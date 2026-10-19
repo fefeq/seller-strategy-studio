@@ -2,19 +2,46 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function ask(system: string, user: string) {
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
-    headers: { Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]}`, "Content-Type": "application/json" },
+    headers: {
+      "Lovable-API-Key": process.env["LOVABLE_API_KEY"] ?? "",
+      "X-Lovable-AIG-SDK": "fetch",
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
-      messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      model: "openai/gpt-6-astra",
+      instructions: system,
+      input: [{ role: "user", content: user }],
+      reasoning: { effort: "low" },
+      store: false,
+      stream: true,
     }),
   });
   if (res.status === 429) throw new Error("Demasiadas peticiones, inténtalo en un momento.");
   if (res.status === 402) throw new Error("Sin créditos de IA disponibles.");
-  if (!res.ok) throw new Error("La IA no respondió");
-  const j = (await res.json()) as { choices: { message: { content: string } }[] };
-  return j.choices[0]?.message.content ?? "";
+  if (!res.ok || !res.body) throw new Error("La IA no respondió");
+  const reader = res.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  let out = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const lines = buf.split("\n");
+    buf = lines.pop() ?? "";
+    for (const line of lines) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trim();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const ev = JSON.parse(payload) as { type?: string; delta?: string };
+        if (ev.type === "response.output_text.delta" && ev.delta) out += ev.delta;
+      } catch { /* ignore partial */ }
+    }
+  }
+  return out;
 }
 
 async function accountContext(supabase: any, accountId: string) {
