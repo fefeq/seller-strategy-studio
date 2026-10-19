@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 
-async function ask(system: string, user: string) {
+async function ask(system: string, user: string, opts: { effort?: "low" | "medium"; schema?: { name: string; schema: unknown } } = {}) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
@@ -13,14 +14,23 @@ async function ask(system: string, user: string) {
       model: "openai/gpt-6-astra",
       instructions: system,
       input: [{ role: "user", content: user }],
-      reasoning: { effort: "low" },
+      reasoning: { effort: opts.effort ?? "low" },
+      ...(opts.schema ? { text: { format: { type: "json_schema", name: opts.schema.name, strict: true, schema: opts.schema.schema } } } : {}),
       store: false,
       stream: true,
     }),
   });
   if (res.status === 429) throw new Error("Demasiadas peticiones, inténtalo en un momento.");
-  if (res.status === 402) throw new Error("Sin créditos de IA disponibles.");
-  if (!res.ok || !res.body) throw new Error("La IA no respondió");
+  if (res.status === 402) throw new Error("Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.");
+  if (res.status === 403) {
+    const body = await res.text().catch(() => "");
+    console.error("AI gateway 403", body.slice(0, 500));
+    throw new Error("El uso de IA está bloqueado para este espacio de trabajo (límite o permisos). Revisa la configuración de IA.");
+  }
+  if (!res.ok || !res.body) {
+    console.error("AI gateway error", res.status, (await res.text().catch(() => "")).slice(0, 500));
+    throw new Error("La IA no respondió");
+  }
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
