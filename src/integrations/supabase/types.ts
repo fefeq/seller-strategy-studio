@@ -1369,6 +1369,7 @@ export type Database = {
           deal_id: string | null
           error: string | null
           id: string
+          lead_id: string | null
           lead_source_id: string | null
           org_id: string | null
           received_at: string
@@ -1381,6 +1382,7 @@ export type Database = {
           deal_id?: string | null
           error?: string | null
           id?: string
+          lead_id?: string | null
           lead_source_id?: string | null
           org_id?: string | null
           received_at?: string
@@ -1393,6 +1395,7 @@ export type Database = {
           deal_id?: string | null
           error?: string | null
           id?: string
+          lead_id?: string | null
           lead_source_id?: string | null
           org_id?: string | null
           received_at?: string
@@ -1415,6 +1418,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lead_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lead_events_lead_source_id_fkey"
             columns: ["lead_source_id"]
             isOneToOne: false
@@ -1425,6 +1435,35 @@ export type Database = {
             foreignKeyName: "lead_events_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_settings: {
+        Row: {
+          org_id: string
+          sla: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          org_id?: string
+          sla?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          org_id?: string
+          sla?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
@@ -1482,6 +1521,148 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          account_id: string | null
+          amount: number | null
+          company: string
+          contact_name: string | null
+          contacted_at: string | null
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          disqualified_at: string | null
+          disqualified_reason: string | null
+          email: string | null
+          external_id: string | null
+          id: string
+          lead_source_id: string | null
+          mql_at: string | null
+          next_step: string
+          next_step_at: string | null
+          notes: string
+          opportunity_at: string | null
+          org_id: string | null
+          owner_id: string | null
+          person_id: string | null
+          segment_id: string | null
+          source: string | null
+          sql_at: string | null
+          stage: string
+          stage_entered_at: string
+          title: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount?: number | null
+          company: string
+          contact_name?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          disqualified_at?: string | null
+          disqualified_reason?: string | null
+          email?: string | null
+          external_id?: string | null
+          id?: string
+          lead_source_id?: string | null
+          mql_at?: string | null
+          next_step?: string
+          next_step_at?: string | null
+          notes?: string
+          opportunity_at?: string | null
+          org_id?: string | null
+          owner_id?: string | null
+          person_id?: string | null
+          segment_id?: string | null
+          source?: string | null
+          sql_at?: string | null
+          stage?: string
+          stage_entered_at?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number | null
+          company?: string
+          contact_name?: string | null
+          contacted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          disqualified_at?: string | null
+          disqualified_reason?: string | null
+          email?: string | null
+          external_id?: string | null
+          id?: string
+          lead_source_id?: string | null
+          mql_at?: string | null
+          next_step?: string
+          next_step_at?: string | null
+          notes?: string
+          opportunity_at?: string | null
+          org_id?: string | null
+          owner_id?: string | null
+          person_id?: string | null
+          segment_id?: string | null
+          source?: string | null
+          sql_at?: string | null
+          stage?: string
+          stage_entered_at?: string
+          title?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leads_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_lead_source_id_fkey"
+            columns: ["lead_source_id"]
+            isOneToOne: false
+            referencedRelation: "lead_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leads_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
             referencedColumns: ["id"]
           },
         ]
