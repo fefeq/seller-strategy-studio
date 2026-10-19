@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/hooks/use-me";
 import { Page, Empty, HealthDot } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -303,6 +304,7 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
 }
 
 function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[]; onChange: () => void }) {
+  const { money: eur } = useCurrency();
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", owner_id: user?.id });
@@ -316,7 +318,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
       {list.map((d) => (
         <Link key={d.id} to="/deals" search={{ deal: d.id }} className="flex items-center justify-between rounded-lg border bg-card p-4 text-sm hover:border-signal">
           <span className="font-medium">{d.name}</span>
-          <span className="flex items-center gap-4"><span>{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><span className="font-mono">{Number(d.amount ?? 0).toLocaleString("es-ES")} €</span><HealthDot value={d.health} /></span>
+          <span className="flex items-center gap-4"><span>{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><span className="font-mono">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
         </Link>
       ))}
     </div>

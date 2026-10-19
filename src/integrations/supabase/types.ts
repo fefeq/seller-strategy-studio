@@ -1278,18 +1278,21 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          currency: string
           id: string
           name: string
         }
         Insert: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           id?: string
           name: string
         }
         Update: {
           created_at?: string
           created_by?: string | null
+          currency?: string
           id?: string
           name?: string
         }
@@ -1584,10 +1587,12 @@ export type Database = {
           acv_max: number | null
           acv_min: number | null
           ae_per_se: number | null
+          ae_quota: number | null
           cac_target: number | null
           created_at: string
           created_by: string | null
           cycle_days: number | null
+          gross_margin_pct: number | null
           id: string
           motion: string
           name: string
@@ -1597,15 +1602,18 @@ export type Database = {
           sdr_per_ae: number | null
           updated_at: string
           updated_by: string | null
+          win_rate_target: number | null
         }
         Insert: {
           acv_max?: number | null
           acv_min?: number | null
           ae_per_se?: number | null
+          ae_quota?: number | null
           cac_target?: number | null
           created_at?: string
           created_by?: string | null
           cycle_days?: number | null
+          gross_margin_pct?: number | null
           id?: string
           motion?: string
           name: string
@@ -1615,15 +1623,18 @@ export type Database = {
           sdr_per_ae?: number | null
           updated_at?: string
           updated_by?: string | null
+          win_rate_target?: number | null
         }
         Update: {
           acv_max?: number | null
           acv_min?: number | null
           ae_per_se?: number | null
+          ae_quota?: number | null
           cac_target?: number | null
           created_at?: string
           created_by?: string | null
           cycle_days?: number | null
+          gross_margin_pct?: number | null
           id?: string
           motion?: string
           name?: string
@@ -1633,6 +1644,7 @@ export type Database = {
           sdr_per_ae?: number | null
           updated_at?: string
           updated_by?: string | null
+          win_rate_target?: number | null
         }
         Relationships: [
           {

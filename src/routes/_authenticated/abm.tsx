@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useMe } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page, Empty } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -110,6 +110,7 @@ function Targets() {
 }
 
 function Partners() {
+  const { money: eur } = useCurrency();
   const qc = useQueryClient();
   const { data: list = [] } = useQuery({ queryKey: ["partners"], queryFn: async () => (await supabase.from("partners").select("*, deals(amount,stage)").order("name")).data ?? [] });
   async function add() {
@@ -140,7 +141,7 @@ function Partners() {
                 <Field label="Estado"><Pick value={p.status} options={{ active: "Activo", onboarding: "Onboarding", paused: "Pausado" }} onChange={(v) => upd(p.id, { status: v })} /></Field>
               </div>
               <Field label="Contacto"><Input defaultValue={p.contact ?? ""} onBlur={(e) => upd(p.id, { contact: e.target.value })} /></Field>
-              <p className="font-mono text-xs text-muted-foreground">Pipeline {pipe.toLocaleString("es-ES")} € · Ganado {won.toLocaleString("es-ES")} €</p>
+              <p className="font-mono text-xs text-muted-foreground">Pipeline {eur(pipe)} · Ganado {eur(won)}</p>
             </div>
           );
         })}

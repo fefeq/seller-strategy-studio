@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/hooks/use-me";
 import { Page, Empty, HealthDot } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 });
 
 function Accounts() {
+  const { money: eur } = useCurrency();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const { data = [] } = useQuery({
@@ -53,7 +55,7 @@ function Accounts() {
                   <td className="px-4 py-3 font-mono">{a.tier}</td>
                   <td className="px-4 py-3"><HealthDot value={a.health} /></td>
                   <td className="px-4 py-3">{a.stakeholders?.length ?? 0}</td>
-                  <td className="px-4 py-3 font-mono">{(a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0).toLocaleString("es-ES")} €</td>
+                  <td className="px-4 py-3 font-mono">{eur((a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0))}</td>
                 </tr>
               ))}
             </tbody>
