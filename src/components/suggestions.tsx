@@ -62,7 +62,9 @@ export function SuggestionCard({ s }: { s: S }) {
         {s.link && <Link to={s.link as any} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Abrir"><ArrowUpRight className="size-4" /></Link>}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
-        <Button size="sm" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> {hasAction ? "Aprobar y hacer" : "Hecho"}</Button>
+        {hasAction || !s.link
+          ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> {hasAction ? "Aprobar y hacer" : "Hecho"}</Button>
+          : <Button size="sm" asChild><Link to={s.link as any}><ArrowUpRight className="size-3.5" /> Resolver</Link></Button>}
         <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}><Clock className="size-3.5" /> En 3 días</Button>
         <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}><X className="size-3.5" /> Descartar</Button>
       </div>
@@ -77,7 +79,7 @@ export function TodayDigest() {
     <div className="rounded-lg border bg-card p-5">
       <div className="mb-3 flex items-end justify-between">
         <h3 className="text-2xl">3 cosas para hoy</h3>
-        <Link to="/inbox" className="text-xs text-muted-foreground hover:text-foreground">Ver las {data.length} sugerencias</Link>
+        <Link to="/inbox" className="text-xs text-muted-foreground hover:text-foreground">{data.length === 1 ? "Ver 1 sugerencia" : `Ver las ${data.length} sugerencias`}</Link>
       </div>
       {top.length === 0 ? <p className="text-sm text-muted-foreground">Todo en orden. Te avisaré cuando detecte algo.</p> : <div className="space-y-3">{top.map((s) => <SuggestionCard key={s.id} s={s} />)}</div>}
     </div>
