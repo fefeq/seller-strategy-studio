@@ -92,7 +92,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
   useEffect(() => { setForm(Object.fromEntries(PLAN_FIELDS.map(([k]) => [k, plan?.[k] ?? ""]))); }, [plan]);
   async function save() {
     const { error } = plan
-      ? await supabase.from("account_plans").update(form).eq("id", plan.id)
+      ? await supabase.from("account_plans").update(form as any).eq("id", plan.id)
       : await supabase.from("account_plans").insert({ account_id: accountId, ...form });
     if (error) return toast.error(error.message);
     toast.success("Account Plan guardado");
@@ -200,7 +200,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
     const { id, title, scheduled_at, deal_id, ...rest } = sel;
     const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null };
     for (const [k] of MEETING_FIELDS) payload[k] = rest[k];
-    const { error } = await supabase.from("meetings").update(payload).eq("id", id);
+    const { error } = await supabase.from("meetings").update(payload as any).eq("id", id);
     if (error) return toast.error(error.message);
     if (sel.notes || sel.next_steps) {
       await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: sel.notes, next_steps: sel.next_steps });
