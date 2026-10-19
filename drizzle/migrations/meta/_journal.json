@@ -78,6 +78,13 @@
       "when": 1792452864090,
       "tag": "0010_lead_intake",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792453524108,
+      "tag": "0011_agent_channel_mcp",
+      "breakpoints": true
     }
   ]
 }

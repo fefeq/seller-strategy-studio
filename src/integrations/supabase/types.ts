@@ -294,6 +294,7 @@ export type Database = {
           id: string
           org_id: string
           result: string
+          source: string
           status: string
           summary: string
           tool: string
@@ -307,6 +308,7 @@ export type Database = {
           id?: string
           org_id: string
           result?: string
+          source?: string
           status?: string
           summary?: string
           tool: string
@@ -320,6 +322,7 @@ export type Database = {
           id?: string
           org_id?: string
           result?: string
+          source?: string
           status?: string
           summary?: string
           tool?: string
