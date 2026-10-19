@@ -304,7 +304,7 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
 }
 
 function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[]; onChange: () => void }) {
-  const { money: eur, symbol } = useCurrency();
+  const { money: eur } = useCurrency();
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", owner_id: user?.id });

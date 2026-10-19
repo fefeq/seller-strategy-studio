@@ -19,7 +19,7 @@ const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation",
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
 function Metrics() {
-  const { money: eur, symbol } = useCurrency();
+  const { money: eur } = useCurrency();
   const qc = useQueryClient();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;

@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 });
 
 function Accounts() {
-  const { money: eur, symbol } = useCurrency();
+  const { money: eur } = useCurrency();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const { data = [] } = useQuery({

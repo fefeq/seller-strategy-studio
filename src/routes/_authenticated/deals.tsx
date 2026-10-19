@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/deals")({
 
 
 function Deals() {
-  const { money: eur, symbol } = useCurrency();
+  const { money: eur } = useCurrency();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();

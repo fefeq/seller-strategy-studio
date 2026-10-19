@@ -110,7 +110,7 @@ function Targets() {
 }
 
 function Partners() {
-  const { money: eur, symbol } = useCurrency();
+  const { money: eur } = useCurrency();
   const qc = useQueryClient();
   const { data: list = [] } = useQuery({ queryKey: ["partners"], queryFn: async () => (await supabase.from("partners").select("*, deals(amount,stage)").order("name")).data ?? [] });
   async function add() {
