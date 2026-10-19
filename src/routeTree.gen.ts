@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as McpRouteImport } from './routes/mcp'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
@@ -29,6 +31,7 @@ import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticated/theory-u'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
@@ -49,6 +52,17 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAbmRoute = AuthenticatedAbmRouteImport.update({
   id: '/abm',
   path: '/abm',
@@ -135,6 +149,11 @@ const AuthenticatedTheoryURoute = AuthenticatedTheoryURouteImport.update({
   path: '/theory-u',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAccountsIndexRoute =
   AuthenticatedAccountsIndexRouteImport.update({
     id: '/accounts/',
@@ -166,6 +185,8 @@ const ApiPublicTelegramWebhookRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
@@ -183,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
   '/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -192,6 +214,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
@@ -209,6 +233,7 @@ export interface FileRoutesByTo {
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
   '/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
@@ -220,6 +245,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
@@ -237,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -248,6 +276,8 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/abm'
     | '/advisor'
     | '/approvals'
@@ -265,6 +295,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/team'
     | '/theory-u'
+    | '/.lovable/oauth/consent'
     | '/accounts/$id'
     | '/api/public/leads'
     | '/accounts/'
@@ -274,6 +305,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/abm'
     | '/advisor'
     | '/approvals'
@@ -291,6 +324,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/team'
     | '/theory-u'
+    | '/.lovable/oauth/consent'
     | '/accounts/$id'
     | '/api/public/leads'
     | '/accounts'
@@ -301,6 +335,8 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/mcp'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/abm'
     | '/_authenticated/advisor'
     | '/_authenticated/approvals'
@@ -318,6 +354,7 @@ export interface FileRouteTypes {
     | '/_authenticated/strategy'
     | '/_authenticated/team'
     | '/_authenticated/theory-u'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/accounts/$id'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
@@ -329,6 +366,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -355,6 +395,20 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/abm': {
@@ -476,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTheoryURouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/accounts/': {
       id: '/_authenticated/accounts/'
       path: '/accounts'
@@ -565,6 +626,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,

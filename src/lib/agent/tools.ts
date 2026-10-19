@@ -243,7 +243,7 @@ export const TOOLS: AgentTool[] = [
   def({
     name: "update_positioning", kind: "write", roles: ["owner", "sales_leader", "marketing"],
     description: `Guarda campos de posicionamiento. Campos: ${POSITIONING_FIELDS.map(([k]) => k).join(", ")}, tagline, short_pitch, product_name.`,
-    input: z.object({ fields: z.record(z.string()) }),
+    input: z.object({ fields: z.record(z.string(), z.string()) }),
     summarize: (a) => `Guardar posicionamiento: ${Object.keys(a.fields).join(", ")}`,
     run: async (c, a) => {
       const allowed = new Set<string>([...POSITIONING_FIELDS.map(([k]) => k), "tagline", "short_pitch", "product_name"]);

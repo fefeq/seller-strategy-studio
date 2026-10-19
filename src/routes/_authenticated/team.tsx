@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ROLES, type Role } from "@/lib/roles";
 import { TelegramLink } from "@/components/telegram-link";
+import { McpConnect } from "@/components/mcp-connect";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({ meta: [{ title: "Equipo — GTM Brain" }, { name: "description", content: "Personas de la empresa y sus roles." }, { property: "og:title", content: "Equipo — GTM Brain" }, { property: "og:description", content: "Personas de la empresa y sus roles." }] }),
@@ -131,7 +132,7 @@ function Team() {
           )}
         </div>
       </div>
-      <div className="mt-8"><TelegramLink /></div>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2"><McpConnect /><TelegramLink /></div>
     </Page>
   );
 }
