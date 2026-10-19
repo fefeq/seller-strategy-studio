@@ -50,6 +50,13 @@
       "when": 1792448599545,
       "tag": "0006_self_service_trials",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792449172500,
+      "tag": "0007_agent_proactive_channels",
+      "breakpoints": true
     }
   ]
 }

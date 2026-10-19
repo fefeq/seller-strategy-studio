@@ -212,6 +212,136 @@ export type Database = {
           },
         ]
       }
+      agent_conversations: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          mode: string
+          org_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          org_id: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          mode?: string
+          org_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_conversations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content?: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_pending_actions: {
+        Row: {
+          args: Json
+          conversation_id: string | null
+          created_at: string
+          decided_at: string | null
+          id: string
+          org_id: string
+          result: string
+          status: string
+          summary: string
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          args?: Json
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          org_id: string
+          result?: string
+          status?: string
+          summary?: string
+          tool: string
+          user_id: string
+        }
+        Update: {
+          args?: Json
+          conversation_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          id?: string
+          org_id?: string
+          result?: string
+          status?: string
+          summary?: string
+          tool?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_pending_actions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_pending_actions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approvals: {
         Row: {
           created_at: string
@@ -523,6 +653,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      channel_links: {
+        Row: {
+          channel: string
+          chat_id: string | null
+          code_expires_at: string | null
+          created_at: string
+          daily_digest: boolean
+          id: string
+          link_code: string | null
+          linked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          chat_id?: string | null
+          code_expires_at?: string | null
+          created_at?: string
+          daily_digest?: boolean
+          id?: string
+          link_code?: string | null
+          linked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          chat_id?: string | null
+          code_expires_at?: string | null
+          created_at?: string
+          daily_digest?: boolean
+          id?: string
+          link_code?: string | null
+          linked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       deal_registrations: {
         Row: {
@@ -993,6 +1159,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_locks: {
+        Row: {
+          last_run_at: string | null
+          locked_until: string | null
+          name: string
+          paused_reason: string | null
+        }
+        Insert: {
+          last_run_at?: string | null
+          locked_until?: string | null
+          name: string
+          paused_reason?: string | null
+        }
+        Update: {
+          last_run_at?: string | null
+          locked_until?: string | null
+          name?: string
+          paused_reason?: string | null
+        }
+        Relationships: []
       }
       knowledge_docs: {
         Row: {
@@ -1857,6 +2044,165 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      suggestions: {
+        Row: {
+          action: Json | null
+          body: string
+          created_at: string
+          dedupe_key: string
+          detector: string
+          id: string
+          link: string | null
+          notified_at: string | null
+          org_id: string
+          priority: number
+          snoozed_until: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          action?: Json | null
+          body?: string
+          created_at?: string
+          dedupe_key: string
+          detector: string
+          id?: string
+          link?: string | null
+          notified_at?: string | null
+          org_id: string
+          priority?: number
+          snoozed_until?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: Json | null
+          body?: string
+          created_at?: string
+          dedupe_key?: string
+          detector?: string
+          id?: string
+          link?: string | null
+          notified_at?: string | null
+          org_id?: string
+          priority?: number
+          snoozed_until?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "suggestions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          done: boolean
+          due_date: string | null
+          id: string
+          notes: string
+          org_id: string | null
+          owner_id: string | null
+          source: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          notes?: string
+          org_id?: string | null
+          owner_id?: string | null
+          source?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          done?: boolean
+          due_date?: string | null
+          id?: string
+          notes?: string
+          org_id?: string | null
+          owner_id?: string | null
+          source?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      telegram_updates: {
+        Row: {
+          error: string | null
+          payload: Json
+          processed_at: string | null
+          received_at: string
+          update_id: number
+        }
+        Insert: {
+          error?: string | null
+          payload: Json
+          processed_at?: string | null
+          received_at?: string
+          update_id: number
+        }
+        Update: {
+          error?: string | null
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          update_id?: number
+        }
+        Relationships: []
       }
       trials: {
         Row: {
