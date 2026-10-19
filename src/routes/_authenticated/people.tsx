@@ -151,9 +151,13 @@ function ImportCsv({ existing }: { existing: { email: string | null; linkedin_ur
     const { fresh, skipped } = dedupePeople(rows, existing);
     let inserted = 0;
     for (let i = 0; i < fresh.length; i += 200) {
-      const { data, error } = await supabase.from("people").upsert(fresh.slice(i, i + 200), { ignoreDuplicates: true }).select("id");
-      if (error) { toast.error(error.message); break; }
-      inserted += data?.length ?? 0;
+      const batch = fresh.slice(i, i + 200);
+      const { data, error } = await supabase.from("people").insert(batch).select("id");
+      if (!error) { inserted += data?.length ?? 0; continue; }
+      for (const row of batch) {
+        const r = await supabase.from("people").insert(row);
+        if (!r.error) inserted++;
+      }
     }
     toast.success(`${inserted} personas importadas · ${skipped + (fresh.length - inserted)} duplicadas o sin email/LinkedIn omitidas`);
     setOpen(false);
