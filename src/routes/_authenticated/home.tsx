@@ -19,7 +19,7 @@ function HomePage() {
   const { data: me } = useMe();
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
-  const { open } = useAgent();
+  const { open: openAgent } = useAgent();
   const { data } = useQuery({
     queryKey: ["home"],
     queryFn: async () => {
@@ -51,7 +51,7 @@ function HomePage() {
             {setup.status.next && <p className="mt-2 text-sm">Siguiente: <strong>{setup.status.next.label}</strong> · desbloquea {setup.status.next.unlocks.toLowerCase()}</p>}
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => open({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
+            <Button variant="outline" onClick={() => openAgent({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
             <Button asChild><Link to="/setup">Completar con IA</Link></Button>
           </div>
         </div>
