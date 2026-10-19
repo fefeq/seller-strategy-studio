@@ -13,25 +13,24 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { DEAL_STAGES } from "@/lib/roles";
 import { parseCsv } from "@/lib/dedupe";
 import { hashLeadKey } from "@/lib/leads-ingest";
-import { LEAD_LIMITS } from "@/lib/leads";
+import { INTAKE_STAGES, LEAD_LIMITS } from "@/lib/leads";
 import { importLeads } from "@/lib/leads.functions";
 
-export const Route = createFileRoute("/_authenticated/leads")({
+export const Route = createFileRoute("/_authenticated/leads/entrada")({
   head: () => ({ meta: [
     { title: "Entrada de leads — GTM Brain" },
-    { name: "description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre como cuenta con etapa y fecha." },
+    { name: "description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre con su etapa y fecha en la pantalla de Leads." },
     { property: "og:title", content: "Entrada de leads — GTM Brain" },
-    { property: "og:description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre como cuenta con etapa y fecha." },
+    { property: "og:description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre con su etapa y fecha en la pantalla de Leads." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
   component: Leads,
 });
 
-const STAGE_OPTS = Object.fromEntries(DEAL_STAGES.filter((s) => s.id !== "won" && s.id !== "lost").map((s) => [s.id, s.label]));
+const STAGE_OPTS: Record<string, string> = Object.fromEntries(INTAKE_STAGES.map((s) => [s.id, s.label]));
 const STATUS: Record<string, [string, string]> = { created: ["Nuevo", "bg-success/15 text-success"], updated: ["Actualizado", "bg-muted text-foreground"], error: ["Error", "bg-destructive/15 text-destructive"] };
 
 /** Public base URL for external tools: the editor preview is private, so use the live domain there. */
@@ -45,10 +44,10 @@ function Leads() {
   const { data: me } = useMe();
   const canManage = !!me?.roles.some((r) => r === "owner" || r === "sales_leader" || r === "marketing");
   return (
-    <Page eyebrow="Pipeline con leads reales" title="Entrada de leads" actions={<Button variant="outline" asChild><Link to="/deals" search={{ deal: undefined }}>Ver pipeline</Link></Button>}>
+    <Page eyebrow="Leads reales" title="Entrada de leads" actions={<Button variant="outline" asChild><Link to="/leads">Ver leads</Link></Button>}>
       <p className="-mt-4 mb-8 max-w-3xl text-sm text-muted-foreground">
-        Cada lead entra como <strong>cuenta</strong>, con su contacto y un <strong>deal con etapa y fecha</strong>. Si vuelve a llegar el mismo lead, se actualiza en lugar de duplicarse.
-        La pipeline, las métricas y la calculadora de Estrategia GTM se recalculan solas al momento.
+        Cada lead entra en <strong>Leads</strong> con su cuenta, su contacto, su etapa (Nuevo, Contactado, MQL o SQL) y su fecha. Si ya trae una etapa de venta (Discovery, Propuesta…), entra directamente como <strong>oportunidad</strong> en la pipeline.
+        Si vuelve a llegar el mismo lead, se actualiza en lugar de duplicarse. Leads, pipeline, métricas y la calculadora de Estrategia GTM se recalculan solas al momento.
       </p>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
         <Sources canManage={canManage} isOwner={!!me?.roles.includes("owner")} />
@@ -104,7 +103,7 @@ function NewSource() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Formulario web");
-  const [stage, setStage] = useState("discovery");
+  const [stage, setStage] = useState("new");
   const [url, setUrl] = useState<string | null>(null);
   async function create() {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
@@ -148,7 +147,7 @@ function HowTo() {
   "web": "acme.com",
   "email": "ana@acme.com",
   "nombre": "Ana Pérez",
-  "etapa": "Propuesta",
+  "etapa": "MQL",
   "fecha": "2026-10-15",
   "fecha_cierre": "2026-12-20",
   "importe": 24000,
@@ -161,10 +160,10 @@ function HowTo() {
         <AccordionContent className="space-y-2 text-sm text-muted-foreground">
           <p>Reconoce nombres en español o inglés y las preguntas de tus formularios. Solo es obligatoria la <strong>empresa</strong> (o su web, o un email de empresa).</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Etapa:</strong> Discovery, Cualificado, Demo, Propuesta, Negociación, Ganado o Perdido. También las de HubSpot, Pipedrive o Salesforce (p. ej. «closedwon»).</li>
+            <li><strong>Etapa del lead:</strong> Nuevo, Contactado, MQL, SQL o Descartado. <strong>Etapa de venta:</strong> Oportunidad, Discovery, Cualificado, Demo, Propuesta, Negociación, Ganado o Perdido (entra como deal). También las de HubSpot, Pipedrive o Salesforce (p. ej. «marketingqualifiedlead» o «closedwon»).</li>
             <li><strong>Fecha:</strong> cuándo entró el lead. <strong>Fecha de cierre:</strong> prevista o real. Admite 15/10/2026 o 2026-10-15.</li>
             <li><strong>Importe:</strong> valor anual del deal. Con él se calcula el ACV real.</li>
-            <li><strong>id:</strong> el identificador en tu herramienta. Con él, cada actualización cae en el mismo deal.</li>
+            <li><strong>id:</strong> el identificador en tu herramienta. Con él, cada actualización cae en el mismo lead o deal.</li>
           </ul>
           <pre className="overflow-x-auto rounded-md bg-muted p-3 font-mono text-xs text-foreground">{example}</pre>
           <p>Puedes enviar un lead o varios a la vez (máximo {LEAD_LIMITS.maxLeads} por envío) dentro de <code>{"{ \"leads\": [ … ] }"}</code>.</p>
@@ -172,7 +171,7 @@ function HowTo() {
       </AccordionItem>
       <AccordionItem value="forms">
         <AccordionTrigger className="font-sans text-sm tracking-normal">Formularios: Typeform, Tally, Webflow</AccordionTrigger>
-        <AccordionContent className="text-sm text-muted-foreground">En los ajustes del formulario abre <strong>Webhooks</strong>, añade uno nuevo y pega el enlace. Cada respuesta llega como lead en Discovery (o la etapa por defecto del enlace).</AccordionContent>
+        <AccordionContent className="text-sm text-muted-foreground">En los ajustes del formulario abre <strong>Webhooks</strong>, añade uno nuevo y pega el enlace. Cada respuesta llega como lead Nuevo (o en la etapa por defecto del enlace).</AccordionContent>
       </AccordionItem>
       <AccordionItem value="zap">
         <AccordionTrigger className="font-sans text-sm tracking-normal">Zapier o Make</AccordionTrigger>
@@ -189,7 +188,7 @@ function HowTo() {
 function CsvImport() {
   const qc = useQueryClient();
   const run = useServerFn(importLeads);
-  const [stage, setStage] = useState("discovery");
+  const [stage, setStage] = useState("new");
   const [rows, setRows] = useState<Record<string, string>[] | null>(null);
   const [progress, setProgress] = useState<number | null>(null);
   async function onFile(file: File) {

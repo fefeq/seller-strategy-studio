@@ -51,7 +51,7 @@ function Deals() {
   }
 
   return (
-    <Page eyebrow="Pipeline y forecast" title="Pipeline" actions={<Button variant="outline" asChild><Link to="/leads">Conectar leads reales</Link></Button>}>
+    <Page eyebrow="Pipeline y forecast" title="Pipeline" actions={<Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>}>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Kpi label="Pipeline abierto" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
         <Kpi label="Forecast ponderado" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0))} />

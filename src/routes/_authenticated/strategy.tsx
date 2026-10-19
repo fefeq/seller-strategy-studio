@@ -106,7 +106,7 @@ function Motions() {
               acvManual == null
                 ? <p className="text-xs text-success">ACV real: media de {real.overall.acvSample} {real.overall.acvSample === 1 ? `deal ${real.overall.acvSource === "ganados" ? "ganado" : "abierto"}` : `deals ${real.overall.acvSource}`}. Se actualiza solo cuando entran leads.</p>
                 : <button className="text-xs text-signal underline-offset-2 hover:underline" onClick={() => setAcvManual(null)}>Volver al ACV real ({money(Math.round(real.overall.acv))})</button>
-            ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: valor de ejemplo. <Link to="/leads" className="underline">Conecta tus leads</Link>.</p>}
+            ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: valor de ejemplo. <Link to="/leads/entrada" className="underline">Conecta tus leads</Link>.</p>}
           </Field>
           <Field label="Calcular con">
             <Pick value={basis} options={{ target: "Benchmarks objetivo del segmento", real: "Datos reales de la pipeline" }} onChange={(v) => setBasis(v as "target" | "real")} />
