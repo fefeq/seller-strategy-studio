@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { applySetupItems, extractSetup } from "@/lib/agent.functions";
-import { proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
+import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 
@@ -75,7 +75,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
     const arr = Array.from(list ?? []).slice(0, 3);
     const read = await Promise.all(arr.map(async (f) => {
       if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} supera 8 MB`); return null; }
-      if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { setText((t) => `${t}\n\n--- ${f.name} ---\n${""}`); const body = await f.text(); setText((t) => t + body.slice(0, 20000)); return null; }
+      if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { const body = await f.text(); setText((t) => `${t}\n\n--- ${f.name} ---\n${body.slice(0, 20000)}`); return null; }
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
     }));
@@ -193,7 +193,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
 function Field({ label, value, onChange }: { label: string; value: unknown; onChange: (v: string) => void }) {
   const long = typeof value === "string" && value.length > 60;
   return (
-    <label className="text-xs text-muted-foreground">{label}
+    <label className="text-xs text-muted-foreground">{FIELD_LABELS[label] ?? label}
       {long ? <Textarea rows={3} defaultValue={String(value ?? "")} onBlur={(e) => onChange(e.target.value)} /> : <Input type={typeof value === "number" ? "number" : "text"} defaultValue={String(value ?? "")} onBlur={(e) => onChange(e.target.value)} />}
     </label>
   );

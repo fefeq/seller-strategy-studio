@@ -192,3 +192,14 @@ export const createTelegramLinkCode = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { code, expires };
   });
+
+export const telegramBotInfo = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { telegramConfigured, tg } = await import("@/lib/telegram.server");
+    if (!telegramConfigured()) return { connected: false as const, username: null };
+    try {
+      const r = (await tg("getMe", {})) as { result?: { username?: string } };
+      return { connected: true as const, username: r.result?.username ?? null };
+    } catch { return { connected: false as const, username: null }; }
+  });

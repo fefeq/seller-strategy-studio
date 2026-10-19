@@ -28,6 +28,8 @@ import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/t
 import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticated/theory-u'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
+import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
+import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -125,6 +127,17 @@ const AuthenticatedAccountsIdRoute = AuthenticatedAccountsIdRouteImport.update({
   path: '/accounts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicJobsProactiveRoute = ApiPublicJobsProactiveRouteImport.update({
+  id: '/api/public/jobs/proactive',
+  path: '/api/public/jobs/proactive',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicTelegramWebhookRoute =
+  ApiPublicTelegramWebhookRouteImport.update({
+    id: '/api/public/telegram/webhook',
+    path: '/api/public/telegram/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -145,6 +158,8 @@ export interface FileRoutesByFullPath {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -165,6 +180,8 @@ export interface FileRoutesByTo {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
+  '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -187,6 +204,8 @@ export interface FileRoutesById {
   '/_authenticated/theory-u': typeof AuthenticatedTheoryURoute
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
+  '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -209,6 +228,8 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/accounts/$id'
     | '/accounts/'
+    | '/api/public/jobs/proactive'
+    | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -229,6 +250,8 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/accounts/$id'
     | '/accounts'
+    | '/api/public/jobs/proactive'
+    | '/api/public/telegram/webhook'
   id:
     | '__root__'
     | '/'
@@ -250,12 +273,16 @@ export interface FileRouteTypes {
     | '/_authenticated/theory-u'
     | '/_authenticated/accounts/$id'
     | '/_authenticated/accounts/'
+    | '/api/public/jobs/proactive'
+    | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
+  ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -393,6 +420,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/jobs/proactive': {
+      id: '/api/public/jobs/proactive'
+      path: '/api/public/jobs/proactive'
+      fullPath: '/api/public/jobs/proactive'
+      preLoaderRoute: typeof ApiPublicJobsProactiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/telegram/webhook': {
+      id: '/api/public/telegram/webhook'
+      path: '/api/public/telegram/webhook'
+      fullPath: '/api/public/telegram/webhook'
+      preLoaderRoute: typeof ApiPublicTelegramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -441,6 +482,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
+  ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

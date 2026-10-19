@@ -29,6 +29,14 @@ export type SetupProposal = {
 
 export type ProposalItem = { key: string; group: string; label: string; detail: string; tool: string; args: Record<string, unknown> };
 
+export const FIELD_LABELS: Record<string, string> = {
+  product_name: "Producto", target_customer: "Cliente objetivo", need: "Necesidad", category: "Categoría", key_benefit: "Beneficio clave",
+  competitive_alternative: "Alternativa competitiva", differentiator: "Diferenciador", one_liner: "Frase de una línea", elevator_pitch: "Elevator pitch",
+  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", motion: "Motion", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
+  industries: "Sectores", company_size: "Tamaño", geography: "Geografía", why_fit: "Por qué encaja", anti_icp: "Anti-ICP", title: "Título", pain: "Dolor",
+  message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda",
+};
+
 const clean = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== ""));
 
 /** Turns a proposal into reviewable items, each mapped to one tool call. Existing segments are updated by name. */
@@ -39,7 +47,7 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
   }
   const pos = clean(p.positioning ?? {}) as Record<string, string>;
   if (Object.keys(pos).length) {
-    items.push({ key: "positioning", group: "Posicionamiento", label: pos.one_liner ?? "Posicionamiento", detail: Object.entries(pos).map(([k, v]) => `${k}: ${v}`).join("\n"), tool: "update_positioning", args: { fields: pos } });
+    items.push({ key: "positioning", group: "Posicionamiento", label: pos.one_liner ?? "Posicionamiento", detail: Object.entries(pos).map(([k, v]) => `${FIELD_LABELS[k] ?? k}: ${v}`).join("\n"), tool: "update_positioning", args: { fields: pos } });
   }
   p.segments.forEach((s, i) => {
     const ex = existingSegments.find((e) => e.name.trim().toLowerCase() === s.name.trim().toLowerCase());
