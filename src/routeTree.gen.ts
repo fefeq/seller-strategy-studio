@@ -15,7 +15,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedCycleRouteImport } from './routes/_authenticated/cycle'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
+import { Route as AuthenticatedDebatesRouteImport } from './routes/_authenticated/debates'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
@@ -60,9 +62,19 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCycleRoute = AuthenticatedCycleRouteImport.update({
+  id: '/cycle',
+  path: '/cycle',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDealsRoute = AuthenticatedDealsRouteImport.update({
   id: '/deals',
   path: '/deals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDebatesRoute = AuthenticatedDebatesRouteImport.update({
+  id: '/debates',
+  path: '/debates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
@@ -145,7 +157,9 @@ export interface FileRoutesByFullPath {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
+  '/debates': typeof AuthenticatedDebatesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -167,7 +181,9 @@ export interface FileRoutesByTo {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
+  '/debates': typeof AuthenticatedDebatesRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -191,7 +207,9 @@ export interface FileRoutesById {
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/cycle': typeof AuthenticatedCycleRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
+  '/_authenticated/debates': typeof AuthenticatedDebatesRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
@@ -215,7 +233,9 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/cycle'
     | '/deals'
+    | '/debates'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -237,7 +257,9 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/cycle'
     | '/deals'
+    | '/debates'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -260,7 +282,9 @@ export interface FileRouteTypes {
     | '/_authenticated/abm'
     | '/_authenticated/advisor'
     | '/_authenticated/approvals'
+    | '/_authenticated/cycle'
     | '/_authenticated/deals'
+    | '/_authenticated/debates'
     | '/_authenticated/home'
     | '/_authenticated/hub'
     | '/_authenticated/inbox'
@@ -329,11 +353,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cycle': {
+      id: '/_authenticated/cycle'
+      path: '/cycle'
+      fullPath: '/cycle'
+      preLoaderRoute: typeof AuthenticatedCycleRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/deals': {
       id: '/_authenticated/deals'
       path: '/deals'
       fullPath: '/deals'
       preLoaderRoute: typeof AuthenticatedDealsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/debates': {
+      id: '/_authenticated/debates'
+      path: '/debates'
+      fullPath: '/debates'
+      preLoaderRoute: typeof AuthenticatedDebatesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -441,7 +479,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAbmRoute: typeof AuthenticatedAbmRoute
   AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedCycleRoute: typeof AuthenticatedCycleRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
+  AuthenticatedDebatesRoute: typeof AuthenticatedDebatesRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
@@ -460,7 +500,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAbmRoute: AuthenticatedAbmRoute,
   AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedCycleRoute: AuthenticatedCycleRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
+  AuthenticatedDebatesRoute: AuthenticatedDebatesRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
