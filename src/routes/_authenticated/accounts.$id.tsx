@@ -14,7 +14,8 @@ import { Field, Pick } from "@/components/fields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BUYING_ROLES, SUPPORT, DEAL_STAGES } from "@/lib/roles";
-import { generateMeetingBrief, generateProposal, researchStakeholder } from "@/lib/ai.functions";
+import { generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
+import { LevelPicker } from "@/components/theory-u/listening";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
   head: () => ({ meta: [{ title: "Cuenta — GTM Brain" }, { name: "description", content: "Account Plan, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — GTM Brain" }, { property: "og:description", content: "Account Plan, stakeholders y reuniones." }] }),
@@ -190,7 +191,9 @@ const MEETING_FIELDS = [
 function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accountId: string; list: any[]; stakeholders: any[]; deals: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
+  const [coachBusy, setCoachBusy] = useState(false);
   const brief = useServerFn(generateMeetingBrief);
+  const coach = useServerFn(listeningCoaching);
   async function add() {
     const { data, error } = await supabase.from("meetings").insert({ account_id: accountId, title: "Nueva reunión", scheduled_at: new Date(Date.now() + 864e5).toISOString() }).select().single();
     if (error) return toast.error(error.message);
@@ -198,20 +201,27 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
   }
   async function save() {
     const { id, title, scheduled_at, deal_id, ...rest } = sel;
-    const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null };
+    const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null, listening_level: rest.listening_level ?? null, listening_reflection: rest.listening_reflection ?? "" };
     for (const [k] of MEETING_FIELDS) payload[k] = rest[k];
     const { error } = await supabase.from("meetings").update(payload as any).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return false; }
     if (sel.notes || sel.next_steps) {
       await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: sel.notes, next_steps: sel.next_steps });
     }
     toast.success("Reunión guardada"); onChange();
+    return true;
   }
   async function genBrief() {
     await save();
     setBusy(true);
     try { const r = await brief({ data: { meetingId: sel.id } }); setSel({ ...sel, ai_brief: r.brief }); onChange(); }
     catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+  }
+  async function genCoaching() {
+    if (!(await save())) return;
+    setCoachBusy(true);
+    try { const r = await coach({ data: { meetingId: sel.id } }); setSel({ ...sel, listening_coaching: r.text }); onChange(); }
+    catch (e) { toast.error((e as Error).message); } finally { setCoachBusy(false); }
   }
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -244,8 +254,18 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
               <Field key={k} label={label}><Textarea rows={3} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
             ))}
           </div>
-          <div className="flex gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Call Prep con IA"}</Button></div>
+          <div className="flex gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Call Prep con IA"}</Button></div>
           {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><pre className="whitespace-pre-wrap rounded-md bg-muted p-4 font-sans text-sm">{sel.ai_brief}</pre></div>}
+          <div className="space-y-3 border-t pt-4">
+            <div>
+              <p className="eyebrow">Después: ¿cómo escuchaste? · Theory U</p>
+              <p className="text-xs text-muted-foreground">Descarga → Factual → Empática → Generativa. Sé honesto: sirve para mejorar, no para evaluar.</p>
+            </div>
+            <LevelPicker value={sel.listening_level} onChange={(l) => setSel({ ...sel, listening_level: l })} />
+            <Textarea rows={2} placeholder="¿En qué momento escuchaste de verdad? ¿Cuándo estabas pensando en tu pitch?" value={sel.listening_reflection ?? ""} onChange={(e) => setSel({ ...sel, listening_reflection: e.target.value })} />
+            <Button variant="outline" size="sm" onClick={genCoaching} disabled={coachBusy}><Sparkles className="size-4" /> {coachBusy ? "Analizando…" : "Coaching de escucha con IA"}</Button>
+            {sel.listening_coaching && <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 font-sans text-sm">{sel.listening_coaching}</pre>}
+          </div>
         </div>
       ) : <Empty>Selecciona o planifica una reunión.</Empty>}
     </div>
