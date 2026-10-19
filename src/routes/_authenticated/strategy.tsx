@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Page, Empty } from "@/components/page";
@@ -12,6 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { capacityPlan, matchSegment, MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
 import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
+import { segmentActuals } from "@/lib/pipeline-real";
+import type { SegLike } from "@/lib/segment-coverage";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   head: () => ({ meta: [{ title: "Estrategia GTM — GTM Brain" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — GTM Brain" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
@@ -98,7 +101,17 @@ function Motions() {
           <Field label="Moneda de la empresa">
             {isOwner ? <Pick value={currency} options={CURRENCIES} onChange={setCurrency} /> : <p className="text-sm">{CURRENCIES[currency] ?? currency} <span className="text-xs text-muted-foreground">· solo el Owner la cambia</span></p>}
           </Field>
-          <Field label={`Valor anual del contrato (ACV, ${symbol})`}><Input type="number" value={acv} onChange={(e) => setAcv(Number(e.target.value))} /></Field>
+          <Field label={`Valor anual del contrato (ACV, ${symbol})`}>
+            <Input type="number" value={acv} onChange={(e) => setAcvManual(Number(e.target.value))} />
+            {real.overall.acv != null ? (
+              acvManual == null
+                ? <p className="text-xs text-success">ACV real: media de {real.overall.acvSample} deals {real.overall.acvSource}. Se actualiza solo cuando entran leads.</p>
+                : <button className="text-xs text-signal underline-offset-2 hover:underline" onClick={() => setAcvManual(null)}>Volver al ACV real ({money(Math.round(real.overall.acv))})</button>
+            ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: valor de ejemplo. <Link to="/leads" className="underline">Conecta tus leads</Link>.</p>}
+          </Field>
+          <Field label="Calcular con">
+            <Pick value={basis} options={{ target: "Benchmarks objetivo del segmento", real: "Datos reales de la pipeline" }} onChange={(v) => setBasis(v as "target" | "real")} />
+          </Field>
           <Field label="Segmento"><Pick value={forced} options={Object.fromEntries([["", "Automático según ACV"], ...segs.map((s) => [s.id, s.name])])} onChange={setForced} /></Field>
         </div>
         {seg ? (
@@ -113,6 +126,17 @@ function Motions() {
               <dt className="text-muted-foreground">CAC objetivo</dt><dd>{seg.cac_target ? money(Number(seg.cac_target)) : "—"}</dd>
               <dt className="text-muted-foreground">Payback objetivo</dt><dd>{seg.payback_months ? `${seg.payback_months} meses` : "—"}</dd>
             </dl>
+            <div className="mt-4 overflow-hidden rounded-md border text-sm">
+              <div className="grid grid-cols-[1.2fr_1fr_1fr] bg-muted/50 px-3 py-1.5"><span className="eyebrow text-[10px]">Real vs objetivo · {seg.name}</span><span className="eyebrow text-[10px]">Real (12 meses)</span><span className="eyebrow text-[10px]">Objetivo</span></div>
+              {[
+                ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} deals` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
+                ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} cerrados` : "—", pct(seg.win_rate_target)],
+                ["Ciclo de venta", segReal?.cycleDays != null ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ganados` : "—", days(seg.cycle_days)],
+              ].map(([l, r, t]) => (
+                <div key={l} className="grid grid-cols-[1.2fr_1fr_1fr] border-t px-3 py-1.5"><span className="text-muted-foreground">{l}</span><span>{r}</span><span>{t}</span></div>
+              ))}
+            </div>
+            {basis === "real" && <p className="mt-2 text-xs text-muted-foreground">{segReal?.winRate != null ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).` : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
               {[
                 ["Deals por AE / año", plan.dealsPerYear != null ? fmt1(Math.ceil(plan.dealsPerYear)) : "—"],
@@ -150,7 +174,7 @@ function Motions() {
         <div className="mb-3 flex items-center justify-between"><h3 className="text-3xl">Tus segmentos y benchmarks</h3><Button size="sm" onClick={add}>+ Segmento</Button></div>
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {segs.map((s) => {
                 const suggested = recommendMotion(Number(s.acv_min ?? 0));
@@ -167,13 +191,16 @@ function Motions() {
                         <Input type="number" defaultValue={(s as any)[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} />
                       </td>
                     ))}
+                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
+                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{pct(real.bySegment[s.id]?.winRate)}</td>
+                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{days(real.bySegment[s.id]?.cycleDays)}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los últimos 12 meses y se actualizan solas. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
       </div>
     </div>
   );
