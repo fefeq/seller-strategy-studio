@@ -1,9 +1,10 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sprout, Users, UserCog } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
+import { canUseAdvisor } from "@/lib/advisor";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { OrgOnboarding } from "@/components/org-onboarding";
 
@@ -24,6 +25,7 @@ const NAV = [
   { to: "/accounts", label: "Cuentas", icon: Building2 },
   { to: "/deals", label: "Pipeline", icon: KanbanSquare },
   { to: "/metrics", label: "Métricas", icon: BarChart3 },
+  { to: "/advisor", label: "Asesor GTM", icon: Sparkles, leadersOnly: true },
   { to: "/abm", label: "ABM y partners", icon: Crosshair },
   { to: "/people", label: "Personas", icon: Users },
   { to: "/approvals", label: "Aprobaciones", icon: CheckSquare },
@@ -49,7 +51,7 @@ function Shell() {
         <div className="px-5 pb-4 pt-6 font-display text-2xl">GTM Brain</div>
         {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
-          {hasOrg && NAV.map((n) => (
+          {hasOrg && NAV.filter((n) => !("leadersOnly" in n) || canUseAdvisor(me?.roles ?? [])).map((n) => (
             <Link
               key={n.to}
               to={n.to}

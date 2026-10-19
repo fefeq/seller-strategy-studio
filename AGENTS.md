@@ -15,3 +15,4 @@
 - New orgs are created via the create_organization RPC, which also seeds default segments, integrations, positioning and docs.
 - Theory U lives in src/routes/_authenticated/theory-u.tsx with one tab component per file in src/components/theory-u/; phase/level definitions and pure rules in src/lib/theory-u.ts (tested) so UI and AI prompts share them.
 - Money is shown in the current org's currency (organizations.currency) via useCurrency() from src/hooks/use-me.ts; never hardcode a currency symbol. Changing currency relabels amounts, it does not convert them.
+- GTM Advisor: the server fn re-checks the caller's org role and the gtm_advisories RLS limits read/insert to owner and sales_leader; the data snapshot sent to the AI is built by pure code in src/lib/advisor.ts (tested) and the model must answer with its strict JSON schema.

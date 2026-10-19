@@ -747,6 +747,50 @@ export type Database = {
           },
         ]
       }
+      gtm_advisories: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          goal: string
+          horizon: string
+          id: string
+          org_id: string | null
+          result: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          goal: string
+          horizon?: string
+          id?: string
+          org_id?: string | null
+          result?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          goal?: string
+          horizon?: string
+          id?: string
+          org_id?: string | null
+          result?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtm_advisories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gtm_experiments: {
         Row: {
           audience: string

@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 
-async function ask(system: string, user: string) {
+async function ask(system: string, user: string, opts: { effort?: "low" | "medium"; schema?: { name: string; schema: unknown } } = {}) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
@@ -13,14 +14,23 @@ async function ask(system: string, user: string) {
       model: "openai/gpt-6-astra",
       instructions: system,
       input: [{ role: "user", content: user }],
-      reasoning: { effort: "low" },
+      reasoning: { effort: opts.effort ?? "low" },
+      ...(opts.schema ? { text: { format: { type: "json_schema", name: opts.schema.name, strict: true, schema: opts.schema.schema } } } : {}),
       store: false,
       stream: true,
     }),
   });
   if (res.status === 429) throw new Error("Demasiadas peticiones, inténtalo en un momento.");
-  if (res.status === 402) throw new Error("Sin créditos de IA disponibles.");
-  if (!res.ok || !res.body) throw new Error("La IA no respondió");
+  if (res.status === 402) throw new Error("Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.");
+  if (res.status === 403) {
+    const body = await res.text().catch(() => "");
+    console.error("AI gateway 403", body.slice(0, 500));
+    throw new Error("El uso de IA está bloqueado para este espacio de trabajo (límite o permisos). Revisa la configuración de IA.");
+  }
+  if (!res.ok || !res.body) {
+    console.error("AI gateway error", res.status, (await res.text().catch(() => "")).slice(0, 500));
+    throw new Error("La IA no respondió");
+  }
   const reader = res.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
@@ -168,4 +178,54 @@ export const listeningCoaching = createServerFn({ method: "POST" })
     );
     await supabase.from("meetings").update({ listening_coaching: text }).eq("id", data.meetingId);
     return { text };
+  });
+
+// ---------- GTM Advisor (Owner / Sales Leader) ----------
+
+export const generateGtmAdvice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { goal: string; horizon: string }) => {
+    const goal = String(d?.goal ?? "").trim();
+    if (goal.length < 10) throw new Error("Describe el objetivo o problema con algo más de detalle");
+    if (goal.length > 4000) throw new Error("El objetivo es demasiado largo (máx. 4000 caracteres)");
+    return { goal, horizon: HORIZONS[d.horizon] ? d.horizon : "quarter" };
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
+    const orgId = profile?.current_org_id;
+    if (!orgId) throw new Error("Selecciona una empresa");
+    const { data: member } = await supabase.from("org_members").select("role, organizations(currency)").eq("org_id", orgId).eq("user_id", userId).maybeSingle();
+    if (!member || !canUseAdvisor([member.role])) throw new Error("Solo el Owner y el Sales Leader pueden usar el Asesor GTM");
+
+    const [deals, segments, history, quotas, strat] = await Promise.all([
+      supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,updated_at,source,segment_id,slip_count,forecast_category,meddpicc,partner_id"),
+      supabase.from("segments").select("id,name,acv_min,acv_max,motion,cycle_days,sdr_per_ae,ae_per_se,cac_target,payback_months,win_rate_target,ae_quota,gross_margin_pct").order("acv_min"),
+      supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
+      supabase.from("quotas").select("period,amount"),
+      strategyContext(supabase),
+    ]);
+    const snapshot = buildSnapshot({
+      deals: (deals.data ?? []) as any,
+      segments: (segments.data ?? []) as any,
+      history: history.data ?? [],
+      quotas: (quotas.data ?? []) as any,
+      currency: (member as any).organizations?.currency ?? "EUR",
+    });
+
+    const raw = await ask(
+      "Eres un VP de Revenue / RevOps senior que asesora a la dirección comercial de empresas B2B. Analizas el objetivo o problema que te plantean usando SOLO los datos aportados (pipeline, métricas, segmentos con sus benchmarks, posicionamiento e ICP) y das recomendaciones de go-to-market priorizadas. Reglas: español neutro (tú); cada hallazgo y recomendación cita cifras concretas del contexto; compara lo real con los benchmarks de cada segmento; marca como supuesto lo que no esté en los datos; usa la moneda indicada; prioriza por impacto en el objetivo y rapidez (priority 1 = lo primero que harías); entre 4 y 7 recomendaciones, cada una con 2–4 acciones concretas, un KPI y un objetivo medible; asigna el rol responsable más adecuado; si faltan datos clave, dilo en data_gaps en lugar de inventar. Referencias generales: cobertura sana 3–4x de la cuota trimestral; forecast preciso si el real queda a ±10% del commit; ABM para ACV >100K.",
+      JSON.stringify({ objetivo: data.goal, horizonte: HORIZONS[data.horizon], datos: snapshot, estrategia: strat }),
+      { effort: "medium", schema: { name: "gtm_advice", schema: ADVISOR_SCHEMA } },
+    );
+    let result: AdvisorResult;
+    try { result = JSON.parse(raw); } catch {
+      console.error("Advisor: invalid JSON", raw.slice(0, 300));
+      throw new Error("La IA no devolvió recomendaciones válidas. Inténtalo de nuevo.");
+    }
+    if (!Array.isArray(result?.recommendations) || result.recommendations.length === 0) throw new Error("La IA no devolvió recomendaciones. Inténtalo de nuevo.");
+
+    const { data: row, error } = await supabase.from("gtm_advisories").insert({ goal: data.goal, horizon: data.horizon, result: result as any }).select("id, created_at").single();
+    if (error) console.error("Advisor: save failed", error.message);
+    return { id: row?.id ?? null, created_at: row?.created_at ?? new Date().toISOString(), result };
   });
