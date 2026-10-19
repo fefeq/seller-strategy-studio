@@ -1,16 +1,7 @@
-# Roadmap — GTM Brain
-- [x] Lovable Cloud + auth + roles
-- [x] Esquema de datos
-- [x] Landing pública
-- [x] App: Inicio por rol, Conocimiento, Cuentas, Pipeline, Personas, Aprobaciones, Integraciones, Equipo
-- [x] Call Prep, research de stakeholders y propuesta con IA
-- [x] Tests deduplicación y permisos
-- [x] Estrategia GTM: motions por segmento (ACV) + ICP estructurado
-- [x] Posicionamiento: Dunford, statement, jerarquía de mensajes, pilares (alimenta la IA)
-- [x] Métricas RevOps: cuotas, cobertura, conversión, días por etapa, win rate, slippage, forecast
-- [x] ABM (cuentas objetivo + engagement) y partners (registro de deals)
-- [x] Multiempresa: empresas, cambio entre ellas, roles e invitaciones por empresa, datos aislados
-- [x] Theory U: recorrido U, sensing, niveles de escucha (en reuniones), Case Clinic, prototipos
-- [x] Moneda por empresa y benchmarks por segmento en la calculadora GTM
-- [x] Asesor GTM con IA (Owner y Sales Leader): recomendaciones priorizadas desde pipeline, métricas y segmentos
-- [ ] Conectar integraciones reales (espera: el usuario elige por cuál empezar)
+# Roadmap
+
+- [ ] Fase 1a: esquema de datos de configuración + indicador de completitud
+- [ ] Fase 1b: onboarding con IA (web/documentos → propuestas revisables), entrevista y asistente
+- [ ] Fase 1c: agente GTM en la app (consultar + ejecutar con confirmación)
+- [ ] Fase 2: motor proactivo (detectores, bandeja de sugerencias, resumen diario, ejecución horaria)
+- [ ] Fase 3: Telegram (vinculación, agente, avisos) — requiere que el usuario cree el bot y lo conecte
