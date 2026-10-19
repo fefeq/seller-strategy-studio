@@ -96,10 +96,17 @@ function DealDetail({ deal, onSaved }: { deal: any; onSaved: () => void }) {
     queryFn: async () => (await supabase.from("mutual_action_items").select("*").eq("deal_id", deal.id).order("due_date")).data ?? [],
   });
   const [newItem, setNewItem] = useState(""); const [due, setDue] = useState(""); const [side, setSide] = useState("nosotros");
+  const { data: lookups = { segments: [], partners: [] } } = useQuery({
+    queryKey: ["deal-lookups"],
+    queryFn: async () => {
+      const [s, p] = await Promise.all([supabase.from("segments").select("id,name"), supabase.from("partners").select("id,name")]);
+      return { segments: s.data ?? [], partners: p.data ?? [] };
+    },
+  });
   const total = MEDDPICC.reduce((s, [k]) => s + (m[k]?.score ?? 0), 0);
 
   async function save() {
-    const { error } = await supabase.from("deals").update({ name: d.name, amount: d.amount, close_date: d.close_date || null, probability: d.probability, health: d.health, meddpicc: d.meddpicc }).eq("id", d.id);
+    const { error } = await supabase.from("deals").update({ name: d.name, amount: d.amount, close_date: d.close_date || null, probability: d.probability, health: d.health, meddpicc: d.meddpicc, forecast_category: d.forecast_category, source: d.source, segment_id: d.segment_id || null, partner_id: d.partner_id || null }).eq("id", d.id);
     if (error) return toast.error(error.message);
     toast.success("Deal guardado"); onSaved();
   }
@@ -126,7 +133,12 @@ function DealDetail({ deal, onSaved }: { deal: any; onSaved: () => void }) {
         <Field label="Fecha de cierre"><Input type="date" value={d.close_date ?? ""} onChange={(e) => setD({ ...d, close_date: e.target.value })} /></Field>
         <Field label="Probabilidad (%)"><Input type="number" min={0} max={100} value={d.probability ?? 0} onChange={(e) => setD({ ...d, probability: Number(e.target.value) })} /></Field>
         <Field label="Salud"><Pick value={d.health} options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }} onChange={(v) => setD({ ...d, health: v })} /></Field>
+        <Field label="Categoría de forecast"><Pick value={d.forecast_category ?? "pipeline"} options={{ commit: "Commit", best_case: "Best case", pipeline: "Pipeline", omitted: "Omitido" }} onChange={(v) => setD({ ...d, forecast_category: v })} /></Field>
+        <Field label="Fuente"><Pick value={d.source ?? "outbound"} options={{ outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" }} onChange={(v) => setD({ ...d, source: v })} /></Field>
+        <Field label="Segmento"><Pick value={d.segment_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.segments.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, segment_id: v })} /></Field>
+        <Field label="Partner"><Pick value={d.partner_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.partners.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, partner_id: v })} /></Field>
       </div>
+      {d.slip_count > 0 && <p className="text-xs text-signal">La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.</p>}
 
       <div>
         <div className="mb-2 flex items-baseline justify-between"><h3 className="text-2xl">MEDDPICC</h3><span className="font-mono text-sm">{total}/24</span></div>
