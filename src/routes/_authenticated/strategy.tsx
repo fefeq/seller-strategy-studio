@@ -104,7 +104,7 @@ function Motions() {
             <Input type="number" value={acv} onChange={(e) => setAcvManual(Number(e.target.value))} />
             {real.overall.acv != null ? (
               acvManual == null
-                ? <p className="text-xs text-success">ACV real: media de {real.overall.acvSample} deals {real.overall.acvSource}. Se actualiza solo cuando entran leads.</p>
+                ? <p className="text-xs text-success">ACV real: media de {real.overall.acvSample} {real.overall.acvSample === 1 ? `deal ${real.overall.acvSource === "ganados" ? "ganado" : "abierto"}` : `deals ${real.overall.acvSource}`}. Se actualiza solo cuando entran leads.</p>
                 : <button className="text-xs text-signal underline-offset-2 hover:underline" onClick={() => setAcvManual(null)}>Volver al ACV real ({money(Math.round(real.overall.acv))})</button>
             ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: valor de ejemplo. <Link to="/leads" className="underline">Conecta tus leads</Link>.</p>}
           </Field>
@@ -128,9 +128,9 @@ function Motions() {
             <div className="mt-4 overflow-hidden rounded-md border text-sm">
               <div className="grid grid-cols-[1.2fr_1fr_1fr] bg-muted/50 px-3 py-1.5"><span className="eyebrow text-[10px]">Real vs objetivo · {seg.name}</span><span className="eyebrow text-[10px]">Real (12 meses)</span><span className="eyebrow text-[10px]">Objetivo</span></div>
               {[
-                ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} deals` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
-                ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} cerrados` : "—", pct(seg.win_rate_target)],
-                ["Ciclo de venta", segReal?.cycleDays != null ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ganados` : "—", days(seg.cycle_days)],
+                ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
+                ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}` : "—", pct(seg.win_rate_target)],
+                ["Ciclo de venta", segReal?.cycleDays != null ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ${segReal.cycleSample === 1 ? "ganado" : "ganados"}` : "—", days(seg.cycle_days)],
               ].map(([l, r, t]) => (
                 <div key={l} className="grid grid-cols-[1.2fr_1fr_1fr] border-t px-3 py-1.5"><span className="text-muted-foreground">{l}</span><span>{r}</span><span>{t}</span></div>
               ))}

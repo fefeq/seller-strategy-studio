@@ -157,7 +157,7 @@ function HowTo() {
   return (
     <Accordion type="single" collapsible className="mt-4">
       <AccordionItem value="fields">
-        <AccordionTrigger>Qué datos entiende</AccordionTrigger>
+        <AccordionTrigger className="font-sans text-sm tracking-normal">Qué datos entiende</AccordionTrigger>
         <AccordionContent className="space-y-2 text-sm text-muted-foreground">
           <p>Reconoce nombres en español o inglés y las preguntas de tus formularios. Solo es obligatoria la <strong>empresa</strong> (o su web, o un email de empresa).</p>
           <ul className="list-disc space-y-1 pl-5">
@@ -171,15 +171,15 @@ function HowTo() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="forms">
-        <AccordionTrigger>Formularios: Typeform, Tally, Webflow</AccordionTrigger>
+        <AccordionTrigger className="font-sans text-sm tracking-normal">Formularios: Typeform, Tally, Webflow</AccordionTrigger>
         <AccordionContent className="text-sm text-muted-foreground">En los ajustes del formulario abre <strong>Webhooks</strong>, añade uno nuevo y pega el enlace. Cada respuesta llega como lead en Discovery (o la etapa por defecto del enlace).</AccordionContent>
       </AccordionItem>
       <AccordionItem value="zap">
-        <AccordionTrigger>Zapier o Make</AccordionTrigger>
+        <AccordionTrigger className="font-sans text-sm tracking-normal">Zapier o Make</AccordionTrigger>
         <AccordionContent className="text-sm text-muted-foreground">Añade el paso <strong>Webhooks → POST</strong> (en Make, «HTTP → Make a request»), pega el enlace, elige JSON y mapea los campos: empresa, email, etapa, fecha, importe e id. Así conectas cualquier herramienta: Google Sheets, LinkedIn Lead Gen, Calendly…</AccordionContent>
       </AccordionItem>
       <AccordionItem value="crm">
-        <AccordionTrigger>CRM: HubSpot, Pipedrive, Attio, Salesforce</AccordionTrigger>
+        <AccordionTrigger className="font-sans text-sm tracking-normal">CRM: HubSpot, Pipedrive, Attio, Salesforce</AccordionTrigger>
         <AccordionContent className="text-sm text-muted-foreground">Crea una automatización que se dispare cuando se crea un deal o cambia de etapa y que envíe un webhook a este enlace. Incluye el id del deal, para que cada cambio de etapa actualice el mismo deal. Si tu CRM no tiene webhooks, usa Zapier o Make.</AccordionContent>
       </AccordionItem>
     </Accordion>
