@@ -1,12 +1,15 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, UserCog } from "lucide-react";
+import { Inbox, Rocket, BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
 import { canUseAdvisor } from "@/lib/advisor";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { OrgOnboarding } from "@/components/org-onboarding";
+import { AgentProvider } from "@/components/agent";
+import { useSetup } from "@/hooks/use-setup";
+import { useSuggestions } from "@/components/suggestions";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -19,6 +22,8 @@ export const Route = createFileRoute("/_authenticated")({
 
 const NAV = [
   { to: "/home", label: "Inicio", icon: Home },
+  { to: "/inbox", label: "Sugerencias", icon: Inbox },
+  { to: "/setup", label: "Configuración", icon: Rocket },
   { to: "/strategy", label: "Estrategia GTM", icon: Compass },
   { to: "/theory-u", label: "Theory U", icon: Sprout },
   { to: "/hub", label: "Conocimiento", icon: BookOpen },
@@ -46,6 +51,7 @@ function Shell() {
   const role = me?.roles[0] as Role | undefined;
   const hasOrg = !!me?.currentOrg;
   return (
+    <AgentProvider>
     <div className="flex min-h-screen">
       <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
         <div className="px-5 pb-4 pt-6 font-display text-2xl">GTM Brain</div>
@@ -62,6 +68,7 @@ function Shell() {
             </Link>
           ))}
         </nav>
+        {hasOrg && <SetupMeter />}
         <div className="border-t border-sidebar-border p-4 text-sm">
           <p className="truncate font-medium">{me?.profile?.full_name}</p>
           <p className="truncate text-xs text-sidebar-foreground/60">{role ? ROLES[role]?.label : ""}</p>
@@ -73,6 +80,25 @@ function Shell() {
       <main className="min-w-0 flex-1">
         {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} />}
       </main>
+    </div>
+    </AgentProvider>
+  );
+}
+
+function SetupMeter() {
+  const { data } = useSetup();
+  const { data: sugg = [] } = useSuggestions();
+  const pct = data?.status.pct;
+  return (
+    <div className="space-y-2 px-3 pb-3">
+      {pct != null && pct < 100 && (
+        <Link to="/setup" className="block rounded-md bg-sidebar-accent/60 p-3 text-xs hover:bg-sidebar-accent">
+          <div className="flex justify-between"><span>Estrategia completada</span><span className="font-mono">{pct}%</span></div>
+          <div className="mt-1.5 h-1 rounded bg-sidebar-border"><div className="h-full rounded bg-sidebar-primary" style={{ width: `${pct}%` }} /></div>
+          {data?.status.next && <p className="mt-1.5 text-sidebar-foreground/60">Siguiente: {data.status.next.label.split(" (")[0]}</p>}
+        </Link>
+      )}
+      {sugg.length > 0 && <Link to="/inbox" className="flex justify-between rounded-md px-3 py-1.5 text-xs text-sidebar-foreground/75 hover:bg-sidebar-accent"><span>Sugerencias pendientes</span><span className="font-mono">{sugg.length}</span></Link>}
     </div>
   );
 }

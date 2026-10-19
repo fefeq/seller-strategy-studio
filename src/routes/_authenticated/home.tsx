@@ -1,7 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useMe } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
+import { useSetup } from "@/hooks/use-setup";
+import { TodayDigest } from "@/components/suggestions";
+import { useAgent } from "@/components/agent";
+import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
 
@@ -10,10 +14,12 @@ export const Route = createFileRoute("/_authenticated/home")({
   component: HomePage,
 });
 
-const fmt = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 function HomePage() {
   const { data: me } = useMe();
+  const { money: fmt } = useCurrency();
+  const { data: setup } = useSetup();
+  const { open } = useAgent();
   const { data } = useQuery({
     queryKey: ["home"],
     queryFn: async () => {
@@ -37,6 +43,20 @@ function HomePage() {
   return (
     <Page eyebrow={ROLES[role]?.label} title={`Hola, ${me?.profile?.full_name?.split(" ")[0] ?? ""}`}>
       <p className="-mt-4 mb-8 text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
+      {setup && setup.status.pct < 100 && (
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-5">
+          <div className="min-w-0 flex-1">
+            <p className="eyebrow">Tu estrategia está al {setup.status.pct}%</p>
+            <div className="mt-2 h-1.5 max-w-md rounded bg-muted"><div className="h-full rounded bg-primary" style={{ width: `${setup.status.pct}%` }} /></div>
+            {setup.status.next && <p className="mt-2 text-sm">Siguiente: <strong>{setup.status.next.label}</strong> · desbloquea {setup.status.next.unlocks.toLowerCase()}</p>}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => open({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
+            <Button asChild><Link to="/setup">Completar con IA</Link></Button>
+          </div>
+        </div>
+      )}
+      <div className="mb-8"><TodayDigest /></div>
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
         <Stat label="Forecast ponderado" value={fmt(weighted)} />

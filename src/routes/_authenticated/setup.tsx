@@ -75,7 +75,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
     const arr = Array.from(list ?? []).slice(0, 3);
     const read = await Promise.all(arr.map(async (f) => {
       if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} supera 8 MB`); return null; }
-      if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { setText((t) => `${t}\n\n--- ${f.name} ---\n${""}`); const body = await f.text(); setText((t) => t + body.slice(0, 20000)); return null; }
+      if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { const body = await f.text(); setText((t) => `${t}\n\n--- ${f.name} ---\n${body.slice(0, 20000)}`); return null; }
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
     }));
