@@ -6,7 +6,7 @@ import { loadSnapshot, syncSuggestions, type Db } from "@/lib/org-data";
 import { detect } from "@/lib/proactive";
 import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
 
-async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
+export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
   const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
   const orgId = profile?.current_org_id;
   if (!orgId) throw new Error("Selecciona una empresa");
