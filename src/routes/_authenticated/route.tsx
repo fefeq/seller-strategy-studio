@@ -4,6 +4,8 @@ import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, 
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
+import { OrgSwitcher } from "@/components/org-switcher";
+import { OrgOnboarding } from "@/components/org-onboarding";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -39,12 +41,14 @@ function Shell() {
     navigate({ to: "/auth", replace: true });
   }
   const role = me?.roles[0] as Role | undefined;
+  const hasOrg = !!me?.currentOrg;
   return (
     <div className="flex min-h-screen">
       <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-        <div className="px-5 py-6 font-display text-2xl">GTM Brain</div>
-        <nav className="flex-1 space-y-0.5 px-3">
-          {NAV.map((n) => (
+        <div className="px-5 pb-4 pt-6 font-display text-2xl">GTM Brain</div>
+        {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
+          {hasOrg && NAV.map((n) => (
             <Link
               key={n.to}
               to={n.to}
@@ -64,7 +68,7 @@ function Shell() {
         </div>
       </aside>
       <main className="min-w-0 flex-1">
-        <Outlet />
+        {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} />}
       </main>
     </div>
   );

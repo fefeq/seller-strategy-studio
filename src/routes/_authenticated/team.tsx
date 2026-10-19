@@ -1,63 +1,135 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ROLES, type Role } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/team")({
-  head: () => ({ meta: [{ title: "Equipo — GTM Brain" }, { name: "description", content: "Personas del equipo y sus roles." }, { property: "og:title", content: "Equipo — GTM Brain" }, { property: "og:description", content: "Personas del equipo y sus roles." }] }),
+  head: () => ({ meta: [{ title: "Equipo — GTM Brain" }, { name: "description", content: "Personas de la empresa y sus roles." }, { property: "og:title", content: "Equipo — GTM Brain" }, { property: "og:description", content: "Personas de la empresa y sus roles." }] }),
   component: Team,
 });
+
+const ROLE_OPTS = Object.entries(ROLES).map(([k, v]) => ({ k, label: v.label }));
 
 function Team() {
   const qc = useQueryClient();
   const { data: me } = useMe();
+  const orgId = me?.currentOrg?.org_id;
   const isOwner = me?.roles.includes("owner");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role>("ae");
+  const [orgName, setOrgName] = useState<string | null>(null);
+
   const { data } = useQuery({
-    queryKey: ["team"],
+    queryKey: ["team", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
-      const [p, r] = await Promise.all([supabase.from("profiles").select("*").order("created_at"), supabase.from("user_roles").select("*")]);
-      return { profiles: p.data ?? [], roles: r.data ?? [] };
+      const [m, i] = await Promise.all([
+        supabase.from("org_members").select("id, user_id, role").eq("org_id", orgId!),
+        supabase.from("org_invites").select("*").eq("org_id", orgId!).is("accepted_at", null).order("created_at"),
+      ]);
+      const ids = (m.data ?? []).map((x) => x.user_id);
+      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id, full_name, email").in("id", ids) : { data: [] };
+      return {
+        members: (m.data ?? []).map((x) => ({ ...x, profile: (profiles ?? []).find((p) => p.id === x.user_id) })),
+        invites: i.data ?? [],
+      };
     },
   });
-  async function setRole(userId: string, role: Role) {
-    if (userId === me?.user.id && role !== "owner") return toast.error("No puedes quitarte el rol de Owner a ti mismo.");
-    const del = await supabase.from("user_roles").delete().eq("user_id", userId);
-    if (del.error) return toast.error(del.error.message);
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+
+  async function setMemberRole(id: string, userId: string, r: Role) {
+    if (userId === me?.user.id && r !== "owner") return toast.error("No puedes quitarte el rol de Owner a ti mismo.");
+    const { error } = await supabase.from("org_members").update({ role: r }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success("Rol actualizado");
     qc.invalidateQueries();
   }
+  async function remove(id: string) {
+    const { error } = await supabase.from("org_members").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    qc.invalidateQueries({ queryKey: ["team", orgId] });
+  }
+  async function invite() {
+    const { error } = await supabase.from("org_invites").insert({ org_id: orgId!, email: email.trim().toLowerCase(), role, invited_by: me?.user.id });
+    if (error) return toast.error(error.code === "23505" ? "Ya hay una invitación pendiente para ese email." : error.message);
+    setEmail("");
+    toast.success("Invitación creada. Se unirá al entrar con ese email.");
+    qc.invalidateQueries({ queryKey: ["team", orgId] });
+  }
+  async function cancelInvite(id: string) {
+    await supabase.from("org_invites").delete().eq("id", id);
+    qc.invalidateQueries({ queryKey: ["team", orgId] });
+  }
+  async function rename() {
+    if (!orgName?.trim()) return;
+    const { error } = await supabase.from("organizations").update({ name: orgName.trim() }).eq("id", orgId!);
+    if (error) return toast.error(error.message);
+    setOrgName(null);
+    qc.invalidateQueries({ queryKey: ["me"] });
+  }
+
   return (
-    <Page eyebrow="Quién hace qué" title="Equipo">
-      <div className="overflow-hidden rounded-lg border bg-card">
-        <table className="w-full text-sm">
-          <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Email", "Rol", "Foco"].map((h) => <th key={h} className="eyebrow px-4 py-3">{h}</th>)}</tr></thead>
-          <tbody>
-            {data?.profiles.map((p) => {
-              const role = (data.roles.find((r) => r.user_id === p.id)?.role ?? "ae") as Role;
-              return (
-                <tr key={p.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">{p.full_name}</td>
-                  <td className="px-4 py-3 text-muted-foreground">{p.email}</td>
+    <Page eyebrow={me?.currentOrg?.name ?? ""} title="Equipo">
+      {isOwner && (
+        <div className="mb-6 flex flex-wrap items-end gap-6">
+          <div className="flex gap-2">
+            <Input className="w-64" value={orgName ?? me?.currentOrg?.name ?? ""} onChange={(e) => setOrgName(e.target.value)} />
+            <Button variant="outline" disabled={orgName === null} onClick={rename}>Renombrar empresa</Button>
+          </div>
+        </div>
+      )}
+      <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
+        <div className="overflow-hidden rounded-lg border bg-card">
+          <table className="w-full text-sm">
+            <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Rol en esta empresa", "Foco", ""].map((h) => <th key={h} className="eyebrow px-4 py-3">{h}</th>)}</tr></thead>
+            <tbody>
+              {data?.members.map((m) => (
+                <tr key={m.id} className="border-b last:border-0">
+                  <td className="px-4 py-3"><p className="font-medium">{m.profile?.full_name}</p><p className="text-xs text-muted-foreground">{m.profile?.email}</p></td>
                   <td className="px-4 py-3">
                     {isOwner ? (
-                      <select className="h-8 rounded border bg-background px-2" value={role} onChange={(e) => setRole(p.id, e.target.value as Role)}>
-                        {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}
+                      <select className="h-8 rounded border bg-background px-2" value={m.role} onChange={(e) => setMemberRole(m.id, m.user_id, e.target.value as Role)}>
+                        {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
                       </select>
-                    ) : ROLES[role]?.label}
+                    ) : ROLES[m.role as Role]?.label}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{ROLES[role]?.focus}</td>
+                  <td className="px-4 py-3 text-muted-foreground">{ROLES[m.role as Role]?.focus}</td>
+                  <td className="px-4 py-3 text-right">{isOwner && m.user_id !== me?.user.id && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(m.id)}>Quitar</Button>}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="space-y-4">
+          {isOwner && (
+            <div className="space-y-3 rounded-lg border bg-card p-5">
+              <h3 className="text-2xl">Invitar a esta empresa</h3>
+              <Input type="email" placeholder="email@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+                {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
+              </select>
+              <Button disabled={!email.includes("@")} onClick={invite}>Invitar</Button>
+              <p className="text-xs text-muted-foreground">La persona se une al registrarse o entrar con ese email. Un consultor puede pertenecer a varias empresas con un rol distinto en cada una.</p>
+            </div>
+          )}
+          {(data?.invites.length ?? 0) > 0 && (
+            <div className="rounded-lg border bg-card p-5">
+              <p className="eyebrow mb-2">Invitaciones pendientes</p>
+              {data?.invites.map((i) => (
+                <div key={i.id} className="flex items-center justify-between border-b py-2 text-sm last:border-0">
+                  <span>{i.email} <span className="text-xs text-muted-foreground">· {ROLES[i.role as Role]?.label}</span></span>
+                  {isOwner && <button className="text-xs text-destructive" onClick={() => cancelInvite(i.id)}>Cancelar</button>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-      <p className="mt-4 text-xs text-muted-foreground">Las personas nuevas entran como Account Executive. Solo el Owner puede cambiar roles y borrar registros; cada cambio guarda quién lo hizo.</p>
     </Page>
   );
 }
