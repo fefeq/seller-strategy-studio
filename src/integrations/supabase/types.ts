@@ -437,6 +437,93 @@ export type Database = {
           },
         ]
       }
+      case_clinics: {
+        Row: {
+          case_giver: string
+          closing: string
+          coaches: string
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          dialogue: string
+          edge: string
+          held_on: string
+          help_needed: string
+          id: string
+          mirror_feeling: string
+          mirror_gesture: string
+          mirror_image: string
+          next_steps: string
+          org_id: string | null
+          situation: string
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          case_giver?: string
+          closing?: string
+          coaches?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          dialogue?: string
+          edge?: string
+          held_on?: string
+          help_needed?: string
+          id?: string
+          mirror_feeling?: string
+          mirror_gesture?: string
+          mirror_image?: string
+          next_steps?: string
+          org_id?: string | null
+          situation?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          case_giver?: string
+          closing?: string
+          coaches?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          dialogue?: string
+          edge?: string
+          held_on?: string
+          help_needed?: string
+          id?: string
+          mirror_feeling?: string
+          mirror_gesture?: string
+          mirror_image?: string
+          next_steps?: string
+          org_id?: string | null
+          situation?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "case_clinics_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "case_clinics_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_registrations: {
         Row: {
           account_id: string | null
@@ -660,6 +747,84 @@ export type Database = {
           },
         ]
       }
+      gtm_experiments: {
+        Row: {
+          audience: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          hypothesis: string
+          id: string
+          journey_id: string | null
+          learning: string
+          metric: string
+          org_id: string | null
+          prototype: string
+          result: string
+          starts_on: string | null
+          status: string
+          target: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          hypothesis?: string
+          id?: string
+          journey_id?: string | null
+          learning?: string
+          metric?: string
+          org_id?: string | null
+          prototype?: string
+          result?: string
+          starts_on?: string | null
+          status?: string
+          target?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          hypothesis?: string
+          id?: string
+          journey_id?: string | null
+          learning?: string
+          metric?: string
+          org_id?: string | null
+          prototype?: string
+          result?: string
+          starts_on?: string | null
+          status?: string
+          target?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtm_experiments_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "u_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gtm_experiments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       icp_profiles: {
         Row: {
           adoption: string | null
@@ -843,6 +1008,9 @@ export type Database = {
           deal_id: string | null
           desired_outcome: string | null
           id: string
+          listening_coaching: string
+          listening_level: number | null
+          listening_reflection: string
           materials: string | null
           next_steps: string | null
           notes: string | null
@@ -865,6 +1033,9 @@ export type Database = {
           deal_id?: string | null
           desired_outcome?: string | null
           id?: string
+          listening_coaching?: string
+          listening_level?: number | null
+          listening_reflection?: string
           materials?: string | null
           next_steps?: string | null
           notes?: string | null
@@ -887,6 +1058,9 @@ export type Database = {
           deal_id?: string | null
           desired_outcome?: string | null
           id?: string
+          listening_coaching?: string
+          listening_level?: number | null
+          listening_reflection?: string
           materials?: string | null
           next_steps?: string | null
           notes?: string | null
@@ -1470,6 +1644,85 @@ export type Database = {
           },
         ]
       }
+      sensing_notes: {
+        Row: {
+          account_id: string | null
+          context: string
+          created_at: string
+          created_by: string | null
+          emerging: string
+          heard: string
+          id: string
+          interviewee: string
+          journey_id: string | null
+          kind: string
+          listening_level: number | null
+          occurred_on: string
+          org_id: string | null
+          surprised: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          emerging?: string
+          heard?: string
+          id?: string
+          interviewee?: string
+          journey_id?: string | null
+          kind?: string
+          listening_level?: number | null
+          occurred_on?: string
+          org_id?: string | null
+          surprised?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          context?: string
+          created_at?: string
+          created_by?: string | null
+          emerging?: string
+          heard?: string
+          id?: string
+          interviewee?: string
+          journey_id?: string | null
+          kind?: string
+          listening_level?: number | null
+          occurred_on?: string
+          org_id?: string | null
+          surprised?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sensing_notes_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensing_notes_journey_id_fkey"
+            columns: ["journey_id"]
+            isOneToOne: false
+            referencedRelation: "u_journeys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sensing_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stakeholders: {
         Row: {
           account_id: string
@@ -1545,6 +1798,56 @@ export type Database = {
             columns: ["reports_to"]
             isOneToOne: false
             referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      u_journeys: {
+        Row: {
+          ai_synthesis: string
+          answers: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          intention: string
+          org_id: string | null
+          phase: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ai_synthesis?: string
+          answers?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intention?: string
+          org_id?: string | null
+          phase?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ai_synthesis?: string
+          answers?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          intention?: string
+          org_id?: string | null
+          phase?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "u_journeys_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

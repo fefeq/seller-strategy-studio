@@ -22,6 +22,13 @@
       "when": 1792447429457,
       "tag": "0002_multitenant_organizations",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792447720844,
+      "tag": "0003_theory_u",
+      "breakpoints": true
     }
   ]
 }
