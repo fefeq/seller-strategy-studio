@@ -23,7 +23,7 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
   run: (ctx: ToolCtx, args: z.infer<S>) => Promise<unknown>;
 };
 
-const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t;
+const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
 const STAGES = DEAL_STAGES.map((s) => s.id) as [string, ...string[]];
 const stageLabel = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
