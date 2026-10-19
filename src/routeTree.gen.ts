@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
+import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
@@ -43,6 +44,11 @@ const AuthRoute = AuthRouteImport.update({
 const AuthenticatedAbmRoute = AuthenticatedAbmRouteImport.update({
   id: '/abm',
   path: '/abm',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAdvisorRoute = AuthenticatedAdvisorRouteImport.update({
+  id: '/advisor',
+  path: '/advisor',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
@@ -112,6 +118,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/abm': typeof AuthenticatedAbmRoute
+  '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/abm': typeof AuthenticatedAbmRoute
+  '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/home': typeof AuthenticatedHomeRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
+  '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/abm'
+    | '/advisor'
     | '/approvals'
     | '/deals'
     | '/home'
@@ -184,6 +194,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/abm'
+    | '/advisor'
     | '/approvals'
     | '/deals'
     | '/home'
@@ -202,6 +213,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/abm'
+    | '/_authenticated/advisor'
     | '/_authenticated/approvals'
     | '/_authenticated/deals'
     | '/_authenticated/home'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: '/abm'
       fullPath: '/abm'
       preLoaderRoute: typeof AuthenticatedAbmRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/advisor': {
+      id: '/_authenticated/advisor'
+      path: '/advisor'
+      fullPath: '/advisor'
+      preLoaderRoute: typeof AuthenticatedAdvisorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/approvals': {
@@ -341,6 +360,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAbmRoute: typeof AuthenticatedAbmRoute
+  AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
@@ -357,6 +377,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAbmRoute: AuthenticatedAbmRoute,
+  AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
