@@ -74,7 +74,7 @@ export const LISTENING_LEVELS = {
   1: { label: "Descarga", short: "Confirmo lo que ya sé", description: "Escuchas para reconfirmar tus juicios. «Sí, ya lo sabía.» El cliente habla, tú esperas tu turno para hacer el pitch." },
   2: { label: "Factual", short: "Noto lo nuevo", description: "Mente abierta: prestas atención a los datos que contradicen lo que pensabas. Haces discovery de verdad." },
   3: { label: "Empática", short: "Veo con sus ojos", description: "Corazón abierto: entiendes la situación desde la perspectiva del stakeholder, sus presiones y sus miedos." },
-  4: { label: "Generativa", short: "Escucho lo que emerge", description: "Voluntad abierta: juntos descubrís una posibilidad que ninguno traía. Sales de la reunión distinto de como entraste." },
+  4: { label: "Generativa", short: "Escucho lo que emerge", description: "Voluntad abierta: con el cliente descubres una posibilidad que ninguno de los dos traía. Sales de la reunión distinto de como entraste." },
 } as const;
 
 export type ListeningLevel = 1 | 2 | 3 | 4;
