@@ -22,18 +22,22 @@ const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "I
 function Metrics() {
   const qc = useQueryClient();
   const { data: me } = useMe();
+  const orgId = me?.currentOrg?.org_id;
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [quarter, setQuarter] = useState(quarterOf(new Date()));
   const { data } = useQuery({
-    queryKey: ["metrics"],
+    queryKey: ["metrics", orgId],
+    enabled: !!orgId,
     queryFn: async () => {
       const [d, h, q, p] = await Promise.all([
         supabase.from("deals").select("*"),
         supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
         supabase.from("quotas").select("*"),
-        supabase.from("profiles").select("id,full_name"),
+        supabase.from("org_members").select("user_id").eq("org_id", orgId!),
       ]);
-      return { deals: d.data ?? [], history: h.data ?? [], quotas: q.data ?? [], profiles: p.data ?? [] };
+      const ids = (p.data ?? []).map((x) => x.user_id);
+      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
+      return { deals: d.data ?? [], history: h.data ?? [], quotas: q.data ?? [], profiles: profiles ?? [] };
     },
   });
 
@@ -72,7 +76,7 @@ function Metrics() {
   }, [data, quarter]);
 
   async function setQuota(userId: string, amount: number) {
-    const { error } = await supabase.from("quotas").upsert({ user_id: userId, period: quarter, amount }, { onConflict: "user_id,period" });
+    const { error } = await supabase.from("quotas").upsert({ org_id: orgId!, user_id: userId, period: quarter, amount }, { onConflict: "org_id,user_id,period" });
     if (error) return toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["metrics"] });
   }

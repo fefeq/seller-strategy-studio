@@ -22,7 +22,7 @@ const PILLARS = [
   ["03", "Capa estratégica", "Account Plan, mapa de stakeholders, Meeting Planner, MEDDPICC y Mutual Action Plan por cuenta."],
   ["04", "Base única de personas", "Una fila por persona, sin duplicados por email o LinkedIn. Cada fuente y resultado de campaña registrado."],
   ["05", "CRM que se mantiene solo", "Los cambios importantes llegan a una bandeja con evidencia: aplicar u omitir."],
-  ["06", "Preparación con IA", "Un clic genera el brief de la reunión con todo lo que el equipo sabe de la cuenta."],
+  ["06", "Varias empresas, un solo lugar", "Gestiona la estrategia de varias empresas y cambia entre ellas. Cada una con su equipo, sus roles y sus datos aislados."],
 ];
 
 function Landing() {
