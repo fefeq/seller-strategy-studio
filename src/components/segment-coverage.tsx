@@ -77,9 +77,9 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 text-sm">
-        <span className="text-muted-foreground">Objetivo {quarter}</span>
+        <span className="whitespace-nowrap text-muted-foreground">Objetivo {quarter}</span>
         {canEdit
-          ? <Input type="number" min={0} className="h-8 w-36 text-right" defaultValue={r.target || ""} key={`${r.segment.id}-${quarter}-${r.target}`} placeholder="Importe" onBlur={(e) => e.target.value !== "" && Number(e.target.value) !== r.target && onTarget(Number(e.target.value))} />
+          ? <Input type="number" min={0} className="h-8 w-32 text-right" defaultValue={r.target || ""} key={`${r.segment.id}-${quarter}-${r.target}`} placeholder="Importe" onBlur={(e) => e.target.value !== "" && Number(e.target.value) !== r.target && onTarget(Number(e.target.value))} />
           : <span className="font-mono">{r.target ? money(r.target) : "—"}</span>}
       </div>
       <div className="mt-3 space-y-2">
