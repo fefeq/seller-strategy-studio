@@ -22,11 +22,11 @@ export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & {
 
 export const sendAgentMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { conversationId?: string | null; text: string; mode?: "chat" | "interview" }) => {
+  .inputValidator((d: { conversationId?: string | null; text: string; mode?: "chat" | "interview"; personaId?: string | null; workflowId?: string | null }) => {
     const text = String(d?.text ?? "").trim();
     if (!text) throw new Error("Escribe un mensaje");
     if (text.length > 4000) throw new Error("Mensaje demasiado largo (máx. 4000 caracteres)");
-    return { conversationId: d.conversationId ?? null, text, mode: d.mode === "interview" ? "interview" as const : "chat" as const };
+    return { conversationId: d.conversationId ?? null, text, mode: d.mode === "interview" ? "interview" as const : "chat" as const, personaId: d.personaId ? String(d.personaId) : null, workflowId: d.workflowId ? String(d.workflowId) : null };
   })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
@@ -41,7 +41,7 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
       conversationId = conv.id;
     }
     const { runAgent } = await import("@/lib/agent/agent.server");
-    const out = await runAgent(ctx, { conversationId, text: data.text, channel: "app", mode: data.mode, orgName: ctx.orgName });
+    const out = await runAgent(ctx, { conversationId, text: data.text, channel: "app", mode: data.mode, orgName: ctx.orgName, personaId: data.personaId, workflowId: data.workflowId });
     return { conversationId, text: out.text, pending: out.pending };
   });
 
