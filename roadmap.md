@@ -9,4 +9,5 @@
 - [x] Posicionamiento: Dunford, statement, jerarquía de mensajes, pilares (alimenta la IA)
 - [x] Métricas RevOps: cuotas, cobertura, conversión, días por etapa, win rate, slippage, forecast
 - [x] ABM (cuentas objetivo + engagement) y partners (registro de deals)
+- [x] Multiempresa: empresas, cambio entre ellas, roles e invitaciones por empresa, datos aislados
 - [ ] Conectar integraciones reales (espera: el usuario elige por cuál empezar)
