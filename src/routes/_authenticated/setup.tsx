@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { applySetupItems, extractSetup } from "@/lib/agent.functions";
-import { proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
+import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 
@@ -193,7 +193,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
 function Field({ label, value, onChange }: { label: string; value: unknown; onChange: (v: string) => void }) {
   const long = typeof value === "string" && value.length > 60;
   return (
-    <label className="text-xs text-muted-foreground">{label}
+    <label className="text-xs text-muted-foreground">{FIELD_LABELS[label] ?? label}
       {long ? <Textarea rows={3} defaultValue={String(value ?? "")} onBlur={(e) => onChange(e.target.value)} /> : <Input type={typeof value === "number" ? "number" : "text"} defaultValue={String(value ?? "")} onBlur={(e) => onChange(e.target.value)} />}
     </label>
   );
