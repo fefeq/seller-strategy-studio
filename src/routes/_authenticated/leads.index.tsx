@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -41,6 +41,7 @@ function LeadsPage() {
   const canSettings = roles.some((r) => r === "owner" || r === "sales_leader" || r === "marketing");
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  const go = useNavigate();
   const qc = useQueryClient();
   const { data } = useLeads(orgId);
 
@@ -62,9 +63,9 @@ function LeadsPage() {
     const lead = data?.leads.find((l) => l.id === id);
     if (!lead || lead.stage === stage) return;
     if (lead.stage === "opportunity") return toast.info("Este lead ya es una oportunidad: síguelo desde Pipeline.");
-    const { error } = await supabase.from("leads").update({ stage }).eq("id", id);
+    const { data: saved, error } = await supabase.from("leads").update({ stage }).eq("id", id).select("deal_id").single();
     if (error) return toast.error(error.message);
-    if (stage === "opportunity") toast.success(`${lead.company} ya es una oportunidad en Discovery`, { action: { label: "Ver en Pipeline", onClick: () => window.location.assign("/deals") } });
+    if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en Discovery`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }

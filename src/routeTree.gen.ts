@@ -33,6 +33,7 @@ import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticate
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
+import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
@@ -160,6 +161,11 @@ const AuthenticatedAccountsIdRoute = AuthenticatedAccountsIdRouteImport.update({
   path: '/accounts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
+  id: '/leads/',
+  path: '/leads/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedLeadsEntradaRoute =
   AuthenticatedLeadsEntradaRouteImport.update({
     id: '/leads/entrada',
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -238,6 +245,7 @@ export interface FileRoutesByTo {
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
+  '/leads': typeof AuthenticatedLeadsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -269,6 +277,7 @@ export interface FileRoutesById {
   '/_authenticated/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
+  '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts/'
+    | '/leads/'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts'
+    | '/leads'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   id:
@@ -359,6 +370,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leads/entrada'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
+    | '/_authenticated/leads/'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -545,6 +557,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leads/': {
+      id: '/_authenticated/leads/'
+      path: '/leads'
+      fullPath: '/leads/'
+      preLoaderRoute: typeof AuthenticatedLeadsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leads/entrada': {
       id: '/_authenticated/leads/entrada'
       path: '/leads/entrada'
@@ -596,6 +615,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsIdRoute: typeof AuthenticatedAccountsIdRoute
   AuthenticatedLeadsEntradaRoute: typeof AuthenticatedLeadsEntradaRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
+  AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -618,6 +638,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsIdRoute: AuthenticatedAccountsIdRoute,
   AuthenticatedLeadsEntradaRoute: AuthenticatedLeadsEntradaRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
+  AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
