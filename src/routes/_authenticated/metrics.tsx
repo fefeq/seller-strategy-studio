@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { DEAL_STAGES } from "@/lib/roles";
 import { coverage, daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
+import { SegmentCoverage } from "@/components/segment-coverage";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — GTM Brain" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — GTM Brain" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -98,6 +99,9 @@ function Metrics() {
             <Kpi label="Forecast comprometido vs real" v={`${eur(m.actual)} / ${eur(m.commit)}`} hint={m.commit ? `${m.acc.diff >= 0 ? "+" : ""}${pct(m.acc.diff)} · ${m.acc.accurate ? "dentro del 10%" : "fuera del 10%"}` : "Marca deals como Commit"} tone={m.commit && !m.acc.accurate ? "bad" : undefined} />
             <Kpi label="Win rate global" v={pct(m.overall)} hint={`${m.created} deals creados este trimestre`} />
           </div>
+
+          <SegmentCoverage quarter={quarter} />
+
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title="Conversión por etapa">
