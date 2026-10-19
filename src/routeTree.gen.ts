@@ -31,6 +31,7 @@ import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticated/theory-u'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
@@ -148,6 +149,11 @@ const AuthenticatedTheoryURoute = AuthenticatedTheoryURouteImport.update({
   path: '/theory-u',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAccountsIndexRoute =
   AuthenticatedAccountsIndexRouteImport.update({
     id: '/accounts/',
@@ -198,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
   '/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -226,6 +233,7 @@ export interface FileRoutesByTo {
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
   '/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/theory-u': typeof AuthenticatedTheoryURoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -286,6 +295,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/team'
     | '/theory-u'
+    | '/.lovable/oauth/consent'
     | '/accounts/$id'
     | '/api/public/leads'
     | '/accounts/'
@@ -314,6 +324,7 @@ export interface FileRouteTypes {
     | '/strategy'
     | '/team'
     | '/theory-u'
+    | '/.lovable/oauth/consent'
     | '/accounts/$id'
     | '/api/public/leads'
     | '/accounts'
@@ -343,6 +354,7 @@ export interface FileRouteTypes {
     | '/_authenticated/strategy'
     | '/_authenticated/team'
     | '/_authenticated/theory-u'
+    | '/.lovable/oauth/consent'
     | '/_authenticated/accounts/$id'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
@@ -356,6 +368,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -517,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTheoryURouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/accounts/': {
       id: '/_authenticated/accounts/'
       path: '/accounts'
@@ -609,6 +629,7 @@ const rootRouteChildren: RootRouteChildren = {
   McpRoute: McpRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
