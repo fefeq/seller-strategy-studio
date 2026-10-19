@@ -111,7 +111,7 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
         <p className="eyebrow">Objetivo</p>
         <p className="mt-1 text-sm">{goal}</p>
         <p className="eyebrow mt-4">Resumen</p>
-        <p className="mt-1 font-display text-2xl leading-snug">{result.summary}</p>
+        <p className="mt-1 font-display text-xl leading-snug">{result.summary}</p>
       </div>
       {result.diagnosis?.length > 0 && (
         <div>
