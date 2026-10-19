@@ -95,8 +95,9 @@ Todo respeta el modo «sugiere, tú apruebas» y funcionará igual en Telegram c
 - **Datos (migración, RLS por empresa):**
   - `gtm_artifacts`: tipo brief / plan / architecture / readiness / retro / winloss, versión, estado draft/approved, contenido jsonb + markdown, autor, aprobado_por.
   - `artifact_reviews`: revisión profunda y readiness, con hallazgos.
-  - `deal_reviews` / `war_rooms`: transcripción resumida y acciones.
-  - Aprobar Plan y Arquitectura: solo owner y sales_leader.
-- **Agente:** `runAgent` recibe `personaId` y `workflowId`; el system prompt se compone de persona + workflow + Contexto de empresa (artefactos aprobados). Nuevas herramientas: `draft_artifact`, `approve_artifact` (escritura con confirmación), `get_artifact`, `next_steps`. La mesa de deal ejecuta 3–4 personas en secuencia (llamadas acotadas) y un moderador sintetiza.
+  - `debates`: nivel (c_level / sales / marketing / partners / all), tema (deal, cuenta, artefacto o libre), participantes, turnos resumidos, síntesis y acciones.
+  - `deal_reviews`: revisiones de deal.
+- **Niveles de debate:** `src/lib/bmad/teams.ts` define nivel → personas por defecto → roles de la app que pueden lanzarlo, como regla pura testeada.
+- **Agente:** `runAgent` recibe `personaId` y `workflowId`; el system prompt se compone de persona + workflow + Contexto de empresa (artefactos aprobados). Nuevas herramientas: `draft_artifact`, `approve_artifact` (escritura con confirmación), `get_artifact`, `next_steps`, `start_debate`. El debate hace una ronda de posturas en paralelo, una ronda de réplica y la síntesis de un moderador con JSON estricto. En el nivel «Todos» se limitan los turnos para controlar el coste.
 - **UI:** selector de agente y menú de códigos en el panel; nueva página «Ciclo GTM» con la línea de fases y los documentos (editor markdown, versiones, aprobar); tarjeta «¿Qué hago ahora?» en Inicio; aviso de criterios de etapa en el Pipeline.
 - **Tests:** `nextSteps` por rol/fase, prerrequisitos de workflows, camino por ACV y criterios de etapa, permisos de aprobación.
