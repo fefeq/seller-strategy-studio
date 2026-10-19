@@ -36,6 +36,13 @@
       "when": 1792448129364,
       "tag": "0004_org_currency_segment_benchmarks",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792448328233,
+      "tag": "0005_gtm_advisor",
+      "breakpoints": true
     }
   ]
 }
