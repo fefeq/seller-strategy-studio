@@ -44,7 +44,7 @@ describe("detectors", () => {
     const s = detect(snap({ deals: [deal({ close_date: "2026-10-01" })] })).find((x) => x.detector === "past_close_date");
     expect(s?.action).toEqual({ tool: "update_deal", args: { deal_id: "d1", close_date: "2026-11-19" } });
   });
-  it("won deals are ignored", () => expect(keys(snap({ deals: [deal({ stage: "won", close_date: "2026-01-01", updated_at: "2026-01-01T00:00:00Z" })] }))).toEqual([]));
+  it("won deals are ignored by deal detectors", () => expect(keys(snap({ deals: [deal({ stage: "won", close_date: "2026-01-01", updated_at: "2026-01-01T00:00:00Z" })] })).filter((k) => k !== "low_coverage")).toEqual([]));
   it("coverage below 3x is flagged; 3x is healthy", () => {
     expect(keys(snap({ deals: [deal({ amount: 290000 })] }))).toContain("low_coverage");
     expect(keys(snap({ deals: [deal({ amount: 300000 })] }))).not.toContain("low_coverage");
