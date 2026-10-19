@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DEAL_STAGES, MEDDPICC } from "@/lib/roles";
+import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -34,6 +35,11 @@ function Deals() {
 
   async function move(id: string, stage: string) {
     const prob: Record<string, number> = { discovery: 10, qualified: 25, demo: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
+    const deal = deals.find((d) => d.id === id);
+    if (deal && stage !== "lost") {
+      const gate = stageGate({ amount: deal.amount, meddpicc: deal.meddpicc as Record<string, unknown> | null }, stage);
+      if (gate.missing.length) toast.warning(`Camino ${TRACKS[gate.track].label}: para esta etapa falta ${gate.missing.join(", ")}.`, { description: "Puedes moverlo igualmente; completa la cualificación MEDDPICC del deal.", duration: 8000 });
+    }
     if (stage === "won") {
       await supabase.from("approvals").insert({ kind: "stage_change", title: `Marcar como Ganado: ${deals.find((d) => d.id === id)?.name}`, evidence: JSON.stringify({ deal_id: id, stage }) });
       toast.info("Enviado a Aprobaciones: mover a Ganado requiere aprobación.");

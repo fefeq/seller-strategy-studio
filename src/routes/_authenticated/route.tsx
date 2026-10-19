@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Inbox, Rocket, BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, UserCog } from "lucide-react";
+import { Inbox, Rocket, BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, Workflow, MessagesSquare, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
@@ -24,6 +24,8 @@ const NAV = [
   { to: "/home", label: "Inicio", icon: Home },
   { to: "/inbox", label: "Sugerencias", icon: Inbox },
   { to: "/setup", label: "Configuración", icon: Rocket },
+  { to: "/cycle", label: "Ciclo GTM", icon: Workflow },
+  { to: "/debates", label: "Debates", icon: MessagesSquare },
   { to: "/strategy", label: "Estrategia GTM", icon: Compass },
   { to: "/theory-u", label: "Theory U", icon: Sprout },
   { to: "/hub", label: "Conocimiento", icon: BookOpen },

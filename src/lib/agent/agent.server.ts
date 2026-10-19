@@ -3,6 +3,8 @@ import { stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
+import { getPersona } from "@/lib/bmad/personas";
+import { getWorkflow } from "@/lib/bmad/workflows";
 
 const MODEL = "openai/gpt-6-astra";
 
@@ -10,10 +12,20 @@ export type AgentChannel = "app" | "telegram";
 export type AgentMode = "chat" | "interview";
 export type PendingAction = { id: string; tool: string; summary: string; status: string; result?: string };
 
-function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string) {
+function personaPrompt(personaId?: string | null, workflowId?: string | null) {
+  const p = getPersona(personaId);
+  const w = getWorkflow(workflowId);
+  let s = "";
+  if (p) s += `\nPERSONAJE: eres ${p.name}, ${p.title} del equipo GTM (personaje inspirado en ${p.inspiredBy}; no digas que eres esa persona real). ${p.tone} Tu foco: ${p.focus} Tu menú: ${p.menu.map((m) => `${m.code} ${m.label}`).join(" · ")}. Si te piden algo fuera de tu foco, ayuda igualmente y sugiere el agente adecuado.`;
+  if (w) s += `\nFLUJO ACTIVO: ${w.label}. ${w.instructions}${w.produces ? ` Este flujo genera un documento del Ciclo GTM: cuando tengas lo necesario, propón crear el borrador con la herramienta draft_artifact (kind=${w.produces}).` : ""}`;
+  return s;
+}
+
+function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null) {
   const role = ctx.roles.map((r) => ROLES[r as Role]?.label ?? r).join(", ");
   const today = new Date().toISOString().slice(0, 10);
-  const base = `Eres GTM Brain, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.
+  const base = `Eres GTM Brain, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.${personaPrompt(personaId, workflowId)}
+- Usa get_cycle_status para saber en qué fase del Ciclo GTM está la empresa y qué documentos aprobados existen; básate en ellos.
 Reglas:
 - Usa las herramientas para consultar datos reales antes de responder; nunca inventes cifras ni ids.
 - Para cambiar datos usa las herramientas de escritura: NO se ejecutan al momento, quedan como propuesta que el usuario confirma. Di claramente qué has propuesto y que debe confirmarlo.
@@ -30,7 +42,7 @@ MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de
 }
 
 /** Runs one agent turn. Write tools create pending actions instead of executing. */
-export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal }) {
+export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal; personaId?: string | null; workflowId?: string | null }) {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("La IA no está configurada");
 
@@ -71,7 +83,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   try {
     const result = streamText({
       model: provider.responses(MODEL),
-      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName),
+      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId),
       messages: [...history, { role: "user", content: opts.text }],
       tools,
       stopWhen: stepCountIs(12),
