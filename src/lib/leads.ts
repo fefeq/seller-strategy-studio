@@ -35,7 +35,7 @@ export function normKey(k: string) {
 
 // Exact aliases first; `contains` words catch long form questions ("¿Cuál es tu empresa?").
 const FIELDS: { key: keyof NormalizedLead | "firstName" | "lastName"; exact: string[]; contains?: string[] }[] = [
-  { key: "externalId", exact: ["external_id", "id", "lead_id", "deal_id", "hs_object_id", "record_id", "dealid", "id_externo", "submission_id", "response_id", "token"] },
+  { key: "externalId", exact: ["external_id", "id", "lead_id", "deal_id", "hs_object_id", "record_id", "dealid", "id_externo", "submission_id", "response_id"] },
   { key: "email", exact: ["email", "e_mail", "correo", "correo_electronico", "work_email", "email_address", "mail"], contains: ["email", "correo", "e_mail"] },
   { key: "domain", exact: ["domain", "dominio", "website", "web", "sitio_web", "company_domain", "company_website", "url", "pagina_web"], contains: ["dominio", "website", "sitio_web", "pagina_web"] },
   { key: "company", exact: ["company", "empresa", "company_name", "nombre_empresa", "organization", "organizacion", "account", "account_name", "cuenta", "compania", "org_name"], contains: ["empresa", "company", "compania", "organizacion", "organization"] },
