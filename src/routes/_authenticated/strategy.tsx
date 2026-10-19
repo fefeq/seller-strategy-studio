@@ -56,13 +56,22 @@ function Motions() {
   const { data: me } = useMe();
   const { currency, symbol, money } = useCurrency();
   const isOwner = me?.roles.includes("owner");
-  const [acv, setAcv] = useState(20000);
+  const [acvManual, setAcvManual] = useState<number | null>(null);
+  const [basis, setBasis] = useState<"target" | "real">("target");
   const [forced, setForced] = useState("");
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
+  const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
+  const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
+  // The ACV follows the real pipeline until the user types their own value.
+  const acv = acvManual ?? (real.overall.acv != null ? Math.round(real.overall.acv) : 20000);
   const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
+  const segReal = seg ? real.bySegment[seg.id] : undefined;
   const rec = recommendMotion(acv);
-  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: seg?.win_rate_target, cac: seg?.cac_target, grossMarginPct: seg?.gross_margin_pct });
-  const missing = seg ? [!seg.ae_quota && "cuota anual AE", !seg.win_rate_target && "win rate objetivo", !seg.cac_target && "CAC objetivo"].filter(Boolean) : [];
+  const winUsed = basis === "real" && segReal?.winRate != null ? segReal.winRate : seg?.win_rate_target;
+  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: winUsed, cac: seg?.cac_target, grossMarginPct: seg?.gross_margin_pct });
+  const missing = seg ? [!seg.ae_quota && "cuota anual AE", !winUsed && "win rate objetivo", !seg.cac_target && "CAC objetivo"].filter(Boolean) : [];
+  const pct = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
+  const days = (n: number | null | undefined) => (n == null ? "—" : `${n} días`);
 
   async function upd(id: string, patch: Record<string, unknown>) {
     const { error } = await supabase.from("segments").update(patch as any).eq("id", id);
