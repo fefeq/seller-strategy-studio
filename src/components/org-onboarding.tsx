@@ -16,15 +16,13 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
     const { error } = await supabase.rpc("create_organization", { _name: name });
     setBusy(false);
     if (error) return toast.error(error.message);
-    qc.clear();
-    qc.invalidateQueries();
+    await qc.resetQueries();
   }
   async function pick(orgId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user!.id);
     if (error) return toast.error(error.message);
-    qc.clear();
-    qc.invalidateQueries();
+    await qc.resetQueries();
   }
 
   return (

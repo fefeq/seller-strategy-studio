@@ -20,15 +20,13 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
     if (error) return toast.error(error.message);
     setOpen(false);
     await qc.cancelQueries();
-    qc.clear();
-    qc.invalidateQueries();
+    await qc.resetQueries();
   }
   async function create() {
     const { error } = await supabase.rpc("create_organization", { _name: name });
     if (error) return toast.error(error.message);
     setName(""); setCreating(false); setOpen(false);
-    qc.clear();
-    qc.invalidateQueries();
+    await qc.resetQueries();
     toast.success("Empresa creada");
   }
 
