@@ -15,6 +15,13 @@
       "when": 1792447072031,
       "tag": "0001_gtm_strategy_positioning_revops_abm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792447429457,
+      "tag": "0002_multitenant_organizations",
+      "breakpoints": true
     }
   ]
 }
