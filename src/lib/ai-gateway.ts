@@ -1,6 +1,6 @@
 // Raw-HTTP Responses helper shared by server functions and the agent. Server-only usage (reads LOVABLE_API_KEY inside the call).
 
-export async function ask(system: string, user: string, opts: { effort?: "low" | "medium"; schema?: { name: string; schema: unknown } } = {}) {
+export async function ask(system: string, user: string, opts: { effort?: "low" | "medium"; schema?: { name: string; schema: unknown }; files?: { filename: string; dataUrl: string }[] } = {}) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
@@ -11,7 +11,7 @@ export async function ask(system: string, user: string, opts: { effort?: "low" |
     body: JSON.stringify({
       model: "openai/gpt-6-astra",
       instructions: system,
-      input: [{ role: "user", content: user }],
+      input: [{ role: "user", content: opts.files?.length ? [{ type: "input_text", text: user }, ...opts.files.map((f) => ({ type: "input_file", filename: f.filename, file_data: f.dataUrl }))] : user }],
       reasoning: { effort: opts.effort ?? "low" },
       ...(opts.schema ? { text: { format: { type: "json_schema", name: opts.schema.name, strict: true, schema: opts.schema.schema } } } : {}),
       store: false,

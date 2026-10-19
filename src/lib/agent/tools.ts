@@ -282,6 +282,13 @@ export const TOOLS: AgentTool[] = [
     },
   }),
   def({
+    name: "set_currency", kind: "write", roles: ["owner"],
+    description: "Cambia la moneda de la empresa (código ISO de 3 letras, p. ej. EUR, USD). Solo reetiqueta importes, no convierte.",
+    input: z.object({ currency: z.string().regex(/^[A-Z]{3}$/) }),
+    summarize: (a) => `Cambiar la moneda de la empresa a ${a.currency}`,
+    run: async (c, a) => ok(await c.db.from("organizations").update({ currency: a.currency }).eq("id", c.orgId).select("id").single()),
+  }),
+  def({
     name: "set_quota", kind: "write", roles: ["owner", "sales_leader"],
     description: "Fija la cuota de un usuario para un trimestre (AAAA-QN). Sin user_id = la mía.",
     input: z.object({ amount: z.number().positive(), period: z.string().regex(/^\d{4}-Q[1-4]$/).optional(), user_id: z.string().uuid().optional() }),
