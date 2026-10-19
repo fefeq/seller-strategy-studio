@@ -6,8 +6,10 @@ import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { oauthReturnPath } from "@/lib/oauth-return-path";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (s: Record<string, unknown>) => ({ next: typeof s.next === "string" ? s.next : undefined }),
   head: () => ({
     meta: [
       { title: "Entrar — GTM Brain" },
@@ -23,6 +25,10 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { next: rawNext } = Route.useSearch();
+  // Validated once; external assistants send users back to the consent page through this.
+  const next = rawNext ? oauthReturnPath(rawNext) : null;
+  const goOn = () => (next ? window.location.assign(next) : navigate({ to: "/home", replace: true }));
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,13 +37,13 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home", replace: true });
+      if (data.session) goOn();
     });
     const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) navigate({ to: "/home", replace: true });
+      if (s) goOn();
     });
     return () => data.subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, next]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -46,7 +52,7 @@ function AuthPage() {
       if (mode === "up") {
         const { data, error } = await supabase.auth.signUp({
           email, password,
-          options: { emailRedirectTo: window.location.origin, data: { full_name: name } },
+          options: { emailRedirectTo: next ? new URL(next, window.location.origin).href : window.location.origin, data: { full_name: name } },
         });
         if (error) throw error;
         if (!data.session) toast.success("Revisa tu email para confirmar la cuenta.");
@@ -62,7 +68,7 @@ function AuthPage() {
   }
 
   async function google() {
-    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" });
+    const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" + (next ? `?next=${encodeURIComponent(next)}` : "") });
     if (r.error) toast.error("No se pudo entrar con Google");
   }
 
