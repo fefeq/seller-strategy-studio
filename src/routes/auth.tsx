@@ -86,7 +86,7 @@ function AuthPage() {
           <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
             {mode === "in" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
           </button>
-          <p className="text-xs text-muted-foreground">La primera persona que se registra será la responsable (GTM Owner).</p>
+          <p className="text-xs text-muted-foreground">Al entrar podrás crear tu empresa o unirte a las que te hayan invitado.</p>
         </form>
       </div>
     </div>
