@@ -1858,6 +1858,75 @@ export type Database = {
           },
         ]
       }
+      trials: {
+        Row: {
+          activated_at: string | null
+          company: string
+          converted_at: string | null
+          created_at: string
+          created_by: string | null
+          email: string
+          id: string
+          mrr: number | null
+          org_id: string | null
+          plan: string
+          segment_id: string | null
+          signed_up_at: string
+          source: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          company?: string
+          converted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          mrr?: number | null
+          org_id?: string | null
+          plan?: string
+          segment_id?: string | null
+          signed_up_at?: string
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          company?: string
+          converted_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          id?: string
+          mrr?: number | null
+          org_id?: string | null
+          plan?: string
+          segment_id?: string | null
+          signed_up_at?: string
+          source?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trials_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trials_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       u_journeys: {
         Row: {
           ai_synthesis: string
