@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { detect, digest } from "./index";
-import type { Snapshot } from "./types";
+import { detect, digest } from "./proactive";
+import type { Snapshot } from "./proactive/types";
 import { setupStatus, type SetupData } from "@/lib/setup-schema";
 import { canUseTool, getTool, toolsFor } from "@/lib/agent/tools";
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
