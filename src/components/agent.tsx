@@ -10,12 +10,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { decideAgentAction, sendAgentMessage } from "@/lib/agent.functions";
+import { getPersona, personasFor } from "@/lib/bmad/personas";
+import { getWorkflow } from "@/lib/bmad/workflows";
 
 type Mode = "chat" | "interview";
 type Action = { id: string; summary: string; status: string; result?: string };
 type Msg = { id: string; role: "user" | "assistant"; content: string; actions?: Action[] };
 
-const Ctx = createContext<{ open: (o?: { mode?: Mode; prompt?: string }) => void }>({ open: () => {} });
+type OpenOpts = { mode?: Mode; prompt?: string; personaId?: string | null; workflowId?: string | null };
+const Ctx = createContext<{ open: (o?: OpenOpts) => void }>({ open: () => {} });
 export const useAgent = () => useContext(Ctx);
 
 const STARTERS = ["¿Qué debería hacer hoy?", "¿Cómo va la cobertura del trimestre?", "Deals en riesgo y por qué", "Crea una tarea para llamar a…"];
@@ -31,6 +34,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [convId, setConvId] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
+  const [personaId, setPersonaId] = useState<string | null>(null);
+  const [workflowId, setWorkflowId] = useState<string | null>(null);
+  const persona = getPersona(personaId);
   const [busy, setBusy] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const loadedFor = useRef<string | null>(null);
@@ -56,13 +62,13 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   useEffect(() => { setConvId(null); setMsgs([]); loadedFor.current = null; }, [orgId]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
 
-  const submit = useCallback(async (value: string, m: Mode, conv: string | null) => {
+  const submit = useCallback(async (value: string, m: Mode, conv: string | null, pid: string | null = personaId, wid: string | null = workflowId) => {
     const t = value.trim();
     if (!t || busy) return;
     setText(""); setBusy(true);
     setMsgs((x) => [...x, { id: `u${Date.now()}`, role: "user", content: t }]);
     try {
-      const r = await send({ data: { conversationId: conv, text: t, mode: m } });
+      const r = await send({ data: { conversationId: conv, text: t, mode: m, personaId: pid, workflowId: wid } });
       setConvId(r.conversationId);
       setMsgs((x) => [...x, { id: `a${Date.now()}`, role: "assistant", content: r.text, actions: r.pending }]);
     } catch (e) {
@@ -70,13 +76,26 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       setText(t);
       setMsgs((x) => x.slice(0, -1));
     } finally { setBusy(false); }
-  }, [busy, send]);
+  }, [busy, send, personaId, workflowId]);
 
-  const open = useCallback((o?: { mode?: Mode; prompt?: string }) => {
+  const open = useCallback((o?: OpenOpts) => {
     setOpen(true);
-    if (o?.mode && o.mode !== mode) { setMode(o.mode); setConvId(null); setMsgs([]); loadedFor.current = orgId ?? null; }
-    if (o?.prompt) setTimeout(() => submit(o.prompt!, o.mode ?? mode, o.mode && o.mode !== mode ? null : convId), 0);
-  }, [mode, convId, orgId, submit]);
+    const switchPersona = o?.personaId !== undefined && o.personaId !== personaId;
+    const reset = (o?.mode && o.mode !== mode) || switchPersona;
+    if (o?.mode) setMode(o.mode);
+    if (o?.personaId !== undefined) setPersonaId(o.personaId);
+    if (o?.workflowId !== undefined) setWorkflowId(o.workflowId);
+    if (reset) { setConvId(null); setMsgs([]); loadedFor.current = orgId ?? null; }
+    if (o?.prompt) setTimeout(() => submit(o.prompt!, o.mode ?? mode, reset ? null : convId, o.personaId !== undefined ? o.personaId : personaId, o.workflowId !== undefined ? o.workflowId : workflowId), 0);
+  }, [mode, convId, orgId, submit, personaId, workflowId]);
+
+  function pickPersona(id: string | null) { setPersonaId(id); setWorkflowId(null); setConvId(null); setMsgs([]); setMode("chat"); }
+  function runCode(code: string) {
+    const item = persona?.menu.find((m) => m.code === code);
+    if (!item) return;
+    setWorkflowId(item.workflow);
+    submit(`${item.code} · ${item.label}`, "chat", convId, personaId, item.workflow);
+  }
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); setOpen((v) => !v); } };
@@ -93,7 +112,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     } catch (e) { toast.error((e as Error).message); }
   }
 
-  function newChat() { setConvId(null); setMsgs([]); setMode("chat"); }
+  function newChat() { setConvId(null); setMsgs([]); setMode("chat"); setWorkflowId(null); }
 
   return (
     <Ctx.Provider value={{ open }}>
@@ -107,13 +126,28 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b px-5 py-4">
             <div className="flex items-center justify-between pr-8">
-              <SheetTitle className="flex items-center gap-2 font-display text-2xl"><Brain className="size-5" /> Agente GTM {mode === "interview" && <span className="rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
+              <SheetTitle className="flex items-center gap-2 font-display text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
               <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
             </div>
+            <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
+              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>GTM Brain</button>
+              {personasFor(me?.roles ?? []).map((p) => (
+                <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
+              ))}
+            </div>
+            {persona && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {persona.menu.map((m) => (
+                  <button key={m.code} onClick={() => runCode(m.code)} disabled={busy} className={`rounded border px-2 py-1 text-xs hover:bg-accent ${workflowId === m.workflow ? "border-primary" : ""}`}><span className="font-mono font-semibold">{m.code}</span> {m.label}</button>
+                ))}
+              </div>
+            )}
+            {workflowId && <p className="mt-1 text-xs text-muted-foreground">Flujo activo: {getWorkflow(workflowId)?.label}</p>}
           </SheetHeader>
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
             {msgs.length === 0 && !busy && (
               <div className="space-y-3 pt-6">
+                <p className="text-sm text-muted-foreground">{persona ? `${persona.focus} Elige un código del menú o pregúntame directamente.` : null}</p>
                 <p className="text-sm text-muted-foreground">Pregúntame por tu pipeline, métricas o cuentas, o pídeme que haga algo. Antes de cambiar datos te pediré confirmación.</p>
                 <div className="flex flex-wrap gap-2">
                   {STARTERS.map((s) => <button key={s} onClick={() => s.endsWith("…") ? setText(s.replace("…", " ")) : submit(s, mode, convId)} className="rounded-full border px-3 py-1.5 text-xs hover:bg-accent">{s}</button>)}
