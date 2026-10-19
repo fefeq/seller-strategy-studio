@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Users, UserCog } from "lucide-react";
+import { BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sprout, Users, UserCog } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/_authenticated")({
 const NAV = [
   { to: "/home", label: "Inicio", icon: Home },
   { to: "/strategy", label: "Estrategia GTM", icon: Compass },
+  { to: "/theory-u", label: "Theory U", icon: Sprout },
   { to: "/hub", label: "Conocimiento", icon: BookOpen },
   { to: "/accounts", label: "Cuentas", icon: Building2 },
   { to: "/deals", label: "Pipeline", icon: KanbanSquare },
