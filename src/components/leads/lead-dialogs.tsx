@@ -1,0 +1,95 @@
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Field, Pick } from "@/components/fields";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { LEAD_STAGES, OPEN_LEAD_STAGES, leadStageLabel, type LeadSla } from "@/lib/lead-funnel";
+
+const NEW_STAGES = Object.fromEntries(LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label]));
+const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+
+export function NewLead({ segments }: { segments: { id: string; name: string }[] }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const empty = { company: "", contact_name: "", email: "", source: "", segment_id: "", stage: "new", next_step_at: "" };
+  const [f, setF] = useState(empty);
+  const set = (k: keyof typeof empty) => (v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  async function save() {
+    const company = f.company.trim();
+    if (!company) return toast.error("Escribe la empresa");
+    // Reuse the account if it already exists; otherwise it is created when the lead becomes an opportunity.
+    const { data: acc } = await supabase.from("accounts").select("id").ilike("name", escapeLike(company)).limit(1).maybeSingle();
+    const { error } = await supabase.from("leads").insert({
+      company,
+      contact_name: f.contact_name.trim() || null,
+      email: f.email.trim().toLowerCase() || null,
+      source: f.source.trim() || "Manual",
+      segment_id: f.segment_id || null,
+      stage: f.stage,
+      next_step_at: f.next_step_at || null,
+      account_id: acc?.id ?? null,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`Lead ${company} creado`);
+    setF(empty);
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button>+ Nuevo lead</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Nuevo lead</DialogTitle></DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Field label="Empresa"><Input value={f.company} onChange={(e) => set("company")(e.target.value)} placeholder="Acme Logistics" autoFocus /></Field></div>
+          <Field label="Contacto"><Input value={f.contact_name} onChange={(e) => set("contact_name")(e.target.value)} /></Field>
+          <Field label="Email"><Input type="email" value={f.email} onChange={(e) => set("email")(e.target.value)} /></Field>
+          <Field label="Origen"><Input value={f.source} onChange={(e) => set("source")(e.target.value)} placeholder="Webinar, LinkedIn, Referido…" /></Field>
+          <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segments.map((s) => [s.id, s.name])) }} onChange={set("segment_id")} /></Field>
+          <Field label="Etapa"><Pick value={f.stage} options={NEW_STAGES} onChange={set("stage")} /></Field>
+          <Field label="Próximo seguimiento"><Input type="date" value={f.next_step_at} onChange={(e) => set("next_step_at")(e.target.value)} /></Field>
+        </div>
+        <Button className="mt-2 w-full" onClick={save}>Crear lead</Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export function SlaSettings({ sla, canEdit, orgId }: { sla: LeadSla; canEdit: boolean; orgId: string }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [v, setV] = useState<LeadSla>(sla);
+
+  async function save() {
+    const clean = Object.fromEntries(OPEN_LEAD_STAGES.map((k) => [k, Math.max(1, Math.round(Number(v[k]) || 1))]));
+    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, sla: clean, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
+    if (error) return toast.error(error.message);
+    toast.success("Plazos guardados");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["leads"] });
+    qc.invalidateQueries({ queryKey: ["lead-funnel"] });
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (o) setV(sla); }}>
+      <DialogTrigger asChild><Button variant="outline">Plazos por etapa</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>¿Cuándo va con retraso un lead?</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">Un lead va con retraso si pasa en una etapa más días de los indicados <strong>o</strong> si su fecha de próximo seguimiento ya ha pasado.</p>
+        <div className="grid grid-cols-2 gap-3">
+          {OPEN_LEAD_STAGES.map((k) => (
+            <Field key={k} label={`${leadStageLabel(k)} · días máx.`}>
+              {canEdit ? <Input type="number" min={1} value={v[k]} onChange={(e) => setV((p) => ({ ...p, [k]: Number(e.target.value) }))} /> : <p className="font-mono">{sla[k]} días</p>}
+            </Field>
+          ))}
+        </div>
+        {canEdit ? <Button className="w-full" onClick={save}>Guardar plazos</Button> : <p className="text-xs text-muted-foreground">Solo Owner, Sales Leader o Marketing pueden cambiar los plazos.</p>}
+      </DialogContent>
+    </Dialog>
+  );
+}

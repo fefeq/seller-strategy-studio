@@ -1,8 +1,19 @@
 // Turns whatever a form, automation or CRM sends into one normalized lead. Pure so the
 // public link, the CSV import and the tests all agree on the same rules.
 import { DEAL_STAGES } from "@/lib/roles";
+import { LEAD_STAGES } from "@/lib/lead-funnel";
 
 export type DealStage = (typeof DEAL_STAGES)[number]["id"];
+/** Stages before an opportunity exists: the lead stays on the Leads screen, no deal yet. */
+export const PRE_DEAL_STAGES = ["new", "contacted", "mql", "sql", "disqualified"] as const;
+export type PreDealStage = (typeof PRE_DEAL_STAGES)[number];
+/** What an incoming lead can carry: a lead stage, or a sales stage (then it enters as an opportunity). */
+export type IntakeStage = PreDealStage | DealStage;
+export const isPreDealStage = (s: string): s is PreDealStage => (PRE_DEAL_STAGES as readonly string[]).includes(s);
+export const INTAKE_STAGES: { id: IntakeStage; label: string }[] = [
+  ...LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => ({ id: s.id as IntakeStage, label: s.label })),
+  ...DEAL_STAGES.filter((s) => s.id !== "won" && s.id !== "lost").map((s) => ({ id: s.id as IntakeStage, label: `Oportunidad · ${s.label}` })),
+];
 
 export type NormalizedLead = {
   company: string;
@@ -11,8 +22,8 @@ export type NormalizedLead = {
   fullName: string | null;
   title: string | null;
   linkedin: string | null;
-  stage: DealStage;
-  /** False when the payload had no stage (then existing deals keep theirs). */
+  stage: IntakeStage;
+  /** False when the payload had no stage (then existing leads/deals keep theirs). */
   stageGiven: boolean;
   stageRecognized: boolean;
   /** When the lead entered (deal created_at). */
@@ -55,25 +66,38 @@ const FIELDS: { key: keyof NormalizedLead | "firstName" | "lastName"; exact: str
   { key: "source", exact: ["source", "origen", "fuente", "utm_source", "lead_source", "canal"] },
 ];
 
-const STAGE_WORDS: [DealStage, string[]][] = [
+// Order matters for partial matches: "disqualified" must win over "qualified".
+const STAGE_WORDS: [IntakeStage, string[]][] = [
   ["won", ["won", "ganado", "ganada", "closedwon", "closed_won", "cerrado_ganado", "cerrada_ganada", "customer", "cliente", "firmado", "signed"]],
-  ["lost", ["lost", "perdido", "perdida", "closedlost", "closed_lost", "cerrado_perdido", "descartado", "unqualified", "no_cualificado", "rejected"]],
+  ["lost", ["lost", "perdido", "perdida", "closedlost", "closed_lost", "cerrado_perdido", "cerrada_perdida"]],
+  ["disqualified", ["descartado", "descartada", "unqualified", "disqualified", "no_cualificado", "no_cualificada", "rejected", "rechazado", "junk", "spam"]],
   ["negotiation", ["negotiation", "negociacion", "contract", "contrato", "contractsent", "contract_sent", "legal", "decisionmakerboughtin", "decision_maker_bought_in"]],
   ["proposal", ["proposal", "propuesta", "quote", "presupuesto", "oferta", "presentationscheduled", "presentation_scheduled"]],
   ["demo", ["demo", "poc", "trial", "prueba", "piloto", "pilot", "appointmentscheduled", "appointment_scheduled", "evaluacion"]],
-  ["qualified", ["qualified", "cualificado", "cualificada", "sql", "qualifiedtobuy", "qualified_to_buy", "opportunity", "oportunidad"]],
-  ["discovery", ["discovery", "descubrimiento", "lead", "new", "nuevo", "nueva", "mql", "subscriber", "contacted", "contactado", "open", "abierto", "salesqualifiedlead", "marketingqualifiedlead", "inbound"]],
+  ["sql", ["sql", "salesqualifiedlead", "sales_qualified_lead", "sales_qualified"]],
+  ["mql", ["mql", "marketingqualifiedlead", "marketing_qualified_lead", "marketing_qualified"]],
+  ["qualified", ["qualified", "cualificado", "cualificada", "qualifiedtobuy", "qualified_to_buy"]],
+  ["discovery", ["discovery", "descubrimiento", "opportunity", "oportunidad"]],
+  ["contacted", ["contacted", "contactado", "contactada", "attempted_to_contact", "attempting", "in_progress", "en_curso", "connected", "working", "en_contacto"]],
+  ["new", ["new", "nuevo", "nueva", "lead", "subscriber", "open", "abierto", "abierta", "inbound", "open_lead"]],
 ];
 
-export function mapStage(raw: unknown, fallback: DealStage = "discovery"): { stage: DealStage; recognized: boolean } {
+const LABELS: [IntakeStage, string][] = [
+  ...DEAL_STAGES.map((s) => [s.id, s.label] as [IntakeStage, string]),
+  ...LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label] as [IntakeStage, string]),
+];
+
+export function mapStage(raw: unknown, fallback: IntakeStage = "new"): { stage: IntakeStage; recognized: boolean } {
   if (raw == null || String(raw).trim() === "") return { stage: fallback, recognized: true };
   const k = normKey(String(raw));
-  if (DEAL_STAGES.some((s) => s.id === k)) return { stage: k as DealStage, recognized: true };
-  const label = DEAL_STAGES.find((s) => normKey(s.label) === k);
-  if (label) return { stage: label.id, recognized: true };
+  for (const [id, label] of LABELS) if (id === k || normKey(label) === k) return { stage: id, recognized: true };
   for (const [stage, words] of STAGE_WORDS) if (words.includes(k)) return { stage, recognized: true };
   for (const [stage, words] of STAGE_WORDS) if (words.some((w) => w.length > 3 && k.includes(w))) return { stage, recognized: true };
   return { stage: fallback, recognized: false };
+}
+
+export function isIntakeStage(s: unknown): s is IntakeStage {
+  return typeof s === "string" && (INTAKE_STAGES.some((x) => x.id === s) || s === "won" || s === "lost" || s === "disqualified");
 }
 
 /** Accepts ISO dates, dd/mm/yyyy (Spanish order), and Unix seconds/milliseconds. */
@@ -181,7 +205,7 @@ export function flattenPayload(body: unknown): Record<string, unknown>[] {
 }
 
 /** Picks known fields from a flat record. Returns an error message when no company can be identified. */
-export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage?: DealStage; source?: string } = {}): { lead: NormalizedLead } | { error: string } {
+export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage?: IntakeStage; source?: string } = {}): { lead: NormalizedLead } | { error: string } {
   const entries = Object.entries(rec).map(([k, v]) => [normKey(k), v] as const).filter(([k]) => k);
   const picked: Record<string, string> = {};
   const used = new Set<string>();
@@ -206,7 +230,7 @@ export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage
   if (!company) return { error: "Falta la empresa: envía «empresa», un dominio/web o un email corporativo." };
 
   const fullName = picked.fullName ?? ([picked.firstName, picked.lastName].filter(Boolean).join(" ") || null);
-  const { stage, recognized } = mapStage(picked.stage, opts.defaultStage ?? "discovery");
+  const { stage, recognized } = mapStage(picked.stage, opts.defaultStage ?? "new");
   const entered = parseDate(picked.enteredAt);
   const close = parseDate(picked.closeDate);
   return {

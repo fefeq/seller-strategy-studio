@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/public/leads")({
       // Lets tools verify the link without sending a lead.
       GET: async ({ request }) => ((await sourceFor(request)) ? json({ ok: true }) : json({ ok: false, error: "Clave no válida" }, 401)),
       POST: async ({ request }) => {
-        const { LEAD_LIMITS, flattenPayload, normalizeLead } = await import("@/lib/leads");
+        const { LEAD_LIMITS, flattenPayload, normalizeLead, isIntakeStage } = await import("@/lib/leads");
         const len = Number(request.headers.get("content-length") ?? 0);
         if (len > LEAD_LIMITS.maxBodyBytes) return json({ ok: false, error: "Envío demasiado grande" }, 413);
         const found = await sourceFor(request);
@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/leads")({
         const ctx = { orgId: source.org_id, sourceId: source.id, segments: segments ?? [] };
         const results: { status: string; error?: string }[] = [];
         for (const rec of records) {
-          const n = normalizeLead(rec, { defaultStage: source.default_stage as never });
+          const n = normalizeLead(rec, { defaultStage: isIntakeStage(source.default_stage) ? source.default_stage : "new" });
           if ("error" in n) {
             results.push({ status: "error", error: n.error });
             await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: "error", summary: "Lead sin empresa", error: n.error });
@@ -66,7 +66,7 @@ export const Route = createFileRoute("/api/public/leads")({
             const r = await ingestLead(db, ctx, n.lead);
             const warn = n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto";
             results.push({ status: r.status, ...(warn ? { error: warn } : {}) });
-            await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: r.status, summary: r.summary, error: warn, account_id: r.accountId, deal_id: r.dealId });
+            await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: r.status, summary: r.summary, error: warn, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId });
           } catch (e) {
             const msg = (e as Error).message.slice(0, 300);
             console.error("lead ingest failed", msg);

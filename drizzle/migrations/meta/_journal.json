@@ -85,6 +85,13 @@
       "when": 1792453524108,
       "tag": "0011_agent_channel_mcp",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792453991546,
+      "tag": "0012_lead_funnel",
+      "breakpoints": true
     }
   ]
 }
