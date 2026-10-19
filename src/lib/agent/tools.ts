@@ -165,7 +165,7 @@ export const TOOLS: AgentTool[] = [
     },
     run: async (c, a) => {
       const { deal_id, meddpicc_field, meddpicc_value, ...rest } = a;
-      const patch: Record<string, unknown> = { ...rest };
+      const patch: any = { ...rest };
       if (meddpicc_field) {
         const cur = ok(await c.db.from("deals").select("meddpicc").eq("org_id", c.orgId).eq("id", deal_id).single());
         patch.meddpicc = { ...((cur as any)?.meddpicc ?? {}), [meddpicc_field]: meddpicc_value ?? "" };
