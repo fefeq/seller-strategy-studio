@@ -247,7 +247,7 @@ export const TOOLS: AgentTool[] = [
     summarize: (a) => `Guardar posicionamiento: ${Object.keys(a.fields).join(", ")}`,
     run: async (c, a) => {
       const allowed = new Set<string>([...POSITIONING_FIELDS.map(([k]) => k), "tagline", "short_pitch", "product_name"]);
-      const patch = Object.fromEntries(Object.entries(a.fields).filter(([k]) => allowed.has(k)));
+      const patch: any = Object.fromEntries(Object.entries(a.fields).filter(([k]) => allowed.has(k)));
       const { data: ex } = await c.db.from("positioning").select("id").eq("org_id", c.orgId).maybeSingle();
       if (ex) return ok(await c.db.from("positioning").update(patch).eq("id", ex.id).select("id").single());
       return ok(await c.db.from("positioning").insert({ ...patch, org_id: c.orgId }).select("id").single());
