@@ -102,3 +102,70 @@ export const researchStakeholder = createServerFn({ method: "POST" })
     await supabase.from("stakeholders").update({ research: text }).eq("id", s.id);
     return { text };
   });
+
+// ---------- Theory U ----------
+
+const U_SYSTEM = "Eres facilitador experto en Theory U (Otto Scharmer, Presencing Institute) aplicada a go-to-market B2B. Respondes en español neutro (tú), markdown conciso y accionable. Distingues lo observado (datos) de las hipótesis.";
+
+async function strategyContext(supabase: any) {
+  const [pos, pillars, icp, segments] = await Promise.all([
+    supabase.from("positioning").select("target_customer,need,category,key_benefit,competitive_alternative,differentiator,one_liner").limit(1).maybeSingle(),
+    supabase.from("messaging_pillars").select("title,pain,message").order("position"),
+    supabase.from("icp_profiles").select("name,industries,company_size,why_fit,anti_icp").limit(5),
+    supabase.from("segments").select("name,acv,motion").limit(10),
+  ]);
+  return { posicionamiento: pos.data, pilares: pillars.data, icp: icp.data, segmentos: segments.data };
+}
+
+export const synthesizeJourney = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { journeyId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: j } = await supabase.from("u_journeys").select("*").eq("id", data.journeyId).single();
+    if (!j) throw new Error("Recorrido no encontrado");
+    const [notes, exps, strat] = await Promise.all([
+      supabase.from("sensing_notes").select("interviewee,kind,heard,surprised,emerging,listening_level").order("occurred_on", { ascending: false }).limit(40),
+      supabase.from("gtm_experiments").select("title,hypothesis,status,result,learning").eq("journey_id", j.id),
+      strategyContext(supabase),
+    ]);
+    const text = await ask(
+      `${U_SYSTEM} Sintetiza el recorrido U del equipo. Estructura: 1) Lo que estamos viendo (patrones del sensing) 2) Lo que tenemos que soltar 3) Lo que quiere emerger 4) Cambios propuestos en ICP, posicionamiento y motions (concretos, comparando con la estrategia actual) 5) Tres prototipos para los próximos 30 días con hipótesis y métrica 6) Pregunta poderosa para la próxima sesión del equipo.`,
+      JSON.stringify({ recorrido: { titulo: j.title, intencion: j.intention, fase_actual: j.phase, respuestas: j.answers }, sensing: notes.data, prototipos: exps.data, estrategia_actual: strat }),
+    );
+    await supabase.from("u_journeys").update({ ai_synthesis: text }).eq("id", j.id);
+    return { text };
+  });
+
+export const sensingPatterns = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { journeyId?: string | null }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    let q = supabase.from("sensing_notes").select("interviewee,kind,occurred_on,context,heard,surprised,emerging,listening_level,accounts(name)").order("occurred_on", { ascending: false }).limit(60);
+    if (data.journeyId) q = q.eq("journey_id", data.journeyId);
+    const { data: notes } = await q;
+    if (!notes || notes.length === 0) throw new Error("Añade al menos una nota de sensing");
+    const strat = await strategyContext(supabase);
+    const text = await ask(
+      `${U_SYSTEM} Analiza las notas de sensing con clientes. Estructura: 1) Temas recurrentes (con nº de menciones) 2) Sorpresas que contradicen nuestros supuestos o posicionamiento actual 3) Señales débiles emergentes 4) Implicaciones para mensajes, ICP y producto 5) Calidad de la escucha del equipo (según los niveles registrados) y cómo profundizarla 6) A quién deberíamos escuchar a continuación.`,
+      JSON.stringify({ notas: notes, estrategia_actual: strat }),
+    );
+    return { text };
+  });
+
+export const listeningCoaching = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { meetingId: string }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: m } = await supabase.from("meetings").select("title,objective,attendees,questions,notes,next_steps,listening_level,listening_reflection,accounts(name)").eq("id", data.meetingId).single();
+    if (!m) throw new Error("Reunión no encontrada");
+    if (!m.notes && !m.listening_reflection) throw new Error("Escribe las notas o tu reflexión de la reunión primero");
+    const text = await ask(
+      `${U_SYSTEM} Eres coach de escucha para vendedores. Niveles: 1 Descarga (confirmo lo que ya sé), 2 Factual (noto lo nuevo), 3 Empática (veo con sus ojos), 4 Generativa (escucho lo que emerge). Estructura: 1) Nivel que reflejan las notas (con evidencias citadas) frente al nivel autoevaluado 2) Momentos donde se pudo escuchar más hondo 3) Qué hacer para subir un nivel en la próxima reunión (3 prácticas concretas) 4) Cinco preguntas abiertas para la próxima conversación con esta cuenta.`,
+      JSON.stringify(m),
+    );
+    await supabase.from("meetings").update({ listening_coaching: text }).eq("id", data.meetingId);
+    return { text };
+  });
