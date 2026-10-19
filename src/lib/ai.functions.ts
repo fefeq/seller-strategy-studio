@@ -45,15 +45,18 @@ async function ask(system: string, user: string) {
 }
 
 async function accountContext(supabase: any, accountId: string) {
-  const [acc, plan, sh, calls, deals, docs] = await Promise.all([
+  const [acc, plan, sh, calls, deals, docs, pos, pillars, icp] = await Promise.all([
     supabase.from("accounts").select("*").eq("id", accountId).maybeSingle(),
     supabase.from("account_plans").select("*").eq("account_id", accountId).maybeSingle(),
     supabase.from("stakeholders").select("name,title,buying_role,support,priorities,research").eq("account_id", accountId),
     supabase.from("calls").select("title,occurred_at,summary,next_steps").eq("account_id", accountId).order("occurred_at", { ascending: false }).limit(5),
     supabase.from("deals").select("name,stage,amount,meddpicc").eq("account_id", accountId),
     supabase.from("knowledge_docs").select("section,title,body").in("section", ["company", "objections", "playbooks", "methodology"]).limit(20),
+    supabase.from("positioning").select("target_customer,need,product_name,category,key_benefit,competitive_alternative,differentiator,tagline,one_liner,short_pitch,elevator_pitch,alternatives,differentiation,value,trend").limit(1).maybeSingle(),
+    supabase.from("messaging_pillars").select("title,pain,message,proof").order("position"),
+    supabase.from("icp_profiles").select("name,industries,company_size,tech_stack,growth_stage,hiring_signals,funding_signals,why_fit,anti_icp").limit(5),
   ]);
-  return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: docs.data });
+  return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: docs.data, posicionamiento: pos.data, pilares_de_mensaje: pillars.data, icp: icp.data });
 }
 
 export const generateMeetingBrief = createServerFn({ method: "POST" })
