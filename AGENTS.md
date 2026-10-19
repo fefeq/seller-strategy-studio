@@ -17,3 +17,9 @@
 - Self-service funnel data lives in the trials table (one row per signup, fed by manual entry/CSV until product/billing syncs exist); funnel maths are cohort-based by signup date in src/lib/self-service.ts (tested) so the metrics UI and future AI snapshots agree.
 - Money is shown in the current org's currency (organizations.currency) via useCurrency() from src/hooks/use-me.ts; never hardcode a currency symbol. Changing currency relabels amounts, it does not convert them.
 - GTM Advisor: the server fn re-checks the caller's org role and the gtm_advisories RLS limits read/insert to owner and sales_leader; the data snapshot sent to the AI is built by pure code in src/lib/advisor.ts (tested) and the model must answer with its strict JSON schema.
+- Onboarding data is defined once in src/lib/setup-schema.ts (items, weights, unlocks, completeness); the AI fill, wizard, interview, sidebar meter and proactive detector all read it, so new required data = one new item there.
+- The agent's capabilities live in one registry (src/lib/agent/tools.ts): read tools run immediately, write tools only create agent_pending_actions executed after explicit confirmation; every handler scopes by org_id explicitly because Telegram/cron run it with the privileged client.
+- Agent turns run server-side via AI SDK Responses (src/lib/agent/agent.server.ts) and return final text; transcripts store only plain user/assistant text so channels (app, Telegram, future WhatsApp) share one core.
+- Proactive rules are pure detectors, one file each in src/lib/proactive/detectors/ (tested in src/lib/proactive.test.ts); suggestions dedupe on (org_id, dedupe_key) so dismissed items never return, and actions reuse agent tools.
+- The hourly/daily proactive job is /api/public/jobs/proactive (managed cron auth + job_locks lease); Telegram enters through /api/public/telegram/webhook (secret-token check, idempotent on update_id) and users link via one-time codes in channel_links.
+
