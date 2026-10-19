@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useMe } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { Input } from "@/components/ui/input";
 import { DEAL_STAGES } from "@/lib/roles";
@@ -19,6 +19,7 @@ const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation",
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
 function Metrics() {
+  const { money: eur, symbol } = useCurrency();
   const qc = useQueryClient();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;

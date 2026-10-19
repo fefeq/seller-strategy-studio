@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useCurrency } from "@/hooks/use-me";
 import { Page, HealthDot } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/deals")({
 
 
 function Deals() {
+  const { money: eur, symbol } = useCurrency();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const qc = useQueryClient();
@@ -86,6 +88,7 @@ function Kpi({ label, v }: { label: string; v: string }) {
 }
 
 function DealDetail({ deal, onSaved }: { deal: any; onSaved: () => void }) {
+  const { money: eur, symbol } = useCurrency();
   const [d, setD] = useState(deal);
   useEffect(() => setD(deal), [deal]);
   const m: Record<string, { score: number; note: string }> = d.meddpicc ?? {};
@@ -118,7 +121,7 @@ function DealDetail({ deal, onSaved }: { deal: any; onSaved: () => void }) {
     qc.invalidateQueries({ queryKey: ["map", deal.id] });
   }
   async function requestDiscount() {
-    await supabase.from("approvals").insert({ kind: "discount", title: `Descuento para ${d.name}`, evidence: `Importe: ${d.amount} €. Justificación: añade el contexto en la cuenta.` });
+    await supabase.from("approvals").insert({ kind: "discount", title: `Descuento para ${d.name}`, evidence: `Importe: ${eur(Number(d.amount ?? 0))}. Justificación: añade el contexto en la cuenta.` });
     toast.success("Solicitud enviada a Deal Desk");
   }
 
@@ -128,7 +131,7 @@ function DealDetail({ deal, onSaved }: { deal: any; onSaved: () => void }) {
       {d.account_id && <Link to="/accounts/$id" params={{ id: d.account_id }} className="text-sm text-signal">Abrir cuenta y Account Plan →</Link>}
       <div className="grid grid-cols-2 gap-3">
         <Field label="Nombre"><Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
-        <Field label="Importe (€)"><Input type="number" value={d.amount ?? 0} onChange={(e) => setD({ ...d, amount: Number(e.target.value) })} /></Field>
+        <Field label={`Importe (${symbol})`}><Input type="number" value={d.amount ?? 0} onChange={(e) => setD({ ...d, amount: Number(e.target.value) })} /></Field>
         <Field label="Fecha de cierre"><Input type="date" value={d.close_date ?? ""} onChange={(e) => setD({ ...d, close_date: e.target.value })} /></Field>
         <Field label="Probabilidad (%)"><Input type="number" min={0} max={100} value={d.probability ?? 0} onChange={(e) => setD({ ...d, probability: Number(e.target.value) })} /></Field>
         <Field label="Salud"><Pick value={d.health} options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }} onChange={(v) => setD({ ...d, health: v })} /></Field>
