@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Field, Pick } from "@/components/fields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BUYING_ROLES, SUPPORT, DEAL_STAGES } from "@/lib/roles";
@@ -302,13 +303,3 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
   );
 }
 
-export function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <div className="space-y-1"><Label className="eyebrow">{label}</Label>{children}</div>;
-}
-export function Pick({ value, options, onChange }: { value: string; options: Record<string, string>; onChange: (v: string) => void }) {
-  return (
-    <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={value ?? ""} onChange={(e) => onChange(e.target.value)}>
-      {Object.entries(options).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-    </select>
-  );
-}
