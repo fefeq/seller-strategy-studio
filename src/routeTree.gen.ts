@@ -24,7 +24,6 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
-import { Route as AuthenticatedLeadsRouteImport } from './routes/_authenticated/leads'
 import { Route as AuthenticatedMetricsRouteImport } from './routes/_authenticated/metrics'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
@@ -34,6 +33,7 @@ import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticate
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
+import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -114,11 +114,6 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedLeadsRoute = AuthenticatedLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedMetricsRoute = AuthenticatedMetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
@@ -165,6 +160,12 @@ const AuthenticatedAccountsIdRoute = AuthenticatedAccountsIdRouteImport.update({
   path: '/accounts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLeadsEntradaRoute =
+  AuthenticatedLeadsEntradaRouteImport.update({
+    id: '/leads/entrada',
+    path: '/leads/entrada',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicLeadsRoute = ApiPublicLeadsRouteImport.update({
   id: '/api/public/leads',
   path: '/api/public/leads',
@@ -197,7 +198,6 @@ export interface FileRoutesByFullPath {
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
-  '/leads': typeof AuthenticatedLeadsRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/setup': typeof AuthenticatedSetupRoute
@@ -206,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
@@ -226,7 +227,6 @@ export interface FileRoutesByTo {
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
-  '/leads': typeof AuthenticatedLeadsRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/setup': typeof AuthenticatedSetupRoute
@@ -235,6 +235,7 @@ export interface FileRoutesByTo {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
@@ -257,7 +258,6 @@ export interface FileRoutesById {
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
-  '/_authenticated/leads': typeof AuthenticatedLeadsRoute
   '/_authenticated/metrics': typeof AuthenticatedMetricsRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
@@ -266,6 +266,7 @@ export interface FileRoutesById {
   '/_authenticated/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/_authenticated/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
@@ -288,7 +289,6 @@ export interface FileRouteTypes {
     | '/hub'
     | '/inbox'
     | '/integrations'
-    | '/leads'
     | '/metrics'
     | '/people'
     | '/setup'
@@ -297,6 +297,7 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/.lovable/oauth/consent'
     | '/accounts/$id'
+    | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts/'
     | '/api/public/jobs/proactive'
@@ -317,7 +318,6 @@ export interface FileRouteTypes {
     | '/hub'
     | '/inbox'
     | '/integrations'
-    | '/leads'
     | '/metrics'
     | '/people'
     | '/setup'
@@ -326,6 +326,7 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/.lovable/oauth/consent'
     | '/accounts/$id'
+    | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts'
     | '/api/public/jobs/proactive'
@@ -347,7 +348,6 @@ export interface FileRouteTypes {
     | '/_authenticated/hub'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
-    | '/_authenticated/leads'
     | '/_authenticated/metrics'
     | '/_authenticated/people'
     | '/_authenticated/setup'
@@ -356,6 +356,7 @@ export interface FileRouteTypes {
     | '/_authenticated/theory-u'
     | '/.lovable/oauth/consent'
     | '/_authenticated/accounts/$id'
+    | '/_authenticated/leads/entrada'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
     | '/api/public/jobs/proactive'
@@ -481,13 +482,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/leads': {
-      id: '/_authenticated/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof AuthenticatedLeadsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/metrics': {
       id: '/_authenticated/metrics'
       path: '/metrics'
@@ -551,6 +545,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/leads/entrada': {
+      id: '/_authenticated/leads/entrada'
+      path: '/leads/entrada'
+      fullPath: '/leads/entrada'
+      preLoaderRoute: typeof AuthenticatedLeadsEntradaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/leads': {
       id: '/api/public/leads'
       path: '/api/public/leads'
@@ -586,7 +587,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
-  AuthenticatedLeadsRoute: typeof AuthenticatedLeadsRoute
   AuthenticatedMetricsRoute: typeof AuthenticatedMetricsRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
@@ -594,6 +594,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTheoryURoute: typeof AuthenticatedTheoryURoute
   AuthenticatedAccountsIdRoute: typeof AuthenticatedAccountsIdRoute
+  AuthenticatedLeadsEntradaRoute: typeof AuthenticatedLeadsEntradaRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
 }
 
@@ -608,7 +609,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
-  AuthenticatedLeadsRoute: AuthenticatedLeadsRoute,
   AuthenticatedMetricsRoute: AuthenticatedMetricsRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
@@ -616,6 +616,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTheoryURoute: AuthenticatedTheoryURoute,
   AuthenticatedAccountsIdRoute: AuthenticatedAccountsIdRoute,
+  AuthenticatedLeadsEntradaRoute: AuthenticatedLeadsEntradaRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
 }
 

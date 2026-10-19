@@ -1,0 +1,40 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+import { readSla, type DealOutcome, type LeadSla } from "@/lib/lead-funnel";
+
+export type Lead = Tables<"leads">;
+export type LeadsData = {
+  leads: Lead[];
+  deals: DealOutcome[];
+  sla: LeadSla;
+  segments: { id: string; name: string }[];
+  members: { id: string; full_name: string }[];
+};
+
+/** Leads of the current company plus what the screen and the funnel need. Key "leads" is refreshed live. */
+export function useLeads(orgId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["leads", orgId],
+    enabled: !!orgId,
+    queryFn: async (): Promise<LeadsData> => {
+      const [l, d, s, seg, m] = await Promise.all([
+        supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(2000),
+        supabase.from("deals").select("id,stage,closed_at"),
+        supabase.from("lead_settings").select("sla").maybeSingle(),
+        supabase.from("segments").select("id,name").order("acv_min"),
+        supabase.from("org_members").select("user_id").eq("org_id", orgId!),
+      ]);
+      if (l.error) throw new Error(l.error.message);
+      const ids = (m.data ?? []).map((x) => x.user_id);
+      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
+      return {
+        leads: l.data ?? [],
+        deals: d.data ?? [],
+        sla: readSla(s.data?.sla),
+        segments: seg.data ?? [],
+        members: (profiles ?? []).map((p) => ({ id: p.id, full_name: p.full_name ?? "Sin nombre" })),
+      };
+    },
+  });
+}
