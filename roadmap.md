@@ -11,4 +11,5 @@
 - [x] ABM (cuentas objetivo + engagement) y partners (registro de deals)
 - [x] Multiempresa: empresas, cambio entre ellas, roles e invitaciones por empresa, datos aislados
 - [x] Theory U: recorrido U, sensing, niveles de escucha (en reuniones), Case Clinic, prototipos
+- [x] Moneda por empresa y benchmarks por segmento en la calculadora GTM
 - [ ] Conectar integraciones reales (espera: el usuario elige por cuál empezar)
