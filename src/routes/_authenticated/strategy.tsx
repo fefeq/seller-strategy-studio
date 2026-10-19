@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
+import { capacityPlan, matchSegment, MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
+import { CURRENCIES, formatMoney } from "@/lib/money";
+import { useCurrency, useMe } from "@/hooks/use-me";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   head: () => ({ meta: [{ title: "Estrategia GTM — GTM Brain" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — GTM Brain" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
@@ -37,11 +39,31 @@ function Strategy() {
   );
 }
 
+const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
+const SEG_COLS = [
+  ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Motion"], ["cycle_days", "Ciclo (días)"],
+  ["sdr_per_ae", "SDR por AE"], ["ae_per_se", "AE por SE"], ["win_rate_target", "Win rate obj. %"], ["ae_quota", "Cuota anual AE"],
+  ["cac_target", "CAC objetivo"], ["gross_margin_pct", "Margen bruto %"], ["payback_months", "Payback obj. (m)"],
+] as const;
+
+function rangeText(r: [number, number | null] | null, fmt: (n: number) => string) {
+  if (!r) return "—";
+  return r[1] == null ? `${fmt(r[0])}+` : `${fmt(r[0])}–${fmt(r[1])}`;
+}
+
 function Motions() {
   const qc = useQueryClient();
+  const { data: me } = useMe();
+  const { currency, symbol, money } = useCurrency();
+  const isOwner = me?.roles.includes("owner");
   const [acv, setAcv] = useState(20000);
+  const [forced, setForced] = useState("");
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
+  const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
   const rec = recommendMotion(acv);
+  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: seg?.win_rate_target, cac: seg?.cac_target, grossMarginPct: seg?.gross_margin_pct });
+  const missing = seg ? [!seg.ae_quota && "cuota anual AE", !seg.win_rate_target && "win rate objetivo", !seg.cac_target && "CAC objetivo"].filter(Boolean) : [];
+
   async function upd(id: string, patch: Record<string, unknown>) {
     const { error } = await supabase.from("segments").update(patch as any).eq("id", id);
     if (error) toast.error(error.message);
@@ -51,48 +73,98 @@ function Motions() {
     await supabase.from("segments").insert({ name: "Nuevo segmento" });
     qc.invalidateQueries({ queryKey: ["segments"] });
   }
+  async function setCurrency(c: string) {
+    const { error } = await supabase.from("organizations").update({ currency: c }).eq("id", me!.currentOrg!.org_id);
+    if (error) return toast.error(error.message);
+    await qc.invalidateQueries({ queryKey: ["me"] });
+    toast.success(`Moneda: ${CURRENCIES[c]}`);
+  }
+  const fmt1 = (n: number | null) => (n == null ? "—" : n.toLocaleString("es-ES", { maximumFractionDigits: 1 }));
+
   return (
     <div className="space-y-8">
       <div className="grid gap-6 rounded-lg border bg-card p-6 md:grid-cols-[1fr_2fr]">
-        <div>
-          <p className="eyebrow">Calculadora de motion</p>
-          <Field label="Valor anual del contrato (ACV, $)"><Input type="number" value={acv} onChange={(e) => setAcv(Number(e.target.value))} /></Field>
+        <div className="space-y-4">
+          <p className="eyebrow">Calculadora de estrategia GTM</p>
+          <Field label="Moneda de la empresa">
+            {isOwner ? <Pick value={currency} options={CURRENCIES} onChange={setCurrency} /> : <p className="text-sm">{CURRENCIES[currency] ?? currency} <span className="text-xs text-muted-foreground">· solo el Owner la cambia</span></p>}
+          </Field>
+          <Field label={`Valor anual del contrato (ACV, ${symbol})`}><Input type="number" value={acv} onChange={(e) => setAcv(Number(e.target.value))} /></Field>
+          <Field label="Segmento"><Pick value={forced} options={Object.fromEntries([["", "Automático según ACV"], ...segs.map((s) => [s.id, s.name])])} onChange={setForced} /></Field>
         </div>
-        <div>
-          <p className="font-display text-4xl text-signal">{MOTIONS[rec].label}</p>
-          <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
-            <dt className="text-muted-foreground">Ciclo de venta</dt><dd>{MOTIONS[rec].cycle}</dd>
-            <dt className="text-muted-foreground">Equipo</dt><dd>{MOTIONS[rec].team}</dd>
-            <dt className="text-muted-foreground">CAC típico</dt><dd>{MOTIONS[rec].cac}</dd>
-            <dt className="text-muted-foreground">Payback</dt><dd>{MOTIONS[rec].payback}</dd>
-            <dt className="text-muted-foreground">Se mide por</dt><dd>{MOTIONS[rec].efficiency}</dd>
-          </dl>
-        </div>
+        {seg ? (
+          <div>
+            <p className="eyebrow">Segmento · {seg.name}</p>
+            <p className="font-display text-4xl text-signal">{MOTIONS[seg.motion as Motion]?.label ?? seg.motion}</p>
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              <dt className="text-muted-foreground">Ciclo de venta</dt><dd>{seg.cycle_days ? `${seg.cycle_days} días` : "—"}</dd>
+              <dt className="text-muted-foreground">Equipo</dt><dd>{[seg.sdr_per_ae && `${seg.sdr_per_ae} SDR por AE`, seg.ae_per_se && `${seg.ae_per_se} AE por SE`].filter(Boolean).join(" · ") || "—"}</dd>
+              <dt className="text-muted-foreground">Win rate objetivo</dt><dd>{seg.win_rate_target ? `${seg.win_rate_target}%` : "—"}</dd>
+              <dt className="text-muted-foreground">Cuota anual por AE</dt><dd>{seg.ae_quota ? money(Number(seg.ae_quota)) : "—"}</dd>
+              <dt className="text-muted-foreground">CAC objetivo</dt><dd>{seg.cac_target ? money(Number(seg.cac_target)) : "—"}</dd>
+              <dt className="text-muted-foreground">Payback objetivo</dt><dd>{seg.payback_months ? `${seg.payback_months} meses` : "—"}</dd>
+            </dl>
+            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+              {[
+                ["Deals por AE / año", plan.dealsPerYear != null ? fmt1(Math.ceil(plan.dealsPerYear)) : "—"],
+                ["Oportunidades por AE / año", plan.oppsPerYear != null ? fmt1(Math.ceil(plan.oppsPerYear)) : "—"],
+                ["Oportunidades por AE / mes", fmt1(plan.oppsPerMonth)],
+                ["Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
+              ].map(([l, v]) => (
+                <div key={l} className="rounded-md bg-muted/50 p-3"><p className="eyebrow text-[10px]">{l}</p><p className="font-display text-2xl">{v}</p></div>
+              ))}
+            </div>
+            {plan.paybackMonths != null && seg.payback_months && (
+              <p className={`mt-2 text-xs ${plan.paybackMonths <= Number(seg.payback_months) ? "text-success" : "text-destructive"}`}>
+                {plan.paybackMonths <= Number(seg.payback_months) ? "Dentro" : "Fuera"} del payback objetivo de {seg.payback_months} meses (margen bruto {seg.gross_margin_pct ?? 100}%).
+              </p>
+            )}
+            {missing.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Completa {missing.join(", ")} en la tabla de segmentos para calcular la capacidad.</p>}
+          </div>
+        ) : (
+          <div>
+            <p className="eyebrow">Ningún segmento tuyo cubre este ACV · referencia de mercado</p>
+            <p className="font-display text-4xl text-signal">{MOTIONS[rec].label}</p>
+            <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm">
+              <dt className="text-muted-foreground">Ciclo de venta</dt><dd>{MOTIONS[rec].cycle}</dd>
+              <dt className="text-muted-foreground">Equipo</dt><dd>{MOTIONS[rec].team}</dd>
+              <dt className="text-muted-foreground">CAC típico</dt><dd>{rangeText(MOTIONS[rec].cac, (n) => formatMoney(n, "USD", true))}</dd>
+              <dt className="text-muted-foreground">Cuota AE típica</dt><dd>{rangeText(MOTIONS[rec].quota, (n) => formatMoney(n, "USD", true))}</dd>
+              <dt className="text-muted-foreground">Payback</dt><dd>{MOTIONS[rec].payback}</dd>
+              <dt className="text-muted-foreground">Se mide por</dt><dd>{MOTIONS[rec].efficiency}</dd>
+            </dl>
+            <p className="mt-3 text-xs text-muted-foreground">Referencia general en dólares (guía de Tom Tunguz). Crea o ajusta un segmento con este rango de ACV para usar tus propios datos.</p>
+          </div>
+        )}
       </div>
       <div>
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-3xl">Tus segmentos</h3><Button size="sm" onClick={add}>+ Segmento</Button></div>
+        <div className="mb-3 flex items-center justify-between"><h3 className="text-3xl">Tus segmentos y benchmarks</h3><Button size="sm" onClick={add}>+ Segmento</Button></div>
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Segmento", "ACV mín", "ACV máx", "Motion", "Ciclo (días)", "SDR por AE", "AE por SE", "CAC objetivo", "Payback (m)"].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}</tr></thead>
             <tbody>
               {segs.map((s) => {
                 const suggested = recommendMotion(Number(s.acv_min ?? 0));
                 return (
-                  <tr key={s.id} className="border-b last:border-0">
-                    <td className="px-2 py-2"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></td>
-                    {(["acv_min", "acv_max"] as const).map((k) => <td key={k} className="px-2 py-2 w-28"><Input type="number" defaultValue={s[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} /></td>)}
-                    <td className="px-2 py-2 w-48">
-                      <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
-                      {s.motion !== suggested && <p className="mt-1 text-[11px] text-signal">Por ACV sugerimos {MOTIONS[suggested].label}</p>}
-                    </td>
-                    {(["cycle_days", "sdr_per_ae", "ae_per_se", "cac_target", "payback_months"] as const).map((k) => <td key={k} className="px-2 py-2 w-24"><Input type="number" defaultValue={s[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} /></td>)}
+                  <tr key={s.id} className={`border-b last:border-0 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
+                    <td className="px-2 py-2 min-w-36"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></td>
+                    {SEG_COLS.map(([k]) => k === "motion" ? (
+                      <td key={k} className="px-2 py-2 min-w-44">
+                        <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
+                        {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
+                      </td>
+                    ) : (
+                      <td key={k} className={`px-2 py-2 ${MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>
+                        <Input type="number" defaultValue={(s as any)[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} />
+                      </td>
+                    ))}
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
       </div>
     </div>
   );

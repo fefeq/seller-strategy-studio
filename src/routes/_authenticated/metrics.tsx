@@ -14,7 +14,6 @@ export const Route = createFileRoute("/_authenticated/metrics")({
   component: Metrics,
 });
 
-const eur = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation", "won"];
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };

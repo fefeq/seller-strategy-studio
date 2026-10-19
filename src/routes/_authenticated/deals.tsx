@@ -18,7 +18,6 @@ export const Route = createFileRoute("/_authenticated/deals")({
   component: Deals,
 });
 
-const eur = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 function Deals() {
   const search = Route.useSearch();
