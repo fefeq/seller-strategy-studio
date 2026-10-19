@@ -2,7 +2,11 @@
 - [x] Lovable Cloud + auth + roles
 - [x] Esquema de datos
 - [x] Landing pública
-- [x] App: Inicio por rol, Conocimiento, Cuentas (Account Plan, Stakeholders, Meeting Planner, Llamadas), Pipeline (MEDDPICC, MAP), Personas (+CSV), Aprobaciones, Integraciones, Equipo
+- [x] App: Inicio por rol, Conocimiento, Cuentas, Pipeline, Personas, Aprobaciones, Integraciones, Equipo
 - [x] Call Prep, research de stakeholders y propuesta con IA
 - [x] Tests deduplicación y permisos
+- [ ] Estrategia GTM: motions por segmento (ACV) + ICP estructurado
+- [ ] Posicionamiento: Dunford, statement, jerarquía de mensajes, pilares (alimenta la IA)
+- [ ] Métricas RevOps: cuotas, cobertura, conversión, días por etapa, win rate, slippage, forecast
+- [ ] ABM (cuentas objetivo + engagement) y partners (registro de deals)
 - [ ] Conectar integraciones reales (espera: el usuario elige por cuál empezar)

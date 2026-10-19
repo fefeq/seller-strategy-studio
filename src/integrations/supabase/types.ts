@@ -73,53 +73,114 @@ export type Database = {
           },
         ]
       }
+      account_touches: {
+        Row: {
+          account_id: string
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          occurred_at: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          occurred_at?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_touches_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       accounts: {
         Row: {
+          abm_tier: string | null
           created_at: string
           created_by: string | null
           domain: string | null
           health: string | null
           id: string
           industry: string | null
+          is_target: boolean
           name: string
           notes: string | null
           owner_id: string | null
+          segment_id: string | null
           size: string | null
           tier: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
+          abm_tier?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
           health?: string | null
           id?: string
           industry?: string | null
+          is_target?: boolean
           name: string
           notes?: string | null
           owner_id?: string | null
+          segment_id?: string | null
           size?: string | null
           tier?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
+          abm_tier?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
           health?: string | null
           id?: string
           industry?: string | null
+          is_target?: boolean
           name?: string
           notes?: string | null
           owner_id?: string | null
+          segment_id?: string | null
           size?: string | null
           tier?: string | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "accounts_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       approvals: {
         Row: {
@@ -304,19 +365,127 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_registrations: {
+        Row: {
+          account_id: string | null
+          account_name: string
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          partner_id: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          account_name: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          partner_id: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          account_name?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          partner_id?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_registrations_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_registrations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_registrations_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_stage_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          deal_id: string
+          from_stage: string | null
+          id: string
+          to_stage: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          deal_id: string
+          from_stage?: string | null
+          id?: string
+          to_stage: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          deal_id?: string
+          from_stage?: string | null
+          id?: string
+          to_stage?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_stage_history_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           account_id: string | null
           amount: number | null
           close_date: string | null
+          closed_at: string | null
           created_at: string
           created_by: string | null
+          forecast_category: string | null
           health: string | null
           id: string
           meddpicc: Json
           name: string
           owner_id: string | null
+          partner_id: string | null
           probability: number | null
+          segment_id: string | null
+          slip_count: number
+          source: string | null
           stage: string
           updated_at: string
           updated_by: string | null
@@ -325,14 +494,20 @@ export type Database = {
           account_id?: string | null
           amount?: number | null
           close_date?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          forecast_category?: string | null
           health?: string | null
           id?: string
           meddpicc?: Json
           name: string
           owner_id?: string | null
+          partner_id?: string | null
           probability?: number | null
+          segment_id?: string | null
+          slip_count?: number
+          source?: string | null
           stage?: string
           updated_at?: string
           updated_by?: string | null
@@ -341,14 +516,20 @@ export type Database = {
           account_id?: string | null
           amount?: number | null
           close_date?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
+          forecast_category?: string | null
           health?: string | null
           id?: string
           meddpicc?: Json
           name?: string
           owner_id?: string | null
+          partner_id?: string | null
           probability?: number | null
+          segment_id?: string | null
+          slip_count?: number
+          source?: string | null
           stage?: string
           updated_at?: string
           updated_by?: string | null
@@ -359,6 +540,88 @@ export type Database = {
             columns: ["account_id"]
             isOneToOne: false
             referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      icp_profiles: {
+        Row: {
+          adoption: string | null
+          anti_icp: string | null
+          company_size: string | null
+          created_at: string
+          created_by: string | null
+          funding_signals: string | null
+          geography: string | null
+          growth_stage: string | null
+          hiring_signals: string | null
+          id: string
+          industries: string | null
+          name: string
+          segment_id: string | null
+          tech_stack: string | null
+          updated_at: string
+          updated_by: string | null
+          why_fit: string | null
+        }
+        Insert: {
+          adoption?: string | null
+          anti_icp?: string | null
+          company_size?: string | null
+          created_at?: string
+          created_by?: string | null
+          funding_signals?: string | null
+          geography?: string | null
+          growth_stage?: string | null
+          hiring_signals?: string | null
+          id?: string
+          industries?: string | null
+          name: string
+          segment_id?: string | null
+          tech_stack?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          why_fit?: string | null
+        }
+        Update: {
+          adoption?: string | null
+          anti_icp?: string | null
+          company_size?: string | null
+          created_at?: string
+          created_by?: string | null
+          funding_signals?: string | null
+          geography?: string | null
+          growth_stage?: string | null
+          hiring_signals?: string | null
+          id?: string
+          industries?: string | null
+          name?: string
+          segment_id?: string | null
+          tech_stack?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          why_fit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "icp_profiles_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
             referencedColumns: ["id"]
           },
         ]
@@ -516,6 +779,45 @@ export type Database = {
           },
         ]
       }
+      messaging_pillars: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string | null
+          pain: string | null
+          position: number
+          proof: string | null
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          pain?: string | null
+          position?: number
+          proof?: string | null
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string | null
+          pain?: string | null
+          position?: number
+          proof?: string | null
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       mutual_action_items: {
         Row: {
           created_at: string
@@ -562,6 +864,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      partners: {
+        Row: {
+          contact: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          margin_pct: number | null
+          name: string
+          notes: string | null
+          partner_type: string
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_pct?: number | null
+          name: string
+          notes?: string | null
+          partner_type?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          margin_pct?: number | null
+          name?: string
+          notes?: string | null
+          partner_type?: string
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
       }
       people: {
         Row: {
@@ -625,6 +969,78 @@ export type Database = {
           },
         ]
       }
+      positioning: {
+        Row: {
+          alternatives: string | null
+          best_customers: string | null
+          category: string | null
+          competitive_alternative: string | null
+          created_at: string
+          created_by: string | null
+          differentiation: string | null
+          differentiator: string | null
+          elevator_pitch: string | null
+          id: string
+          key_benefit: string | null
+          need: string | null
+          one_liner: string | null
+          product_name: string | null
+          short_pitch: string | null
+          tagline: string | null
+          target_customer: string | null
+          trend: string | null
+          updated_at: string
+          updated_by: string | null
+          value: string | null
+        }
+        Insert: {
+          alternatives?: string | null
+          best_customers?: string | null
+          category?: string | null
+          competitive_alternative?: string | null
+          created_at?: string
+          created_by?: string | null
+          differentiation?: string | null
+          differentiator?: string | null
+          elevator_pitch?: string | null
+          id?: string
+          key_benefit?: string | null
+          need?: string | null
+          one_liner?: string | null
+          product_name?: string | null
+          short_pitch?: string | null
+          tagline?: string | null
+          target_customer?: string | null
+          trend?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Update: {
+          alternatives?: string | null
+          best_customers?: string | null
+          category?: string | null
+          competitive_alternative?: string | null
+          created_at?: string
+          created_by?: string | null
+          differentiation?: string | null
+          differentiator?: string | null
+          elevator_pitch?: string | null
+          id?: string
+          key_benefit?: string | null
+          need?: string | null
+          one_liner?: string | null
+          product_name?: string | null
+          short_pitch?: string | null
+          tagline?: string | null
+          target_customer?: string | null
+          trend?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          value?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -643,6 +1059,93 @@ export type Database = {
           email?: string | null
           full_name?: string
           id?: string
+        }
+        Relationships: []
+      }
+      quotas: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          period: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          period?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      segments: {
+        Row: {
+          acv_max: number | null
+          acv_min: number | null
+          ae_per_se: number | null
+          cac_target: number | null
+          created_at: string
+          created_by: string | null
+          cycle_days: number | null
+          id: string
+          motion: string
+          name: string
+          notes: string | null
+          payback_months: number | null
+          sdr_per_ae: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          acv_max?: number | null
+          acv_min?: number | null
+          ae_per_se?: number | null
+          cac_target?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_days?: number | null
+          id?: string
+          motion?: string
+          name: string
+          notes?: string | null
+          payback_months?: number | null
+          sdr_per_ae?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          acv_max?: number | null
+          acv_min?: number | null
+          ae_per_se?: number | null
+          cac_target?: number | null
+          created_at?: string
+          created_by?: string | null
+          cycle_days?: number | null
+          id?: string
+          motion?: string
+          name?: string
+          notes?: string | null
+          payback_months?: number | null
+          sdr_per_ae?: number | null
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
