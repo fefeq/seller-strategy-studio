@@ -8,4 +8,5 @@
 - [ ] Más adelante: WhatsApp (el agente ya es independiente del canal); lanzar el Asesor GTM desde el agente.
 - [x] Ciclo GTM estilo BMAD: agentes con menú, fases y documentos, hub «¿Qué hago ahora?», camino por ACV, revisión profunda, retros
 - [x] Debates multiagente por niveles (C-Levels, Sales, Marketing, Partners, Todos) con nombres de fundadores famosos
-- [ ] Entrada de leads reales: enlace seguro por empresa (formularios, Zapier/Make, CRMs vía webhook) + CSV → cuenta, persona y deal con etapa y fecha; calculadora con ACV, win rate y ciclo reales en vivo
+- [x] Entrada de leads reales: enlace seguro por empresa (formularios, Zapier/Make, CRMs vía webhook) + CSV → cuenta, persona y deal con etapa y fecha; calculadora con ACV, win rate y ciclo reales en vivo
+- [ ] Más adelante: sincronización nativa con un CRM (HubSpot, Pipedrive, Attio, Salesforce) si el cliente lo usa; hoy entra por webhook/Zapier.
