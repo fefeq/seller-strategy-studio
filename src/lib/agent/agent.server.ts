@@ -42,7 +42,7 @@ MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de
 }
 
 /** Runs one agent turn. Write tools create pending actions instead of executing. */
-export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal }) {
+export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal; personaId?: string | null; workflowId?: string | null }) {
   const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("La IA no está configurada");
 
@@ -83,7 +83,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   try {
     const result = streamText({
       model: provider.responses(MODEL),
-      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName),
+      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId),
       messages: [...history, { role: "user", content: opts.text }],
       tools,
       stopWhen: stepCountIs(12),
