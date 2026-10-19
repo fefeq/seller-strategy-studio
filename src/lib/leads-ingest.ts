@@ -3,12 +3,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { STAGE_PROBABILITY, type NormalizedLead } from "@/lib/leads";
+import { DEAL_STAGES } from "@/lib/roles";
 
 type Db = SupabaseClient<Database>;
 export type IngestCtx = { orgId: string; sourceId?: string | null; segments: { id: string; name: string }[] };
 export type IngestResult = { status: "created" | "updated"; accountId: string; dealId: string; accountCreated: boolean; summary: string };
 
 const like = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
+const stageName = (id: string) => DEAL_STAGES.find((s) => s.id === id)?.label ?? id;
 const closed = (stage: string) => stage === "won" || stage === "lost";
 
 export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): Promise<IngestResult> {
@@ -51,7 +53,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
   }
   const segmentId = lead.segment ? ctx.segments.find((s) => s.name.trim().toLowerCase() === lead.segment!.trim().toLowerCase())?.id ?? null : null;
   const closedAt = closed(lead.stage) ? (lead.closeDate ? `${lead.closeDate}T12:00:00Z` : new Date().toISOString()) : null;
-  const stageLabel = lead.stageGiven ? lead.stage : "sin etapa";
+  const stageLabel = lead.stageGiven ? stageName(lead.stage) : "sin cambio de etapa";
 
   if (deal) {
     const patch: Database["public"]["Tables"]["deals"]["Update"] = {};
@@ -83,7 +85,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
     ...(lead.enteredAt && new Date(lead.enteredAt) <= new Date() ? { created_at: lead.enteredAt } : {}),
   }).select("id").single();
   if (error) throw new Error(`Deal: ${error.message}`);
-  return { status: "created", accountId: account.id, dealId: created.id, accountCreated, summary: `${lead.company} · ${lead.stage}` };
+  return { status: "created", accountId: account.id, dealId: created.id, accountCreated, summary: `${lead.company} · ${stageName(lead.stage)}` };
 }
 
 /** SHA-256 hex of a lead-link key; only the hash is stored. */
