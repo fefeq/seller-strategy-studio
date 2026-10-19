@@ -64,6 +64,13 @@
       "when": 1792450933591,
       "tag": "0008_gtm_cycle_artifacts_debates",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792451892407,
+      "tag": "0009_segment_targets",
+      "breakpoints": true
     }
   ]
 }

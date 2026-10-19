@@ -1931,6 +1931,57 @@ export type Database = {
           },
         ]
       }
+      segment_targets: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string | null
+          period: string
+          segment_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period: string
+          segment_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period?: string
+          segment_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_targets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segment_targets_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       segments: {
         Row: {
           acv_max: number | null
