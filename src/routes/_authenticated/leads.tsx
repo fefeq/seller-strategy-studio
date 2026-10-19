@@ -45,7 +45,7 @@ function Leads() {
   const { data: me } = useMe();
   const canManage = !!me?.roles.some((r) => r === "owner" || r === "sales_leader" || r === "marketing");
   return (
-    <Page eyebrow="Pipeline con leads reales" title="Entrada de leads" actions={<Button variant="outline" asChild><Link to="/deals">Ver pipeline</Link></Button>}>
+    <Page eyebrow="Pipeline con leads reales" title="Entrada de leads" actions={<Button variant="outline" asChild><Link to="/deals" search={{ deal: undefined }}>Ver pipeline</Link></Button>}>
       <p className="-mt-4 mb-8 max-w-3xl text-sm text-muted-foreground">
         Cada lead entra como <strong>cuenta</strong>, con su contacto y un <strong>deal con etapa y fecha</strong>. Si vuelve a llegar el mismo lead, se actualiza en lugar de duplicarse.
         La pipeline, las métricas y la calculadora de Estrategia GTM se recalculan solas al momento.
