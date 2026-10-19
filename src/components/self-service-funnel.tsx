@@ -64,7 +64,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         <>
           <div className="grid gap-4 md:grid-cols-4">
             <Kpi label="Activación" v={t.signups ? pct(t.activationRate) : "—"} hint={`${t.activated} de ${t.signups} registros`} />
-            <Kpi label="Prueba → pago" v={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} clientes · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
+            <Kpi label="Prueba → pago" v={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
             <Kpi label="Tiempo hasta la compra" v={dd(t.medianDaysToPurchase)} hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`} />
             <Kpi label="MRR nuevo self-service" v={money(t.newMrr)} hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"} />
           </div>
