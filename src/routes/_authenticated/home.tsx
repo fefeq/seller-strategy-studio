@@ -1,0 +1,91 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useMe } from "@/hooks/use-me";
+import { Page, HealthDot } from "@/components/page";
+import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
+
+export const Route = createFileRoute("/_authenticated/home")({
+  head: () => ({ meta: [{ title: "Inicio — GTM Brain" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — GTM Brain" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
+  component: HomePage,
+});
+
+const fmt = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+
+function HomePage() {
+  const { data: me } = useMe();
+  const { data } = useQuery({
+    queryKey: ["home"],
+    queryFn: async () => {
+      const [deals, meetings, approvals, people, accounts] = await Promise.all([
+        supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,owner_id"),
+        supabase.from("meetings").select("id,title,scheduled_at,account_id").gte("scheduled_at", new Date(Date.now() - 864e5).toISOString()).order("scheduled_at").limit(6),
+        supabase.from("approvals").select("id").eq("status", "pending"),
+        supabase.from("people").select("id,tier,crm_stage"),
+        supabase.from("accounts").select("id,name,health"),
+      ]);
+      return { deals: deals.data ?? [], meetings: meetings.data ?? [], approvals: approvals.data ?? [], people: people.data ?? [], accounts: accounts.data ?? [] };
+    },
+  });
+  const role = (me?.roles[0] ?? "ae") as Role;
+  const open = (data?.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost");
+  const pipeline = open.reduce((s, d) => s + Number(d.amount ?? 0), 0);
+  const weighted = open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0);
+  const risk = open.filter((d) => d.health === "red");
+  const mine = open.filter((d) => d.owner_id === me?.user.id);
+
+  return (
+    <Page eyebrow={ROLES[role]?.label} title={`Hola, ${me?.profile?.full_name?.split(" ")[0] ?? ""}`}>
+      <p className="-mt-4 mb-8 text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Stat label="Pipeline abierto" value={fmt(pipeline)} />
+        <Stat label="Forecast ponderado" value={fmt(weighted)} />
+        <Stat label="Deals en riesgo" value={String(risk.length)} tone={risk.length ? "signal" : undefined} />
+        <Stat label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
+      </div>
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        <Panel title="Próximas reuniones" link={{ to: "/accounts", label: "Ver cuentas" }}>
+          {(data?.meetings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin reuniones planificadas. Planifica una desde una cuenta.</p>}
+          {data?.meetings.map((m) => (
+            <Link key={m.id} to="/accounts/$id" params={{ id: m.account_id ?? "" }} className="flex justify-between border-b py-2.5 text-sm last:border-0 hover:text-signal">
+              <span>{m.title}</span><span className="font-mono text-xs text-muted-foreground">{m.scheduled_at ? new Date(m.scheduled_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
+            </Link>
+          ))}
+        </Panel>
+        <Panel title={role === "sales_leader" || role === "owner" ? "Deals en riesgo" : "Mis deals"} link={{ to: "/deals", label: "Ver pipeline" }}>
+          {((role === "sales_leader" || role === "owner") ? risk : mine).slice(0, 6).map((d) => (
+            <div key={d.id} className="flex items-center justify-between border-b py-2.5 text-sm last:border-0">
+              <span>{d.name}</span>
+              <span className="flex items-center gap-3"><span className="text-muted-foreground">{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><HealthDot value={d.health} /></span>
+            </div>
+          ))}
+          {((role === "sales_leader" || role === "owner") ? risk : mine).length === 0 && <p className="text-sm text-muted-foreground">Nada por aquí todavía.</p>}
+        </Panel>
+        <Panel title="Base de personas" link={{ to: "/people", label: "Abrir" }}>
+          <p className="text-sm">{data?.people.length ?? 0} personas · {data?.people.filter((p) => p.tier === "A").length ?? 0} tier A</p>
+        </Panel>
+        <Panel title="Cuentas" link={{ to: "/accounts", label: "Abrir" }}>
+          <p className="text-sm">{data?.accounts.length ?? 0} cuentas · {data?.accounts.filter((a) => a.health === "red").length ?? 0} en riesgo</p>
+        </Panel>
+      </div>
+    </Page>
+  );
+}
+
+function Stat({ label, value, tone }: { label: string; value: string; tone?: "signal" }) {
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <p className="eyebrow">{label}</p>
+      <p className={`mt-2 font-display text-4xl ${tone === "signal" ? "text-signal" : ""}`}>{value}</p>
+    </div>
+  );
+}
+
+function Panel({ title, link, children }: { title: string; link: { to: "/accounts" | "/deals" | "/people"; label: string }; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border bg-card p-5">
+      <div className="mb-3 flex items-center justify-between"><h3 className="text-2xl">{title}</h3><Link to={link.to} className="text-xs text-signal">{link.label} →</Link></div>
+      {children}
+    </div>
+  );
+}
