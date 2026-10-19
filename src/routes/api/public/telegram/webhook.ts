@@ -18,10 +18,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
         // Idempotency: first writer wins; a retried update that already completed is skipped.
         const { error: insErr } = await db.from("telegram_updates").insert({ update_id: update.update_id, payload: update });
-        if (insErr) {
-          const { data: prev } = await db.from("telegram_updates").select("processed_at").eq("update_id", update.update_id).maybeSingle();
-          if (prev?.processed_at || !prev) return Response.json({ ok: true, duplicate: true });
-        }
+        if (insErr) return Response.json({ ok: true, duplicate: true });
 
         try {
           await handle(db, update, { sendText, tg });
