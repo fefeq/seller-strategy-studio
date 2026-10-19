@@ -103,10 +103,9 @@ export function parseAmount(raw: unknown): number | null {
   let s = String(raw).replace(/[^\d.,-]/g, "");
   if (!s) return null;
   const lastComma = s.lastIndexOf(","), lastDot = s.lastIndexOf(".");
-  if (lastComma > lastDot) s = s.replace(/\./g, "").replace(",", ".");
-  else if (lastDot > lastComma && lastComma >= 0) s = s.replace(/,/g, "");
-  else if (lastComma >= 0 && lastDot < 0) s = /,\d{3}$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".");
-  else if (lastDot >= 0 && lastComma < 0 && /^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  if (lastComma >= 0 && lastDot >= 0) s = lastComma > lastDot ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+  else if (lastComma >= 0) s = /^\d{1,3}(,\d{3})+$/.test(s) ? s.replace(/,/g, "") : s.replace(",", ".");
+  else if (lastDot >= 0 && /^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
   const n = Number(s);
   return Number.isFinite(n) && n >= 0 ? n : null;
 }
