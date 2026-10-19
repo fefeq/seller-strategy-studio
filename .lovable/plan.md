@@ -39,17 +39,36 @@ BMAD es un método de desarrollo de software asistido por IA. Se apoya en cinco 
 
 ## Los agentes de GTM Brain y quién los usa
 
-| Agente (equivale a) | Menú (códigos) | Usuarios principales |
-|---|---|---|
-| **Marta, Analista de mercado** (Analista) | `IM` investigar mercado · `CT` análisis de competidor · `VC` voz del cliente (sensing) · `BR` GTM Brief · `CE` contexto de empresa | Owner/RevOps, Marketing, Enablement |
-| **Juan, Estratega GTM** (PM) | `PG` crear/actualizar Plan GTM · `VP` validar plan | Owner, Sales Leader |
-| **Wenceslao, Arquitecto de Revenue** (Arquitecto) | `AR` arquitectura de revenue · `CP` plan de capacidad · `RP` revisión antes de salir al mercado | Owner/RevOps, Deal Desk |
-| **Sofía, Directora de ventas** (PO) | `PS` plan de la semana · `AP` dividir el plan en Account Plans · `RF` priorizar pipeline · `RE` replanificar | Sales Leader |
-| **Amelia, Copiloto del vendedor** (Desarrollador) | `CP` call prep · `DL` avanzar deal · `RD` revisión de deal · `PR` propuesta · `WL` win/loss | AE, SDR, SE, CS |
-| **Sara, Mensajes y campañas** (UX) | `MS` mensajes por persona · `CA` campaña · `JC` recorrido de compra | Marketing, Enablement |
-| **GTM Brain (hub)** | «¿Qué hago ahora?», estado, cambiar de iniciativa | Todos |
+Los nombres hacen guiño a fundadores y figuras famosas del mundo startup. Son personajes inspirados en ellos, no los representan. El tono de cada uno recuerda a su referente.
+
+| Agente (equivale a) | Equipo | Menú (códigos) | Usuarios principales |
+|---|---|---|---|
+| **Reid, Estratega GTM / CEO** (PM), por Reid Hoffman | C-Level | `PG` crear/actualizar Plan GTM · `VP` validar plan | Owner, Sales Leader |
+| **Benioff, Arquitecto de Revenue / CRO** (Arquitecto), por Marc Benioff | C-Level, Sales | `AR` arquitectura de revenue · `CP` plan de capacidad · `RP` revisión antes de salir al mercado | Owner/RevOps |
+| **Ruth, CFO / Deal Desk** (nuevo), por Ruth Porat | C-Level | `PX` pricing y descuentos · `UE` unit economics y payback · `AD` aprobación de deal | Owner, Deal Desk/Finanzas |
+| **Melanie, CMO / Mensajes y campañas** (UX), por Melanie Perkins | C-Level, Marketing | `MS` mensajes por persona · `CA` campaña · `JC` recorrido de compra | Marketing, Enablement |
+| **Paul, Analista de mercado** (Analista), por Paul Graham | Marketing | `IM` investigar mercado · `CT` análisis de competidor · `VC` voz del cliente (sensing) · `BR` GTM Brief · `CE` contexto de empresa | Owner/RevOps, Marketing, Enablement |
+| **Sheryl, Directora de ventas** (PO), por Sheryl Sandberg | Sales | `PS` plan de la semana · `AP` dividir el plan en Account Plans · `RF` priorizar pipeline · `RE` replanificar | Sales Leader |
+| **Jason, Copiloto del vendedor** (Desarrollador), por Jason Lemkin | Sales | `CP` call prep · `DL` avanzar deal · `RD` revisión de deal · `PR` propuesta · `WL` win/loss | AE, SDR, SE |
+| **Brian, Customer Success** (nuevo), por Brian Chesky | Sales | `ON` onboarding de cliente · `EX` expansión · `CH` riesgo de churn | CS |
+| **Satya, Partners y ecosistema** (nuevo), por Satya Nadella | Partners | `RG` registro de oportunidad · `CO` co-selling · `PP` plan de partner · `CF` conflicto de canal | Partner Manager, Sales Leader |
+| **GTM Brain (hub)** | — | «¿Qué hago ahora?», estado, cambiar de iniciativa | Todos |
 
 Cada rol ve primero sus agentes; el resto quedan disponibles si su rol lo permite.
+
+## Debates multiagente por niveles
+
+Lanzas un debate eligiendo un **nivel** y un **tema**: un deal, una cuenta, el Plan GTM, un documento o una pregunta libre.
+
+| Nivel | Participantes | Para qué sirve |
+|---|---|---|
+| **C-Levels** | Reid, Benioff, Ruth, Melanie | Estrategia, presupuesto, pricing, objetivos, apuestas de mercado |
+| **Sales Team** | Sheryl, Jason, Brian, Benioff | Deals atascados, forecast, account plans, expansión |
+| **Marketing Team** | Melanie, Paul, Jason (voz de ventas) | Mensajes, campañas, ICP, calidad de leads |
+| **Partner Team** | Satya, Benioff, Sheryl | Co-selling, conflictos de canal, plan de partners |
+| **Todos** | Todos los agentes; GTM Brain modera | Revisión trimestral, lanzamientos, cambios de estrategia |
+
+Cómo funciona: cada participante da su postura desde su papel. Después hay una ronda de réplica y el moderador cierra con acuerdos, desacuerdos, riesgos y próximos pasos, que puedes convertir en tareas o en cambios a documentos (siempre con tu aprobación). Puedes añadir o quitar participantes antes de empezar. Los niveles que ve cada usuario dependen de su rol: por ejemplo, C-Levels solo para Owner y Sales Leader.
 
 ## Qué construimos
 
@@ -58,7 +77,7 @@ Cada rol ve primero sus agentes; el resto quedan disponibles si su rol lo permit
 3. **Hub «¿Qué hago ahora?»** en Inicio y en el agente: en qué fase estás, qué documento falta y los siguientes pasos para tu rol. Integra el % de configuración y las sugerencias actuales.
 4. **Camino según tamaño del deal:** el ACV decide cuánta preparación pide cada deal y qué criterios exige cada cambio de etapa (aviso al moverlo sin cumplirlos).
 5. **Revisiones de preparación:** «¿Listos para salir al mercado?» sobre Plan + Arquitectura, y criterios por etapa en los deals.
-6. **Mesa de deal:** varios agentes debaten un deal o el plan y cierran con riesgos y próximos pasos que puedes convertir en tareas.
+6. **Debates multiagente por niveles** (C-Levels, Sales, Marketing, Partners o Todos) sobre un deal, una cuenta, un documento o una pregunta, con acuerdos y acciones aplicables. El historial queda guardado.
 7. **Revisión profunda:** sobre cualquier documento o deal (pre-mortem, red team, primeros principios), con los cambios propuestos para aceptar o descartar.
 8. **Retrospectivas:** win/loss al cerrar un deal y retro trimestral, que proponen cambios al Brief y al Plan y cierran el ciclo.
 
