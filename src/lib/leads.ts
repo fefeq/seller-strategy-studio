@@ -12,6 +12,8 @@ export type NormalizedLead = {
   title: string | null;
   linkedin: string | null;
   stage: DealStage;
+  /** False when the payload had no stage (then existing deals keep theirs). */
+  stageGiven: boolean;
   stageRecognized: boolean;
   /** When the lead entered (deal created_at). */
   enteredAt: string | null;
@@ -217,6 +219,7 @@ export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage
       title: picked.title?.slice(0, 200) ?? null,
       linkedin: picked.linkedin?.includes("linkedin.") ? picked.linkedin.slice(0, 300) : null,
       stage,
+      stageGiven: !!picked.stage,
       stageRecognized: recognized,
       enteredAt: entered ? entered.toISOString() : null,
       closeDate: close ? close.toISOString().slice(0, 10) : null,
