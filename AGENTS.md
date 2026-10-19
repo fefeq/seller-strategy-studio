@@ -23,3 +23,4 @@
 - Proactive rules are pure detectors, one file each in src/lib/proactive/detectors/ (tested in src/lib/proactive.test.ts); suggestions dedupe on (org_id, dedupe_key) so dismissed items never return, and actions reuse agent tools.
 - The hourly/daily proactive job is /api/public/jobs/proactive (managed cron auth + job_locks lease); Telegram enters through /api/public/telegram/webhook (secret-token check, idempotent on update_id) and users link via one-time codes in channel_links.
 
+- GTM cycle (BMAD analogy): personas, workflows, phases/next-steps, debate levels and ACV tracks are declarative registries in src/lib/bmad/ (pure, tested in src/lib/bmad.test.ts); artifacts live in gtm_artifacts (versioned, only owner/sales_leader approve, approved ones form the company context every agent loads) and drafting is shared by the server fn and the agent tool via src/lib/bmad/drafting.ts.
