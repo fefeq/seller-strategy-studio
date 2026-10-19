@@ -913,6 +913,62 @@ export type Database = {
           },
         ]
       }
+      debates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          level: string
+          org_id: string | null
+          participants: string[]
+          subject_id: string | null
+          subject_type: string | null
+          synthesis: Json
+          topic: string
+          turns: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level: string
+          org_id?: string | null
+          participants?: string[]
+          subject_id?: string | null
+          subject_type?: string | null
+          synthesis?: Json
+          topic: string
+          turns?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          level?: string
+          org_id?: string | null
+          participants?: string[]
+          subject_id?: string | null
+          subject_type?: string | null
+          synthesis?: Json
+          topic?: string
+          turns?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gtm_advisories: {
         Row: {
           created_at: string
@@ -950,6 +1006,68 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "gtm_advisories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gtm_artifacts: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          content: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          meta: Json
+          org_id: string | null
+          persona: string | null
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          meta?: Json
+          org_id?: string | null
+          persona?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          content?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          meta?: Json
+          org_id?: string | null
+          persona?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gtm_artifacts_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

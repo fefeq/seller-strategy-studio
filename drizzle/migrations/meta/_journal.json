@@ -57,6 +57,13 @@
       "when": 1792449172500,
       "tag": "0007_agent_proactive_channels",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792450933591,
+      "tag": "0008_gtm_cycle_artifacts_debates",
+      "breakpoints": true
     }
   ]
 }
