@@ -5,8 +5,8 @@
 - [x] App: Inicio por rol, Conocimiento, Cuentas, Pipeline, Personas, Aprobaciones, Integraciones, Equipo
 - [x] Call Prep, research de stakeholders y propuesta con IA
 - [x] Tests deduplicación y permisos
-- [ ] Estrategia GTM: motions por segmento (ACV) + ICP estructurado
-- [ ] Posicionamiento: Dunford, statement, jerarquía de mensajes, pilares (alimenta la IA)
-- [ ] Métricas RevOps: cuotas, cobertura, conversión, días por etapa, win rate, slippage, forecast
-- [ ] ABM (cuentas objetivo + engagement) y partners (registro de deals)
+- [x] Estrategia GTM: motions por segmento (ACV) + ICP estructurado
+- [x] Posicionamiento: Dunford, statement, jerarquía de mensajes, pilares (alimenta la IA)
+- [x] Métricas RevOps: cuotas, cobertura, conversión, días por etapa, win rate, slippage, forecast
+- [x] ABM (cuentas objetivo + engagement) y partners (registro de deals)
 - [ ] Conectar integraciones reales (espera: el usuario elige por cuál empezar)

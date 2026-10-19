@@ -222,7 +222,7 @@ function Pillars() {
     qc.invalidateQueries({ queryKey: ["pillars"] });
   }
   async function upd(id: string, patch: Record<string, string>) {
-    await supabase.from("messaging_pillars").update(patch).eq("id", id);
+    await supabase.from("messaging_pillars").update(patch as any).eq("id", id);
     qc.invalidateQueries({ queryKey: ["pillars"] });
   }
   return (
