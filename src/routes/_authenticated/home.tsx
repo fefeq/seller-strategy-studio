@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
 import { TodayDigest } from "@/components/suggestions";
+import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
@@ -56,7 +57,7 @@ function HomePage() {
           </div>
         </div>
       )}
-      <div className="mb-8"><TodayDigest /></div>
+      <div className="mb-8 grid gap-6 lg:grid-cols-2"><NextSteps /><TodayDigest /></div>
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
         <Stat label="Forecast ponderado" value={fmt(weighted)} />
