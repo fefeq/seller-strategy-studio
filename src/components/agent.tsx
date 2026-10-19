@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Brain, Check, Loader2, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,7 +160,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                 {m.role === "user"
                   ? <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{m.content}</div>
                   : <div className="space-y-2 text-sm leading-relaxed">
-                      <ReactMarkdown components={MD}>{m.content}</ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{m.content}</ReactMarkdown>
                       {m.actions?.map((a) => (
                         <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3">
                           <span className="text-sm">{a.summary}</span>

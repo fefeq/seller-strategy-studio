@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { CheckCircle2, FileText, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -207,7 +208,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
         <div className="mt-6">
           {edit !== null
             ? <Textarea rows={28} className="font-mono text-xs" value={edit} onChange={(e) => setEdit(e.target.value)} />
-            : <article className="prose-sm space-y-2 text-sm leading-relaxed [&_h2]:mt-5 [&_h2]:font-display [&_h2]:text-xl [&_li]:ml-5 [&_li]:list-disc [&_strong]:font-semibold"><ReactMarkdown>{art.content}</ReactMarkdown></article>}
+            : <article className="prose-sm space-y-2 text-sm leading-relaxed [&_h2]:mt-5 [&_h2]:font-display [&_h2]:text-xl [&_li]:ml-5 [&_li]:list-disc [&_strong]:font-semibold [&_table]:w-full [&_table]:text-xs [&_td]:border-b [&_td]:px-2 [&_td]:py-1 [&_th]:border-b [&_th]:px-2 [&_th]:py-1 [&_th]:text-left"><ReactMarkdown remarkPlugins={[remarkGfm]}>{art.content}</ReactMarkdown></article>}
         </div>
       </SheetContent>
     </Sheet>

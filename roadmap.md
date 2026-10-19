@@ -6,3 +6,5 @@
 - [x] Fase 2: motor proactivo (detectores, bandeja de sugerencias, resumen diario, ejecución horaria)
 - [ ] Fase 3: Telegram — código listo (vinculación, agente, avisos, resumen diario). Bloqueado: el usuario debe crear el bot en @BotFather y conectarlo; después hay que registrar el webhook.
 - [ ] Más adelante: WhatsApp (el agente ya es independiente del canal); lanzar el Asesor GTM desde el agente.
+- [x] Ciclo GTM estilo BMAD: agentes con menú, fases y documentos, hub «¿Qué hago ahora?», camino por ACV, revisión profunda, retros
+- [x] Debates multiagente por niveles (C-Levels, Sales, Marketing, Partners, Todos) con nombres de fundadores famosos
