@@ -97,7 +97,7 @@ export function mapStage(raw: unknown, fallback: IntakeStage = "new"): { stage: 
 }
 
 export function isIntakeStage(s: unknown): s is IntakeStage {
-  return typeof s === "string" && INTAKE_STAGES.some((x) => x.id === s) || s === "won" || s === "lost" || s === "disqualified";
+  return typeof s === "string" && (INTAKE_STAGES.some((x) => x.id === s) || s === "won" || s === "lost" || s === "disqualified");
 }
 
 /** Accepts ISO dates, dd/mm/yyyy (Spanish order), and Unix seconds/milliseconds. */

@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { LEAD_LIMITS, normalizeLead, type DealStage } from "@/lib/leads";
-import { DEAL_STAGES } from "@/lib/roles";
+import { LEAD_LIMITS, isIntakeStage, normalizeLead } from "@/lib/leads";
 
 type Input = { rows: Record<string, string>[]; defaultStage?: string };
 
@@ -11,7 +10,7 @@ export const importLeads = createServerFn({ method: "POST" })
   .inputValidator((input: Input) => {
     if (!Array.isArray(input?.rows) || input.rows.length === 0) throw new Error("No hay filas para importar");
     if (input.rows.length > LEAD_LIMITS.maxLeads) throw new Error(`Máximo ${LEAD_LIMITS.maxLeads} filas por envío`);
-    const stage = DEAL_STAGES.some((s) => s.id === input.defaultStage) ? (input.defaultStage as DealStage) : "discovery";
+    const stage = isIntakeStage(input.defaultStage) ? input.defaultStage : "new";
     return { rows: input.rows.map((r) => Object.fromEntries(Object.entries(r ?? {}).slice(0, 60).map(([k, v]) => [String(k).slice(0, 120), String(v ?? "").slice(0, 2000)]))), defaultStage: stage };
   })
   .handler(async ({ data, context }) => {
@@ -29,7 +28,7 @@ export const importLeads = createServerFn({ method: "POST" })
       try {
         const r = await ingestLead(supabase, ctx, n.lead);
         out[r.status] += 1;
-        await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: r.status, summary: r.summary, account_id: r.accountId, deal_id: r.dealId, error: n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto" });
+        await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: r.status, summary: r.summary, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId, error: n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto" });
       } catch (e) {
         out.errors.push({ row: i, error: (e as Error).message.slice(0, 200) });
       }

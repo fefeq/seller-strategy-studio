@@ -24,9 +24,9 @@ describe("each lead becomes an account with stage and date", () => {
   it("rejects a lead with no way to identify the company", () => {
     expect("error" in normalizeLead({ email: "ana@gmail.com" })).toBe(true);
   });
-  it("without a stage, new leads enter in Discovery and existing deals keep theirs", () => {
+  it("without a stage, new leads enter as Nuevo and existing ones keep theirs", () => {
     const l = lead({ company: "Acme" });
-    expect(l.stage).toBe("discovery");
+    expect(l.stage).toBe("new");
     expect(l.stageGiven).toBe(false);
   });
 });
@@ -37,7 +37,20 @@ describe("stage mapping from CRMs and forms", () => {
     expect(mapStage("Closed Lost").stage).toBe("lost");
     expect(mapStage("appointmentscheduled").stage).toBe("demo");
     expect(mapStage("Negociación").stage).toBe("negotiation");
-    expect(mapStage("MQL").stage).toBe("discovery");
+  });
+  it("lead statuses stay on the Leads screen: Nuevo, Contactado, MQL, SQL, Descartado", () => {
+    expect(mapStage("MQL").stage).toBe("mql");
+    expect(mapStage("marketingqualifiedlead").stage).toBe("mql");
+    expect(mapStage("salesqualifiedlead").stage).toBe("sql");
+    expect(mapStage("Contactado").stage).toBe("contacted");
+    expect(mapStage("subscriber").stage).toBe("new");
+    expect(mapStage("Unqualified").stage).toBe("disqualified");
+    expect(mapStage("No cualificado").stage).toBe("disqualified");
+  });
+  it("an opportunity or any sales stage enters the pipeline as a deal", () => {
+    expect(mapStage("Oportunidad").stage).toBe("discovery");
+    expect(mapStage("Cualificado").stage).toBe("qualified");
+    expect(mapStage("Perdido").stage).toBe("lost");
   });
   it("flags unknown stages and falls back to the default", () => {
     expect(mapStage("xyz", "qualified")).toEqual({ stage: "qualified", recognized: false });
