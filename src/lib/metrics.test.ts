@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coverage, engagementScore, forecastAccuracy, recommendMotion, registrationConflict, stageConversion, winRate } from "./metrics";
+import { capacityPlan, coverage, engagementScore, forecastAccuracy, matchSegment, recommendMotion, registrationConflict, stageConversion, winRate } from "./metrics";
 
 describe("recommendMotion by ACV", () => {
   it("<5K is product-led", () => expect(recommendMotion(4999)).toBe("plg"));
@@ -39,4 +39,27 @@ it("partner registration conflicts with another partner's active registration on
   const regs = [{ account_name: "Acme", status: "approved", expires_at: null, partner_id: "p1" }];
   expect(registrationConflict(" acme ", regs, "p2")).toBeTruthy();
   expect(registrationConflict("acme", regs, "p1")).toBeFalsy();
+});
+
+describe("segment matching for the strategy calculator", () => {
+  const segs = [
+    { name: "SMB", acv_min: 0, acv_max: 5000 },
+    { name: "Mid", acv_min: 5000, acv_max: 50000 },
+    { name: "Ent", acv_min: 50000, acv_max: null },
+  ];
+  it("finds the segment whose range contains the ACV", () => expect(matchSegment(20000, segs)?.name).toBe("Mid"));
+  it("on a shared boundary the upper segment wins", () => expect(matchSegment(5000, segs)?.name).toBe("Mid"));
+  it("an empty max has no upper limit", () => expect(matchSegment(9_000_000, segs)?.name).toBe("Ent"));
+  it("returns nothing when no segment covers the ACV", () => expect(matchSegment(60000, segs.slice(0, 2))).toBeUndefined());
+});
+
+describe("capacity plan per AE", () => {
+  it("deals per year = quota / ACV", () => expect(capacityPlan({ acv: 20000, quota: 600000 }).dealsPerYear).toBe(30));
+  it("opportunities = deals / win rate", () => {
+    const p = capacityPlan({ acv: 20000, quota: 600000, winRatePct: 25 });
+    expect(p.oppsPerYear).toBe(120);
+    expect(p.oppsPerMonth).toBe(10);
+  });
+  it("payback = CAC / monthly gross-margin revenue", () => expect(capacityPlan({ acv: 20000, cac: 10000, grossMarginPct: 80 }).paybackMonths).toBe(7.5));
+  it("missing benchmarks give no figure", () => expect(capacityPlan({ acv: 20000 }).oppsPerYear).toBeNull());
 });
