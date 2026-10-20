@@ -12,6 +12,7 @@ import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
 import { CacPanel } from "@/components/cac-panel";
 import { BudgetPanel } from "@/components/budget-panel";
+import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
@@ -105,6 +106,7 @@ function Metrics() {
 
           <SegmentCoverage quarter={quarter} />
           <CacPanel quarter={quarter} />
+          <WonDealsPanel quarter={quarter} />
           <BudgetPanel year={Number(quarter.slice(0, 4))} />
 
 
