@@ -2306,6 +2306,72 @@ export type Database = {
           },
         ]
       }
+      segment_budget_quarters: {
+        Row: {
+          actual_cost_to_serve: number | null
+          actual_revenue: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string | null
+          period: string
+          plan_acquisition: number | null
+          plan_cost_to_serve: number | null
+          plan_new_customers: number | null
+          plan_revenue: number | null
+          segment_id: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          actual_cost_to_serve?: number | null
+          actual_revenue?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period: string
+          plan_acquisition?: number | null
+          plan_cost_to_serve?: number | null
+          plan_new_customers?: number | null
+          plan_revenue?: number | null
+          segment_id: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          actual_cost_to_serve?: number | null
+          actual_revenue?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period?: string
+          plan_acquisition?: number | null
+          plan_cost_to_serve?: number | null
+          plan_new_customers?: number | null
+          plan_revenue?: number | null
+          segment_id?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_budget_quarters_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segment_budget_quarters_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       segment_budgets: {
         Row: {
           actual_cost_to_serve: number | null

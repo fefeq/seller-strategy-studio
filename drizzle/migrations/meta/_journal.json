@@ -120,6 +120,13 @@
       "when": 1792457400414,
       "tag": "0016_segment_budgets",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792458075138,
+      "tag": "0017_segment_budget_quarters",
+      "breakpoints": true
     }
   ]
 }
