@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Page, Empty } from "@/components/page";
-import { Pick } from "@/components/fields";
+import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -60,6 +60,14 @@ function People() {
     if (error) toast.error(error.message);
     qc.invalidateQueries({ queryKey: ["people"] });
   }
+  // Editable fields per person, shared by the mobile cards and the desktop table.
+  const editors = (p: (typeof people)[number]) => [
+    { label: "Fuente", w: "w-36", node: <Pick value={p.source ?? ""} options={SOURCES} onChange={(v) => update(p.id, { source: v })} /> },
+    { label: "Tier", w: "w-20", node: <Pick value={p.tier ?? "B"} options={{ A: "A", B: "B", C: "C" }} onChange={(v) => update(p.id, { tier: v })} /> },
+    { label: "Secuencia", w: "w-36", node: <Pick value={p.sequence_stage ?? "none"} options={SEQ} onChange={(v) => update(p.id, { sequence_stage: v })} /> },
+    { label: "Etapa CRM", w: "w-36", node: <Pick value={p.crm_stage ?? "lead"} options={CRM} onChange={(v) => update(p.id, { crm_stage: v })} /> },
+  ];
+  const results = (id: string) => (byPerson.get(id) ?? []).map((r) => CAMPAIGN_RESULTS[r]).join(", ") || "—";
 
   return (
     <Page eyebrow="Una fila por persona" title="Personas" actions={<><NewCampaign /><AddPerson existing={people} /><ImportCsv existing={people} /></>}>
@@ -71,24 +79,35 @@ function People() {
         <span className="ml-auto self-center font-mono text-xs text-muted-foreground">{list.length} / {people.length}</span>
       </div>
       {list.length === 0 ? <Empty>Sin personas. Importa un CSV o añade una a mano.</Empty> : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <>
+        <ul className="border-t md:hidden">
+          {list.map((p) => (
+            <li key={p.id} className="space-y-3 border-b py-4 text-sm">
+              <div><p className="break-words font-medium">{p.full_name || "—"}</p><p className="break-all text-xs text-muted-foreground">{p.email}{p.company ? ` · ${p.company}` : ""}</p></div>
+              <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+                {editors(p).map((e) => <Field key={e.label} label={e.label}>{e.node}</Field>)}
+              </div>
+              <p className="text-xs"><span className="eyebrow mr-2">Campañas</span>{results(p.id)}</p>
+              <ResultLogger campaigns={data?.campaigns ?? []} onLog={(c, r) => logResult(p.id, c, r)} />
+            </li>
+          ))}
+        </ul>
+        <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Fuente", "Tier", "Secuencia", "Etapa CRM", "Campañas", "Registrar resultado"].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {list.map((p) => (
                 <tr key={p.id} className="border-b last:border-0">
                   <td className="px-3 py-2"><p className="font-medium">{p.full_name || "—"}</p><p className="text-xs text-muted-foreground">{p.email}{p.company ? ` · ${p.company}` : ""}</p></td>
-                  <td className="px-3 py-2 w-36"><Pick value={p.source ?? ""} options={SOURCES} onChange={(v) => update(p.id, { source: v })} /></td>
-                  <td className="px-3 py-2 w-20"><Pick value={p.tier ?? "B"} options={{ A: "A", B: "B", C: "C" }} onChange={(v) => update(p.id, { tier: v })} /></td>
-                  <td className="px-3 py-2 w-36"><Pick value={p.sequence_stage ?? "none"} options={SEQ} onChange={(v) => update(p.id, { sequence_stage: v })} /></td>
-                  <td className="px-3 py-2 w-36"><Pick value={p.crm_stage ?? "lead"} options={CRM} onChange={(v) => update(p.id, { crm_stage: v })} /></td>
-                  <td className="px-3 py-2 text-xs">{(byPerson.get(p.id) ?? []).map((r) => CAMPAIGN_RESULTS[r]).join(", ") || "—"}</td>
+                  {editors(p).map((e) => <td key={e.label} className={`px-3 py-2 ${e.w}`}>{e.node}</td>)}
+                  <td className="px-3 py-2 text-xs">{results(p.id)}</td>
                   <td className="px-3 py-2"><ResultLogger campaigns={data?.campaigns ?? []} onLog={(c, r) => logResult(p.id, c, r)} /></td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        </>
       )}
     </Page>
   );
@@ -98,11 +117,11 @@ function ResultLogger({ campaigns, onLog }: { campaigns: { id: string; name: str
   const [c, setC] = useState("");
   if (!campaigns.length) return <span className="text-xs text-muted-foreground">Crea una campaña</span>;
   return (
-    <div className="flex gap-1">
-      <select className="h-8 rounded border bg-background px-1 text-xs" value={c} onChange={(e) => setC(e.target.value)}>
+    <div className="grid grid-cols-2 gap-2 md:flex md:gap-1">
+      <select aria-label="Campaña" className="h-10 min-w-0 rounded border bg-background px-1 text-xs md:h-8" value={c} onChange={(e) => setC(e.target.value)}>
         <option value="">Campaña…</option>{campaigns.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
       </select>
-      <select className="h-8 rounded border bg-background px-1 text-xs" disabled={!c} value="" onChange={(e) => e.target.value && onLog(c, e.target.value)}>
+      <select aria-label="Resultado" className="h-10 min-w-0 rounded border bg-background px-1 text-xs md:h-8" disabled={!c} value="" onChange={(e) => e.target.value && onLog(c, e.target.value)}>
         <option value="">Resultado…</option>{Object.entries(CAMPAIGN_RESULTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
       </select>
     </div>
@@ -192,7 +211,7 @@ function NewCampaign() {
       <DialogContent>
         <DialogHeader><DialogTitle>Nueva campaña</DialogTitle></DialogHeader>
         <Input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
-        <textarea className="min-h-32 rounded-md border bg-background p-2 text-sm" placeholder="Copy" value={copy} onChange={(e) => setCopy(e.target.value)} />
+        <textarea className="min-h-32 rounded-md border bg-background p-2 text-base md:text-sm" placeholder="Copy" value={copy} onChange={(e) => setCopy(e.target.value)} />
         <Button disabled={!name} onClick={save}>Crear</Button>
       </DialogContent>
     </Dialog>

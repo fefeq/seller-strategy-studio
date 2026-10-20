@@ -45,17 +45,17 @@ function Accounts() {
     }>
       <Input placeholder="Buscar cuenta…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-4 max-w-xs" />
       {list.length === 0 ? <Empty>Crea tu primera cuenta para empezar su Account Plan.</Empty> : (
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className="eyebrow px-4 py-3">{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>
             <tbody>
               {list.map((a) => (
                 <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-4 py-3"><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link><span className="ml-2 text-xs text-muted-foreground">{a.domain}</span></td>
-                  <td className="px-4 py-3 font-mono">{a.tier}</td>
-                  <td className="px-4 py-3"><HealthDot value={a.health} /></td>
-                  <td className="px-4 py-3">{a.stakeholders?.length ?? 0}</td>
-                  <td className="px-4 py-3 font-mono">{eur((a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0))}</td>
+                  <td className="px-3 py-3 sm:px-4"><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link><span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">{a.domain}</span></td>
+                  <td className="hidden px-4 py-3 font-mono sm:table-cell">{a.tier}</td>
+                  <td className="whitespace-nowrap px-3 py-3 sm:px-4"><HealthDot value={a.health} /></td>
+                  <td className="hidden px-4 py-3 sm:table-cell">{a.stakeholders?.length ?? 0}</td>
+                  <td className="whitespace-nowrap px-3 py-3 font-mono sm:px-4">{eur((a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0))}</td>
                 </tr>
               ))}
             </tbody>

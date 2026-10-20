@@ -56,7 +56,7 @@ export function Sensing() {
       <div className="space-y-3 rounded-lg border bg-card p-5">
         <h3 className="text-2xl">Nueva nota de sensing</h3>
         <p className="text-sm text-muted-foreground">Suspende el juicio. Anota lo que oyes tal cual, no lo que ya sabías.</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label="Con quién"><Input value={form.interviewee} onChange={set("interviewee")} placeholder="Nombre y cargo" /></Field>
           <Field label="Tipo"><Pick value={form.kind} options={SENSING_KINDS} onChange={(v) => setForm({ ...form, kind: v })} /></Field>
           <Field label="Cuenta"><Pick value={form.account_id} options={Object.fromEntries([["", "—"], ...(data?.accounts ?? []).map((a) => [a.id, a.name])])} onChange={(v) => setForm({ ...form, account_id: v })} /></Field>
@@ -72,7 +72,7 @@ export function Sensing() {
 
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
-          <div className="w-56"><Pick value={filter} options={{ ...journeyOpts, "": "Todos los recorridos" }} onChange={setFilter} /></div>
+          <div className="w-full sm:w-56"><Pick value={filter} options={{ ...journeyOpts, "": "Todos los recorridos" }} onChange={setFilter} /></div>
           <Button variant="outline" onClick={runPatterns} disabled={busy || notes.length === 0}><Sparkles className="size-4" /> {busy ? "Analizando…" : "Detectar patrones con IA"}</Button>
           <span className="font-mono text-xs text-muted-foreground">{notes.length} notas</span>
         </div>
@@ -81,7 +81,7 @@ export function Sensing() {
         {notes.map((n) => (
           <div key={n.id} className="space-y-2 rounded-lg border bg-card p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="font-medium">{n.interviewee || "Sin nombre"}{n.accounts?.name ? <span className="text-muted-foreground"> · {n.accounts.name}</span> : null}</p>
+              <p className="min-w-0 break-words font-medium">{n.interviewee || "Sin nombre"}{n.accounts?.name ? <span className="text-muted-foreground"> · {n.accounts.name}</span> : null}</p>
               <span className="font-mono text-[10px] uppercase text-muted-foreground">{SENSING_KINDS[n.kind]} · {new Date(n.occurred_on).toLocaleDateString("es-ES")}{n.listening_level ? ` · Escucha ${LISTENING_LEVELS[n.listening_level as 1].label}` : ""}</span>
             </div>
             {n.heard && <p><span className="eyebrow mr-1">Escuché</span>{n.heard}</p>}

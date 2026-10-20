@@ -128,17 +128,17 @@ function Column({ c, money, owner, hideLabel }: { c: BoardColumn; money: (n: num
         {items.map((i) => (
           <li key={i.id} className="text-sm" title={i.lateText ?? undefined}>
             <div className="flex justify-between gap-2">
-              <span className={`truncate ${i.late ? "text-signal" : ""}`}>{i.name}</span>
+              <span className={`min-w-0 truncate ${i.late ? "text-signal" : ""}`}>{i.name}</span>
               {i.amount ? <span className="shrink-0 font-mono text-xs text-muted-foreground">{money(i.amount)}</span> : null}
             </div>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="line-clamp-2 text-xs text-muted-foreground sm:line-clamp-none sm:truncate">
               {owner(i.ownerId)}{i.detail ? ` · ${i.detail}` : ""}{i.late && i.lateText ? <span className="text-signal"> · {i.lateText}</span> : null}
             </p>
           </li>
         ))}
       </ul>
       {c.count > SHOW && (
-        <button className="mt-1 text-xs underline text-muted-foreground" onClick={() => setAll((x) => !x)}>
+        <button className="-mx-1 mt-1 min-h-8 px-1 py-1.5 text-xs underline text-muted-foreground md:mx-0 md:min-h-0 md:px-0 md:py-0" onClick={() => setAll((x) => !x)}>
           {all ? "Ver menos" : `Ver ${c.count - SHOW} más`}
         </button>
       )}

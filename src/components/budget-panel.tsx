@@ -46,7 +46,7 @@ export function BudgetPanel({ year }: { year: number }) {
             El margen real (ingresos − coste de servir) sustituye al margen objetivo en todos los paybacks.
           </p>
         </div>
-        <div className="flex items-center gap-5 text-right text-sm">
+        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
           <div>
             <p className="font-mono">{money(realRev)} <span className="text-muted-foreground">/ {money(planRev)}</span></p>
             <p className="text-xs text-muted-foreground">ingresos reales / presupuesto{planRev ? ` · ${Math.round((realRev / planRev) * 100)}%` : ""}</p>
@@ -62,7 +62,7 @@ export function BudgetPanel({ year }: { year: number }) {
         <table className="w-full min-w-[760px] text-sm">
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
-              <th className="py-2 pr-3 font-normal">Segmento</th>
+              <th className="sticky left-0 z-10 bg-background py-2 pr-3 font-normal">Segmento</th>
               <th className="px-2 py-2 text-right font-normal">Ingresos</th>
               <th className="px-2 py-2 text-right font-normal">Margen bruto</th>
               <th className="px-2 py-2 text-right font-normal">Gasto de captación</th>
@@ -73,7 +73,7 @@ export function BudgetPanel({ year }: { year: number }) {
           <tbody>
             {rows.map((r) => (
               <tr key={r.segment.id} className="border-b border-dashed align-top">
-                <td className="py-2 pr-3">
+                <td className="sticky left-0 z-10 max-w-40 bg-background py-2 pr-3 sm:max-w-none">
                   <p className="font-medium">{r.segment.name}</p>
                   <p className="text-[11px] text-muted-foreground">margen en el payback: {pct(r.margin.pct)} {r.margin.source === "real" ? "(real)" : r.margin.source === "plan" ? "(presupuestado)" : r.margin.source === "objetivo" ? "(objetivo)" : ""}</p>
                 </td>

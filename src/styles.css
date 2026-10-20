@@ -384,3 +384,12 @@ a.text-signal:hover,
 button.text-signal:hover {
   text-decoration-color: var(--color-ink);
 }
+
+/* Móvil: iOS hace zoom al enfocar un campo con letra < 16 px. Por debajo de md todos los campos van a 16 px. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/abm")({
 
 const CHANNELS: Record<string, string> = { web_visit: "Visita web", email: "Email", linkedin: "LinkedIn", direct_mail: "Envío físico", event: "Evento", call: "Llamada", meeting: "Reunión" };
 const PTYPES: Record<string, string> = { reseller: "Reseller", referral: "Referral", technology: "Tecnológico / co-sell", integrator: "Integrador (SI)", marketplace: "Marketplace cloud" };
+const ABM_TIERS: Record<string, string> = { "1": "1 · 1:1", "2": "2 · 1:few", "3": "3 · 1:many" };
 const REG_STATUS: Record<string, string> = { pending: "Pendiente", approved: "Aprobado", rejected: "Rechazado", expired: "Caducado" };
 
 function Abm() {
@@ -69,15 +70,33 @@ function Targets() {
     <div className="space-y-6">
       <p className="max-w-3xl text-sm text-muted-foreground">Recomendado para contratos de más de 100K, ciclos largos y varios decisores. Trabaja 50–500 cuentas con mensajes personalizados en varios canales, y mide el engagement de cada cuenta en lugar del volumen de leads.</p>
       {targets.length === 0 ? <Empty>Marca cuentas como objetivo desde la lista de abajo.</Empty> : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <>
+        {/* Phones: one card per target account; the table from md. */}
+        <div className="divide-y divide-hairline border-t border-hairline md:hidden">
+          {targets.map((a) => (
+            <div key={a.id} className="space-y-3 py-4">
+              <div className="flex items-start justify-between gap-3">
+                <Link to="/accounts/$id" params={{ id: a.id }} className="min-w-0 break-words font-medium hover:text-signal">{a.name}</Link>
+                <ScoreBar score={a.score} />
+              </div>
+              <Field label="Tier ABM"><Pick value={a.abm_tier ?? "2"} options={ABM_TIERS} onChange={(v) => tier(a.id, v)} /></Field>
+              <p className="font-mono text-xs text-muted-foreground">{a.channels} canales · último toque {a.last ? new Date(a.last).toLocaleDateString("es-ES") : "—"}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" onClick={() => setTouchFor(a.id)}>+ Toque</Button>
+                <Button size="sm" variant="ghost" onClick={() => toggle(a.id, false)}>Quitar</Button>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Tier ABM", "Engagement (90 d)", "Canales", "Último toque", ""].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {targets.map((a) => (
                 <tr key={a.id} className="border-b last:border-0">
                   <td className="px-3 py-2"><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link></td>
-                  <td className="px-3 py-2 w-40"><Pick value={a.abm_tier ?? "2"} options={{ "1": "1 · 1:1", "2": "2 · 1:few", "3": "3 · 1:many" }} onChange={(v) => tier(a.id, v)} /></td>
-                  <td className="px-3 py-2"><div className="flex items-center gap-2"><div className="h-1.5 w-24 rounded bg-muted"><div className="h-full rounded bg-signal" style={{ width: `${Math.min(100, a.score * 3)}%` }} /></div><span className="font-mono text-xs">{a.score}</span></div></td>
+                  <td className="px-3 py-2 w-40"><Pick value={a.abm_tier ?? "2"} options={ABM_TIERS} onChange={(v) => tier(a.id, v)} /></td>
+                  <td className="px-3 py-2"><ScoreBar score={a.score} /></td>
                   <td className="px-3 py-2 font-mono text-xs">{a.channels}</td>
                   <td className="px-3 py-2 font-mono text-xs text-muted-foreground">{a.last ? new Date(a.last).toLocaleDateString("es-ES") : "—"}</td>
                   <td className="px-3 py-2 text-right">
@@ -89,11 +108,12 @@ function Targets() {
             </tbody>
           </table>
         </div>
+        </>
       )}
       {touchFor && (
-        <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-4">
+        <div className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-4 [&>div]:w-full sm:[&>div]:w-auto">
           <Field label={`Toque en ${accounts.find((a) => a.id === touchFor)?.name}`}><Pick value={channel} options={Object.fromEntries(Object.entries(CHANNELS).map(([k, v]) => [k, `${v} (+${TOUCH_WEIGHTS[k]})`]))} onChange={setChannel} /></Field>
-          <Input className="max-w-md" placeholder="Nota" value={note} onChange={(e) => setNote(e.target.value)} />
+          <Input className="w-full sm:max-w-md" placeholder="Nota" value={note} onChange={(e) => setNote(e.target.value)} />
           <Button onClick={logTouch}>Registrar</Button><Button variant="ghost" onClick={() => setTouchFor(null)}>Cancelar</Button>
         </div>
       )}
@@ -101,7 +121,7 @@ function Targets() {
         <div>
           <p className="eyebrow mb-2">Otras cuentas</p>
           <div className="flex flex-wrap gap-2">
-            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="rounded-none border px-3 py-1 text-xs hover:border-signal">+ {a.name}</button>)}
+            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="min-h-9 rounded-none border px-3 py-2 text-left text-xs hover:border-signal md:min-h-0 md:py-1">+ {a.name}</button>)}
           </div>
         </div>
       )}
@@ -123,7 +143,7 @@ function Partners() {
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-3xl text-sm text-muted-foreground">Para que funcionen hacen falta incentivos claros (los resellers suelen llevarse un 20–30% de margen), formación y materiales, registro de deals y marketing conjunto.</p>
         <Button size="sm" onClick={add}>+ Partner</Button>
       </div>
@@ -135,7 +155,7 @@ function Partners() {
           return (
             <div key={p.id} className="space-y-3 rounded-lg border bg-card p-4">
               <Input className="font-display text-xl" defaultValue={p.name} onBlur={(e) => upd(p.id, { name: e.target.value })} />
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Field label="Tipo"><Pick value={p.partner_type} options={PTYPES} onChange={(v) => upd(p.id, { partner_type: v })} /></Field>
                 <Field label="Margen %"><Input type="number" defaultValue={p.margin_pct ?? 0} onBlur={(e) => upd(p.id, { margin_pct: Number(e.target.value) })} /></Field>
                 <Field label="Estado"><Pick value={p.status} options={{ active: "Activo", onboarding: "Onboarding", paused: "Pausado" }} onChange={(v) => upd(p.id, { status: v })} /></Field>
@@ -193,9 +213,9 @@ function Registrations() {
         {regs.map((r) => {
           const expired = r.expires_at && new Date(r.expires_at) < new Date();
           return (
-            <div key={r.id} className="flex items-center justify-between rounded-lg border bg-card p-3 text-sm">
-              <div><p className="font-medium">{r.account_name}</p><p className="text-xs text-muted-foreground">{r.partners?.name} · caduca {r.expires_at}</p></div>
-              <div className="flex items-center gap-2">
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border bg-card p-3 text-sm">
+              <div className="min-w-0 break-words"><p className="font-medium">{r.account_name}</p><p className="text-xs text-muted-foreground">{r.partners?.name} · caduca {r.expires_at}</p></div>
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded bg-muted px-1.5 font-mono text-[10px] uppercase">{expired ? "Caducado" : REG_STATUS[r.status]}</span>
                 {canDecide && r.status === "pending" && <><Button size="sm" onClick={() => decide(r.id, "approved")}>Aprobar</Button><Button size="sm" variant="outline" onClick={() => decide(r.id, "rejected")}>Rechazar</Button></>}
               </div>
@@ -205,4 +225,8 @@ function Registrations() {
       </div>
     </div>
   );
+}
+
+function ScoreBar({ score }: { score: number }) {
+  return <div className="flex shrink-0 items-center gap-2"><div className="h-1.5 w-24 rounded bg-muted"><div className="h-full rounded bg-signal" style={{ width: `${Math.min(100, score * 3)}%` }} /></div><span className="font-mono text-xs">{score}</span></div>;
 }

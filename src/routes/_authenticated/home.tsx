@@ -47,12 +47,12 @@ function HomePage() {
       <p className="-mt-4 mb-8 text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
       {setup && setup.status.pct < 100 && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-5">
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
             <p className="eyebrow">Tu estrategia está al {setup.status.pct}%</p>
             <div className="mt-2 h-1.5 max-w-md rounded bg-muted"><div className="h-full rounded bg-primary" style={{ width: `${setup.status.pct}%` }} /></div>
-            {setup.status.next && <p className="mt-2 text-sm">Siguiente: <strong>{setup.status.next.label}</strong> · desbloquea {setup.status.next.unlocks.toLowerCase()}</p>}
+            {setup.status.next && <p className="mt-2 break-words text-sm">Siguiente: <strong>{setup.status.next.label}</strong> · desbloquea {setup.status.next.unlocks.toLowerCase()}</p>}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={() => openAgent({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
             <Button asChild><Link to="/setup">Completar con IA</Link></Button>
           </div>
@@ -70,16 +70,16 @@ function HomePage() {
         <Panel title="Próximas reuniones" link={{ to: "/accounts", label: "Ver cuentas" }}>
           {(data?.meetings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin reuniones planificadas. Planifica una desde una cuenta.</p>}
           {data?.meetings.map((m) => (
-            <Link key={m.id} to="/accounts/$id" params={{ id: m.account_id ?? "" }} className="flex justify-between border-b py-2.5 text-sm last:border-0 hover:text-signal">
-              <span>{m.title}</span><span className="font-mono text-xs text-muted-foreground">{m.scheduled_at ? new Date(m.scheduled_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
+            <Link key={m.id} to="/accounts/$id" params={{ id: m.account_id ?? "" }} className="flex justify-between gap-3 border-b py-2.5 text-sm last:border-0 hover:text-signal">
+              <span className="min-w-0 truncate">{m.title}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{m.scheduled_at ? new Date(m.scheduled_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : ""}</span>
             </Link>
           ))}
         </Panel>
         <Panel title={role === "sales_leader" || role === "owner" ? "Deals en riesgo" : "Mis deals"} link={{ to: "/deals", label: "Ver pipeline" }}>
           {((role === "sales_leader" || role === "owner") ? risk : mine).slice(0, 6).map((d) => (
-            <div key={d.id} className="flex items-center justify-between border-b py-2.5 text-sm last:border-0">
-              <span>{d.name}</span>
-              <span className="flex items-center gap-3"><span className="text-muted-foreground">{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><HealthDot value={d.health} /></span>
+            <div key={d.id} className="flex items-center justify-between gap-3 border-b py-2.5 text-sm last:border-0">
+              <span className="min-w-0 break-words">{d.name}</span>
+              <span className="flex shrink-0 items-center gap-3"><span className="text-muted-foreground">{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><HealthDot value={d.health} /></span>
             </div>
           ))}
           {((role === "sales_leader" || role === "owner") ? risk : mine).length === 0 && <p className="text-sm text-muted-foreground">Nada por aquí todavía.</p>}
@@ -107,7 +107,7 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: "si
 function Panel({ title, link, children }: { title: string; link: { to: "/accounts" | "/deals" | "/people"; label: string }; children: React.ReactNode }) {
   return (
     <div className="rounded-lg border bg-card p-5">
-      <div className="mb-3 flex items-center justify-between"><h3 className="text-2xl">{title}</h3><Link to={link.to} className="text-xs text-signal">{link.label} →</Link></div>
+      <div className="mb-3 flex items-center justify-between gap-3"><h3 className="min-w-0 text-2xl">{title}</h3><Link to={link.to} className="shrink-0 py-2 text-xs text-signal md:py-0">{link.label} →</Link></div>
       {children}
     </div>
   );

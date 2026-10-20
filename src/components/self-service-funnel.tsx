@@ -62,7 +62,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
 
       {t && (
         <>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <Kpi label="Activación" v={t.signups ? pct(t.activationRate) : "—"} hint={`${t.activated} de ${t.signups} registros`} />
             <Kpi label="Prueba → pago" v={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
             <Kpi label="Tiempo hasta la compra" v={dd(t.medianDaysToPurchase)} hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`} />
@@ -88,7 +88,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
               {rows.length === 0 ? (
                 <p className="text-sm text-muted-foreground">Sin datos para comparar.</p>
               ) : (
-                <table className="w-full text-sm">
+                <table className="w-full text-sm [&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background">
                   <thead>
                     <tr className="border-b text-left text-xs text-muted-foreground">
                       <th className="py-2 pr-3 font-normal">Segmento</th>
@@ -127,14 +127,14 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
 function Step({ label, n, ratio, note }: { label: string; n: number; ratio: number; note?: string }) {
   return (
     <div>
-      <div className="flex justify-between text-sm"><span>{label}</span><span className="font-mono text-xs text-muted-foreground">{n}{note ? ` · ${note}` : ""}</span></div>
+      <div className="flex justify-between gap-3 text-sm"><span className="min-w-0">{label}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{n}{note ? ` · ${note}` : ""}</span></div>
       <div className="mt-1 h-7 rounded bg-muted"><div className="h-full rounded bg-primary transition-all" style={{ width: `${Math.max(n ? 2 : 0, Math.round(ratio * 100))}%` }} /></div>
     </div>
   );
 }
 
 function Kpi({ label, v, hint }: { label: string; v: string; hint: string }) {
-  return <div className="rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 font-display text-3xl">{v}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>;
+  return <div className="min-w-0 rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 break-words font-display text-2xl md:text-3xl">{v}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>;
 }
 
 type TrialRow = { id: string; email: string; company: string; segment_id: string | null; source: string; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null };
@@ -216,7 +216,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
             <div className="grid gap-2 sm:grid-cols-4">
               <Input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               <Input placeholder="Empresa" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-              <select className="h-9 rounded-md border bg-card px-2 text-sm" value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}>
+              <select className="h-10 rounded-md border bg-card px-2 text-sm md:h-9" value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}>
                 <option value="">Sin segmento</option>
                 {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
@@ -235,10 +235,10 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
             <Input placeholder="Buscar por email o empresa" value={q} onChange={(e) => setQ(e.target.value)} />
             {list.length === 0 && <p className="text-sm text-muted-foreground">Sin registros.</p>}
             {list.map((t) => (
-              <div key={t.id} className="grid items-center gap-2 border-b py-2 text-sm sm:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto]">
-                <div className="min-w-0">
+              <div key={t.id} className="grid grid-cols-2 items-end gap-2 border-b py-2 text-sm sm:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto] sm:items-center">
+                <div className="col-span-2 min-w-0 sm:col-span-1">
                   <p className="truncate">{t.company || t.email || "Sin nombre"}</p>
-                  <select className="mt-1 h-7 w-full rounded border bg-card px-1 text-xs" value={t.segment_id ?? ""} onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}>
+                  <select className="mt-1 h-10 w-full rounded border bg-card px-1 text-xs md:h-7" value={t.segment_id ?? ""} onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}>
                     <option value="">Sin segmento</option>
                     {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
@@ -247,7 +247,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
                 <DateField label="Activación" value={t.activated_at} onSave={(v) => patch(t.id, { activated_at: v })} />
                 <DateField label="Pago" value={t.converted_at} onSave={(v) => patch(t.id, { converted_at: v })} />
                 <label className="text-xs text-muted-foreground">MRR
-                  <Input type="number" min={0} className="h-8" defaultValue={t.mrr ?? ""} key={`${t.id}-${t.mrr}`} onBlur={(e) => patch(t.id, { mrr: e.target.value === "" ? null : Number(e.target.value) })} />
+                  <Input type="number" min={0} className="h-10 md:h-8" defaultValue={t.mrr ?? ""} key={`${t.id}-${t.mrr}`} onBlur={(e) => patch(t.id, { mrr: e.target.value === "" ? null : Number(e.target.value) })} />
                 </label>
                 {isOwner ? <Button variant="ghost" size="sm" onClick={() => remove(t.id)}>Borrar</Button> : <span />}
               </div>
@@ -263,7 +263,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
 function DateField({ label, value, onSave }: { label: string; value: string | null; onSave: (iso: string | null) => void }) {
   return (
     <label className="text-xs text-muted-foreground">{label}
-      <Input type="date" className="h-8" defaultValue={toDateInput(value)} key={value ?? "none"} onBlur={(e) => { const v = e.target.value; if (v !== toDateInput(value)) onSave(v ? parseDateCell(v) : null); }} />
+      <Input type="date" className="h-10 md:h-8" defaultValue={toDateInput(value)} key={value ?? "none"} onBlur={(e) => { const v = e.target.value; if (v !== toDateInput(value)) onSave(v ? parseDateCell(v) : null); }} />
     </label>
   );
 }

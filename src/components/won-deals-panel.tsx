@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { quarterRange } from "@/lib/metrics";
 import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDealRow } from "@/lib/won-deals";
 
-const SELECT = "h-8 rounded-md border bg-background px-2 text-xs";
+const SELECT = "h-10 rounded-md border bg-background px-2 text-xs md:h-8";
+const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
 
 /** Won deals of the quarter with close date, value and segment: the deals the real CAC divides by. */
 export function WonDealsPanel({ quarter }: { quarter: string }) {
@@ -56,7 +57,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
             la fecha decide el trimestre, el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV del payback.
           </p>
         </div>
-        <div className="flex items-center gap-5 text-right text-sm">
+        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
           <div>
             <p className="font-mono">{summary.total.deals} · {money(summary.total.amount)}</p>
             <p className="text-xs text-muted-foreground">ganados en el trimestre</p>
@@ -83,7 +84,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
         <p className="py-4 text-sm text-muted-foreground">Ningún deal ganado en {quarter}. Sin clientes nuevos no hay CAC real: añade los que cerraste o márcalos como ganados en Pipeline.</p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className={`w-full min-w-[720px] text-sm ${STICKY_FIRST}`}>
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
                 <th className="py-2 pr-3 font-normal">Deal</th>
@@ -110,17 +111,17 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
   const d = r.deal;
   return (
     <tr className="border-b border-dashed align-top">
-      <td className="py-2 pr-3">
+      <td className="max-w-36 break-words py-2 pr-3 sm:max-w-none">
         <p className="font-medium">{d.name}</p>
         {account && <p className="text-[11px] text-muted-foreground">{account}</p>}
       </td>
       <td className="px-2 py-1.5">
-        <Input type="date" aria-label={`Fecha de cierre · ${d.name}`} className="h-8 w-40 text-xs" key={`${d.id}-${r.closedOn}`} defaultValue={r.closedOn}
+        <Input type="date" aria-label={`Fecha de cierre · ${d.name}`} className="h-10 w-40 text-xs md:h-8" key={`${d.id}-${r.closedOn}`} defaultValue={r.closedOn}
           onBlur={(e) => { const v = e.target.value; if (v && (v !== r.closedOn || r.dateSource === "estimada")) onUpdate({ closed_at: closedAtFromDay(v), close_date: v }); }} />
         {r.dateSource === "estimada" && <p className="mt-0.5 text-[11px] text-signal">Estimada · confírmala</p>}
       </td>
       <td className="px-2 py-1.5 text-right">
-        <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-8 w-32 text-right text-xs" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
+        <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-10 w-32 text-right text-xs md:h-8" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
           onBlur={(e) => {
             const v = e.target.value === "" ? null : Number(e.target.value);
             if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un valor válido");
@@ -186,15 +187,15 @@ function AddWon({ quarter, segments, openDeals, onDone }: {
           <option value="">Nuevo deal (no está en Pipeline)</option>
           {openDeals.map((d) => <option key={d.id} value={d.id}>Ganado: {d.name}</option>)}
         </select>
-        {!dealId && <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del deal o cliente" className="h-8 text-xs" aria-label="Nombre del deal" />}
+        {!dealId && <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del deal o cliente" className="h-10 text-xs md:h-8" aria-label="Nombre del deal" />}
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Fecha de cierre</span>
-        <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-8 text-xs" aria-label="Fecha de cierre del nuevo deal" />
+        <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-10 text-xs md:h-8" aria-label="Fecha de cierre del nuevo deal" />
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Valor anual</span>
-        <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="h-8 text-right text-xs" aria-label="Valor del nuevo deal" />
+        <Input type="number" min={0} value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0" className="h-10 text-right text-xs md:h-8" aria-label="Valor del nuevo deal" />
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Segmento</span>

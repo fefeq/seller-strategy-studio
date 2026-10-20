@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty } from "@/components/page";
@@ -9,9 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CASE_CLINIC_STEPS } from "@/lib/theory-u";
 
+// Below lg the list/editor stack, so bring the editor into view after a tap.
+function revealOnMobile(el: HTMLElement | null) {
+  if (el && typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+}
+
 export function CaseClinics() {
   const qc = useQueryClient();
   const [sel, setSel] = useState<any | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const { data } = useQuery({
     queryKey: ["case_clinics"],
     queryFn: async () => {
@@ -28,6 +36,7 @@ export function CaseClinics() {
     const { data: row, error } = await supabase.from("case_clinics").insert({ title: "Nuevo Case Clinic" }).select("*, deals(name)").single();
     if (error) return toast.error(error.message);
     setSel(row); qc.invalidateQueries({ queryKey: ["case_clinics"] });
+    revealOnMobile(editorRef.current);
   }
   async function save(extra: Record<string, unknown> = {}) {
     const { id, deals: _d, org_id: _o, created_at: _c, updated_at: _u, created_by: _cb, updated_by: _ub, ...rest } = sel;
@@ -45,12 +54,13 @@ export function CaseClinics() {
         <div className="space-y-2">
           <Button size="sm" className="w-full" onClick={add}>+ Nuevo Case Clinic</Button>
           {list.map((c) => (
-            <button key={c.id} onClick={() => setSel(c)} className={`block w-full rounded-md border bg-card p-3 text-left text-sm ${sel?.id === c.id ? "border-signal" : ""}`}>
+            <button key={c.id} onClick={() => { setSel(c); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${sel?.id === c.id ? "border-signal" : ""}`}>
               <span className="font-medium">{c.title}</span>
               <span className="block font-mono text-xs text-muted-foreground">{new Date(c.held_on).toLocaleDateString("es-ES")} · {c.status === "closed" ? "Cerrado" : "Abierto"}{c.deals?.name ? ` · ${c.deals.name}` : ""}</span>
             </button>
           ))}
         </div>
+        <div ref={editorRef} className="min-w-0 scroll-mt-20">
         {sel ? (
           <div className="space-y-4 rounded-lg border bg-card p-5">
             <div className="grid gap-3 md:grid-cols-4">
@@ -69,12 +79,13 @@ export function CaseClinics() {
                 <Textarea rows={s.key === "dialogue" ? 5 : 2} value={sel[s.key] ?? ""} onChange={(e) => setSel({ ...sel, [s.key]: e.target.value })} />
               </Field>
             ))}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button onClick={() => save()}>Guardar</Button>
               {sel.status !== "closed" && <Button variant="outline" onClick={() => save({ status: "closed" })}>Guardar y cerrar</Button>}
             </div>
           </div>
         ) : <Empty>Selecciona o crea un Case Clinic.</Empty>}
+        </div>
       </div>
     </div>
   );

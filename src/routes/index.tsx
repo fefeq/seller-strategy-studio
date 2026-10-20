@@ -44,9 +44,9 @@ function Landing() {
         <p className="mt-8 measure-body text-lg text-ink-mid">
           Antes de cada llamada, cada persona tiene las últimas conversaciones, ofertas, notas de cuenta y el plan para ganar.
         </p>
-        <div className="mt-10 flex gap-3">
+        <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row">
           <Button size="lg" asChild><Link to="/auth">Empezar</Link></Button>
-          <p className="note self-center">Cuentas, personas, llamadas y planes en un mismo documento.</p>
+          <p className="note sm:self-center">Cuentas, personas, llamadas y planes en un mismo documento.</p>
         </div>
       </section>
       <section className="mx-auto max-w-6xl px-6">

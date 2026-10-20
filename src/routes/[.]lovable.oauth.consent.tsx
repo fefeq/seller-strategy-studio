@@ -63,8 +63,8 @@ function Consent() {
   return (
     <Shell>
       <p className="eyebrow">Nokko</p>
-      <h1 className="mt-1 text-3xl">Conectar {client} a Nokko</h1>
-      <p className="mt-3 text-sm">{client} podrá consultar tu pipeline, cuentas, métricas y estrategia, y preparar acciones <strong>como tú</strong> ({email}), en tu empresa activa y con tu rol.</p>
+      <h1 className="mt-1 break-words text-3xl">Conectar {client} a Nokko</h1>
+      <p className="mt-3 break-words text-sm">{client} podrá consultar tu pipeline, cuentas, métricas y estrategia, y preparar acciones <strong>como tú</strong> ({email}), en tu empresa activa y con tu rol.</p>
       <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
         <li>· Las acciones que cambian datos quedan pendientes hasta que las confirmes en Sugerencias.</li>
         <li>· No puede borrar nada ni saltarse los permisos de tu rol.</li>

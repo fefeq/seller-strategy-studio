@@ -52,7 +52,7 @@ export function PaybackQuarters() {
             Meses que tarda cada segmento en recuperar lo que cuesta captar un cliente: CAC real del trimestre (costes de Métricas / deals ganados) entre el margen mensual del ACV del segmento. El margen sale del presupuesto de ese trimestre o de su año (real o, si no hay, presupuestado). Verde = dentro del objetivo; rojo = fuera.
           </p>
         </div>
-        <div className="w-44"><Pick value={count} options={{ "4": "Últimos 4 trimestres", "8": "Últimos 8 trimestres" }} onChange={setCount} /></div>
+        <div className="w-full sm:w-44"><Pick value={count} options={{ "4": "Últimos 4 trimestres", "8": "Últimos 8 trimestres" }} onChange={setCount} /></div>
       </div>
 
       {segs.length === 0 ? (
@@ -62,7 +62,7 @@ export function PaybackQuarters() {
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="px-4 py-2.5 font-normal">Segmento</th>
+                <th className="sticky left-0 z-10 bg-background px-4 py-2.5 font-normal">Segmento</th>
                 {quarters.map((q) => <th key={q} className="px-3 py-2.5 text-right font-normal">{q}</th>)}
                 <th className="px-4 py-2.5 text-right font-normal">Objetivo</th>
               </tr>
@@ -70,7 +70,7 @@ export function PaybackQuarters() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.segment.id} className="border-b last:border-0">
-                  <td className="px-4 py-3 font-medium">{r.segment.name}</td>
+                  <td className="sticky left-0 z-10 bg-background px-4 py-3 font-medium">{r.segment.name}</td>
                   {quarters.map((q) => <Cell key={q} c={r.byQuarter[q]} target={r.target} money={money} />)}
                   <td className="px-4 py-3 text-right font-mono text-xs">{r.target != null ? `${r.target} m` : <span className="text-muted-foreground">sin objetivo</span>}</td>
                 </tr>

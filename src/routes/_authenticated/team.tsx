@@ -79,29 +79,29 @@ function Team() {
     <Page eyebrow={me?.currentOrg?.name ?? ""} title="Equipo">
       {isOwner && (
         <div className="mb-6 flex flex-wrap items-end gap-6">
-          <div className="flex gap-2">
-            <Input className="w-64" value={orgName ?? me?.currentOrg?.name ?? ""} onChange={(e) => setOrgName(e.target.value)} />
+          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+            <Input className="w-full sm:w-64" value={orgName ?? me?.currentOrg?.name ?? ""} onChange={(e) => setOrgName(e.target.value)} />
             <Button variant="outline" disabled={orgName === null} onClick={rename}>Renombrar empresa</Button>
           </div>
         </div>
       )}
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
-        <div className="overflow-hidden rounded-lg border bg-card">
+        <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Rol en esta empresa", "Foco", ""].map((h) => <th key={h} className="eyebrow px-4 py-3">{h}</th>)}</tr></thead>
+            <thead className="hidden border-b bg-muted/50 text-left md:table-header-group"><tr>{["Persona", "Rol en esta empresa", "Foco", ""].map((h) => <th key={h} className="eyebrow px-4 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {data?.members.map((m) => (
-                <tr key={m.id} className="border-b last:border-0">
-                  <td className="px-4 py-3"><p className="font-medium">{m.profile?.full_name}</p><p className="text-xs text-muted-foreground">{m.profile?.email}</p></td>
-                  <td className="px-4 py-3">
+                <tr key={m.id} className="flex flex-wrap items-center gap-2 border-b py-3 last:border-0 md:table-row md:py-0">
+                  <td className="block basis-full md:table-cell md:px-4 md:py-3"><p className="break-words font-medium">{m.profile?.full_name}</p><p className="break-all text-xs text-muted-foreground">{m.profile?.email}</p></td>
+                  <td className="block min-w-0 flex-1 md:table-cell md:px-4 md:py-3">
                     {isOwner ? (
-                      <select className="h-8 rounded border bg-background px-2" value={m.role} onChange={(e) => setMemberRole(m.id, m.user_id, e.target.value as Role)}>
+                      <select className="h-10 w-full max-w-xs rounded border bg-background px-2 md:h-8 md:w-auto md:max-w-none" value={m.role} onChange={(e) => setMemberRole(m.id, m.user_id, e.target.value as Role)}>
                         {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
                       </select>
                     ) : ROLES[m.role as Role]?.label}
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">{ROLES[m.role as Role]?.focus}</td>
-                  <td className="px-4 py-3 text-right">{isOwner && m.user_id !== me?.user.id && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(m.id)}>Quitar</Button>}</td>
+                  <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{ROLES[m.role as Role]?.focus}</td>
+                  <td className="block shrink-0 text-right md:table-cell md:px-4 md:py-3">{isOwner && m.user_id !== me?.user.id && <Button size="sm" variant="ghost" className="text-destructive" onClick={() => remove(m.id)}>Quitar</Button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -112,7 +112,7 @@ function Team() {
             <div className="space-y-3 rounded-lg border bg-card p-5">
               <h3 className="text-2xl">Invitar a esta empresa</h3>
               <Input type="email" placeholder="email@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <select className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+              <select className="h-10 w-full rounded-md border bg-background px-2 text-sm md:h-9" value={role} onChange={(e) => setRole(e.target.value as Role)}>
                 {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
               </select>
               <Button disabled={!email.includes("@")} onClick={invite}>Invitar</Button>
@@ -123,9 +123,9 @@ function Team() {
             <div className="rounded-lg border bg-card p-5">
               <p className="eyebrow mb-2">Invitaciones pendientes</p>
               {data?.invites.map((i) => (
-                <div key={i.id} className="flex items-center justify-between border-b py-2 text-sm last:border-0">
-                  <span>{i.email} <span className="text-xs text-muted-foreground">· {ROLES[i.role as Role]?.label}</span></span>
-                  {isOwner && <button className="text-xs text-destructive" onClick={() => cancelInvite(i.id)}>Cancelar</button>}
+                <div key={i.id} className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-0">
+                  <span className="min-w-0 break-all">{i.email} <span className="text-xs text-muted-foreground">· {ROLES[i.role as Role]?.label}</span></span>
+                  {isOwner && <button className="-my-2 shrink-0 px-2 py-2 text-xs text-destructive md:my-0 md:px-0 md:py-0" onClick={() => cancelInvite(i.id)}>Cancelar</button>}
                 </div>
               ))}
             </div>

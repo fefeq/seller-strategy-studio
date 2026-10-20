@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Lightbulb, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +29,13 @@ const EXAMPLES = [
   "La cobertura de pipeline para el trimestre es baja. ¿Cómo la recuperamos en 60 días?",
 ];
 
+// Below lg the columns stack; bring the result into view after it arrives or is picked.
+function revealOnMobile(el: HTMLElement | null) {
+  if (el && typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+}
+
 const TONE: Record<string, string> = { high: "bg-signal/15 text-signal", medium: "bg-warning/25 text-foreground", low: "bg-muted text-muted-foreground" };
 
 function Advisor() {
@@ -40,6 +47,7 @@ function Advisor() {
   const [horizon, setHorizon] = useState("quarter");
   const [busy, setBusy] = useState(false);
   const [selId, setSelId] = useState<string | null>(null);
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const { data: history = [] } = useQuery({
     queryKey: ["gtm_advisories"],
@@ -54,6 +62,7 @@ function Advisor() {
       const r = await run({ data: { goal, horizon } });
       await qc.invalidateQueries({ queryKey: ["gtm_advisories"] });
       setSelId(r.id);
+      revealOnMobile(resultRef.current);
       toast.success("Recomendaciones listas");
     } catch (e) {
       toast.error((e as Error).message);
@@ -69,25 +78,26 @@ function Advisor() {
   return (
     <Page eyebrow="Dirección comercial · IA" title="Asesor GTM">
       <div className="grid gap-6 lg:grid-cols-[1fr_1.7fr]">
-        <div className="space-y-4">
-          <div className="space-y-3 rounded-lg border bg-card p-5">
+        {/* Phones: form → result → history (the left column is `contents` below lg). */}
+        <div className="contents lg:block lg:space-y-4">
+          <div className="order-1 space-y-3 rounded-lg border bg-card p-5 lg:order-none">
             <Field label="Objetivo o problema comercial">
               <Textarea rows={6} maxLength={4000} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Ej.: Necesitamos 400K de nuevo negocio este trimestre y la cobertura está en 2x." />
             </Field>
             <div className="flex flex-wrap gap-1.5">
-              {EXAMPLES.map((ex) => <button key={ex} onClick={() => setGoal(ex)} className="rounded-none border px-2.5 py-1 text-left text-xs hover:border-signal">{ex}</button>)}
+              {EXAMPLES.map((ex) => <button key={ex} onClick={() => setGoal(ex)} className="rounded-none border px-2.5 py-2 text-left text-xs hover:border-signal md:py-1">{ex}</button>)}
             </div>
             <Field label="Horizonte"><Pick value={horizon} options={HORIZONS} onChange={setHorizon} /></Field>
-            <Button className="w-full" onClick={analyze} disabled={busy || goal.trim().length < 10}>
+            <Button className="h-auto min-h-10 w-full whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={analyze} disabled={busy || goal.trim().length < 10}>
               <Sparkles className="size-4" /> {busy ? "Analizando pipeline, métricas y segmentos…" : "Generar recomendaciones"}
             </Button>
             <p className="text-xs text-muted-foreground">Se analizan tus deals, la conversión por etapa, la cobertura del trimestre, el win rate por fuente y por segmento, los benchmarks de cada segmento, el posicionamiento y el ICP. Puede tardar hasta un minuto.</p>
           </div>
           {history.length > 0 && (
-            <div className="space-y-2">
+            <div className="order-3 space-y-2 lg:order-none">
               <p className="eyebrow">Análisis anteriores</p>
               {history.map((h) => (
-                <button key={h.id} onClick={() => setSelId(h.id)} className={`block w-full rounded-md border bg-card p-3 text-left text-sm ${current?.id === h.id ? "border-signal" : ""}`}>
+                <button key={h.id} onClick={() => { setSelId(h.id); revealOnMobile(resultRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${current?.id === h.id ? "border-signal" : ""}`}>
                   <span className="line-clamp-2">{h.goal}</span>
                   <span className="block font-mono text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })} · {HORIZONS[h.horizon] ?? h.horizon}</span>
                 </button>
@@ -95,9 +105,11 @@ function Advisor() {
             </div>
           )}
         </div>
-        {busy && !current ? <Empty>Analizando…</Empty> : current ? <AdviceView goal={current.goal} result={current.result as unknown as AdvisorResult} /> : (
-          <Empty>Describe un objetivo o un problema y obtendrás un diagnóstico basado en tus datos y un plan de acción priorizado.</Empty>
-        )}
+        <div ref={resultRef} className="order-2 min-w-0 scroll-mt-20 lg:order-none">
+          {busy && !current ? <Empty>Analizando…</Empty> : current ? <AdviceView goal={current.goal} result={current.result as unknown as AdvisorResult} /> : (
+            <Empty>Describe un objetivo o un problema y obtendrás un diagnóstico basado en tus datos y un plan de acción priorizado.</Empty>
+          )}
+        </div>
       </div>
     </Page>
   );
@@ -109,7 +121,7 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
     <div className="space-y-6">
       <div className="rounded-lg border bg-card p-5">
         <p className="eyebrow">Objetivo</p>
-        <p className="mt-1 text-sm">{goal}</p>
+        <p className="mt-1 break-words text-sm">{goal}</p>
         <p className="eyebrow mt-4">Resumen</p>
         <p className="mt-1 font-display text-xl leading-snug">{result.summary}</p>
       </div>
@@ -150,9 +162,9 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
   return (
     <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="flex items-start gap-3">
+        <div className="flex min-w-0 items-start gap-3">
           <span className="font-display text-3xl leading-none text-signal">{String(index + 1).padStart(2, "0")}</span>
-          <div>
+          <div className="min-w-0 break-words">
             <p className="font-display text-xl leading-tight">{rec.title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{rec.rationale}</p>
           </div>
@@ -167,7 +179,7 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
         {rec.actions.map((a, i) => <li key={i} className="flex gap-2"><span className="text-signal">→</span>{a}</li>)}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs">
-        <span className="text-muted-foreground">
+        <span className="min-w-0 break-words text-muted-foreground">
           <b className="text-foreground">{ROLES[rec.owner_role as Role]?.label ?? rec.owner_role}</b> · KPI: {rec.kpi} · Objetivo: {rec.target}
         </span>
         <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}><Lightbulb className="size-3.5" /> {saved ? "En Prototipos" : "Convertir en prototipo"}</Button>

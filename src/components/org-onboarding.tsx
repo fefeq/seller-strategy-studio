@@ -26,11 +26,11 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   }
 
   return (
-    <div className="flex min-h-[80vh] items-center justify-center p-8">
+    <div className="flex min-h-[80vh] items-center justify-center p-5 sm:p-8">
       <div className="w-full max-w-md space-y-6">
         <div>
           <p className="eyebrow">Primer paso</p>
-          <h1 className="mt-1 text-5xl">Crea una empresa</h1>
+          <h1 className="mt-1 text-4xl sm:text-5xl">Crea una empresa</h1>
           <p className="mt-2 text-sm text-muted-foreground">Cada empresa tiene su propia estrategia, cuentas, pipeline y equipo. Podrás crear más y cambiar entre ellas.</p>
         </div>
         <div className="flex gap-2">
@@ -41,7 +41,7 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
           <div className="space-y-2">
             <p className="eyebrow">O entra en una existente</p>
             {memberships.map((m) => (
-              <button key={m.org_id} onClick={() => pick(m.org_id)} className="block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal">{m.name}</button>
+              <button key={m.org_id} onClick={() => pick(m.org_id)} className="block w-full break-words rounded-md border bg-card p-3 text-left text-sm hover:border-signal">{m.name}</button>
             ))}
           </div>
         )}

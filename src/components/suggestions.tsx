@@ -56,10 +56,10 @@ export function SuggestionCard({ s }: { s: S }) {
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>{PRIO[s.priority]}</p>
-          <p className="mt-0.5 font-medium">{s.title}</p>
-          <p className="mt-1 text-sm text-muted-foreground">{s.body}</p>
+          <p className="mt-0.5 break-words font-medium">{s.title}</p>
+          <p className="mt-1 break-words text-sm text-muted-foreground">{s.body}</p>
         </div>
-        {s.link && <Link to={s.link as any} className="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Abrir"><ArrowUpRight className="size-4" /></Link>}
+        {s.link && <Link to={s.link as any} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><ArrowUpRight className="size-4" /></Link>}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {hasAction || !s.link
@@ -77,9 +77,9 @@ export function TodayDigest() {
   const top = digest(data, 3);
   return (
     <div className="rounded-lg border bg-card p-5">
-      <div className="mb-3 flex items-end justify-between">
+      <div className="mb-3 flex flex-wrap items-end justify-between gap-x-3 gap-y-1">
         <h3 className="text-2xl">3 cosas para hoy</h3>
-        <Link to="/inbox" className="text-xs text-muted-foreground hover:text-foreground">{data.length === 1 ? "Ver 1 sugerencia" : `Ver las ${data.length} sugerencias`}</Link>
+        <Link to="/inbox" className="-my-2 py-2 text-xs text-muted-foreground hover:text-foreground md:my-0 md:py-0">{data.length === 1 ? "Ver 1 sugerencia" : `Ver las ${data.length} sugerencias`}</Link>
       </div>
       {top.length === 0 ? <p className="text-sm text-muted-foreground">Todo en orden. Te avisaré cuando detecte algo.</p> : <div className="space-y-3">{top.map((s) => <SuggestionCard key={s.id} s={s} />)}</div>}
     </div>

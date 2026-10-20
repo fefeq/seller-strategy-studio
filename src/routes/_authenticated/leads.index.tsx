@@ -111,19 +111,19 @@ function LeadsPage() {
               <label className="flex items-center gap-2 text-sm"><Switch checked={!!search.late} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, late: v || undefined }) })} />Solo retrasados</label>
             </div>
             {data.leads.length === 0 ? <Empty>Aún no hay leads. Créalos con «+ Nuevo lead» o conecta tus formularios y tu CRM en <Link to="/leads/entrada" className="underline">Entrada de leads</Link>.</Empty> : (
-              <div className="flex gap-3 overflow-x-auto pb-4">
+              <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
                 {COLUMNS.map((st) => {
                   const all = data.leads.filter((l) => l.stage === st.id);
                   const col = all.filter(shown);
                   const lateN = all.filter((l) => view.delays.get(l.id)?.late).length;
                   const capped = st.id === "opportunity" || st.id === "disqualified" ? col.slice(0, 25) : col;
                   return (
-                    <div key={st.id} className={`min-w-40 flex-1 rounded-lg p-2 ${st.id === "disqualified" ? "bg-muted/30" : "bg-muted/60"}`}
+                    <div key={st.id} className={`w-[80vw] max-w-72 shrink-0 snap-start rounded-lg p-2 md:w-auto md:min-w-40 md:max-w-none md:flex-1 ${st.id === "disqualified" ? "bg-muted/30" : "bg-muted/60"}`}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => move(e.dataTransfer.getData("id"), st.id)}>
-                      <div className="flex items-center justify-between px-2 py-2">
+                      <div className="flex items-center justify-between gap-2 px-2 py-2">
                         <span className="eyebrow">{st.label}</span>
-                        <span className="font-mono text-xs">{all.length}{lateN ? <span className="ml-1 text-signal">· {lateN} tarde</span> : null}</span>
+                        <span className="shrink-0 font-mono text-xs">{all.length}{lateN ? <span className="ml-1 text-signal">· {lateN} tarde</span> : null}</span>
                       </div>
                       <div className="space-y-2">
                         {capped.map((l) => {
@@ -132,7 +132,7 @@ function LeadsPage() {
                             <button key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
                               onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
                               className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
-                              <span className="font-medium">{l.company}</span>
+                              <span className="break-words font-medium">{l.company}</span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                                 {l.source && <span className="rounded bg-muted px-1.5 py-0.5">{l.source}</span>}
@@ -151,26 +151,26 @@ function LeadsPage() {
                 })}
               </div>
             )}
-            <p className="text-xs text-muted-foreground">Arrastra un lead para cambiar su etapa. Al soltarlo en Oportunidad se crea su deal en Discovery dentro de la Pipeline.</p>
+            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en Discovery dentro de la Pipeline.</p>
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title={`Retrasos (${view.late.length})`}>
               {view.late.length === 0 ? <Muted>Ningún lead va con retraso. Los plazos actuales son: {LEAD_STAGES.slice(0, 4).map((s) => `${s.label} ${data.sla[s.id as keyof typeof data.sla]} d`).join(" · ")}.</Muted> : view.late.slice(0, 12).map((l) => (
-                <button key={l.id} onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })} className="flex w-full items-center justify-between gap-3 border-b py-2 text-left text-sm last:border-0 hover:text-signal">
-                  <span><span className="font-medium">{l.company}</span> <span className="text-xs text-muted-foreground">· {leadStageLabel(l.stage)}</span></span>
-                  <span className="text-right font-mono text-xs text-signal">{delayText(view.delays.get(l.id)!)}</span>
+                <button key={l.id} onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })} className="flex w-full flex-col items-start gap-1 border-b py-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3 text-left text-sm last:border-0 hover:text-signal">
+                  <span className="min-w-0 break-words"><span className="font-medium">{l.company}</span> <span className="text-xs text-muted-foreground">· {leadStageLabel(l.stage)}</span></span>
+                  <span className="font-mono text-xs text-signal sm:text-right">{delayText(view.delays.get(l.id)!)}</span>
                 </button>
               ))}
             </Panel>
             <Panel title={`Conversión por origen · ${view.quarter}`}>
               {view.bySource.length === 0 ? <Muted>Sin leads este trimestre.</Muted> : (
-                <table className="w-full text-sm">
-                  <thead className="text-left"><tr>{["Origen", "Leads", "SQL", "Oport.", "Ganado"].map((h) => <th key={h} className="eyebrow pb-2">{h}</th>)}</tr></thead>
+                <div className="overflow-x-auto"><table className="w-full text-sm">
+                  <thead className="text-left"><tr>{["Origen", "Leads", "SQL", "Oport.", "Ganado"].map((h) => <th key={h} className="eyebrow pb-2 pr-3 last:pr-0 md:pr-0">{h}</th>)}</tr></thead>
                   <tbody>{view.bySource.map((g) => (
-                    <tr key={g.key} className="border-t"><td className="py-2">{g.key}</td><td className="font-mono">{g.total}</td><td className="font-mono">{g.counts.sql}</td><td className="font-mono">{pct(g.toOpportunity)}</td><td className="font-mono">{pct(g.toWon)}</td></tr>
+                    <tr key={g.key} className="border-t [&>td:not(:last-child)]:pr-3 md:[&>td]:pr-0"><td className="py-2">{g.key}</td><td className="font-mono">{g.total}</td><td className="font-mono">{g.counts.sql}</td><td className="font-mono">{pct(g.toOpportunity)}</td><td className="font-mono">{pct(g.toWon)}</td></tr>
                   ))}</tbody>
-                </table>
+                </table></div>
               )}
             </Panel>
           </div>

@@ -93,7 +93,7 @@ function Metrics() {
 
   return (
     <Page eyebrow="Revenue operations" title="Métricas" actions={
-      <select className="h-9 rounded-md border bg-card px-3 text-sm" value={quarter} onChange={(e) => setQuarter(e.target.value)}>
+      <select aria-label="Trimestre" className="h-10 rounded-md border bg-card px-3 text-sm md:h-9" value={quarter} onChange={(e) => setQuarter(e.target.value)}>
         {quarters.map((q) => <option key={q} value={q}>{q}</option>)}
       </select>
     }>
@@ -138,7 +138,7 @@ function Metrics() {
             <Panel title={`Deals que se han retrasado (${pct(m.slipRate)} del pipeline abierto)`}>
               {m.slipped.length === 0 && <Muted>Ningún deal ha movido su fecha de cierre.</Muted>}
               {m.slipped.map((d) => (
-                <div key={d.id} className="flex justify-between border-b py-2 text-sm last:border-0"><span>{d.name}</span><span className="font-mono text-xs text-signal">{d.slip_count}× retrasado · cierre {d.close_date}</span></div>
+                <div key={d.id} className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 border-b py-2 text-sm last:border-0"><span className="min-w-0 break-words">{d.name}</span><span className="ml-auto shrink-0 font-mono text-xs text-signal">{d.slip_count}× retrasado · cierre {d.close_date}</span></div>
               ))}
             </Panel>
             <Panel title={`Cuotas ${quarter}`}>
@@ -146,9 +146,9 @@ function Metrics() {
                 const q = data.quotas.find((x) => x.user_id === p.id && x.period === quarter);
                 return (
                   <div key={p.id} className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-0">
-                    <span>{p.full_name}</span>
+                    <span className="min-w-0 break-words">{p.full_name}</span>
                     {canEdit
-                      ? <Input type="number" className="w-36" defaultValue={q?.amount ?? ""} key={`${p.id}-${quarter}`} onBlur={(e) => e.target.value !== "" && setQuota(p.id, Number(e.target.value))} />
+                      ? <Input type="number" className="w-36 shrink-0" defaultValue={q?.amount ?? ""} key={`${p.id}-${quarter}`} onBlur={(e) => e.target.value !== "" && setQuota(p.id, Number(e.target.value))} />
                       : <span className="font-mono">{q ? eur(Number(q.amount)) : "—"}</span>}
                   </div>
                 );
@@ -168,7 +168,7 @@ function Metrics() {
 
 const lab = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
-  return <div className="rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 font-display text-3xl">{v}</p><p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>{hint}</p></div>;
+  return <div className="min-w-0 rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 break-words font-display text-3xl">{v}</p><p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>{hint}</p></div>;
 }
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return <div className="rounded-lg border bg-card p-5"><h3 className="mb-3 text-2xl">{title}</h3>{children}</div>;
@@ -176,7 +176,7 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
 function Bar({ label, value, right }: { label: string; value: number; right: string }) {
   return (
     <div className="py-1.5 text-sm">
-      <div className="flex justify-between"><span>{label}</span><span className="font-mono text-xs text-muted-foreground">{right}</span></div>
+      <div className="flex justify-between gap-3"><span className="min-w-0 break-words">{label}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{right}</span></div>
       <div className="mt-1 h-1.5 rounded bg-muted"><div className="h-full rounded bg-primary" style={{ width: `${Math.min(100, Math.round(value * 100))}%` }} /></div>
     </div>
   );

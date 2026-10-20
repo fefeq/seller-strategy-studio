@@ -38,7 +38,7 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
           <h2 className="text-3xl">Embudo de leads {quarter}</h2>
           <p className="mt-1 text-sm text-muted-foreground">Cohorte de leads que entraron en el trimestre: hasta dónde llegan y cuánto tardan. Ganado viene de su oportunidad en Pipeline.</p>
         </div>
-        <Link to="/leads" className="text-sm underline-offset-2 hover:underline">Abrir Leads{view.late ? ` · ${view.late} con retraso` : ""} →</Link>
+        <Link to="/leads" className="py-2 text-sm underline-offset-2 hover:underline md:py-0">Abrir Leads{view.late ? ` · ${view.late} con retraso` : ""} →</Link>
       </div>
 
       {f.total === 0 ? (
@@ -48,9 +48,9 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
           <div className="rounded-lg border bg-card p-5">
             {f.steps.map((s) => (
               <div key={s.id} className="py-1.5">
-                <div className="mb-1 flex justify-between text-sm">
-                  <span>{s.label}</span>
-                  <span className="font-mono text-xs text-muted-foreground">{s.count} · {pct(s.fromStart)} del total{s.fromPrev != null ? ` · ${pct(s.fromPrev)} del paso anterior` : ""}</span>
+                <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-sm">
+                  <span className="min-w-0">{s.label}</span>
+                  <span className="ml-auto font-mono text-xs text-muted-foreground">{s.count} · {pct(s.fromStart)} del total{s.fromPrev != null ? <span className="hidden sm:inline"> · {pct(s.fromPrev)} del paso anterior</span> : null}</span>
                 </div>
                 <div className="h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${(s.count / max) * 100}%` }} /></div>
               </div>
@@ -59,7 +59,7 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             {([["Hasta MQL", f.medianDays.mql], ["Hasta SQL", f.medianDays.sql], ["Hasta oportunidad", f.medianDays.opportunity], ["Hasta ganado", f.medianDays.won]] as const).map(([label, v]) => (
-              <div key={label} className="rounded-lg border bg-card p-4"><p className="eyebrow">{label}</p><p className="mt-1 font-display text-3xl">{dd(v)}</p><p className="text-xs text-muted-foreground">mediana desde que entra</p></div>
+              <div key={label} className="min-w-0 rounded-lg border bg-card p-4"><p className="eyebrow">{label}</p><p className="mt-1 font-display text-3xl">{dd(v)}</p><p className="text-xs text-muted-foreground">mediana desde que entra</p></div>
             ))}
           </div>
         </div>
@@ -70,10 +70,10 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
           <div className="flex items-center gap-2 border-b p-3 text-sm">
             <span className="eyebrow mr-2">Comparar por</span>
             {(["segment", "source"] as const).map((k) => (
-              <button key={k} onClick={() => setBy(k)} className={`rounded px-2 py-1 ${by === k ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{k === "segment" ? "Segmento" : "Origen"}</button>
+              <button key={k} onClick={() => setBy(k)} className={`min-h-8 rounded px-3 py-1.5 md:min-h-0 md:px-2 md:py-1 ${by === k ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}>{k === "segment" ? "Segmento" : "Origen"}</button>
             ))}
           </div>
-          <table className="w-full text-sm">
+          <table className="w-full text-sm [&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background">
             <thead className="border-b bg-muted/50 text-left"><tr>{[by === "segment" ? "Segmento" : "Origen", "Leads", "Contactado", "MQL", "SQL", "Oportunidad", "Ganado", "Lead → Oport.", "Lead → Ganado"].map((h) => <th key={h} className="eyebrow px-3 py-2">{h}</th>)}</tr></thead>
             <tbody>
               {view.groups.map((g) => (

@@ -12,6 +12,9 @@ import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
 import { CAC_CHANNELS, channelQuarterTable, costByChannel, previousQuarter, quartersUpTo } from "@/lib/cac";
 import { useSegmentCoverageData } from "@/components/segment-coverage";
 
+// Keeps the row label visible while the wide tables scroll sideways on a phone.
+const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
+
 /** Read-only channel × quarter view of the last 4 quarters: totals, shared part, deals won and average CAC. */
 function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLike[]; money: (n: number) => string }) {
   const { data: me } = useMe();
@@ -31,7 +34,7 @@ function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLi
   if (!t.rows.length) return <p className="py-6 text-sm text-muted-foreground">Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por segmento» de cada trimestre.</p>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[560px] text-sm">
+      <table className={`w-full min-w-[560px] text-sm ${STICKY_FIRST}`}>
         <thead>
           <tr className="border-b text-left text-xs text-muted-foreground">
             <th className="py-2 pr-3 font-normal">Canal</th>
@@ -143,7 +146,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
             Los costes «Compartido» se reparten entre segmentos según los clientes ganados. El payback de la cobertura usa este CAC.
           </p>
         </div>
-        <div className="flex items-center gap-4 text-right text-sm">
+        <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">
           <div>
             <p className="font-mono">{money(totalCost)}</p>
             <p className="text-xs text-muted-foreground">coste total</p>
@@ -167,7 +170,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
       </TabsList>
       <TabsContent value="segments">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
+        <table className={`w-full min-w-[640px] text-sm ${STICKY_FIRST}`}>
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
               <th className="py-2 pr-3 font-normal">Canal</th>
@@ -183,7 +186,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
                   return (
                     <td key={col.id} className="px-2 py-1 text-right">
                       {canEdit
-                        ? <Input type="number" min={0} aria-label={`${ch} · ${col.name}`} className="ml-auto h-8 w-28 text-right" key={`${ch}-${col.id}-${quarter}-${v?.amount ?? ""}`} defaultValue={v && Number(v.amount) ? Number(v.amount) : ""} placeholder="0" onBlur={(e) => save(ch, col.id, e.target.value)} />
+                        ? <Input type="number" min={0} aria-label={`${ch} · ${col.name}`} className="ml-auto h-10 w-28 text-right md:h-8" key={`${ch}-${col.id}-${quarter}-${v?.amount ?? ""}`} defaultValue={v && Number(v.amount) ? Number(v.amount) : ""} placeholder="0" onBlur={(e) => save(ch, col.id, e.target.value)} />
                         : <span className="font-mono text-xs">{v && Number(v.amount) ? money(Number(v.amount)) : "—"}</span>}
                     </td>
                   );
@@ -216,8 +219,8 @@ export function CacPanel({ quarter }: { quarter: string }) {
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         {canEdit ? (
-          <form className="flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); addChannel(); }}>
-            <Input value={newChannel} onChange={(e) => setNewChannel(e.target.value)} placeholder="Otro canal (p. ej. LinkedIn Ads)" className="h-8 w-56" />
+          <form className="flex w-full flex-wrap items-center gap-2 sm:w-auto" onSubmit={(e) => { e.preventDefault(); addChannel(); }}>
+            <Input value={newChannel} onChange={(e) => setNewChannel(e.target.value)} placeholder="Otro canal (p. ej. LinkedIn Ads)" className="h-10 w-full sm:w-56 md:h-8" />
             <Button type="submit" size="sm" variant="ghost" disabled={!newChannel.trim()}><Plus className="mr-1 h-3.5 w-3.5" /> Añadir canal</Button>
           </form>
         ) : <p className="text-xs text-muted-foreground">Solo Owner, Sales Leader y Marketing pueden introducir costes.</p>}
@@ -226,7 +229,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
             <p className="text-xs text-muted-foreground">Peso de cada canal</p>
             {byChannel.slice(0, 5).map((c) => (
               <div key={c.channel} className="text-xs">
-                <div className="flex justify-between"><span>{c.channel}</span><span className="font-mono">{money(c.amount)} · {Math.round(c.share * 100)}%</span></div>
+                <div className="flex justify-between gap-3"><span className="min-w-0 truncate">{c.channel}</span><span className="shrink-0 font-mono">{money(c.amount)} · {Math.round(c.share * 100)}%</span></div>
                 <div className="mt-0.5 h-1.5 rounded bg-muted"><div className="h-full rounded bg-primary" style={{ width: `${Math.round(c.share * 100)}%` }} /></div>
               </div>
             ))}

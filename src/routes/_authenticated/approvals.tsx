@@ -51,14 +51,14 @@ function Approvals() {
           {pending.map((a) => (
             <div key={a.id} className="rounded-lg border bg-card p-4">
               <p className="eyebrow">{KIND[a.kind] ?? a.kind}</p>
-              <p className="mt-1 font-medium">{a.title}</p>
-              {a.evidence && <pre className="mt-2 whitespace-pre-wrap rounded bg-muted p-2 font-mono text-xs">{a.evidence}</pre>}
+              <p className="mt-1 break-words font-medium">{a.title}</p>
+              {a.evidence && <pre className="mt-2 whitespace-pre-wrap rounded bg-muted p-2 font-mono text-xs [overflow-wrap:anywhere]">{a.evidence}</pre>}
               {can && <div className="mt-3 flex gap-2"><Button size="sm" onClick={() => decide(a, "applied")}>Aplicar</Button><Button size="sm" variant="outline" onClick={() => decide(a, "skipped")}>Omitir</Button></div>}
             </div>
           ))}
           {done.length > 0 && <p className="eyebrow pt-6">Historial</p>}
           {done.map((a) => (
-            <div key={a.id} className="flex justify-between rounded-md border p-3 text-sm opacity-70"><span>{a.title}</span><span className="font-mono text-xs">{a.status === "applied" ? "Aplicado" : "Omitido"}</span></div>
+            <div key={a.id} className="flex justify-between gap-3 rounded-md border p-3 text-sm opacity-70"><span className="min-w-0 break-words">{a.title}</span><span className="shrink-0 font-mono text-xs">{a.status === "applied" ? "Aplicado" : "Omitido"}</span></div>
           ))}
         </div>
         <div className="space-y-3 rounded-lg border bg-card p-5">

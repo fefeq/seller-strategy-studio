@@ -44,19 +44,19 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
       <PopoverContent align="start" className="w-64 p-1">
         <p className="eyebrow px-2 py-1.5">Tus empresas</p>
         {memberships.map((m) => (
-          <button key={m.org_id} onClick={() => switchTo(m.org_id)} className="flex w-full items-center justify-between rounded px-2 py-1.5 text-left text-sm hover:bg-muted">
+          <button key={m.org_id} onClick={() => switchTo(m.org_id)} className="flex w-full items-center justify-between gap-2 rounded px-2 py-2.5 text-left text-sm hover:bg-muted md:py-1.5">
             <span className="min-w-0"><span className="block truncate">{m.name}</span><span className="block text-[11px] text-muted-foreground">{ROLES[m.role as Role]?.label}</span></span>
-            {m.org_id === current?.org_id && <Check className="size-4 text-signal" />}
+            {m.org_id === current?.org_id && <Check className="size-4 shrink-0 text-signal" />}
           </button>
         ))}
         <div className="mt-1 border-t p-1">
           {creating ? (
             <div className="flex gap-1">
-              <Input autoFocus className="h-8" placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name.trim() && create()} />
-              <Button size="sm" disabled={!name.trim()} onClick={create}>Crear</Button>
+              <Input autoFocus className="h-10 md:h-8" placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name.trim() && create()} />
+              <Button size="sm" className="h-10 md:h-6" disabled={!name.trim()} onClick={create}>Crear</Button>
             </div>
           ) : (
-            <button onClick={() => setCreating(true)} className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-muted"><Plus className="size-4" /> Nueva empresa</button>
+            <button onClick={() => setCreating(true)} className="flex w-full items-center gap-2 rounded px-2 py-2.5 text-sm hover:bg-muted md:py-1.5"><Plus className="size-4" /> Nueva empresa</button>
           )}
         </div>
       </PopoverContent>

@@ -2,13 +2,13 @@ import type { ReactNode } from "react";
 
 export function Page({ eyebrow, title, actions, children }: { eyebrow?: string; title: string; actions?: ReactNode; children: ReactNode }) {
   return (
-    <div className="mx-auto max-w-7xl px-5 py-10 md:px-10">
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-4 border-b-2 border-hairline-firm pb-6">
-        <div>
+    <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-5 md:px-10 md:py-10">
+      <div className="mb-8 flex flex-wrap items-end justify-between gap-4 border-b-2 border-hairline-firm pb-6 md:mb-10">
+        <div className="min-w-0">
           {eyebrow && <p className="kicker">{eyebrow}</p>}
-          <h1 className="lede-m mt-3 measure-lede md:lede-l">{title}</h1>
+          <h1 className="lede-m mt-3 measure-lede break-words [overflow-wrap:anywhere] md:lede-l">{title}</h1>
         </div>
-        <div className="flex gap-2">{actions}</div>
+        <div className="flex flex-wrap gap-2">{actions}</div>
       </div>
       {children}
     </div>

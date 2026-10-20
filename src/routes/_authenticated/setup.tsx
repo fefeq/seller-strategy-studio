@@ -31,7 +31,7 @@ function SetupPage() {
   return (
     <Page eyebrow="Onboarding" title="Configura tu estrategia">
       <div className="mb-8 grid gap-6 lg:grid-cols-[1fr_340px]">
-        <div>
+        <div className="min-w-0">
           <p className="max-w-2xl text-muted-foreground">Elige cómo quieres hacerlo. Puedes combinar las tres vías: todas guardan en el mismo sitio y el progreso se actualiza solo.</p>
           <Tabs value={tab} onValueChange={setTab} className="mt-6">
             <TabsList>
@@ -104,7 +104,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
         <label className="text-sm font-medium">O pega lo que tengas</label>
         <Textarea className="mt-1" rows={5} placeholder="Descripción del producto, clientes ideales, competidores, precios…" value={text} onChange={(e) => setText(e.target.value)} />
       </div>
-      <Button onClick={run} disabled={busy || (!url.trim() && !text.trim() && !files.length)}>
+      <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-8" onClick={run} disabled={busy || (!url.trim() && !text.trim() && !files.length)}>
         {busy ? <><Loader2 className="size-4 animate-spin" /> Analizando (puede tardar un minuto)…</> : <><Sparkles className="size-4" /> Proponer mi estrategia</>}
       </Button>
       <p className="text-xs text-muted-foreground">La IA propone y tú revisas cada punto antes de guardarlo.</p>
@@ -181,9 +181,9 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
           </div>
         </section>
       ))}
-      <div className="sticky bottom-4 flex flex-wrap items-center gap-2 rounded-lg border bg-card p-3 shadow-sm">
-        <Button onClick={save} disabled={busy || !chosen.length}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar {chosen.length} elementos</Button>
-        <Button variant="outline" onClick={onWizard}>Completar el resto paso a paso</Button>
+      <div className="sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
+        <Button className="order-last col-span-2 mr-14 sm:order-none sm:mr-0" onClick={save} disabled={busy || !chosen.length}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar {chosen.length} elementos</Button>
+        <Button variant="outline" onClick={onWizard}><span className="sm:hidden">Seguir paso a paso</span><span className="hidden sm:inline">Completar el resto paso a paso</span></Button>
         <Button variant="ghost" onClick={onReset}>Empezar de nuevo</Button>
       </div>
     </div>
@@ -229,7 +229,7 @@ function Wizard({ proposal }: { proposal: SetupProposal | null }) {
       <div className="flex flex-wrap gap-1.5">
         {ordered.map((i, idx) => {
           const d = setup.status.items.find((x) => x.id === i.id)?.done;
-          return <button key={i.id} onClick={() => setStep(idx)} className={`rounded-none border px-3 py-1 text-xs ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
+          return <button key={i.id} onClick={() => setStep(idx)} className={`min-h-8 rounded-none border px-3 py-1.5 text-xs md:min-h-0 md:py-1 ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
         })}
       </div>
       <div className="mt-5">
@@ -240,6 +240,8 @@ function Wizard({ proposal }: { proposal: SetupProposal | null }) {
     </div>
   );
 }
+
+const SEG_COLS = [["acv_min", "ACV mín."], ["acv_max", "ACV máx."], ["win_rate_target", "Win rate %"], ["ae_quota", "Cuota anual AE"]] as const;
 
 function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupProposal | null; onSaved: () => void }) {
   const apply = useServerFn(applySetupItems);
@@ -298,14 +300,22 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
       {id === "pillars" && v.rows?.map((r: any, i: number) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr]"><Input placeholder={`Pilar ${i + 1}`} value={r.title} onChange={(e) => setRow(i, "title", e.target.value)} /><Input placeholder="Mensaje" value={r.message} onChange={(e) => setRow(i, "message", e.target.value)} /></div>
       ))}
-      {(id === "segments" || id === "benchmarks") && (
-        <div className="overflow-x-auto"><table className="w-full text-sm">
-          <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1">Segmento</th><th>ACV mín.</th><th>ACV máx.</th><th>Win rate %</th><th>Cuota anual AE</th></tr></thead>
+      {(id === "segments" || id === "benchmarks") && (<>
+        <div className="space-y-3 md:hidden">{v.rows?.map((r: any, i: number) => (
+          <div key={r.id} className="border-t border-hairline pt-2">
+            <p className="text-sm font-medium">{r.name}</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">{SEG_COLS.map(([k, l]) => (
+              <label key={k} className="text-xs text-muted-foreground">{l}<Input className="mt-1" type="number" inputMode="decimal" value={r[k]} onChange={(e) => setRow(i, k, e.target.value)} /></label>
+            ))}</div>
+          </div>
+        ))}{!v.rows?.length && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}</div>
+        <div className="hidden overflow-x-auto md:block"><table className="w-full text-sm">
+          <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1">Segmento</th>{SEG_COLS.map(([k, l]) => <th key={k}>{l}</th>)}</tr></thead>
           <tbody>{v.rows?.map((r: any, i: number) => (
-            <tr key={r.id}><td className="py-1 pr-2">{r.name}</td>{["acv_min", "acv_max", "win_rate_target", "ae_quota"].map((k) => <td key={k} className="pr-2"><Input type="number" value={r[k]} onChange={(e) => setRow(i, k, e.target.value)} /></td>)}</tr>
+            <tr key={r.id}><td className="py-1 pr-2">{r.name}</td>{SEG_COLS.map(([k]) => <td key={k} className="pr-2"><Input type="number" value={r[k]} onChange={(e) => setRow(i, k, e.target.value)} /></td>)}</tr>
           ))}</tbody>
         </table>{!v.rows?.length && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}</div>
-      )}
+      </>)}
       {id === "quota" && <div className="max-w-xs">{inp("amount", `Tu cuota para ${quarterOf(new Date())}`, { type: "number" })}<p className="mt-1 text-xs text-muted-foreground">Las cuotas del resto del equipo se fijan en Métricas.</p></div>}
       {id === "accounts" && <label className="block text-sm">Una cuenta por línea<Textarea className="mt-1" rows={5} value={v.names ?? ""} onChange={(e) => setV({ ...v, names: e.target.value })} /></label>}
       {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("amount", "Importe", { type: "number" })}{inp("close_date", "Fecha de cierre", { type: "date" })}</div>}

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Page, Empty } from "@/components/page";
@@ -114,6 +114,17 @@ function Motions() {
     toast.success(`Moneda: ${CURRENCIES[c]}`);
   }
   const fmt1 = (n: number | null) => (n == null ? "—" : n.toLocaleString("es-ES", { maximumFractionDigits: 1 }));
+  // One editable cell, shared by the mobile cards and the desktop table.
+  const segCell = (s: (typeof segs)[number], k: (typeof SEG_COLS)[number][0]) => {
+    if (k === "motion") {
+      const suggested = recommendMotion(Number(s.acv_min ?? 0));
+      return <>
+        <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
+        {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
+      </>;
+    }
+    return <Input type="number" inputMode="decimal" defaultValue={(s as any)[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} />;
+  };
 
   return (
     <div className="space-y-8">
@@ -149,7 +160,7 @@ function Motions() {
               <dt className="text-muted-foreground">Payback objetivo</dt><dd>{seg.payback_months ? `${seg.payback_months} meses` : "—"}</dd>
             </dl>
             <div className="mt-4 overflow-hidden rounded-md border text-sm">
-              <div className="grid grid-cols-[1.2fr_1fr_1fr] bg-muted/50 px-3 py-1.5"><span className="eyebrow text-[10px]">Real vs objetivo · {seg.name}</span><span className="eyebrow text-[10px]">Real (12 meses)</span><span className="eyebrow text-[10px]">Objetivo</span></div>
+              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-muted/50 px-3 py-1.5"><span className="eyebrow text-[10px]">Real vs objetivo · {seg.name}</span><span className="eyebrow text-[10px]">Real (12 meses)</span><span className="eyebrow text-[10px]">Objetivo</span></div>
               {[
                 ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
                 ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}` : "—", pct(seg.win_rate_target)],
@@ -157,7 +168,7 @@ function Motions() {
                 ["CAC", segCac?.cac != null ? `${money(Math.round(segCac.cac))} · ${segCac.customers} ${segCac.customers === 1 ? "ganado" : "ganados"}` : segCac?.cost ? `${money(Math.round(segCac.cost))} gastado · 0 ganados` : "—", seg.cac_target ? money(Number(seg.cac_target)) : "—"],
                 ["Payback", paybackReal != null ? `${fmt1(paybackReal)} m` : "—", seg.payback_months ? `${seg.payback_months} m` : "—"],
               ].map(([l, r, t]) => (
-                <div key={l} className="grid grid-cols-[1.2fr_1fr_1fr] border-t px-3 py-1.5"><span className="text-muted-foreground">{l}</span><span>{r}</span><span>{t}</span></div>
+                <div key={l} className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 border-t px-3 py-1.5"><span className="break-words text-muted-foreground">{l}</span><span className="break-words">{r}</span><span className="break-words">{t}</span></div>
               ))}
             </div>
             {segCac?.cac == null && (
@@ -200,25 +211,36 @@ function Motions() {
         )}
       </div>
       <div>
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-3xl">Tus segmentos y benchmarks</h3><Button size="sm" onClick={add}>+ Segmento</Button></div>
-        <div className="overflow-x-auto rounded-lg border bg-card">
+        <div className="mb-3 flex items-center justify-between gap-3"><h3 className="min-w-0 text-3xl">Tus segmentos y benchmarks</h3><Button size="sm" className="shrink-0" onClick={add}>+ Segmento</Button></div>
+        <div className="divide-y divide-hairline border-t border-hairline md:hidden">
+          {segs.map((s) => (
+            <div key={s.id} className={`space-y-3 py-4 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
+              <Field label="Segmento"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></Field>
+              <div className="grid grid-cols-2 gap-3">
+                {SEG_COLS.map(([k, h]) => (
+                  <div key={k} className={k === "motion" ? "col-span-2" : "min-w-0"}>
+                    <Field label={`${h}${MONEY_COLS.includes(k) ? ` (${symbol})` : ""}`}>{segCell(s, k)}</Field>
+                  </div>
+                ))}
+              </div>
+              <dl className="grid grid-cols-3 gap-2 bg-signal/5 px-2 py-2 text-sm">
+                <div className="min-w-0"><dt className="eyebrow text-[10px]">ACV real</dt><dd className="break-words">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</dd></div>
+                <div className="min-w-0"><dt className="eyebrow text-[10px]">Win rate real</dt><dd>{pct(real.bySegment[s.id]?.winRate)}</dd></div>
+                <div className="min-w-0"><dt className="eyebrow text-[10px]">Ciclo real</dt><dd>{days(real.bySegment[s.id]?.cycleDays)}</dd></div>
+              </dl>
+            </div>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow sticky left-0 z-10 bg-background px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {segs.map((s) => {
-                const suggested = recommendMotion(Number(s.acv_min ?? 0));
                 return (
                   <tr key={s.id} className={`border-b last:border-0 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
-                    <td className="px-2 py-2 min-w-36"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></td>
-                    {SEG_COLS.map(([k]) => k === "motion" ? (
-                      <td key={k} className="px-2 py-2 min-w-44">
-                        <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
-                        {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
-                      </td>
-                    ) : (
-                      <td key={k} className={`px-2 py-2 ${MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>
-                        <Input type="number" defaultValue={(s as any)[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} />
-                      </td>
+                    <td className="sticky left-0 z-10 min-w-36 bg-background px-2 py-2"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></td>
+                    {SEG_COLS.map(([k]) => (
+                      <td key={k} className={`px-2 py-2 ${k === "motion" ? "min-w-44" : MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>{segCell(s, k)}</td>
                     ))}
                     <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
                     <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{pct(real.bySegment[s.id]?.winRate)}</td>
@@ -246,6 +268,12 @@ const ICP_FIELDS = [
 function Icp() {
   const qc = useQueryClient();
   const [sel, setSel] = useState<any | null>(null);
+  const detailRef = useRef<HTMLDivElement>(null);
+  const selId = sel?.id;
+  // Below lg the editor sits under the list: bring it into view when an ICP is picked.
+  useEffect(() => {
+    if (selId && typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selId]);
   const { data } = useQuery({
     queryKey: ["icp"],
     queryFn: async () => {
@@ -268,11 +296,11 @@ function Icp() {
       <div className="space-y-2">
         <Button size="sm" className="w-full" onClick={add}>+ ICP</Button>
         {data?.icps.map((i) => (
-          <button key={i.id} onClick={() => setSel(i)} className={`block w-full rounded-md border bg-card p-3 text-left text-sm ${sel?.id === i.id ? "border-signal" : ""}`}>{i.name}</button>
+          <button key={i.id} onClick={() => setSel(i)} className={`block w-full break-words rounded-md border bg-card p-3 text-left text-sm ${sel?.id === i.id ? "border-signal" : ""}`}>{i.name}</button>
         ))}
       </div>
       {sel ? (
-        <div className="space-y-4 rounded-lg border bg-card p-5">
+        <div ref={detailRef} className="min-w-0 scroll-mt-20 space-y-4 rounded-lg border bg-card p-5">
           <div className="grid gap-3 md:grid-cols-2">
             <Field label="Nombre"><Input value={sel.name} onChange={(e) => setSel({ ...sel, name: e.target.value })} /></Field>
             <Field label="Segmento"><Pick value={sel.segment_id ?? ""} options={Object.fromEntries([["", "—"], ...(data?.segs ?? []).map((s) => [s.id, s.name])])} onChange={(v) => setSel({ ...sel, segment_id: v })} /></Field>
@@ -364,9 +392,9 @@ function Pillars() {
   }
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">3–5 pilares. Cada uno responde a un dolor y se apoya en pruebas: funcionalidades, casos de cliente, datos.</p>
-        <Button size="sm" onClick={add} disabled={list.length >= 5}>+ Pilar</Button>
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 text-sm text-muted-foreground">3–5 pilares. Cada uno responde a un dolor y se apoya en pruebas: funcionalidades, casos de cliente, datos.</p>
+        <Button size="sm" className="shrink-0" onClick={add} disabled={list.length >= 5}>+ Pilar</Button>
       </div>
       {list.length === 0 && <Empty>Sin pilares todavía.</Empty>}
       <div className="grid gap-4 md:grid-cols-2">

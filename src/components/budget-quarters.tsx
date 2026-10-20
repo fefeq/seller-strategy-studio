@@ -29,6 +29,8 @@ export function BudgetQuarters() {
   const now = new Date().getFullYear();
   const [year, setYear] = useState(String(now));
   const [segId, setSegId] = useState("");
+  // On a phone the table shows one quarter (or the year) at a time; from md every column is visible.
+  const [mq, setMq] = useState("");
   const y = Number(year);
   const { data } = useQuery({
     queryKey: ["segment-coverage", orgId, "budget-quarters-tab", y],
@@ -66,7 +68,7 @@ export function BudgetQuarters() {
 
   const cell = (col: (typeof cols)[number], field: BudgetField, value: number | null, label: string) =>
     col.editable
-      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-7 w-[4.75rem] px-1 text-right text-[11px] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
+      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-10 w-24 px-1 text-right md:h-7 md:w-[4.75rem] md:text-[11px] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
       : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? String(value) : money(value)}</span>;
   const val = (v: string, strong = false) => <span className={`font-mono text-xs ${strong ? "font-medium" : ""}`}>{v}</span>;
   const pb = (n: number | null, ok: boolean | null) => (n == null ? val("—") : <span className={`font-mono text-xs font-medium ${ok === false ? "text-signal" : ok ? "text-success" : ""}`}>{fmt1(n)} m</span>);
@@ -82,6 +84,8 @@ export function BudgetQuarters() {
     { label: "Payback", plan: (c) => pb(c.r!.plan.payback, c.r!.payback.planOk), real: (c) => pb(c.r!.actual.payback, c.r!.payback.realOk), dev: (r) => <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />, strong: true },
   ];
   const yr = qb && i >= 0 ? qb.year[i] : undefined;
+  const shownCol = cols.some((c) => c.key === mq) ? mq : (cols.find((c) => c.key === `${y}-Q${Math.floor(new Date().getMonth() / 3) + 1}`) ?? cols[0])?.key;
+  const onlyMd = (c: (typeof cols)[number]) => (c.key === shownCol ? "" : "hidden md:table-cell");
 
   return (
     <div className="space-y-4">
@@ -93,8 +97,8 @@ export function BudgetQuarters() {
             <Link to="/metrics" className="underline">Métricas</Link> («CAC real» y «Deals ganados»). Debajo de cada cifra real, el desvío: verde si va mejor que el presupuesto, rojo si va peor.
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="w-44"><Pick value={sel} options={Object.fromEntries(segments.map((s) => [s.id, s.name]))} onChange={setSegId} /></div>
+        <div className="flex w-full gap-2 sm:w-auto">
+          <div className="min-w-0 flex-1 sm:w-44 sm:flex-none"><Pick value={sel} options={Object.fromEntries(segments.map((s) => [s.id, s.name]))} onChange={setSegId} /></div>
           <div className="w-28"><Pick value={year} options={Object.fromEntries([now - 1, now, now + 1].map((n) => [String(n), String(n)]))} onChange={setYear} /></div>
         </div>
       </div>
@@ -104,34 +108,39 @@ export function BudgetQuarters() {
       ) : (
         <>
           {yr && (
-            <div className="grid gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Kpi label={`Ingresos ${y}`} v={`${money(yr.actual.revenue ?? 0)}`} sub={<>de {money(yr.plan.revenue ?? 0)}<Deviation prefix=" · " real={yr.actual.revenue} plan={yr.plan.revenue} /></>} />
               <Kpi label="Margen bruto" v={pct(yr.actual.margin)} sub={<>presupuesto {pct(yr.plan.margin)}<Deviation prefix=" · " real={yr.actual.margin} plan={yr.plan.margin} points /></>} />
               <Kpi label="Gasto de captación" v={money(yr.actual.acquisition)} sub={<>de {money(yr.plan.acquisition ?? 0)}<Deviation prefix=" · " real={yr.actual.acquisition || null} plan={yr.plan.acquisition} lowerIsBetter /></>} />
               <Kpi label="Payback" v={yr.actual.payback != null ? `${fmt1(yr.actual.payback)} m` : "—"} sub={<>presupuesto {yr.plan.payback != null ? `${fmt1(yr.plan.payback)} m` : "—"} · objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}</>} />
             </div>
           )}
+          <div className="flex flex-wrap gap-1.5 md:hidden" role="group" aria-label="Trimestre visible">
+            {cols.map((c) => (
+              <button key={c.key} type="button" onClick={() => setMq(c.key)} aria-pressed={c.key === shownCol} className={`min-h-8 rounded-none border px-3 py-1.5 text-xs ${c.key === shownCol ? "bg-primary text-primary-foreground" : ""}`}>{c.label}</button>
+            ))}
+          </div>
           <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[860px] text-sm">
+            <table className="w-full text-sm md:min-w-[860px]">
               <thead>
                 <tr className="border-b text-xs text-muted-foreground">
-                  <th className="px-3 py-2 text-left font-normal" rowSpan={2}>Concepto</th>
-                  {cols.map((c) => <th key={c.key} colSpan={2} className={`px-2 pt-2 text-center font-normal ${c.key === "year" ? "bg-muted/50 text-foreground" : ""}`}>{c.label}</th>)}
+                  <th className="sticky left-0 z-10 bg-background px-3 py-2 text-left font-normal" rowSpan={2}>Concepto</th>
+                  {cols.map((c) => <th key={c.key} colSpan={2} className={`px-2 pt-2 text-center font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50 text-foreground" : ""}`}>{c.label}</th>)}
                 </tr>
                 <tr className="border-b text-[11px] text-muted-foreground">
                   {cols.map((c) => [
-                    <th key={`${c.key}-p`} className={`px-1 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Presup.</th>,
-                    <th key={`${c.key}-r`} className={`px-1 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Real</th>,
+                    <th key={`${c.key}-p`} className={`px-1 pb-2 text-right font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>Presup.</th>,
+                    <th key={`${c.key}-r`} className={`px-1 pb-2 text-right font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>Real</th>,
                   ])}
                 </tr>
               </thead>
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.label} className={`border-b last:border-0 ${l.strong ? "font-medium" : ""}`}>
-                    <td className="whitespace-nowrap px-3 py-2 text-xs">{l.label}</td>
+                    <td className="sticky left-0 z-10 whitespace-nowrap bg-background px-3 py-2 text-xs">{l.label}</td>
                     {cols.map((c) => [
-                      <td key={`${c.key}-p`} className={`px-1 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>{c.r && l.plan(c)}</td>,
-                      <td key={`${c.key}-r`} className={`px-1 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>
+                      <td key={`${c.key}-p`} className={`px-1 py-1.5 text-right align-top ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>{c.r && l.plan(c)}</td>,
+                      <td key={`${c.key}-r`} className={`px-1 py-1.5 text-right align-top ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>
                         {c.r && l.real(c)}
                         <div className="mt-0.5 font-mono text-[10px]">{c.r && l.dev(c.r)}</div>
                       </td>,

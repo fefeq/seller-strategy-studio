@@ -7,19 +7,24 @@ import { LISTENING_LEVELS, listeningStats, type ListeningLevel } from "@/lib/the
 const LEVELS = [1, 2, 3, 4] as const;
 
 export function LevelPicker({ value, onChange }: { value: number | null | undefined; onChange: (l: ListeningLevel | null) => void }) {
+  const picked = value ? LISTENING_LEVELS[value as ListeningLevel] : null;
   return (
-    <div className="grid grid-cols-4 gap-1.5">
+    <div>
+    <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
       {LEVELS.map((l) => (
         <button
           key={l}
           type="button"
           title={LISTENING_LEVELS[l].description}
           onClick={() => onChange(value === l ? null : l)}
-          className={`rounded-md border px-2 py-1.5 text-left text-xs ${value === l ? "border-signal bg-signal/10" : "hover:border-foreground/30"}`}
+          className={`min-h-10 rounded-md border px-2 py-1.5 text-left text-xs md:min-h-0 ${value === l ? "border-signal bg-signal/10" : "hover:border-foreground/30"}`}
         >
           <span className="font-mono text-[10px] text-muted-foreground">{l}</span> <span className="font-medium">{LISTENING_LEVELS[l].label}</span>
         </button>
       ))}
+    </div>
+    {/* The description lives in `title` on desktop; touch has no hover, so show it. */}
+    {picked && <p className="mt-1.5 text-xs text-muted-foreground md:hidden">{picked.description}</p>}
     </div>
   );
 }
@@ -65,8 +70,8 @@ export function Listening() {
         <p className="eyebrow">Reuniones valoradas</p>
         {meetings.length === 0 && <Empty>Aún no hay reuniones con nivel de escucha. Ábrelas desde Cuentas → Meeting Planner.</Empty>}
         {meetings.map((m) => (
-          <div key={m.id} className="flex items-center justify-between rounded-lg border bg-card p-3 text-sm">
-            <div>
+          <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
+            <div className="min-w-0 break-words">
               <p className="font-medium">{m.title}</p>
               <p className="text-xs text-muted-foreground">
                 {m.account_id ? <Link to="/accounts/$id" params={{ id: m.account_id }} className="hover:text-signal">{m.accounts?.name}</Link> : "—"}
@@ -74,7 +79,7 @@ export function Listening() {
                 {m.listening_coaching ? " · con coaching IA" : ""}
               </p>
             </div>
-            <span className="rounded bg-muted px-2 py-0.5 font-mono text-[10px] uppercase">{m.listening_level} · {LISTENING_LEVELS[m.listening_level as ListeningLevel]?.label}</span>
+            <span className="shrink-0 rounded bg-muted px-2 py-0.5 font-mono text-[10px] uppercase">{m.listening_level} · {LISTENING_LEVELS[m.listening_level as ListeningLevel]?.label}</span>
           </div>
         ))}
       </div>

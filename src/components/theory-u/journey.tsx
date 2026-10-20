@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -13,11 +13,20 @@ import { nextPhase, phaseIndex, U_PHASES } from "@/lib/theory-u";
 import { synthesizeJourney } from "@/lib/ai.functions";
 
 // Vertical offset per phase to draw the U: down the left, bottom, up the right.
-const DEPTH = ["mt-0", "mt-16", "mt-32", "mt-16", "mt-0"];
+// Only from sm: on phones the phases stack in one column.
+const DEPTH = ["sm:mt-0", "sm:mt-16", "sm:mt-32", "sm:mt-16", "sm:mt-0"];
+
+// Below lg the list/editor stack, so bring the target into view after a tap.
+function revealOnMobile(el: HTMLElement | null) {
+  if (el && typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+    requestAnimationFrame(() => el.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }
+}
 
 export function UJourney() {
   const qc = useQueryClient();
   const [selId, setSelId] = useState<string | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
   const { data: list = [] } = useQuery({
     queryKey: ["u_journeys"],
     queryFn: async () => (await supabase.from("u_journeys").select("*").order("created_at", { ascending: false })).data ?? [],
@@ -41,6 +50,7 @@ export function UJourney() {
     if (error) return toast.error(error.message);
     await qc.invalidateQueries({ queryKey: ["u_journeys"] });
     setSelId(data.id);
+    revealOnMobile(editorRef.current);
   }
 
   return (
@@ -48,15 +58,17 @@ export function UJourney() {
       <div className="space-y-2">
         <Button size="sm" className="w-full" onClick={add}>+ Nuevo recorrido</Button>
         {list.map((j) => (
-          <button key={j.id} onClick={() => setSelId(j.id)} className={`block w-full rounded-md border bg-card p-3 text-left text-sm ${selId === j.id ? "border-signal" : ""}`}>
+          <button key={j.id} onClick={() => { setSelId(j.id); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${selId === j.id ? "border-signal" : ""}`}>
             <span className="font-medium">{j.title}</span>
             <span className="block font-mono text-xs text-muted-foreground">{U_PHASES[phaseIndex(j.phase)]?.label}</span>
           </button>
         ))}
       </div>
-      {sel ? <JourneyEditor key={sel.id} journey={sel} counts={counts} /> : (
-        <Empty>Un recorrido U guía al equipo por 5 movimientos para replantear la estrategia comercial: co-iniciar, co-percibir, presencing, co-crear y co-evolucionar. Crea el primero.</Empty>
-      )}
+      <div ref={editorRef} className="min-w-0 scroll-mt-20">
+        {sel ? <JourneyEditor key={sel.id} journey={sel} counts={counts} /> : (
+          <Empty>Un recorrido U guía al equipo por 5 movimientos para replantear la estrategia comercial: co-iniciar, co-percibir, presencing, co-crear y co-evolucionar. Crea el primero.</Empty>
+        )}
+      </div>
     </div>
   );
 }
@@ -68,6 +80,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
   const [answers, setAnswers] = useState<Record<string, string>>(journey.answers ?? {});
   const [view, setView] = useState<string>(journey.phase);
   const [busy, setBusy] = useState(false);
+  const phaseRef = useRef<HTMLDivElement>(null);
   const synth = useServerFn(synthesizeJourney);
   const current = phaseIndex(journey.phase);
   const phase = U_PHASES[phaseIndex(view)] ?? U_PHASES[0];
@@ -98,14 +111,14 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
       </div>
 
       <div className="relative rounded-lg border bg-card px-4 pb-6 pt-5">
-        <svg className="pointer-events-none absolute inset-x-[10%] top-10 h-40 w-[80%] text-border" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
+        <svg className="pointer-events-none absolute inset-x-[10%] top-10 hidden h-40 sm:block w-[80%] text-border" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
           <path d="M0 0 C 0 45, 100 45, 100 0" fill="none" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1.5 1.5" vectorEffect="non-scaling-stroke" />
         </svg>
-        <div className="relative grid grid-cols-5 gap-2">
+        <div className="relative grid grid-cols-1 gap-2 sm:grid-cols-5">
           {U_PHASES.map((p, i) => {
             const state = i < current ? "done" : i === current ? "current" : "todo";
             return (
-              <button key={p.key} onClick={() => setView(p.key)} className={`${DEPTH[i]} rounded-lg border p-3 text-left transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
+              <button key={p.key} onClick={() => { setView(p.key); revealOnMobile(phaseRef.current); }} className={`${DEPTH[i]} min-w-0 break-words rounded-lg border p-3 text-left transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
                 <span className={`font-mono text-[10px] uppercase ${state === "current" ? "text-signal" : "text-muted-foreground"}`}>{i + 1} · {state === "done" ? "Hecho" : state === "current" ? "Ahora" : "Pendiente"}</span>
                 <span className="mt-1 block font-display text-lg leading-tight">{p.label}</span>
                 <span className="block text-xs text-muted-foreground">{p.tagline}</span>
@@ -115,7 +128,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
         </div>
       </div>
 
-      <div className="space-y-4 rounded-lg border bg-card p-5">
+      <div ref={phaseRef} className="scroll-mt-20 space-y-4 rounded-lg border bg-card p-5">
         <div>
           <h3 className="text-2xl">{phase.label}</h3>
           <p className="max-w-3xl text-sm text-muted-foreground">{phase.description}</p>
@@ -127,7 +140,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
           return <Field key={k} label={q}><Textarea rows={3} value={answers[k] ?? ""} onChange={(e) => setAnswers({ ...answers, [k]: e.target.value })} onBlur={() => save()} /></Field>;
         })}
         <div className="flex flex-wrap gap-2">
-          {phaseIndex(view) === current && nextPhase(journey.phase) && <Button onClick={advance}>Avanzar a {U_PHASES[current + 1].label} <ArrowRight className="size-4" /></Button>}
+          {phaseIndex(view) === current && nextPhase(journey.phase) && <Button className="h-auto min-h-10 whitespace-normal py-2 text-left md:min-h-0 md:whitespace-nowrap" onClick={advance}>Avanzar a {U_PHASES[current + 1].label} <ArrowRight className="size-4" /></Button>}
           <Button variant="outline" onClick={runSynth} disabled={busy}><Sparkles className="size-4" /> {busy ? "Sintetizando…" : "Sintetizar con IA"}</Button>
         </div>
       </div>

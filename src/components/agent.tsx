@@ -119,27 +119,27 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ open }}>
       {children}
       {orgId && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90">
-          <Brain className="size-4" /> Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
+        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 flex size-12 items-center justify-center gap-2 rounded-none bg-primary text-sm text-primary-foreground shadow-lg hover:opacity-90 md:bottom-6 md:right-6 md:size-auto md:px-4 md:py-3">
+          <Brain className="size-5 md:size-4" /> <span className="hidden md:inline">Agente</span> <kbd className="hidden rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px] md:inline">⌘J</kbd>
         </button>
       )}
       <Sheet open={isOpen} onOpenChange={setOpen}>
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
-          <SheetHeader className="border-b px-5 py-4">
-            <div className="flex items-center justify-between pr-8">
-              <SheetTitle className="flex items-center gap-2 font-display text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
+          <SheetHeader className="border-b px-5 py-4 text-left">
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-10 md:pr-8">
+              <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-xl md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
               <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
             </div>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-none border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>Nokko</button>
+              <button onClick={() => pickPersona(null)} className={`min-h-9 shrink-0 rounded-none border px-3 py-2 text-xs md:min-h-0 md:py-1 ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>Nokko</button>
               {personasFor(me?.roles ?? []).map((p) => (
-                <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`shrink-0 rounded-none border px-3 py-1 text-xs ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
+                <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`min-h-9 shrink-0 rounded-none border px-3 py-2 text-xs md:min-h-0 md:py-1 ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
               ))}
             </div>
             {persona && (
               <div className="mt-2 flex flex-wrap gap-1.5">
                 {persona.menu.map((m) => (
-                  <button key={m.code} onClick={() => runCode(m.code)} disabled={busy} className={`rounded border px-2 py-1 text-xs hover:bg-accent ${workflowId === m.workflow ? "border-primary" : ""}`}><span className="font-mono font-semibold">{m.code}</span> {m.label}</button>
+                  <button key={m.code} onClick={() => runCode(m.code)} disabled={busy} className={`min-h-9 rounded border px-2 py-2 text-left text-xs hover:bg-accent md:min-h-0 md:py-1 ${workflowId === m.workflow ? "border-primary" : ""}`}><span className="font-mono font-semibold">{m.code}</span> {m.label}</button>
                 ))}
               </div>
             )}
@@ -151,7 +151,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                 <p className="text-sm text-muted-foreground">{persona ? `${persona.focus} Elige un código del menú o pregúntame directamente.` : null}</p>
                 <p className="text-sm text-muted-foreground">Pregúntame por tu pipeline, métricas o cuentas, o pídeme que haga algo. Antes de cambiar datos te pediré confirmación.</p>
                 <div className="flex flex-wrap gap-2">
-                  {STARTERS.map((s) => <button key={s} onClick={() => s.endsWith("…") ? setText(s.replace("…", " ")) : submit(s, mode, convId)} className="rounded-none border px-3 py-1.5 text-xs hover:bg-accent">{s}</button>)}
+                  {STARTERS.map((s) => <button key={s} onClick={() => s.endsWith("…") ? setText(s.replace("…", " ")) : submit(s, mode, convId)} className="min-h-9 rounded-none border px-3 py-2 text-left text-xs hover:bg-accent md:min-h-0 md:py-1.5">{s}</button>)}
                 </div>
               </div>
             )}
@@ -162,8 +162,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                   : <div className="space-y-2 text-sm leading-relaxed">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{m.content}</ReactMarkdown>
                       {m.actions?.map((a) => (
-                        <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3">
-                          <span className="text-sm">{a.summary}</span>
+                        <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
+                          <span className="min-w-0 break-words text-sm">{a.summary}</span>
                           {a.status === "pending" ? (
                             <span className="flex shrink-0 gap-1.5">
                               <Button size="sm" onClick={() => onDecide(m.id, a, "confirm")}><Check className="size-3.5" /> Confirmar</Button>

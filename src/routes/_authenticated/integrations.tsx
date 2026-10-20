@@ -31,12 +31,12 @@ function Integrations() {
             <div className="grid gap-3 md:grid-cols-3">
               {data.filter((i) => i.category === c).map((i) => (
                 <div key={i.id} className="rounded-lg border bg-card p-4">
-                  <div className="flex items-center justify-between"><span className="font-medium">{i.name}</span>
-                    <span className={`rounded px-1.5 font-mono text-[10px] uppercase ${i.status === "connected" ? "bg-success/15 text-success" : i.status === "in_progress" ? "bg-warning/25" : "bg-muted text-muted-foreground"}`}>{STATUS[i.status]}</span>
+                  <div className="flex items-center justify-between gap-3"><span className="min-w-0 break-words font-medium">{i.name}</span>
+                    <span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${i.status === "connected" ? "bg-success/15 text-success" : i.status === "in_progress" ? "bg-warning/25" : "bg-muted text-muted-foreground"}`}>{STATUS[i.status]}</span>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">{i.purpose}</p>
                   {isOwner && (
-                    <select className="mt-3 h-8 w-full rounded border bg-background px-2 text-xs" value={i.status} onChange={(e) => set(i.id, e.target.value)}>
+                    <select className="mt-3 h-10 w-full rounded border bg-background px-2 text-xs md:h-8" value={i.status} onChange={(e) => set(i.id, e.target.value)}>
                       {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
                     </select>
                   )}

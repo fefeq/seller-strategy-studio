@@ -78,7 +78,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           </p>
         </div>
         {current && (
-          <div className="flex gap-6 text-right text-sm">
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-right text-sm">
             <Headline label={`CAC ${quarter}`} value={money0(current.actual.cac)} />
             <Headline label={`Payback ${quarter}`} value={current.actual.payback == null ? "—" : `${fmt1(current.actual.payback)} m`} />
           </div>
@@ -89,7 +89,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
         <table className="w-full min-w-[680px] text-sm">
           <thead>
             <tr className="border-b text-left text-xs text-muted-foreground">
-              <th className="py-2.5 pr-4 font-normal">KPI</th>
+              <th className="sticky left-0 z-10 bg-background py-2.5 pr-4 font-normal">KPI</th>
               {quarters.map((q) => (
                 <th key={q} className={`px-3 py-2.5 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}>{q}</th>
               ))}
@@ -98,7 +98,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           <tbody>
             {lines.map((l) => (
               <tr key={l.label} className="border-b align-top last:border-0">
-                <td className="py-3 pr-4 font-medium">{l.label}</td>
+                <td className="sticky left-0 z-10 bg-background py-3 pr-4 font-medium">{l.label}</td>
                 {kpis.map((k) => {
                   const real = l.value(k.actual), plan = l.value(k.plan);
                   const hint = l.hint?.(k);

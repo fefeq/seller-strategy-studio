@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,7 +46,7 @@ function AccountPage() {
 
   return (
     <Page eyebrow="Cuenta" title={a.name} actions={
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Select value={a.health ?? "green"} onValueChange={async (v) => { await supabase.from("accounts").update({ health: v }).eq("id", id); refresh(); }}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
           <SelectContent><SelectItem value="green">Sana</SelectItem><SelectItem value="yellow">Atención</SelectItem><SelectItem value="red">En riesgo</SelectItem></SelectContent>
@@ -114,11 +114,11 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
           </div>
         ))}
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button onClick={save}>Guardar Account Plan</Button>
         <Button variant="outline" onClick={genProposal} disabled={busy}><Sparkles className="size-4" /> {busy ? "Generando…" : "Borrador de propuesta con IA"}</Button>
       </div>
-      {proposal && <pre className="whitespace-pre-wrap rounded-lg border bg-card p-6 font-sans text-sm">{proposal}</pre>}
+      {proposal && <pre className="whitespace-pre-wrap break-words rounded-lg border bg-card p-6 font-sans text-sm">{proposal}</pre>}
     </div>
   );
 }
@@ -126,6 +126,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
 function StakeholdersTab({ accountId, list, onChange }: { accountId: string; list: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
+  const detailRef = useRevealOnMobile(sel?.id);
   const research = useServerFn(researchStakeholder);
   async function add() {
     const { data, error } = await supabase.from("stakeholders").insert({ account_id: accountId, name: "Nueva persona" }).select().single();
@@ -146,10 +147,10 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
   const roots = list.filter((s) => !s.reports_to || !list.find((x) => x.id === s.reports_to));
   const children = (pid: string) => list.filter((s) => s.reports_to === pid);
   const Node = ({ s }: { s: any }) => (
-    <li className="ml-4 border-l pl-4">
-      <button onClick={() => setSel(s)} className={`my-1 rounded-md border bg-card px-3 py-2 text-left text-sm ${sel?.id === s.id ? "border-signal" : ""}`}>
+    <li className="ml-2 border-l pl-2 sm:ml-4 sm:pl-4">
+      <button onClick={() => setSel(s)} className={`my-1 max-w-full break-words rounded-md border bg-card px-3 py-2 text-left text-sm ${sel?.id === s.id ? "border-signal" : ""}`}>
         <span className="font-medium">{s.name}</span> <span className="text-muted-foreground">· {s.title}</span>
-        <span className="mt-1 flex gap-1.5 font-mono text-[10px] uppercase">
+        <span className="mt-1 flex flex-wrap gap-1.5 font-mono text-[10px] uppercase">
           <span className="rounded bg-accent px-1">{BUYING_ROLES[s.buying_role] ?? s.buying_role}</span>
           <span className={`rounded px-1 ${s.support === "advocate" ? "bg-success/15 text-success" : s.support === "opponent" || s.support === "skeptic" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>{SUPPORT[s.support] ?? s.support}</span>
         </span>
@@ -160,12 +161,12 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex items-center justify-between"><h3 className="text-2xl">Mapa de poder</h3><Button size="sm" onClick={add}>+ Persona</Button></div>
-        {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
+        <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><Button size="sm" onClick={add}>+ Persona</Button></div>
+        {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
-        <div className="space-y-3 rounded-lg border bg-card p-5">
-          <div className="grid grid-cols-2 gap-3">
+        <div ref={detailRef} className="scroll-mt-20 space-y-3 rounded-lg border bg-card p-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Field label="Nombre"><Input value={sel.name ?? ""} onChange={(e) => setSel({ ...sel, name: e.target.value })} /></Field>
             <Field label="Cargo"><Input value={sel.title ?? ""} onChange={(e) => setSel({ ...sel, title: e.target.value })} /></Field>
             <Field label="Email"><Input value={sel.email ?? ""} onChange={(e) => setSel({ ...sel, email: e.target.value })} /></Field>
@@ -175,8 +176,8 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
             <Field label="Reporta a"><Pick value={sel.reports_to ?? ""} options={Object.fromEntries([["", "—"], ...list.filter((x) => x.id !== sel.id).map((x) => [x.id, x.name])])} onChange={(v) => setSel({ ...sel, reports_to: v })} /></Field>
           </div>
           <Field label="Prioridades y notas"><Textarea rows={3} value={sel.priorities ?? ""} onChange={(e) => setSel({ ...sel, priorities: e.target.value })} /></Field>
-          <div className="flex gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button></div>
-          {sel.research && <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
+          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button></div>
+          {sel.research && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
         </div>
       ) : <Empty>Selecciona una persona del mapa.</Empty>}
     </div>
@@ -193,6 +194,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [coachBusy, setCoachBusy] = useState(false);
+  const detailRef = useRevealOnMobile(sel?.id);
   const brief = useServerFn(generateMeetingBrief);
   const coach = useServerFn(listeningCoaching);
   async function add() {
@@ -230,13 +232,13 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
         <Button size="sm" className="w-full" onClick={add}>+ Planificar reunión</Button>
         {list.map((m) => (
           <button key={m.id} onClick={() => setSel(m)} className={`block w-full rounded-md border bg-card p-3 text-left text-sm ${sel?.id === m.id ? "border-signal" : ""}`}>
-            <span className="font-medium">{m.title}</span>
+            <span className="break-words font-medium">{m.title}</span>
             <span className="block font-mono text-xs text-muted-foreground">{m.scheduled_at ? new Date(m.scheduled_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" }) : ""}</span>
           </button>
         ))}
       </div>
       {sel ? (
-        <div className="space-y-4 rounded-lg border bg-card p-5">
+        <div ref={detailRef} className="scroll-mt-20 space-y-4 rounded-lg border bg-card p-5">
           <div className="grid gap-3 md:grid-cols-3">
             <Field label="Título"><Input value={sel.title} onChange={(e) => setSel({ ...sel, title: e.target.value })} /></Field>
             <Field label="Fecha y hora"><Input type="datetime-local" value={sel.scheduled_at ? new Date(sel.scheduled_at).toISOString().slice(0, 16) : ""} onChange={(e) => setSel({ ...sel, scheduled_at: new Date(e.target.value).toISOString() })} /></Field>
@@ -246,7 +248,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
             <div className="flex flex-wrap gap-1.5">
               <span className="eyebrow mr-1 self-center">Añadir asistente:</span>
               {stakeholders.map((s) => (
-                <button key={s.id} className="rounded-none border px-2.5 py-0.5 text-xs hover:border-signal" onClick={() => setSel({ ...sel, attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role] ?? ""})` })}>{s.name}</button>
+                <button key={s.id} className="min-h-8 rounded-none border px-2.5 py-1.5 text-xs hover:border-signal md:min-h-0 md:py-0.5" onClick={() => setSel({ ...sel, attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role] ?? ""})` })}>{s.name}</button>
               ))}
             </div>
           )}
@@ -255,8 +257,8 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
               <Field key={k} label={label}><Textarea rows={3} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
             ))}
           </div>
-          <div className="flex gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Call Prep con IA"}</Button></div>
-          {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><pre className="whitespace-pre-wrap rounded-md bg-muted p-4 font-sans text-sm">{sel.ai_brief}</pre></div>}
+          <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Call Prep con IA"}</Button></div>
+          {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.ai_brief}</pre></div>}
           <div className="space-y-3 border-t pt-4">
             <div>
               <p className="eyebrow">Después: ¿cómo escuchaste? · Theory U</p>
@@ -265,7 +267,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
             <LevelPicker value={sel.listening_level} onChange={(l) => setSel({ ...sel, listening_level: l })} />
             <Textarea rows={2} placeholder="¿En qué momento escuchaste de verdad? ¿Cuándo estabas pensando en tu pitch?" value={sel.listening_reflection ?? ""} onChange={(e) => setSel({ ...sel, listening_reflection: e.target.value })} />
             <Button variant="outline" size="sm" onClick={genCoaching} disabled={coachBusy}><Sparkles className="size-4" /> {coachBusy ? "Analizando…" : "Coaching de escucha con IA"}</Button>
-            {sel.listening_coaching && <pre className="whitespace-pre-wrap rounded-md bg-muted p-4 font-sans text-sm">{sel.listening_coaching}</pre>}
+            {sel.listening_coaching && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.listening_coaching}</pre>}
           </div>
         </div>
       ) : <Empty>Selecciona o planifica una reunión.</Empty>}
@@ -293,8 +295,8 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
         {list.length === 0 && <Empty>Sin llamadas registradas.</Empty>}
         {list.map((c) => (
           <div key={c.id} className="rounded-lg border bg-card p-4 text-sm">
-            <div className="flex justify-between"><span className="font-medium">{c.title}</span><span className="font-mono text-xs text-muted-foreground">{c.occurred_at ? new Date(c.occurred_at).toLocaleDateString("es-ES") : ""}</span></div>
-            {c.summary && <p className="mt-2 whitespace-pre-wrap">{c.summary}</p>}
+            <div className="flex justify-between gap-3"><span className="min-w-0 break-words font-medium">{c.title}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{c.occurred_at ? new Date(c.occurred_at).toLocaleDateString("es-ES") : ""}</span></div>
+            {c.summary && <p className="mt-2 whitespace-pre-wrap break-words">{c.summary}</p>}
             {c.next_steps && <p className="mt-2 text-signal">→ {c.next_steps}</p>}
           </div>
         ))}
@@ -316,12 +318,21 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
       <Button size="sm" onClick={add}>+ Nuevo deal</Button>
       {list.length === 0 && <Empty>Sin deals en esta cuenta.</Empty>}
       {list.map((d) => (
-        <Link key={d.id} to="/deals" search={{ deal: d.id }} className="flex items-center justify-between rounded-lg border bg-card p-4 text-sm hover:border-signal">
-          <span className="font-medium">{d.name}</span>
-          <span className="flex items-center gap-4"><span>{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><span className="font-mono">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
+        <Link key={d.id} to="/deals" search={{ deal: d.id }} className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-sm hover:border-signal sm:flex-row sm:items-center sm:justify-between">
+          <span className="min-w-0 break-words font-medium">{d.name}</span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:shrink-0"><span>{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><span className="font-mono">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
         </Link>
       ))}
     </div>
   );
 }
 
+/** On < lg the editor sits below the list: bring it into view when a new item is selected. */
+function useRevealOnMobile(key: string | undefined) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!key || !ref.current || !window.matchMedia("(max-width: 1023px)").matches) return;
+    ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [key]);
+  return ref;
+}

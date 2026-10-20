@@ -39,6 +39,9 @@ const METHODS = [
 ] as const;
 const STATUS: Record<string, string> = { draft: "Borrador", approved: "Aprobado", archived: "Archivado" };
 
+// Wide markdown tables scroll inside their own box instead of widening the sheet.
+const MD_COMPONENTS = { table: ({ node: _node, ...p }: any) => <div className="max-w-full overflow-x-auto"><table {...p} /></div> };
+
 type Art = { id: string; kind: string; title: string; version: number; status: string; content: string; persona: string | null; updated_at: string; meta: any };
 
 function CyclePage() {
@@ -78,17 +81,17 @@ function CyclePage() {
                 const list = arts.filter((a) => a.kind === k);
                 return (
                   <div key={k} className="mt-4">
-                    <div className="flex items-center justify-between"><p className="text-sm font-medium">{ARTIFACTS[k].label}</p><span className="text-[10px] text-muted-foreground">{getPersona(PERSONA_FOR[k])?.name}</span></div>
+                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 break-words text-sm font-medium">{ARTIFACTS[k].label}</p><span className="shrink-0 text-[10px] text-muted-foreground">{getPersona(PERSONA_FOR[k])?.name}</span></div>
                     <div className="mt-1.5 space-y-1">
                       {list.slice(0, k === "winloss" ? 5 : 3).map((a) => (
-                        <button key={a.id} onClick={() => setSelected(a.id)} className="flex w-full items-center justify-between rounded border px-2 py-1.5 text-left text-xs hover:bg-accent">
+                        <button key={a.id} onClick={() => setSelected(a.id)} className="flex min-h-10 w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-xs hover:bg-accent md:min-h-0">
                           <span className="truncate"><FileText className="mr-1 inline size-3" />{k === "winloss" ? a.title.replace("Win/Loss: ", "") : `v${a.version}`}</span>
-                          <span className={a.status === "approved" ? "text-success" : "text-muted-foreground"}>{STATUS[a.status]}</span>
+                          <span className={`shrink-0 ${a.status === "approved" ? "text-success" : "text-muted-foreground"}`}>{STATUS[a.status]}</span>
                         </button>
                       ))}
                       {list.length === 0 && <p className="text-xs text-muted-foreground">Aún no hay ninguno.</p>}
                     </div>
-                    <Button size="sm" variant="ghost" className="mt-1 h-7 w-full text-xs" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>
+                    <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>
                   </div>
                 );
               })}
@@ -124,7 +127,7 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
         <DialogHeader><DialogTitle>{ARTIFACTS[kind].label} con {p?.name}</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">{p?.name} usará el contexto de empresa y los documentos aprobados. Secciones: {ARTIFACTS[kind].sections.join(" · ")}.</p>
         {kind === "winloss" && (
-          <select className="h-9 rounded-md border bg-background px-2 text-sm" value={dealId} onChange={(e) => setDealId(e.target.value)}>
+          <select className="h-10 rounded-md border bg-background px-2 text-sm md:h-9" value={dealId} onChange={(e) => setDealId(e.target.value)}>
             <option value="">Elige un deal cerrado…</option>
             {closed.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.stage === "won" ? "Ganado" : "Perdido"})</option>)}
           </select>
@@ -178,8 +181,8 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
   return (
     <Sheet open onOpenChange={(o) => { if (!o) { onClose(); setEdit(null); setResult(null); } }}>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
-        <SheetHeader>
-          <SheetTitle className="font-display text-3xl">{art.title} · v{art.version}</SheetTitle>
+        <SheetHeader className="text-left">
+          <SheetTitle className="break-words pr-10 font-display text-2xl [overflow-wrap:anywhere] md:text-3xl">{art.title} · v{art.version}</SheetTitle>
           <p className="text-xs text-muted-foreground">{STATUS[art.status]} · redactado con {getPersona(art.persona)?.name ?? "Nokko"} · {new Date(art.updated_at).toLocaleDateString("es-ES")}</p>
         </SheetHeader>
         <div className="mt-4 flex flex-wrap gap-2">
@@ -188,11 +191,11 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             : <><Button size="sm" onClick={save}>Guardar</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancelar</Button></>)}
           {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}><CheckCircle2 className="size-4" /> Aprobar</Button>}
           {art.status === "draft" && !leader && <span className="self-center text-xs text-muted-foreground">Solo Owner o Sales Leader pueden aprobar.</span>}
-          <span className="ml-auto flex items-center gap-1.5">
-            <select className="h-8 rounded-md border bg-background px-2 text-xs" value={method} onChange={(e) => setMethod(e.target.value)}>
+          <span className="flex w-full items-center gap-1.5 sm:ml-auto sm:w-auto">
+            <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <Button size="sm" variant="outline" onClick={runReview} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Revisión profunda</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Revisión profunda</Button>
           </span>
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}
         </div>
@@ -202,13 +205,13 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <ul className="mt-2 space-y-2 text-sm">
               {result.findings.map((f, i) => <li key={i}><span className={`mr-2 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${f.severity === "alta" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>{f.severity}</span>{f.issue} <span className="text-muted-foreground">→ {f.fix}</span></li>)}
             </ul>
-            <div className="mt-3 flex gap-2"><Button size="sm" onClick={applyRevision}>Aceptar cambios (nueva versión)</Button><Button size="sm" variant="ghost" onClick={() => setResult(null)}>Descartar</Button></div>
+            <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={applyRevision}>Aceptar cambios (nueva versión)</Button><Button size="sm" variant="ghost" onClick={() => setResult(null)}>Descartar</Button></div>
           </div>
         )}
         <div className="mt-6">
           {edit !== null
-            ? <Textarea rows={28} className="font-mono text-xs" value={edit} onChange={(e) => setEdit(e.target.value)} />
-            : <article className="prose-sm space-y-2 text-sm leading-relaxed [&_h2]:mt-5 [&_h2]:font-display [&_h2]:text-xl [&_li]:ml-5 [&_li]:list-disc [&_strong]:font-semibold [&_table]:w-full [&_table]:text-xs [&_td]:border-b [&_td]:px-2 [&_td]:py-1 [&_th]:border-b [&_th]:px-2 [&_th]:py-1 [&_th]:text-left"><ReactMarkdown remarkPlugins={[remarkGfm]}>{art.content}</ReactMarkdown></article>}
+            ? <Textarea rows={28} className="font-mono text-base md:text-xs" value={edit} onChange={(e) => setEdit(e.target.value)} />
+            : <article className="prose-sm min-w-0 space-y-2 break-words text-sm leading-relaxed [&_h2]:mt-5 [&_h2]:font-display [&_h2]:text-xl [&_li]:ml-5 [&_li]:list-disc [&_strong]:font-semibold [&_table]:w-full [&_table]:min-w-[36rem] [&_table]:text-xs md:[&_table]:min-w-0 [&_td]:border-b [&_td]:px-2 [&_td]:py-1 [&_th]:border-b [&_th]:px-2 [&_th]:py-1 [&_th]:text-left"><ReactMarkdown remarkPlugins={[remarkGfm]} components={MD_COMPONENTS}>{art.content}</ReactMarkdown></article>}
         </div>
       </SheetContent>
     </Sheet>

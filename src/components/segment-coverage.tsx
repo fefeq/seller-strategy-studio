@@ -86,11 +86,11 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
   return (
     <div className="rounded-md border p-4">
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="font-medium">{r.segment.name}</p>
+        <div className="min-w-0">
+          <p className="break-words font-medium">{r.segment.name}</p>
           <p className="text-[11px] text-muted-foreground">ACV {money(r.acv)} · {ACV_SOURCE[r.acvSource]}</p>
         </div>
-        <div className="text-right">
+        <div className="shrink-0 text-right">
           <p className={`font-display text-3xl ${tone}`}>{cov ? `${cov.ratio.toFixed(1)}x` : "—"}</p>
           <p className={`text-[11px] ${tone}`}>{!cov ? "Sin objetivo" : cov.status === "low" ? "Baja (<3x)" : cov.status === "healthy" ? "Sana (3–4x)" : "Alta (>4x)"}</p>
         </div>
@@ -98,7 +98,7 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
       <div className="mt-3 flex items-center justify-between gap-2 text-sm">
         <span className="whitespace-nowrap text-muted-foreground">Objetivo {quarter}</span>
         {canEdit
-          ? <Input type="number" min={0} className="h-8 w-32 text-right" defaultValue={r.target || ""} key={`${r.segment.id}-${quarter}-${r.target}`} placeholder="Importe" onBlur={(e) => e.target.value !== "" && Number(e.target.value) !== r.target && onTarget(Number(e.target.value))} />
+          ? <Input type="number" min={0} className="h-10 w-32 text-right md:h-8" defaultValue={r.target || ""} key={`${r.segment.id}-${quarter}-${r.target}`} placeholder="Importe" onBlur={(e) => e.target.value !== "" && Number(e.target.value) !== r.target && onTarget(Number(e.target.value))} />
           : <span className="font-mono">{r.target ? money(r.target) : "—"}</span>}
       </div>
       <div className="mt-3 space-y-2">
@@ -106,14 +106,14 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
         <Metric label="Deals ganados" real={`${r.won.deals} · ${money(r.won.amount)}`} target={r.won.target != null ? `${r.won.target} deals` : null} progress={r.won.target ? r.won.deals / r.won.target : null} hint={r.won.attainment != null ? `${pct(r.won.attainment)} del objetivo` : undefined} />
         <Metric label="Oportunidades creadas" real={`${r.opps.created} (${r.opps.open} abiertas)`} target={r.opps.target != null ? `${r.opps.target}` : null} progress={r.opps.target ? r.opps.created / r.opps.target : null} hint={r.opps.target == null && r.target ? "Falta win rate objetivo" : undefined} />
         <Metric label="Win rate" real={r.winRate.real != null ? pct(r.winRate.real) : "—"} target={r.winRate.target != null ? `${r.winRate.target}%` : null} progress={r.winRate.real != null && r.winRate.target ? r.winRate.real / (r.winRate.target / 100) : null} />
-        <div className="flex items-center justify-between border-t pt-2 text-sm">
+        <div className="flex items-center justify-between gap-2 border-t pt-2 text-sm">
           <span>CAC</span>
           <span className="font-mono text-xs">
             {r.cac.real != null ? money(r.cac.real) : "—"}
             <span className="text-muted-foreground"> / obj. {r.cac.target != null ? money(r.cac.target) : "—"}</span>
           </span>
         </div>
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between gap-2 text-sm">
           <span>Payback {r.payback.source === "real" ? "real" : r.payback.source === "objetivo" ? "estimado" : ""}</span>
           <span className="font-mono text-xs">
             <span className={r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""}>{r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}</span>
@@ -143,7 +143,7 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
 function Metric({ label, real, target, progress, hint }: { label: string; real: string; target: string | null; progress: number | null; hint?: string }) {
   return (
     <div className="text-sm">
-      <div className="flex justify-between gap-2"><span>{label}</span><span className="font-mono text-xs">{real}<span className="text-muted-foreground"> / {target ?? "—"}</span></span></div>
+      <div className="flex flex-wrap justify-between gap-x-2"><span className="min-w-0">{label}</span><span className="ml-auto font-mono text-xs">{real}<span className="text-muted-foreground"> / {target ?? "—"}</span></span></div>
       <div className="mt-1 h-1.5 rounded bg-muted"><div className={`h-full rounded ${progress != null && progress >= 1 ? "bg-success" : "bg-primary"}`} style={{ width: `${progress != null ? Math.min(100, Math.round(progress * 100)) : 0}%` }} /></div>
       {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
     </div>

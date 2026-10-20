@@ -85,6 +85,7 @@ function AuthPage() {
       </div>
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-4">
+          <Link to="/" aria-label="Nokko" className="mb-8 inline-block md:hidden"><Lockup /></Link>
           <h1 className="lede-m">{mode === "in" ? "Entrar" : "Crear cuenta"}</h1>
           {mode === "up" && (
             <div className="space-y-1.5"><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
@@ -93,7 +94,7 @@ function AuthPage() {
           <div className="space-y-1.5"><Label>Contraseña</Label><Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
           <Button className="w-full" disabled={busy}>{mode === "in" ? "Entrar" : "Crear cuenta"}</Button>
           <Button type="button" variant="outline" className="w-full" onClick={google}>Continuar con Google</Button>
-          <button type="button" className="w-full text-sm text-ink underline decoration-hairline-firm underline-offset-4" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+          <button type="button" className="w-full py-2 text-sm text-ink underline decoration-hairline-firm underline-offset-4" onClick={() => setMode(mode === "in" ? "up" : "in")}>
             {mode === "in" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
           </button>
           <p className="note">Al entrar podrás crear tu empresa o unirte a las que te hayan invitado.</p>

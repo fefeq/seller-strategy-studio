@@ -30,7 +30,7 @@ export function AssistantActions() {
       <div className="divide-y">
         {data.map((a) => (
           <div key={a.id} className="flex flex-wrap items-center gap-3 py-2 text-sm">
-            <span className="flex-1">{a.summary}</span>
+            <span className="min-w-0 basis-full break-words sm:flex-1 sm:basis-auto">{a.summary}</span>
             <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</span>
             <Button size="sm" onClick={() => run(a.id, "confirm")}>Confirmar</Button>
             <Button size="sm" variant="outline" onClick={() => run(a.id, "cancel")}>Cancelar</Button>
