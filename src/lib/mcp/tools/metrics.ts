@@ -4,7 +4,7 @@ import { segmentActuals } from "@/lib/pipeline-real";
 import { segmentCoverage, type SegLike } from "@/lib/segment-coverage";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { costByChannel } from "@/lib/cac";
-import { quartersOfYear, segmentBudget, withBudgetMargin } from "@/lib/segment-budget";
+import { quarterlyBudget, quartersOfYear, withPeriodMargin } from "@/lib/segment-budget";
 import { mcpCtx, json } from "../context";
 
 const round = (n: number | null | undefined) => (n == null ? null : Math.round(n * 10) / 10);
@@ -33,7 +33,7 @@ export const realMetrics = defineTool({
 export const segmentCoverageTool = defineTool({
   name: "get_segment_coverage",
   title: "Segment coverage",
-  description: "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto anual y payback por segmento frente al objetivo del trimestre, más el presupuesto del año (ingresos, coste de servir y captación, previsto frente a real).",
+  description: "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
   inputSchema: { quarter: z.string().regex(/^\d{4}-Q[1-4]$/).optional().describe("Trimestre AAAA-QN; por defecto el actual") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ quarter }, ctx) => {
@@ -47,18 +47,20 @@ export const segmentCoverageTool = defineTool({
       c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at").eq("org_id", c.orgId),
       c.db.from("segment_targets").select("segment_id,amount").eq("org_id", c.orgId).eq("period", q),
       c.db.from("cac_costs").select("segment_id,channel,amount,period").eq("org_id", c.orgId).in("period", quartersOfYear(year)),
-      c.db.from("segment_budgets").select("*").eq("org_id", c.orgId).eq("year", year),
+      c.db.from("segment_budget_quarters").select("*").eq("org_id", c.orgId).in("period", quartersOfYear(year)),
     ]);
     const costs = (yearCosts ?? []).filter((x) => x.period === q);
     const t = Object.fromEntries((targets ?? []).map((x) => [x.segment_id, Number(x.amount)]));
-    const rows = segmentCoverage(withBudgetMargin((segs ?? []) as SegLike[], budgets ?? [], year), deals ?? [], t, range, costs);
-    const budget = segmentBudget((segs ?? []) as SegLike[], deals ?? [], budgets ?? [], yearCosts ?? [], year);
+    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q), deals ?? [], t, range, costs);
+    const qb = quarterlyBudget((segs ?? []) as SegLike[], deals ?? [], budgets ?? [], yearCosts ?? [], year);
+    const quarterB = qb.byQuarter[q], budget = qb.year;
     return json({
       quarter: q, currency: c.currency, cost_by_channel: costByChannel(costs),
       segments: rows.map((r, i) => ({
         name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
         cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target },
-        gross_margin: { pct: round(budget[i].margin.pct), source: budget[i].margin.source },
+        gross_margin: { pct: round(quarterB[i].margin.pct), source: quarterB[i].margin.source },
+        budget_quarter: { plan: quarterB[i].plan, actual: quarterB[i].actual, revenue_attainment: quarterB[i].revenueAttainment },
         payback: { ...r.payback, real: round(r.payback.real) },
         budget_year: { year, plan: budget[i].plan, actual: budget[i].actual, revenue_attainment: budget[i].revenueAttainment },
       })),

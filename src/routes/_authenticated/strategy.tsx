@@ -14,7 +14,8 @@ import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
 import type { SegLike } from "@/lib/segment-coverage";
-import { marginFor } from "@/lib/segment-budget";
+import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-budget";
+import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
@@ -31,12 +32,14 @@ function Strategy() {
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Motions por segmento</TabsTrigger>
           <TabsTrigger value="payback">Payback real</TabsTrigger>
+          <TabsTrigger value="budget">Presupuesto vs real</TabsTrigger>
           <TabsTrigger value="icp">ICP</TabsTrigger>
           <TabsTrigger value="positioning">Posicionamiento</TabsTrigger>
           <TabsTrigger value="pillars">Mensajes</TabsTrigger>
         </TabsList>
         <TabsContent value="motions"><Motions /></TabsContent>
         <TabsContent value="payback"><PaybackQuarters /></TabsContent>
+        <TabsContent value="budget"><BudgetQuarters /></TabsContent>
         <TabsContent value="icp"><Icp /></TabsContent>
         <TabsContent value="positioning"><Positioning /></TabsContent>
         <TabsContent value="pillars"><Pillars /></TabsContent>
@@ -69,7 +72,8 @@ function Motions() {
   const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
   const { data: costs = [] } = useQuery({ queryKey: ["segment-coverage", "cac-12m"], queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", lastQuarters())).data ?? [] });
   const year = new Date().getFullYear();
-  const { data: budgets = [] } = useQuery({ queryKey: ["segment-coverage", "budgets", year], queryFn: async () => (await supabase.from("segment_budgets").select("*").eq("year", year)).data ?? [] });
+  const { data: budgetRows = [] } = useQuery({ queryKey: ["segment-coverage", "budget-quarters", year], queryFn: async () => (await supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year))).data ?? [] });
+  const budgets = useMemo(() => annualFromQuarters(budgetRows, year), [budgetRows, year]);
   const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
   const cacReal = useMemo(() => trailingCac(segs as SegLike[], deals, costs), [segs, deals, costs]);
   // The ACV follows the real pipeline until the user types their own value.

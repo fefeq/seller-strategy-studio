@@ -7,7 +7,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
-import { withBudgetMargin, type MarginSource } from "@/lib/segment-budget";
+import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
@@ -16,7 +16,7 @@ const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos",
 
 /**
  * Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels.
- * `segments` carry the gross margin of the year's budget (real → plan → target) so every payback uses it.
+ * `segments` carry the budget margin of the quarter, then its year (real → plan → target) so every payback uses it.
  */
 export function useSegmentCoverageData(quarter: string) {
   const { data: me } = useMe();
@@ -31,10 +31,10 @@ export function useSegmentCoverageData(quarter: string) {
         supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
         supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
         supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
-        supabase.from("segment_budgets").select("*").eq("year", year),
+        supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
       ]);
       return {
-        segments: withBudgetMargin(s.data ?? [], b.data ?? [], year), deals: d.data ?? [], costs: c.data ?? [],
+        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter), deals: d.data ?? [], costs: c.data ?? [],
         targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
       };
     },
