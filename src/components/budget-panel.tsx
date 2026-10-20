@@ -30,8 +30,10 @@ export function BudgetPanel({ year }: { year: number }) {
   const rows = useMemo(() => (data ? segmentBudget(data.segments, data.deals, data.budgets, data.costs, year) : []), [data, year]);
   const sum = (f: (r: SegmentBudgetRow) => number | null) => rows.reduce((s, r) => s + (f(r) ?? 0), 0);
   const planRev = sum((r) => r.plan.revenue), realRev = sum((r) => r.actual.revenue);
-  const realCost = sum((r) => r.actual.costToServe);
-  const realMargin = realRev ? ((realRev - realCost) / realRev) * 100 : null;
+  // Revenue-weighted average of each segment's margin (already limited to quarters with revenue and cost).
+  const withMargin = rows.filter((r) => r.actual.margin != null && r.actual.revenue);
+  const weight = withMargin.reduce((s, r) => s + r.actual.revenue!, 0);
+  const realMargin = weight ? withMargin.reduce((s, r) => s + r.actual.margin! * r.actual.revenue!, 0) / weight : null;
 
   return (
     <section className="rounded-lg border bg-card p-5">
