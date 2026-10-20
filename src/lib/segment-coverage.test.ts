@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { segmentAcv, segmentCoverage, type DealLike, type SegLike } from "./segment-coverage";
+import { paybackByQuarter, paybackSummary, segmentAcv, segmentCoverage, type DealLike, type SegLike } from "./segment-coverage";
+import { quarterRange } from "./metrics";
 
 const range = { start: new Date("2026-10-01"), end: new Date("2027-01-01") };
 const mid: SegLike = { id: "mid", name: "Mid-market", acv_min: 5000, acv_max: 50000, win_rate_target: 25, cac_target: 10000, gross_margin_pct: 80, payback_months: 12 };
@@ -36,5 +37,30 @@ describe("segment coverage", () => {
   });
   it("ACV falls back to the range midpoint without deals", () => {
     expect(segmentAcv(mid, []).acv).toBe(27500);
+  });
+});
+
+describe("payback summary for the dashboard", () => {
+  it("takes each segment's latest quarter with real payback, its trend, and counts segments within target", () => {
+    const deals = [
+      d({ amount: 20000, stage: "won", segment_id: "mid", closed_at: "2026-05-10" }),
+      d({ amount: 20000, stage: "won", segment_id: "mid", closed_at: "2026-08-10" }),
+      d({ amount: 100000, stage: "won", segment_id: "ent", closed_at: "2026-08-10" }),
+    ];
+    const costs = [
+      { segment_id: "mid", channel: "Eventos", amount: 10000, period: "2026-Q2" },
+      { segment_id: "mid", channel: "Eventos", amount: 20000, period: "2026-Q3" },
+      { segment_id: "ent", channel: "Eventos", amount: 200000, period: "2026-Q3" },
+    ];
+    const qs = ["2026-Q2", "2026-Q3", "2026-Q4"];
+    const s = paybackSummary(paybackByQuarter([mid, ent], deals, costs, qs, quarterRange), qs);
+    const [m, e] = s.latest;
+    // Mid Q3: 20 000 / (20 000 × 80% / 12) = 15 m (target 12), Q2 was 7.5 m
+    expect(m.quarter).toBe("2026-Q3");
+    expect(m.cell?.payback).toBeCloseTo(15);
+    expect(m.trend).toBeCloseTo(7.5);
+    // Ent Q3: 200 000 / (100 000 × 80% / 12) = 30 m (target 18)
+    expect(e.cell?.ok).toBe(false);
+    expect([s.within, s.measured]).toEqual([0, 2]);
   });
 });

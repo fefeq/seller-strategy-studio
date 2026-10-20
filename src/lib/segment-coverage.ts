@@ -101,3 +101,21 @@ export function paybackByQuarter(segments: SegLike[], deals: DealLike[], costs: 
     return { segment: seg, target, byQuarter };
   });
 }
+
+/**
+ * Dashboard summary of paybackByQuarter: per segment the latest quarter with a real payback (and the one before,
+ * for the trend), plus how many measured segments are within their target.
+ */
+export function paybackSummary(rows: ReturnType<typeof paybackByQuarter>, quarters: string[]) {
+  const latest = rows.map((r) => {
+    const real = [...quarters].reverse().filter((q) => r.byQuarter[q].status === "real");
+    const cell = real[0] ? r.byQuarter[real[0]] : null;
+    const prev = real[1] ? r.byQuarter[real[1]] : null;
+    return {
+      segment: r.segment, target: r.target, quarter: real[0] ?? null, cell,
+      trend: cell?.payback != null && prev?.payback != null ? cell.payback - prev.payback : null,
+    };
+  });
+  const measured = latest.filter((l) => l.cell && l.target != null);
+  return { latest, measured: measured.length, within: measured.filter((l) => l.cell!.ok).length };
+}
