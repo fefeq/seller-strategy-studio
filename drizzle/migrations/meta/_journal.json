@@ -99,6 +99,13 @@
       "when": 1792455506588,
       "tag": "0013_suggestions_team_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792455978015,
+      "tag": "0014_restrict_user_roles_read",
+      "breakpoints": true
     }
   ]
 }
