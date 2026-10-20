@@ -34,7 +34,10 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
             } catch (e) { console.error("proactive org failed", o.id, e); }
           }
           await notifyUrgent(db);
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total });
+          // Monday morning: this week's pipeline report for every company (idempotent, once per week).
+          const { runWeeklyReports } = await import("@/lib/weekly-report.server");
+          const weekly = await runWeeklyReports(db, now).catch((e) => { console.error("weekly reports failed", e); return null; });
+          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }
