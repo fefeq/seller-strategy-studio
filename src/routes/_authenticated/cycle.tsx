@@ -21,6 +21,7 @@ import { getPersona } from "@/lib/bmad/personas";
 import { TRACKS } from "@/lib/bmad/tracks";
 import { canUseAdvisor } from "@/lib/advisor";
 import { deepReview, draftArtifact } from "@/lib/bmad.functions";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   head: () => ({ meta: [
@@ -116,10 +117,10 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
   if (!kind) return null;
   const p = getPersona(PERSONA_FOR[kind]);
   async function go() {
-    if (kind === "winloss" && !dealId) return toast.error("Elige el deal cerrado");
+    if (kind === "winloss" && !dealId) return toast.error("Elige el deal cerrado.");
     setBusy(true);
-    try { const r = await draft({ data: { kind: kind!, notes, dealId: dealId || null } }); setNotes(""); setDealId(""); toast.success("Borrador creado"); onDone(r.id); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { const r = await draft({ data: { kind: kind!, notes, dealId: dealId || null } }); setNotes(""); setDealId(""); toast.success("Borrador creado."); onDone(r.id); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -154,27 +155,27 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
 
   async function save() {
     const { error } = await supabase.from("gtm_artifacts").update({ content: edit! }).eq("id", art!.id);
-    if (error) return toast.error(error.message);
-    setEdit(null); refresh(); toast.success("Guardado");
+    if (error) return toast.error(errorText(error));
+    setEdit(null); refresh(); toast.success("Guardado.");
   }
   async function approve() {
     if (kind !== "winloss") await supabase.from("gtm_artifacts").update({ status: "archived" }).eq("kind", kind).eq("status", "approved").neq("id", art!.id);
     const { error } = await supabase.from("gtm_artifacts").update({ status: "approved", approved_by: me?.user.id, approved_at: new Date().toISOString() }).eq("id", art!.id);
-    if (error) return toast.error(error.message);
-    refresh(); toast.success("Aprobado: ya alimenta la siguiente fase y a los agentes");
+    if (error) return toast.error(errorText(error));
+    refresh(); toast.success("Aprobado: ya alimenta la siguiente fase y a los agentes.");
   }
   async function runReview() {
     setBusy(true); setResult(null);
-    try { setResult(await review({ data: { artifactId: art!.id, method } })); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { setResult(await review({ data: { artifactId: art!.id, method } })); } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   async function applyRevision() {
     const { data, error } = await supabase.from("gtm_artifacts").insert({ kind, title: art!.title, version: nextVersion, content: result!.revised, persona: art!.persona, meta: art!.meta ?? {} }).select("id").single();
-    if (error) return toast.error(error.message);
-    setResult(null); refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador`);
+    if (error) return toast.error(errorText(error));
+    setResult(null); refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador.`);
   }
   async function remove() {
     const { error } = await supabase.from("gtm_artifacts").delete().eq("id", art!.id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     refresh(); onClose();
   }
 

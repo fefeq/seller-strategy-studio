@@ -9,6 +9,7 @@ import { Page, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({ meta: [{ title: "Conocimiento — Nokko" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — Nokko" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
@@ -59,8 +60,8 @@ function Hub() {
         revealOnMobile(editorRef.current);
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["docs"] }); toast.success("Guardado"); },
-    onError: (e: Error) => toast.error(e.message),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["docs"] }); toast.success("Guardado."); },
+    onError: (e: Error) => toast.error(errorText(e)),
   });
   const del = useMutation({
     mutationFn: async (id: string) => { const { error } = await supabase.from("knowledge_docs").delete().eq("id", id); if (error) throw error; },

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { quarterRange } from "@/lib/metrics";
 import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDealRow } from "@/lib/won-deals";
+import { errorText } from "@/lib/errors";
 
 const SELECT = "h-10 rounded-md border bg-background px-2 text-xs md:h-8";
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -43,7 +44,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
 
   async function update(id: string, patch: { closed_at?: string; close_date?: string; amount?: number | null; segment_id?: string | null }) {
     const { error } = await supabase.from("deals").update(patch).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     refresh();
   }
 
@@ -124,7 +125,7 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
         <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-10 w-32 text-right text-xs md:h-8" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
           onBlur={(e) => {
             const v = e.target.value === "" ? null : Number(e.target.value);
-            if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un valor válido");
+            if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un valor válido.");
             if (v !== (d.amount == null ? null : Number(d.amount))) onUpdate({ amount: v });
           }} />
       </td>
@@ -165,16 +166,16 @@ function AddWon({ quarter, segments, openDeals, onDone }: {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     const value = amount === "" ? null : Number(amount);
-    if (!dealId && !name.trim()) return toast.error("Pon un nombre al deal");
-    if (!day) return toast.error("Indica la fecha de cierre");
-    if (value == null || !Number.isFinite(value) || value <= 0) return toast.error("Indica el valor del deal");
+    if (!dealId && !name.trim()) return toast.error("Pon un nombre al deal.");
+    if (!day) return toast.error("Indica la fecha de cierre.");
+    if (value == null || !Number.isFinite(value) || value <= 0) return toast.error("Indica el valor del deal.");
     setSaving(true);
     const common = { stage: "won", probability: 100, closed_at: closedAtFromDay(day), close_date: day, amount: value, segment_id: segment || null };
     const { error } = dealId
       ? await supabase.from("deals").update(common).eq("id", dealId)
       : await supabase.from("deals").insert({ ...common, name: name.trim().slice(0, 200) });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     toast.success(dealId ? "Deal marcado como ganado" : "Deal ganado añadido");
     onDone();
   }

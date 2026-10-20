@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { dedupePeople, parseCsv } from "@/lib/dedupe";
 import { CAMPAIGN_RESULTS, SOURCES } from "@/lib/roles";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -52,12 +53,12 @@ function People() {
 
   async function update(id: string, patch: Record<string, string>) {
     const { error } = await supabase.from("people").update(patch as any).eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["people"] });
   }
   async function logResult(person_id: string, campaign_id: string, result: string) {
     const { error } = await supabase.from("campaign_results").upsert({ person_id, campaign_id, result }, { onConflict: "campaign_id,person_id" });
-    if (error) toast.error(error.message);
+    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["people"] });
   }
   // Editable fields per person, shared by the mobile cards and the desktop table.
@@ -136,7 +137,7 @@ function AddPerson({ existing }: { existing: { email: string | null; linkedin_ur
     const { fresh } = dedupePeople([f], existing);
     if (!fresh.length) return toast.error("Esta persona ya existe (mismo email o LinkedIn) o falta email/LinkedIn.");
     const { error } = await supabase.from("people").insert({ ...fresh[0], full_name: f.full_name, company: f.company, title: f.title });
-    if (error) return toast.error(error.code === "23505" ? "Duplicado: ya existe." : error.message);
+    if (error) return toast.error(error.code === "23505" ? "Duplicado: ya existe." : errorText(error));
     setOpen(false); setF({ full_name: "", email: "", linkedin_url: "", company: "", title: "" });
     qc.invalidateQueries({ queryKey: ["people"] });
   }
@@ -178,7 +179,7 @@ function ImportCsv({ existing }: { existing: { email: string | null; linkedin_ur
         if (!r.error) inserted++;
       }
     }
-    toast.success(`${inserted} personas importadas · ${skipped + (fresh.length - inserted)} duplicadas o sin email/LinkedIn omitidas`);
+    toast.success(`${inserted} personas importadas · ${skipped + (fresh.length - inserted)} duplicadas o sin email/LinkedIn omitidas.`);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["people"] });
   }
@@ -201,7 +202,7 @@ function NewCampaign() {
   const [name, setName] = useState(""); const [copy, setCopy] = useState("");
   async function save() {
     const { error } = await supabase.from("campaigns").insert({ name, copy });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setOpen(false); setName(""); setCopy("");
     qc.invalidateQueries({ queryKey: ["people"] });
   }

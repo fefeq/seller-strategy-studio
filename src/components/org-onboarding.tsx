@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Membership } from "@/hooks/use-me";
+import { errorText } from "@/lib/errors";
 
 export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   const qc = useQueryClient();
@@ -15,13 +16,13 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
     setBusy(true);
     const { error } = await supabase.rpc("create_organization", { _name: name });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     await qc.resetQueries();
   }
   async function pick(orgId: string) {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user!.id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     await qc.resetQueries();
   }
 

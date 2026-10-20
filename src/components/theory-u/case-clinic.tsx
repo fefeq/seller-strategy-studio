@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CASE_CLINIC_STEPS } from "@/lib/theory-u";
+import { errorText } from "@/lib/errors";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -34,7 +35,7 @@ export function CaseClinics() {
 
   async function add() {
     const { data: row, error } = await supabase.from("case_clinics").insert({ title: "Nuevo Case Clinic" }).select("*, deals(name)").single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSel(row); qc.invalidateQueries({ queryKey: ["case_clinics"] });
     revealOnMobile(editorRef.current);
   }
@@ -42,9 +43,9 @@ export function CaseClinics() {
     const { id, deals: _d, org_id: _o, created_at: _c, updated_at: _u, created_by: _cb, updated_by: _ub, ...rest } = sel;
     const payload = { ...rest, deal_id: rest.deal_id || null, ...extra };
     const { error } = await supabase.from("case_clinics").update(payload).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSel({ ...sel, ...extra });
-    toast.success("Case Clinic guardado"); qc.invalidateQueries({ queryKey: ["case_clinics"] });
+    toast.success("Case Clinic guardado."); qc.invalidateQueries({ queryKey: ["case_clinics"] });
   }
 
   return (

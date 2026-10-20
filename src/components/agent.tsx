@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { decideAgentAction, sendAgentMessage } from "@/lib/agent.functions";
 import { getPersona, personasFor } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
+import { errorText } from "@/lib/errors";
 
 type Mode = "chat" | "interview";
 type Action = { id: string; summary: string; status: string; result?: string };
@@ -73,7 +74,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       setConvId(r.conversationId);
       setMsgs((x) => [...x, { id: `a${Date.now()}`, role: "assistant", content: r.text, actions: r.pending }]);
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(errorText(e));
       setText(t);
       setMsgs((x) => x.slice(0, -1));
     } finally { setBusy(false); }
@@ -108,9 +109,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     try {
       const r = await decide({ data: { id: a.id, decision } });
       setMsgs((x) => x.map((m) => m.id !== msgId ? m : { ...m, actions: m.actions?.map((y) => y.id === a.id ? { ...y, status: r.status, result: r.result } : y) }));
-      if (r.status === "failed") toast.error(r.result || "No se pudo ejecutar");
+      if (r.status === "failed") toast.error(`No se ha podido hacer. ${r.result || "Vuelve a intentarlo."}.`);
       if (r.status === "confirmed") qc.invalidateQueries();
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) { toast.error(errorText(e)); }
   }
 
   function newChat() { setConvId(null); setMsgs([]); setMode("chat"); setWorkflowId(null); }

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { nextPhase, phaseIndex, U_PHASES } from "@/lib/theory-u";
 import { synthesizeJourney } from "@/lib/ai.functions";
+import { errorText } from "@/lib/errors";
 
 // Vertical offset per phase to draw the U: down the left, bottom, up the right.
 // Only from sm: on phones the phases stack in one column.
@@ -47,7 +48,7 @@ export function UJourney() {
 
   async function add() {
     const { data, error } = await supabase.from("u_journeys").insert({ title: "Nuevo recorrido U" }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     await qc.invalidateQueries({ queryKey: ["u_journeys"] });
     setSelId(data.id);
     revealOnMobile(editorRef.current);
@@ -87,20 +88,20 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
 
   async function save(patch: Record<string, unknown> = {}) {
     const { error } = await supabase.from("u_journeys").update({ title, intention, answers, ...patch } as any).eq("id", journey.id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(errorText(error)); return false; }
     qc.invalidateQueries({ queryKey: ["u_journeys"] });
     return true;
   }
   async function advance() {
     const next = nextPhase(journey.phase);
     if (!next) return;
-    if (await save({ phase: next })) { setView(next); toast.success(`Fase: ${U_PHASES[phaseIndex(next)].label}`); }
+    if (await save({ phase: next })) { setView(next); toast.success(`Fase: ${U_PHASES[phaseIndex(next)].label}.`); }
   }
   async function runSynth() {
     if (!(await save())) return;
     setBusy(true);
     try { await synth({ data: { journeyId: journey.id } }); qc.invalidateQueries({ queryKey: ["u_journeys"] }); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
   return (
@@ -114,11 +115,11 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
         <svg className="pointer-events-none absolute inset-x-[10%] top-10 hidden h-40 sm:block w-[80%] text-border" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden>
           <path d="M0 0 C 0 45, 100 45, 100 0" fill="none" stroke="currentColor" strokeWidth="0.6" strokeDasharray="1.5 1.5" vectorEffect="non-scaling-stroke" />
         </svg>
-        <div className="relative grid grid-cols-1 gap-2 sm:grid-cols-5">
+        <div className="relative -mx-4 flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:snap-none sm:grid-cols-5 sm:overflow-visible sm:px-0 sm:pb-0">
           {U_PHASES.map((p, i) => {
             const state = i < current ? "done" : i === current ? "current" : "todo";
             return (
-              <button key={p.key} onClick={() => { setView(p.key); revealOnMobile(phaseRef.current); }} className={`${DEPTH[i]} min-w-0 break-words rounded-lg border p-3 text-left transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
+              <button key={p.key} onClick={() => { setView(p.key); revealOnMobile(phaseRef.current); }} className={`${DEPTH[i]} w-[42vw] max-w-48 shrink-0 snap-start break-words rounded-lg border p-3 text-left sm:w-auto sm:min-w-0 sm:max-w-none transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
                 <span className={`font-mono text-[10px] uppercase ${state === "current" ? "text-signal" : "text-muted-foreground"}`}>{i + 1} · {state === "done" ? "Hecho" : state === "current" ? "Ahora" : "Pendiente"}</span>
                 <span className="mt-1 block text-[15px] font-semibold leading-tight">{p.label}</span>
                 <span className="block text-xs text-muted-foreground">{p.tagline}</span>

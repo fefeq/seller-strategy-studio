@@ -103,7 +103,7 @@
       },
       {
         "name": "get_overview",
-        "title": "get overview",
+        "title": "Resumen de la empresa",
         "description": "Resumen del negocio: pipeline abierto, forecast, cobertura del trimestre, win rate, deals en riesgo y funnel self-service del trimestre.",
         "annotations": {
           "readOnlyHint": true,
@@ -120,7 +120,7 @@
       },
       {
         "name": "search",
-        "title": "search",
+        "title": "Buscar",
         "description": "Busca por texto en cuentas, deals, stakeholders y personas. Devuelve ids para usar en otras herramientas.",
         "annotations": {
           "readOnlyHint": true,
@@ -145,7 +145,7 @@
       },
       {
         "name": "get_account",
-        "title": "get account",
+        "title": "Ver cuenta",
         "description": "Detalle de una cuenta: Account Plan, stakeholders, deals, reuniones y tareas abiertas.",
         "annotations": {
           "readOnlyHint": true,
@@ -171,7 +171,7 @@
       },
       {
         "name": "list_deals",
-        "title": "list deals",
+        "title": "Listar deals",
         "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja) o con fecha de cierre pasada.",
         "annotations": {
           "readOnlyHint": true,
@@ -210,7 +210,7 @@
       },
       {
         "name": "list_leads",
-        "title": "list leads",
+        "title": "Listar leads",
         "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
         "annotations": {
           "readOnlyHint": true,
@@ -242,7 +242,7 @@
       },
       {
         "name": "list_tasks",
-        "title": "list tasks",
+        "title": "Listar tareas",
         "description": "Tareas abiertas (por defecto las mías).",
         "annotations": {
           "readOnlyHint": true,
@@ -263,7 +263,7 @@
       },
       {
         "name": "list_suggestions",
-        "title": "list suggestions",
+        "title": "Listar sugerencias",
         "description": "Sugerencias proactivas pendientes del motor (riesgos y próximos pasos).",
         "annotations": {
           "readOnlyHint": true,
@@ -280,7 +280,7 @@
       },
       {
         "name": "get_setup_status",
-        "title": "get setup status",
+        "title": "Estado de la configuración",
         "description": "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea) y valores actuales de segmentos, ICP, posicionamiento y pilares.",
         "annotations": {
           "readOnlyHint": true,
@@ -297,7 +297,7 @@
       },
       {
         "name": "search_knowledge",
-        "title": "search knowledge",
+        "title": "Buscar en el conocimiento",
         "description": "Busca en el hub de conocimiento (playbooks, objeciones, metodología, empresa).",
         "annotations": {
           "readOnlyHint": true,
@@ -322,7 +322,7 @@
       },
       {
         "name": "create_account",
-        "title": "create account",
+        "title": "Crear cuenta",
         "description": "Crea una cuenta. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -356,7 +356,7 @@
       },
       {
         "name": "create_deal",
-        "title": "create deal",
+        "title": "Crear deal",
         "description": "Crea un deal (oportunidad). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -406,7 +406,7 @@
       },
       {
         "name": "update_deal",
-        "title": "update deal",
+        "title": "Actualizar deal",
         "description": "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -473,7 +473,7 @@
       },
       {
         "name": "update_lead",
-        "title": "update lead",
+        "title": "Actualizar lead",
         "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -520,7 +520,7 @@
       },
       {
         "name": "create_stakeholder",
-        "title": "create stakeholder",
+        "title": "Añadir stakeholder",
         "description": "Añade un stakeholder a una cuenta. buying_role: decision_maker, champion, influencer, blocker, user. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -560,7 +560,7 @@
       },
       {
         "name": "create_meeting",
-        "title": "create meeting",
+        "title": "Planificar reunión",
         "description": "Planifica una reunión (Meeting Planner). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -602,7 +602,7 @@
       },
       {
         "name": "prepare_meeting_brief",
-        "title": "prepare meeting brief",
+        "title": "Preparar brief de reunión",
         "description": "Genera con IA el Call Prep de una reunión y lo guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -628,7 +628,7 @@
       },
       {
         "name": "create_task",
-        "title": "create task",
+        "title": "Crear tarea",
         "description": "Crea una tarea (opcionalmente ligada a un deal o cuenta). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -678,7 +678,7 @@
       },
       {
         "name": "complete_task",
-        "title": "complete task",
+        "title": "Completar tarea",
         "description": "Marca una tarea como hecha. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -704,7 +704,7 @@
       },
       {
         "name": "log_trial",
-        "title": "log trial",
+        "title": "Registrar prueba (self-service)",
         "description": "Registra un alta self-service (prueba) o actualiza su activación/pago por email. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -745,7 +745,7 @@
       },
       {
         "name": "create_experiment",
-        "title": "create experiment",
+        "title": "Crear prototipo (Theory U)",
         "description": "Crea un prototipo/experimento GTM (Theory U) con hipótesis y métrica. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -776,7 +776,7 @@
       },
       {
         "name": "update_positioning",
-        "title": "update positioning",
+        "title": "Actualizar posicionamiento",
         "description": "Guarda campos de posicionamiento. Campos: target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -806,7 +806,7 @@
       },
       {
         "name": "upsert_segment",
-        "title": "upsert segment",
+        "title": "Crear o actualizar segmento",
         "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%) y cuota anual AE. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -857,7 +857,7 @@
       },
       {
         "name": "create_icp",
-        "title": "create icp",
+        "title": "Crear perfil ICP",
         "description": "Crea un perfil ICP. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -903,7 +903,7 @@
       },
       {
         "name": "create_pillar",
-        "title": "create pillar",
+        "title": "Crear pilar de mensaje",
         "description": "Crea un pilar de mensaje (título, dolor, mensaje, prueba). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -937,7 +937,7 @@
       },
       {
         "name": "set_currency",
-        "title": "set currency",
+        "title": "Cambiar moneda",
         "description": "Cambia la moneda de la empresa (código ISO de 3 letras, p. ej. EUR, USD). Solo reetiqueta importes, no convierte. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -962,7 +962,7 @@
       },
       {
         "name": "set_quota",
-        "title": "set quota",
+        "title": "Fijar cuota",
         "description": "Fija la cuota de un usuario para un trimestre (AAAA-QN). Sin user_id = la mía. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
@@ -996,7 +996,7 @@
       },
       {
         "name": "get_cycle_status",
-        "title": "get cycle status",
+        "title": "Estado del ciclo GTM",
         "description": "Estado del Ciclo GTM: fase actual, documentos (Brief, Plan, Arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
         "annotations": {
           "readOnlyHint": true,
@@ -1013,7 +1013,7 @@
       },
       {
         "name": "get_artifact",
-        "title": "get artifact",
+        "title": "Ver documento del ciclo GTM",
         "description": "Lee el contenido de un documento del Ciclo GTM por id o la última versión de un tipo (brief, plan, architecture, readiness, retro, winloss).",
         "annotations": {
           "readOnlyHint": true,
@@ -1047,7 +1047,7 @@
       },
       {
         "name": "draft_artifact",
-        "title": "draft artifact",
+        "title": "Redactar documento del ciclo GTM",
         "description": "Genera con IA un borrador nuevo (nueva versión) de un documento del Ciclo GTM: brief, plan, architecture, readiness, retro o winloss (winloss necesita deal_id). Las notas recogen lo hablado con el usuario. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,

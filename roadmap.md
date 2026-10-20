@@ -34,12 +34,11 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 
 ### Lo puede hacer Claude sin decisiones previas
 
-- [ ] Errores: los «No se pudo: {mensaje}» (Telegram y acciones del asistente) dicen qué pasó pero no qué hacer; y los errores de Supabase llegan en inglés al usuario. Mapearlos a mensajes en español con siguiente paso.
-- [ ] Deals: al cambiar de etapa se pierden los cambios sin guardar de la ficha abierta.
-- [ ] MCP: los títulos de las herramientas que ven Claude y ChatGPT salen generados en inglés («get summary»). Darles título en español.
-- [ ] Equipo: aviso de React por una lista sin `key`.
-- [ ] Móvil, pulido: los pasos del asistente de configuración ocupan unas 8 líneas; en Theory U el editor de la fase queda muy abajo; las pestañas que se desplazan de lado no lo indican.
-- [ ] Limpieza: quitar las dependencias de Bodoni Moda y Courier Prime (ya no se usan), la línea suelta del README («Implement exactly the screenshot…») y unificar el punto final de los avisos.
+- [x] Errores: los «No se pudo: {mensaje}» (Telegram y acciones del asistente) dicen qué pasó pero no qué hacer; y los errores de Supabase llegan en inglés al usuario. Mapearlos a mensajes en español con siguiente paso.
+- [x] Deals: al cambiar de etapa se pierden los cambios sin guardar de la ficha abierta.
+- [x] MCP: los títulos de las herramientas que ven Claude y ChatGPT salen generados en inglés («get summary»). Darles título en español.
+- [x] Móvil, pulido: los pasos del asistente de configuración ocupan unas 8 líneas; en Theory U el editor de la fase queda muy abajo; las pestañas que se desplazan de lado no lo indican.
+- [x] Limpieza: quitar las dependencias de Bodoni Moda y Courier Prime (ya no se usan), la línea suelta del README («Implement exactly the screenshot…») y unificar el punto final de los avisos.
 
 ### Más adelante
 

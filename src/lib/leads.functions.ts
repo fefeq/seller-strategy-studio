@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { LEAD_LIMITS, isIntakeStage, normalizeLead } from "@/lib/leads";
+import { errorText } from "@/lib/errors";
 
 type Input = { rows: Record<string, string>[]; defaultStage?: string };
 
@@ -30,7 +31,7 @@ export const importLeads = createServerFn({ method: "POST" })
         out[r.status] += 1;
         await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: r.status, summary: r.summary, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId, error: n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto" });
       } catch (e) {
-        out.errors.push({ row: i, error: (e as Error).message.slice(0, 200) });
+        out.errors.push({ row: i, error: errorText(e).slice(0, 200) });
       }
     }
     if (out.errors.length) await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: "error", summary: `${out.errors.length} filas sin importar`, error: out.errors.slice(0, 5).map((e) => `Fila ${e.row + 2}: ${e.error}`).join(" · ") });

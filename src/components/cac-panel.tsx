@@ -11,6 +11,7 @@ import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
 import { CAC_CHANNELS, channelQuarterTable, costByChannel, previousQuarter, quartersUpTo } from "@/lib/cac";
 import { useSegmentCoverageData } from "@/components/segment-coverage";
+import { errorText } from "@/lib/errors";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -103,14 +104,14 @@ export function CacPanel({ quarter }: { quarter: string }) {
 
   async function save(channel: string, seg: string, value: string) {
     const amount = value === "" ? 0 : Number(value);
-    if (!Number.isFinite(amount) || amount < 0) return toast.error("Introduce un importe válido");
+    if (!Number.isFinite(amount) || amount < 0) return toast.error("Introduce un importe válido.");
     const current = cell(channel, seg);
     if (Number(current?.amount ?? 0) === amount) return;
     const { error } = await supabase.from("cac_costs").upsert(
       { org_id: orgId!, segment_id: seg === SHARED ? null : seg, channel, period: quarter, amount },
       { onConflict: "org_id,segment_id,channel,period" },
     );
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["segment-coverage"] });
   }
 
@@ -118,13 +119,13 @@ export function CacPanel({ quarter }: { quarter: string }) {
     const prev = previousQuarter(quarter);
     setCopying(true);
     const { data: old, error } = await supabase.from("cac_costs").select("segment_id,channel,amount").eq("period", prev);
-    if (error || !old?.length) { setCopying(false); return toast.error(error?.message ?? `No hay costes en ${prev}`); }
+    if (error || !old?.length) { setCopying(false); return toast.error(error ? errorText(error) : `No hay costes en ${prev}`); }
     const { error: e2 } = await supabase.from("cac_costs").upsert(
       old.map((o) => ({ org_id: orgId!, segment_id: o.segment_id, channel: o.channel, period: quarter, amount: o.amount })),
       { onConflict: "org_id,segment_id,channel,period" },
     );
     setCopying(false);
-    if (e2) return toast.error(e2.message);
+    if (e2) return toast.error(errorText(e2));
     toast.success(`Costes de ${prev} copiados. Ajústalos a este trimestre.`);
     qc.invalidateQueries({ queryKey: ["segment-coverage"] });
   }

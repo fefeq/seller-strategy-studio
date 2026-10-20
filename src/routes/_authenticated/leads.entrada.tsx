@@ -17,6 +17,7 @@ import { parseCsv } from "@/lib/dedupe";
 import { hashLeadKey } from "@/lib/leads-ingest";
 import { INTAKE_STAGES, LEAD_LIMITS } from "@/lib/leads";
 import { importLeads } from "@/lib/leads.functions";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/leads/entrada")({
   head: () => ({ meta: [
@@ -63,13 +64,13 @@ function Sources({ canManage, isOwner }: { canManage: boolean; isOwner: boolean 
   const { data: sources = [] } = useQuery({ queryKey: ["lead-sources"], queryFn: async () => (await supabase.from("lead_sources").select("*").order("created_at")).data ?? [] });
   async function upd(id: string, patch: { active?: boolean; default_stage?: string }) {
     const { error } = await supabase.from("lead_sources").update(patch).eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
   async function remove(id: string) {
     if (!confirm("¿Borrar este enlace? Las herramientas que lo usan dejarán de enviar leads.")) return;
     const { error } = await supabase.from("lead_sources").delete().eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
   return (
@@ -110,7 +111,7 @@ function NewSource() {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
     const key = `gtm_${[...bytes].map((b) => alphabet[b % alphabet.length]).join("")}`;
     const { error } = await supabase.from("lead_sources").insert({ name: name.trim() || "Entrada de leads", default_stage: stage, token_hash: await hashLeadKey(key), token_hint: key.slice(-4) });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setUrl(`${publicBase()}/api/public/leads?key=${key}`);
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
@@ -124,7 +125,7 @@ function NewSource() {
           <div className="space-y-3">
             <p className="text-sm">Cópialo ahora: por seguridad <strong>no se volverá a mostrar</strong>. Si lo pierdes, crea otro y borra este.</p>
             <div className="flex gap-2"><Input readOnly value={url} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
-              <Button size="icon" variant="outline" aria-label="Copiar enlace" onClick={() => { navigator.clipboard.writeText(url); toast.success("Enlace copiado"); }}><Copy className="size-4" /></Button>
+              <Button size="icon" variant="outline" aria-label="Copiar enlace" onClick={() => { navigator.clipboard.writeText(url); toast.success("Enlace copiado."); }}><Copy className="size-4" /></Button>
             </div>
             <p className="text-xs text-muted-foreground">Pégalo como destino «Webhook» (método POST) en tu herramienta. Funciona en tu web publicada.</p>
             <Button className="w-full" onClick={() => close(false)}>Hecho</Button>
@@ -193,7 +194,7 @@ function CsvImport() {
   const [progress, setProgress] = useState<number | null>(null);
   async function onFile(file: File) {
     const parsed = parseCsv(await file.text());
-    if (!parsed.length) return toast.error("El archivo no tiene filas");
+    if (!parsed.length) return toast.error("El archivo no tiene filas.");
     setRows(parsed);
   }
   async function start() {
@@ -209,7 +210,7 @@ function CsvImport() {
       toast.success(`${total.created} leads nuevos · ${total.updated} actualizados${total.errors ? ` · ${total.errors} con errores (mira «Últimos leads»)` : ""}`);
       setRows(null);
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(errorText(e));
     } finally {
       setProgress(null);
       qc.invalidateQueries();

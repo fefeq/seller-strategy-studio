@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
 import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
+import { errorText } from "@/lib/errors";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
@@ -54,7 +55,7 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
 
   async function setTarget(segmentId: string, amount: number) {
     const { error } = await supabase.from("segment_targets").upsert({ org_id: orgId!, segment_id: segmentId, period: quarter, amount }, { onConflict: "org_id,segment_id,period" });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["segment-coverage"] });
   }
 

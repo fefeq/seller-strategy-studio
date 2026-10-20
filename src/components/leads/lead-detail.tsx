@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadDelay, leadStageLabel } from "@/lib/lead-funnel";
+import { errorText } from "@/lib/errors";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -40,7 +41,7 @@ export function LeadDetail({ lead, data, canDelete, onClose }: { lead: Lead; dat
       notes: f.notes ?? "",
       disqualified_reason: f.stage === "disqualified" ? f.disqualified_reason || null : null,
     }).eq("id", lead.id).select("deal_id").single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     toast.success(!converted && f.stage === "opportunity" && saved?.deal_id ? "Convertido en oportunidad: ya está en Pipeline" : "Lead guardado");
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
@@ -49,7 +50,7 @@ export function LeadDetail({ lead, data, canDelete, onClose }: { lead: Lead; dat
   async function remove() {
     if (!confirm(`¿Borrar el lead ${lead.company}? Su oportunidad, si la tiene, se mantiene en Pipeline.`)) return;
     const { error } = await supabase.from("leads").delete().eq("id", lead.id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["leads"] });
     onClose();
   }

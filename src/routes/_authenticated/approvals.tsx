@@ -9,6 +9,7 @@ import { Page, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
   head: () => ({ meta: [{ title: "Aprobaciones — Nokko" }, { name: "description", content: "Cambios importantes con evidencia: aplicar u omitir." }, { property: "og:title", content: "Aprobaciones — Nokko" }, { property: "og:description", content: "Cambios importantes con evidencia: aplicar u omitir." }] }),
@@ -32,7 +33,7 @@ function Approvals() {
       } catch { /* evidence not structured */ }
     }
     const { error } = await supabase.from("approvals").update({ status }).eq("id", a.id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries();
   }
   async function propose() {

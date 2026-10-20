@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { canUseAdvisor, HORIZONS, LEVELS, sortRecommendations, WINDOWS, type AdvisorRecommendation, type AdvisorResult } from "@/lib/advisor";
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
+import { errorText } from "@/lib/errors";
 
 const TITLE = "Asesor GTM — Nokko";
 const DESC = "Describe un objetivo o problema comercial y recibe recomendaciones de go-to-market priorizadas a partir de tu pipeline, métricas y segmentos.";
@@ -63,9 +64,9 @@ function Advisor() {
       await qc.invalidateQueries({ queryKey: ["gtm_advisories"] });
       setSelId(r.id);
       revealOnMobile(resultRef.current);
-      toast.success("Recomendaciones listas");
+      toast.success("Recomendaciones listas.");
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(errorText(e));
     } finally {
       setBusy(false);
     }
@@ -155,9 +156,9 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
   const [saved, setSaved] = useState(false);
   async function toPrototype() {
     const { error } = await supabase.from("gtm_experiments").insert({ title: rec.title, hypothesis: rec.rationale, prototype: rec.actions.join("\n"), metric: rec.kpi, target: rec.target });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSaved(true);
-    toast.success("Añadido a Theory U → Prototipos");
+    toast.success("Añadido a Theory U → Prototipos.");
   }
   return (
     <div className="rounded-lg border bg-card p-5">

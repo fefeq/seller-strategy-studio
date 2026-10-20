@@ -16,6 +16,7 @@ import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -85,7 +86,7 @@ function Metrics() {
 
   async function setQuota(userId: string, amount: number) {
     const { error } = await supabase.from("quotas").upsert({ org_id: orgId!, user_id: userId, period: quarter, amount }, { onConflict: "org_id,user_id,period" });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["metrics"] });
   }
 

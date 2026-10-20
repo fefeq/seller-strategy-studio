@@ -5,6 +5,7 @@ import { executeTool, type ToolCtx } from "@/lib/agent/tools";
 import { loadSnapshot, syncSuggestions, type Db } from "@/lib/org-data";
 import { detect } from "@/lib/proactive";
 import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
+import { errorText } from "@/lib/errors";
 
 export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
   const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
@@ -71,7 +72,7 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
     if (act.conversation_id) await ctx.db.from("agent_messages").insert({ conversation_id: act.conversation_id, role: "assistant", content: result });
     return { status: "confirmed", result };
   } catch (e) {
-    const result = (e as Error).message;
+    const result = errorText(e);
     await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id);
     return { status: "failed", result };
   }
@@ -130,7 +131,7 @@ export const applySetupItems = createServerFn({ method: "POST" })
     const results: { tool: string; ok: boolean; error?: string }[] = [];
     for (const it of data.items) {
       try { await executeTool(ctx, it.tool, it.args); results.push({ tool: it.tool, ok: true }); }
-      catch (e) { results.push({ tool: it.tool, ok: false, error: (e as Error).message }); }
+      catch (e) { results.push({ tool: it.tool, ok: false, error: errorText(e) }); }
     }
     return results;
   });

@@ -9,6 +9,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { decideSuggestion, refreshSuggestions } from "@/lib/agent.functions";
 import { digest } from "@/lib/proactive";
+import { errorText } from "@/lib/errors";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 
@@ -48,7 +49,7 @@ export function SuggestionCard({ s }: { s: S }) {
       const r = await decide({ data: { id: s.id, decision } });
       toast.success(r.message);
       qc.invalidateQueries();
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(null); }
+    } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
   const hasAction = !!(s.action as any)?.tool;
   return (

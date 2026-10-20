@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BUYING_ROLES, SUPPORT, DEAL_STAGES } from "@/lib/roles";
 import { generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
 import { LevelPicker } from "@/components/theory-u/listening";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
   head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Plan de cuenta, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Plan de cuenta, stakeholders y reuniones." }] }),
@@ -96,13 +97,13 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
     const { error } = plan
       ? await supabase.from("account_plans").update(form as any).eq("id", plan.id)
       : await supabase.from("account_plans").insert({ account_id: accountId, ...form });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     toast.success("Plan de cuenta guardado.");
     onSaved();
   }
   async function genProposal() {
     setBusy(true);
-    try { setProposal((await propose({ data: { accountId } })).text); } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    try { setProposal((await propose({ data: { accountId } })).text); } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   return (
     <div className="space-y-6">
@@ -130,19 +131,19 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
   const research = useServerFn(researchStakeholder);
   async function add() {
     const { data, error } = await supabase.from("stakeholders").insert({ account_id: accountId, name: "Nueva persona" }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSel(data); onChange();
   }
   async function save() {
     const { id, name, title, email, linkedin_url, buying_role, support, priorities, reports_to } = sel;
     const { error } = await supabase.from("stakeholders").update({ name, title, email, linkedin_url, buying_role, support, priorities, reports_to: reports_to || null }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Guardado"); onChange();
+    if (error) return toast.error(errorText(error));
+    toast.success("Guardado."); onChange();
   }
   async function runResearch() {
     setBusy(true);
     try { const r = await research({ data: { stakeholderId: sel.id } }); setSel({ ...sel, research: r.text }); onChange(); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   const roots = list.filter((s) => !s.reports_to || !list.find((x) => x.id === s.reports_to));
   const children = (pid: string) => list.filter((s) => s.reports_to === pid);
@@ -199,7 +200,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
   const coach = useServerFn(listeningCoaching);
   async function add() {
     const { data, error } = await supabase.from("meetings").insert({ account_id: accountId, title: "Nueva reunión", scheduled_at: new Date(Date.now() + 864e5).toISOString() }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSel(data); onChange();
   }
   async function save() {
@@ -207,24 +208,24 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
     const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null, listening_level: rest.listening_level ?? null, listening_reflection: rest.listening_reflection ?? "" };
     for (const [k] of MEETING_FIELDS) payload[k] = rest[k];
     const { error } = await supabase.from("meetings").update(payload as any).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(errorText(error)); return false; }
     if (sel.notes || sel.next_steps) {
       await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: sel.notes, next_steps: sel.next_steps });
     }
-    toast.success("Reunión guardada"); onChange();
+    toast.success("Reunión guardada."); onChange();
     return true;
   }
   async function genBrief() {
     await save();
     setBusy(true);
     try { const r = await brief({ data: { meetingId: sel.id } }); setSel({ ...sel, ai_brief: r.brief }); onChange(); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   async function genCoaching() {
     if (!(await save())) return;
     setCoachBusy(true);
     try { const r = await coach({ data: { meetingId: sel.id } }); setSel({ ...sel, listening_coaching: r.text }); onChange(); }
-    catch (e) { toast.error((e as Error).message); } finally { setCoachBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setCoachBusy(false); }
   }
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
@@ -279,7 +280,7 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
   const [title, setTitle] = useState(""); const [summary, setSummary] = useState(""); const [next, setNext] = useState("");
   async function add() {
     const { error } = await supabase.from("calls").insert({ account_id: accountId, title, summary, next_steps: next });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setTitle(""); setSummary(""); setNext(""); onChange();
   }
   return (
@@ -310,7 +311,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", owner_id: user?.id });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     onChange();
   }
   return (

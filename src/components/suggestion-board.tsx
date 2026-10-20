@@ -9,6 +9,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { decideSuggestion } from "@/lib/agent.functions";
 import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, isOverdue } from "@/lib/suggestion-board";
+import { errorText } from "@/lib/errors";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
@@ -54,13 +55,13 @@ export function SuggestionBoard() {
 
   async function assign(id: string, userId: string | null) {
     const { error } = await supabase.from("suggestions").update({ user_id: userId }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     toast.success(userId ? `Asignada a ${name(userId)}` : "Sin responsable");
     qc.invalidateQueries({ queryKey: ["suggestions"] });
   }
   async function act(id: string, decision: "approve" | "snooze" | "dismiss") {
     try { toast.success((await decide({ data: { id, decision } })).message); qc.invalidateQueries(); }
-    catch (e) { toast.error((e as Error).message); }
+    catch (e) { toast.error(errorText(e)); }
   }
   type Row = (typeof rows)[number];
   // Shared by the table (md+) and the phone cards.

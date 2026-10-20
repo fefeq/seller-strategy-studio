@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LISTENING_LEVELS, SENSING_KINDS } from "@/lib/theory-u";
 import { sensingPatterns } from "@/lib/ai.functions";
 import { LevelPicker } from "./listening";
+import { errorText } from "@/lib/errors";
 
 const BLANK = { interviewee: "", kind: "interview", account_id: "", journey_id: "", context: "", heard: "", surprised: "", emerging: "", listening_level: null as number | null };
 
@@ -37,17 +38,17 @@ export function Sensing() {
   const journeyOpts = Object.fromEntries([["", "Sin recorrido"], ...(data?.journeys ?? []).map((j) => [j.id, j.title])]);
 
   async function add() {
-    if (!form.heard && !form.surprised) return toast.error("Anota qué escuchaste o qué te sorprendió");
+    if (!form.heard && !form.surprised) return toast.error("Anota qué escuchaste o qué te sorprendió.");
     const { error } = await supabase.from("sensing_notes").insert({ ...form, account_id: form.account_id || null, journey_id: form.journey_id || null });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setForm({ ...BLANK, journey_id: form.journey_id, kind: form.kind });
     qc.invalidateQueries({ queryKey: ["sensing"] });
-    toast.success("Nota guardada");
+    toast.success("Nota guardada.");
   }
   async function runPatterns() {
     setBusy(true);
     try { const r = await analyze({ data: { journeyId: filter || null } }); setPatterns(r.text); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   const set = (k: keyof typeof BLANK) => (e: { target: { value: string } }) => setForm({ ...form, [k]: e.target.value });
 

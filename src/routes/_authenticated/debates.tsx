@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DEBATE_LEVELS, canConvene, withRebuttal, type DebateLevel } from "@/lib/bmad/teams";
 import { PERSONAS, getPersona } from "@/lib/bmad/personas";
 import { runDebate } from "@/lib/bmad.functions";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/debates")({
   head: () => ({ meta: [
@@ -68,7 +69,7 @@ function DebatesPage() {
   const current = debates.find((d) => d.id === selected);
 
   async function start() {
-    if (!topic.trim()) return toast.error("Escribe el tema del debate");
+    if (!topic.trim()) return toast.error("Escribe el tema del debate.");
     const [subjectType, subjectId] = subject ? subject.split(":") : [null, null];
     setBusy(true);
     try {
@@ -76,14 +77,14 @@ function DebatesPage() {
       await qc.invalidateQueries({ queryKey: ["debates"] });
       setSelected(r.id); setCreating(false); setTopic("");
       revealOnMobile(mainRef.current);
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
   async function toTask(a: Synth["actions"][number]) {
     const due = new Date(Date.now() + a.due_in_days * 86_400_000).toISOString().slice(0, 10);
     const { error } = await supabase.from("tasks").insert({ title: a.title, due_date: due, owner_id: me?.user.id, source: "debate", notes: `Del debate: ${current?.topic ?? ""} (responsable sugerido: ${getPersona(a.owner_persona)?.name ?? a.owner_persona})` });
-    if (error) return toast.error(error.message);
-    toast.success("Tarea creada");
+    if (error) return toast.error(errorText(error));
+    toast.success("Tarea creada.");
   }
 
   return (

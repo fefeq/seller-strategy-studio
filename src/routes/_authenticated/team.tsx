@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ROLES, type Role } from "@/lib/roles";
 import { TelegramLink } from "@/components/telegram-link";
 import { McpConnect } from "@/components/mcp-connect";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/team")({
   head: () => ({ meta: [{ title: "Equipo — Nokko" }, { name: "description", content: "Personas de la empresa y sus roles." }, { property: "og:title", content: "Equipo — Nokko" }, { property: "og:description", content: "Personas de la empresa y sus roles." }] }),
@@ -47,18 +48,18 @@ function Team() {
   async function setMemberRole(id: string, userId: string, r: Role) {
     if (userId === me?.user.id && r !== "owner") return toast.error("No puedes quitarte el rol de Owner a ti mismo.");
     const { error } = await supabase.from("org_members").update({ role: r }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Rol actualizado");
+    if (error) return toast.error(errorText(error));
+    toast.success("Rol actualizado.");
     qc.invalidateQueries();
   }
   async function remove(id: string) {
     const { error } = await supabase.from("org_members").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["team", orgId] });
   }
   async function invite() {
     const { error } = await supabase.from("org_invites").insert({ org_id: orgId!, email: email.trim().toLowerCase(), role, invited_by: me?.user.id });
-    if (error) return toast.error(error.code === "23505" ? "Ya hay una invitación pendiente para ese email." : error.message);
+    if (error) return toast.error(error.code === "23505" ? "Ya hay una invitación pendiente para ese email." : errorText(error));
     setEmail("");
     toast.success("Invitación creada. Se unirá al entrar con ese email.");
     qc.invalidateQueries({ queryKey: ["team", orgId] });
@@ -70,7 +71,7 @@ function Team() {
   async function rename() {
     if (!orgName?.trim()) return;
     const { error } = await supabase.from("organizations").update({ name: orgName.trim() }).eq("id", orgId!);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setOrgName(null);
     qc.invalidateQueries({ queryKey: ["me"] });
   }

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { decideAgentAction } from "@/lib/agent.functions";
 import { Button } from "@/components/ui/button";
+import { errorText } from "@/lib/errors";
 
 /** Actions prepared by external assistants (Claude, ChatGPT, Codex…) waiting for the user's OK. */
 export function AssistantActions() {
@@ -18,9 +19,9 @@ export function AssistantActions() {
   async function run(id: string, decision: "confirm" | "cancel") {
     try {
       const r = await decide({ data: { id, decision } });
-      if (r.status === "failed") toast.error(`No se pudo: ${r.result}`);
+      if (r.status === "failed") toast.error(`No se ha podido hacer. ${r.result || "Vuelve a intentarlo."}.`);
       else toast.success(decision === "confirm" ? r.result || "Hecho" : "Cancelado");
-    } catch (e) { toast.error((e as Error).message); }
+    } catch (e) { toast.error(errorText(e)); }
     qc.invalidateQueries();
   }
   return (

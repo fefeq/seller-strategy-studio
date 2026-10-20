@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { engagementScore, registrationConflict, TOUCH_WEIGHTS } from "@/lib/metrics";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/abm")({
   head: () => ({ meta: [{ title: "ABM y partners — Nokko" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — Nokko" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
@@ -62,7 +63,7 @@ function Targets() {
   async function logTouch() {
     if (!touchFor) return;
     const { error } = await supabase.from("account_touches").insert({ account_id: touchFor, channel, notes: note });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setNote(""); setTouchFor(null); qc.invalidateQueries({ queryKey: ["abm"] });
   }
   const others = accounts.filter((a) => !a.is_target);
@@ -187,11 +188,11 @@ function Registrations() {
   async function submit() {
     const expires = new Date(Date.now() + 90 * 864e5).toISOString().slice(0, 10);
     const { error } = await supabase.from("deal_registrations").insert({ partner_id: partner, account_name: account, notes, expires_at: expires });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     if (conflict) {
       await supabase.from("approvals").insert({ kind: "other", title: `Conflicto de canal: ${account}`, evidence: `Ya registrado por ${(conflict as any).partners?.name ?? "otro partner"} (${REG_STATUS[conflict.status]}).` });
       toast.warning("Registrado con conflicto: enviado a Aprobaciones.");
-    } else toast.success("Registro enviado");
+    } else toast.success("Registro enviado.");
     setAccount(""); setNotes(""); qc.invalidateQueries({ queryKey: ["regs"] });
   }
   async function decide(id: string, status: string) {

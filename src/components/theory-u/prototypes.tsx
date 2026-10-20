@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EXPERIMENT_STATUS } from "@/lib/theory-u";
+import { errorText } from "@/lib/errors";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -44,15 +45,15 @@ export function Prototypes() {
 
   async function add() {
     const { data: row, error } = await supabase.from("gtm_experiments").insert({ title: "Nuevo prototipo" }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     setSel(row); qc.invalidateQueries({ queryKey: ["gtm_experiments"] });
     revealOnMobile(editorRef.current);
   }
   async function save() {
     const { id, org_id: _o, created_at: _c, updated_at: _u, created_by: _cb, updated_by: _ub, ...rest } = sel;
     const { error } = await supabase.from("gtm_experiments").update({ ...rest, journey_id: rest.journey_id || null, starts_on: rest.starts_on || null, ends_on: rest.ends_on || null }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("Prototipo guardado"); qc.invalidateQueries({ queryKey: ["gtm_experiments"] });
+    if (error) return toast.error(errorText(error));
+    toast.success("Prototipo guardado."); qc.invalidateQueries({ queryKey: ["gtm_experiments"] });
   }
 
   return (

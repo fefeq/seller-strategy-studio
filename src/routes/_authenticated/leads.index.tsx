@@ -14,6 +14,7 @@ import { LeadDetail } from "@/components/leads/lead-detail";
 import { NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
 import { DISQUALIFIED, LEAD_STAGES, delayText, funnelBy, leadCohort, leadDelay, leadFunnel, leadStageLabel, type LeadDelay } from "@/lib/lead-funnel";
 import { quarterOf, quarterRange } from "@/lib/metrics";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true } => ({
@@ -64,8 +65,8 @@ function LeadsPage() {
     if (!lead || lead.stage === stage) return;
     if (lead.stage === "opportunity") return toast.info("Este lead ya es una oportunidad: síguelo desde Pipeline.");
     const { data: saved, error } = await supabase.from("leads").update({ stage }).eq("id", id).select("deal_id").single();
-    if (error) return toast.error(error.message);
-    if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en Discovery`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
+    if (error) return toast.error(errorText(error));
+    if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en Discovery.`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }

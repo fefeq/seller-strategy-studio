@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { parseCsv, normEmail } from "@/lib/dedupe";
 import { cohort, funnelBySegment, funnelStats, parseDateCell, type FunnelStats } from "@/lib/self-service";
 import { quarterRange } from "@/lib/metrics";
+import { errorText } from "@/lib/errors";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
@@ -150,23 +151,23 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
 
   async function add() {
     const signed = parseDateCell(form.signed_up_at);
-    if (!signed) return toast.error("Fecha de alta no válida");
+    if (!signed) return toast.error("Fecha de alta no válida.");
     const { error } = await supabase.from("trials").insert({ email: normEmail(form.email) ?? "", company: form.company.trim(), segment_id: form.segment_id || null, signed_up_at: signed });
-    if (error) return toast.error(error.code === "23505" ? "Ya existe un registro con ese email" : error.message);
+    if (error) return toast.error(error.code === "23505" ? "Ya existe un registro con ese email" : errorText(error));
     setForm((f) => ({ ...f, email: "", company: "" }));
-    toast.success("Registro añadido");
+    toast.success("Registro añadido.");
     refresh();
   }
 
   async function patch(id: string, values: Partial<TrialRow>) {
     const { error } = await supabase.from("trials").update(values).eq("id", id);
-    if (error) return toast.error(error.code === "23514" ? "La fecha no puede ser anterior al alta" : error.message);
+    if (error) return toast.error(error.code === "23514" ? "La fecha no puede ser anterior al alta" : errorText(error));
     refresh();
   }
 
   async function remove(id: string) {
     const { error } = await supabase.from("trials").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     refresh();
   }
 
@@ -199,7 +200,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
         if (!error && email) byEmail.set(email, "pending");
       }
     }
-    toast.success(`${inserted} añadidos · ${updated} actualizados · ${skipped} omitidos`);
+    toast.success(`${inserted} añadidos · ${updated} actualizados · ${skipped} omitidos.`);
     refresh();
   }
 

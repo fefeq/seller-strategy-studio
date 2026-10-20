@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ import { applySetupItems, extractSetup } from "@/lib/agent.functions";
 import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -74,7 +75,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
   async function onFiles(list: FileList | null) {
     const arr = Array.from(list ?? []).slice(0, 3);
     const read = await Promise.all(arr.map(async (f) => {
-      if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} supera 8 MB`); return null; }
+      if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} supera 8 MB.`); return null; }
       if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { const body = await f.text(); setText((t) => `${t}\n\n--- ${f.name} ---\n${body.slice(0, 20000)}`); return null; }
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
@@ -85,7 +86,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
   async function run() {
     setBusy(true);
     try { setProposal(await extract({ data: { url, text, files } })); }
-    catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
   if (proposal) return <ProposalReview proposal={proposal} onReset={() => setProposal(null)} onWizard={onWizard} />;
@@ -135,7 +136,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
       toast[bad.length ? "warning" : "success"](`${r.length - bad.length} guardados${bad.length ? ` · ${bad.length} con error: ${bad[0].error}` : ""}`);
       qc.invalidateQueries();
       if (!bad.length) onReset();
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
   const setArg = (key: string, path: string[], value: string) => setItems((list) => list.map((i) => {
@@ -224,12 +225,20 @@ function Wizard({ proposal }: { proposal: SetupProposal | null }) {
   const cur = ordered[Math.min(step, ordered.length - 1)];
   if (!cur || !setup) return null;
   const done = setup.status.items.find((i) => i.id === cur.id)?.done;
+  // Mobile: the steps are one swipeable row; keep the current one in view.
+  const stepsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = stepsRef.current;
+    const el = box?.querySelector<HTMLElement>("[data-active]");
+    if (box && el && box.scrollWidth > box.clientWidth) box.scrollTo({ left: el.offsetLeft - box.clientWidth / 2 + el.offsetWidth / 2, behavior: "smooth" });
+  }, [step]);
+
   return (
     <div className="rounded-lg border bg-card p-5">
-      <div className="flex flex-wrap gap-1.5">
+      <div ref={stepsRef} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {ordered.map((i, idx) => {
           const d = setup.status.items.find((x) => x.id === i.id)?.done;
-          return <button key={i.id} onClick={() => setStep(idx)} className={`min-h-8 rounded-none border px-3 py-1.5 text-xs md:min-h-0 md:py-1 ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
+          return <button key={i.id} data-active={idx === step || undefined} onClick={() => setStep(idx)} className={`min-h-8 shrink-0 whitespace-nowrap rounded-none border px-3 py-1.5 text-xs md:min-h-0 md:py-1 ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
         })}
       </div>
       <div className="mt-5">
@@ -281,9 +290,9 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
     try {
       const r = await apply({ data: { items: items() } });
       const bad = r.filter((x) => !x.ok);
-      if (bad.length) toast.error(bad[0].error); else { toast.success("Guardado"); onSaved(); }
+      if (bad.length) toast.error(errorText(bad[0].error)); else { toast.success("Guardado."); onSaved(); }
       qc.invalidateQueries();
-    } catch (e) { toast.error((e as Error).message); } finally { setBusy(false); }
+    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
   const inp = (k: string, label: string, opts: { area?: boolean; type?: string } = {}) => (

@@ -17,6 +17,7 @@ import type { SegLike } from "@/lib/segment-coverage";
 import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-budget";
 import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
+import { errorText } from "@/lib/errors";
 
 const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pillars"] as const;
 
@@ -100,7 +101,7 @@ function Motions() {
 
   async function upd(id: string, patch: Record<string, unknown>) {
     const { error } = await supabase.from("segments").update(patch as any).eq("id", id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["segments"] });
   }
   async function add() {
@@ -109,9 +110,9 @@ function Motions() {
   }
   async function setCurrency(c: string) {
     const { error } = await supabase.from("organizations").update({ currency: c }).eq("id", me!.currentOrg!.org_id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     await qc.invalidateQueries({ queryKey: ["me"] });
-    toast.success(`Moneda: ${CURRENCIES[c]}`);
+    toast.success(`Moneda: ${CURRENCIES[c]}.`);
   }
   const fmt1 = (n: number | null) => (n == null ? "—" : n.toLocaleString("es-ES", { maximumFractionDigits: 1 }));
   // One editable cell, shared by the mobile cards and the desktop table.
@@ -288,8 +289,8 @@ function Icp() {
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, ...rest } = sel;
     const { error } = await supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id);
-    if (error) return toast.error(error.message);
-    toast.success("ICP guardado"); qc.invalidateQueries({ queryKey: ["icp"] });
+    if (error) return toast.error(errorText(error));
+    toast.success("ICP guardado."); qc.invalidateQueries({ queryKey: ["icp"] });
   }
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
@@ -346,8 +347,8 @@ function Positioning() {
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, ...rest } = f as any;
     const { error } = row ? await supabase.from("positioning").update(rest).eq("id", row.id) : await supabase.from("positioning").insert(rest);
-    if (error) return toast.error(error.message);
-    toast.success("Posicionamiento guardado"); qc.invalidateQueries({ queryKey: ["positioning"] });
+    if (error) return toast.error(errorText(error));
+    toast.success("Posicionamiento guardado."); qc.invalidateQueries({ queryKey: ["positioning"] });
   }
   const v = (k: string) => f[k] || `[${STATEMENT.find((s) => s[0] === k)?.[1].toLowerCase()}]`;
   return (

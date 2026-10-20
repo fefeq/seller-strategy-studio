@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/hooks/use-me";
@@ -13,6 +13,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DEAL_STAGES, MEDDPICC } from "@/lib/roles";
 import { stageGate, TRACKS } from "@/lib/bmad/tracks";
+import { errorText } from "@/lib/errors";
+import { mergeServerEdits } from "@/lib/merge-edits";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -97,7 +99,14 @@ function Kpi({ label, v }: { label: string; v: string }) {
 function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: string) => Promise<void>; onSaved: () => void }) {
   const { money: eur, symbol } = useCurrency();
   const [d, setD] = useState(deal);
-  useEffect(() => setD(deal), [deal]);
+  // When the deal refreshes (stage change, realtime, save), keep what the person is still editing.
+  const server = useRef(deal);
+  useEffect(() => {
+    const prev = server.current;
+    server.current = deal;
+    if (prev === deal) return;
+    setD((cur: any) => (prev.id !== deal.id ? deal : mergeServerEdits(cur, prev, deal)));
+  }, [deal]);
   const m: Record<string, { score: number; note: string }> = d.meddpicc ?? {};
   const qc = useQueryClient();
   const { data: items = [] } = useQuery({
@@ -116,8 +125,8 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
 
   async function save() {
     const { error } = await supabase.from("deals").update({ name: d.name, amount: d.amount, close_date: d.close_date || null, probability: d.probability, health: d.health, meddpicc: d.meddpicc, forecast_category: d.forecast_category, source: d.source, segment_id: d.segment_id || null, partner_id: d.partner_id || null }).eq("id", d.id);
-    if (error) return toast.error(error.message);
-    toast.success("Deal guardado"); onSaved();
+    if (error) return toast.error(errorText(error));
+    toast.success("Deal guardado."); onSaved();
   }
   async function addItem() {
     await supabase.from("mutual_action_items").insert({ deal_id: deal.id, title: newItem, due_date: due || null, owner_side: side });
@@ -129,12 +138,12 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
   }
   async function requestDiscount() {
     await supabase.from("approvals").insert({ kind: "discount", title: `Descuento para ${d.name}`, evidence: `Importe: ${eur(Number(d.amount ?? 0))}. Justificación: añade el contexto en la cuenta.` });
-    toast.success("Solicitud enviada a Deal Desk");
+    toast.success("Solicitud enviada a Deal Desk.");
   }
 
   return (
     <div className="space-y-6">
-      <SheetHeader><SheetTitle className="break-words pr-10 font-display text-3xl font-normal">{d.name}</SheetTitle></SheetHeader>
+      <SheetHeader><SheetTitle className="break-words pr-10 font-display text-3xl">{d.name}</SheetTitle></SheetHeader>
       {d.account_id && <Link to="/accounts/$id" params={{ id: d.account_id }} className="text-sm text-signal">Abrir cuenta y plan →</Link>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}

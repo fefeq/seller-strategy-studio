@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { LEAD_STAGES, OPEN_LEAD_STAGES, leadStageLabel, type LeadSla } from "@/lib/lead-funnel";
+import { errorText } from "@/lib/errors";
 
 const NEW_STAGES = Object.fromEntries(LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label]));
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -20,7 +21,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
 
   async function save() {
     const company = f.company.trim();
-    if (!company) return toast.error("Escribe la empresa");
+    if (!company) return toast.error("Escribe la empresa.");
     // Reuse the account if it already exists; otherwise it is created when the lead becomes an opportunity.
     const { data: acc } = await supabase.from("accounts").select("id").ilike("name", escapeLike(company)).limit(1).maybeSingle();
     const { error } = await supabase.from("leads").insert({
@@ -33,8 +34,8 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
       next_step_at: f.next_step_at || null,
       account_id: acc?.id ?? null,
     });
-    if (error) return toast.error(error.message);
-    toast.success(`Lead ${company} creado`);
+    if (error) return toast.error(errorText(error));
+    toast.success(`Lead ${company} creado.`);
     setF(empty);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["leads"] });
@@ -68,8 +69,8 @@ export function SlaSettings({ sla, canEdit, orgId }: { sla: LeadSla; canEdit: bo
   async function save() {
     const clean = Object.fromEntries(OPEN_LEAD_STAGES.map((k) => [k, Math.max(1, Math.round(Number(v[k]) || 1))]));
     const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, sla: clean, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
-    if (error) return toast.error(error.message);
-    toast.success("Plazos guardados");
+    if (error) return toast.error(errorText(error));
+    toast.success("Plazos guardados.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["lead-funnel"] });

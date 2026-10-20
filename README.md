@@ -1,6 +1,4 @@
-# NOKKO
-
-Implement exactly the screenshot and nothing else
+# Nokko
 
 This project was built with [Lovable](https://lovable.dev).
 

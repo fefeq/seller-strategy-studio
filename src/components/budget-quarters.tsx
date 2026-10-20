@@ -7,6 +7,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/fields";
 import { deviation, quarterlyBudget, quartersOfYear, type BudgetField, type SegmentBudgetRow } from "@/lib/segment-budget";
+import { errorText } from "@/lib/errors";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
@@ -55,14 +56,14 @@ export function BudgetQuarters() {
 
   async function save(period: string, field: BudgetField, value: string, current: number | null) {
     const v = value === "" ? null : Number(value);
-    if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un importe válido");
-    if (field === "plan_new_customers" && v != null && !Number.isInteger(v)) return toast.error("Los clientes deben ser un número entero");
+    if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un importe válido.");
+    if (field === "plan_new_customers" && v != null && !Number.isInteger(v)) return toast.error("Los clientes deben ser un número entero.");
     if (v === current) return;
     const { error } = await supabase.from("segment_budget_quarters").upsert(
       { org_id: orgId!, segment_id: sel, period, [field]: v } as { org_id: string; segment_id: string; period: string } & Partial<Record<BudgetField, number | null>>,
       { onConflict: "org_id,segment_id,period" },
     );
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["segment-coverage"] });
   }
 

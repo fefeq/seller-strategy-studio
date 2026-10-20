@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { oauthReturnPath } from "@/lib/oauth-return-path";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => (typeof s.next === "string" ? { next: s.next } : {}),
@@ -62,7 +63,7 @@ function AuthPage() {
         if (error) throw error;
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se ha podido continuar. Inténtalo de nuevo.");
+      toast.error(errorText(err, "No se ha podido continuar. Inténtalo de nuevo."));
     } finally {
       setBusy(false);
     }
@@ -70,7 +71,7 @@ function AuthPage() {
 
   async function google() {
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" + (next ? `?next=${encodeURIComponent(next)}` : "") });
-    if (r.error) toast.error("No se pudo entrar con Google");
+    if (r.error) toast.error("No se pudo entrar con Google.");
   }
 
   return (

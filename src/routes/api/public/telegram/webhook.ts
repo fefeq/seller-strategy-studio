@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/api/public/telegram/webhook")({
   server: {
@@ -53,13 +54,13 @@ async function handle(db: Admin, update: any, t: Tg) {
     try {
       if (kind === "a") {
         const r = await decidePending(ctx, id, decision === "c" ? "confirm" : "cancel");
-        return t.sendText(chatId, r.status === "confirmed" ? r.result || "Hecho." : r.status === "cancelled" ? "Cancelado." : `No se pudo: ${r.result}`);
+        return t.sendText(chatId, r.status === "confirmed" ? r.result || "Hecho." : r.status === "cancelled" ? "Cancelado." : `No se ha podido hacer. ${r.result || "Vuelve a intentarlo desde Sugerencias, en la app."}`);
       }
       if (kind === "s") {
         const r = await decideSuggestionCore(ctx, id, decision as any);
         return t.sendText(chatId, r.message);
       }
-    } catch (e) { return t.sendText(chatId, `No se pudo: ${(e as Error).message}`); }
+    } catch (e) { return t.sendText(chatId, `No se ha podido hacer. ${errorText(e)}`); }
     return;
   }
 
@@ -100,5 +101,5 @@ async function handle(db: Admin, update: any, t: Tg) {
     const out = await runAgent(ctx, { conversationId: conv.id, text: text.slice(0, 4000), channel: "telegram", mode: "chat", orgName: ctx.orgName });
     await t.sendText(chatId, out.text);
     for (const p of out.pending) await t.sendText(chatId, `¿Confirmas? ${p.summary}`, [[{ text: "Confirmar", data: `a:${p.id}:c` }, { text: "Cancelar", data: `a:${p.id}:x` }]]);
-  } catch (e) { await t.sendText(chatId, (e as Error).message); }
+  } catch (e) { await t.sendText(chatId, errorText(e)); }
 }

@@ -19,7 +19,7 @@ export function McpConnect() {
       <p className="text-sm text-muted-foreground">Usa Nokko desde Claude, ChatGPT, Codex o Cursor. Al conectar, inicias sesión y apruebas el acceso; el asistente actúa como tú, con tu rol, y lo que cambie datos queda pendiente de tu confirmación en Sugerencias.</p>
       <div className="mt-3 flex gap-2">
         <Input readOnly value={MCP_URL} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
-        <Button size="icon" variant="outline" aria-label="Copiar dirección" onClick={() => { navigator.clipboard.writeText(MCP_URL); toast.success("Dirección copiada"); }}><Copy className="size-4" /></Button>
+        <Button size="icon" variant="outline" aria-label="Copiar dirección" onClick={() => { navigator.clipboard.writeText(MCP_URL); toast.success("Dirección copiada."); }}><Copy className="size-4" /></Button>
       </div>
       <button className="mt-2 text-xs underline" onClick={() => setOpen(!open)}>{open ? "Ocultar pasos" : "Ver pasos para cada asistente"}</button>
       {open && <ul className="mt-2 space-y-1 text-sm">{STEPS.map(([n, s]) => <li key={n}><strong>{n}:</strong> {s}</li>)}</ul>}

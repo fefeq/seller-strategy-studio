@@ -8,6 +8,7 @@ import { Page, Empty, HealthDot } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -26,7 +27,7 @@ function Accounts() {
   const [domain, setDomain] = useState("");
   async function create() {
     const { data: a, error } = await supabase.from("accounts").insert({ name, domain }).select().single();
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(errorText(error));
     await supabase.from("account_plans").insert({ account_id: a.id });
     navigate({ to: "/accounts/$id", params: { id: a.id } });
   }

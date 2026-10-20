@@ -8,6 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { createTelegramLinkCode, telegramBotInfo } from "@/lib/agent.functions";
+import { errorText } from "@/lib/errors";
 
 export function TelegramLink() {
   const { data: me } = useMe();
@@ -25,7 +26,7 @@ export function TelegramLink() {
   const linked = !!link?.chat_id;
 
   async function generate() {
-    try { setCode((await mkCode()).code); } catch (e) { toast.error((e as Error).message); }
+    try { setCode((await mkCode()).code); } catch (e) { toast.error(errorText(e)); }
   }
   async function unlink() {
     await supabase.from("channel_links").delete().eq("user_id", me!.user.id).eq("channel", "telegram");
