@@ -13,9 +13,9 @@
 - Multitenant: every tenant table has org_id defaulting to public.current_org() (profiles.current_org_id); RLS filters to the current org + membership, so client queries never pass org_id except in upsert conflict targets.
 - Roles are per organization in org_members (user_roles is deprecated); only an org's owner may delete, manage members and invites.
 - New orgs are created via the create_organization RPC, which also seeds default segments, integrations, positioning and docs.
-- Theory U: route src/routes/_authenticated/theory-u.tsx, one tab per file in src/components/theory-u/, shared pure rules in src/lib/theory-u.ts (tested).
+- Theory U: one tab per file in src/components/theory-u/, pure rules in src/lib/theory-u.ts (tested).
 - Self-service funnel: trials table (manual/CSV), cohort maths by signup date in src/lib/self-service.ts (tested).
-- Money uses the org currency via useCurrency() (src/hooks/use-me.ts); never hardcode symbols; changing currency relabels, never converts.
+- Money uses the org currency via useCurrency(); never hardcode symbols; changing currency relabels, never converts.
 - GTM Advisor: the server fn re-checks the caller's org role and the gtm_advisories RLS limits read/insert to owner and sales_leader; the data snapshot sent to the AI is built by pure code in src/lib/advisor.ts (tested) and the model must answer with its strict JSON schema.
 - Onboarding data is defined once in src/lib/setup-schema.ts (items, weights, unlocks, completeness); the AI fill, wizard, interview, sidebar meter and proactive detector all read it, so new required data = one new item there.
 - The agent's capabilities live in one registry (src/lib/agent/tools.ts): read tools run immediately, write tools only create agent_pending_actions executed after explicit confirmation; every handler scopes by org_id explicitly because Telegram/cron run it with the privileged client.
