@@ -15,6 +15,7 @@ import { NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
 import { DISQUALIFIED, LEAD_STAGES, delayText, funnelBy, leadCohort, leadDelay, leadFunnel, leadStageLabel, type LeadDelay } from "@/lib/lead-funnel";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
+import { leadsHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true } => ({
@@ -76,7 +77,7 @@ function LeadsPage() {
   const segName = (id: string | null) => data?.segments.find((s) => s.id === id)?.name;
 
   return (
-    <Page eyebrow="Antes de la pipeline" title="Leads" actions={<>
+    <Page eyebrow="Leads" title={view ? leadsHeadline({ open: view.open.length, late: view.late.length }) : "Leads"} actions={<>
       <Button variant="outline" asChild><Link to="/leads/entrada"><ArrowDownToLine className="mr-1 size-4" />Entrada de leads</Link></Button>
       {data && <SlaSettings sla={data.sla} canEdit={canSettings} orgId={orgId!} />}
       {data && <NewLead segments={data.segments} />}

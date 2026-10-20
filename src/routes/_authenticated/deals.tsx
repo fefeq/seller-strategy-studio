@@ -15,6 +15,7 @@ import { DEAL_STAGES, MEDDPICC } from "@/lib/roles";
 import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 import { errorText } from "@/lib/errors";
 import { mergeServerEdits } from "@/lib/merge-edits";
+import { isOverdue, pipelineHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -53,7 +54,7 @@ function Deals() {
   }
 
   return (
-    <Page eyebrow="Pipeline y forecast" title="Pipeline" actions={<Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>}>
+    <Page eyebrow="Pipeline" title={pipelineHeadline({ openDeals: open.length, openAmount: open.reduce((s, d) => s + Number(d.amount ?? 0), 0), overdue: open.filter((d) => isOverdue(d.close_date)).length, money: eur })} actions={<Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>}>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Kpi label="Pipeline abierto" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
         <Kpi label="Forecast ponderado" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0))} />

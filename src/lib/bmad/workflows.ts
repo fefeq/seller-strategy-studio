@@ -13,17 +13,17 @@ export type Workflow = {
 };
 
 export const ARTIFACTS: Record<ArtifactKind, { label: string; phase: PhaseId; sections: string[] }> = {
-  brief: { label: "GTM Brief", phase: "analysis", sections: ["Problema", "Mercado y tamaño", "Cliente ideal", "Alternativas actuales", "Nuestra apuesta", "Riesgos y supuestos"] },
+  brief: { label: "Brief GTM", phase: "analysis", sections: ["Problema", "Mercado y tamaño", "Cliente ideal", "Alternativas actuales", "Nuestra apuesta", "Riesgos y supuestos"] },
   plan: { label: "Plan GTM", phase: "plan", sections: ["Objetivos del periodo", "Segmentos y motion por ACV", "Posicionamiento y mensajes", "Canales y fuentes de pipeline", "Cuotas y cobertura", "Apuestas y experimentos", "Fuera de alcance"] },
-  architecture: { label: "Arquitectura de revenue", phase: "architecture", sections: ["Motions y etapas", "Capacidad (AEs, SDRs, SEs)", "Cobertura y pipeline necesario", "Territorios y asignación", "Playbooks por segmento", "Stack y herramientas", "Métricas y cadencias"] },
+  architecture: { label: "Arquitectura de revenue", phase: "architecture", sections: ["Modelos de venta y etapas", "Capacidad (AEs, SDRs, SEs)", "Cobertura y pipeline necesario", "Territorios y asignación", "Playbooks por segmento", "Stack y herramientas", "Métricas y cadencias"] },
   readiness: { label: "Revisión antes de salir al mercado", phase: "architecture", sections: ["Veredicto (listo / listo con riesgos / no listo)", "Alineación plan ↔ capacidad", "Alineación mensajes ↔ ICP", "Huecos críticos", "Acciones antes de lanzar"] },
   retro: { label: "Retro trimestral", phase: "retro", sections: ["Resultado frente a objetivo", "Qué funcionó", "Qué no funcionó", "Aprendizajes de win/loss", "Cambios propuestos al Brief y al Plan"] },
   winloss: { label: "Win/Loss", phase: "retro", sections: ["Resultado y motivo principal", "Qué hicimos bien", "Qué falló", "Competencia", "Lección para el playbook"] },
 };
 
 export const WORKFLOWS: Workflow[] = [
-  { id: "brief", label: "GTM Brief", phase: "analysis", produces: "brief", instructions: "Redacta el GTM Brief a partir del contexto de empresa." },
-  { id: "market_research", label: "Investigar mercado", phase: "analysis", instructions: "Investiga el mercado: tamaño, tendencias, compradores y señales. Termina proponiendo qué incluir en el GTM Brief." },
+  { id: "brief", label: "Brief GTM", phase: "analysis", produces: "brief", instructions: "Redacta el Brief GTM a partir del contexto de empresa." },
+  { id: "market_research", label: "Investigar mercado", phase: "analysis", instructions: "Investiga el mercado: tamaño, tendencias, compradores y señales. Termina proponiendo qué incluir en el Brief Grief." },
   { id: "competitor", label: "Análisis de competidor", phase: "analysis", instructions: "Pregunta qué competidor analizar y haz un teardown: propuesta, precio, a quién gana, dónde es débil y cómo diferenciarnos." },
   { id: "voice_of_customer", label: "Voz del cliente", phase: "analysis", instructions: "Revisa reuniones, notas de sensing y win/loss para extraer patrones de la voz del cliente." },
   { id: "company_context", label: "Contexto de empresa", phase: "analysis", instructions: "Revisa el estado de la configuración y propone completar lo que falta del contexto de empresa." },
@@ -42,7 +42,7 @@ export const WORKFLOWS: Workflow[] = [
   { id: "account_breakdown", label: "Planes de cuenta", phase: "execution", requires: ["plan"], instructions: "Divide el Plan GTM en cuentas objetivo y propone qué planes de cuenta crear primero." },
   { id: "prioritize_pipeline", label: "Priorizar pipeline", phase: "execution", instructions: "Ordena el pipeline por valor, probabilidad real y riesgo; di dónde poner el foco." },
   { id: "replan", label: "Replanificar", phase: "execution", instructions: "Algo ha cambiado a mitad de trimestre: pregunta qué y propone cómo ajustar el plan y las prioridades." },
-  { id: "call_prep", label: "Call prep", phase: "execution", instructions: "Pregunta la reunión o cuenta y genera el Call Prep." },
+  { id: "call_prep", label: "Preparación de llamada", phase: "execution", instructions: "Pregunta la reunión o cuenta y genera la preparación de llamada." },
   { id: "advance_deal", label: "Avanzar deal", phase: "execution", instructions: "Pregunta el deal, revisa qué le falta para pasar de etapa según su camino (ACV) y propone el siguiente paso." },
   { id: "deal_review", label: "Revisión de deal", phase: "execution", instructions: "Revisión de deal: MEDDPICC, riesgos, señales de slip y acciones." },
   { id: "proposal", label: "Propuesta", phase: "execution", instructions: "Estructura la propuesta comercial del deal con valor, alcance, precio y plan de acción mutuo." },

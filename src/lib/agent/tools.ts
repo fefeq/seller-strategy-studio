@@ -222,16 +222,16 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "create_meeting", kind: "write",
-    description: "Planifica una reunión (Meeting Planner).",
+    description: "Planifica una reunión (planificador de reuniones).",
     input: z.object({ title: z.string().min(1), account_id: z.string().uuid().optional(), deal_id: z.string().uuid().optional(), scheduled_at: z.string().optional().describe("ISO 8601"), objective: z.string().optional() }),
     summarize: (a) => `Planificar la reunión «${a.title}»${a.scheduled_at ? ` el ${a.scheduled_at.slice(0, 16).replace("T", " ")}` : ""}`,
     run: async (c, a) => ok(await c.db.from("meetings").insert({ ...a, org_id: c.orgId }).select("id,title").single()),
   }),
   def({
     name: "prepare_meeting_brief", kind: "write",
-    description: "Genera con IA el Call Prep de una reunión y lo guarda.",
+    description: "Genera con IA la preparación de llamada de una reunión y la guarda.",
     input: z.object({ meeting_id: z.string().uuid() }),
-    summarize: () => "Generar y guardar el Call Prep de la reunión",
+    summarize: () => "Generar y guardar la preparación de llamada de la reunión",
     run: async (c, a) => {
       const m = ok(await c.db.from("meetings").select("*").eq("org_id", c.orgId).eq("id", a.meeting_id).single()) as any;
       const acc = m.account_id ? await TOOLS.find((t) => t.name === "get_account")!.run(c, { account_id: m.account_id }) : {};
@@ -240,7 +240,7 @@ export const TOOLS: AgentTool[] = [
         c.db.from("messaging_pillars").select("title,message,proof").eq("org_id", c.orgId),
       ]);
       const brief = await ask(
-        "Eres un coach de ventas B2B. Prepara un Call Prep conciso en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.",
+        "Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.",
         JSON.stringify({ reunion: m, contexto: acc, posicionamiento: pos.data, pilares: pillars.data }),
       );
       ok(await c.db.from("meetings").update({ ai_brief: brief }).eq("org_id", c.orgId).eq("id", a.meeting_id).select("id").single());
@@ -361,7 +361,7 @@ export const TOOLS: AgentTool[] = [
     name: "draft_artifact", kind: "write",
     description: "Genera con IA un borrador nuevo (nueva versión) de un documento del Ciclo GTM: brief, plan, architecture, readiness, retro o winloss (winloss necesita deal_id). Las notas recogen lo hablado con el usuario.",
     input: z.object({ kind: z.enum(["brief", "plan", "architecture", "readiness", "retro", "winloss"]), notes: z.string().max(6000).optional(), deal_id: z.string().uuid().optional() }),
-    summarize: (a) => `Crear borrador de ${({ brief: "GTM Brief", plan: "Plan GTM", architecture: "Arquitectura de revenue", readiness: "revisión antes de salir", retro: "retro trimestral", winloss: "win/loss" } as Record<string, string>)[a.kind]} en el Ciclo GTM`,
+    summarize: (a) => `Crear borrador de ${({ brief: "Brief GTM", plan: "Plan GTM", architecture: "Arquitectura de revenue", readiness: "revisión antes de salir", retro: "retro trimestral", winloss: "win/loss" } as Record<string, string>)[a.kind]} en el Ciclo GTM`,
     run: async (c, a) => {
       const { draftArtifactCore } = await import("@/lib/bmad/drafting");
       return draftArtifactCore(c, { kind: a.kind, notes: a.notes ?? "", dealId: a.deal_id ?? null });

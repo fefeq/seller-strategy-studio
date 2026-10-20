@@ -10,6 +10,7 @@ import { PaybackCard } from "@/components/payback-card";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
+import { homeHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Inicio — Nokko" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — Nokko" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
@@ -41,9 +42,21 @@ function HomePage() {
   const weighted = open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0);
   const risk = open.filter((d) => d.health === "red");
   const mine = open.filter((d) => d.owner_id === me?.user.id);
+  const leader = role === "sales_leader" || role === "owner";
+  const scope = leader ? open : mine;
+  const scopeRisk = scope.filter((d) => d.health === "red");
+  const today = new Date().toISOString().slice(0, 10);
+  const firstName = me?.profile?.full_name?.split(" ")[0] ?? "";
+  const headline = homeHeadline({
+    riskDeals: scopeRisk.length, riskAmount: scopeRisk.reduce((s, d) => s + Number(d.amount ?? 0), 0),
+    pendingApprovals: leader ? (data?.approvals.length ?? 0) : 0,
+    meetingsToday: (data?.meetings ?? []).filter((m) => m.scheduled_at?.slice(0, 10) === today).length,
+    openDeals: scope.length, openAmount: scope.reduce((s, d) => s + Number(d.amount ?? 0), 0),
+    money: fmt, fallback: `Hola, ${firstName}`,
+  });
 
   return (
-    <Page eyebrow={ROLES[role]?.label} title={`Hola, ${me?.profile?.full_name?.split(" ")[0] ?? ""}`}>
+    <Page eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label} title={data ? headline : `Hola, ${firstName}`}>
       <p className="-mt-4 mb-8 text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
       {setup && setup.status.pct < 100 && (
         <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-5">

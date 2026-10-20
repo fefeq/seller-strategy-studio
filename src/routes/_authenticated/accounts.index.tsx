@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { errorText } from "@/lib/errors";
+import { accountsHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -33,7 +34,7 @@ function Accounts() {
   }
   const list = data.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   return (
-    <Page eyebrow="Account management" title="Cuentas" actions={
+    <Page eyebrow="Cuentas" title={accountsHeadline({ total: data.length, atRisk: data.filter((a) => a.health === "red").length })} actions={
       <Dialog>
         <DialogTrigger asChild><Button>+ Nueva cuenta</Button></DialogTrigger>
         <DialogContent>

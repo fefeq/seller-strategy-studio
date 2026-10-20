@@ -8,7 +8,7 @@ import { CaseClinics } from "@/components/theory-u/case-clinic";
 import { Prototypes } from "@/components/theory-u/prototypes";
 
 const TITLE = "Theory U — Nokko";
-const DESC = "Recorrido U, sensing de clientes, niveles de escucha, Case Clinics y prototipos GTM.";
+const DESC = "Recorrido U, sensing de clientes, niveles de escucha, clínicas de casos y prototipos GTM.";
 
 export const Route = createFileRoute("/_authenticated/theory-u")({
   head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
@@ -23,7 +23,7 @@ function TheoryU() {
           <TabsTrigger value="journey">Recorrido U</TabsTrigger>
           <TabsTrigger value="sensing">Sensing</TabsTrigger>
           <TabsTrigger value="listening">Escucha</TabsTrigger>
-          <TabsTrigger value="clinic">Case Clinic</TabsTrigger>
+          <TabsTrigger value="clinic">Clínica de casos</TabsTrigger>
           <TabsTrigger value="prototypes">Prototipos</TabsTrigger>
         </TabsList>
         <TabsContent value="journey"><UJourney /></TabsContent>

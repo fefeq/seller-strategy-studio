@@ -105,7 +105,7 @@ export function BudgetQuarters() {
       </div>
 
       {segments.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No hay segmentos todavía. Créalos en la pestaña «Motions por segmento».</p>
+        <p className="text-sm text-muted-foreground">No hay segmentos todavía. Créalos en la pestaña «Modelos de venta por segmento».</p>
       ) : (
         <>
           {yr && (

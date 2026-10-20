@@ -12,7 +12,7 @@ export const meetingNoPrep: Detector = (s) =>
       detector: "meeting_no_prep",
       dedupe_key: `meeting_no_prep:${m.id}`,
       priority: 1,
-      title: `Reunión «${m.title}» sin Call Prep`,
+      title: `Reunión «${m.title}» sin preparación de llamada`,
       body: `Es el ${new Date(m.scheduled_at!).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short", timeZone: "Europe/Madrid" })}. Te preparo el brief con IA.`,
       link: m.account_id ? `/accounts/${m.account_id}` : null,
       action: { tool: "prepare_meeting_brief", args: { meeting_id: m.id } },

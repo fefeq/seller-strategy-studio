@@ -27,10 +27,10 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 
 - [ ] Telegram: crear el bot en @BotFather y conectarlo en Lovable. Después: registrar el webhook y probar vinculación, avisos y resumen diario (Claude).
 - [ ] Probar en el móvil con datos reales lo que no se pudo ver con datos de prueba: reuniones, mapa de stakeholders, perfiles ICP y el modo entrevista del agente.
-- [ ] Glosario de producto: decidir si se traducen o se quedan en inglés Meeting Planner, Call Prep, Case Clinic, Stakeholder Research, GTM Brief, Motions, Revenue, Win/Loss y los roles (Owner, Sales Leader, Deal Desk).
-- [ ] Titulares de pantalla: la guía pide conclusiones con dato («31 cuentas llevan 21 días sin contacto») en vez de temas («Métricas», «Pipeline», «Cuentas»). Decidir si se hace y en qué pantallas primero.
-- [ ] Portada: revisar frases que suenan a promesa («CRM que se mantiene solo», «el plan para ganar»).
-- [ ] Renombrar a Nokko el proyecto de Lovable («Seller Strategy Studio») y, si se quiere, el repositorio de GitHub. Se hace en sus ajustes; comprobar después que Lovable sigue sincronizando.
+- [x] Glosario de producto (decidido: mixto). Funciones en español —Planificador de reuniones, Preparación de llamada, Clínica de casos, Investigación de stakeholders, Brief GTM, Modelos de venta—; roles y siglas del sector en inglés (Owner, Sales Leader, Deal Desk, MEDDPICC, ICP, ACV, CAC, Win/Loss, Revenue). Antes: decidir si se traducen o se quedan en inglés Meeting Planner, Call Prep, Case Clinic, Stakeholder Research, GTM Brief, Motions, Revenue, Win/Loss y los roles (Owner, Sales Leader, Deal Desk).
+- [x] Titulares de pantalla (decidido: en pantallas con datos). Inicio, Métricas, Pipeline, Leads, Cuentas y Sugerencias abren con una conclusión calculada (src/lib/headlines.ts); sin datos vuelven al nombre de la sección. Antes: la guía pide conclusiones con dato («31 cuentas llevan 21 días sin contacto») en vez de temas («Métricas», «Pipeline», «Cuentas»). Decidir si se hace y en qué pantallas primero.
+- [x] Portada: reescritas sin promesas («El CRM se actualiza con evidencia», «el plan de la cuenta»). Antes: revisar frases que suenan a promesa («CRM que se mantiene solo», «el plan para ganar»).
+- [x] Decidido: el proyecto de Lovable y el repo se quedan como «Seller Strategy Studio» (solo los ve el equipo; la app ya se llama Nokko). Propuesta original: renombrar a Nokko el proyecto de Lovable («Seller Strategy Studio») y, si se quiere, el repositorio de GitHub. Se hace en sus ajustes; comprobar después que Lovable sigue sincronizando.
 
 ### Lo puede hacer Claude sin decisiones previas
 

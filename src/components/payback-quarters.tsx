@@ -56,7 +56,7 @@ export function PaybackQuarters() {
       </div>
 
       {segs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No hay segmentos todavía. Créalos en la pestaña «Motions por segmento».</p>
+        <p className="text-sm text-muted-foreground">No hay segmentos todavía. Créalos en la pestaña «Modelos de venta por segmento».</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full min-w-[640px] text-sm">

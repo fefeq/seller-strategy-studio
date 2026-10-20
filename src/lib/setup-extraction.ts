@@ -32,7 +32,7 @@ export type ProposalItem = { key: string; group: string; label: string; detail: 
 export const FIELD_LABELS: Record<string, string> = {
   product_name: "Producto", target_customer: "Cliente objetivo", need: "Necesidad", category: "Categoría", key_benefit: "Beneficio clave",
   competitive_alternative: "Alternativa competitiva", differentiator: "Diferenciador", one_liner: "Frase de una línea", elevator_pitch: "Elevator pitch",
-  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", motion: "Motion", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
+  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
   industries: "Sectores", company_size: "Tamaño", geography: "Geografía", why_fit: "Por qué encaja", anti_icp: "Anti-ICP", title: "Título", pain: "Dolor",
   message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda",
 };

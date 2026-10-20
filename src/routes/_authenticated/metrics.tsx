@@ -17,6 +17,7 @@ import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
+import { metricsHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -93,7 +94,7 @@ function Metrics() {
   const quarters = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() + (i - 2) * 3); return quarterOf(d); });
 
   return (
-    <Page eyebrow="Revenue operations" title="Métricas" actions={
+    <Page eyebrow={`Métricas · ${quarter}`} title={m ? metricsHeadline({ quota: m.quota, ratio: m.cov.ratio, status: m.cov.status }) : "Métricas"} actions={
       <select aria-label="Trimestre" className="h-10 rounded-md border bg-card px-3 text-sm md:h-9" value={quarter} onChange={(e) => setQuarter(e.target.value)}>
         {quarters.map((q) => <option key={q} value={q}>{q}</option>)}
       </select>
@@ -101,7 +102,7 @@ function Metrics() {
       {m && (
         <div className="space-y-8">
           <div className="grid gap-4 md:grid-cols-4">
-            <Kpi label="Cobertura de pipeline" v={m.quota ? `${m.cov.ratio.toFixed(1)}x` : "—"} hint={m.quota ? (m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad") : "Define cuotas abajo"} tone={m.cov.status === "low" && m.quota ? "bad" : undefined} />
+            <Kpi label="Cobertura de pipeline" v={m.quota ? `${m.cov.ratio.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x` : "—"} hint={m.quota ? (m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad") : "Define cuotas abajo"} tone={m.cov.status === "low" && m.quota ? "bad" : undefined} />
             <Kpi label="Pipeline que cierra este trimestre" v={eur(m.openPipe)} hint={`Cuota total ${eur(m.quota)}`} />
             <Kpi label="Forecast comprometido vs real" v={`${eur(m.actual)} / ${eur(m.commit)}`} hint={m.commit ? `${m.acc.diff >= 0 ? "+" : ""}${pct(m.acc.diff)} · ${m.acc.accurate ? "dentro del 10%" : "fuera del 10%"}` : "Marca deals como Commit"} tone={m.commit && !m.acc.accurate ? "bad" : undefined} />
             <Kpi label="Win rate global" v={pct(m.overall)} hint={`${m.created} deals creados este trimestre`} />

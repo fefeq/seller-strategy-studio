@@ -46,7 +46,7 @@ export function Listening() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-3xl text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda. Valora tu nivel después de cada reunión en el Meeting Planner de cada cuenta.</p>
+      <p className="max-w-3xl text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda. Valora tu nivel después de cada reunión en el planificador de reuniones de cada cuenta.</p>
       <div className="grid gap-3 md:grid-cols-4">
         {LEVELS.map((l) => (
           <div key={l} className="rounded-lg border bg-card p-4">
@@ -68,7 +68,7 @@ export function Listening() {
       </div>
       <div className="space-y-2">
         <p className="eyebrow">Reuniones valoradas</p>
-        {meetings.length === 0 && <Empty>Aún no hay reuniones con nivel de escucha. Ábrelas desde Cuentas → Meeting Planner.</Empty>}
+        {meetings.length === 0 && <Empty>Aún no hay reuniones con nivel de escucha. Ábrelas desde Cuentas → Planificador de reuniones.</Empty>}
         {meetings.map((m) => (
           <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
             <div className="min-w-0 break-words">

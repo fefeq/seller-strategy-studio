@@ -34,7 +34,7 @@ export function CaseClinics() {
   const list = data?.clinics ?? [];
 
   async function add() {
-    const { data: row, error } = await supabase.from("case_clinics").insert({ title: "Nuevo Case Clinic" }).select("*, deals(name)").single();
+    const { data: row, error } = await supabase.from("case_clinics").insert({ title: "Nueva clínica de casos" }).select("*, deals(name)").single();
     if (error) return toast.error(errorText(error));
     setSel(row); qc.invalidateQueries({ queryKey: ["case_clinics"] });
     revealOnMobile(editorRef.current);
@@ -45,7 +45,7 @@ export function CaseClinics() {
     const { error } = await supabase.from("case_clinics").update(payload).eq("id", id);
     if (error) return toast.error(errorText(error));
     setSel({ ...sel, ...extra });
-    toast.success("Case Clinic guardado."); qc.invalidateQueries({ queryKey: ["case_clinics"] });
+    toast.success("Clínica de casos guardada."); qc.invalidateQueries({ queryKey: ["case_clinics"] });
   }
 
   return (
@@ -53,7 +53,7 @@ export function CaseClinics() {
       <p className="max-w-3xl text-sm text-muted-foreground">Coaching entre pares de Theory U (~45 min). Un vendedor (case giver) trae un deal atascado o un reto propio; 3–4 compañeros escuchan, guardan silencio y devuelven espejos antes de dialogar. No se dan consejos de manual: se buscan nuevas formas de ver la situación.</p>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <div className="space-y-2">
-          <Button size="sm" className="w-full" onClick={add}>+ Nuevo Case Clinic</Button>
+          <Button size="sm" className="w-full" onClick={add}>+ Nueva clínica de casos</Button>
           {list.map((c) => (
             <button key={c.id} onClick={() => { setSel(c); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${sel?.id === c.id ? "border-signal" : ""}`}>
               <span className="font-medium">{c.title}</span>
@@ -85,7 +85,7 @@ export function CaseClinics() {
               {sel.status !== "closed" && <Button variant="outline" onClick={() => save({ status: "closed" })}>Guardar y cerrar</Button>}
             </div>
           </div>
-        ) : <Empty>Selecciona o crea un Case Clinic.</Empty>}
+        ) : <Empty>Selecciona o crea una clínica de casos.</Empty>}
         </div>
       </div>
     </div>

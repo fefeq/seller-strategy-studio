@@ -36,7 +36,7 @@ export type SetupItem = {
 };
 
 export const SETUP_ITEMS: SetupItem[] = [
-  { id: "positioning", label: "Posicionamiento (8 campos clave)", weight: 20, unlocks: "Mensajes coherentes en Call Prep, propuestas y el agente", link: "/strategy",
+  { id: "positioning", label: "Posicionamiento (8 campos clave)", weight: 20, unlocks: "Mensajes coherentes en la preparación de llamadas, las propuestas y el agente", link: "/strategy",
     done: (d) => POSITIONING_FIELDS.every(([k]) => filled(d.positioning?.[k])) },
   { id: "icp", label: "Al menos un ICP con sectores, tamaño, encaje y anti-ICP", weight: 15, unlocks: "Priorización de cuentas y research de stakeholders", link: "/strategy",
     done: (d) => d.icps.some((i) => filled(i.industries) && filled(i.company_size) && filled(i.why_fit) && filled(i.anti_icp)) },
@@ -48,7 +48,7 @@ export const SETUP_ITEMS: SetupItem[] = [
     done: (d) => d.pillars.filter((p) => filled(p.title) && filled(p.message)).length >= 3 },
   { id: "quota", label: "Cuota del trimestre actual", weight: 15, unlocks: "Cobertura de pipeline y forecast", link: "/metrics",
     done: (d) => d.quotas.some((q) => q.period === d.quarter && Number(q.amount) > 0) },
-  { id: "accounts", label: "Primeras cuentas objetivo", weight: 10, unlocks: "Planes de cuenta, ABM y Meeting Planner", link: "/accounts",
+  { id: "accounts", label: "Primeras cuentas objetivo", weight: 10, unlocks: "Planes de cuenta, ABM y planificador de reuniones", link: "/accounts",
     done: (d) => d.accounts > 0 },
   { id: "deals", label: "Pipeline: al menos un deal", weight: 10, unlocks: "Métricas, Asesor GTM y alertas de riesgo", link: "/deals",
     done: (d) => d.deals > 0 },

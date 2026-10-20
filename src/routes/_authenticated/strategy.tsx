@@ -24,7 +24,7 @@ const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pi
 export const Route = createFileRoute("/_authenticated/strategy")({
   validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
     STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number]) ? { tab: s.tab as (typeof STRATEGY_TABS)[number] } : {},
-  head: () => ({ meta: [{ title: "Estrategia GTM — Nokko" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — Nokko" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
+  head: () => ({ meta: [{ title: "Estrategia GTM — Nokko" }, { name: "description", content: "Modelos de venta por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — Nokko" }, { property: "og:description", content: "Modelos de venta por segmento, ICP y posicionamiento." }] }),
   component: Strategy,
 });
 
@@ -36,7 +36,7 @@ function Strategy() {
     <Page eyebrow="Capa estratégica" title="Estrategia GTM">
       <Tabs key={tab ?? "motions"} defaultValue={tab ?? "motions"}>
         <TabsList className="mb-6">
-          <TabsTrigger value="motions">Motions por segmento</TabsTrigger>
+          <TabsTrigger value="motions">Modelos de venta por segmento</TabsTrigger>
           <TabsTrigger value="payback">Payback real</TabsTrigger>
           <TabsTrigger value="budget">Presupuesto vs real</TabsTrigger>
           <TabsTrigger value="icp">ICP</TabsTrigger>
@@ -56,7 +56,7 @@ function Strategy() {
 
 const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
 const SEG_COLS = [
-  ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Motion"], ["cycle_days", "Ciclo (días)"],
+  ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["cycle_days", "Ciclo (días)"],
   ["sdr_per_ae", "SDR por AE"], ["ae_per_se", "AE por SE"], ["win_rate_target", "Win rate obj. %"], ["ae_quota", "Cuota anual AE"],
   ["cac_target", "CAC objetivo"], ["gross_margin_pct", "Margen bruto %"], ["payback_months", "Payback obj. (m)"],
 ] as const;

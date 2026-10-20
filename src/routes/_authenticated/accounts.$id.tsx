@@ -62,7 +62,7 @@ function AccountPage() {
         <TabsList className="mb-6">
           <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
           <TabsTrigger value="stakeholders">Stakeholders ({data.stakeholders.length})</TabsTrigger>
-          <TabsTrigger value="meetings">Meeting Planner ({data.meetings.length})</TabsTrigger>
+          <TabsTrigger value="meetings">Planificador de reuniones ({data.meetings.length})</TabsTrigger>
           <TabsTrigger value="calls">Llamadas ({data.calls.length})</TabsTrigger>
           <TabsTrigger value="deals">Deals ({data.deals.length})</TabsTrigger>
         </TabsList>
@@ -258,7 +258,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
               <Field key={k} label={label}><Textarea rows={3} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Call Prep con IA"}</Button></div>
+          <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Preparar llamada con IA"}</Button></div>
           {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.ai_brief}</pre></div>}
           <div className="space-y-3 border-t pt-4">
             <div>

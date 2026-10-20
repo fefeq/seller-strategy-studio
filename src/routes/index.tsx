@@ -8,7 +8,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Nokko — una sola fuente de verdad para ventas" },
-      { name: "description", content: "Planes de cuenta, Meeting Planner, Stakeholder Research, pipeline y base única de personas para todo tu equipo comercial." },
+      { name: "description", content: "Planes de cuenta, planificador de reuniones, investigación de stakeholders, pipeline y base única de personas para todo tu equipo comercial." },
       { property: "og:title", content: "Nokko — una sola fuente de verdad para ventas" },
       { property: "og:description", content: "Cada rol del ciclo de venta trabajando desde el mismo contexto." },
       { property: "og:type", content: "website" },
@@ -21,9 +21,9 @@ export const Route = createFileRoute("/")({
 const PILLARS = [
   ["01", "Cerebro compartido", "Empresa, ICP, ofertas, objeciones, playbooks, llamadas y reglas. Todo el equipo trabaja con el mismo contexto."],
   ["02", "Un responsable", "El GTM Owner entrena el sistema, aprueba cambios y promueve las skills que funcionan."],
-  ["03", "Capa estratégica", "Plan de cuenta, mapa de stakeholders, Meeting Planner, MEDDPICC y plan de acción conjunto por cuenta."],
+  ["03", "Capa estratégica", "Plan de cuenta, mapa de stakeholders, planificador de reuniones, MEDDPICC y plan de acción conjunto por cuenta."],
   ["04", "Base única de personas", "Una fila por persona, sin duplicados por email o LinkedIn. Cada fuente y resultado de campaña registrado."],
-  ["05", "CRM que se mantiene solo", "Los cambios importantes llegan a una bandeja con evidencia: aplicar u omitir."],
+  ["05", "El CRM se actualiza con evidencia", "Los cambios importantes llegan a una bandeja con su evidencia: aplicar u omitir."],
   ["06", "Varias empresas, un solo lugar", "Gestiona la estrategia de varias empresas y cambia entre ellas. Cada una con su equipo, sus roles y sus datos aislados."],
 ];
 
@@ -46,7 +46,7 @@ function Landing() {
           Una sola fuente de verdad para <span className="text-red">todo</span> el equipo de ventas.
         </h1>
         <p className="mt-8 measure-body text-lg text-ink-mid">
-          Antes de cada llamada, cada persona tiene las últimas conversaciones, ofertas, notas de cuenta y el plan para ganar.
+          Antes de cada llamada, cada persona tiene las últimas conversaciones, ofertas, notas de cuenta y el plan de la cuenta.
         </p>
         <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row">
           <Button size="lg" asChild><Link to="/auth">Empezar</Link></Button>

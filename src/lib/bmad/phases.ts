@@ -48,7 +48,7 @@ export function nextSteps(s: CycleState, roles: string[]): NextStep[] {
     else add({ id: `draft_${kind}`, title: `Crea el ${title}`, why: "Es la entrada de la siguiente fase.", persona, workflow, priority: prio });
   };
 
-  if (leader || roles.includes("marketing")) phaseDoc("brief", "paul", "brief", "GTM Brief", 2);
+  if (leader || roles.includes("marketing")) phaseDoc("brief", "paul", "brief", "Brief GTM", 2);
   if (leader && ok.has("brief")) phaseDoc("plan", "reid", "plan", "Plan GTM", 2);
   if (leader && ok.has("plan")) phaseDoc("architecture", "benioff", "architecture", "Arquitectura de revenue", 3);
   if (leader && ok.has("plan") && ok.has("architecture")) phaseDoc("readiness", "benioff", "readiness", "revisión antes de salir al mercado", 3);
