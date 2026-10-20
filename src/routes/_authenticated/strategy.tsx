@@ -18,7 +18,11 @@ import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-bud
 import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 
+const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pillars"] as const;
+
 export const Route = createFileRoute("/_authenticated/strategy")({
+  validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
+    STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number]) ? { tab: s.tab as (typeof STRATEGY_TABS)[number] } : {},
   head: () => ({ meta: [{ title: "Estrategia GTM — GTM Brain" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — GTM Brain" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
   component: Strategy,
 });
@@ -26,9 +30,10 @@ export const Route = createFileRoute("/_authenticated/strategy")({
 const MOTION_OPTS = Object.fromEntries(Object.entries(MOTIONS).map(([k, v]) => [k, v.label]));
 
 function Strategy() {
+  const { tab } = Route.useSearch();
   return (
     <Page eyebrow="Capa estratégica" title="Estrategia GTM">
-      <Tabs defaultValue="motions">
+      <Tabs key={tab ?? "motions"} defaultValue={tab ?? "motions"}>
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Motions por segmento</TabsTrigger>
           <TabsTrigger value="payback">Payback real</TabsTrigger>
