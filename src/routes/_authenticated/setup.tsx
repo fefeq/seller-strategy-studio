@@ -181,8 +181,8 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
           </div>
         </section>
       ))}
-      <div className="sticky bottom-0 z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
-        <Button className="order-last col-span-2 mr-14 sm:order-none sm:mr-0" onClick={save} disabled={busy || !chosen.length}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar {chosen.length} elementos</Button>
+      <div className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
+        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar {chosen.length} elementos</Button>
         <Button variant="outline" onClick={onWizard}><span className="sm:hidden">Seguir paso a paso</span><span className="hidden sm:inline">Completar el resto paso a paso</span></Button>
         <Button variant="ghost" onClick={onReset}>Empezar de nuevo</Button>
       </div>

@@ -119,8 +119,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ open }}>
       {children}
       {orgId && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-40 flex size-12 items-center justify-center gap-2 rounded-none bg-primary text-sm text-primary-foreground shadow-lg hover:opacity-90 md:bottom-6 md:right-6 md:size-auto md:px-4 md:py-3">
-          <Brain className="size-5 md:size-4" /> <span className="hidden md:inline">Agente</span> <kbd className="hidden rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px] md:inline">⌘J</kbd>
+        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90 md:flex">
+          <Brain className="size-4" /> Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
         </button>
       )}
       <Sheet open={isOpen} onOpenChange={setOpen}>
