@@ -13,7 +13,7 @@
     "server": {
       "name": "nokko",
       "version": "0.1.0",
-      "title": "NOKKO"
+      "title": "Nokko"
     },
     "tools": [
       {
@@ -323,7 +323,7 @@
       {
         "name": "create_account",
         "title": "create account",
-        "description": "Crea una cuenta. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea una cuenta. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -357,7 +357,7 @@
       {
         "name": "create_deal",
         "title": "create deal",
-        "description": "Crea un deal (oportunidad). (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea un deal (oportunidad). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -407,7 +407,7 @@
       {
         "name": "update_deal",
         "title": "update deal",
-        "description": "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -474,7 +474,7 @@
       {
         "name": "update_lead",
         "title": "update lead",
-        "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -521,7 +521,7 @@
       {
         "name": "create_stakeholder",
         "title": "create stakeholder",
-        "description": "Añade un stakeholder a una cuenta. buying_role: decision_maker, champion, influencer, blocker, user. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Añade un stakeholder a una cuenta. buying_role: decision_maker, champion, influencer, blocker, user. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -561,7 +561,7 @@
       {
         "name": "create_meeting",
         "title": "create meeting",
-        "description": "Planifica una reunión (Meeting Planner). (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Planifica una reunión (Meeting Planner). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -603,7 +603,7 @@
       {
         "name": "prepare_meeting_brief",
         "title": "prepare meeting brief",
-        "description": "Genera con IA el Call Prep de una reunión y lo guarda. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Genera con IA el Call Prep de una reunión y lo guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -629,7 +629,7 @@
       {
         "name": "create_task",
         "title": "create task",
-        "description": "Crea una tarea (opcionalmente ligada a un deal o cuenta). (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea una tarea (opcionalmente ligada a un deal o cuenta). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -679,7 +679,7 @@
       {
         "name": "complete_task",
         "title": "complete task",
-        "description": "Marca una tarea como hecha. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Marca una tarea como hecha. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -705,7 +705,7 @@
       {
         "name": "log_trial",
         "title": "log trial",
-        "description": "Registra un alta self-service (prueba) o actualiza su activación/pago por email. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Registra un alta self-service (prueba) o actualiza su activación/pago por email. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -746,7 +746,7 @@
       {
         "name": "create_experiment",
         "title": "create experiment",
-        "description": "Crea un prototipo/experimento GTM (Theory U) con hipótesis y métrica. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea un prototipo/experimento GTM (Theory U) con hipótesis y métrica. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -777,7 +777,7 @@
       {
         "name": "update_positioning",
         "title": "update positioning",
-        "description": "Guarda campos de posicionamiento. Campos: target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Guarda campos de posicionamiento. Campos: target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -807,7 +807,7 @@
       {
         "name": "upsert_segment",
         "title": "upsert segment",
-        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%) y cuota anual AE. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%) y cuota anual AE. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -858,7 +858,7 @@
       {
         "name": "create_icp",
         "title": "create icp",
-        "description": "Crea un perfil ICP. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea un perfil ICP. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -904,7 +904,7 @@
       {
         "name": "create_pillar",
         "title": "create pillar",
-        "description": "Crea un pilar de mensaje (título, dolor, mensaje, prueba). (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Crea un pilar de mensaje (título, dolor, mensaje, prueba). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -938,7 +938,7 @@
       {
         "name": "set_currency",
         "title": "set currency",
-        "description": "Cambia la moneda de la empresa (código ISO de 3 letras, p. ej. EUR, USD). Solo reetiqueta importes, no convierte. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Cambia la moneda de la empresa (código ISO de 3 letras, p. ej. EUR, USD). Solo reetiqueta importes, no convierte. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -963,7 +963,7 @@
       {
         "name": "set_quota",
         "title": "set quota",
-        "description": "Fija la cuota de un usuario para un trimestre (AAAA-QN). Sin user_id = la mía. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Fija la cuota de un usuario para un trimestre (AAAA-QN). Sin user_id = la mía. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -1048,7 +1048,7 @@
       {
         "name": "draft_artifact",
         "title": "draft artifact",
-        "description": "Genera con IA un borrador nuevo (nueva versión) de un documento del Ciclo GTM: brief, plan, architecture, readiness, retro o winloss (winloss necesita deal_id). Las notas recogen lo hablado con el usuario. (Queda pendiente: el usuario la confirma en NOKKO.)",
+        "description": "Genera con IA un borrador nuevo (nueva versión) de un documento del Ciclo GTM: brief, plan, architecture, readiness, retro o winloss (winloss necesita deal_id). Las notas recogen lo hablado con el usuario. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
