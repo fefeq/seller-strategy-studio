@@ -17,6 +17,7 @@
 - [x] Móvil: todas las pantallas sin scroll lateral, menú ☰/✕, barra inferior (Inicio, Sugerencias, Leads, Pipeline, Agente), etapa del deal editable desde su ficha, tablas como tarjetas; menú lateral plegable en escritorio (⌘/Ctrl+B); instalable en la pantalla de inicio
 - [x] Branding «Nokko — Edición»: Jost + Spline Sans Mono, llave, lockup e isotipo del design system, favicon e iconos
 - [x] Papel blanco roto y modo claro/oscuro con interruptor (recuerda la elección o sigue al sistema)
+- [x] Puntuación de leads y cuentas: encaje con el ICP (70 %) + actividad reciente (30 %), con los criterios explicados; ordena Leads y Cuentas y la lista de leads del agente; segmento, sector y tamaño editables en la ficha de la cuenta
 - [x] Textos revisados con la guía de voz: sin exclamaciones ni emoji, sin inglés visible, vocabulario de producto, estados vacíos con qué hacer; la IA tutea y empieza por la conclusión
 
 ## Pendiente
@@ -42,13 +43,18 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 
 ### Fase A (pipeline), un PR por pieza
 
-- [ ] 1. Puntuación de leads y cuentas (PR #1).
+- [x] 1. Puntuación de leads y cuentas.
 - [x] 2. Umbral de enfriado según el ciclo real del segmento (un cuarto del ciclo, entre 14 y 60 días; ajustable por empresa en Pipeline); sustituye el umbral fijo de 14 días en el detector, la Pipeline y el agente.
-- [ ] 3. Informe semanal del lunes en la app, por email con Resend y por Telegram.
+- [ ] 3. Informe semanal del lunes (quién avanzó, quién se enfrió, qué hacer) en la app, por email con Resend y por Telegram. Necesita de Fede: verificar nokko.ai en Resend y guardar la clave en los secretos de Lovable Cloud.
 - [ ] 4. Seguimientos día 3/7/14: detector + borrador del agente en Sugerencias.
-- [ ] 5. Biblioteca de jugadas (discovery, objeciones, demo, negociación).
+- [ ] 5. Biblioteca de jugadas (discovery, objeciones, demo, negociación): base de Nokko adaptada por la IA al contexto aprobado; la usa la Preparación de llamada.
 - [ ] 6. Notas de llamada en 5 líneas + desmontaje de la llamada por la IA.
-- [ ] 7. Reparto de cuentas propuesto por la IA; el Owner aprueba.
+- [ ] 7. Reparto de cuentas propuesto por la IA (por segmento o país); el Owner aprueba.
+
+### Fase B (necesita decisión de Fede)
+
+- [ ] Elegir proveedor de datos para señales, cuentas similares y contactos. Comparativa hecha (ver el documento del proyecto); la decisión real es con quién firmar un acuerdo de embed: Apollo (Data Reseller Program) o Lusha (Lusha as a service). Clay no como backend.
+- [ ] Descartado: señales de quién interactúa con posts de competidores o influencers en LinkedIn (sin API oficial, riesgo legal).
 
 ### Más adelante
 
