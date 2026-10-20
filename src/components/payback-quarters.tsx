@@ -7,6 +7,7 @@ import { Pick } from "@/components/fields";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { quartersUpTo } from "@/lib/cac";
 import { paybackByQuarter, type QuarterPayback, type SegLike } from "@/lib/segment-coverage";
+import { withBudgetMargin } from "@/lib/segment-budget";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 
@@ -24,7 +25,16 @@ export function PaybackQuarters() {
     enabled: !!orgId,
     queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quarters)).data ?? [],
   });
-  const rows = useMemo(() => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange), [segs, deals, costs, quarters.join()]);
+  const years = [...new Set(quarters.map((q) => Number(q.slice(0, 4))))];
+  const { data: budgets = [] } = useQuery({
+    queryKey: ["segment-coverage", orgId, "budgets", years.join()],
+    enabled: !!orgId,
+    queryFn: async () => (await supabase.from("segment_budgets").select("*").in("year", years)).data ?? [],
+  });
+  const rows = useMemo(
+    () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withBudgetMargin(segs as SegLike[], budgets, Number(q.slice(0, 4)))),
+    [segs, deals, costs, budgets, quarters.join()],
+  );
   const anyReal = rows.some((r) => Object.values(r.byQuarter).some((c) => c.status === "real"));
 
   return (
@@ -33,7 +43,7 @@ export function PaybackQuarters() {
         <div className="max-w-2xl">
           <h3 className="text-2xl">Payback real por trimestre</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Meses que tarda cada segmento en recuperar lo que cuesta captar un cliente: CAC real del trimestre (costes de Métricas / deals ganados) entre el margen mensual del ACV del segmento. Verde = dentro del objetivo; rojo = fuera.
+            Meses que tarda cada segmento en recuperar lo que cuesta captar un cliente: CAC real del trimestre (costes de Métricas / deals ganados) entre el margen mensual del ACV del segmento. El margen sale del presupuesto de ese año (real o, si no hay, presupuestado). Verde = dentro del objetivo; rojo = fuera.
           </p>
         </div>
         <div className="w-44"><Pick value={count} options={{ "4": "Últimos 4 trimestres", "8": "Últimos 8 trimestres" }} onChange={setCount} /></div>

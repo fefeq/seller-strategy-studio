@@ -6,27 +6,35 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { quarterRange } from "@/lib/metrics";
-import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage";
+import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
+import { withBudgetMargin, type MarginSource } from "@/lib/segment-budget";
+
+const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos", rango: "punto medio del rango" };
 
-/** Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels. */
+/**
+ * Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels.
+ * `segments` carry the gross margin of the year's budget (real → plan → target) so every payback uses it.
+ */
 export function useSegmentCoverageData(quarter: string) {
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
+  const year = Number(quarter.slice(0, 4));
   return useQuery({
     queryKey: ["segment-coverage", orgId, quarter],
     enabled: !!orgId,
     queryFn: async () => {
-      const [s, d, t, c] = await Promise.all([
+      const [s, d, t, c, b] = await Promise.all([
         supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
         supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
         supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
         supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
+        supabase.from("segment_budgets").select("*").eq("year", year),
       ]);
       return {
-        segments: s.data ?? [], deals: d.data ?? [], costs: c.data ?? [],
+        segments: withBudgetMargin(s.data ?? [], b.data ?? [], year), deals: d.data ?? [], costs: c.data ?? [],
         targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
       };
     },
@@ -112,6 +120,12 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
             <span className="text-muted-foreground"> / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}</span>
           </span>
         </div>
+        {(() => {
+          const s = r.segment as SegLike & { margin_source?: MarginSource | null };
+          return s.margin_source && s.gross_margin_pct != null
+            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? " · apunta ingresos y coste de servir en «Presupuesto por segmento»" : ""}</p>
+            : null;
+        })()}
         {r.payback.source !== "real" && (
           <p className="text-[11px] text-muted-foreground">
             {r.cac.cost > 0 && r.cac.customers === 0

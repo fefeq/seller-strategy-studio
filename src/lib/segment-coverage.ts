@@ -80,9 +80,12 @@ export type QuarterPayback = {
   ok: boolean | null;
 };
 
-/** Real payback per segment for each quarter (only real CAC, never the target), against the segment's target payback. */
-export function paybackByQuarter(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], quarters: string[], rangeOf: (q: string) => { start: Date; end: Date }) {
-  const perQ = Object.fromEntries(quarters.map((q) => [q, segmentCoverage(segments, deals, {}, rangeOf(q), costs.filter((c) => c.period === q))]));
+/**
+ * Real payback per segment for each quarter (only real CAC, never the target), against the segment's target payback.
+ * `segmentsFor(q)` lets callers swap in the margin of that quarter's year budget (same order and ids as `segments`).
+ */
+export function paybackByQuarter(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], quarters: string[], rangeOf: (q: string) => { start: Date; end: Date }, segmentsFor: (q: string) => SegLike[] = () => segments) {
+  const perQ = Object.fromEntries(quarters.map((q) => [q, segmentCoverage(segmentsFor(q), deals, {}, rangeOf(q), costs.filter((c) => c.period === q))]));
   return segments.map((seg, i) => {
     const target = seg.payback_months != null ? Number(seg.payback_months) : null;
     const byQuarter: Record<string, QuarterPayback> = {};
