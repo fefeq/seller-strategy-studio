@@ -2306,6 +2306,72 @@ export type Database = {
           },
         ]
       }
+      segment_budgets: {
+        Row: {
+          actual_cost_to_serve: number | null
+          actual_revenue: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string | null
+          plan_acquisition: number | null
+          plan_cost_to_serve: number | null
+          plan_new_customers: number | null
+          plan_revenue: number | null
+          segment_id: string
+          updated_at: string
+          updated_by: string | null
+          year: number
+        }
+        Insert: {
+          actual_cost_to_serve?: number | null
+          actual_revenue?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          plan_acquisition?: number | null
+          plan_cost_to_serve?: number | null
+          plan_new_customers?: number | null
+          plan_revenue?: number | null
+          segment_id: string
+          updated_at?: string
+          updated_by?: string | null
+          year: number
+        }
+        Update: {
+          actual_cost_to_serve?: number | null
+          actual_revenue?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          plan_acquisition?: number | null
+          plan_cost_to_serve?: number | null
+          plan_new_customers?: number | null
+          plan_revenue?: number | null
+          segment_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "segment_budgets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "segment_budgets_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       segment_targets: {
         Row: {
           amount: number
