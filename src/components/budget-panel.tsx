@@ -73,7 +73,7 @@ export function BudgetPanel({ year }: { year: number }) {
         </div>
       </div>
       {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
         {rows.map((r) => <BudgetCard key={r.segment.id} r={r} year={year} money={money} canEdit={canEdit} onSave={(f, v, cur) => save(r.segment.id, f, v, cur)} />)}
       </div>
       {!canEdit && <p className="mt-3 text-xs text-muted-foreground">Solo Owner y Sales Leader pueden editar el presupuesto.</p>}
