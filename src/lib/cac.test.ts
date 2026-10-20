@@ -48,3 +48,21 @@ describe("real CAC", () => {
     expect(previousQuarter("2026-Q3")).toBe("2026-Q2");
   });
 });
+
+describe("calculator real CAC (last 4 quarters)", () => {
+  const now = new Date("2026-11-15T12:00:00Z");
+  it("uses costs of the current and previous 3 quarters and deals won since then", async () => {
+    const { trailingCac, lastQuarters } = await import("./pipeline-real");
+    expect(lastQuarters(now)).toEqual(["2026-Q4", "2026-Q3", "2026-Q2", "2026-Q1"]);
+    const costs = [
+      { segment_id: "mid", channel: "Eventos", amount: 20000, period: "2026-Q1" },
+      { segment_id: "mid", channel: "Eventos", amount: 20000, period: "2026-Q4" },
+      { segment_id: "mid", channel: "Eventos", amount: 99999, period: "2025-Q4" },
+    ];
+    const deals = [won({ closed_at: "2026-02-10" }), won({ closed_at: "2026-10-20" }), won({ closed_at: "2025-12-01" })];
+    const r = trailingCac([mid], deals, costs, now);
+    expect(r.mid.cost).toBe(40000);
+    expect(r.mid.customers).toBe(2);
+    expect(r.mid.cac).toBe(20000);
+  });
+});
