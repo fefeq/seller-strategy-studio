@@ -85,7 +85,7 @@ async function fetchSite(raw: string) {
   let url: URL;
   try { url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { throw new Error("La web no es válida"); }
   if (!/^https?:$/.test(url.protocol) || PRIVATE_HOST.test(url.hostname)) throw new Error("La web no es válida");
-  const res = await fetch(url, { headers: { "User-Agent": "GTMBrainBot/1.0", Accept: "text/html" }, redirect: "follow" }).catch(() => null);
+  const res = await fetch(url, { headers: { "User-Agent": "NokkoBot/1.0", Accept: "text/html" }, redirect: "follow" }).catch(() => null);
   if (!res || !res.ok) throw new Error("No he podido leer esa web. Prueba a pegar el texto.");
   const html = (await res.text()).slice(0, 400_000);
   return html

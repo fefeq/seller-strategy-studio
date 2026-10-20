@@ -6,7 +6,7 @@ import { SuggestionBoard } from "@/components/suggestion-board";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/inbox")({
-  head: () => ({ meta: [{ title: "Sugerencias — GTM Brain" }, { name: "description", content: "Riesgos y próximos pasos que el motor proactivo ha detectado, listos para aprobar." }, { property: "og:title", content: "Sugerencias — GTM Brain" }, { property: "og:description", content: "Riesgos y próximos pasos detectados, listos para aprobar." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Sugerencias — NOKKO" }, { name: "description", content: "Riesgos y próximos pasos que el motor proactivo ha detectado, listos para aprobar." }, { property: "og:title", content: "Sugerencias — NOKKO" }, { property: "og:description", content: "Riesgos y próximos pasos detectados, listos para aprobar." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: Inbox,
 });
 

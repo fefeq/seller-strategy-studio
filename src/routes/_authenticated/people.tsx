@@ -12,7 +12,7 @@ import { dedupePeople, parseCsv } from "@/lib/dedupe";
 import { CAMPAIGN_RESULTS, SOURCES } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/people")({
-  head: () => ({ meta: [{ title: "Personas — GTM Brain" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — GTM Brain" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
+  head: () => ({ meta: [{ title: "Personas — NOKKO" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — NOKKO" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
   component: People,
 });
 

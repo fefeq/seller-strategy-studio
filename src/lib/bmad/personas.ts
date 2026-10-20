@@ -1,4 +1,4 @@
-// BMAD-style agent personas for GTM Brain. Names are nods to famous startup figures:
+// BMAD-style agent personas for NOKKO. Names are nods to famous startup figures:
 // characters inspired by them, not representing them.
 import type { Role } from "@/lib/roles";
 
@@ -124,7 +124,7 @@ export const PERSONAS: Persona[] = [
   },
 ];
 
-export const HUB = { id: "hub", name: "GTM Brain", title: "Orquestador", focus: "Estado del ciclo y siguiente paso." };
+export const HUB = { id: "hub", name: "NOKKO", title: "Orquestador", focus: "Estado del ciclo y siguiente paso." };
 
 export const getPersona = (id: string | null | undefined) => PERSONAS.find((p) => p.id === id);
 

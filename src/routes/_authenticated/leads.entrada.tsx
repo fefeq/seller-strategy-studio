@@ -20,9 +20,9 @@ import { importLeads } from "@/lib/leads.functions";
 
 export const Route = createFileRoute("/_authenticated/leads/entrada")({
   head: () => ({ meta: [
-    { title: "Entrada de leads — GTM Brain" },
+    { title: "Entrada de leads — NOKKO" },
     { name: "description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre con su etapa y fecha en la pantalla de Leads." },
-    { property: "og:title", content: "Entrada de leads — GTM Brain" },
+    { property: "og:title", content: "Entrada de leads — NOKKO" },
     { property: "og:description", content: "Conecta formularios, automatizaciones, CRMs y CSV para que cada lead entre con su etapa y fecha en la pantalla de Leads." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

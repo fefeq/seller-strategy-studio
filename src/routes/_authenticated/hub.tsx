@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/hub")({
-  head: () => ({ meta: [{ title: "Conocimiento — GTM Brain" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — GTM Brain" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
+  head: () => ({ meta: [{ title: "Conocimiento — NOKKO" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — NOKKO" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
   component: Hub,
 });
 

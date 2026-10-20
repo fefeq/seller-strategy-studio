@@ -23,7 +23,7 @@ const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pi
 export const Route = createFileRoute("/_authenticated/strategy")({
   validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
     STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number]) ? { tab: s.tab as (typeof STRATEGY_TABS)[number] } : {},
-  head: () => ({ meta: [{ title: "Estrategia GTM — GTM Brain" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — GTM Brain" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
+  head: () => ({ meta: [{ title: "Estrategia GTM — NOKKO" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — NOKKO" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
   component: Strategy,
 });
 

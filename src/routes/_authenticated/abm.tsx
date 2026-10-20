@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { engagementScore, registrationConflict, TOUCH_WEIGHTS } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_authenticated/abm")({
-  head: () => ({ meta: [{ title: "ABM y partners — GTM Brain" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — GTM Brain" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
+  head: () => ({ meta: [{ title: "ABM y partners — NOKKO" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — NOKKO" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
   component: Abm,
 });
 

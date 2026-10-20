@@ -16,7 +16,7 @@ import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
-  head: () => ({ meta: [{ title: "Métricas RevOps — GTM Brain" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — GTM Brain" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
+  head: () => ({ meta: [{ title: "Métricas RevOps — NOKKO" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — NOKKO" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
   component: Metrics,
 });
 

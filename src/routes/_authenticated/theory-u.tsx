@@ -7,7 +7,7 @@ import { Listening } from "@/components/theory-u/listening";
 import { CaseClinics } from "@/components/theory-u/case-clinic";
 import { Prototypes } from "@/components/theory-u/prototypes";
 
-const TITLE = "Theory U — GTM Brain";
+const TITLE = "Theory U — NOKKO";
 const DESC = "Recorrido U, sensing de clientes, niveles de escucha, Case Clinics y prototipos GTM.";
 
 export const Route = createFileRoute("/_authenticated/theory-u")({

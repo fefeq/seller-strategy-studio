@@ -24,7 +24,7 @@ function personaPrompt(personaId?: string | null, workflowId?: string | null) {
 function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null) {
   const role = ctx.roles.map((r) => ROLES[r as Role]?.label ?? r).join(", ");
   const today = new Date().toISOString().slice(0, 10);
-  const base = `Eres GTM Brain, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.${personaPrompt(personaId, workflowId)}
+  const base = `Eres NOKKO, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.${personaPrompt(personaId, workflowId)}
 - Usa get_cycle_status para saber en qué fase del Ciclo GTM está la empresa y qué documentos aprobados existen; básate en ellos.
 Reglas:
 - Usa las herramientas para consultar datos reales antes de responder; nunca inventes cifras ni ids.

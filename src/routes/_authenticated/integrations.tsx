@@ -5,7 +5,7 @@ import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
-  head: () => ({ meta: [{ title: "Integraciones — GTM Brain" }, { name: "description", content: "Mapa de herramientas del stack comercial." }, { property: "og:title", content: "Integraciones — GTM Brain" }, { property: "og:description", content: "Mapa de herramientas del stack comercial." }] }),
+  head: () => ({ meta: [{ title: "Integraciones — NOKKO" }, { name: "description", content: "Mapa de herramientas del stack comercial." }, { property: "og:title", content: "Integraciones — NOKKO" }, { property: "og:description", content: "Mapa de herramientas del stack comercial." }] }),
   component: Integrations,
 });
 

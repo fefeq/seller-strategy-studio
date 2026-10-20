@@ -16,7 +16,7 @@ import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
-  head: () => ({ meta: [{ title: "Pipeline — GTM Brain" }, { name: "description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }, { property: "og:title", content: "Pipeline — GTM Brain" }, { property: "og:description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }] }),
+  head: () => ({ meta: [{ title: "Pipeline — NOKKO" }, { name: "description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }, { property: "og:title", content: "Pipeline — NOKKO" }, { property: "og:description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }] }),
   component: Deals,
 });
 

@@ -7,11 +7,11 @@ import { realMetrics, segmentCoverageTool } from "./tools/metrics";
 const projectRef = import.meta.env["VITE_SUPABASE_PROJECT_ID"] ?? "project-ref-unset";
 
 export default defineMcp({
-  name: "seller-strategy-studio",
-  title: "Seller Strategy Studio",
+  name: "nokko",
+  title: "NOKKO",
   version: "0.1.0",
   instructions:
-    "GTM Brain: sistema comercial (cuentas, deals, tareas, estrategia GTM, métricas). Todo actúa como el usuario conectado en su empresa activa y con su rol. " +
+    "NOKKO: sistema comercial (cuentas, deals, tareas, estrategia GTM, métricas). Todo actúa como el usuario conectado en su empresa activa y con su rol. " +
     "Las consultas devuelven datos al momento. Las acciones de escritura quedan pendientes y el usuario las confirma en la app (Sugerencias). " +
     "Usa list_companies/switch_company para cambiar de empresa. Responde en español neutro.",
   auth: auth.oauth.issuer({

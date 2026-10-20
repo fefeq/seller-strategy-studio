@@ -1,10 +1,10 @@
-# Seller Strategy Studio
+# NOKKO
 
 Implement exactly the screenshot and nothing else
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://seller-strategy-studio.lovable.app
+**Live app**: https://nokko.ai
 
 ## Build with Lovable
 

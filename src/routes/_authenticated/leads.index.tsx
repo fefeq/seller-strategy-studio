@@ -21,9 +21,9 @@ export const Route = createFileRoute("/_authenticated/leads/")({
     late: s.late === true || s.late === "true" ? true : undefined,
   }),
   head: () => ({ meta: [
-    { title: "Leads — GTM Brain" },
+    { title: "Leads — NOKKO" },
     { name: "description", content: "Pipeline de leads por etapas (Nuevo, Contactado, MQL, SQL, Oportunidad) con retrasos y conversión." },
-    { property: "og:title", content: "Leads — GTM Brain" },
+    { property: "og:title", content: "Leads — NOKKO" },
     { property: "og:description", content: "Pipeline de leads por etapas con retrasos y conversión hasta oportunidad y venta." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },

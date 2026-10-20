@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
-  head: () => ({ meta: [{ title: "Cuentas — GTM Brain" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — GTM Brain" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
+  head: () => ({ meta: [{ title: "Cuentas — NOKKO" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — NOKKO" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
   component: Accounts,
 });
 
