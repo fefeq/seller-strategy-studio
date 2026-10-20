@@ -6,6 +6,7 @@ import { useSetup } from "@/hooks/use-setup";
 import { TodayDigest } from "@/components/suggestions";
 import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
+import { PaybackCard } from "@/components/payback-card";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
@@ -64,6 +65,7 @@ function HomePage() {
         <Stat label="Deals en riesgo" value={String(risk.length)} tone={risk.length ? "signal" : undefined} />
         <Stat label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
       </div>
+      <div className="mt-8"><PaybackCard /></div>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Panel title="Próximas reuniones" link={{ to: "/accounts", label: "Ver cuentas" }}>
           {(data?.meetings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin reuniones planificadas. Planifica una desde una cuenta.</p>}
