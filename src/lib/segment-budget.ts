@@ -9,8 +9,8 @@ export const BUDGET_FIELDS = ["plan_revenue", "plan_cost_to_serve", "plan_acquis
 export type BudgetField = (typeof BUDGET_FIELDS)[number];
 export type BudgetValues = Record<BudgetField, number | string | null>;
 export type QuarterBudgetLike = BudgetValues & { segment_id: string; period: string };
-/** Annual budget of a segment (derived: sum of its quarters). */
-export type BudgetLike = BudgetValues & { segment_id: string; year: number };
+/** Annual budget of a segment (derived: sum of its quarters). `*_margin` = margin over quarters that have both revenue and cost. */
+export type BudgetLike = BudgetValues & { segment_id: string; year: number; plan_margin?: number | null; actual_margin?: number | null };
 
 export type MarginSource = "real" | "plan" | "objetivo";
 
@@ -40,6 +40,11 @@ export function annualFromQuarters(rows: QuarterBudgetLike[], year: number): Bud
       const vals = xs.map((x) => num(x[f])).filter((v): v is number => v != null);
       out[f] = vals.length ? vals.reduce((s, v) => s + v, 0) : null;
     }
+    // A quarter with revenue but no cost yet would inflate the margin: only paired quarters count.
+    for (const k of ["plan", "actual"] as const) {
+      const paired = xs.filter((x) => num(x[`${k}_revenue`]) && num(x[`${k}_cost_to_serve`]) != null);
+      out[`${k}_margin`] = grossMargin(paired.reduce((t, x) => t + num(x[`${k}_revenue`])!, 0), paired.length ? paired.reduce((t, x) => t + num(x[`${k}_cost_to_serve`])!, 0) : null);
+    }
     return out;
   });
 }
@@ -51,17 +56,24 @@ export function grossMargin(revenue: number | string | null | undefined, costToS
   return ((r - c) / r) * 100;
 }
 
+/** Real or planned margin of a budget (annual budgets carry it precomputed over paired quarters). */
+export function budgetMargin(b: (BudgetValues & { plan_margin?: number | null; actual_margin?: number | null }) | undefined, kind: "plan" | "actual") {
+  if (!b) return null;
+  const pre = b[`${kind}_margin`];
+  return pre !== undefined ? pre : grossMargin(b[`${kind}_revenue`], b[`${kind}_cost_to_serve`]);
+}
+
 /**
  * Margin used by payback. Budgets come in priority order (e.g. the quarter, then its year):
  * any real margin beats any planned one; without either, the segment's gross margin target.
  */
-export function marginFor(seg: SegLike, ...budgets: (BudgetValues | undefined)[]): { pct: number | null; source: MarginSource | null } {
+export function marginFor(seg: SegLike, ...budgets: ((BudgetValues & { plan_margin?: number | null; actual_margin?: number | null }) | undefined)[]): { pct: number | null; source: MarginSource | null } {
   for (const b of budgets) {
-    const real = b ? grossMargin(b.actual_revenue, b.actual_cost_to_serve) : null;
+    const real = budgetMargin(b, "actual");
     if (real != null) return { pct: real, source: "real" };
   }
   for (const b of budgets) {
-    const plan = b ? grossMargin(b.plan_revenue, b.plan_cost_to_serve) : null;
+    const plan = budgetMargin(b, "plan");
     if (plan != null) return { pct: plan, source: "plan" };
   }
   return seg.gross_margin_pct != null ? { pct: Number(seg.gross_margin_pct), source: "objetivo" } : { pct: null, source: null };
@@ -110,13 +122,13 @@ function periodBudget(
     const planRevenue = num(b?.plan_revenue);
     const planAcq = num(b?.plan_acquisition);
     const planNew = num(b?.plan_new_customers);
-    const planMargin = b ? grossMargin(b.plan_revenue, b.plan_cost_to_serve) : null;
+    const planMargin = budgetMargin(b, "plan");
     const planCac = planAcq != null && planNew ? planAcq / planNew : null;
     const planPayback = capacityPlan({ acv, cac: planCac, grossMarginPct: planMargin ?? seg.gross_margin_pct }).paybackMonths;
 
     const won = wonIn(seg.id);
     const actualRevenue = num(b?.actual_revenue);
-    const realMargin = b ? grossMargin(b.actual_revenue, b.actual_cost_to_serve) : null;
+    const realMargin = budgetMargin(b, "actual");
     const used = marginFor(seg, ...marginChain(seg.id));
     const cac = cacs[seg.id];
     const realPayback = cac.cac != null ? capacityPlan({ acv, cac: cac.cac, grossMarginPct: used.pct }).paybackMonths : null;

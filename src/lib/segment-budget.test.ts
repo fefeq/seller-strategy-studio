@@ -103,3 +103,16 @@ describe("quarterly budget", () => {
     expect(deviation(null, 100)).toBeNull();
   });
 });
+
+describe("annual margin", () => {
+  it("only quarters with both revenue and cost count, so a quarter without cost yet does not inflate it", () => {
+    const base = { segment_id: "mid", plan_revenue: null, plan_cost_to_serve: null, plan_acquisition: null, plan_new_customers: null, actual_revenue: null, actual_cost_to_serve: null };
+    const [y] = annualFromQuarters([
+      { ...base, period: "2026-Q3", actual_revenue: 110000, actual_cost_to_serve: 40000 },
+      { ...base, period: "2026-Q4", actual_revenue: 90000 },
+    ], 2026);
+    expect(y.actual_revenue).toBe(200000);
+    expect(y.actual_margin).toBeCloseTo(63.64, 1);
+    expect(marginFor(mid, y).pct).toBeCloseTo(63.64, 1);
+  });
+});

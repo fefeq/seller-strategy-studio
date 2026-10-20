@@ -12,11 +12,11 @@ const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1
 const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
 
 /** Deviation of actual vs plan in %, green when it goes the good way (red otherwise). */
-export function Deviation({ real, plan, lowerIsBetter = false, points = false }: { real: number | null; plan: number | null; lowerIsBetter?: boolean; points?: boolean }) {
+export function Deviation({ real, plan, lowerIsBetter = false, points = false, prefix = "" }: { real: number | null; plan: number | null; lowerIsBetter?: boolean; points?: boolean; prefix?: string }) {
   const d = deviation(real, plan, { lowerIsBetter, points });
   if (!d) return null;
-  if (d.good == null) return <span className="text-muted-foreground">= presupuesto</span>;
-  return <span className={d.good ? "text-success" : "text-signal"}>{d.value > 0 ? "+" : ""}{points ? `${fmt1(d.value)} pt` : `${Math.round(d.value)}%`}</span>;
+  if (d.good == null) return <span className="text-muted-foreground">{prefix}= presupuesto</span>;
+  return <span className={d.good ? "text-success" : "text-signal"}>{prefix}{d.value > 0 ? "+" : ""}{points ? `${fmt1(d.value)} pt` : `${Math.round(d.value)}%`}</span>;
 }
 
 /** Plan vs actual per quarter (and year) for one segment: revenue, cost to serve, acquisition, CAC and payback. */
@@ -66,7 +66,7 @@ export function BudgetQuarters() {
 
   const cell = (col: (typeof cols)[number], field: BudgetField, value: number | null, label: string) =>
     col.editable
-      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-7 w-[5.5rem] px-2 text-right text-xs" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
+      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-7 w-[4.5rem] px-1.5 text-right text-xs" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
       : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? value : money(value)}</span>;
   const val = (v: string, strong = false) => <span className={`font-mono text-xs ${strong ? "font-medium" : ""}`}>{v}</span>;
   const pb = (n: number | null, ok: boolean | null) => (n == null ? val("—") : <span className={`font-mono text-xs font-medium ${ok === false ? "text-signal" : ok ? "text-success" : ""}`}>{fmt1(n)} m</span>);
@@ -105,14 +105,14 @@ export function BudgetQuarters() {
         <>
           {yr && (
             <div className="grid gap-3 sm:grid-cols-4">
-              <Kpi label={`Ingresos ${y}`} v={`${money(yr.actual.revenue ?? 0)}`} sub={<>de {money(yr.plan.revenue ?? 0)} · <Deviation real={yr.actual.revenue} plan={yr.plan.revenue} /></>} />
-              <Kpi label="Margen bruto" v={pct(yr.actual.margin)} sub={<>presupuesto {pct(yr.plan.margin)} · <Deviation real={yr.actual.margin} plan={yr.plan.margin} points /></>} />
-              <Kpi label="Gasto de captación" v={money(yr.actual.acquisition)} sub={<>de {money(yr.plan.acquisition ?? 0)} · <Deviation real={yr.actual.acquisition || null} plan={yr.plan.acquisition} lowerIsBetter /></>} />
+              <Kpi label={`Ingresos ${y}`} v={`${money(yr.actual.revenue ?? 0)}`} sub={<>de {money(yr.plan.revenue ?? 0)}<Deviation prefix=" · " real={yr.actual.revenue} plan={yr.plan.revenue} /></>} />
+              <Kpi label="Margen bruto" v={pct(yr.actual.margin)} sub={<>presupuesto {pct(yr.plan.margin)}<Deviation prefix=" · " real={yr.actual.margin} plan={yr.plan.margin} points /></>} />
+              <Kpi label="Gasto de captación" v={money(yr.actual.acquisition)} sub={<>de {money(yr.plan.acquisition ?? 0)}<Deviation prefix=" · " real={yr.actual.acquisition || null} plan={yr.plan.acquisition} lowerIsBetter /></>} />
               <Kpi label="Payback" v={yr.actual.payback != null ? `${fmt1(yr.actual.payback)} m` : "—"} sub={<>presupuesto {yr.plan.payback != null ? `${fmt1(yr.plan.payback)} m` : "—"} · objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}</>} />
             </div>
           )}
           <div className="overflow-x-auto rounded-lg border bg-card">
-            <table className="w-full min-w-[900px] text-sm">
+            <table className="w-full min-w-[860px] text-sm">
               <thead>
                 <tr className="border-b text-xs text-muted-foreground">
                   <th className="px-3 py-2 text-left font-normal" rowSpan={2}>Concepto</th>
@@ -120,8 +120,8 @@ export function BudgetQuarters() {
                 </tr>
                 <tr className="border-b text-[11px] text-muted-foreground">
                   {cols.map((c) => [
-                    <th key={`${c.key}-p`} className={`px-2 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Presup.</th>,
-                    <th key={`${c.key}-r`} className={`px-2 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Real</th>,
+                    <th key={`${c.key}-p`} className={`px-1 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Presup.</th>,
+                    <th key={`${c.key}-r`} className={`px-1 pb-2 text-right font-normal ${c.key === "year" ? "bg-muted/50" : ""}`}>Real</th>,
                   ])}
                 </tr>
               </thead>
@@ -130,8 +130,8 @@ export function BudgetQuarters() {
                   <tr key={l.label} className={`border-b last:border-0 ${l.strong ? "font-medium" : ""}`}>
                     <td className="whitespace-nowrap px-3 py-2 text-xs">{l.label}</td>
                     {cols.map((c) => [
-                      <td key={`${c.key}-p`} className={`px-2 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>{c.r && l.plan(c)}</td>,
-                      <td key={`${c.key}-r`} className={`px-2 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>
+                      <td key={`${c.key}-p`} className={`px-1 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>{c.r && l.plan(c)}</td>,
+                      <td key={`${c.key}-r`} className={`px-1 py-1.5 text-right align-top ${c.key === "year" ? "bg-muted/50" : ""}`}>
                         {c.r && l.real(c)}
                         <div className="mt-0.5 font-mono text-[10px]">{c.r && l.dev(c.r)}</div>
                       </td>,
