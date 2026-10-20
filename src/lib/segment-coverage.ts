@@ -68,3 +68,33 @@ export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets:
     };
   });
 }
+
+export type QuarterPayback = {
+  /** Months to recover the real CAC; null unless the quarter has both costs and deals won. */
+  payback: number | null;
+  cac: number | null;
+  cost: number;
+  customers: number;
+  /** real = computed; no_wins = costs but nothing won; no_costs = nothing entered. */
+  status: "real" | "no_wins" | "no_costs";
+  ok: boolean | null;
+};
+
+/** Real payback per segment for each quarter (only real CAC, never the target), against the segment's target payback. */
+export function paybackByQuarter(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], quarters: string[], rangeOf: (q: string) => { start: Date; end: Date }) {
+  const perQ = Object.fromEntries(quarters.map((q) => [q, segmentCoverage(segments, deals, {}, rangeOf(q), costs.filter((c) => c.period === q))]));
+  return segments.map((seg, i) => {
+    const target = seg.payback_months != null ? Number(seg.payback_months) : null;
+    const byQuarter: Record<string, QuarterPayback> = {};
+    for (const q of quarters) {
+      const r = perQ[q][i];
+      const real = r.payback.source === "real" ? r.payback.real : null;
+      byQuarter[q] = {
+        payback: real, cac: r.cac.real, cost: r.cac.cost, customers: r.cac.customers,
+        status: real != null ? "real" : r.cac.cost > 0 ? "no_wins" : "no_costs",
+        ok: real != null && target != null ? real <= target : null,
+      };
+    }
+    return { segment: seg, target, byQuarter };
+  });
+}

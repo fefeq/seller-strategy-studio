@@ -85,3 +85,29 @@ describe("channel × quarter table", () => {
     expect(t.total).toEqual({ "2026-Q1": 1500, "2026-Q2": 300 });
   });
 });
+
+describe("real payback by quarter", () => {
+  it("each quarter uses only its own costs and deals won, compared with the target payback", async () => {
+    const { paybackByQuarter } = await import("./segment-coverage");
+    const { quarterRange } = await import("./metrics");
+    const costs = [
+      { segment_id: "mid", channel: "Eventos", amount: 30000, period: "2026-Q3" },
+      { segment_id: "mid", channel: "Eventos", amount: 60000, period: "2026-Q4" },
+    ];
+    const deals = [won({ closed_at: "2026-08-10" }), won({ closed_at: "2026-08-20" }), won({ closed_at: "2026-10-20" })];
+    const [row] = paybackByQuarter([mid], deals, costs, ["2026-Q2", "2026-Q3", "2026-Q4"], quarterRange);
+    // ACV 20.000 × 80% / 12 = 1.333,33 per month
+    expect(row.byQuarter["2026-Q3"].payback).toBeCloseTo(11.25);
+    expect(row.byQuarter["2026-Q3"].ok).toBe(true);
+    expect(row.byQuarter["2026-Q4"].payback).toBeCloseTo(45);
+    expect(row.byQuarter["2026-Q4"].ok).toBe(false);
+    expect(row.byQuarter["2026-Q2"].status).toBe("no_costs");
+    expect(row.target).toBe(12);
+  });
+  it("costs without deals won give no real payback (never the target CAC)", async () => {
+    const { paybackByQuarter } = await import("./segment-coverage");
+    const { quarterRange } = await import("./metrics");
+    const [row] = paybackByQuarter([mid], [], [{ segment_id: "mid", channel: "Eventos", amount: 5000, period: "2026-Q4" }], ["2026-Q4"], quarterRange);
+    expect(row.byQuarter["2026-Q4"]).toMatchObject({ payback: null, status: "no_wins" });
+  });
+});
