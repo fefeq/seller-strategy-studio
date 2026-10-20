@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { capacityPlan, matchSegment, MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
 import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { segmentActuals } from "@/lib/pipeline-real";
+import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
 import type { SegLike } from "@/lib/segment-coverage";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
@@ -63,15 +63,21 @@ function Motions() {
   const [forced, setForced] = useState("");
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
   const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
+  const { data: costs = [] } = useQuery({ queryKey: ["segment-coverage", "cac-12m"], queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", lastQuarters())).data ?? [] });
   const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
+  const cacReal = useMemo(() => trailingCac(segs as SegLike[], deals, costs), [segs, deals, costs]);
   // The ACV follows the real pipeline until the user types their own value.
   const acv = acvManual ?? (real.overall.acv != null ? Math.round(real.overall.acv) : 20000);
   const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
   const segReal = seg ? real.bySegment[seg.id] : undefined;
+  const segCac = seg ? cacReal[seg.id] : undefined;
   const rec = recommendMotion(acv);
   const winUsed = basis === "real" && segReal?.winRate != null ? segReal.winRate : seg?.win_rate_target;
-  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: winUsed, cac: seg?.cac_target, grossMarginPct: seg?.gross_margin_pct });
-  const missing = seg ? [!seg.ae_quota && "cuota anual AE", !winUsed && "win rate objetivo", !seg.cac_target && "CAC objetivo"].filter(Boolean) : [];
+  const cacUsed = basis === "real" && segCac?.cac != null ? segCac.cac : seg?.cac_target;
+  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: winUsed, cac: cacUsed, grossMarginPct: seg?.gross_margin_pct });
+  // Real payback = real CAC over the real ACV of the segment (falls back to the calculator's ACV).
+  const paybackReal = segCac?.cac != null ? capacityPlan({ acv: segReal?.acv ?? acv, cac: segCac.cac, grossMarginPct: seg?.gross_margin_pct }).paybackMonths : null;
+  const missing = seg ? [!seg.ae_quota && "cuota anual AE", !winUsed && "win rate objetivo", !cacUsed && "CAC objetivo"].filter(Boolean) : [];
   const pct = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
   const days = (n: number | null | undefined) => (n == null ? "—" : `${n} días`);
 
@@ -131,17 +137,24 @@ function Motions() {
                 ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
                 ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}` : "—", pct(seg.win_rate_target)],
                 ["Ciclo de venta", segReal?.cycleDays != null ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ${segReal.cycleSample === 1 ? "ganado" : "ganados"}` : "—", days(seg.cycle_days)],
+                ["CAC", segCac?.cac != null ? `${money(Math.round(segCac.cac))} · ${segCac.customers} ${segCac.customers === 1 ? "ganado" : "ganados"}` : segCac?.cost ? `${money(Math.round(segCac.cost))} gastado · 0 ganados` : "—", seg.cac_target ? money(Number(seg.cac_target)) : "—"],
+                ["Payback", paybackReal != null ? `${fmt1(paybackReal)} m` : "—", seg.payback_months ? `${seg.payback_months} m` : "—"],
               ].map(([l, r, t]) => (
                 <div key={l} className="grid grid-cols-[1.2fr_1fr_1fr] border-t px-3 py-1.5"><span className="text-muted-foreground">{l}</span><span>{r}</span><span>{t}</span></div>
               ))}
             </div>
-            {basis === "real" && <p className="mt-2 text-xs text-muted-foreground">{segReal?.winRate != null ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).` : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."}</p>}
+            {segCac?.cac == null && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {segCac?.cost ? "Hay costes, pero ningún deal ganado en los últimos 12 meses en este segmento: aún no hay CAC real." : <>Para ver el CAC y el payback reales, introduce los costes por canal en <Link to="/metrics" className="underline">Métricas → CAC real</Link>.</>}
+              </p>
+            )}
+            {basis === "real" && <p className="mt-2 text-xs text-muted-foreground">{segReal?.winRate != null ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).` : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."} {segCac?.cac != null ? `El payback usa el CAC real (${money(Math.round(segCac.cac))}).` : "El payback usa el CAC objetivo."}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
               {[
                 ["Deals por AE / año", plan.dealsPerYear != null ? fmt1(Math.ceil(plan.dealsPerYear)) : "—"],
                 ["Oportunidades por AE / año", plan.oppsPerYear != null ? fmt1(Math.ceil(plan.oppsPerYear)) : "—"],
                 ["Oportunidades por AE / mes", fmt1(plan.oppsPerMonth)],
-                ["Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
+                [basis === "real" && segCac?.cac != null ? "Payback real" : "Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
               ].map(([l, v]) => (
                 <div key={l} className="rounded-md bg-muted/50 p-3"><p className="eyebrow text-[10px]">{l}</p><p className="font-display text-2xl">{v}</p></div>
               ))}
