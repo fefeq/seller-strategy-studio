@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { quarterRange } from "@/lib/metrics";
-import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage";
+import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
 import { withBudgetMargin, type MarginSource } from "@/lib/segment-budget";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", plan: "margen presupuestado", objetivo: "margen objetivo" };
@@ -120,6 +120,12 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
             <span className="text-muted-foreground"> / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}</span>
           </span>
         </div>
+        {(() => {
+          const s = r.segment as SegLike & { margin_source?: MarginSource | null };
+          return s.margin_source && s.gross_margin_pct != null
+            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? " · apunta ingresos y coste de servir en «Presupuesto por segmento»" : ""}</p>
+            : null;
+        })()}
         {r.payback.source !== "real" && (
           <p className="text-[11px] text-muted-foreground">
             {r.cac.cost > 0 && r.cac.customers === 0
