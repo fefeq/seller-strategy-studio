@@ -101,7 +101,7 @@ function Targets() {
         <div>
           <p className="eyebrow mb-2">Otras cuentas</p>
           <div className="flex flex-wrap gap-2">
-            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="rounded-full border px-3 py-1 text-xs hover:border-signal">+ {a.name}</button>)}
+            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="rounded-none border px-3 py-1 text-xs hover:border-signal">+ {a.name}</button>)}
           </div>
         </div>
       )}

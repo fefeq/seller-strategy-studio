@@ -373,12 +373,14 @@
 }
 
 /* Lo interactivo no es rojo: los enlaces son tinta subrayada. */
-a.text-signal {
+a.text-signal,
+button.text-signal {
   color: var(--color-ink);
   text-decoration: underline;
   text-decoration-color: var(--color-hairline-firm);
   text-underline-offset: 3px;
 }
-a.text-signal:hover {
+a.text-signal:hover,
+button.text-signal:hover {
   text-decoration-color: var(--color-ink);
 }

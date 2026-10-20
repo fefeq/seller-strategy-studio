@@ -246,7 +246,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
             <div className="flex flex-wrap gap-1.5">
               <span className="eyebrow mr-1 self-center">Añadir asistente:</span>
               {stakeholders.map((s) => (
-                <button key={s.id} className="rounded-full border px-2.5 py-0.5 text-xs hover:border-signal" onClick={() => setSel({ ...sel, attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role] ?? ""})` })}>{s.name}</button>
+                <button key={s.id} className="rounded-none border px-2.5 py-0.5 text-xs hover:border-signal" onClick={() => setSel({ ...sel, attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role] ?? ""})` })}>{s.name}</button>
               ))}
             </div>
           )}

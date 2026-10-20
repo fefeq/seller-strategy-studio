@@ -229,7 +229,7 @@ function Wizard({ proposal }: { proposal: SetupProposal | null }) {
       <div className="flex flex-wrap gap-1.5">
         {ordered.map((i, idx) => {
           const d = setup.status.items.find((x) => x.id === i.id)?.done;
-          return <button key={i.id} onClick={() => setStep(idx)} className={`rounded-full border px-3 py-1 text-xs ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
+          return <button key={i.id} onClick={() => setStep(idx)} className={`rounded-none border px-3 py-1 text-xs ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
         })}
       </div>
       <div className="mt-5">

@@ -66,8 +66,7 @@ function Shell() {
             <Link
               key={n.to}
               to={n.to}
-              className="flex items-center border-l-2 border-transparent px-3 py-1.5 text-sm text-ink-mid hover:text-ink"
-              activeProps={{ className: "border-red font-semibold text-ink" }}
+              className="flex items-center border-l-2 border-transparent px-3 py-1.5 text-sm text-ink-mid hover:text-ink data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink"
             >
               {n.label}
             </Link>
