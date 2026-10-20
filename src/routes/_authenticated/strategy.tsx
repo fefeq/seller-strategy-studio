@@ -137,17 +137,24 @@ function Motions() {
                 ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
                 ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}` : "—", pct(seg.win_rate_target)],
                 ["Ciclo de venta", segReal?.cycleDays != null ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ${segReal.cycleSample === 1 ? "ganado" : "ganados"}` : "—", days(seg.cycle_days)],
+                ["CAC", segCac?.cac != null ? `${money(Math.round(segCac.cac))} · ${segCac.customers} ${segCac.customers === 1 ? "ganado" : "ganados"}` : segCac?.cost ? `${money(Math.round(segCac.cost))} gastado · 0 ganados` : "—", seg.cac_target ? money(Number(seg.cac_target)) : "—"],
+                ["Payback", paybackReal != null ? `${fmt1(paybackReal)} m` : "—", seg.payback_months ? `${seg.payback_months} m` : "—"],
               ].map(([l, r, t]) => (
                 <div key={l} className="grid grid-cols-[1.2fr_1fr_1fr] border-t px-3 py-1.5"><span className="text-muted-foreground">{l}</span><span>{r}</span><span>{t}</span></div>
               ))}
             </div>
-            {basis === "real" && <p className="mt-2 text-xs text-muted-foreground">{segReal?.winRate != null ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).` : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."}</p>}
+            {segCac?.cac == null && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {segCac?.cost ? "Hay costes, pero ningún deal ganado en los últimos 12 meses en este segmento: aún no hay CAC real." : <>Para ver el CAC y el payback reales, introduce los costes por canal en <Link to="/metrics" className="underline">Métricas → CAC real</Link>.</>}
+              </p>
+            )}
+            {basis === "real" && <p className="mt-2 text-xs text-muted-foreground">{segReal?.winRate != null ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).` : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."} {segCac?.cac != null ? `El payback usa el CAC real (${money(Math.round(segCac.cac))}).` : "El payback usa el CAC objetivo."}</p>}
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
               {[
                 ["Deals por AE / año", plan.dealsPerYear != null ? fmt1(Math.ceil(plan.dealsPerYear)) : "—"],
                 ["Oportunidades por AE / año", plan.oppsPerYear != null ? fmt1(Math.ceil(plan.oppsPerYear)) : "—"],
                 ["Oportunidades por AE / mes", fmt1(plan.oppsPerMonth)],
-                ["Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
+                [basis === "real" && segCac?.cac != null ? "Payback real" : "Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
               ].map(([l, v]) => (
                 <div key={l} className="rounded-md bg-muted/50 p-3"><p className="eyebrow text-[10px]">{l}</p><p className="font-display text-2xl">{v}</p></div>
               ))}
