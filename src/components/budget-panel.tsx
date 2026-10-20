@@ -73,7 +73,7 @@ export function BudgetPanel({ year }: { year: number }) {
         </div>
       </div>
       {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-2">
         {rows.map((r) => <BudgetCard key={r.segment.id} r={r} year={year} money={money} canEdit={canEdit} onSave={(f, v, cur) => save(r.segment.id, f, v, cur)} />)}
       </div>
       {!canEdit && <p className="mt-3 text-xs text-muted-foreground">Solo Owner y Sales Leader pueden editar el presupuesto.</p>}
@@ -84,7 +84,7 @@ export function BudgetPanel({ year }: { year: number }) {
 function BudgetCard({ r, year, money, canEdit, onSave }: { r: SegmentBudgetRow; year: number; money: (n: number) => string; canEdit: boolean; onSave: (f: Field, v: string, current: number | null) => void }) {
   const input = (field: Field, value: number | null, label: string) =>
     canEdit
-      ? <Input type="number" min={0} aria-label={`${label} · ${r.segment.name}`} className="ml-auto h-7 w-28 text-right text-xs" key={`${field}-${year}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => onSave(field, e.target.value, value)} />
+      ? <Input type="number" min={0} aria-label={`${label} · ${r.segment.name}`} className="ml-auto h-7 w-24 text-right text-xs" key={`${field}-${year}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => onSave(field, e.target.value, value)} />
       : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? value : money(value)}</span>;
   const auto = (v: string) => <span className="font-mono text-xs">{v}</span>;
   const dev = (real: number | null, plan: number | null, lowerIsBetter = false) => {
@@ -125,14 +125,14 @@ function BudgetCard({ r, year, money, canEdit, onSave }: { r: SegmentBudgetRow; 
               <td className="py-1 pr-2 text-xs">{label}</td>
               <td className="py-1 text-right">{plan}</td>
               <td className="py-1 text-right">{real}</td>
-              <td className="py-1 pl-2 text-right font-mono text-xs">{d}</td>
+              <td className="whitespace-nowrap py-1 pl-2 text-right font-mono text-xs">{d}</td>
             </tr>
           ))}
           <tr className="border-t font-medium">
             <td className="py-1.5 pr-2 text-xs">Payback</td>
             <td className="py-1.5 text-right font-mono text-xs">{pb(r.plan.payback, r.payback.planOk)}</td>
             <td className="py-1.5 text-right font-mono text-xs">{pb(r.actual.payback, r.payback.realOk)}</td>
-            <td className="py-1.5 pl-2 text-right font-mono text-xs text-muted-foreground">{r.payback.target != null ? `obj. ${r.payback.target} m` : "sin obj."}</td>
+            <td className="whitespace-nowrap py-1.5 pl-2 text-right font-mono text-xs text-muted-foreground">{r.payback.target != null ? `obj. ${r.payback.target} m` : "sin obj."}</td>
           </tr>
         </tbody>
       </table>
