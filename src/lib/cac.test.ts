@@ -66,3 +66,22 @@ describe("calculator real CAC (last 4 quarters)", () => {
     expect(r.mid.cac).toBe(20000);
   });
 });
+
+describe("channel × quarter table", () => {
+  it("lists the selected quarter and the 3 before it, oldest first", async () => {
+    const { quartersUpTo } = await import("./cac");
+    expect(quartersUpTo("2026-Q2")).toEqual(["2025-Q3", "2025-Q4", "2026-Q1", "2026-Q2"]);
+  });
+  it("adds every segment per channel and quarter and keeps shared costs apart", async () => {
+    const { channelQuarterTable } = await import("./cac");
+    const t = channelQuarterTable([
+      { segment_id: "a", channel: "Eventos", amount: 1000, period: "2026-Q1" },
+      { segment_id: null, channel: "Eventos", amount: 500, period: "2026-Q1" },
+      { segment_id: null, channel: "Herramientas", amount: 300, period: "2026-Q2" },
+      { segment_id: "a", channel: "Eventos", amount: 9999, period: "2025-Q1" },
+    ], ["2026-Q1", "2026-Q2"]);
+    expect(t.rows[0]).toEqual({ channel: "Eventos", byQuarter: { "2026-Q1": 1500, "2026-Q2": 0 }, total: 1500 });
+    expect(t.shared).toEqual({ "2026-Q1": 500, "2026-Q2": 300 });
+    expect(t.total).toEqual({ "2026-Q1": 1500, "2026-Q2": 300 });
+  });
+});
