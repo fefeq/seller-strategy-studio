@@ -10,5 +10,6 @@
 - [x] Debates multiagente por niveles (C-Levels, Sales, Marketing, Partners, Todos) con nombres de fundadores famosos
 - [x] Entrada de leads reales: enlace seguro por empresa (formularios, Zapier/Make, CRMs vía webhook) + CSV → cuenta, persona y deal con etapa y fecha; calculadora con ACV, win rate y ciclo reales en vivo
 - [x] Pantalla de Leads: pipeline Nuevo → Contactado → MQL → SQL → Oportunidad, retrasos (plazo por etapa + seguimiento vencido), conversión; embudo Lead → Ganado en Métricas por segmento/origen; agente y avisos proactivos
+- [x] Panel de equipo en Sugerencias: estado, responsable, asignación y vencidas
 - [ ] Más adelante: sincronización nativa con un CRM (HubSpot, Pipedrive, Attio, Salesforce) si el cliente lo usa; hoy entra por webhook/Zapier.
 - [x] Conexión MCP para Claude, ChatGPT, Codex (OAuth, herramientas del agente, escrituras confirmadas en Sugerencias). Activa para asistentes externos al publicar.
