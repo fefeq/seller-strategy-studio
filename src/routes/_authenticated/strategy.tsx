@@ -14,6 +14,7 @@ import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
 import type { SegLike } from "@/lib/segment-coverage";
+import { marginFor } from "@/lib/segment-budget";
 import { PaybackQuarters } from "@/components/payback-quarters";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
@@ -67,6 +68,8 @@ function Motions() {
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
   const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
   const { data: costs = [] } = useQuery({ queryKey: ["segment-coverage", "cac-12m"], queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", lastQuarters())).data ?? [] });
+  const year = new Date().getFullYear();
+  const { data: budgets = [] } = useQuery({ queryKey: ["segment-coverage", "budgets", year], queryFn: async () => (await supabase.from("segment_budgets").select("*").eq("year", year)).data ?? [] });
   const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
   const cacReal = useMemo(() => trailingCac(segs as SegLike[], deals, costs), [segs, deals, costs]);
   // The ACV follows the real pipeline until the user types their own value.
@@ -74,12 +77,14 @@ function Motions() {
   const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
   const segReal = seg ? real.bySegment[seg.id] : undefined;
   const segCac = seg ? cacReal[seg.id] : undefined;
+  // Margin of this year's budget (real → plan) before the segment's target margin.
+  const margin = seg ? marginFor(seg as SegLike, budgets.find((b) => b.segment_id === seg.id)) : { pct: null, source: null };
   const rec = recommendMotion(acv);
   const winUsed = basis === "real" && segReal?.winRate != null ? segReal.winRate : seg?.win_rate_target;
   const cacUsed = basis === "real" && segCac?.cac != null ? segCac.cac : seg?.cac_target;
-  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: winUsed, cac: cacUsed, grossMarginPct: seg?.gross_margin_pct });
+  const plan = capacityPlan({ acv, quota: seg?.ae_quota, winRatePct: winUsed, cac: cacUsed, grossMarginPct: margin.pct });
   // Real payback = real CAC over the real ACV of the segment (falls back to the calculator's ACV).
-  const paybackReal = segCac?.cac != null ? capacityPlan({ acv: segReal?.acv ?? acv, cac: segCac.cac, grossMarginPct: seg?.gross_margin_pct }).paybackMonths : null;
+  const paybackReal = segCac?.cac != null ? capacityPlan({ acv: segReal?.acv ?? acv, cac: segCac.cac, grossMarginPct: margin.pct }).paybackMonths : null;
   const missing = seg ? [!seg.ae_quota && "cuota anual AE", !winUsed && "win rate objetivo", !cacUsed && "CAC objetivo"].filter(Boolean) : [];
   const pct = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
   const days = (n: number | null | undefined) => (n == null ? "—" : `${n} días`);
@@ -164,7 +169,7 @@ function Motions() {
             </div>
             {plan.paybackMonths != null && seg.payback_months && (
               <p className={`mt-2 text-xs ${plan.paybackMonths <= Number(seg.payback_months) ? "text-success" : "text-destructive"}`}>
-                {plan.paybackMonths <= Number(seg.payback_months) ? "Dentro" : "Fuera"} del payback objetivo de {seg.payback_months} meses (margen bruto {seg.gross_margin_pct ?? 100}%).
+                {plan.paybackMonths <= Number(seg.payback_months) ? "Dentro" : "Fuera"} del payback objetivo de {seg.payback_months} meses (margen bruto {margin.pct != null ? Math.round(margin.pct) : 100}%{margin.source === "real" ? `, real de ${year}` : margin.source === "plan" ? `, presupuestado ${year}` : ""}).
               </p>
             )}
             {missing.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Completa {missing.join(", ")} en la tabla de segmentos para calcular la capacidad.</p>}
