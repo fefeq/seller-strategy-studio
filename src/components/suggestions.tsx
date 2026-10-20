@@ -30,7 +30,7 @@ export function useSuggestions() {
     queryKey: ["suggestions", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data } = await supabase.from("suggestions").select("id,title,body,priority,link,action,created_at,detector").eq("org_id", orgId!).eq("status", "pending").order("priority").order("created_at", { ascending: false }).limit(100);
+      const { data } = await supabase.from("suggestions").select("id,title,body,priority,link,action,created_at,detector").eq("org_id", orgId!).eq("status", "pending").or(`user_id.is.null,user_id.eq.${me!.user.id}`).order("priority").order("created_at", { ascending: false }).limit(100);
       return data ?? [];
     },
   });
