@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Page, Empty } from "@/components/page";
 import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { AssistantActions } from "@/components/assistant-actions";
+import { SuggestionBoard } from "@/components/suggestion-board";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export const Route = createFileRoute("/_authenticated/inbox")({
   head: () => ({ meta: [{ title: "Sugerencias — GTM Brain" }, { name: "description", content: "Riesgos y próximos pasos que el motor proactivo ha detectado, listos para aprobar." }, { property: "og:title", content: "Sugerencias — GTM Brain" }, { property: "og:description", content: "Riesgos y próximos pasos detectados, listos para aprobar." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -14,6 +16,10 @@ function Inbox() {
   return (
     <Page eyebrow="Motor proactivo" title="Sugerencias">
       <p className="-mt-4 mb-8 max-w-2xl text-muted-foreground">Reviso tu pipeline, reuniones, cuentas y configuración cada hora y te preparo la acción. Nada cambia sin tu aprobación; si descartas algo, no vuelve a aparecer.</p>
+      <Tabs defaultValue="me">
+        <TabsList className="mb-6"><TabsTrigger value="me">Para mí</TabsTrigger><TabsTrigger value="team">Equipo</TabsTrigger></TabsList>
+        <TabsContent value="team"><SuggestionBoard /></TabsContent>
+        <TabsContent value="me">
       <AssistantActions />
       {!isLoading && data.length === 0 && <Empty>No hay sugerencias pendientes. Buen trabajo.</Empty>}
       <div className="space-y-8">
@@ -24,6 +30,8 @@ function Inbox() {
           </section>
         ))}
       </div>
+        </TabsContent>
+      </Tabs>
     </Page>
   );
 }
