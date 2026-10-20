@@ -87,7 +87,7 @@ function Hub() {
               {d.scope === "personal" && <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">personal</span>}
             </button>
           ))}
-          {list.length === 0 && <Empty>Sin documentos todavía.</Empty>}
+          {list.length === 0 && <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>}
         </div>
         <div ref={editorRef} className="min-w-0 scroll-mt-20">
           {selected ? (

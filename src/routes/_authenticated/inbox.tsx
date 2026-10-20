@@ -21,7 +21,7 @@ function Inbox() {
         <TabsContent value="team"><SuggestionBoard /></TabsContent>
         <TabsContent value="me">
       <AssistantActions />
-      {!isLoading && data.length === 0 && <Empty>No hay sugerencias pendientes. Buen trabajo.</Empty>}
+      {!isLoading && data.length === 0 && <Empty>No hay sugerencias pendientes.</Empty>}
       <div className="space-y-8">
         {groups.map((g) => (
           <section key={g.p}>

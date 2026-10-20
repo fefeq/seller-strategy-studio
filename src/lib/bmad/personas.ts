@@ -29,7 +29,7 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "benioff", name: "Benioff", inspiredBy: "Marc Benioff", title: "Arquitecto de Revenue / CRO", bmadEquivalent: "Arquitecto",
+    id: "benioff", name: "Benioff", inspiredBy: "Marc Benioff", title: "Arquitecto de revenue / CRO", bmadEquivalent: "Arquitecto",
     teams: ["c_level", "sales", "partners"], primaryRoles: ["owner"],
     tone: "Obsesión por el sistema comercial repetible: procesos, capacidad, ecosistema y métricas.",
     focus: "Arquitectura de revenue: capacidad, cobertura, roles, territorios, playbooks y herramientas.",
@@ -78,10 +78,10 @@ export const PERSONAS: Persona[] = [
     id: "sheryl", name: "Sheryl", inspiredBy: "Sheryl Sandberg", title: "Directora de ventas", bmadEquivalent: "Product Owner",
     teams: ["sales", "partners"], primaryRoles: ["sales_leader"],
     tone: "Ejecución y foco operativo; convierte la estrategia en prioridades semanales con dueños y fechas.",
-    focus: "Plan de la semana, Account Plans, prioridad de pipeline y replanificación.",
+    focus: "Plan de la semana, planes de cuenta, prioridad de pipeline y replanificación.",
     menu: [
       { code: "PS", label: "Plan de la semana", workflow: "weekly_plan" },
-      { code: "AP", label: "Dividir el plan en Account Plans", workflow: "account_breakdown" },
+      { code: "AP", label: "Dividir el plan en planes de cuenta", workflow: "account_breakdown" },
       { code: "RF", label: "Priorizar pipeline", workflow: "prioritize_pipeline" },
       { code: "RE", label: "Replanificar", workflow: "replan" },
     ],

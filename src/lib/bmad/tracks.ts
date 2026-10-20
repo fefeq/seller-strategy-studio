@@ -5,9 +5,9 @@ import { MEDDPICC } from "@/lib/roles";
 export type Track = "light" | "standard" | "full";
 
 export const TRACKS: Record<Track, { label: string; description: string }> = {
-  light: { label: "Ligero (PLG)", description: "ACV < 5K: sin Account Plan, cualificación mínima." },
+  light: { label: "Ligero (PLG)", description: "ACV < 5K: sin plan de cuenta, cualificación mínima." },
   standard: { label: "Estándar (inside)", description: "ACV 5K–50K: MEDDPICC ligero." },
-  full: { label: "Completo (field/strategic)", description: "ACV > 50K: Account Plan completo y plan de acción mutuo." },
+  full: { label: "Completo (field/strategic)", description: "ACV > 50K: plan de cuenta completo y plan de acción conjunto." },
 };
 
 export function trackFor(acv: number | null | undefined): Track {

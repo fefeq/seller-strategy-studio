@@ -3,7 +3,7 @@ export const ROLES = {
   sales_leader: { label: "Sales Leader", focus: "Pipeline, forecast y deals en riesgo" },
   marketing: { label: "Marketing / Demand Gen", focus: "Campañas, fuentes y rendimiento" },
   sdr: { label: "SDR / BDR", focus: "Cola de leads, secuencias y research" },
-  ae: { label: "Account Executive", focus: "Mis deals, Account Plans y reuniones" },
+  ae: { label: "Account Executive", focus: "Mis deals, planes de cuenta y reuniones" },
   se: { label: "Sales Engineer", focus: "Demos técnicas y POCs por deal" },
   cs: { label: "Customer Success / AM", focus: "Salud de cuentas, renovación y expansión" },
   deal_desk: { label: "Deal Desk / Finanzas / Legal", focus: "Descuentos y contratos" },

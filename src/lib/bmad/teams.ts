@@ -6,7 +6,7 @@ export type DebateLevel = "c_level" | "sales" | "marketing" | "partners" | "all"
 
 export const DEBATE_LEVELS: Record<DebateLevel, { label: string; participants: string[]; purpose: string; roles: Role[] | null }> = {
   c_level: { label: "C-Levels", participants: ["reid", "benioff", "ruth", "melanie"], purpose: "Estrategia, presupuesto, pricing, objetivos y apuestas de mercado.", roles: ["owner", "sales_leader"] },
-  sales: { label: "Sales Team", participants: ["sheryl", "jason", "brian", "benioff"], purpose: "Deals atascados, forecast, account plans y expansión.", roles: null },
+  sales: { label: "Sales Team", participants: ["sheryl", "jason", "brian", "benioff"], purpose: "Deals atascados, forecast, planes de cuenta y expansión.", roles: null },
   marketing: { label: "Marketing Team", participants: ["melanie", "paul", "jason"], purpose: "Mensajes, campañas, ICP y calidad de leads.", roles: null },
   partners: { label: "Partner Team", participants: ["satya", "benioff", "sheryl"], purpose: "Co-selling, conflictos de canal y plan de partners.", roles: null },
   all: { label: "Todos", participants: PERSONAS.map((p) => p.id), purpose: "Revisión trimestral, lanzamientos y cambios de estrategia.", roles: ["owner", "sales_leader"] },

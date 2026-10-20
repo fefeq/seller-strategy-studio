@@ -44,7 +44,7 @@ function Accounts() {
       </Dialog>
     }>
       <Input placeholder="Buscar cuenta…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-4 max-w-xs" />
-      {list.length === 0 ? <Empty>Crea tu primera cuenta para empezar su Account Plan.</Empty> : (
+      {list.length === 0 ? <Empty>Aún no hay cuentas. Crea la primera para empezar su plan de cuenta.</Empty> : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
             <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>

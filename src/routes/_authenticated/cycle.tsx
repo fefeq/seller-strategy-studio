@@ -62,7 +62,7 @@ function CyclePage() {
 
   return (
     <Page eyebrow="Como BMAD, pero para vender" title="Ciclo GTM">
-      <p className="-mt-4 mb-8 max-w-3xl text-muted-foreground">Cada fase produce un documento. Al aprobarlo, alimenta la siguiente fase y el contexto que usan todos los agentes. Los Account Plans y deals son la ejecución; las retros cierran el ciclo.</p>
+      <p className="-mt-4 mb-8 max-w-3xl text-muted-foreground">Cada fase produce un documento. Al aprobarlo, alimenta la siguiente fase y el contexto que usan todos los agentes. Los planes de cuenta y los deals son la ejecución; las retros cierran el ciclo.</p>
       <div className="grid gap-4 lg:grid-cols-5">
         {PHASES.map((ph, i) => {
           const kinds = ph.artifacts;

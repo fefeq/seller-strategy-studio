@@ -56,7 +56,7 @@ async function notifyUrgent(db: Admin) {
     const { data: urgent } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("priority", 1).is("notified_at", null).or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(3);
     for (const s of urgent ?? []) {
       try {
-        await sendText(l.chat_id!, `⚠️ ${s.title}\n${s.body}`, [[{ text: (s.action as any)?.tool ? "✅ Aprobar y hacer" : "✅ Hecho", data: `s:${s.id}:approve` }, { text: "⏰ En 3 días", data: `s:${s.id}:snooze` }, { text: "✖ Descartar", data: `s:${s.id}:dismiss` }]]);
+        await sendText(l.chat_id!, `${s.title}\n${s.body}`, [[{ text: (s.action as any)?.tool ? "Aprobar y hacer" : "Hecho", data: `s:${s.id}:approve` }, { text: "En 3 días", data: `s:${s.id}:snooze` }, { text: "Descartar", data: `s:${s.id}:dismiss` }]]);
         await db.from("suggestions").update({ notified_at: new Date().toISOString() }).eq("id", s.id);
       } catch (e) { console.error("notify failed", e); }
     }
@@ -80,7 +80,7 @@ async function sendDigests(db: Admin) {
       ? `Buenos días${name ? `, ${name}` : ""}. 3 cosas para hoy:\n\n${top.map((t, i) => `${i + 1}. ${t.title}`).join("\n")}\n\nPulsa para gestionarlas o pregúntame lo que quieras.`
       : `Buenos días${name ? `, ${name}` : ""}. Nada urgente hoy. ¿En qué te ayudo?`;
     try {
-      await sendText(l.chat_id!, text, top.map((t, i) => [{ text: `✅ ${i + 1}`, data: `s:${t.id}:approve` }, { text: `⏰ ${i + 1}`, data: `s:${t.id}:snooze` }]));
+      await sendText(l.chat_id!, text, top.map((t, i) => [{ text: `Hecho ${i + 1}`, data: `s:${t.id}:approve` }, { text: `Posponer ${i + 1}`, data: `s:${t.id}:snooze` }]));
       sent++;
     } catch (e) { console.error("digest failed", e); }
   }

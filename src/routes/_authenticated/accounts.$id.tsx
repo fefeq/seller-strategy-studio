@@ -19,7 +19,7 @@ import { generateMeetingBrief, generateProposal, listeningCoaching, researchStak
 import { LevelPicker } from "@/components/theory-u/listening";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
-  head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Account Plan, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Account Plan, stakeholders y reuniones." }] }),
+  head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Plan de cuenta, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Plan de cuenta, stakeholders y reuniones." }] }),
   component: AccountPage,
 });
 
@@ -59,7 +59,7 @@ function AccountPage() {
     }>
       <Tabs defaultValue="plan">
         <TabsList className="mb-6">
-          <TabsTrigger value="plan">Account Plan</TabsTrigger>
+          <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
           <TabsTrigger value="stakeholders">Stakeholders ({data.stakeholders.length})</TabsTrigger>
           <TabsTrigger value="meetings">Meeting Planner ({data.meetings.length})</TabsTrigger>
           <TabsTrigger value="calls">Llamadas ({data.calls.length})</TabsTrigger>
@@ -97,7 +97,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
       ? await supabase.from("account_plans").update(form as any).eq("id", plan.id)
       : await supabase.from("account_plans").insert({ account_id: accountId, ...form });
     if (error) return toast.error(error.message);
-    toast.success("Account Plan guardado");
+    toast.success("Plan de cuenta guardado.");
     onSaved();
   }
   async function genProposal() {
@@ -115,7 +115,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
         ))}
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button onClick={save}>Guardar Account Plan</Button>
+        <Button onClick={save}>Guardar plan</Button>
         <Button variant="outline" onClick={genProposal} disabled={busy}><Sparkles className="size-4" /> {busy ? "Generando…" : "Borrador de propuesta con IA"}</Button>
       </div>
       {proposal && <pre className="whitespace-pre-wrap break-words rounded-lg border bg-card p-6 font-sans text-sm">{proposal}</pre>}
@@ -292,7 +292,7 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
         <Button disabled={!title} onClick={add}>Guardar</Button>
       </div>
       <div className="space-y-3">
-        {list.length === 0 && <Empty>Sin llamadas registradas.</Empty>}
+        {list.length === 0 && <Empty>Sin llamadas registradas. Registra la primera con el formulario.</Empty>}
         {list.map((c) => (
           <div key={c.id} className="rounded-lg border bg-card p-4 text-sm">
             <div className="flex justify-between gap-3"><span className="min-w-0 break-words font-medium">{c.title}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{c.occurred_at ? new Date(c.occurred_at).toLocaleDateString("es-ES") : ""}</span></div>
@@ -316,7 +316,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
   return (
     <div className="space-y-3">
       <Button size="sm" onClick={add}>+ Nuevo deal</Button>
-      {list.length === 0 && <Empty>Sin deals en esta cuenta.</Empty>}
+      {list.length === 0 && <Empty>Esta cuenta no tiene deals. Crea uno con «+ Nuevo deal».</Empty>}
       {list.map((d) => (
         <Link key={d.id} to="/deals" search={{ deal: d.id }} className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-sm hover:border-signal sm:flex-row sm:items-center sm:justify-between">
           <span className="min-w-0 break-words font-medium">{d.name}</span>

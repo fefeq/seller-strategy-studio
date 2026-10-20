@@ -128,11 +128,11 @@ function Metrics() {
               })}
             </Panel>
             <Panel title="Win rate por fuente">
-              {m.bySource.length === 0 && <Muted>Sin deals cerrados todavía.</Muted>}
+              {m.bySource.length === 0 && <Muted>Sin deals cerrados todavía. Aparecerán al marcar deals como ganados o perdidos.</Muted>}
               {m.bySource.map((r) => <Bar key={r.k} label={SOURCE_LABEL[r.k] ?? r.k} value={r.rate} right={`${pct(r.rate)} · ${r.won}G/${r.lost}P`} />)}
             </Panel>
             <Panel title="Win rate por rep">
-              {m.byRep.length === 0 && <Muted>Sin deals cerrados todavía.</Muted>}
+              {m.byRep.length === 0 && <Muted>Sin deals cerrados todavía. Aparecerán al marcar deals como ganados o perdidos.</Muted>}
               {m.byRep.map((r) => <Bar key={r.k} label={r.k} value={r.rate} right={`${pct(r.rate)} · ${r.won}G/${r.lost}P`} />)}
             </Panel>
             <Panel title={`Deals que se han retrasado (${pct(m.slipRate)} del pipeline abierto)`}>

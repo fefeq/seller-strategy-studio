@@ -147,7 +147,7 @@ function Partners() {
         <p className="max-w-3xl text-sm text-muted-foreground">Para que funcionen hacen falta incentivos claros (los resellers suelen llevarse un 20–30% de margen), formación y materiales, registro de deals y marketing conjunto.</p>
         <Button size="sm" onClick={add}>+ Partner</Button>
       </div>
-      {list.length === 0 && <Empty>Sin partners todavía.</Empty>}
+      {list.length === 0 && <Empty>Sin partners todavía. Añade el primero con «+ Partner».</Empty>}
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((p) => {
           const won = (p.deals ?? []).filter((d) => d.stage === "won").reduce((s, d) => s + Number(d.amount ?? 0), 0);
@@ -209,7 +209,7 @@ function Registrations() {
         <Button disabled={!partner || !account} onClick={submit}>Registrar (válido 90 días)</Button>
       </div>
       <div className="space-y-2">
-        {regs.length === 0 && <Empty>Sin registros.</Empty>}
+        {regs.length === 0 && <Empty>Sin registros de partner. Registra una oportunidad con el formulario.</Empty>}
         {regs.map((r) => {
           const expired = r.expires_at && new Date(r.expires_at) < new Date();
           return (

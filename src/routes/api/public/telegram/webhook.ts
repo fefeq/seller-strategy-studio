@@ -53,7 +53,7 @@ async function handle(db: Admin, update: any, t: Tg) {
     try {
       if (kind === "a") {
         const r = await decidePending(ctx, id, decision === "c" ? "confirm" : "cancel");
-        return t.sendText(chatId, r.status === "confirmed" ? `✅ ${r.result || "Hecho"}` : r.status === "cancelled" ? "Cancelado." : `No se pudo: ${r.result}`);
+        return t.sendText(chatId, r.status === "confirmed" ? r.result || "Hecho." : r.status === "cancelled" ? "Cancelado." : `No se pudo: ${r.result}`);
       }
       if (kind === "s") {
         const r = await decideSuggestionCore(ctx, id, decision as any);
@@ -76,7 +76,7 @@ async function handle(db: Admin, update: any, t: Tg) {
     if (!link || !link.code_expires_at || new Date(link.code_expires_at) < new Date()) return t.sendText(chatId, "Ese código no es válido o ha caducado. Genera uno nuevo en Nokko → Equipo.");
     await db.from("channel_links").update({ chat_id: null }).eq("channel", "telegram").eq("chat_id", chatId);
     await db.from("channel_links").update({ chat_id: chatId, linked_at: new Date().toISOString(), link_code: null, code_expires_at: null }).eq("id", link.id);
-    return t.sendText(chatId, "¡Listo! Tu cuenta de Nokko está vinculada. Pregúntame lo que quieras (p. ej. «¿qué debería hacer hoy?») y cada mañana te enviaré tus 3 prioridades.");
+    return t.sendText(chatId, "Tu cuenta de Nokko está vinculada. Pregúntame lo que quieras (p. ej. «¿qué debería hacer hoy?») y cada mañana te enviaré tus 3 prioridades.");
   }
 
   const { data: link } = await db.from("channel_links").select("user_id").eq("channel", "telegram").eq("chat_id", chatId).maybeSingle();
@@ -99,6 +99,6 @@ async function handle(db: Admin, update: any, t: Tg) {
   try {
     const out = await runAgent(ctx, { conversationId: conv.id, text: text.slice(0, 4000), channel: "telegram", mode: "chat", orgName: ctx.orgName });
     await t.sendText(chatId, out.text);
-    for (const p of out.pending) await t.sendText(chatId, `¿Confirmas? ${p.summary}`, [[{ text: "✅ Confirmar", data: `a:${p.id}:c` }, { text: "✖ Cancelar", data: `a:${p.id}:x` }]]);
+    for (const p of out.pending) await t.sendText(chatId, `¿Confirmas? ${p.summary}`, [[{ text: "Confirmar", data: `a:${p.id}:c` }, { text: "Cancelar", data: `a:${p.id}:x` }]]);
   } catch (e) { await t.sendText(chatId, (e as Error).message); }
 }

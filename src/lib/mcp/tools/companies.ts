@@ -5,7 +5,7 @@ import { json, text } from "../context";
 
 export const listCompanies = defineTool({
   name: "list_companies",
-  title: "List companies",
+  title: "Listar empresas",
   description: "Lista las empresas a las que pertenece el usuario, su rol y cuál está activa.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -23,7 +23,7 @@ export const listCompanies = defineTool({
 
 export const switchCompany = defineTool({
   name: "switch_company",
-  title: "Switch company",
+  title: "Cambiar de empresa",
   description: "Cambia la empresa activa del usuario (también en la app). Usa el id de list_companies.",
   inputSchema: { company_id: z.string().uuid().describe("id de la empresa (de list_companies)") },
   annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false },

@@ -71,7 +71,7 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "get_account", kind: "read",
-    description: "Detalle de una cuenta: Account Plan, stakeholders, deals, reuniones y tareas abiertas.",
+    description: "Detalle de una cuenta: plan de cuenta, stakeholders, deals, reuniones y tareas abiertas.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const [acc, plan, sh, deals, meet, tasks] = await Promise.all([
@@ -240,7 +240,7 @@ export const TOOLS: AgentTool[] = [
         c.db.from("messaging_pillars").select("title,message,proof").eq("org_id", c.orgId),
       ]);
       const brief = await ask(
-        "Eres un coach de ventas B2B. Prepara un Call Prep conciso en español neutro (tú), en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.",
+        "Eres un coach de ventas B2B. Prepara un Call Prep conciso en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.",
         JSON.stringify({ reunion: m, contexto: acc, posicionamiento: pos.data, pilares: pillars.data }),
       );
       ok(await c.db.from("meetings").update({ ai_brief: brief }).eq("org_id", c.orgId).eq("id", a.meeting_id).select("id").single());
@@ -338,7 +338,7 @@ export const TOOLS: AgentTool[] = [
   // ---------- CICLO GTM (BMAD) ----------
   def({
     name: "get_cycle_status", kind: "read",
-    description: "Estado del Ciclo GTM: fase actual, documentos (Brief, Plan, Arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
+    description: "Estado del Ciclo GTM: fase actual, documentos (brief, plan, arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
     input: z.object({}),
     run: async (c) => {
       const { loadCycleState } = await import("@/lib/bmad/cycle-state");
@@ -361,7 +361,7 @@ export const TOOLS: AgentTool[] = [
     name: "draft_artifact", kind: "write",
     description: "Genera con IA un borrador nuevo (nueva versión) de un documento del Ciclo GTM: brief, plan, architecture, readiness, retro o winloss (winloss necesita deal_id). Las notas recogen lo hablado con el usuario.",
     input: z.object({ kind: z.enum(["brief", "plan", "architecture", "readiness", "retro", "winloss"]), notes: z.string().max(6000).optional(), deal_id: z.string().uuid().optional() }),
-    summarize: (a) => `Crear borrador de ${({ brief: "GTM Brief", plan: "Plan GTM", architecture: "Arquitectura de Revenue", readiness: "revisión antes de salir", retro: "retro trimestral", winloss: "win/loss" } as Record<string, string>)[a.kind]} en el Ciclo GTM`,
+    summarize: (a) => `Crear borrador de ${({ brief: "GTM Brief", plan: "Plan GTM", architecture: "Arquitectura de revenue", readiness: "revisión antes de salir", retro: "retro trimestral", winloss: "win/loss" } as Record<string, string>)[a.kind]} en el Ciclo GTM`,
     run: async (c, a) => {
       const { draftArtifactCore } = await import("@/lib/bmad/drafting");
       return draftArtifactCore(c, { kind: a.kind, notes: a.notes ?? "", dealId: a.deal_id ?? null });

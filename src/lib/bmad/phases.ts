@@ -5,7 +5,7 @@ export const PHASES: { id: PhaseId; label: string; bmad: string; description: st
   { id: "analysis", label: "Análisis", bmad: "Analysis", description: "Mercado, cliente y apuesta.", artifacts: ["brief"] },
   { id: "plan", label: "Plan", bmad: "Planning (PRD)", description: "Segmentos, motion, objetivos y mensajes.", artifacts: ["plan"] },
   { id: "architecture", label: "Arquitectura", bmad: "Solutioning", description: "Capacidad, playbooks y revisión antes de salir.", artifacts: ["architecture", "readiness"] },
-  { id: "execution", label: "Ejecución", bmad: "Implementation", description: "Account Plans, deals y semana comercial.", artifacts: [] },
+  { id: "execution", label: "Ejecución", bmad: "Implementation", description: "Planes de cuenta, deals y semana comercial.", artifacts: [] },
   { id: "retro", label: "Retro", bmad: "Retrospective", description: "Win/Loss y retro trimestral que realimentan el ciclo.", artifacts: ["retro", "winloss"] },
 ];
 
@@ -50,7 +50,7 @@ export function nextSteps(s: CycleState, roles: string[]): NextStep[] {
 
   if (leader || roles.includes("marketing")) phaseDoc("brief", "paul", "brief", "GTM Brief", 2);
   if (leader && ok.has("brief")) phaseDoc("plan", "reid", "plan", "Plan GTM", 2);
-  if (leader && ok.has("plan")) phaseDoc("architecture", "benioff", "architecture", "Arquitectura de Revenue", 3);
+  if (leader && ok.has("plan")) phaseDoc("architecture", "benioff", "architecture", "Arquitectura de revenue", 3);
   if (leader && ok.has("plan") && ok.has("architecture")) phaseDoc("readiness", "benioff", "readiness", "revisión antes de salir al mercado", 3);
 
   if (s.openDeals > 0) {

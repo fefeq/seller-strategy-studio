@@ -68,7 +68,7 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
     await executeTool(ctx, act.tool, act.args);
     const result = `Hecho: ${act.summary}`;
     await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id);
-    if (act.conversation_id) await ctx.db.from("agent_messages").insert({ conversation_id: act.conversation_id, role: "assistant", content: `✅ ${result}` });
+    if (act.conversation_id) await ctx.db.from("agent_messages").insert({ conversation_id: act.conversation_id, role: "assistant", content: result });
     return { status: "confirmed", result };
   } catch (e) {
     const result = (e as Error).message;
@@ -111,7 +111,7 @@ export const extractSetup = createServerFn({ method: "POST" })
     const ctx = await userCtx(context.supabase as Db, context.userId);
     const site = data.url ? await fetchSite(data.url) : "";
     const raw = await ask(
-      "Eres un estratega GTM B2B senior. A partir de la web, textos y documentos de una empresa, propones su configuración go-to-market: posicionamiento (marco de April Dunford), segmentos con rango de ACV y motion (plg <5K, inside 5K–50K, field 50K–250K, strategic >250K), ICPs con anti-ICP, 3 pilares de mensaje y hasta 5 cuentas objetivo de ejemplo si se mencionan clientes o el tipo de cliente es claro. Español neutro. Sé concreto y basado en las fuentes; usa null cuando no haya base razonable (no inventes cifras de win rate o cuota si no aparecen: déjalas null). En questions pon 2-4 preguntas clave que faltan para afinar.",
+      "Eres un estratega GTM B2B senior. A partir de la web, textos y documentos de una empresa, propones su configuración go-to-market: posicionamiento (marco de April Dunford), segmentos con rango de ACV y motion (plg <5K, inside 5K–50K, field 50K–250K, strategic >250K), ICPs con anti-ICP, 3 pilares de mensaje y hasta 5 cuentas objetivo de ejemplo si se mencionan clientes o el tipo de cliente es claro. Español neutro (tú), sin signos de exclamación ni emoji. Sé concreto y basado en las fuentes; usa null cuando no haya base razonable (no inventes cifras de win rate o cuota si no aparecen: déjalas null). En questions pon 2-4 preguntas clave que faltan para afinar.",
       JSON.stringify({ empresa: ctx.orgName, moneda_actual: ctx.currency, web: data.url ? { url: data.url, texto: site } : null, notas: data.text || null }),
       { effort: "medium", schema: { name: "gtm_setup", schema: SETUP_EXTRACTION_SCHEMA }, files: data.files },
     );

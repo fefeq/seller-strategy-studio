@@ -135,7 +135,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
   return (
     <div className="space-y-6">
       <SheetHeader><SheetTitle className="break-words pr-10 font-display text-3xl font-normal">{d.name}</SheetTitle></SheetHeader>
-      {d.account_id && <Link to="/accounts/$id" params={{ id: d.account_id }} className="text-sm text-signal">Abrir cuenta y Account Plan →</Link>}
+      {d.account_id && <Link to="/accounts/$id" params={{ id: d.account_id }} className="text-sm text-signal">Abrir cuenta y plan →</Link>}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}
         <Field label="Etapa"><Pick value={deal.stage} options={Object.fromEntries(DEAL_STAGES.map((s) => [s.id, s.label]))} onChange={(v) => { if (v !== deal.stage) void onMove(v); }} /></Field>
@@ -173,7 +173,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
       <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar deal</Button><Button variant="outline" onClick={requestDiscount}>Pedir descuento</Button></div>
 
       <div>
-        <h3 className="mb-2 text-2xl">Mutual Action Plan</h3>
+        <h3 className="mb-2 text-2xl">Plan de acción conjunto</h3>
         <div className="space-y-1.5">
           {items.map((i) => (
             <label key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border p-2.5 text-sm">

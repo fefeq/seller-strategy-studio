@@ -95,7 +95,7 @@ export function Prototypes() {
           </div>
           <Button onClick={save}>Guardar</Button>
         </div>
-      ) : exps.length === 0 ? <Empty>Crea tu primer prototipo GTM.</Empty> : null}
+      ) : exps.length === 0 ? <Empty>Aún no hay prototipos GTM. Crea el primero.</Empty> : null}
       </div>
     </div>
   );

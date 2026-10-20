@@ -5,7 +5,7 @@ import { ARTIFACTS, getWorkflow, missingPrereqs, type ArtifactKind } from "./wor
 import { PERSONAS } from "./personas";
 
 type Ctx = { db: Db; orgId: string; userId: string; currency: string; orgName?: string };
-export const STYLE = "Español neutro (tú). Concreto, basado en los datos; si falta información, dilo y marca supuestos como [Supuesto].";
+export const STYLE = "Español neutro (tú), sin signos de exclamación ni emoji; empieza por la conclusión. Concreto, basado en los datos; si falta información, dilo y marca supuestos como [Supuesto].";
 
 /** Company context loaded by every BMAD agent: setup data + latest approved artifacts. */
 export async function companyContext(db: Db, orgId: string) {

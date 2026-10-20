@@ -396,7 +396,7 @@ function Pillars() {
         <p className="min-w-0 text-sm text-muted-foreground">3–5 pilares. Cada uno responde a un dolor y se apoya en pruebas: funcionalidades, casos de cliente, datos.</p>
         <Button size="sm" className="shrink-0" onClick={add} disabled={list.length >= 5}>+ Pilar</Button>
       </div>
-      {list.length === 0 && <Empty>Sin pilares todavía.</Empty>}
+      {list.length === 0 && <Empty>Sin pilares todavía. Crea el primero con «+ Pilar».</Empty>}
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((p, i) => (
           <div key={p.id} className="space-y-2 rounded-lg border bg-card p-4">

@@ -11,7 +11,7 @@ const round = (n: number | null | undefined) => (n == null ? null : Math.round(n
 
 export const realMetrics = defineTool({
   name: "get_real_metrics",
-  title: "Real pipeline metrics",
+  title: "Métricas reales de pipeline",
   description: "ACV, win rate y ciclo de venta reales (últimos 12 meses), total y por segmento, frente a los objetivos del segmento.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
@@ -32,7 +32,7 @@ export const realMetrics = defineTool({
 
 export const segmentCoverageTool = defineTool({
   name: "get_segment_coverage",
-  title: "Segment coverage",
+  title: "Cobertura por segmento",
   description: "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
   inputSchema: { quarter: z.string().regex(/^\d{4}-Q[1-4]$/).optional().describe("Trimestre AAAA-QN; por defecto el actual") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },

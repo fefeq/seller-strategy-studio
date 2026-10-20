@@ -27,7 +27,7 @@ export const generateMeetingBrief = createServerFn({ method: "POST" })
     if (error || !m) throw new Error("Reunión no encontrada");
     const ctx = m.account_id ? await accountContext(supabase, m.account_id) : "{}";
     const brief = await ask(
-      "Eres un coach de ventas B2B senior. Responde en español neutro, en markdown conciso. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
+      "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
       `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
     );
     await supabase.from("meetings").update({ ai_brief: brief }).eq("id", m.id);
@@ -40,7 +40,7 @@ export const generateProposal = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = await accountContext(context.supabase, data.accountId);
     const text = await ask(
-      "Eres un estratega comercial. Redacta en español neutro, markdown, un borrador de propuesta / business case: resumen ejecutivo, situación y dolores, solución propuesta, impacto y ROI estimado (indica supuestos), plan de implementación, próximos pasos. No inventes cifras sin marcarlas como supuesto.",
+      "Eres un estratega comercial. Redacta en español neutro (tú), sin signos de exclamación ni emoji, en markdown, un borrador de propuesta / business case: resumen ejecutivo, situación y dolores, solución propuesta, impacto y ROI estimado (indica supuestos), plan de implementación, próximos pasos. No inventes cifras sin marcarlas como supuesto.",
       ctx,
     );
     return { text };
@@ -55,7 +55,7 @@ export const researchStakeholder = createServerFn({ method: "POST" })
     if (!s) throw new Error("No encontrado");
     const ctx = await accountContext(supabase, s.account_id);
     const text = await ask(
-      "Eres analista de research de ventas. En español neutro y markdown breve: hipótesis de prioridades de esta persona según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos, y 3 aperturas de conversación. Marca como hipótesis lo que no esté en el contexto.",
+      "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve: hipótesis de prioridades de esta persona según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos, y 3 aperturas de conversación. Marca como hipótesis lo que no esté en el contexto.",
       `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nContexto:\n${ctx}`,
     );
     await supabase.from("stakeholders").update({ research: text }).eq("id", s.id);
@@ -64,7 +64,7 @@ export const researchStakeholder = createServerFn({ method: "POST" })
 
 // ---------- Theory U ----------
 
-const U_SYSTEM = "Eres facilitador experto en Theory U (Otto Scharmer, Presencing Institute) aplicada a go-to-market B2B. Respondes en español neutro (tú), markdown conciso y accionable. Distingues lo observado (datos) de las hipótesis.";
+const U_SYSTEM = "Eres facilitador experto en Theory U (Otto Scharmer, Presencing Institute) aplicada a go-to-market B2B. Respondes en español neutro (tú), markdown conciso y accionable; empiezas por la conclusión, sin signos de exclamación ni emoji. Distingues lo observado (datos) de las hipótesis.";
 
 async function strategyContext(supabase: any) {
   const [pos, pillars, icp, segments] = await Promise.all([
@@ -163,7 +163,7 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
     });
 
     const raw = await ask(
-      "Eres un VP de Revenue / RevOps senior que asesora a la dirección comercial de empresas B2B. Analizas el objetivo o problema que te plantean usando SOLO los datos aportados (pipeline, métricas, segmentos con sus benchmarks, posicionamiento e ICP) y das recomendaciones de go-to-market priorizadas. Reglas: español neutro (tú); cada hallazgo y recomendación cita cifras concretas del contexto; compara lo real con los benchmarks de cada segmento; marca como supuesto lo que no esté en los datos; usa la moneda indicada; prioriza por impacto en el objetivo y rapidez (priority 1 = lo primero que harías); entre 4 y 7 recomendaciones, cada una con 2–4 acciones concretas, un KPI y un objetivo medible; asigna el rol responsable más adecuado; si faltan datos clave, dilo en data_gaps en lugar de inventar. Referencias generales: cobertura sana 3–4x de la cuota trimestral; forecast preciso si el real queda a ±10% del commit; ABM para ACV >100K.",
+      "Eres un VP de Revenue / RevOps senior que asesora a la dirección comercial de empresas B2B. Analizas el objetivo o problema que te plantean usando SOLO los datos aportados (pipeline, métricas, segmentos con sus benchmarks, posicionamiento e ICP) y das recomendaciones de go-to-market priorizadas. Reglas: español neutro (tú), sin signos de exclamación ni emoji; cada hallazgo y recomendación cita cifras concretas del contexto; compara lo real con los benchmarks de cada segmento; marca como supuesto lo que no esté en los datos; usa la moneda indicada; prioriza por impacto en el objetivo y rapidez (priority 1 = lo primero que harías); entre 4 y 7 recomendaciones, cada una con 2–4 acciones concretas, un KPI y un objetivo medible; asigna el rol responsable más adecuado; si faltan datos clave, dilo en data_gaps en lugar de inventar. Referencias generales: cobertura sana 3–4x de la cuota trimestral; forecast preciso si el real queda a ±10% del commit; ABM para ACV >100K.",
       JSON.stringify({ objetivo: data.goal, horizonte: HORIZONS[data.horizon], datos: snapshot, estrategia: strat }),
       { effort: "medium", schema: { name: "gtm_advice", schema: ADVISOR_SCHEMA } },
     );
