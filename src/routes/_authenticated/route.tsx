@@ -1,6 +1,5 @@
 import { createFileRoute, Link, Outlet, redirect, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Inbox, Rocket, BarChart3, BookOpen, Building2, CheckSquare, Compass, Crosshair, Home, KanbanSquare, LogOut, Plug, Sparkles, Sprout, Users, Workflow, MessagesSquare, UserCog, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
@@ -11,6 +10,7 @@ import { AgentProvider } from "@/components/agent";
 import { useSetup } from "@/hooks/use-setup";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
+import { Lockup } from "@/components/brand";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -22,24 +22,24 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const NAV = [
-  { to: "/home", label: "Inicio", icon: Home },
-  { to: "/inbox", label: "Sugerencias", icon: Inbox },
-  { to: "/setup", label: "Configuración", icon: Rocket },
-  { to: "/cycle", label: "Ciclo GTM", icon: Workflow },
-  { to: "/debates", label: "Debates", icon: MessagesSquare },
-  { to: "/strategy", label: "Estrategia GTM", icon: Compass },
-  { to: "/theory-u", label: "Theory U", icon: Sprout },
-  { to: "/hub", label: "Conocimiento", icon: BookOpen },
-  { to: "/accounts", label: "Cuentas", icon: Building2 },
-  { to: "/leads", label: "Leads", icon: Filter },
-  { to: "/deals", label: "Pipeline", icon: KanbanSquare },
-  { to: "/metrics", label: "Métricas", icon: BarChart3 },
-  { to: "/advisor", label: "Asesor GTM", icon: Sparkles, leadersOnly: true },
-  { to: "/abm", label: "ABM y partners", icon: Crosshair },
-  { to: "/people", label: "Personas", icon: Users },
-  { to: "/approvals", label: "Aprobaciones", icon: CheckSquare },
-  { to: "/integrations", label: "Integraciones", icon: Plug },
-  { to: "/team", label: "Equipo", icon: UserCog },
+  { to: "/home", label: "Inicio" },
+  { to: "/inbox", label: "Sugerencias" },
+  { to: "/setup", label: "Configuración" },
+  { to: "/cycle", label: "Ciclo GTM" },
+  { to: "/debates", label: "Debates" },
+  { to: "/strategy", label: "Estrategia GTM" },
+  { to: "/theory-u", label: "Theory U" },
+  { to: "/hub", label: "Conocimiento" },
+  { to: "/accounts", label: "Cuentas" },
+  { to: "/leads", label: "Leads" },
+  { to: "/deals", label: "Pipeline" },
+  { to: "/metrics", label: "Métricas" },
+  { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
+  { to: "/abm", label: "ABM y partners" },
+  { to: "/people", label: "Personas" },
+  { to: "/approvals", label: "Aprobaciones" },
+  { to: "/integrations", label: "Integraciones" },
+  { to: "/team", label: "Equipo" },
 ] as const;
 
 function Shell() {
@@ -58,27 +58,27 @@ function Shell() {
   return (
     <AgentProvider>
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-        <div className="px-5 pb-4 pt-6 font-display text-2xl">Nokko</div>
+      <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-hairline bg-sidebar text-sidebar-foreground">
+        <div className="border-b-2 border-hairline-firm px-5 pb-5 pt-6"><Lockup /></div>
         {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
+        <nav className="flex-1 overflow-y-auto px-3 py-3">
           {hasOrg && NAV.filter((n) => !("leadersOnly" in n) || canUseAdvisor(me?.roles ?? [])).map((n) => (
             <Link
               key={n.to}
               to={n.to}
-              className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              activeProps={{ className: "bg-sidebar-accent text-sidebar-accent-foreground" }}
+              className="flex items-center border-l-2 border-transparent px-3 py-1.5 text-sm text-ink-mid hover:text-ink"
+              activeProps={{ className: "border-red font-semibold text-ink" }}
             >
-              <n.icon className="size-4" /> {n.label}
+              {n.label}
             </Link>
           ))}
         </nav>
         {hasOrg && <SetupMeter />}
-        <div className="border-t border-sidebar-border p-4 text-sm">
+        <div className="border-t border-hairline p-4 text-sm">
           <p className="truncate font-medium">{me?.profile?.full_name}</p>
-          <p className="truncate text-xs text-sidebar-foreground/60">{role ? ROLES[role]?.label : ""}</p>
-          <button onClick={signOut} className="mt-3 flex items-center gap-2 text-xs text-sidebar-foreground/70 hover:text-sidebar-foreground">
-            <LogOut className="size-3.5" /> Cerrar sesión
+          <p className="eyebrow mt-1 truncate">{role ? ROLES[role]?.label : ""}</p>
+          <button onClick={signOut} className="mt-3 text-xs text-ink underline decoration-hairline-firm underline-offset-4 hover:decoration-ink">
+            Cerrar sesión
           </button>
         </div>
       </aside>
@@ -97,13 +97,13 @@ function SetupMeter() {
   return (
     <div className="space-y-2 px-3 pb-3">
       {pct != null && pct < 100 && (
-        <Link to="/setup" className="block rounded-md bg-sidebar-accent/60 p-3 text-xs hover:bg-sidebar-accent">
-          <div className="flex justify-between"><span>Estrategia completada</span><span className="font-mono">{pct}%</span></div>
-          <div className="mt-1.5 h-1 rounded bg-sidebar-border"><div className="h-full rounded bg-sidebar-primary" style={{ width: `${pct}%` }} /></div>
-          {data?.status.next && <p className="mt-1.5 text-sidebar-foreground/60">Siguiente: {data.status.next.label.split(" (")[0]}</p>}
+        <Link to="/setup" className="block border-t border-hairline px-3 pt-3 text-xs hover:text-ink">
+          <div className="flex justify-between"><span>Estrategia completada</span><span className="font-mono font-semibold">{pct}%</span></div>
+          <div className="mt-1.5 h-0.5 bg-hairline"><div className="h-full bg-ink" style={{ width: `${pct}%` }} /></div>
+          {data?.status.next && <p className="mt-1.5 text-ink-mid">Siguiente: {data.status.next.label.split(" (")[0]}</p>}
         </Link>
       )}
-      {sugg.length > 0 && <Link to="/inbox" className="flex justify-between rounded-md px-3 py-1.5 text-xs text-sidebar-foreground/75 hover:bg-sidebar-accent"><span>Sugerencias pendientes</span><span className="font-mono">{sugg.length}</span></Link>}
+      {sugg.length > 0 && <Link to="/inbox" className="flex justify-between px-3 py-1.5 text-xs text-ink-mid hover:text-ink"><span>Sugerencias pendientes</span><span className="font-mono">{sugg.length}</span></Link>}
     </div>
   );
 }

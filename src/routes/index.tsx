@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ROLES } from "@/lib/roles";
+import { Lockup } from "@/components/brand";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,46 +29,50 @@ const PILLARS = [
 function Landing() {
   return (
     <div className="min-h-screen">
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-display text-2xl">Nokko</span>
-        <Button asChild><Link to="/auth">Entrar</Link></Button>
+      <header className="border-b-2 border-hairline-firm bg-paper-edge">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+        <Lockup />
+        <Button variant="outline" asChild><Link to="/auth">Entrar</Link></Button>
+        </div>
       </header>
-      <section className="mx-auto max-w-6xl px-6 pb-20 pt-16">
-        <p className="eyebrow">Sistema operativo comercial</p>
-        <h1 className="mt-4 max-w-4xl text-6xl leading-[1.02] md:text-8xl">
-          Una sola fuente de verdad para <em className="text-signal">todo</em> el equipo de ventas.
+      <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 md:pt-28">
+        <div className="rule-major mb-6 w-24" />
+        <p className="kicker">Sistema operativo comercial</p>
+        <h1 className="lede-m mt-5 max-w-[14ch] md:lede-xl">
+          Una sola fuente de verdad para <span className="text-red">todo</span> el equipo de ventas.
         </h1>
-        <p className="mt-8 max-w-xl text-lg text-muted-foreground">
+        <p className="mt-8 measure-body text-lg text-ink-mid">
           Antes de cada llamada, cada persona tiene las últimas conversaciones, ofertas, notas de cuenta y el plan para ganar.
         </p>
         <div className="mt-10 flex gap-3">
           <Button size="lg" asChild><Link to="/auth">Empezar</Link></Button>
+          <p className="note self-center">Cuentas, personas, llamadas y planes en un mismo documento.</p>
         </div>
       </section>
-      <section className="border-y bg-card">
-        <div className="mx-auto grid max-w-6xl md:grid-cols-3">
+      <section className="mx-auto max-w-6xl px-6">
+        <div className="rule-section grid gap-x-12 md:grid-cols-3">
           {PILLARS.map(([n, t, d]) => (
-            <div key={n} className="border-b p-8 md:border-r">
-              <span className="font-mono text-xs text-signal">{n}</span>
-              <h3 className="mt-3 text-3xl">{t}</h3>
-              <p className="mt-3 text-sm text-muted-foreground">{d}</p>
+            <div key={n} className="border-t border-hairline py-8 first:border-t-0 md:[&:nth-child(-n+3)]:border-t-0">
+              <span className="note text-red">{n}</span>
+              <h3 className="head mt-3">{t}</h3>
+              <p className="mt-3 text-sm text-ink-mid">{d}</p>
             </div>
           ))}
         </div>
       </section>
       <section className="mx-auto max-w-6xl px-6 py-20">
-        <p className="eyebrow">Cada rol, su vista</p>
-        <h2 className="mt-3 text-5xl">Todo el ciclo de venta, conectado.</h2>
-        <div className="mt-10 grid gap-px overflow-hidden rounded-lg border bg-border md:grid-cols-3">
+        <p className="kicker">Cada rol, su vista</p>
+        <h2 className="lede-m mt-4 measure-lede">Todo el ciclo de venta, conectado.</h2>
+        <div className="mt-10 grid gap-x-12 md:grid-cols-3">
           {Object.entries(ROLES).map(([k, r]) => (
-            <div key={k} className="bg-background p-6">
+            <div key={k} className="border-t border-hairline py-5">
               <p className="font-medium">{r.label}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{r.focus}</p>
+              <p className="mt-1 text-sm text-ink-mid">{r.focus}</p>
             </div>
           ))}
         </div>
       </section>
-      <footer className="border-t py-8 text-center text-xs text-muted-foreground">Primero el sistema, luego el equipo, luego los agentes.</footer>
+      <footer className="border-t-2 border-hairline-firm bg-paper-edge py-8 text-center note">Primero el sistema, luego el equipo, luego los agentes.</footer>
     </div>
   );
 }
