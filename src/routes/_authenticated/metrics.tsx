@@ -106,7 +106,7 @@ function Metrics() {
 
           <SegmentCoverage quarter={quarter} />
           <CacPanel quarter={quarter} />
-          <WonDealsPanel quarter={quarter} />
+          <WonDealsPanel key={quarter} quarter={quarter} />
           <BudgetPanel year={Number(quarter.slice(0, 4))} />
 
 
