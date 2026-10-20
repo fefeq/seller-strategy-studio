@@ -12,7 +12,7 @@ import { TelegramLink } from "@/components/telegram-link";
 import { McpConnect } from "@/components/mcp-connect";
 
 export const Route = createFileRoute("/_authenticated/team")({
-  head: () => ({ meta: [{ title: "Equipo — NOKKO" }, { name: "description", content: "Personas de la empresa y sus roles." }, { property: "og:title", content: "Equipo — NOKKO" }, { property: "og:description", content: "Personas de la empresa y sus roles." }] }),
+  head: () => ({ meta: [{ title: "Equipo — Nokko" }, { name: "description", content: "Personas de la empresa y sus roles." }, { property: "og:title", content: "Equipo — Nokko" }, { property: "og:description", content: "Personas de la empresa y sus roles." }] }),
   component: Team,
 });
 

@@ -5,9 +5,9 @@ import { ROLES } from "@/lib/roles";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "NOKKO — una sola fuente de verdad para ventas" },
+      { title: "Nokko — una sola fuente de verdad para ventas" },
       { name: "description", content: "Account Plans, Meeting Planner, Stakeholder Research, pipeline y base única de personas para todo tu equipo comercial." },
-      { property: "og:title", content: "NOKKO — una sola fuente de verdad para ventas" },
+      { property: "og:title", content: "Nokko — una sola fuente de verdad para ventas" },
       { property: "og:description", content: "Cada rol del ciclo de venta trabajando desde el mismo contexto." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -29,7 +29,7 @@ function Landing() {
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-display text-2xl">NOKKO</span>
+        <span className="font-display text-2xl">Nokko</span>
         <Button asChild><Link to="/auth">Entrar</Link></Button>
       </header>
       <section className="mx-auto max-w-6xl px-6 pb-20 pt-16">

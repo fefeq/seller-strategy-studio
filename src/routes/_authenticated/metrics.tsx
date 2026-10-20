@@ -18,7 +18,7 @@ import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
-  head: () => ({ meta: [{ title: "Métricas RevOps — NOKKO" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — NOKKO" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
+  head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
   component: Metrics,
 });
 

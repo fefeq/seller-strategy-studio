@@ -59,7 +59,7 @@ function Shell() {
     <AgentProvider>
     <div className="flex min-h-screen">
       <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-        <div className="px-5 pb-4 pt-6 font-display text-2xl">NOKKO</div>
+        <div className="px-5 pb-4 pt-6 font-display text-2xl">Nokko</div>
         {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3">
           {hasOrg && NAV.filter((n) => !("leadersOnly" in n) || canUseAdvisor(me?.roles ?? [])).map((n) => (

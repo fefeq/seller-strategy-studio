@@ -7,10 +7,10 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   // SSR has no localStorage session and would redirect signed-in users.
   ssr: false,
   head: () => ({ meta: [
-    { title: "Conectar asistente — NOKKO" },
-    { name: "description", content: "Autoriza a un asistente de IA a usar NOKKO en tu nombre." },
-    { property: "og:title", content: "Conectar asistente — NOKKO" },
-    { property: "og:description", content: "Autoriza a un asistente de IA a usar NOKKO en tu nombre." },
+    { title: "Conectar asistente — Nokko" },
+    { name: "description", content: "Autoriza a un asistente de IA a usar Nokko en tu nombre." },
+    { property: "og:title", content: "Conectar asistente — Nokko" },
+    { property: "og:description", content: "Autoriza a un asistente de IA a usar Nokko en tu nombre." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
     { name: "robots", content: "noindex" },
@@ -62,8 +62,8 @@ function Consent() {
 
   return (
     <Shell>
-      <p className="eyebrow">NOKKO</p>
-      <h1 className="mt-1 text-3xl">Conectar {client} a NOKKO</h1>
+      <p className="eyebrow">Nokko</p>
+      <h1 className="mt-1 text-3xl">Conectar {client} a Nokko</h1>
       <p className="mt-3 text-sm">{client} podrá consultar tu pipeline, cuentas, métricas y estrategia, y preparar acciones <strong>como tú</strong> ({email}), en tu empresa activa y con tu rol.</p>
       <ul className="mt-4 space-y-1 text-sm text-muted-foreground">
         <li>· Las acciones que cambian datos quedan pendientes hasta que las confirmes en Sugerencias.</li>

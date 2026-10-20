@@ -11,7 +11,7 @@ export const agentMcpTools = TOOLS.map((t) =>
   defineTool({
     name: t.name,
     title: t.name.replace(/_/g, " "),
-    description: t.kind === "write" ? `${t.description} (Queda pendiente: el usuario la confirma en NOKKO.)` : t.description,
+    description: t.kind === "write" ? `${t.description} (Queda pendiente: el usuario la confirma en Nokko.)` : t.description,
     inputSchema: ((t.input as z.ZodObject<z.ZodRawShape>).shape ?? {}) as z.ZodRawShape,
     annotations: t.kind === "read"
       ? { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
@@ -27,7 +27,7 @@ export const agentMcpTools = TOOLS.map((t) =>
       const summary = summarizeAction(t.name, parsed.data);
       const { error } = await c.db.from("agent_pending_actions").insert({ org_id: c.orgId, user_id: c.userId, tool: t.name, args: parsed.data as never, summary, source: "mcp" });
       if (error) throw new ToolError(error.message);
-      return text(`Acción preparada en ${c.orgName}: «${summary}». El usuario debe confirmarla en NOKKO → Sugerencias (${APP_URL}).`);
+      return text(`Acción preparada en ${c.orgName}: «${summary}». El usuario debe confirmarla en Nokko → Sugerencias (${APP_URL}).`);
     },
   }),
 );

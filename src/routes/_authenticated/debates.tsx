@@ -15,9 +15,9 @@ import { runDebate } from "@/lib/bmad.functions";
 
 export const Route = createFileRoute("/_authenticated/debates")({
   head: () => ({ meta: [
-    { title: "Debates — NOKKO" },
+    { title: "Debates — Nokko" },
     { name: "description", content: "Mesas de debate entre agentes: C-Levels, Sales, Marketing, Partners o todos a la vez, con acuerdos y acciones." },
-    { property: "og:title", content: "Debates — NOKKO" },
+    { property: "og:title", content: "Debates — Nokko" },
     { property: "og:description", content: "Mesas de debate multiagente por niveles con acuerdos y acciones." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),

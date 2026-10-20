@@ -88,7 +88,7 @@ export const runDebate = createServerFn({ method: "POST" })
     const shared = JSON.stringify({ empresa: ctx.orgName, moneda: ctx.currency, tema: data.topic, sujeto: subject, contexto: cc });
     const speak = (pid: string, round: string) => {
       const p = getPersona(pid)!;
-      return ask(`Eres ${p.name} (${p.title}), personaje inspirado en ${p.inspiredBy}, en una mesa de debate "${DEBATE_LEVELS[data.level].label}" de NOKKO. ${p.tone} Tu foco: ${p.focus} ${round} Máximo 120 palabras, en primera persona, sin saludos. ${STYLE}`, shared, { effort: "low" }).then((t) => ({ persona: pid, round: round.startsWith("Ronda 1") ? 1 : 2, text: t.trim() }));
+      return ask(`Eres ${p.name} (${p.title}), personaje inspirado en ${p.inspiredBy}, en una mesa de debate "${DEBATE_LEVELS[data.level].label}" de Nokko. ${p.tone} Tu foco: ${p.focus} ${round} Máximo 120 palabras, en primera persona, sin saludos. ${STYLE}`, shared, { effort: "low" }).then((t) => ({ persona: pid, round: round.startsWith("Ronda 1") ? 1 : 2, text: t.trim() }));
     };
     const r1 = await Promise.all(ids.map((id) => speak(id, "Ronda 1: da tu postura y tu recomendación principal desde tu papel.")));
     let turns = r1;
@@ -98,7 +98,7 @@ export const runDebate = createServerFn({ method: "POST" })
       turns = [...r1, ...r2];
     }
     const raw = await ask(
-      `Eres NOKKO, moderador del debate. Sintetiza: resumen, acuerdos, desacuerdos, riesgos y de 3 a 6 acciones concretas (owner_persona = id de uno de: ${ids.join(", ")}). ${STYLE}`,
+      `Eres Nokko, moderador del debate. Sintetiza: resumen, acuerdos, desacuerdos, riesgos y de 3 a 6 acciones concretas (owner_persona = id de uno de: ${ids.join(", ")}). ${STYLE}`,
       JSON.stringify({ tema: data.topic, turnos: turns.map((t) => ({ quien: getPersona(t.persona)!.name, ronda: t.round, texto: t.text })) }),
       { effort: "low", schema: { name: "debate_synthesis", schema: SYNTH_SCHEMA } },
     );

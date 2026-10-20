@@ -12,9 +12,9 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => (typeof s.next === "string" ? { next: s.next } : {}),
   head: () => ({
     meta: [
-      { title: "Entrar — NOKKO" },
+      { title: "Entrar — Nokko" },
       { name: "description", content: "Accede al sistema comercial de tu equipo." },
-      { property: "og:title", content: "Entrar — NOKKO" },
+      { property: "og:title", content: "Entrar — Nokko" },
       { property: "og:description", content: "Accede al sistema comercial de tu equipo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -75,7 +75,7 @@ function AuthPage() {
   return (
     <div className="grid min-h-screen md:grid-cols-2">
       <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground md:flex">
-        <Link to="/" className="font-display text-2xl">NOKKO</Link>
+        <Link to="/" className="font-display text-2xl">Nokko</Link>
         <p className="font-display text-5xl leading-tight">“Primero el sistema, luego el equipo, luego los agentes.”</p>
         <p className="eyebrow text-sidebar-foreground/60">Una sola fuente de verdad</p>
       </div>

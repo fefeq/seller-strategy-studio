@@ -131,7 +131,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
               <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
             </div>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>NOKKO</button>
+              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>Nokko</button>
               {personasFor(me?.roles ?? []).map((p) => (
                 <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
               ))}

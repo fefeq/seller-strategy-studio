@@ -14,7 +14,7 @@ import { canUseAdvisor, HORIZONS, LEVELS, sortRecommendations, WINDOWS, type Adv
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
 
-const TITLE = "Asesor GTM — NOKKO";
+const TITLE = "Asesor GTM — Nokko";
 const DESC = "Describe un objetivo o problema comercial y recibe recomendaciones de go-to-market priorizadas a partir de tu pipeline, métricas y segmentos.";
 
 export const Route = createFileRoute("/_authenticated/advisor")({

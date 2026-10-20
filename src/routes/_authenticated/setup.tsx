@@ -19,7 +19,7 @@ import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_authenticated/setup")({
-  head: () => ({ meta: [{ title: "Configuración guiada — NOKKO" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — NOKKO" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SetupPage,
 });
 

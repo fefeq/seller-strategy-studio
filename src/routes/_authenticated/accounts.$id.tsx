@@ -19,7 +19,7 @@ import { generateMeetingBrief, generateProposal, listeningCoaching, researchStak
 import { LevelPicker } from "@/components/theory-u/listening";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
-  head: () => ({ meta: [{ title: "Cuenta — NOKKO" }, { name: "description", content: "Account Plan, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — NOKKO" }, { property: "og:description", content: "Account Plan, stakeholders y reuniones." }] }),
+  head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Account Plan, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Account Plan, stakeholders y reuniones." }] }),
   component: AccountPage,
 });
 
