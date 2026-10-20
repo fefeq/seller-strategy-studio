@@ -1,15 +1,78 @@
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Copy, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { quarterRange } from "@/lib/metrics";
-import { segmentCoverage } from "@/lib/segment-coverage";
-import { CAC_CHANNELS, costByChannel, previousQuarter } from "@/lib/cac";
+import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
+import { CAC_CHANNELS, channelQuarterTable, costByChannel, previousQuarter, quartersUpTo } from "@/lib/cac";
 import { useSegmentCoverageData } from "@/components/segment-coverage";
+
+/** Read-only channel × quarter view of the last 4 quarters: totals, shared part, deals won and average CAC. */
+function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLike[]; money: (n: number) => string }) {
+  const { data: me } = useMe();
+  const orgId = me?.currentOrg?.org_id;
+  const quarters = quartersUpTo(quarter, 4);
+  const { data: costs = [] } = useQuery({
+    queryKey: ["segment-coverage", orgId, "cac-quarters", quarter],
+    enabled: !!orgId,
+    queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quarters)).data ?? [],
+  });
+  const t = channelQuarterTable(costs, quarters);
+  const won = Object.fromEntries(quarters.map((q) => {
+    const { start, end } = quarterRange(q);
+    return [q, deals.filter((d) => { const at = new Date(d.closed_at ?? d.updated_at); return d.stage === "won" && at >= start && at < end; }).length];
+  }));
+  const cell = (n: number) => (n ? money(n) : "—");
+  if (!t.rows.length) return <p className="py-6 text-sm text-muted-foreground">Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por segmento» de cada trimestre.</p>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[560px] text-sm">
+        <thead>
+          <tr className="border-b text-left text-xs text-muted-foreground">
+            <th className="py-2 pr-3 font-normal">Canal</th>
+            {quarters.map((q) => <th key={q} className={`px-2 py-2 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}>{q}</th>)}
+            <th className="px-2 py-2 text-right font-normal">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {t.rows.map((r) => (
+            <tr key={r.channel} className="border-b border-dashed">
+              <td className="py-1.5 pr-3">{r.channel}</td>
+              {quarters.map((q) => <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">{cell(r.byQuarter[q])}</td>)}
+              <td className="px-2 py-1.5 text-right font-mono text-xs">{money(r.total)}</td>
+            </tr>
+          ))}
+          <tr className="border-b font-medium">
+            <td className="py-2 pr-3">Total</td>
+            {quarters.map((q) => <td key={q} className="px-2 py-2 text-right font-mono text-xs">{money(t.total[q])}</td>)}
+            <td className="px-2 py-2 text-right font-mono text-xs">{money(quarters.reduce((s, q) => s + t.total[q], 0))}</td>
+          </tr>
+          <tr className="text-muted-foreground">
+            <td className="py-1.5 pr-3">de ello, compartido</td>
+            {quarters.map((q) => <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">{cell(t.shared[q])}</td>)}
+            <td className="px-2 py-1.5 text-right font-mono text-xs">{cell(quarters.reduce((s, q) => s + t.shared[q], 0))}</td>
+          </tr>
+          <tr>
+            <td className="py-1.5 pr-3">Deals ganados</td>
+            {quarters.map((q) => <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">{won[q]}</td>)}
+            <td className="px-2 py-1.5 text-right font-mono text-xs">{quarters.reduce((s, q) => s + won[q], 0)}</td>
+          </tr>
+          <tr className="font-medium">
+            <td className="py-1.5 pr-3">CAC medio</td>
+            {quarters.map((q) => <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">{won[q] && t.total[q] ? money(t.total[q] / won[q]) : "—"}</td>)}
+            <td className="px-2 py-1.5 text-right font-mono text-xs">{(() => { const w = quarters.reduce((s, q) => s + won[q], 0); const c = quarters.reduce((s, q) => s + t.total[q], 0); return w && c ? money(c / w) : "—"; })()}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p className="mt-2 text-[11px] text-muted-foreground">La calculadora de Estrategia GTM usa estos 4 trimestres para su CAC y payback reales; la cobertura usa el trimestre seleccionado.</p>
+    </div>
+  );
+}
 
 const SHARED = "shared";
 
@@ -97,6 +160,12 @@ export function CacPanel({ quarter }: { quarter: string }) {
         </div>
       </div>
 
+      <Tabs defaultValue="segments">
+      <TabsList className="mb-3">
+        <TabsTrigger value="segments">Por segmento · {quarter}</TabsTrigger>
+        <TabsTrigger value="quarters">Por trimestre</TabsTrigger>
+      </TabsList>
+      <TabsContent value="segments">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px] text-sm">
           <thead>
@@ -139,6 +208,11 @@ export function CacPanel({ quarter }: { quarter: string }) {
           </tbody>
         </table>
       </div>
+      </TabsContent>
+      <TabsContent value="quarters">
+        <QuarterView quarter={quarter} deals={data?.deals ?? []} money={money} />
+      </TabsContent>
+      </Tabs>
 
       <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
         {canEdit ? (
