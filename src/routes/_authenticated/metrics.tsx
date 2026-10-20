@@ -10,6 +10,7 @@ import { DEAL_STAGES } from "@/lib/roles";
 import { coverage, daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
+import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — GTM Brain" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — GTM Brain" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -145,6 +146,8 @@ function Metrics() {
               <Muted>Solo Owner y Sales Leader pueden fijar cuotas.</Muted>
             </Panel>
           </div>
+
+          <LeadFunnelPanel quarter={quarter} />
 
           <SelfServiceFunnel quarter={quarter} />
         </div>
