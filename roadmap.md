@@ -14,3 +14,4 @@
 - [ ] Más adelante: sincronización nativa con un CRM (HubSpot, Pipedrive, Attio, Salesforce) si el cliente lo usa; hoy entra por webhook/Zapier.
 - [x] Conexión MCP para Claude, ChatGPT, Codex (OAuth, herramientas del agente, escrituras confirmadas en Sugerencias). Activa para asistentes externos al publicar.
 - [x] Panel de CAC real en Métricas: costes por canal, segmento y trimestre → payback real en la cobertura
+- [x] Métricas: KPIs trimestrales (ingresos, coste de servir, margen, CAC y payback real vs plan, 4 trimestres) y panel de Pipeline (leads → oportunidades → deals en proceso → ganados, quién sigue en cada etapa, CAC y payback real y proyectado)

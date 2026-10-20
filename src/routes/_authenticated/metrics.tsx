@@ -14,6 +14,8 @@ import { CacPanel } from "@/components/cac-panel";
 import { BudgetPanel } from "@/components/budget-panel";
 import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
+import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
+import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — NOKKO" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — NOKKO" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -104,6 +106,8 @@ function Metrics() {
             <Kpi label="Win rate global" v={pct(m.overall)} hint={`${m.created} deals creados este trimestre`} />
           </div>
 
+          <QuarterKpisPanel quarter={quarter} />
+          <PipelineBoardPanel quarter={quarter} />
           <SegmentCoverage quarter={quarter} />
           <CacPanel quarter={quarter} />
           <WonDealsPanel key={quarter} quarter={quarter} />
