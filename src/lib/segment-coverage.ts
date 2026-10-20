@@ -1,5 +1,6 @@
 // Real vs target per segment for a quarter. Pure so the metrics dashboard and future AI snapshots agree.
 import { capacityPlan, coverage, matchSegment, winRate } from "@/lib/metrics";
+import { segmentCac, type CostLike } from "@/lib/cac";
 
 export type SegLike = { id: string; name: string; acv_min: number | null; acv_max: number | null; win_rate_target: number | null; cac_target: number | null; gross_margin_pct: number | null; payback_months: number | null };
 export type DealLike = { segment_id: string | null; amount: number | null; stage: string; close_date: string | null; closed_at: string | null; updated_at: string; created_at: string };
@@ -26,8 +27,14 @@ export function assignSegment<T extends DealLike>(deal: T, segments: SegLike[]) 
 
 export type SegmentCoverageRow = ReturnType<typeof segmentCoverage>[number];
 
-export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets: Record<string, number>, range: { start: Date; end: Date }) {
+/**
+ * Payback uses the real CAC of the quarter (entered costs / deals won) when there is one,
+ * otherwise the segment's target CAC; `payback.source` says which.
+ */
+export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets: Record<string, number>, range: { start: Date; end: Date }, costs: CostLike[] = []) {
   const inQ = (s?: string | null) => !!s && new Date(s) >= range.start && new Date(s) < range.end;
+  const wonIn = (segId: string) => deals.filter((d) => d.stage === "won" && assignSegment(d, segments) === segId && inQ(d.closed_at ?? d.updated_at)).length;
+  const cacs = segmentCac(costs, Object.fromEntries(segments.map((s) => [s.id, wonIn(s.id)])), segments.map((s) => s.id));
   return segments.map((seg) => {
     const ds = deals.filter((d) => assignSegment(d, segments) === seg.id);
     const target = targets[seg.id] ?? 0;
@@ -42,7 +49,11 @@ export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets:
     const dealsTarget = target && acv ? Math.ceil(target / acv) : null;
     const oppsTarget = dealsTarget != null && winTarget ? Math.ceil(dealsTarget / (winTarget / 100)) : null;
     const realWin = winRate(wonQ.length, closed.length - wonQ.length);
-    const payback = capacityPlan({ acv, cac: seg.cac_target, grossMarginPct: seg.gross_margin_pct }).paybackMonths;
+    const cac = cacs[seg.id];
+    const cacTarget = seg.cac_target != null ? Number(seg.cac_target) : null;
+    const cacUsed = cac.cac ?? cacTarget;
+    const paybackSource = cac.cac != null ? ("real" as const) : cacTarget ? ("objetivo" as const) : null;
+    const payback = capacityPlan({ acv, cac: cacUsed, grossMarginPct: seg.gross_margin_pct }).paybackMonths;
     return {
       segment: seg,
       acv, acvSource: source,
@@ -52,7 +63,8 @@ export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets:
       won: { deals: wonQ.length, amount: wonAmount, target: dealsTarget, attainment: target ? wonAmount / target : null },
       opps: { created, open: open.length, target: oppsTarget },
       winRate: { real: closed.length ? realWin : null, target: winTarget },
-      payback: { real: payback, target: seg.payback_months != null ? Number(seg.payback_months) : null, ok: payback != null && seg.payback_months != null ? payback <= Number(seg.payback_months) : null },
+      cac: { ...cac, real: cac.cac, target: cacTarget },
+      payback: { real: payback, source: paybackSource, target: seg.payback_months != null ? Number(seg.payback_months) : null, ok: payback != null && seg.payback_months != null ? payback <= Number(seg.payback_months) : null },
     };
   });
 }

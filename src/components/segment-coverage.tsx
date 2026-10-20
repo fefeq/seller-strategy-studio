@@ -11,6 +11,28 @@ import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos", rango: "punto medio del rango" };
 
+/** Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels. */
+export function useSegmentCoverageData(quarter: string) {
+  const { data: me } = useMe();
+  const orgId = me?.currentOrg?.org_id;
+  return useQuery({
+    queryKey: ["segment-coverage", orgId, quarter],
+    enabled: !!orgId,
+    queryFn: async () => {
+      const [s, d, t, c] = await Promise.all([
+        supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
+        supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+        supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
+        supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
+      ]);
+      return {
+        segments: s.data ?? [], deals: d.data ?? [], costs: c.data ?? [],
+        targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
+      };
+    },
+  });
+}
+
 /** Real coverage, deals, opportunities and payback per segment vs its quarterly target. */
 export function SegmentCoverage({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
@@ -18,19 +40,8 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
   const orgId = me?.currentOrg?.org_id;
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const qc = useQueryClient();
-  const { data } = useQuery({
-    queryKey: ["segment-coverage", orgId, quarter],
-    enabled: !!orgId,
-    queryFn: async () => {
-      const [s, d, t] = await Promise.all([
-        supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
-        supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
-        supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
-      ]);
-      return { segments: s.data ?? [], deals: d.data ?? [], targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number> };
-    },
-  });
-  const rows = useMemo(() => (data ? segmentCoverage(data.segments, data.deals, data.targets, quarterRange(quarter)) : []), [data, quarter]);
+  const { data } = useSegmentCoverageData(quarter);
+  const rows = useMemo(() => (data ? segmentCoverage(data.segments, data.deals, data.targets, quarterRange(quarter), data.costs) : []), [data, quarter]);
   const total = rows.reduce((a, r) => ({ target: a.target + r.target, pipeline: a.pipeline + r.pipeline, won: a.won + r.won.amount }), { target: 0, pipeline: 0, won: 0 });
 
   async function setTarget(segmentId: string, amount: number) {
@@ -88,13 +99,28 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
         <Metric label="Oportunidades creadas" real={`${r.opps.created} (${r.opps.open} abiertas)`} target={r.opps.target != null ? `${r.opps.target}` : null} progress={r.opps.target ? r.opps.created / r.opps.target : null} hint={r.opps.target == null && r.target ? "Falta win rate objetivo" : undefined} />
         <Metric label="Win rate" real={r.winRate.real != null ? pct(r.winRate.real) : "—"} target={r.winRate.target != null ? `${r.winRate.target}%` : null} progress={r.winRate.real != null && r.winRate.target ? r.winRate.real / (r.winRate.target / 100) : null} />
         <div className="flex items-center justify-between border-t pt-2 text-sm">
-          <span>Payback CAC</span>
+          <span>CAC</span>
+          <span className="font-mono text-xs">
+            {r.cac.real != null ? money(r.cac.real) : "—"}
+            <span className="text-muted-foreground"> / obj. {r.cac.target != null ? money(r.cac.target) : "—"}</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span>Payback {r.payback.source === "real" ? "real" : r.payback.source === "objetivo" ? "estimado" : ""}</span>
           <span className="font-mono text-xs">
             <span className={r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""}>{r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}</span>
             <span className="text-muted-foreground"> / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}</span>
           </span>
         </div>
-        {r.payback.real == null && <p className="text-[11px] text-muted-foreground">Añade el CAC objetivo del segmento para calcular el payback.</p>}
+        {r.payback.source !== "real" && (
+          <p className="text-[11px] text-muted-foreground">
+            {r.cac.cost > 0 && r.cac.customers === 0
+              ? "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
+              : r.payback.source === "objetivo"
+                ? "Calculado con el CAC objetivo. Introduce los costes en «CAC real» para verlo real."
+                : "Introduce los costes en «CAC real» o un CAC objetivo para calcular el payback."}
+          </p>
+        )}
       </div>
     </div>
   );

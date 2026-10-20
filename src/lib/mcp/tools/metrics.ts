@@ -3,6 +3,7 @@ import { z } from "zod";
 import { segmentActuals } from "@/lib/pipeline-real";
 import { segmentCoverage, type SegLike } from "@/lib/segment-coverage";
 import { quarterOf, quarterRange } from "@/lib/metrics";
+import { costByChannel } from "@/lib/cac";
 import { mcpCtx, json } from "../context";
 
 const round = (n: number | null | undefined) => (n == null ? null : Math.round(n * 10) / 10);
@@ -31,7 +32,7 @@ export const realMetrics = defineTool({
 export const segmentCoverageTool = defineTool({
   name: "get_segment_coverage",
   title: "Segment coverage",
-  description: "Cobertura de pipeline, deals ganados, oportunidades, win rate y payback por segmento frente al objetivo del trimestre.",
+  description: "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados) y payback por segmento frente al objetivo del trimestre.",
   inputSchema: { quarter: z.string().regex(/^\d{4}-Q[1-4]$/).optional().describe("Trimestre AAAA-QN; por defecto el actual") },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ quarter }, ctx) => {
@@ -39,13 +40,17 @@ export const segmentCoverageTool = defineTool({
     const q = quarter ?? quarterOf(new Date());
     const range = quarterRange(q);
     if (!range) throw new ToolError("Trimestre no válido");
-    const [{ data: segs }, { data: deals }, { data: targets }] = await Promise.all([
+    const [{ data: segs }, { data: deals }, { data: targets }, { data: costs }] = await Promise.all([
       c.db.from("segments").select("*").eq("org_id", c.orgId),
       c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at").eq("org_id", c.orgId),
       c.db.from("segment_targets").select("segment_id,amount").eq("org_id", c.orgId).eq("period", q),
+      c.db.from("cac_costs").select("segment_id,channel,amount").eq("org_id", c.orgId).eq("period", q),
     ]);
     const t = Object.fromEntries((targets ?? []).map((x) => [x.segment_id, Number(x.amount)]));
-    const rows = segmentCoverage((segs ?? []) as SegLike[], deals ?? [], t, range);
-    return json({ quarter: q, currency: c.currency, segments: rows.map((r) => ({ name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate, payback: r.payback })) });
+    const rows = segmentCoverage((segs ?? []) as SegLike[], deals ?? [], t, range, costs ?? []);
+    return json({
+      quarter: q, currency: c.currency, cost_by_channel: costByChannel(costs ?? []),
+      segments: rows.map((r) => ({ name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate, cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target }, payback: { ...r.payback, real: round(r.payback.real) } })),
+    });
   },
 });

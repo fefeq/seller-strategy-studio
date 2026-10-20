@@ -10,6 +10,7 @@ import { DEAL_STAGES } from "@/lib/roles";
 import { coverage, daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
+import { CacPanel } from "@/components/cac-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
@@ -102,6 +103,7 @@ function Metrics() {
           </div>
 
           <SegmentCoverage quarter={quarter} />
+          <CacPanel quarter={quarter} />
 
 
           <div className="grid gap-6 lg:grid-cols-2">

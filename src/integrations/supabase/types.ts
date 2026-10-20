@@ -395,6 +395,60 @@ export type Database = {
           },
         ]
       }
+      cac_costs: {
+        Row: {
+          amount: number
+          channel: string
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string | null
+          period: string
+          segment_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          channel: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period: string
+          segment_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          channel?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          period?: string
+          segment_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cac_costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cac_costs_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       calls: {
         Row: {
           account_id: string | null
