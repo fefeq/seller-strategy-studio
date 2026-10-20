@@ -6,18 +6,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/fields";
-import { quarterlyBudget, quartersOfYear, type BudgetField, type SegmentBudgetRow } from "@/lib/segment-budget";
+import { deviation, quarterlyBudget, quartersOfYear, type BudgetField, type SegmentBudgetRow } from "@/lib/segment-budget";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
 
 /** Deviation of actual vs plan in %, green when it goes the good way (red otherwise). */
 export function Deviation({ real, plan, lowerIsBetter = false, points = false }: { real: number | null; plan: number | null; lowerIsBetter?: boolean; points?: boolean }) {
-  if (real == null || plan == null || (!points && !plan)) return null;
-  const d = points ? real - plan : ((real - plan) / plan) * 100;
-  if (Math.abs(d) < 0.05) return <span className="text-muted-foreground">= presupuesto</span>;
-  const good = lowerIsBetter ? d < 0 : d > 0;
-  return <span className={good ? "text-success" : "text-signal"}>{d > 0 ? "+" : ""}{points ? `${fmt1(d)} pt` : `${Math.round(d)}%`}</span>;
+  const d = deviation(real, plan, { lowerIsBetter, points });
+  if (!d) return null;
+  if (d.good == null) return <span className="text-muted-foreground">= presupuesto</span>;
+  return <span className={d.good ? "text-success" : "text-signal"}>{d.value > 0 ? "+" : ""}{points ? `${fmt1(d.value)} pt` : `${Math.round(d.value)}%`}</span>;
 }
 
 /** Plan vs actual per quarter (and year) for one segment: revenue, cost to serve, acquisition, CAC and payback. */

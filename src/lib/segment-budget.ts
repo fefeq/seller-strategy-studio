@@ -16,6 +16,17 @@ export type MarginSource = "real" | "plan" | "objetivo";
 
 const num = (v: number | string | null | undefined) => (v == null || v === "" ? null : Number(v));
 
+/**
+ * Deviation of actual vs plan: % of the plan (or points for margins). `good` = it goes the right way
+ * (more revenue, margin, customers; less cost, spend, CAC, payback), shown green; otherwise red.
+ */
+export function deviation(real: number | null, plan: number | null, opts: { lowerIsBetter?: boolean; points?: boolean } = {}) {
+  if (real == null || plan == null || (!opts.points && !plan)) return null;
+  const value = opts.points ? real - plan : ((real - plan) / plan) * 100;
+  if (Math.abs(value) < 0.05) return { value: 0, good: null };
+  return { value, good: opts.lowerIsBetter ? value < 0 : value > 0 };
+}
+
 export const quartersOfYear = (year: number) => [1, 2, 3, 4].map((n) => `${year}-Q${n}`);
 
 /** Annual budget per segment = sum of the year's quarters; a field stays null when no quarter has it. */
