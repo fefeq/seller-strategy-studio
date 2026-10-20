@@ -47,6 +47,22 @@ describe("detectors", () => {
     expect(s?.action?.tool).toBe("create_task");
     expect(s?.user_id).toBe("u1");
   });
+  it("the stale threshold follows the segment's real cycle, or the company's own number", () => {
+    const ago = (n: number) => new Date(NOW.getTime() - n * 864e5).toISOString();
+    const seg = { id: "mid", name: "Mid", acv_min: 10000, acv_max: 100000, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null };
+    const won = [{ id: "w1", stage: "won", amount: 50000, segment_id: "mid", close_date: null, created_at: ago(200), closed_at: ago(80), updated_at: ago(80) }, { id: "w2", stage: "won", amount: 60000, segment_id: "mid", close_date: null, created_at: ago(150), closed_at: ago(30), updated_at: ago(30) }];
+    const idle = (n: number, staleDays: number | null = null) => {
+      const d = deal({ amount: 50000, updated_at: ago(n) });
+      return detect(snap({ deals: [d], cycleDeals: [...won, { ...d, segment_id: "mid", closed_at: null, created_at: ago(40) }], cycleSegments: [seg], staleDays })).find((x) => x.detector === "stale_deal");
+    };
+    // 120-day cycle → 30-day threshold: 20 idle days is fine, 31 is cold.
+    expect(idle(20)).toBeUndefined();
+    expect(idle(31)?.body).toContain("30 días, un cuarto del ciclo real de 120 días");
+    expect(idle(31)?.priority).toBe(2);
+    expect(idle(61)?.priority).toBe(1);
+    // The company's own number wins.
+    expect(idle(20, 10)?.body).toContain("10 días, fijado por la empresa");
+  });
   it("past close date proposes moving it 30 days", () => {
     const s = detect(snap({ deals: [deal({ close_date: "2026-10-01" })] })).find((x) => x.detector === "past_close_date");
     expect(s?.action).toEqual({ tool: "update_deal", args: { deal_id: "d1", close_date: "2026-11-19" } });

@@ -40,6 +40,16 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Móvil, pulido: los pasos del asistente de configuración ocupan unas 8 líneas; en Theory U el editor de la fase queda muy abajo; las pestañas que se desplazan de lado no lo indican.
 - [x] Limpieza: quitar las dependencias de Bodoni Moda y Courier Prime (ya no se usan), la línea suelta del README («Implement exactly the screenshot…») y unificar el punto final de los avisos.
 
+### Fase A (pipeline), un PR por pieza
+
+- [ ] 1. Puntuación de leads y cuentas (PR #1).
+- [x] 2. Umbral de enfriado según el ciclo real del segmento (un cuarto del ciclo, entre 14 y 60 días; ajustable por empresa en Pipeline); sustituye el umbral fijo de 14 días en el detector, la Pipeline y el agente.
+- [ ] 3. Informe semanal del lunes en la app, por email con Resend y por Telegram.
+- [ ] 4. Seguimientos día 3/7/14: detector + borrador del agente en Sugerencias.
+- [ ] 5. Biblioteca de jugadas (discovery, objeciones, demo, negociación).
+- [ ] 6. Notas de llamada en 5 líneas + desmontaje de la llamada por la IA.
+- [ ] 7. Reparto de cuentas propuesto por la IA; el Owner aprueba.
+
 ### Más adelante
 
 - [ ] WhatsApp (el agente ya es independiente del canal).

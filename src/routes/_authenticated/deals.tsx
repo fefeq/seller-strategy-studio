@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrency } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page, HealthDot } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 import { errorText } from "@/lib/errors";
 import { mergeServerEdits } from "@/lib/merge-edits";
 import { isOverdue, pipelineHeadline } from "@/lib/headlines";
+import { staleDeals, staleThreshold } from "@/lib/stale";
+import { actuals } from "@/lib/pipeline-real";
+import { StaleSettings, useStaleSettings } from "@/components/stale-settings";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -35,6 +38,13 @@ function Deals() {
   });
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const selected = deals.find((d) => d.id === search.deal);
+  const { data: me } = useMe();
+  const { data: staleCfg } = useStaleSettings();
+  const now = new Date();
+  const cold = new Map(staleDeals(deals, staleCfg?.segments ?? [], staleCfg?.staleDays ?? null, now).map((r) => [r.deal.id, r]));
+  const coldCount = [...cold.values()].filter((r) => r.stale).length;
+  const companyThreshold = staleThreshold(actuals(deals, now).cycleDays, staleCfg?.staleDays ?? null);
+  const canEditStale = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
 
   async function move(id: string, stage: string) {
     const prob: Record<string, number> = { discovery: 10, qualified: 25, demo: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
@@ -54,12 +64,16 @@ function Deals() {
   }
 
   return (
-    <Page eyebrow="Pipeline" title={pipelineHeadline({ openDeals: open.length, openAmount: open.reduce((s, d) => s + Number(d.amount ?? 0), 0), overdue: open.filter((d) => isOverdue(d.close_date)).length, money: eur })} actions={<Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>}>
+    <Page eyebrow="Pipeline" title={pipelineHeadline({ openDeals: open.length, openAmount: open.reduce((s, d) => s + Number(d.amount ?? 0), 0), overdue: open.filter((d) => isOverdue(d.close_date)).length, cold: coldCount, money: eur })} actions={<>
+      {me?.currentOrg?.org_id && <StaleSettings staleDays={staleCfg?.staleDays ?? null} cycleDays={actuals(deals, now).cycleDays} canEdit={canEditStale} orgId={me.currentOrg.org_id} />}
+      <Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>
+    </>}>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Kpi label="Pipeline abierto" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
         <Kpi label="Forecast ponderado" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0))} />
         <Kpi label="Ganado" v={eur(deals.filter((d) => d.stage === "won").reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
       </div>
+      <p className="mb-4 text-xs text-muted-foreground">Un deal se da por enfriado a los {companyThreshold.days} días sin actividad ({companyThreshold.source === "empresa" ? "fijado por la empresa" : companyThreshold.source === "ciclo" ? `un cuarto del ciclo real de ${companyThreshold.cycleDays} días` : "por defecto, aún sin ciclo real"}); cada segmento usa su propio ciclo cuando lo tiene.</p>
       <p className="mb-2 text-xs text-muted-foreground md:hidden">Desliza para ver todas las etapas. Abre un deal para cambiar su etapa.</p>
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
         {DEAL_STAGES.map((st) => {
@@ -73,9 +87,10 @@ function Deals() {
                 {col.map((d) => (
                   <button key={d.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", d.id)}
                     onClick={() => navigate({ search: { deal: d.id } })}
-                    className="block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal">
+                    className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${cold.get(d.id)?.stale ? "border-signal/60" : ""}`}>
                     <span className="break-words font-medium">{d.name}</span>
                     <span className="block text-xs text-muted-foreground">{d.accounts?.name}</span>
+                    {cold.get(d.id)?.stale && <span className="mt-1 block text-[11px] text-signal">Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral {cold.get(d.id)!.threshold.days})</span>}
                     <span className="mt-2 flex items-center justify-between"><span className="font-mono text-xs">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
                   </button>
                 ))}

@@ -10,6 +10,7 @@ import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
+import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
 import { ask } from "@/lib/ai-gateway";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
@@ -88,16 +89,27 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "list_deals", kind: "read",
-    description: "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja) o con fecha de cierre pasada.",
-    input: z.object({ stage: z.enum(STAGES).optional(), mine: z.boolean().optional(), at_risk: z.boolean().optional(), overdue: z.boolean().optional() }),
+    description: "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja), con fecha de cierre pasada o enfriados (sin actividad más días que el umbral de su segmento: un cuarto del ciclo real, 14–60 días, o el número fijado por la empresa). Cada deal trae dias_sin_actividad, umbral_enfriado y enfriado.",
+    input: z.object({ stage: z.enum(STAGES).optional(), mine: z.boolean().optional(), at_risk: z.boolean().optional(), overdue: z.boolean().optional(), cold: z.boolean().optional() }),
     run: async (c, a) => {
-      let q = c.db.from("deals").select("id,name,stage,amount,probability,health,close_date,owner_id,account_id,forecast_category").eq("org_id", c.orgId).order("close_date");
-      if (a.stage) q = q.eq("stage", a.stage);
-      else q = q.not("stage", "in", "(won,lost)");
-      if (a.mine) q = q.eq("owner_id", c.userId);
-      if (a.at_risk) q = q.eq("health", "red");
-      if (a.overdue) q = q.lt("close_date", new Date().toISOString().slice(0, 10));
-      return ok(await q.limit(40));
+      const [all, seg, cfg] = await Promise.all([
+        c.db.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,created_at,updated_at,segment_id,owner_id,account_id,forecast_category").eq("org_id", c.orgId).order("close_date"),
+        c.db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", c.orgId),
+        c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
+      ]);
+      if (all.error) throw new Error(all.error.message);
+      const now = new Date();
+      const cold = new Map(staleDeals(all.data ?? [], seg.data ?? [], readStaleDays(cfg.data?.sla), now).map((r) => [r.deal.id, r]));
+      const today = now.toISOString().slice(0, 10);
+      const list = (all.data ?? [])
+        .filter((d) => (a.stage ? d.stage === a.stage : d.stage !== "won" && d.stage !== "lost"))
+        .filter((d) => (!a.mine || d.owner_id === c.userId) && (!a.at_risk || d.health === "red") && (!a.overdue || (!!d.close_date && d.close_date < today)) && (!a.cold || !!cold.get(d.id)?.stale))
+        .slice(0, 40)
+        .map(({ closed_at: _c, created_at: _cr, updated_at: _u, segment_id: _s, ...d }) => {
+          const r = cold.get(d.id);
+          return { ...d, dias_sin_actividad: r?.idleDays ?? null, umbral_enfriado: r ? thresholdText(r.threshold) : null, enfriado: r?.stale ?? false };
+        });
+      return list;
     },
   }),
   def({
