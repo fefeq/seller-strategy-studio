@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ROLES, type Role } from "@/lib/roles";
 import type { Membership } from "@/hooks/use-me";
 import { errorText } from "@/lib/errors";
+import { track } from "@/lib/analytics";
 
 export function OrgSwitcher({ memberships, current, userId }: { memberships: Membership[]; current: Membership | null; userId: string }) {
   const qc = useQueryClient();
@@ -26,6 +27,7 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
   async function create() {
     const { error } = await supabase.rpc("create_organization", { _name: name });
     if (error) return toast.error(errorText(error));
+    track("org_created", { location: "switcher" });
     setName(""); setCreating(false); setOpen(false);
     await qc.resetQueries();
     toast.success("Empresa creada.");

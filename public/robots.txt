@@ -1,14 +1,39 @@
+# nokko.ai — solo la web pública es indexable; la app tras el login no.
+# Buscadores y asistentes de IA tienen acceso explícito a la parte pública.
 User-agent: Googlebot
-Allow: /
-
 User-agent: Bingbot
-Allow: /
-
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Google-Extended
 User-agent: Twitterbot
-Allow: /
-
 User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
+Disallow: /api/
+Disallow: /mcp
+Disallow: /.lovable/
+Disallow: /home
+Disallow: /inbox
+Disallow: /setup
+Disallow: /cycle
+Disallow: /debates
+Disallow: /strategy
+Disallow: /theory-u
+Disallow: /hub
+Disallow: /accounts
+Disallow: /leads
+Disallow: /deals
+Disallow: /metrics
+Disallow: /abm
+Disallow: /advisor
+Disallow: /approvals
+Disallow: /integrations
+Disallow: /people
+Disallow: /team
+
+Sitemap: https://nokko.ai/sitemap.xml
