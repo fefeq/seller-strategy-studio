@@ -12,7 +12,7 @@ import { AgentProvider, useAgent } from "@/components/agent";
 import { useSetup } from "@/hooks/use-setup";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
-import { Brace, Lockup } from "@/components/brand";
+import { Isotipo, Lockup } from "@/components/brand";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -121,7 +121,7 @@ function Shell() {
       {/* Mobile top bar: brand + current section + menu toggle. It stays above the drawer so ☰/✕ always works. */}
       <header className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}>
         <div className="flex h-14 items-center justify-between gap-3 px-4">
-          <Link to="/home" className="shrink-0" aria-label="Inicio"><Lockup className="[&_span]:text-[22px]" /></Link>
+          <Link to="/home" className="shrink-0" aria-label="Inicio"><Lockup /></Link>
           {current && <span className="min-w-0 truncate text-sm text-ink-mid">{current}</span>}
           <button
             onClick={() => setNavOpen((o) => !o)}
@@ -151,7 +151,7 @@ function Shell() {
       {/* Desktop/tablet: full sidebar, or a slim rail when closed (remembered per browser). */}
       {collapsed ? (
         <aside className="sticky top-0 hidden h-screen w-14 shrink-0 flex-col items-center gap-4 border-r border-hairline bg-sidebar py-6 text-sidebar-foreground md:flex">
-          <Link to="/home" aria-label="Inicio"><Brace className="h-5" /></Link>
+          <Link to="/home" aria-label="Inicio"><Isotipo className="size-8" /></Link>
           <button
             onClick={() => setCollapsed(false)}
             aria-label="Abrir menú"

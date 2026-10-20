@@ -127,7 +127,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
           <SheetHeader className="border-b px-5 py-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-10 md:pr-8">
-              <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-xl md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
+              <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-[22px] md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
               <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
             </div>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
@@ -194,8 +194,8 @@ const MD = {
   ul: (p: any) => <ul className="mb-2 list-disc space-y-1 pl-5" {...p} />,
   ol: (p: any) => <ol className="mb-2 list-decimal space-y-1 pl-5" {...p} />,
   strong: (p: any) => <strong className="font-semibold" {...p} />,
-  h1: (p: any) => <h3 className="mb-1 mt-3 font-display text-lg" {...p} />,
-  h2: (p: any) => <h3 className="mb-1 mt-3 font-display text-lg" {...p} />,
+  h1: (p: any) => <h3 className="mb-1 mt-3 text-[15px] font-semibold" {...p} />,
+  h2: (p: any) => <h3 className="mb-1 mt-3 text-[15px] font-semibold" {...p} />,
   h3: (p: any) => <h4 className="mb-1 mt-2 font-medium" {...p} />,
   table: (p: any) => <div className="overflow-x-auto"><table className="my-2 w-full text-xs" {...p} /></div>,
   th: (p: any) => <th className="border-b px-2 py-1 text-left font-medium" {...p} />,

@@ -102,7 +102,7 @@ export function Cell({ c, target, money }: { c: QuarterPayback; target: number |
   const diff = target != null ? c.payback - target : null;
   return (
     <td className="px-3 py-3 text-right">
-      <p className={`font-display text-xl ${tone}`}>{fmt1(c.payback)} m</p>
+      <p className={`font-display text-[22px] leading-7 ${tone}`}>{fmt1(c.payback)} m</p>
       <p className="text-[11px] text-muted-foreground">
         CAC {money(Math.round(c.cac ?? 0))} · {c.customers} {c.customers === 1 ? "ganado" : "ganados"}
         {diff != null && <span className={tone}> · {diff > 0 ? "+" : ""}{fmt1(diff)} m</span>}

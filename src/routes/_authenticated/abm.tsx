@@ -154,7 +154,7 @@ function Partners() {
           const pipe = (p.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0);
           return (
             <div key={p.id} className="space-y-3 rounded-lg border bg-card p-4">
-              <Input className="font-display text-xl" defaultValue={p.name} onBlur={(e) => upd(p.id, { name: e.target.value })} />
+              <Input className="font-display md:text-[22px]" defaultValue={p.name} onBlur={(e) => upd(p.id, { name: e.target.value })} />
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                 <Field label="Tipo"><Pick value={p.partner_type} options={PTYPES} onChange={(v) => upd(p.id, { partner_type: v })} /></Field>
                 <Field label="Margen %"><Input type="number" defaultValue={p.margin_pct ?? 0} onBlur={(e) => upd(p.id, { margin_pct: Number(e.target.value) })} /></Field>

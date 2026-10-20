@@ -120,7 +120,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
             return (
               <button key={p.key} onClick={() => { setView(p.key); revealOnMobile(phaseRef.current); }} className={`${DEPTH[i]} min-w-0 break-words rounded-lg border p-3 text-left transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
                 <span className={`font-mono text-[10px] uppercase ${state === "current" ? "text-signal" : "text-muted-foreground"}`}>{i + 1} · {state === "done" ? "Hecho" : state === "current" ? "Ahora" : "Pendiente"}</span>
-                <span className="mt-1 block font-display text-lg leading-tight">{p.label}</span>
+                <span className="mt-1 block text-[15px] font-semibold leading-tight">{p.label}</span>
                 <span className="block text-xs text-muted-foreground">{p.tagline}</span>
               </button>
             );

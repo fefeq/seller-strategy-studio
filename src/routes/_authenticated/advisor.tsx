@@ -123,7 +123,7 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
         <p className="eyebrow">Objetivo</p>
         <p className="mt-1 break-words text-sm">{goal}</p>
         <p className="eyebrow mt-4">Resumen</p>
-        <p className="mt-1 font-display text-xl leading-snug">{result.summary}</p>
+        <p className="mt-1 font-display text-[22px] leading-snug">{result.summary}</p>
       </div>
       {result.diagnosis?.length > 0 && (
         <div>
@@ -165,7 +165,7 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
         <div className="flex min-w-0 items-start gap-3">
           <span className="font-display text-3xl leading-none text-signal">{String(index + 1).padStart(2, "0")}</span>
           <div className="min-w-0 break-words">
-            <p className="font-display text-xl leading-tight">{rec.title}</p>
+            <p className="font-display text-[22px] leading-tight">{rec.title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{rec.rationale}</p>
           </div>
         </div>

@@ -1,19 +1,22 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import "@fontsource/bodoni-moda/400.css";
-@import "@fontsource/bodoni-moda/500.css";
-@import "@fontsource/bodoni-moda/400-italic.css";
 @import "@fontsource/schibsted-grotesk/400.css";
 @import "@fontsource/schibsted-grotesk/500.css";
 @import "@fontsource/schibsted-grotesk/600.css";
-@import "@fontsource/courier-prime/400.css";
+
+/* Jost (titulares y cifras grandes) y Spline Sans Mono (voz de máquina): binarios del design system «Nokko — Edición». */
+@font-face { font-family: "Jost"; src: url("./fonts/Jost-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Jost"; src: url("./fonts/Jost-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Jost"; src: url("./fonts/Jost-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Spline Sans Mono"; src: url("./fonts/SplineSansMono-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Nokko — Edición. Neo-editorial: papel hueso, didona, un solo rojo,
- * filetes en vez de cajas, sin sombras y sin radios.
+ * Nokko — Edición. Edición crítica: papel hueso, titulares en una geométrica ligera
+ * (Jost 500) y muy respirada, un solo rojo, filetes en vez de cajas, sin sombras,
+ * sin radios y sin serifas.
  */
 
 @theme {
@@ -26,17 +29,17 @@
   --shadow-lg: 0 0 #0000;
   --shadow-xl: 0 0 #0000;
   --shadow-2xl: 0 0 #0000;
-  /* text-2xl = estilo «head» (26px): el mínimo de la didona. */
-  --text-2xl: 1.625rem;
-  --text-2xl--line-height: 1.875rem;
+  /* text-2xl = estilo «head» (25px): el titular más pequeño. */
+  --text-2xl: 1.5625rem;
+  --text-2xl--line-height: 1.9375rem;
 }
 
 @theme inline {
   --font-sans: "Schibsted Grotesk", Helvetica, Arial, sans-serif;
-  --font-display: "Bodoni Moda", Didot, "Times New Roman", serif;
+  --font-display: Jost, Futura, "Century Gothic", Avenir, sans-serif;
   /* Los datos no van en mono: grotesca con cifras tabulares. */
   --font-mono: "Schibsted Grotesk", Helvetica, Arial, sans-serif;
-  --font-tipo: "Courier Prime", "Courier New", monospace;
+  --font-tipo: "Spline Sans Mono", ui-monospace, Menlo, monospace;
 
   --radius-xs: 0px;
   --radius-sm: 0px;
@@ -221,14 +224,15 @@
     font-size: 15px;
     line-height: 23px;
   }
-  h1, h2, h3 {
+  /* Titulares en Jost 500, nunca más: el contraste lo hacen el cuerpo y el aire. Interletra neutra. */
+  h1, h2, h3,
+  .font-display {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.015em;
+    font-weight: 500;
+    letter-spacing: -0.008em;
   }
   h3 {
-    font-weight: 500;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
   em, i {
     font-style: italic;
@@ -279,45 +283,45 @@
 }
 @utility lede-xl {
   font-family: var(--font-display);
-  font-size: 88px;
-  line-height: 80px;
-  font-weight: 400;
-  letter-spacing: -0.025em;
+  font-size: 84px;
+  line-height: 96px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
 }
 @utility lede-l {
   font-family: var(--font-display);
-  font-size: 56px;
-  line-height: 54px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-size: 54px;
+  line-height: 63px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 @utility lede-m {
   font-family: var(--font-display);
   font-size: 38px;
-  line-height: 40px;
-  font-weight: 400;
-  letter-spacing: -0.015em;
+  line-height: 46px;
+  font-weight: 500;
+  letter-spacing: -0.008em;
 }
 @utility head {
   font-family: var(--font-display);
-  font-size: 26px;
-  line-height: 30px;
+  font-size: 25px;
+  line-height: 31px;
   font-weight: 500;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 @utility figure {
   font-family: var(--font-display);
-  font-size: 64px;
-  line-height: 58px;
-  font-weight: 400;
-  letter-spacing: -0.02em;
+  font-size: 62px;
+  line-height: 62px;
+  font-weight: 500;
+  letter-spacing: -0.012em;
 }
 @utility figure-s {
   font-family: var(--font-display);
   font-size: 34px;
-  line-height: 34px;
-  font-weight: 400;
-  letter-spacing: -0.015em;
+  line-height: 38px;
+  font-weight: 500;
+  letter-spacing: -0.008em;
 }
 @utility data {
   font-family: var(--font-sans);
@@ -339,7 +343,8 @@
   background: var(--color-paper-sunk);
 }
 @utility measure-lede {
-  max-width: 18ch;
+  max-width: 20ch;
+  text-wrap: balance;
 }
 @utility measure-body {
   max-width: 64ch;

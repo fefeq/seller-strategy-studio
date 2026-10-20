@@ -400,7 +400,7 @@ function Pillars() {
       <div className="grid gap-4 md:grid-cols-2">
         {list.map((p, i) => (
           <div key={p.id} className="space-y-2 rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2"><span className="font-mono text-xs text-signal">0{i + 1}</span><Input className="font-display text-xl" defaultValue={p.title} onBlur={(e) => upd(p.id, { title: e.target.value })} /></div>
+            <div className="flex items-center gap-2"><span className="font-mono text-xs text-signal">0{i + 1}</span><Input className="font-display md:text-[22px]" defaultValue={p.title} onBlur={(e) => upd(p.id, { title: e.target.value })} /></div>
             <Field label="Dolor que resuelve"><Textarea rows={2} defaultValue={p.pain ?? ""} onBlur={(e) => upd(p.id, { pain: e.target.value })} /></Field>
             <Field label="Mensaje"><Textarea rows={2} defaultValue={p.message ?? ""} onBlur={(e) => upd(p.id, { message: e.target.value })} /></Field>
             <Field label="Pruebas"><Textarea rows={2} defaultValue={p.proof ?? ""} onBlur={(e) => upd(p.id, { proof: e.target.value })} /></Field>

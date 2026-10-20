@@ -109,7 +109,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
       <div className="grid gap-4 md:grid-cols-2">
         {PLAN_FIELDS.map(([k, label, hint]) => (
           <div key={k} className="space-y-1.5 rounded-lg border bg-card p-4">
-            <Label className="font-display text-xl font-normal">{label}</Label>
+            <Label className="font-display text-[22px] font-medium normal-case leading-7 tracking-normal text-ink">{label}</Label>
             <Textarea rows={4} placeholder={hint} value={form[k] ?? ""} onChange={(e) => setForm({ ...form, [k]: e.target.value })} />
           </div>
         ))}
