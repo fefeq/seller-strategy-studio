@@ -47,7 +47,7 @@ async function handle(db: Admin, update: any, t: Tg) {
     const { data: link } = await db.from("channel_links").select("user_id").eq("channel", "telegram").eq("chat_id", chatId).maybeSingle();
     if (!link) return;
     const ctx = await channelCtx(db as any, link.user_id);
-    if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en NOKKO.");
+    if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en Nokko.");
     const [kind, id, decision] = String(cq.data ?? "").split(":");
     const { decidePending, decideSuggestionCore } = await import("@/lib/agent.functions");
     try {
@@ -73,17 +73,17 @@ async function handle(db: Admin, update: any, t: Tg) {
   if (m) {
     const code = m[1].toUpperCase();
     const { data: link } = await db.from("channel_links").select("id,code_expires_at").eq("link_code", code).maybeSingle();
-    if (!link || !link.code_expires_at || new Date(link.code_expires_at) < new Date()) return t.sendText(chatId, "Ese código no es válido o ha caducado. Genera uno nuevo en NOKKO → Equipo.");
+    if (!link || !link.code_expires_at || new Date(link.code_expires_at) < new Date()) return t.sendText(chatId, "Ese código no es válido o ha caducado. Genera uno nuevo en Nokko → Equipo.");
     await db.from("channel_links").update({ chat_id: null }).eq("channel", "telegram").eq("chat_id", chatId);
     await db.from("channel_links").update({ chat_id: chatId, linked_at: new Date().toISOString(), link_code: null, code_expires_at: null }).eq("id", link.id);
-    return t.sendText(chatId, "¡Listo! Tu cuenta de NOKKO está vinculada. Pregúntame lo que quieras (p. ej. «¿qué debería hacer hoy?») y cada mañana te enviaré tus 3 prioridades.");
+    return t.sendText(chatId, "¡Listo! Tu cuenta de Nokko está vinculada. Pregúntame lo que quieras (p. ej. «¿qué debería hacer hoy?») y cada mañana te enviaré tus 3 prioridades.");
   }
 
   const { data: link } = await db.from("channel_links").select("user_id").eq("channel", "telegram").eq("chat_id", chatId).maybeSingle();
-  if (!link) return t.sendText(chatId, "Hola, soy NOKKO. Para usarme, abre la app → Equipo → «Conectar Telegram» y envíame el código: /vincular CÓDIGO");
+  if (!link) return t.sendText(chatId, "Hola, soy Nokko. Para usarme, abre la app → Equipo → «Conectar Telegram» y envíame el código: /vincular CÓDIGO");
   if (text === "/start") return t.sendText(chatId, "Ya estás vinculado. ¿En qué te ayudo?");
   const ctx = await channelCtx(db as any, link.user_id);
-  if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en NOKKO. Elige una en la app.");
+  if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en Nokko. Elige una en la app.");
 
   if (text === "/nueva") {
     await db.from("agent_conversations").insert({ org_id: ctx.orgId, user_id: ctx.userId, channel: "telegram", title: "Telegram" });

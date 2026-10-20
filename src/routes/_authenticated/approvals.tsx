@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/approvals")({
-  head: () => ({ meta: [{ title: "Aprobaciones — NOKKO" }, { name: "description", content: "Cambios importantes con evidencia: aplicar u omitir." }, { property: "og:title", content: "Aprobaciones — NOKKO" }, { property: "og:description", content: "Cambios importantes con evidencia: aplicar u omitir." }] }),
+  head: () => ({ meta: [{ title: "Aprobaciones — Nokko" }, { name: "description", content: "Cambios importantes con evidencia: aplicar u omitir." }, { property: "og:title", content: "Aprobaciones — Nokko" }, { property: "og:description", content: "Cambios importantes con evidencia: aplicar u omitir." }] }),
   component: Approvals,
 });
 

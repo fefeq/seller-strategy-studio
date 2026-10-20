@@ -19,7 +19,7 @@ import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_authenticated/setup")({
-  head: () => ({ meta: [{ title: "Configuración guiada — NOKKO" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — NOKKO" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SetupPage,
 });
 
@@ -229,7 +229,7 @@ function Wizard({ proposal }: { proposal: SetupProposal | null }) {
       <div className="flex flex-wrap gap-1.5">
         {ordered.map((i, idx) => {
           const d = setup.status.items.find((x) => x.id === i.id)?.done;
-          return <button key={i.id} onClick={() => setStep(idx)} className={`rounded-full border px-3 py-1 text-xs ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
+          return <button key={i.id} onClick={() => setStep(idx)} className={`rounded-none border px-3 py-1 text-xs ${idx === step ? "bg-primary text-primary-foreground" : d ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>;
         })}
       </div>
       <div className="mt-5">

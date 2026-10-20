@@ -24,9 +24,9 @@ import { deepReview, draftArtifact } from "@/lib/bmad.functions";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   head: () => ({ meta: [
-    { title: "Ciclo GTM — NOKKO" },
+    { title: "Ciclo GTM — Nokko" },
     { name: "description", content: "Fases del go-to-market con documentos aprobados que alimentan cada paso: Brief, Plan, Arquitectura, ejecución y retro." },
-    { property: "og:title", content: "Ciclo GTM — NOKKO" },
+    { property: "og:title", content: "Ciclo GTM — Nokko" },
     { property: "og:description", content: "Fases del go-to-market con documentos versionados y aprobados." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
@@ -180,7 +180,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader>
           <SheetTitle className="font-display text-3xl">{art.title} · v{art.version}</SheetTitle>
-          <p className="text-xs text-muted-foreground">{STATUS[art.status]} · redactado con {getPersona(art.persona)?.name ?? "NOKKO"} · {new Date(art.updated_at).toLocaleDateString("es-ES")}</p>
+          <p className="text-xs text-muted-foreground">{STATUS[art.status]} · redactado con {getPersona(art.persona)?.name ?? "Nokko"} · {new Date(art.updated_at).toLocaleDateString("es-ES")}</p>
         </SheetHeader>
         <div className="mt-4 flex flex-wrap gap-2">
           {art.status === "draft" && (edit === null

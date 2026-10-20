@@ -12,7 +12,7 @@ import { Page, HealthDot } from "@/components/page";
 import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
 
 export const Route = createFileRoute("/_authenticated/home")({
-  head: () => ({ meta: [{ title: "Inicio — NOKKO" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — NOKKO" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
+  head: () => ({ meta: [{ title: "Inicio — Nokko" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — Nokko" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
   component: HomePage,
 });
 

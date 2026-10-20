@@ -69,7 +69,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
           </p>
         </div>
         {late > 0 && (
-          <span className="flex items-center gap-1 rounded-full bg-signal/10 px-3 py-1 text-xs text-signal"><AlertTriangle className="h-3 w-3" /> {late} con retraso</span>
+          <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-xs text-signal"><AlertTriangle className="h-3 w-3" /> {late} con retraso</span>
         )}
       </div>
 

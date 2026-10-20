@@ -41,7 +41,7 @@ export function TelegramLink() {
       <h3 className="flex items-center gap-2 text-2xl"><Send className="size-5" /> Telegram</h3>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Habla con el agente desde Telegram, recibe cada mañana tus 3 prioridades y aprueba las sugerencias urgentes con un botón. Usa tus permisos y tu empresa activa.</p>
       {!bot?.connected ? (
-        <p className="mt-3 text-sm">El bot de Telegram todavía no está conectado a NOKKO.</p>
+        <p className="mt-3 text-sm">El bot de Telegram todavía no está conectado a Nokko.</p>
       ) : linked ? (
         <div className="mt-4 space-y-3 text-sm">
           <p>Vinculado{bot.username ? <> con <strong>@{bot.username}</strong></> : null} desde el {new Date(link!.linked_at!).toLocaleDateString("es-ES")}.</p>

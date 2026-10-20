@@ -119,7 +119,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{ open }}>
       {children}
       {orgId && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90">
+        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90">
           <Brain className="size-4" /> Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
         </button>
       )}
@@ -131,9 +131,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
               <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
             </div>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
-              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>NOKKO</button>
+              <button onClick={() => pickPersona(null)} className={`shrink-0 rounded-none border px-3 py-1 text-xs ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>Nokko</button>
               {personasFor(me?.roles ?? []).map((p) => (
-                <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`shrink-0 rounded-full border px-3 py-1 text-xs ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
+                <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => pickPersona(p.id)} className={`shrink-0 rounded-none border px-3 py-1 text-xs ${personaId === p.id ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name}</button>
               ))}
             </div>
             {persona && (
@@ -151,7 +151,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                 <p className="text-sm text-muted-foreground">{persona ? `${persona.focus} Elige un código del menú o pregúntame directamente.` : null}</p>
                 <p className="text-sm text-muted-foreground">Pregúntame por tu pipeline, métricas o cuentas, o pídeme que haga algo. Antes de cambiar datos te pediré confirmación.</p>
                 <div className="flex flex-wrap gap-2">
-                  {STARTERS.map((s) => <button key={s} onClick={() => s.endsWith("…") ? setText(s.replace("…", " ")) : submit(s, mode, convId)} className="rounded-full border px-3 py-1.5 text-xs hover:bg-accent">{s}</button>)}
+                  {STARTERS.map((s) => <button key={s} onClick={() => s.endsWith("…") ? setText(s.replace("…", " ")) : submit(s, mode, convId)} className="rounded-none border px-3 py-1.5 text-xs hover:bg-accent">{s}</button>)}
                 </div>
               </div>
             )}

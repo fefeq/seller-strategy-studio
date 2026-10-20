@@ -59,7 +59,7 @@ export async function draftArtifactCore(ctx: Ctx, data: { kind: ArtifactKind; no
     const spec = ARTIFACTS[data.kind];
     const extra = data.dealId ? await subjectData(ctx.db, ctx.orgId, "deal", data.dealId) : await cycleData(ctx.db, ctx.orgId, data.kind);
     const content = (await ask(
-      `Eres ${persona.name} (${persona.title}) en NOKKO. ${persona.tone}\nRedacta el documento "${spec.label}" en markdown con exactamente estas secciones (## título): ${spec.sections.join(" · ")}. ${STYLE} Moneda: ${ctx.currency}. Máximo ~900 palabras.${missing.length ? ` Aviso: faltan documentos aprobados previos (${missing.map((k) => ARTIFACTS[k].label).join(", ")}); indícalo al inicio y trabaja con lo disponible.` : ""}`,
+      `Eres ${persona.name} (${persona.title}) en Nokko. ${persona.tone}\nRedacta el documento "${spec.label}" en markdown con exactamente estas secciones (## título): ${spec.sections.join(" · ")}. ${STYLE} Moneda: ${ctx.currency}. Máximo ~900 palabras.${missing.length ? ` Aviso: faltan documentos aprobados previos (${missing.map((k) => ARTIFACTS[k].label).join(", ")}); indícalo al inicio y trabaja con lo disponible.` : ""}`,
       JSON.stringify({ empresa: (ctx.orgName ?? "la empresa"), contexto: cc, datos: extra, notas_del_usuario: data.notes || null }),
       { effort: "medium" },
     )).trim();

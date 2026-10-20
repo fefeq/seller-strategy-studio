@@ -14,7 +14,7 @@ import { canUseAdvisor, HORIZONS, LEVELS, sortRecommendations, WINDOWS, type Adv
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
 
-const TITLE = "Asesor GTM — NOKKO";
+const TITLE = "Asesor GTM — Nokko";
 const DESC = "Describe un objetivo o problema comercial y recibe recomendaciones de go-to-market priorizadas a partir de tu pipeline, métricas y segmentos.";
 
 export const Route = createFileRoute("/_authenticated/advisor")({
@@ -75,7 +75,7 @@ function Advisor() {
               <Textarea rows={6} maxLength={4000} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Ej.: Necesitamos 400K de nuevo negocio este trimestre y la cobertura está en 2x." />
             </Field>
             <div className="flex flex-wrap gap-1.5">
-              {EXAMPLES.map((ex) => <button key={ex} onClick={() => setGoal(ex)} className="rounded-full border px-2.5 py-1 text-left text-xs hover:border-signal">{ex}</button>)}
+              {EXAMPLES.map((ex) => <button key={ex} onClick={() => setGoal(ex)} className="rounded-none border px-2.5 py-1 text-left text-xs hover:border-signal">{ex}</button>)}
             </div>
             <Field label="Horizonte"><Pick value={horizon} options={HORIZONS} onChange={setHorizon} /></Field>
             <Button className="w-full" onClick={analyze} disabled={busy || goal.trim().length < 10}>

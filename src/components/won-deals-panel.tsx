@@ -69,12 +69,12 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
 
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
         {summary.bySegment.map((s) => (
-          <span key={s.segment.id} className="rounded-full border px-3 py-1">
+          <span key={s.segment.id} className="rounded-none border px-3 py-1">
             {s.segment.name}: <span className="font-mono">{s.deals} · {money(s.amount)}</span>
           </span>
         ))}
-        {summary.unassigned > 0 && <span className="rounded-full border border-signal px-3 py-1 text-signal">Sin segmento: {summary.unassigned}</span>}
-        {summary.withIssues > 0 && <span className="flex items-center gap-1 rounded-full bg-signal/10 px-3 py-1 text-signal"><AlertTriangle className="h-3 w-3" /> {summary.withIssues} por revisar</span>}
+        {summary.unassigned > 0 && <span className="rounded-none border border-signal px-3 py-1 text-signal">Sin segmento: {summary.unassigned}</span>}
+        {summary.withIssues > 0 && <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-signal"><AlertTriangle className="h-3 w-3" /> {summary.withIssues} por revisar</span>}
       </div>
 
       {adding && <AddWon quarter={quarter} segments={segments} openDeals={openDeals} onDone={() => { setAdding(false); refresh(); }} />}

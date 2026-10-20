@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { engagementScore, registrationConflict, TOUCH_WEIGHTS } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_authenticated/abm")({
-  head: () => ({ meta: [{ title: "ABM y partners — NOKKO" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — NOKKO" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
+  head: () => ({ meta: [{ title: "ABM y partners — Nokko" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — Nokko" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
   component: Abm,
 });
 
@@ -101,7 +101,7 @@ function Targets() {
         <div>
           <p className="eyebrow mb-2">Otras cuentas</p>
           <div className="flex flex-wrap gap-2">
-            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="rounded-full border px-3 py-1 text-xs hover:border-signal">+ {a.name}</button>)}
+            {others.map((a) => <button key={a.id} onClick={() => toggle(a.id, true)} className="rounded-none border px-3 py-1 text-xs hover:border-signal">+ {a.name}</button>)}
           </div>
         </div>
       )}

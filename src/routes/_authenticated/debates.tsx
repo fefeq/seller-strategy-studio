@@ -15,9 +15,9 @@ import { runDebate } from "@/lib/bmad.functions";
 
 export const Route = createFileRoute("/_authenticated/debates")({
   head: () => ({ meta: [
-    { title: "Debates — NOKKO" },
+    { title: "Debates — Nokko" },
     { name: "description", content: "Mesas de debate entre agentes: C-Levels, Sales, Marketing, Partners o todos a la vez, con acuerdos y acciones." },
-    { property: "og:title", content: "Debates — NOKKO" },
+    { property: "og:title", content: "Debates — Nokko" },
     { property: "og:description", content: "Mesas de debate multiagente por niveles con acuerdos y acciones." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
@@ -112,7 +112,7 @@ function DebatesPage() {
                 <div className="flex flex-wrap gap-1.5">
                   {PERSONAS.map((p) => {
                     const on = participants.includes(p.id);
-                    return <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => setParticipants((x) => on ? x.filter((i) => i !== p.id) : [...x, p.id])} className={`rounded-full border px-3 py-1 text-xs ${on ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name} <span className="opacity-70">· {p.title}</span></button>;
+                    return <button key={p.id} title={`${p.title} · inspirado en ${p.inspiredBy}`} onClick={() => setParticipants((x) => on ? x.filter((i) => i !== p.id) : [...x, p.id])} className={`rounded-none border px-3 py-1 text-xs ${on ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>{p.name} <span className="opacity-70">· {p.title}</span></button>;
                   })}
                 </div>
                 {!withRebuttal(participants) && <p className="mt-1.5 text-xs text-muted-foreground">Con más de 5 participantes se hace una sola ronda para contener el coste.</p>}

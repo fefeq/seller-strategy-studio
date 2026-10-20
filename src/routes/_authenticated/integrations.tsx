@@ -5,7 +5,7 @@ import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
-  head: () => ({ meta: [{ title: "Integraciones — NOKKO" }, { name: "description", content: "Mapa de herramientas del stack comercial." }, { property: "og:title", content: "Integraciones — NOKKO" }, { property: "og:description", content: "Mapa de herramientas del stack comercial." }] }),
+  head: () => ({ meta: [{ title: "Integraciones — Nokko" }, { name: "description", content: "Mapa de herramientas del stack comercial." }, { property: "og:title", content: "Integraciones — Nokko" }, { property: "og:description", content: "Mapa de herramientas del stack comercial." }] }),
   component: Integrations,
 });
 
