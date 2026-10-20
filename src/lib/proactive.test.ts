@@ -34,6 +34,13 @@ describe("setup completeness", () => {
 });
 
 describe("detectors", () => {
+  it("a delayed lead proposes a follow-up task; one on time does not", () => {
+    const lead = (o: object) => ({ id: "l1", company: "Acme", stage: "contacted", stage_entered_at: new Date(NOW.getTime() - 4 * 864e5).toISOString(), next_step_at: null, owner_id: "u1", account_id: null, ...o });
+    const s = detect(snap({ leads: [lead({})] })).find((x) => x.detector === "late_lead");
+    expect(s?.action?.tool).toBe("create_task");
+    expect(keys(snap({ leads: [lead({ stage_entered_at: new Date(NOW.getTime() - 2 * 864e5).toISOString() })] }))).not.toContain("late_lead");
+    expect(keys(snap({ leads: [lead({ stage_entered_at: NOW.toISOString(), next_step_at: "2026-10-19" })] }))).toContain("late_lead");
+  });
   it("stale deal after 14 days proposes a task, not before", () => {
     expect(keys(snap({ deals: [deal({ updated_at: new Date(NOW.getTime() - 13 * 864e5).toISOString() })] }))).not.toContain("stale_deal");
     const s = detect(snap({ deals: [deal({ updated_at: new Date(NOW.getTime() - 15 * 864e5).toISOString() })] })).find((x) => x.detector === "stale_deal");
