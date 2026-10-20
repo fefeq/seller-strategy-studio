@@ -67,7 +67,7 @@ export function BudgetQuarters() {
   const cell = (col: (typeof cols)[number], field: BudgetField, value: number | null, label: string) =>
     col.editable
       ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-7 w-[4.75rem] px-1 text-right text-[11px] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
-      : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? value : money(value)}</span>;
+      : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? String(value) : money(value)}</span>;
   const val = (v: string, strong = false) => <span className={`font-mono text-xs ${strong ? "font-medium" : ""}`}>{v}</span>;
   const pb = (n: number | null, ok: boolean | null) => (n == null ? val("—") : <span className={`font-mono text-xs font-medium ${ok === false ? "text-signal" : ok ? "text-success" : ""}`}>{fmt1(n)} m</span>);
 
