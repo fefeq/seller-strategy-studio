@@ -16,7 +16,7 @@ import { DISQUALIFIED, LEAD_STAGES, delayText, funnelBy, leadCohort, leadDelay, 
 import { quarterOf, quarterRange } from "@/lib/metrics";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
-  validateSearch: (s: Record<string, unknown>) => ({
+  validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true } => ({
     lead: typeof s.lead === "string" ? s.lead : undefined,
     late: s.late === true || s.late === "true" ? true : undefined,
   }),
