@@ -46,3 +46,27 @@ export function previousQuarter(q: string) {
   const [y, n] = q.split("-Q").map(Number);
   return n === 1 ? `${y - 1}-Q4` : `${y}-Q${n - 1}`;
 }
+
+/** The given quarter and the previous n-1, oldest first (for left-to-right tables). */
+export function quartersUpTo(q: string, n = 4) {
+  const out = [q];
+  while (out.length < n) out.unshift(previousQuarter(out[0]));
+  return out;
+}
+
+/** Channel × quarter totals (all segments), with the shared (common) part of each quarter kept apart. */
+export function channelQuarterTable(costs: (CostLike & { period: string })[], quarters: string[]) {
+  const inQ = costs.filter((c) => quarters.includes(c.period));
+  const sum = (xs: typeof inQ) => xs.reduce((s, c) => s + Number(c.amount || 0), 0);
+  const channels = [...new Set(inQ.map((c) => c.channel))];
+  const rows = channels
+    .map((channel) => {
+      const byQuarter = Object.fromEntries(quarters.map((q) => [q, sum(inQ.filter((c) => c.channel === channel && c.period === q))]));
+      return { channel, byQuarter, total: Object.values(byQuarter).reduce((s, v) => s + v, 0) };
+    })
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total);
+  const total = Object.fromEntries(quarters.map((q) => [q, sum(inQ.filter((c) => c.period === q))]));
+  const shared = Object.fromEntries(quarters.map((q) => [q, sum(inQ.filter((c) => c.period === q && !c.segment_id))]));
+  return { rows, total, shared };
+}
