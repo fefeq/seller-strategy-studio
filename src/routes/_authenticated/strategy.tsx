@@ -14,6 +14,7 @@ import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
 import type { SegLike } from "@/lib/segment-coverage";
+import { PaybackQuarters } from "@/components/payback-quarters";
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   head: () => ({ meta: [{ title: "Estrategia GTM — GTM Brain" }, { name: "description", content: "Motions por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — GTM Brain" }, { property: "og:description", content: "Motions por segmento, ICP y posicionamiento." }] }),
@@ -28,11 +29,13 @@ function Strategy() {
       <Tabs defaultValue="motions">
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Motions por segmento</TabsTrigger>
+          <TabsTrigger value="payback">Payback real</TabsTrigger>
           <TabsTrigger value="icp">ICP</TabsTrigger>
           <TabsTrigger value="positioning">Posicionamiento</TabsTrigger>
           <TabsTrigger value="pillars">Mensajes</TabsTrigger>
         </TabsList>
         <TabsContent value="motions"><Motions /></TabsContent>
+        <TabsContent value="payback"><PaybackQuarters /></TabsContent>
         <TabsContent value="icp"><Icp /></TabsContent>
         <TabsContent value="positioning"><Positioning /></TabsContent>
         <TabsContent value="pillars"><Pillars /></TabsContent>
