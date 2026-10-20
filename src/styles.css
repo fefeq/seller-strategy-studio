@@ -119,16 +119,17 @@
 :root {
   --radius: 0px;
 
-  --paper: #f4f1ea;
-  --paper-raised: #fbf9f4;
-  --paper-sunk: #ebe7dd;
-  --paper-edge: #eae5da;
-  --paper-alarm: #fbeae6;
+  /* Tema claro: blanco roto (un punto cálido, nunca blanco puro). */
+  --paper: #fafaf7;
+  --paper-raised: #fdfdfb;
+  --paper-sunk: #f0efea;
+  --paper-edge: #f3f2ee;
+  --paper-alarm: #fdeeea;
   --ink: #121212;
   --ink-mid: #55504a;
   --ink-faint: #837c72;
-  --ink-reverse: #fbf9f4;
-  --hairline: #cdc7ba;
+  --ink-reverse: #fdfdfb;
+  --hairline: #d8d6cf;
   --hairline-firm: #6e685e;
   --red: #c4200a;
   --red-display: #ff3b1f;
@@ -184,6 +185,7 @@
 
 /* Tema tinta */
 .dark {
+  color-scheme: dark;
   --paper: #141210;
   --paper-raised: #1c1a17;
   --paper-sunk: #0e0d0b;
@@ -216,6 +218,10 @@
   }
   html {
     -webkit-font-smoothing: antialiased;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   body {
     background-color: var(--color-background);

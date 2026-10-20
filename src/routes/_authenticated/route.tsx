@@ -13,6 +13,7 @@ import { useSetup } from "@/hooks/use-setup";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
 import { Isotipo, Lockup } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -111,6 +112,7 @@ function Shell() {
         <button onClick={signOut} className="-my-2 mt-1 py-2 text-xs text-ink underline decoration-hairline-firm underline-offset-4 hover:decoration-ink">
           Cerrar sesión
         </button>
+        <ThemeToggle className="mt-3 border-t border-hairline pt-3 md:pt-2" />
       </div>
     </>
   );
@@ -160,6 +162,7 @@ function Shell() {
           >
             <PanelLeftOpen className="size-4" />
           </button>
+          <ThemeToggle compact className="mt-auto" />
         </aside>
       ) : (
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-hairline bg-sidebar text-sidebar-foreground md:flex">

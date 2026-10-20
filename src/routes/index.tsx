@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { ROLES } from "@/lib/roles";
 import { Lockup } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -32,7 +33,10 @@ function Landing() {
       <header className="border-b-2 border-hairline-firm bg-paper-edge">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
         <Lockup />
-        <Button variant="outline" asChild><Link to="/auth">Entrar</Link></Button>
+        <div className="flex items-center gap-2">
+          <ThemeToggle compact />
+          <Button variant="outline" asChild><Link to="/auth">Entrar</Link></Button>
+        </div>
         </div>
       </header>
       <section className="mx-auto max-w-6xl px-6 pb-24 pt-20 md:pt-28">
