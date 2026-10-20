@@ -81,7 +81,7 @@
       {
         "name": "get_segment_coverage",
         "title": "Segment coverage",
-        "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto anual y payback por segmento frente al objetivo del trimestre, más el presupuesto del año (ingresos, coste de servir y captación, previsto frente a real).",
+        "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
