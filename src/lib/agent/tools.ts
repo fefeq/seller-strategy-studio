@@ -10,6 +10,7 @@ import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
+import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
 import { ask } from "@/lib/ai-gateway";
 
@@ -114,24 +115,33 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "list_leads", kind: "read",
-    description: "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
+    description: "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado), ordenados por puntuación (encaje con el ICP 70 % + actividad 30 %): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
     input: z.object({ stage: z.enum(LEAD_STAGE_IDS).optional(), late_only: z.boolean().optional() }),
     run: async (c, a) => {
-      const [l, d, s] = await Promise.all([
-        c.db.from("leads").select("id,company,contact_name,email,stage,source,stage_entered_at,next_step,next_step_at,created_at,contacted_at,mql_at,sql_at,opportunity_at,deal_id,owner_id").eq("org_id", c.orgId).order("created_at", { ascending: false }).limit(1000),
+      const [l, d, s, icp, acc, seg] = await Promise.all([
+        c.db.from("leads").select("id,company,contact_name,email,stage,source,stage_entered_at,updated_at,next_step,next_step_at,created_at,contacted_at,mql_at,sql_at,opportunity_at,deal_id,owner_id,segment_id,account_id").eq("org_id", c.orgId).order("created_at", { ascending: false }).limit(1000),
         c.db.from("deals").select("id,stage,closed_at").eq("org_id", c.orgId),
         c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
+        c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp").eq("org_id", c.orgId),
+        c.db.from("accounts").select("id,segment_id,industry,size,tier,name").eq("org_id", c.orgId),
+        c.db.from("segments").select("id,name").eq("org_id", c.orgId),
       ]);
       const sla = readSla(s.data?.sla);
       const now = new Date();
       const { start, end } = quarterRange(quarterOf(now));
-      const rows = (l.data ?? []).map((x) => ({ ...x, delay: leadDelay(x, sla, now) }));
-      const list = rows.filter((x) => (!a.stage || x.stage === a.stage) && (!a.late_only || x.delay.late)).slice(0, 40);
+      const accounts = new Map((acc.data ?? []).map((x) => [x.id, x]));
+      const segNames = new Map((seg.data ?? []).map((x) => [x.id, x.name]));
+      const rows = (l.data ?? []).map((x) => {
+        const delay = leadDelay(x, sla, now);
+        return { ...x, delay, score: scoreLead({ ...x, late: delay.late }, icp.data ?? [], accounts, now, segNames) };
+      });
+      // Highest score first so the agent prioritises the same way the screen does.
+      const list = rows.filter((x) => (!a.stage || x.stage === a.stage) && (!a.late_only || x.delay.late)).sort(byScore((x) => x.score)).slice(0, 40);
       const f = leadFunnel(leadCohort(l.data ?? [], start, end), d.data ?? []);
       return {
         plazos_dias: sla,
         embudo_trimestre: f.steps.map((st) => ({ paso: st.label, leads: st.count, conversion_paso_anterior: st.fromPrev })),
-        leads: list.map((x) => ({ id: x.id, empresa: x.company, contacto: x.contact_name ?? x.email, etapa: leadStageLabel(x.stage), origen: x.source, proximo_paso: x.next_step, seguimiento: x.next_step_at, retraso: x.delay.late ? delayText(x.delay) : null, deal_id: x.deal_id })),
+        leads: list.map((x) => ({ id: x.id, empresa: x.company, contacto: x.contact_name ?? x.email, etapa: leadStageLabel(x.stage), origen: x.source, puntuacion: x.score.total, encaje_icp: x.score.total == null ? "sin datos" : fitText(x.score.fit), actividad: x.score.activity, proximo_paso: x.next_step, seguimiento: x.next_step_at, retraso: x.delay.late ? delayText(x.delay) : null, deal_id: x.deal_id })),
       };
     },
   }),
