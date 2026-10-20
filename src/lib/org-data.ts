@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { quarterOf } from "@/lib/metrics";
 import type { SetupData } from "@/lib/setup-schema";
 import type { Snapshot } from "@/lib/proactive/types";
+import { readSla } from "@/lib/lead-funnel";
 
 export type Db = SupabaseClient<Database>;
 
@@ -33,7 +34,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs] = await Promise.all([
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,owner_id,meddpicc,account_id").eq("org_id", orgId),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by").eq("org_id", orgId).gte("scheduled_at", now.toISOString()),
@@ -42,6 +43,8 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
     db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
     db.from("segments").select("id,name").eq("org_id", orgId),
+    db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
+    db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
   ]);
   return {
     now, orgId, setup,
@@ -52,6 +55,8 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     registrations: regs.data ?? [],
     trials: (trials.data ?? []) as any,
     segments: segs.data ?? [],
+    leads: leads.data ?? [],
+    leadSla: readSla(leadSettings.data?.sla),
   };
 }
 

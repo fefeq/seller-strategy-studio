@@ -11,6 +11,9 @@ export type Snapshot = {
   registrations: { id: string; account_name: string; status: string; expires_at: string | null }[];
   trials: { segment_id: string | null; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null }[];
   segments: { id: string; name: string }[];
+  /** Open leads (Nuevo…SQL) and the company's stage limits; optional so older snapshots still work. */
+  leads?: { id: string; company: string; stage: string; stage_entered_at: string; next_step_at: string | null; owner_id: string | null; account_id: string | null }[];
+  leadSla?: import("@/lib/lead-funnel").LeadSla;
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };

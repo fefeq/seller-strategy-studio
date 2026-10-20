@@ -9,6 +9,7 @@ import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
+import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { ask } from "@/lib/ai-gateway";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
@@ -25,6 +26,7 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 
 const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
 const STAGES = DEAL_STAGES.map((s) => s.id) as [string, ...string[]];
+const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
 const stageLabel = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
 const like = (q: string) => `%${q.replace(/[%_,()]/g, " ").trim()}%`;
@@ -96,6 +98,29 @@ export const TOOLS: AgentTool[] = [
       if (a.at_risk) q = q.eq("health", "red");
       if (a.overdue) q = q.lt("close_date", new Date().toISOString().slice(0, 10));
       return ok(await q.limit(40));
+    },
+  }),
+  def({
+    name: "list_leads", kind: "read",
+    description: "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
+    input: z.object({ stage: z.enum(LEAD_STAGE_IDS).optional(), late_only: z.boolean().optional() }),
+    run: async (c, a) => {
+      const [l, d, s] = await Promise.all([
+        c.db.from("leads").select("id,company,contact_name,email,stage,source,stage_entered_at,next_step,next_step_at,created_at,contacted_at,mql_at,sql_at,opportunity_at,deal_id,owner_id").eq("org_id", c.orgId).order("created_at", { ascending: false }).limit(1000),
+        c.db.from("deals").select("id,stage,closed_at").eq("org_id", c.orgId),
+        c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
+      ]);
+      const sla = readSla(s.data?.sla);
+      const now = new Date();
+      const { start, end } = quarterRange(quarterOf(now));
+      const rows = (l.data ?? []).map((x) => ({ ...x, delay: leadDelay(x, sla, now) }));
+      const list = rows.filter((x) => (!a.stage || x.stage === a.stage) && (!a.late_only || x.delay.late)).slice(0, 40);
+      const f = leadFunnel(leadCohort(l.data ?? [], start, end), d.data ?? []);
+      return {
+        plazos_dias: sla,
+        embudo_trimestre: f.steps.map((st) => ({ paso: st.label, leads: st.count, conversion_paso_anterior: st.fromPrev })),
+        leads: list.map((x) => ({ id: x.id, empresa: x.company, contacto: x.contact_name ?? x.email, etapa: leadStageLabel(x.stage), origen: x.source, proximo_paso: x.next_step, seguimiento: x.next_step_at, retraso: x.delay.late ? delayText(x.delay) : null, deal_id: x.deal_id })),
+      };
     },
   }),
   def({
@@ -171,6 +196,21 @@ export const TOOLS: AgentTool[] = [
         patch.meddpicc = { ...((cur as any)?.meddpicc ?? {}), [meddpicc_field]: meddpicc_value ?? "" };
       }
       return ok(await c.db.from("deals").update(patch).eq("org_id", c.orgId).eq("id", deal_id).select("id,name,stage,close_date").single());
+    },
+  }),
+  def({
+    name: "update_lead", kind: "write",
+    description: "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery.",
+    input: z.object({ lead_id: z.string().uuid(), stage: z.enum(LEAD_STAGE_IDS).optional(), next_step: z.string().optional(), next_step_at: z.string().optional().describe("AAAA-MM-DD"), disqualified_reason: z.string().optional() }),
+    summarize: (a) => {
+      const parts = [a.stage && `etapa → ${leadStageLabel(a.stage)}`, a.next_step && `próximo paso «${a.next_step}»`, a.next_step_at && `seguimiento ${a.next_step_at}`].filter(Boolean);
+      return `Actualizar el lead: ${parts.join(", ") || "sin cambios"}`;
+    },
+    run: async (c, a) => {
+      const { lead_id, ...patch } = a;
+      const cur = ok(await c.db.from("leads").select("stage").eq("org_id", c.orgId).eq("id", lead_id).single());
+      if ((cur as any)?.stage === "opportunity" && patch.stage && patch.stage !== "opportunity") return { error: "El lead ya es oportunidad; actualiza su deal." };
+      return ok(await c.db.from("leads").update(patch).eq("org_id", c.orgId).eq("id", lead_id).select("id,company,stage,deal_id,next_step_at").single());
     },
   }),
   def({

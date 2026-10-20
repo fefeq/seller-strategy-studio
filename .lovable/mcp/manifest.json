@@ -209,6 +209,38 @@
         "outputSchema": null
       },
       {
+        "name": "list_leads",
+        "title": "list leads",
+        "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stage": {
+              "type": "string",
+              "enum": [
+                "new",
+                "contacted",
+                "mql",
+                "sql",
+                "opportunity",
+                "disqualified"
+              ]
+            },
+            "late_only": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_tasks",
         "title": "list tasks",
         "description": "Tareas abiertas (por defecto las mías).",
@@ -434,6 +466,53 @@
           },
           "required": [
             "deal_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_lead",
+        "title": "update lead",
+        "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery. (Queda pendiente: el usuario la confirma en GTM Brain.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "lead_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "new",
+                "contacted",
+                "mql",
+                "sql",
+                "opportunity",
+                "disqualified"
+              ]
+            },
+            "next_step": {
+              "type": "string"
+            },
+            "next_step_at": {
+              "description": "AAAA-MM-DD",
+              "type": "string"
+            },
+            "disqualified_reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "lead_id"
           ],
           "additionalProperties": false
         },
