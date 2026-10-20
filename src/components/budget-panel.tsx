@@ -44,7 +44,7 @@ export function BudgetPanel({ year }: { year: number }) {
     if (field === "plan_new_customers" && v != null && !Number.isInteger(v)) return toast.error("Los clientes deben ser un número entero");
     if (v === current) return;
     const { error } = await supabase.from("segment_budgets").upsert(
-      { org_id: orgId!, segment_id: segmentId, year, [field]: v },
+      { org_id: orgId!, segment_id: segmentId, year, [field]: v } as { org_id: string; segment_id: string; year: number } & Partial<Record<Field, number | null>>,
       { onConflict: "org_id,segment_id,year" },
     );
     if (error) return toast.error(error.message);
