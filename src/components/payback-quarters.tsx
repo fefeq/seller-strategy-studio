@@ -11,13 +11,11 @@ import { withPeriodMargin } from "@/lib/segment-budget";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 
-/** Real payback per segment and quarter (real CAC only) against each segment's target payback. */
-export function PaybackQuarters() {
-  const { money } = useCurrency();
+/** Segments, won deals, costs and budget margins of the last `count` quarters → real payback per segment and quarter. */
+export function usePaybackQuarters(count: number) {
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const [count, setCount] = useState("4");
-  const quarters = quartersUpTo(quarterOf(new Date()), Number(count));
+  const quarters = quartersUpTo(quarterOf(new Date()), count);
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
   const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
   const { data: costs = [] } = useQuery({
@@ -35,6 +33,14 @@ export function PaybackQuarters() {
     () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withPeriodMargin(segs as SegLike[], budgets, q)),
     [segs, deals, costs, budgets, quarters.join()],
   );
+  return { quarters, rows, segs };
+}
+
+/** Real payback per segment and quarter (real CAC only) against each segment's target payback. */
+export function PaybackQuarters() {
+  const { money } = useCurrency();
+  const [count, setCount] = useState("4");
+  const { quarters, rows, segs } = usePaybackQuarters(Number(count));
   const anyReal = rows.some((r) => Object.values(r.byQuarter).some((c) => c.status === "real"));
 
   return (
@@ -83,7 +89,7 @@ export function PaybackQuarters() {
   );
 }
 
-function Cell({ c, target, money }: { c: QuarterPayback; target: number | null; money: (n: number) => string }) {
+export function Cell({ c, target, money }: { c: QuarterPayback; target: number | null; money: (n: number) => string }) {
   if (c.status !== "real" || c.payback == null) {
     return (
       <td className="px-3 py-3 text-right">
