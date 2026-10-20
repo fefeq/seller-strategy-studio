@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { Lockup } from "@/components/brand";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,14 +75,17 @@ function AuthPage() {
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground md:flex">
-        <Link to="/" className="font-display text-2xl">Nokko</Link>
-        <p className="font-display text-5xl leading-tight">“Primero el sistema, luego el equipo, luego los agentes.”</p>
-        <p className="eyebrow text-sidebar-foreground/60">Una sola fuente de verdad</p>
+      <div className="hidden flex-col justify-between border-r-2 border-hairline-firm bg-paper-edge p-12 md:flex">
+        <Link to="/" aria-label="Nokko"><Lockup /></Link>
+        <div>
+          <div className="rule-major mb-6 w-24" />
+          <p className="lede-l measure-lede">Primero el sistema, luego el equipo, luego los agentes.</p>
+        </div>
+        <p className="kicker">Una sola fuente de verdad</p>
       </div>
       <div className="flex items-center justify-center p-6">
         <form onSubmit={submit} className="w-full max-w-sm space-y-4">
-          <h1 className="text-4xl">{mode === "in" ? "Entrar" : "Crear cuenta"}</h1>
+          <h1 className="lede-m">{mode === "in" ? "Entrar" : "Crear cuenta"}</h1>
           {mode === "up" && (
             <div className="space-y-1.5"><Label>Nombre</Label><Input value={name} onChange={(e) => setName(e.target.value)} required /></div>
           )}
@@ -89,10 +93,10 @@ function AuthPage() {
           <div className="space-y-1.5"><Label>Contraseña</Label><Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
           <Button className="w-full" disabled={busy}>{mode === "in" ? "Entrar" : "Crear cuenta"}</Button>
           <Button type="button" variant="outline" className="w-full" onClick={google}>Continuar con Google</Button>
-          <button type="button" className="w-full text-sm text-muted-foreground underline" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+          <button type="button" className="w-full text-sm text-ink underline decoration-hairline-firm underline-offset-4" onClick={() => setMode(mode === "in" ? "up" : "in")}>
             {mode === "in" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
           </button>
-          <p className="text-xs text-muted-foreground">Al entrar podrás crear tu empresa o unirte a las que te hayan invitado.</p>
+          <p className="note">Al entrar podrás crear tu empresa o unirte a las que te hayan invitado.</p>
         </form>
       </div>
     </div>
