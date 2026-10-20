@@ -1,6 +1,8 @@
 // Real ACV, win rate and sales cycle from the pipeline, overall and per segment. Pure so the
 // calculator, the dashboards and future AI snapshots read the same numbers.
 import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-coverage";
+import { previousQuarter, segmentCac, type CostLike } from "@/lib/cac";
+import { quarterOf, quarterRange } from "@/lib/metrics";
 
 export type Actuals = {
   /** Average amount of won deals; falls back to open deals when nothing is won yet. */
@@ -52,4 +54,29 @@ export function segmentActuals(segments: SegLike[], deals: DealLike[], now = new
   const bySeg: Record<string, Actuals> = {};
   for (const s of segments) bySeg[s.id] = actuals(deals.filter((d) => assignSegment(d, segments) === s.id), now);
   return { overall: actuals(deals, now), bySegment: bySeg };
+}
+
+/** The current quarter and the previous n-1, newest first (2026-Q4, 2026-Q3, …). */
+export function lastQuarters(now = new Date(), n = 4) {
+  const out = [quarterOf(now)];
+  while (out.length < n) out.push(previousQuarter(out[out.length - 1]));
+  return out;
+}
+
+/**
+ * Real CAC per segment over the last 4 quarters (current included): entered costs of those quarters
+ * divided by deals won since the start of the oldest one. Used by the strategy calculator's payback.
+ */
+export function trailingCac(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], now = new Date()) {
+  const quarters = lastQuarters(now, 4);
+  const start = quarterRange(quarters[quarters.length - 1]).start.getTime();
+  const won = (id: string) => deals.filter((d) => {
+    const t = new Date(d.closed_at ?? d.updated_at).getTime();
+    return d.stage === "won" && t >= start && t <= now.getTime() && assignSegment(d, segments) === id;
+  }).length;
+  return segmentCac(
+    costs.filter((c) => quarters.includes(c.period)),
+    Object.fromEntries(segments.map((s) => [s.id, won(s.id)])),
+    segments.map((s) => s.id),
+  );
 }
