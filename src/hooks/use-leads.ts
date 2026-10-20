@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { readSla, type DealOutcome, type LeadSla } from "@/lib/lead-funnel";
+import type { AccountFitInput, IcpProfile } from "@/lib/scoring";
 
 export type Lead = Tables<"leads">;
 export type LeadsData = {
@@ -10,6 +11,9 @@ export type LeadsData = {
   sla: LeadSla;
   segments: { id: string; name: string }[];
   members: { id: string; full_name: string }[];
+  /** For the score: the ICPs and the accounts' segment, sector, size and tier. */
+  icps: IcpProfile[];
+  accounts: Map<string, AccountFitInput>;
 };
 
 /** Leads of the current company plus what the screen and the funnel need. Key "leads" is refreshed live. */
@@ -18,12 +22,14 @@ export function useLeads(orgId: string | null | undefined) {
     queryKey: ["leads", orgId],
     enabled: !!orgId,
     queryFn: async (): Promise<LeadsData> => {
-      const [l, d, s, seg, m] = await Promise.all([
+      const [l, d, s, seg, m, icp, acc] = await Promise.all([
         supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(2000),
         supabase.from("deals").select("id,stage,closed_at"),
         supabase.from("lead_settings").select("sla").maybeSingle(),
         supabase.from("segments").select("id,name").order("acv_min"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
+        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
+        supabase.from("accounts").select("id,segment_id,industry,size,tier,name"),
       ]);
       if (l.error) throw new Error(l.error.message);
       const ids = (m.data ?? []).map((x) => x.user_id);
@@ -34,6 +40,8 @@ export function useLeads(orgId: string | null | undefined) {
         sla: readSla(s.data?.sla),
         segments: seg.data ?? [],
         members: (profiles ?? []).map((p) => ({ id: p.id, full_name: p.full_name ?? "Sin nombre" })),
+        icps: icp.data ?? [],
+        accounts: new Map((acc.data ?? []).map((a) => [a.id, a])),
       };
     },
   });

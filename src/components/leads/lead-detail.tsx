@@ -12,11 +12,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadDelay, leadStageLabel } from "@/lib/lead-funnel";
 import { errorText } from "@/lib/errors";
+import { ScoreDetail } from "@/components/score";
+import type { Score } from "@/lib/scoring";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
 
-export function LeadDetail({ lead, data, canDelete, onClose }: { lead: Lead; data: LeadsData; canDelete: boolean; onClose: () => void }) {
+export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Lead; data: LeadsData; score?: Score; canDelete: boolean; onClose: () => void }) {
   const { symbol } = useCurrency();
   const qc = useQueryClient();
   const [f, setF] = useState(lead);
@@ -70,6 +72,8 @@ export function LeadDetail({ lead, data, canDelete, onClose }: { lead: Lead; dat
       {converted && lead.deal_id && (
         <p className="rounded-md bg-muted p-3 text-sm">Ya es una oportunidad. <Link to="/deals" search={{ deal: lead.deal_id }} className="font-medium underline">Abrir en Pipeline →</Link></p>
       )}
+
+      {score && <ScoreDetail score={score} />}
 
       <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {timeline.map(([label, at]) => (

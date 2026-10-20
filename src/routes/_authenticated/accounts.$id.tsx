@@ -18,6 +18,8 @@ import { BUYING_ROLES, SUPPORT, DEAL_STAGES } from "@/lib/roles";
 import { generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
+import { latestOf, scoreAccount } from "@/lib/scoring";
+import { ScoreDetail } from "@/components/score";
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
   head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Plan de cuenta, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Plan de cuenta, stakeholders y reuniones." }] }),
@@ -30,20 +32,29 @@ function AccountPage() {
   const { data } = useQuery({
     queryKey: ["account", id],
     queryFn: async () => {
-      const [a, plan, sh, mt, calls, deals] = await Promise.all([
+      const [a, plan, sh, mt, calls, deals, touches, icps, segs] = await Promise.all([
         supabase.from("accounts").select("*").eq("id", id).single(),
         supabase.from("account_plans").select("*").eq("account_id", id).maybeSingle(),
         supabase.from("stakeholders").select("*").eq("account_id", id).order("created_at"),
         supabase.from("meetings").select("*").eq("account_id", id).order("scheduled_at", { ascending: false }),
         supabase.from("calls").select("*").eq("account_id", id).order("occurred_at", { ascending: false }),
         supabase.from("deals").select("*").eq("account_id", id),
+        supabase.from("account_touches").select("occurred_at").eq("account_id", id),
+        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
+        supabase.from("segments").select("id,name"),
       ]);
-      return { account: a.data, plan: plan.data, stakeholders: sh.data ?? [], meetings: mt.data ?? [], calls: calls.data ?? [], deals: deals.data ?? [] };
+      return { account: a.data, plan: plan.data, stakeholders: sh.data ?? [], meetings: mt.data ?? [], calls: calls.data ?? [], deals: deals.data ?? [], touches: touches.data ?? [], icps: icps.data ?? [], segNames: new Map((segs.data ?? []).map((s) => [s.id, s.name])) };
     },
   });
   const refresh = () => qc.invalidateQueries({ queryKey: ["account", id] });
   if (!data?.account) return <Page title="Cargando…"><div /></Page>;
   const a = data.account;
+  const now = new Date();
+  const score = scoreAccount({
+    ...a,
+    lastActivityAt: latestOf(...data.touches.map((t) => t.occurred_at), ...data.meetings.map((m) => m.scheduled_at).filter((d): d is string => !!d && d <= now.toISOString()), ...data.calls.map((c) => c.occurred_at), ...data.deals.map((d) => d.updated_at)),
+    openDeals: data.deals.filter((d) => d.stage !== "won" && d.stage !== "lost").length,
+  }, data.icps, now, data.segNames);
 
   return (
     <Page eyebrow="Cuenta" title={a.name} actions={
@@ -58,6 +69,10 @@ function AccountPage() {
         </Select>
       </div>
     }>
+      <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_minmax(0,20rem)]">
+        <ScoreDetail score={score} />
+        <FitFields account={a} segNames={data.segNames} onSaved={refresh} />
+      </div>
       <Tabs defaultValue="plan">
         <TabsList className="mb-6">
           <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
@@ -73,6 +88,28 @@ function AccountPage() {
         <TabsContent value="deals"><DealsTab accountId={id} list={data.deals} onChange={refresh} /></TabsContent>
       </Tabs>
     </Page>
+  );
+}
+
+/** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
+function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+  const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
+  useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
+  async function save(patch: Partial<typeof f>) {
+    const next = { ...f, ...patch };
+    setF(next);
+    if (next.segment_id === (account.segment_id ?? "") && next.industry === (account.industry ?? "") && next.size === (account.size ?? "")) return;
+    const { error } = await supabase.from("accounts").update({ segment_id: next.segment_id || null, industry: next.industry || null, size: next.size || null }).eq("id", account.id);
+    if (error) return toast.error(errorText(error));
+    onSaved();
+  }
+  return (
+    <div className="space-y-3 rounded-lg border bg-card p-4">
+      <p className="eyebrow">Datos para el encaje</p>
+      <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segNames) }} onChange={(v) => save({ segment_id: v })} /></Field>
+      <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
+      <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
+    </div>
   );
 }
 
