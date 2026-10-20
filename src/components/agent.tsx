@@ -43,23 +43,34 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const endRef = useRef<HTMLDivElement>(null);
   const loadedFor = useRef<string | null>(null);
 
-  // Restore the latest app conversation of this org once.
+  /**
+   * Loads the latest app conversation of this org, in the given mode when asked (chat and interview are
+   * separate threads), so switching mode or reopening the panel continues where the user left off.
+   * Returns the conversation id, or null when there is none yet.
+   */
+  const restore = useCallback(async (m?: Mode): Promise<string | null> => {
+    if (!orgId) return null;
+    let q = supabase.from("agent_conversations").select("id,mode").eq("org_id", orgId).eq("channel", "app");
+    if (m) q = q.eq("mode", m);
+    const { data: conv } = await q.order("updated_at", { ascending: false }).limit(1).maybeSingle();
+    if (!conv) { setConvId(null); setMsgs([]); return null; }
+    const [{ data: msgsData }, { data: a }] = await Promise.all([
+      supabase.from("agent_messages").select("id,role,content,created_at").eq("conversation_id", conv.id).order("created_at").limit(60),
+      supabase.from("agent_pending_actions").select("id,summary,status,result,created_at").eq("conversation_id", conv.id).eq("status", "pending"),
+    ]);
+    setConvId(conv.id); setMode(conv.mode as Mode);
+    const list: Msg[] = (msgsData ?? []).map((x) => ({ id: x.id, role: x.role as Msg["role"], content: x.content }));
+    if (a?.length && list.length) list[list.length - 1] = { ...list[list.length - 1], actions: a };
+    setMsgs(list);
+    return conv.id;
+  }, [orgId]);
+
+  // Restore the latest app conversation of this org once per org.
   useEffect(() => {
     if (!isOpen || !orgId || loadedFor.current === orgId) return;
     loadedFor.current = orgId;
-    (async () => {
-      const { data: conv } = await supabase.from("agent_conversations").select("id,mode").eq("org_id", orgId).eq("channel", "app").order("updated_at", { ascending: false }).limit(1).maybeSingle();
-      if (!conv) return;
-      const [{ data: m }, { data: a }] = await Promise.all([
-        supabase.from("agent_messages").select("id,role,content,created_at").eq("conversation_id", conv.id).order("created_at").limit(60),
-        supabase.from("agent_pending_actions").select("id,summary,status,result,created_at").eq("conversation_id", conv.id).eq("status", "pending"),
-      ]);
-      setConvId(conv.id); setMode(conv.mode as Mode);
-      const list: Msg[] = (m ?? []).map((x) => ({ id: x.id, role: x.role as Msg["role"], content: x.content }));
-      if (a?.length && list.length) list[list.length - 1] = { ...list[list.length - 1], actions: a };
-      setMsgs(list);
-    })();
-  }, [isOpen, orgId]);
+    restore();
+  }, [isOpen, orgId, restore]);
 
   useEffect(() => { setConvId(null); setMsgs([]); loadedFor.current = null; }, [orgId]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [msgs, busy]);
@@ -83,13 +94,27 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const open = useCallback((o?: OpenOpts) => {
     setOpen(true);
     const switchPersona = o?.personaId !== undefined && o.personaId !== personaId;
-    const reset = (o?.mode && o.mode !== mode) || switchPersona;
+    const switchMode = !!o?.mode && o.mode !== mode;
+    const nextMode = o?.mode ?? mode;
+    const pid = o?.personaId !== undefined ? o.personaId : personaId;
+    const wid = o?.workflowId !== undefined ? o.workflowId : workflowId;
     if (o?.mode) setMode(o.mode);
     if (o?.personaId !== undefined) setPersonaId(o.personaId);
     if (o?.workflowId !== undefined) setWorkflowId(o.workflowId);
-    if (reset) { setConvId(null); setMsgs([]); loadedFor.current = orgId ?? null; }
-    if (o?.prompt) setTimeout(() => submit(o.prompt!, o.mode ?? mode, reset ? null : convId, o.personaId !== undefined ? o.personaId : personaId, o.workflowId !== undefined ? o.workflowId : workflowId), 0);
-  }, [mode, convId, orgId, submit, personaId, workflowId]);
+    loadedFor.current = orgId ?? null;
+    if (switchPersona) {
+      // Another persona is another thread: start clean.
+      setConvId(null); setMsgs([]);
+      if (o?.prompt) setTimeout(() => submit(o.prompt!, nextMode, null, pid, wid), 0);
+      return;
+    }
+    if (switchMode) {
+      // Continue the latest conversation of that mode instead of losing it («Empezar entrevista» twice = same interview).
+      restore(nextMode).then((id) => { if (o?.prompt) submit(o.prompt!, nextMode, id, pid, wid); });
+      return;
+    }
+    if (o?.prompt) setTimeout(() => submit(o.prompt!, nextMode, convId, pid, wid), 0);
+  }, [mode, convId, orgId, submit, restore, personaId, workflowId]);
 
   function pickPersona(id: string | null) { setPersonaId(id); setWorkflowId(null); setConvId(null); setMsgs([]); setMode("chat"); }
   function runCode(code: string) {
