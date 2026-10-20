@@ -118,7 +118,7 @@ function LeadsPage() {
                   const lateN = all.filter((l) => view.delays.get(l.id)?.late).length;
                   const capped = st.id === "opportunity" || st.id === "disqualified" ? col.slice(0, 25) : col;
                   return (
-                    <div key={st.id} className={`shrink-0 rounded-lg p-2 ${st.id === "disqualified" ? "w-56 bg-muted/30" : "w-64 bg-muted/60"}`}
+                    <div key={st.id} className={`min-w-40 flex-1 rounded-lg p-2 ${st.id === "disqualified" ? "bg-muted/30" : "bg-muted/60"}`}
                       onDragOver={(e) => e.preventDefault()}
                       onDrop={(e) => move(e.dataTransfer.getData("id"), st.id)}>
                       <div className="flex items-center justify-between px-2 py-2">
