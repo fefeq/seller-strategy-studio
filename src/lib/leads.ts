@@ -98,14 +98,20 @@ export function columnMapping(headers: string[]): Record<string, CsvField | null
   return out;
 }
 
-/** Renames each column to its field's canonical name (dropping ignored ones), so the importer reads what the person chose. */
+/**
+ * Renames each column to its field's canonical name, so the importer reads what the person chose.
+ * Two columns on one field: the first with a value in that row wins. Ignored columns travel under a
+ * neutral name so an email typed in an unlabeled column is still rescued by the importer.
+ */
 export function applyColumnMapping(rows: Record<string, string>[], mapping: Record<string, CsvField | null>): Record<string, string>[] {
   const canonical = Object.fromEntries(FIELDS.map((f) => [f.key, f.exact[0]])) as Record<CsvField, string>;
   return rows.map((r) => {
     const out: Record<string, string> = {};
+    let extra = 0;
     for (const [col, v] of Object.entries(r)) {
       const f = mapping[col];
-      if (f && out[canonical[f]] == null) out[canonical[f]] = v;
+      if (f) { if (!out[canonical[f]]?.trim()) out[canonical[f]] = v; }
+      else if (/@/.test(v ?? "")) out[`sin_mapear_${++extra}`] = v;
     }
     return out;
   });

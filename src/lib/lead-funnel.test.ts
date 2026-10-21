@@ -77,3 +77,14 @@ describe("full funnel Lead → Contactado → MQL → SQL → Oportunidad → Ga
     expect(leadCohort([L("x", { created_at: "2026-09-30T23:00:00Z" }), ...leads], new Date("2026-10-01T00:00:00Z"), new Date("2027-01-01T00:00:00Z"))).toHaveLength(4);
   });
 });
+
+describe("median days ignore skipped steps", () => {
+  it("a lead imported as Oportunidad adds no 0-day MQL or SQL", () => {
+    const at = "2026-10-01T00:00:00Z";
+    const direct = L("x", { stage: "opportunity", created_at: at, stage_entered_at: at, contacted_at: at, mql_at: at, sql_at: at, opportunity_at: at });
+    const real = L("y", { stage: "sql", contacted_at: "2026-10-02T00:00:00Z", mql_at: "2026-10-05T00:00:00Z", sql_at: "2026-10-11T00:00:00Z" });
+    const f = leadFunnel([direct, real], []);
+    expect(f.medianDays.mql).toBe(4);
+    expect(f.medianDays.sql).toBe(10);
+  });
+});

@@ -179,7 +179,8 @@ function Motions() {
     }
     const error = invalid[`${s.id}:${k}`];
     return <>
-      <Input type="number" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
+      {/* Text with a decimal keyboard, not type=number: a number field hands back "" for «97,5» in some browsers, which read as «empty» and wiped the value. */}
+      <Input type="text" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onFocus={(e) => e.currentTarget.select()} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
       {error && <p className="mt-1 text-[11px] text-destructive md:hidden">{error}</p>}
     </>;
   };
