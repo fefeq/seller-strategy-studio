@@ -44,6 +44,8 @@ function Hub() {
   const { data: me } = useMe();
   const [section, setSection] = useState<string>("company");
   const [selected, setSelected] = useState<Doc | null>(null);
+  // Each «+ Nuevo» is a fresh editor, even when another unsaved draft was open.
+  const [draftSeq, setDraftSeq] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   const { data: docs = [] } = useQuery({
     queryKey: ["docs"],
@@ -106,7 +108,7 @@ function Hub() {
         </nav>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{SECTIONS.find((s) => s[0] === section)?.[2]}</p>
-          <Button size="sm" variant="outline" className="w-full" onClick={() => { setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
+          <Button size="sm" variant="outline" className="w-full" onClick={() => { setDraftSeq((n) => n + 1); setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
           {list.map((d) => (
             <button key={d.id} onClick={() => { setSelected(d); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}>
               <span className="font-medium">{d.title}</span>
@@ -117,7 +119,7 @@ function Hub() {
         </div>
         <div ref={editorRef} className="min-w-0 scroll-mt-20">
           {selected ? (
-            <Editor key={selected.id || "draft"} doc={selected} isOwner={isOwner} saving={save.isPending} onSave={(d) => save.mutate(d)} onDelete={() => del.mutate(selected.id)} />
+            <Editor key={selected.id || `draft-${draftSeq}`} doc={selected} isOwner={isOwner} saving={save.isPending} onSave={(d) => save.mutate(d)} onDelete={() => del.mutate(selected.id)} />
           ) : (
             <Empty>Selecciona o crea un documento.</Empty>
           )}
