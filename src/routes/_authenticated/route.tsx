@@ -42,7 +42,7 @@ const NAV = [
   { to: "/abm", label: "ABM y partners" },
   { to: "/people", label: "Personas" },
   { to: "/approvals", label: "Aprobaciones" },
-  { to: "/integrations", label: "Integraciones" },
+  { to: "/integrations", label: "Conexiones" },
   { to: "/team", label: "Equipo y conexiones" },
 ] as const;
 
