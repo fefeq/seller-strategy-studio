@@ -16,11 +16,14 @@ import { DISQUALIFIED, LEAD_STAGES, delayText, funnelBy, leadCohort, leadDelay, 
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
 import { leadsHeadline } from "@/lib/headlines";
+import { byScore, scoreLead, type Score } from "@/lib/scoring";
+import { ScoreBadge } from "@/components/score";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
-  validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true } => ({
+  validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha" } => ({
     lead: typeof s.lead === "string" ? s.lead : undefined,
     late: s.late === true || s.late === "true" ? true : undefined,
+    orden: s.orden === "fecha" ? "fecha" : undefined,
   }),
   head: () => ({ meta: [
     { title: "Leads — Nokko" },
@@ -51,6 +54,8 @@ function LeadsPage() {
     if (!data) return null;
     const now = new Date();
     const delays = new Map<string, LeadDelay>(data.leads.map((l) => [l.id, leadDelay(l, data.sla, now)]));
+    const segNames = new Map(data.segments.map((s) => [s.id, s.name]));
+    const scores = new Map<string, Score>(data.leads.map((l) => [l.id, scoreLead({ ...l, late: delays.get(l.id)!.late }, data.icps, data.accounts, now, segNames)]));
     const open = data.leads.filter((l) => ["new", "contacted", "mql", "sql"].includes(l.stage));
     const late = open.filter((l) => delays.get(l.id)?.late).sort((a, b) => (delays.get(b.id)!.daysInStage - delays.get(a.id)!.daysInStage));
     const quarter = quarterOf(now);
@@ -58,7 +63,7 @@ function LeadsPage() {
     const cohort = leadCohort(data.leads, start, end);
     const funnel = leadFunnel(cohort, data.deals);
     const bySource = funnelBy(cohort, data.deals, (l) => l.source || "Sin origen");
-    return { delays, open, late, quarter, funnel, bySource };
+    return { delays, scores, open, late, quarter, funnel, bySource };
   }, [data]);
 
   async function move(id: string, stage: string) {
@@ -75,6 +80,7 @@ function LeadsPage() {
   const selected = data?.leads.find((l) => l.id === search.lead);
   const shown = (l: Lead) => !search.late || view?.delays.get(l.id)?.late;
   const segName = (id: string | null) => data?.segments.find((s) => s.id === id)?.name;
+  const byDate = search.orden === "fecha";
 
   return (
     <Page eyebrow="Leads" title={view ? leadsHeadline({ open: view.open.length, late: view.late.length }) : "Leads"} actions={<>
@@ -110,13 +116,16 @@ function LeadsPage() {
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-3xl">Pipeline de leads</h2>
-              <label className="flex items-center gap-2 text-sm"><Switch checked={!!search.late} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, late: v || undefined }) })} />Solo retrasados</label>
+              <div className="flex flex-wrap items-center gap-4">
+                <label className="flex items-center gap-2 text-sm"><Switch checked={!byDate} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, orden: v ? undefined : "fecha" }) })} />Por puntuación</label>
+                <label className="flex items-center gap-2 text-sm"><Switch checked={!!search.late} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, late: v || undefined }) })} />Solo retrasados</label>
+              </div>
             </div>
             {data.leads.length === 0 ? <Empty>Aún no hay leads. Créalos con «+ Nuevo lead» o conecta tus formularios y tu CRM en <Link to="/leads/entrada" className="underline">Entrada de leads</Link>.</Empty> : (
               <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
                 {COLUMNS.map((st) => {
                   const all = data.leads.filter((l) => l.stage === st.id);
-                  const col = all.filter(shown);
+                  const col = byDate ? all.filter(shown) : [...all.filter(shown)].sort(byScore((l) => view.scores.get(l.id)!));
                   const lateN = all.filter((l) => view.delays.get(l.id)?.late).length;
                   const capped = st.id === "opportunity" || st.id === "disqualified" ? col.slice(0, 25) : col;
                   return (
@@ -134,7 +143,7 @@ function LeadsPage() {
                             <button key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
                               onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
                               className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
-                              <span className="break-words font-medium">{l.company}</span>
+                              <span className="flex items-start justify-between gap-2"><span className="break-words font-medium">{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                                 {l.source && <span className="rounded bg-muted px-1.5 py-0.5">{l.source}</span>}
@@ -153,7 +162,7 @@ function LeadsPage() {
                 })}
               </div>
             )}
-            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en Discovery dentro de la Pipeline.</p>
+            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en Discovery dentro de la Pipeline.</p>
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -180,7 +189,7 @@ function LeadsPage() {
       )}
       <Sheet open={!!selected} onOpenChange={(o) => !o && navigate({ search: (p) => ({ ...p, lead: undefined }) })}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-xl">
-          {selected && data && <LeadDetail lead={selected} data={data} canDelete={roles.includes("owner")} onClose={() => navigate({ search: (p) => ({ ...p, lead: undefined }) })} />}
+          {selected && data && <LeadDetail lead={selected} data={data} score={view?.scores.get(selected.id)} canDelete={roles.includes("owner")} onClose={() => navigate({ search: (p) => ({ ...p, lead: undefined }) })} />}
         </SheetContent>
       </Sheet>
     </Page>
