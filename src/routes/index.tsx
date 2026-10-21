@@ -3,6 +3,9 @@ import { Button } from "@/components/ui/button";
 import { ROLES } from "@/lib/roles";
 import { Lockup } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { track } from "@/lib/analytics";
+import { homeJsonLd } from "@/lib/seo";
+import { absoluteUrl } from "@/lib/site";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -12,8 +15,11 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Nokko — una sola fuente de verdad para ventas" },
       { property: "og:description", content: "Cada rol del ciclo de venta trabajando desde el mismo contexto." },
       { property: "og:type", content: "website" },
+      { property: "og:url", content: absoluteUrl("/") },
       { name: "twitter:card", content: "summary_large_image" },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/") }],
+    scripts: [{ type: "application/ld+json", children: homeJsonLd() }],
   }),
   component: Landing,
 });
@@ -35,7 +41,7 @@ function Landing() {
         <Lockup />
         <div className="flex items-center gap-2">
           <ThemeToggle compact />
-          <Button variant="outline" asChild><Link to="/auth">Entrar</Link></Button>
+          <Button variant="outline" asChild><Link to="/auth" onClick={() => track("cta_click", { location: "header_entrar" })}>Entrar</Link></Button>
         </div>
         </div>
       </header>
@@ -49,7 +55,7 @@ function Landing() {
           Antes de cada llamada, cada persona tiene las últimas conversaciones, ofertas, notas de cuenta y el plan de la cuenta.
         </p>
         <div className="mt-10 flex flex-col items-start gap-3 sm:flex-row">
-          <Button size="lg" asChild><Link to="/auth">Empezar</Link></Button>
+          <Button size="lg" asChild><Link to="/auth" onClick={() => track("cta_click", { location: "hero_empezar" })}>Empezar</Link></Button>
           <p className="note sm:self-center">Cuentas, personas, llamadas y planes en un mismo documento.</p>
         </div>
       </section>

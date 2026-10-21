@@ -15,6 +15,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieBanner } from "@/components/cookie-banner";
+import { CONSENT_BOOT } from "@/lib/analytics";
+import { ANALYTICS_ENABLED, GOOGLE_SITE_VERIFICATION, GTM_ID, SITE_NAME } from "@/lib/site";
 
 function NotFoundComponent() {
   return (
@@ -91,7 +94,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "Nokko — el sistema operativo comercial de tu equipo" },
       { name: "description", content: "Conocimiento, cuentas, deals y personas en un solo lugar para todo el equipo de ventas." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:locale", content: "es_ES" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "google-site-verification", content: GOOGLE_SITE_VERIFICATION },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -112,9 +118,21 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="es" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_BOOT }} />
+        {ANALYTICS_ENABLED && <script dangerouslySetInnerHTML={{ __html: CONSENT_BOOT }} />}
         <HeadContent />
       </head>
       <body>
+        {ANALYTICS_ENABLED && (
+          <noscript>
+            <iframe
+              src={`https://www.googletagmanager.com/ns.html?id=${GTM_ID}`}
+              height="0"
+              width="0"
+              style={{ display: "none", visibility: "hidden" }}
+              title="Google Tag Manager"
+            />
+          </noscript>
+        )}
         {children}
         <Scripts />
       </body>
@@ -138,6 +156,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster />
+      <CookieBanner />
     </QueryClientProvider>
   );
 }

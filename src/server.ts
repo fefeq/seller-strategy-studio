@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { robotsTagFor } from "./lib/seo";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -44,12 +45,25 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Only PUBLIC_PATHS may be indexed; the app behind the login and technical screens get noindex.
+function withRobotsTag(request: Request, response: Response): Response {
+  const tag = robotsTagFor(new URL(request.url).pathname, response.headers.get("content-type"));
+  if (!tag || response.headers.has("x-robots-tag")) return response;
+  const headers = new Headers(response.headers);
+  headers.set("x-robots-tag", tag);
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withRobotsTag(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

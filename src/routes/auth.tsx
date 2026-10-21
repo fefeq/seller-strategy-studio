@@ -9,6 +9,24 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { oauthReturnPath } from "@/lib/oauth-return-path";
 import { errorText } from "@/lib/errors";
+import { track } from "@/lib/analytics";
+import { absoluteUrl } from "@/lib/site";
+
+// Set just before the Google redirect so the return can be measured as sign_up or login.
+const OAUTH_PENDING = "nokko-oauth-pending";
+// An account created this recently on return from Google counts as a new sign-up.
+const NEW_ACCOUNT_MS = 10 * 60 * 1000;
+
+function trackGoogleReturn(createdAt: string | undefined) {
+  let pending = false;
+  try {
+    pending = sessionStorage.getItem(OAUTH_PENDING) === "1";
+    sessionStorage.removeItem(OAUTH_PENDING);
+  } catch { /* blocked storage */ }
+  if (!pending) return;
+  const isNew = !!createdAt && Date.now() - Date.parse(createdAt) < NEW_ACCOUNT_MS;
+  track(isNew ? "sign_up" : "login", { method: "google" });
+}
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { next?: string } => (typeof s.next === "string" ? { next: s.next } : {}),
@@ -20,7 +38,9 @@ export const Route = createFileRoute("/auth")({
       { property: "og:description", content: "Accede al sistema comercial de tu equipo." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex, follow" },
     ],
+    links: [{ rel: "canonical", href: absoluteUrl("/auth") }],
   }),
   component: AuthPage,
 });
@@ -39,10 +59,16 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) goOn();
+      if (data.session) {
+        trackGoogleReturn(data.session.user.created_at);
+        goOn();
+      }
     });
     const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) goOn();
+      if (s) {
+        trackGoogleReturn(s.user.created_at);
+        goOn();
+      }
     });
     return () => data.subscription.unsubscribe();
   }, [navigate, next]);
@@ -57,10 +83,12 @@ function AuthPage() {
           options: { emailRedirectTo: next ? new URL(next, window.location.origin).href : window.location.origin, data: { full_name: name } },
         });
         if (error) throw error;
+        track("sign_up", { method: "email" });
         if (!data.session) toast.success("Revisa tu email para confirmar la cuenta.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        track("login", { method: "email" });
       }
     } catch (err) {
       toast.error(errorText(err, "No se ha podido continuar. Inténtalo de nuevo."));
@@ -70,6 +98,7 @@ function AuthPage() {
   }
 
   async function google() {
+    try { sessionStorage.setItem(OAUTH_PENDING, "1"); } catch { /* blocked storage */ }
     const r = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/auth" + (next ? `?next=${encodeURIComponent(next)}` : "") });
     if (r.error) toast.error("No se pudo entrar con Google.");
   }
@@ -95,7 +124,10 @@ function AuthPage() {
           <div className="space-y-1.5"><Label>Contraseña</Label><Input type="password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required /></div>
           <Button className="w-full" disabled={busy}>{mode === "in" ? "Entrar" : "Crear cuenta"}</Button>
           <Button type="button" variant="outline" className="w-full" onClick={google}>Continuar con Google</Button>
-          <button type="button" className="w-full py-2 text-sm text-ink underline decoration-hairline-firm underline-offset-4" onClick={() => setMode(mode === "in" ? "up" : "in")}>
+          <button type="button" className="w-full py-2 text-sm text-ink underline decoration-hairline-firm underline-offset-4" onClick={() => {
+            if (mode === "in") track("sign_up_start", { location: "auth_toggle" });
+            setMode(mode === "in" ? "up" : "in");
+          }}>
             {mode === "in" ? "¿No tienes cuenta? Créala" : "¿Ya tienes cuenta? Entra"}
           </button>
           <p className="note">Al entrar podrás crear tu empresa o unirte a las que te hayan invitado.</p>

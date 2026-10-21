@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { Membership } from "@/hooks/use-me";
 import { errorText } from "@/lib/errors";
+import { track } from "@/lib/analytics";
 
 export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   const qc = useQueryClient();
@@ -17,6 +18,7 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
     const { error } = await supabase.rpc("create_organization", { _name: name });
     setBusy(false);
     if (error) return toast.error(errorText(error));
+    track("org_created", { location: "onboarding" });
     await qc.resetQueries();
   }
   async function pick(orgId: string) {

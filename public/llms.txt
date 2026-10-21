@@ -1,0 +1,20 @@
+# Nokko
+
+> Nokko (nokko.ai) es una plataforma de go-to-market en español para equipos comerciales B2B: una sola fuente de verdad donde todo el equipo de ventas trabaja con el mismo contexto de empresa, cuentas, deals y personas. No tiene relación con Nooks (nooks.ai).
+
+Nokko está pensado para el equipo comercial completo: GTM Owner / RevOps, Sales Leader, Marketing / Demand Gen, SDR / BDR, Account Executive, Sales Engineer, Customer Success / AM, Deal Desk / Finanzas / Legal y Sales Enablement. Cada rol tiene su vista.
+
+## Qué hace
+
+- Cerebro compartido: empresa, ICP, ofertas, objeciones, playbooks, llamadas y reglas en un mismo sitio.
+- Un responsable: el GTM Owner entrena el sistema, aprueba cambios y promueve lo que funciona.
+- Capa estratégica: plan de cuenta, mapa de stakeholders, planificador de reuniones, MEDDPICC y plan de acción conjunto por cuenta.
+- Base única de personas: una fila por persona, sin duplicados por email o LinkedIn.
+- El CRM se actualiza con evidencia: los cambios importantes llegan a una bandeja con su evidencia para aplicar u omitir.
+- Varias empresas en un solo lugar, cada una con su equipo, roles y datos aislados.
+- Agente de IA en la app y conexión MCP para Claude, ChatGPT y Codex; las escrituras se confirman antes de aplicarse.
+
+## Enlaces
+
+- [Inicio](https://nokko.ai/): qué es Nokko y para quién.
+- [Entrar o crear cuenta](https://nokko.ai/auth)
