@@ -10,6 +10,7 @@ import { parseCsv, normEmail } from "@/lib/dedupe";
 import { cohort, funnelBySegment, funnelStats, parseDateCell, type FunnelStats } from "@/lib/self-service";
 import { quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
+import { DateField as SpanishDate } from "@/components/date-field";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
@@ -221,7 +222,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
                 <option value="">Sin segmento</option>
                 {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
-              <Input type="date" aria-label="Fecha de alta" value={form.signed_up_at} onChange={(e) => setForm({ ...form, signed_up_at: e.target.value })} />
+              <SpanishDate aria-label="Fecha de alta" value={form.signed_up_at || null} onChange={(iso) => setForm({ ...form, signed_up_at: iso ?? "" })} />
             </div>
             <Button size="sm" onClick={add}>Añadir</Button>
           </div>
@@ -264,7 +265,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
 function DateField({ label, value, onSave }: { label: string; value: string | null; onSave: (iso: string | null) => void }) {
   return (
     <label className="text-xs text-muted-foreground">{label}
-      <Input type="date" className="h-10 md:h-8" defaultValue={toDateInput(value)} key={value ?? "none"} onBlur={(e) => { const v = e.target.value; if (v !== toDateInput(value)) onSave(v ? parseDateCell(v) : null); }} />
+      <SpanishDate className="h-10 md:h-8" value={toDateInput(value) || null} onChange={(iso) => onSave(iso ? parseDateCell(iso) : null)} />
     </label>
   );
 }

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { EXPERIMENT_STATUS } from "@/lib/theory-u";
 import { errorText } from "@/lib/errors";
+import { DateField } from "@/components/date-field";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -85,8 +86,8 @@ export function Prototypes() {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
             <div className="col-span-2"><Field label="Título"><Input value={sel.title} onChange={(e) => setSel({ ...sel, title: e.target.value })} /></Field></div>
             <div className="col-span-2 md:col-span-1"><Field label="Estado"><Pick value={sel.status} options={EXPERIMENT_STATUS} onChange={(v) => setSel({ ...sel, status: v })} /></Field></div>
-            <Field label="Inicio"><Input type="date" value={sel.starts_on ?? ""} onChange={(e) => setSel({ ...sel, starts_on: e.target.value })} /></Field>
-            <Field label="Fin"><Input type="date" value={sel.ends_on ?? ""} onChange={(e) => setSel({ ...sel, ends_on: e.target.value })} /></Field>
+            <Field label="Inicio"><DateField value={sel.starts_on} onChange={(iso) => setSel({ ...sel, starts_on: iso })} /></Field>
+            <Field label="Fin"><DateField value={sel.ends_on} onChange={(iso) => setSel({ ...sel, ends_on: iso })} /></Field>
           </div>
           <Field label="Recorrido U"><Pick value={sel.journey_id ?? ""} options={Object.fromEntries([["", "Sin recorrido"], ...(data?.journeys ?? []).map((j) => [j.id, j.title])])} onChange={(v) => setSel({ ...sel, journey_id: v })} /></Field>
           <div className="grid gap-3 md:grid-cols-2">
