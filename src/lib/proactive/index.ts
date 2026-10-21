@@ -9,9 +9,10 @@ import { trialConversion } from "./detectors/trial-conversion";
 import { setupIncomplete } from "./detectors/setup-incomplete";
 import { registrationExpiring } from "./detectors/registration-expiring";
 import { lateLeads } from "./detectors/late-leads";
+import { followupSequence } from "./detectors/followup-sequence";
 
 /** Adding a rule = adding a file in ./detectors and listing it here. */
-export const DETECTORS: Detector[] = [staleDeal, pastCloseDate, lowCoverage, meddpiccGaps, meetingNoPrep, noDecisionMaker, trialConversion, setupIncomplete, registrationExpiring, lateLeads];
+export const DETECTORS: Detector[] = [staleDeal, pastCloseDate, lowCoverage, meddpiccGaps, meetingNoPrep, noDecisionMaker, trialConversion, setupIncomplete, registrationExpiring, lateLeads, followupSequence];
 
 export function detect(s: Snapshot): Suggestion[] {
   const out = DETECTORS.flatMap((d) => d(s));

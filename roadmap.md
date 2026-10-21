@@ -46,7 +46,7 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] 1. Puntuación de leads y cuentas.
 - [x] 2. Umbral de enfriado según el ciclo real del segmento (un cuarto del ciclo, entre 14 y 60 días; ajustable por empresa en Pipeline); sustituye el umbral fijo de 14 días en el detector, la Pipeline y el agente.
 - [x] 3. Informe semanal del lunes (quién avanzó, quién se enfrió, leads, qué hacer primero): en Sugerencias e Inicio, por Telegram y por email con Resend a Owner y Sales Leader; botón «Informe de la semana ahora». Falta de Fede: verificar nokko.ai en Resend y guardar RESEND_API_KEY (y RESEND_FROM si no es informes@nokko.ai) en los secretos de Lovable Cloud; sin la clave, el email se omite y lo demás funciona.
-- [ ] 4. Seguimientos día 3/7/14: detector + borrador del agente en Sugerencias.
+- [x] 4. Seguimientos día 3/7/14 para leads contactados sin respuesta: aviso en Sugerencias con borrador (posicionamiento y pilares de la empresa); al aprobar se apunta el envío y se programa el siguiente; el agente redacta una versión adaptada (draft_followup); la ficha del lead muestra en qué paso va. Nokko no envía: el comercial copia y manda.
 - [ ] 5. Biblioteca de jugadas (discovery, objeciones, demo, negociación): base de Nokko adaptada por la IA al contexto aprobado; la usa la Preparación de llamada.
 - [ ] 6. Notas de llamada en 5 líneas + desmontaje de la llamada por la IA.
 - [ ] 7. Reparto de cuentas propuesto por la IA (por segmento o país); el Owner aprueba.

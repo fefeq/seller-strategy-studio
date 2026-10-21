@@ -14,6 +14,7 @@ import { DISQUALIFIED, LEAD_STAGES, delayText, leadDelay, leadStageLabel } from 
 import { errorText } from "@/lib/errors";
 import { ScoreDetail } from "@/components/score";
 import type { Score } from "@/lib/scoring";
+import { FOLLOWUP_STEPS, followupStatus } from "@/lib/followup";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -74,6 +75,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
       )}
 
       {score && <ScoreDetail score={score} />}
+      <FollowupLine lead={lead} />
 
       <ol className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {timeline.map(([label, at]) => (
@@ -102,5 +104,23 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
         {canDelete && <Button variant="ghost" onClick={remove}>Borrar</Button>}
       </div>
     </div>
+  );
+}
+
+/** Where the day-3/7/14 sequence stands for a contacted lead. */
+function FollowupLine({ lead }: { lead: Lead }) {
+  const st = followupStatus(lead);
+  if (lead.stage !== "contacted") return null;
+  const done = FOLLOWUP_STEPS.filter((s) => st.daysSinceContact != null && st.daysSinceContact >= s.day && !(st.due && st.due.id === s.id));
+  return (
+    <p className="rounded-md bg-muted p-3 text-sm">
+      <span className="eyebrow mr-2">Seguimientos</span>
+      {st.reason === "not_contacted" && "Pon la fecha de contacto para arrancar la secuencia día 3 / 7 / 14."}
+      {st.reason === "ended" && `Secuencia terminada: ${st.daysSinceContact} días sin respuesta. Muévelo o descártalo.`}
+      {st.reason === "scheduled" && `En pausa hasta el seguimiento programado del ${fmt(lead.next_step_at)}.`}
+      {st.reason == null && st.due && <>Toca el <strong>{st.due.label.toLowerCase()}</strong> ({st.daysSinceContact} días sin respuesta). El borrador está en Sugerencias.</>}
+      {st.reason == null && !st.due && st.next && <>Siguiente: {st.next.step.label.toLowerCase()} el {fmt(st.next.date)}.</>}
+      {done.length > 0 && st.reason == null && <span className="ml-2 text-xs text-muted-foreground">Pasados: {done.map((s) => s.label.toLowerCase()).join(", ")}.</span>}
+    </p>
   );
 }

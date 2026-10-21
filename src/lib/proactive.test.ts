@@ -41,6 +41,20 @@ describe("detectors", () => {
     expect(keys(snap({ leads: [lead({ stage_entered_at: new Date(NOW.getTime() - 2 * 864e5).toISOString() })] }))).not.toContain("late_lead");
     expect(keys(snap({ leads: [lead({ stage_entered_at: NOW.toISOString(), next_step_at: "2026-10-19" })] }))).toContain("late_lead");
   });
+  it("follow-up sequence: day 3, 7 and 14 on contacted leads, with a draft and the lead update", () => {
+    const ago = (n: number) => new Date(NOW.getTime() - n * 864e5).toISOString();
+    const contacted = (n: number) => ({ id: "l1", company: "Acme", stage: "contacted", stage_entered_at: ago(n), contacted_at: ago(n), contact_name: "Ana Ruiz", next_step_at: null, owner_id: "u1", account_id: null });
+    expect(keys(snap({ leads: [contacted(2)] }))).not.toContain("followup_sequence");
+    const d3 = detect(snap({ leads: [contacted(3)] })).find((x) => x.detector === "followup_sequence");
+    expect(d3?.dedupe_key).toBe("followup:l1:nudge");
+    expect(d3?.body).toContain("Hola, Ana.");
+    expect(d3?.action).toEqual({ tool: "update_lead", args: { lead_id: "l1", next_step: "Seguimiento día 3 enviado; toca el día 7", next_step_at: ago(-4).slice(0, 10) } });
+    expect(detect(snap({ leads: [contacted(14)] })).find((x) => x.detector === "followup_sequence")?.dedupe_key).toBe("followup:l1:breakup");
+    // While the sequence runs, the late-lead rule stays quiet; after it ends, it takes over.
+    expect(keys(snap({ leads: [contacted(5)] }))).not.toContain("late_lead");
+    expect(keys(snap({ leads: [contacted(22)] }))).toEqual(expect.arrayContaining(["late_lead"]));
+    expect(keys(snap({ leads: [contacted(22)] }))).not.toContain("followup_sequence");
+  });
   it("stale deal after 14 days proposes a task, not before", () => {
     expect(keys(snap({ deals: [deal({ updated_at: new Date(NOW.getTime() - 13 * 864e5).toISOString() })] }))).not.toContain("stale_deal");
     const s = detect(snap({ deals: [deal({ updated_at: new Date(NOW.getTime() - 15 * 864e5).toISOString() })] })).find((x) => x.detector === "stale_deal");

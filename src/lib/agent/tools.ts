@@ -12,6 +12,7 @@ import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
+import { FOLLOWUP_STEPS, followupDraft, followupStatus } from "@/lib/followup";
 import { ask } from "@/lib/ai-gateway";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
@@ -173,6 +174,24 @@ export const TOOLS: AgentTool[] = [
         c.db.from("messaging_pillars").select("id,title,pain,message,proof").eq("org_id", c.orgId),
       ]);
       return { estado: setupStatus(d), moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
+    },
+  }),
+  def({
+    name: "draft_followup", kind: "read",
+    description: "Redacta con IA el seguimiento del día 3, 7 o 14 para un lead contactado sin respuesta, con el posicionamiento y los pilares de la empresa. Solo devuelve el borrador: no envía nada ni cambia el lead. Si no se indica el paso, usa el que toca.",
+    input: z.object({ lead_id: z.string().uuid(), step: z.enum(["nudge", "value", "breakup"]).optional().describe("nudge = día 3, value = día 7, breakup = día 14"), tone: z.string().optional().describe("p. ej. más directo, más cercano, más corto") }),
+    run: async (c, a) => {
+      const l = ok(await c.db.from("leads").select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source").eq("org_id", c.orgId).eq("id", a.lead_id).single()) as any;
+      const st = followupStatus(l, new Date());
+      const step = a.step ? FOLLOWUP_STEPS.find((x) => x.id === a.step)! : st.due ?? st.next?.step ?? FOLLOWUP_STEPS[0];
+      const setup = await loadSetupData(c.db, c.orgId);
+      const base = followupDraft(step, l, { positioning: setup.positioning, pillars: setup.pillars });
+      const text = await ask(
+        "Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.",
+        JSON.stringify({ paso: `${step.label}: ${step.purpose}`, tono: a.tone ?? null, lead: { empresa: l.company, contacto: l.contact_name, cargo: l.title, origen: l.source, notas: (l.notes ?? "").slice(0, 600) }, posicionamiento: setup.positioning, pilares: setup.pillars, borrador_base: base }),
+        { effort: "low" },
+      );
+      return { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: text.trim(), borrador_base: base };
     },
   }),
   def({

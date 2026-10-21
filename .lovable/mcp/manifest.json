@@ -296,6 +296,44 @@
         "outputSchema": null
       },
       {
+        "name": "draft_followup",
+        "title": "Redactar seguimiento de un lead",
+        "description": "Redacta con IA el seguimiento del día 3, 7 o 14 para un lead contactado sin respuesta, con el posicionamiento y los pilares de la empresa. Solo devuelve el borrador: no envía nada ni cambia el lead. Si no se indica el paso, usa el que toca.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "lead_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "step": {
+              "type": "string",
+              "enum": [
+                "nudge",
+                "value",
+                "breakup"
+              ],
+              "description": "nudge = día 3, value = día 7, breakup = día 14"
+            },
+            "tone": {
+              "type": "string",
+              "description": "p. ej. más directo, más cercano, más corto"
+            }
+          },
+          "required": [
+            "lead_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "search_knowledge",
         "title": "Buscar en el conocimiento",
         "description": "Busca en el hub de conocimiento (playbooks, objeciones, metodología, empresa).",

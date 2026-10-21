@@ -1,12 +1,18 @@
 import { DAY, isoDate, type Detector } from "../types";
 import { DEFAULT_LEAD_SLA, delayText, leadDelay, leadStageLabel } from "@/lib/lead-funnel";
+import { followupStatus } from "@/lib/followup";
 
-/** Lead stuck past its stage limit or with an overdue follow-up → propose a follow-up task for tomorrow. */
+/**
+ * Lead stuck past its stage limit or with an overdue follow-up → propose a follow-up task for tomorrow.
+ * While the day-3/7/14 sequence runs on a contacted lead, that rule owns it (one voice per lead).
+ */
 export const lateLeads: Detector = (s) => {
   const sla = s.leadSla ?? DEFAULT_LEAD_SLA;
   return (s.leads ?? []).flatMap((l) => {
     const d = leadDelay(l, sla, s.now);
     if (!d.late) return [];
+    const seq = followupStatus({ stage: l.stage, contacted_at: l.contacted_at ?? null, next_step_at: l.next_step_at, company: l.company }, s.now);
+    if (seq.due || seq.reason === "scheduled" || (seq.next && seq.reason == null)) return [];
     const severe = d.reasons.length === 2 || (d.limit != null && d.daysInStage > d.limit * 2);
     return [{
       detector: "late_lead",

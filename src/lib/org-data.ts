@@ -44,7 +44,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
     db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
     db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", orgId),
-    db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
+    db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
   ]);
   return {
