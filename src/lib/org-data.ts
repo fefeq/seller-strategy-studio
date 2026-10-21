@@ -7,6 +7,7 @@ import type { SetupData } from "@/lib/setup-schema";
 import type { Snapshot } from "@/lib/proactive/types";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
+import { NOTES_UNTIL_MS } from "@/lib/call-notes";
 
 export type Db = SupabaseClient<Database>;
 
@@ -38,7 +39,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
   const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
-    db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by").eq("org_id", orgId).gte("scheduled_at", now.toISOString()),
+    db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
     db.from("accounts").select("id,name,is_target,owner_id").eq("org_id", orgId),
     db.from("stakeholders").select("account_id,buying_role").eq("org_id", orgId),
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),

@@ -42,6 +42,14 @@ describe("resolvePlan", () => {
     expect(p.prompt).toMatch(/No inventes nombres/);
   });
 
+  it("meeting notes: asks the five questions and saves them with the agent tool", () => {
+    const p = resolvePlan({ ...base, detector: "meeting_no_notes", dedupe_key: "meeting_no_notes:m1", link: "/accounts/a1?tab=meetings&meeting=m1" });
+    expect(p.to).toBe("/accounts/a1?tab=meetings&meeting=m1");
+    expect(p.side).toBe("right");
+    expect(p.prompt).toContain("id m1");
+    expect(p.prompt).toContain("save_call_notes");
+  });
+
   it("weekly report: asks for this week's actions", () => {
     const p = resolvePlan({ ...base, detector: "weekly_report", dedupe_key: "weekly:2026-10-19", link: "/deals" });
     expect(p.to).toBe("/deals");

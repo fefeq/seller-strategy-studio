@@ -5,7 +5,8 @@ export type Snapshot = {
   orgId: string;
   setup: SetupData;
   deals: { id: string; name: string; stage: string; amount: number | null; close_date: string | null; updated_at: string; owner_id: string | null; meddpicc: Record<string, unknown> | null; account_id: string | null }[];
-  meetings: { id: string; title: string; scheduled_at: string | null; ai_brief: string | null; account_id: string | null; created_by: string | null }[];
+  /** Upcoming meetings and those of the last 7 days (for the call-notes reminder). */
+  meetings: { id: string; title: string; scheduled_at: string | null; ai_brief: string | null; account_id: string | null; created_by: string | null; notes?: string | null; call_notes?: unknown }[];
   accounts: { id: string; name: string; is_target: boolean; owner_id: string | null }[];
   stakeholders: { account_id: string; buying_role: string | null }[];
   registrations: { id: string; account_name: string; status: string; expires_at: string | null }[];

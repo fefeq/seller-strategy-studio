@@ -699,6 +699,47 @@
         "outputSchema": null
       },
       {
+        "name": "save_call_notes",
+        "title": "Guardar notas de llamada en 5 líneas",
+        "description": "Guarda las notas de una reunión en 5 líneas (después de la llamada). Campos: dolor = qué les duele; impacto = qué les cuesta no resolverlo; decision = quién decide y cómo; freno = qué les frena; siguiente = próximo paso acordado. Solo lo que el usuario dijo: no completes huecos. Los campos vacíos mantienen lo que ya había. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "meeting_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "dolor": {
+              "type": "string"
+            },
+            "impacto": {
+              "type": "string"
+            },
+            "decision": {
+              "type": "string"
+            },
+            "freno": {
+              "type": "string"
+            },
+            "siguiente": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "meeting_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "create_task",
         "title": "Crear tarea",
         "description": "Crea una tarea (opcionalmente ligada a un deal o cuenta). (Queda pendiente: el usuario la confirma en Nokko.)",

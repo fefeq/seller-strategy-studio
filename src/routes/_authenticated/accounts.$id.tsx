@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/hooks/use-me";
 import { Page, Empty, HealthDot } from "@/components/page";
@@ -17,19 +17,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
-import { generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
+import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
+import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type CallNotes } from "@/lib/call-notes";
+import { useAgent } from "@/components/agent";
+import { AiText } from "@/components/ai-text";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
 
+const ACCOUNT_TABS = ["plan", "stakeholders", "meetings", "calls", "deals"] as const;
+type AccountTab = (typeof ACCOUNT_TABS)[number];
+
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
+  // tab + meeting: deep link from a suggestion straight to one meeting («Apunta las notas…»).
+  validateSearch: (s: Record<string, unknown>): { tab?: AccountTab; meeting?: string } => ({
+    ...(ACCOUNT_TABS.includes(s.tab as AccountTab) ? { tab: s.tab as AccountTab } : {}),
+    ...(typeof s.meeting === "string" ? { meeting: s.meeting } : {}),
+  }),
   head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Plan de cuenta, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Plan de cuenta, stakeholders y reuniones." }] }),
   component: AccountPage,
 });
 
 function AccountPage() {
   const { id } = Route.useParams();
+  const search = Route.useSearch();
   const qc = useQueryClient();
   const { data } = useQuery({
     queryKey: ["account", id],
@@ -75,7 +87,7 @@ function AccountPage() {
         <ScoreDetail score={score} />
         <FitFields account={a} segNames={data.segNames} onSaved={refresh} />
       </div>
-      <Tabs defaultValue="plan">
+      <Tabs key={`${id}-${search.tab ?? "plan"}-${search.meeting ?? ""}`} defaultValue={search.tab ?? "plan"}>
         <TabsList className="mb-6">
           <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
           <TabsTrigger value="stakeholders">Stakeholders ({data.stakeholders.length})</TabsTrigger>
@@ -85,7 +97,7 @@ function AccountPage() {
         </TabsList>
         <TabsContent value="plan"><PlanTab accountId={id} plan={data.plan} onSaved={refresh} /></TabsContent>
         <TabsContent value="stakeholders"><StakeholdersTab accountId={id} list={data.stakeholders} onChange={refresh} /></TabsContent>
-        <TabsContent value="meetings"><MeetingsTab accountId={id} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>
+        <TabsContent value="meetings"><MeetingsTab accountId={id} openMeetingId={search.meeting} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>
         <TabsContent value="calls"><CallsTab accountId={id} list={data.calls} onChange={refresh} /></TabsContent>
         <TabsContent value="deals"><DealsTab accountId={id} list={data.deals} onChange={refresh} /></TabsContent>
       </Tabs>
@@ -227,13 +239,24 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
 const MEETING_FIELDS = [
   ["objective", "Objetivo"], ["attendees", "Asistentes"], ["agenda", "Agenda"], ["questions", "Preguntas de discovery"],
   ["objections", "Objeciones esperadas"], ["materials", "Materiales"], ["desired_outcome", "Resultado deseado"],
-  ["notes", "Notas (después)"], ["next_steps", "Próximos pasos (después)"],
 ] as const;
 
-function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accountId: string; list: any[]; stakeholders: any[]; deals: any[]; onChange: () => void }) {
+function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deals, onChange }: { accountId: string; openMeetingId?: string; list: any[]; stakeholders: any[]; deals: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [coachBusy, setCoachBusy] = useState(false);
+  const [reviewBusy, setReviewBusy] = useState(false);
+  const { open: openAgent } = useAgent();
+  const teardown = useServerFn(callTeardown);
+  // Opened from a suggestion: select that meeting once the list is there.
+  const opened = useRef<string | null>(null);
+  useEffect(() => {
+    if (!openMeetingId || opened.current === openMeetingId) return;
+    const m = list.find((x) => x.id === openMeetingId);
+    if (m) { opened.current = openMeetingId; setSel(m); }
+  }, [openMeetingId, list]);
+  const lines: CallNotes = normalizeCallNotes(sel?.call_notes);
+  const setLine = (k: keyof CallNotes, v: string) => setSel({ ...sel, call_notes: { ...(sel.call_notes ?? {}), [k]: v } });
   const detailRef = useRevealOnMobile(sel?.id);
   const brief = useServerFn(generateMeetingBrief);
   const coach = useServerFn(listeningCoaching);
@@ -244,12 +267,15 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
   }
   async function save() {
     const { id, title, scheduled_at, deal_id, ...rest } = sel;
-    const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null, listening_level: rest.listening_level ?? null, listening_reflection: rest.listening_reflection ?? "" };
+    const call_notes = normalizeCallNotes(rest.call_notes);
+    const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null, listening_level: rest.listening_level ?? null, listening_reflection: rest.listening_reflection ?? "", notes: rest.notes ?? null, call_notes, next_steps: call_notes.siguiente ?? rest.next_steps ?? null };
     for (const [k] of MEETING_FIELDS) payload[k] = rest[k];
     const { error } = await supabase.from("meetings").update(payload as any).eq("id", id);
     if (error) { toast.error(errorText(error)); return false; }
-    if (sel.notes || sel.next_steps) {
-      await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: sel.notes, next_steps: sel.next_steps });
+    // The call log (Llamadas tab, call prep, score) gets the five lines and the free notes.
+    const log = callLogEntry({ notes: rest.notes, next_steps: rest.next_steps, call_notes });
+    if (log.hasContent) {
+      await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: log.summary, next_steps: log.next_steps });
     }
     toast.success("Reunión guardada."); onChange();
     return true;
@@ -259,6 +285,22 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
     setBusy(true);
     try { const r = await brief({ data: { meetingId: sel.id } }); setSel({ ...sel, ai_brief: r.brief }); onChange(); }
     catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+  }
+  async function genTeardown() {
+    if (!(await save())) return;
+    setReviewBusy(true);
+    try { const r = await teardown({ data: { meetingId: sel.id } }); setSel((s: any) => ({ ...s, call_review: r.text })); onChange(); }
+    catch (e) { toast.error(errorText(e)); } finally { setReviewBusy(false); }
+  }
+  // Hand the teardown to the agent so the deal updates come back as actions to confirm.
+  function updateDealWithAgent() {
+    const deal = deals.find((d) => d.id === sel.deal_id);
+    if (!deal) return;
+    const review = String(sel.call_review ?? "").slice(0, 2500);
+    openAgent({
+      fresh: true, docked: true, mode: "chat", personaId: null, workflowId: null,
+      prompt: `Actualiza el deal «${deal.name}» (id ${deal.id}) con lo que salió de la reunión «${sel.title}».\n\nDesmontaje de la llamada:\n${review}\n\nPrepara como acciones para que las confirme: los campos de MEDDPICC que las notas permiten rellenar (solo con lo que dicen las notas, sin suponer nada) y una tarea para el próximo paso acordado con su fecha. Si falta la fecha del próximo paso, dímelo en vez de inventarla.`,
+    });
   }
   async function genCoaching() {
     if (!(await save())) return;
@@ -298,7 +340,27 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
             ))}
           </div>
           <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Preparar llamada con IA"}</Button></div>
-          {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.ai_brief}</pre></div>}
+          {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><AiText>{sel.ai_brief}</AiText></div>}
+          <div className="space-y-3 border-t pt-4">
+            <div>
+              <p className="eyebrow">Después de la llamada: notas en 5 líneas · {filledCount(lines)}/5</p>
+              <p className="text-xs text-muted-foreground">Una línea por pregunta, en cuanto cuelgues. Con esto la IA desmonta la llamada y te dice qué actualizar en el deal.</p>
+            </div>
+            <div className="space-y-2">
+              {CALL_NOTE_FIELDS.map((f, i) => (
+                <Field key={f.key} label={`${i + 1}. ${f.label}`}>
+                  <Input value={sel.call_notes?.[f.key] ?? ""} placeholder={f.hint} maxLength={300} onChange={(e) => setLine(f.key, e.target.value)} />
+                </Field>
+              ))}
+              <Field label="Notas libres (opcional)"><Textarea rows={3} value={sel.notes ?? ""} onChange={(e) => setSel({ ...sel, notes: e.target.value })} /></Field>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => save()}>Guardar notas</Button>
+              <Button variant="outline" onClick={genTeardown} disabled={reviewBusy || (filledCount(lines) === 0 && !String(sel.notes ?? "").trim())}><Wand2 className="size-4" /> {reviewBusy ? "Desmontando…" : sel.call_review ? "Volver a desmontar con IA" : "Desmontar la llamada con IA"}</Button>
+              {sel.call_review && sel.deal_id && <Button variant="outline" onClick={updateDealWithAgent}><Sparkles className="size-4" /> Actualizar el deal con el agente</Button>}
+            </div>
+            {sel.call_review && <div><p className="eyebrow mb-2">Desmontaje de la llamada</p><AiText>{sel.call_review}</AiText></div>}
+          </div>
           <div className="space-y-3 border-t pt-4">
             <div>
               <p className="eyebrow">Después: ¿cómo escuchaste? · Theory U</p>
@@ -307,7 +369,7 @@ function MeetingsTab({ accountId, list, stakeholders, deals, onChange }: { accou
             <LevelPicker value={sel.listening_level} onChange={(l) => setSel({ ...sel, listening_level: l })} />
             <Textarea rows={2} placeholder="¿En qué momento escuchaste de verdad? ¿Cuándo estabas pensando en tu pitch?" value={sel.listening_reflection ?? ""} onChange={(e) => setSel({ ...sel, listening_reflection: e.target.value })} />
             <Button variant="outline" size="sm" onClick={genCoaching} disabled={coachBusy}><Sparkles className="size-4" /> {coachBusy ? "Analizando…" : "Coaching de escucha con IA"}</Button>
-            {sel.listening_coaching && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.listening_coaching}</pre>}
+            {sel.listening_coaching && <AiText>{sel.listening_coaching}</AiText>}
           </div>
         </div>
       ) : <Empty>Selecciona o planifica una reunión.</Empty>}
