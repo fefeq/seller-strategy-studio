@@ -26,6 +26,7 @@ const TITLES: Record<string, string> = {
   get_overview: "Resumen de la empresa",
   get_setup_status: "Estado de la configuración",
   list_deals: "Listar deals",
+  list_products: "Listar productos",
   list_stages: "Listar etapas del pipeline",
   list_leads: "Listar leads",
   list_suggestions: "Listar sugerencias",

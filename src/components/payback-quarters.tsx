@@ -1,3 +1,4 @@
+import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -17,7 +18,7 @@ export function usePaybackQuarters(count: number) {
   const orgId = me?.currentOrg?.org_id;
   const quarters = quartersUpTo(quarterOf(new Date()), count);
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
-  const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
+  const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin")).data ?? [] });
   const { data: costs = [] } = useQuery({
     queryKey: ["segment-coverage", orgId, "payback-quarters", count],
     enabled: !!orgId,
@@ -30,7 +31,7 @@ export function usePaybackQuarters(count: number) {
     queryFn: async () => (await supabase.from("segment_budget_quarters").select("*").in("period", years.flatMap((y) => [1, 2, 3, 4].map((n) => `${y}-Q${n}`)))).data ?? [],
   });
   const rows = useMemo(
-    () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withPeriodMargin(segs as SegLike[], budgets, q)),
+    () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withPeriodMargin(segs as SegLike[], budgets, q, wonDealsMargin(deals, quarterRange(q)?.end).bySegment)),
     [segs, deals, costs, budgets, quarters.join()],
   );
   return { quarters, rows, segs };

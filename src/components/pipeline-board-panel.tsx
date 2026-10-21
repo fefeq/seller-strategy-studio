@@ -1,3 +1,4 @@
+import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -28,7 +29,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     enabled: !!orgId,
     queryFn: async () => {
       const [d, s, b, c] = await Promise.all([
-        supabase.from("deals").select("id,name,owner_id,segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+        supabase.from("deals").select("id,name,owner_id,segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin"),
         supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
         supabase.from("segment_budget_quarters").select("*").in("period", [1, 2, 3, 4].map((n) => `${year}-Q${n}`)),
         supabase.from("cac_costs").select("segment_id,channel,amount,period").eq("period", quarter),
@@ -45,7 +46,8 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     const [k] = quarterKpis(data.segments, data.deals, data.budgets, data.costs, [quarter]);
     const real = actuals(data.deals);
     const segMargins = data.segments.map((s) => s.gross_margin_pct).filter((x): x is number => x != null).map(Number);
-    const margin = k.actual.margin ?? k.plan.margin ?? (segMargins.length ? segMargins.reduce((a, b) => a + b, 0) / segMargins.length : null);
+    // Real margin of the books first, then what the won deals with product lines actually carried.
+    const margin = k.actual.margin ?? wonDealsMargin(data.deals, range.end).all?.pct ?? k.plan.margin ?? (segMargins.length ? segMargins.reduce((a, b) => a + b, 0) / segMargins.length : null);
     const cost = data.costs.reduce((s, c) => s + Number(c.amount || 0), 0) || null;
     const closing = closingIn(data.deals, range);
     const won = board.find((g) => g.id === "won")!.count;

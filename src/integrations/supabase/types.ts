@@ -824,6 +824,73 @@ export type Database = {
           },
         ]
       }
+      deal_lines: {
+        Row: {
+          billing: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          discount_pct: number
+          id: string
+          name: string
+          org_id: string
+          product_id: string | null
+          quantity: number
+          unit_cost: number | null
+          unit_price: number
+        }
+        Insert: {
+          billing?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          discount_pct?: number
+          id?: string
+          name: string
+          org_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number | null
+          unit_price?: number
+        }
+        Update: {
+          billing?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          discount_pct?: number
+          id?: string
+          name?: string
+          org_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_lines_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_lines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_stage_history: {
         Row: {
           changed_at: string
@@ -926,6 +993,7 @@ export type Database = {
           created_by: string | null
           external_id: string | null
           forecast_category: string | null
+          gross_margin: number | null
           health: string | null
           id: string
           lead_source_id: string | null
@@ -951,6 +1019,7 @@ export type Database = {
           created_by?: string | null
           external_id?: string | null
           forecast_category?: string | null
+          gross_margin?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
@@ -976,6 +1045,7 @@ export type Database = {
           created_by?: string | null
           external_id?: string | null
           forecast_category?: string | null
+          gross_margin?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
@@ -2279,6 +2349,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "positioning_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          billing: string
+          cost: number | null
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          name: string
+          org_id: string
+          price: number
+          sku: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          active?: boolean
+          billing?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name: string
+          org_id?: string
+          price?: number
+          sku?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          active?: boolean
+          billing?: string
+          cost?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          name?: string
+          org_id?: string
+          price?: number
+          sku?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
