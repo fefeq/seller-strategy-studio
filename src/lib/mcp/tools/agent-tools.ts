@@ -33,6 +33,7 @@ const TITLES: Record<string, string> = {
   prepare_meeting_brief: "Preparar brief de reunión",
   search: "Buscar",
   search_knowledge: "Buscar en el conocimiento",
+  draft_followup: "Redactar seguimiento de un lead",
   set_currency: "Cambiar moneda",
   set_quota: "Fijar cuota",
   update_deal: "Actualizar deal",

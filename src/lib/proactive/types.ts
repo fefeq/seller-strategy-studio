@@ -12,7 +12,7 @@ export type Snapshot = {
   trials: { segment_id: string | null; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null }[];
   segments: { id: string; name: string }[];
   /** Open leads (Nuevo…SQL) and the company's stage limits; optional so older snapshots still work. */
-  leads?: { id: string; company: string; stage: string; stage_entered_at: string; next_step_at: string | null; owner_id: string | null; account_id: string | null }[];
+  leads?: { id: string; company: string; stage: string; stage_entered_at: string; next_step_at: string | null; owner_id: string | null; account_id: string | null; contacted_at?: string | null; contact_name?: string | null }[];
   leadSla?: import("@/lib/lead-funnel").LeadSla;
   /** For the cold-deal threshold: every deal with its dates and segment, the segments with ACV ranges, and the company override. Optional so older snapshots still work. */
   cycleDeals?: (import("@/lib/segment-coverage").DealLike & { id: string })[];
