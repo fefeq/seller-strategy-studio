@@ -24,3 +24,13 @@ describe("errorText", () => {
     expect(errorText(undefined, "No se ha podido guardar.")).toBe("No se ha podido guardar.");
   });
 });
+
+describe("isNetworkError", () => {
+  it("recognises a request dropped by the browser and nothing else", async () => {
+    const { isNetworkError } = await import("./errors");
+    expect(isNetworkError(new TypeError("Load failed"))).toBe(true);
+    expect(isNetworkError(new Error("Failed to fetch"))).toBe(true);
+    expect(isNetworkError(new Error("La IA no respondió"))).toBe(false);
+    expect(isNetworkError(null)).toBe(false);
+  });
+});

@@ -17,7 +17,7 @@ import { applySetupItems, extractSetup } from "@/lib/agent.functions";
 import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
-import { errorText } from "@/lib/errors";
+import { errorText, isNetworkError } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -86,7 +86,8 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
   async function run() {
     setBusy(true);
     try { setProposal(await extract({ data: { url, text, files } })); }
-    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+    catch (e) { toast.error(isNetworkError(e) ? "La propuesta tardó demasiado y el navegador cortó la conexión. Prueba con solo la web o con menos texto, sin archivos, o desde el ordenador." : errorText(e)); }
+    finally { setBusy(false); }
   }
 
   if (proposal) return <ProposalReview proposal={proposal} onReset={() => setProposal(null)} onWizard={onWizard} />;

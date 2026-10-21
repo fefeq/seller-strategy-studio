@@ -23,6 +23,12 @@ const RULES: [(code: string, msg: string, status: number) => boolean, string][] 
   [(_c, m) => /failed to fetch|networkerror|network request failed|load failed|fetch failed|timeout|timed out/i.test(m), "No hay conexión con el servidor. Comprueba tu conexión y vuelve a intentarlo."],
 ];
 
+/** True when the browser dropped the request (offline, or a long call cut by the device) rather than the server answering. */
+export function isNetworkError(e: unknown): boolean {
+  const m = e instanceof Error ? e.message : typeof e === "string" ? e : "";
+  return /failed to fetch|networkerror|network request failed|load failed|fetch failed|timeout|timed out/i.test(m);
+}
+
 /** Heuristic: our own messages are Spanish; Supabase/auth/network ones are English. */
 function looksSpanish(m: string) {
   return /[áéíóúñ¿¡]/i.test(m) || /\b(no|el|la|los|las|de|del|una?|para|con|ya|tu|es|hay|está)\b/i.test(m) && !/\b(the|is|are|not|failed|error|violates|invalid|with)\b/i.test(m);
