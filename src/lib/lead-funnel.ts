@@ -109,6 +109,23 @@ export function reachedAt(lead: LeadRow, step: FunnelStep, deals: Map<string, De
   }
 }
 
+const BACKFILLED: Partial<Record<FunnelStep, FunnelStep>> = { contacted: "mql", mql: "sql", sql: "opportunity" };
+
+/**
+ * Whether the lead really went through a step. The database stamps every earlier step when a lead
+ * enters or jumps straight to a later one (a CSV row that arrives as Oportunidad gets contacted_at,
+ * mql_at and sql_at all at the same instant). A step stamped at the very same instant as the next
+ * one was skipped, not passed: counting it shows a 100 % funnel nobody went through.
+ */
+export function passedThrough(lead: LeadRow, step: FunnelStep, deals: Map<string, DealOutcome>): boolean {
+  const at = reachedAt(lead, step, deals);
+  if (!at) return false;
+  const next = BACKFILLED[step];
+  if (!next) return true;
+  const nextAt = reachedAt(lead, next, deals);
+  return !(nextAt && new Date(nextAt).getTime() === new Date(at).getTime());
+}
+
 const median = (xs: number[]) => {
   if (!xs.length) return null;
   const s = [...xs].sort((a, b) => a - b);
@@ -119,7 +136,11 @@ const median = (xs: number[]) => {
 export type FunnelResult = {
   total: number;
   disqualified: number;
-  steps: { id: FunnelStep; label: string; count: number; fromPrev: number | null; fromStart: number }[];
+  /**
+   * count = leads that passed through the step; direct = those that entered the funnel at this step
+   * (they skipped the one before); fromPrev = share of the previous step's leads that went on to this one.
+   */
+  steps: { id: FunnelStep; label: string; count: number; direct: number; fromPrev: number | null; fromStart: number }[];
   /** Median days from entry to each step, among leads that reached it. */
   medianDays: Record<"mql" | "sql" | "opportunity" | "won", number | null>;
 };
@@ -132,15 +153,21 @@ export function leadCohort<T extends Pick<LeadRow, "created_at">>(leads: T[], st
 export function leadFunnel(leads: LeadRow[], deals: DealOutcome[] | Map<string, DealOutcome>): FunnelResult {
   const map = deals instanceof Map ? deals : new Map(deals.map((d) => [d.id, d]));
   const total = leads.length;
-  let prev: number | null = null;
-  const steps = FUNNEL_STEPS.map((s) => {
-    const count = leads.filter((l) => reachedAt(l, s.id, map)).length;
-    const row = { id: s.id, label: s.label, count, fromPrev: prev == null ? null : prev ? count / prev : 0, fromStart: total ? count / total : 0 };
-    prev = count;
-    return row;
+  const steps = FUNNEL_STEPS.map((s, i) => {
+    const here = leads.filter((l) => passedThrough(l, s.id, map));
+    const before = i === 0 ? null : FUNNEL_STEPS[i - 1].id;
+    const prevCount = before == null ? null : leads.filter((l) => passedThrough(l, before, map)).length;
+    const continued = before == null ? here.length : here.filter((l) => passedThrough(l, before, map)).length;
+    return {
+      id: s.id, label: s.label, count: here.length,
+      direct: before == null ? 0 : here.length - continued,
+      fromPrev: prevCount == null ? null : prevCount ? continued / prevCount : 0,
+      fromStart: total ? here.length / total : 0,
+    };
   });
+  // Same rule as the counts: a step a lead skipped has no «days to reach it».
   const days = (step: FunnelStep) => median(leads.flatMap((l) => {
-    const at = reachedAt(l, step, map);
+    const at = passedThrough(l, step, map) ? reachedAt(l, step, map) : null;
     return at ? [Math.max(0, (new Date(at).getTime() - new Date(l.created_at).getTime()) / DAY)] : [];
   }));
   return {

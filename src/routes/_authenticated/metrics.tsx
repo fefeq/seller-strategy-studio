@@ -7,7 +7,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { Input } from "@/components/ui/input";
 import { DEAL_STAGES } from "@/lib/roles";
-import { coverage, daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
+import { daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
 import { CacPanel } from "@/components/cac-panel";
@@ -18,6 +18,7 @@ import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
 import { metricsHeadline } from "@/lib/headlines";
+import { formatRatio, quarterCoverage } from "@/lib/coverage";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -29,7 +30,7 @@ const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation",
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
 function Metrics() {
-  const { money: eur } = useCurrency();
+  const { money: eur, currency } = useCurrency();
   const qc = useQueryClient();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
@@ -73,7 +74,7 @@ function Metrics() {
     const created = data.history.filter((h) => !h.from_stage && inQ(h.changed_at)).length;
     return {
       openPipe: openInQ.reduce((s, d) => s + Number(d.amount ?? 0), 0),
-      quota, cov: coverage(openInQ.reduce((s, d) => s + Number(d.amount ?? 0), 0), quota),
+      quota, cov: quarterCoverage(data.deals, quota, quarter),
       conv: stageConversion(data.history, OPEN_ORDER),
       days: daysInStage(data.history),
       bySource: group((d) => d.source ?? "outbound"),
@@ -102,7 +103,7 @@ function Metrics() {
       {m && (
         <div className="space-y-8">
           <div className="grid gap-4 md:grid-cols-4">
-            <Kpi label="Cobertura de pipeline" v={m.quota ? `${m.cov.ratio.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x` : "—"} hint={m.quota ? (m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad") : "Define cuotas abajo"} tone={m.cov.status === "low" && m.quota ? "bad" : undefined} />
+            <Kpi label="Cobertura de pipeline" v={m.quota ? formatRatio(m.cov.ratio) : "—"} hint={m.quota ? `${m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${m.cov.undated.count ? ` · ${m.cov.undated.count} ${m.cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${eur(m.cov.undated.amount)}) no cuentan` : ""}` : "Define cuotas abajo"} tone={m.cov.status === "low" && m.quota ? "bad" : undefined} />
             <Kpi label="Pipeline que cierra este trimestre" v={eur(m.openPipe)} hint={`Cuota total ${eur(m.quota)}`} />
             <Kpi label="Forecast comprometido vs real" v={`${eur(m.actual)} / ${eur(m.commit)}`} hint={m.commit ? `${m.acc.diff >= 0 ? "+" : ""}${pct(m.acc.diff)} · ${m.acc.accurate ? "dentro del 10%" : "fuera del 10%"}` : "Marca deals como Commit"} tone={m.commit && !m.acc.accurate ? "bad" : undefined} />
             <Kpi label="Win rate global" v={pct(m.overall)} hint={`${m.created} deals creados este trimestre`} />
@@ -155,7 +156,7 @@ function Metrics() {
                   </div>
                 );
               })}
-              <Muted>Solo Owner y Sales Leader pueden fijar cuotas.</Muted>
+              <Muted>{canEdit ? `Importe en ${currency} de deals ganados (ACV nuevo) que cada persona debe cerrar en ${quarter}. La cobertura compara el pipeline con cierre en el trimestre con esta suma.` : "Solo el Owner y el Sales Leader fijan las cuotas."}</Muted>
             </Panel>
           </div>
 

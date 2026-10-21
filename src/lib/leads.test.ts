@@ -103,3 +103,35 @@ describe("real numbers for the calculator", () => {
     expect(a.winRate).toBeNull();
   });
 });
+
+describe("CSV column mapping (preview)", () => {
+  it("says which field each column fills, so «fecha» is visibly the entry date", async () => {
+    const { columnMapping } = await import("./leads");
+    expect(columnMapping(["empresa", "etapa", "fecha", "importe", "notas"])).toEqual({ empresa: "company", etapa: "stage", fecha: "enteredAt", importe: "amount", notas: null });
+    expect(columnMapping(["Empresa", "Fecha de cierre"])["Fecha de cierre"]).toBe("closeDate");
+  });
+  it("a column the person reassigns reaches the importer as that field", async () => {
+    const { applyColumnMapping, normalizeLead } = await import("./leads");
+    const rows = [{ empresa: "Acme", etapa: "Discovery", fecha: "15/11/2026", importe: "500", notas: "x" }];
+    const mapped = applyColumnMapping(rows, { empresa: "company", etapa: "stage", fecha: "closeDate", importe: "amount", notas: null });
+    expect(mapped[0]).toEqual({ company: "Acme", stage: "Discovery", close_date: "15/11/2026", amount: "500" });
+    const r = normalizeLead(mapped[0]);
+    if ("error" in r) throw new Error(r.error);
+    expect(r.lead.closeDate).toBe("2026-11-15");
+  });
+  it("warns when rows will create deals and nothing fills the close date", async () => {
+    const { columnMapping, dealsWithoutCloseDate } = await import("./leads");
+    const rows = [{ empresa: "Acme", etapa: "Discovery", fecha: "15/11/2026" }];
+    expect(dealsWithoutCloseDate(rows, columnMapping(Object.keys(rows[0])), "new")).toBe(true);
+    expect(dealsWithoutCloseDate([{ empresa: "Acme", etapa: "Nuevo" }], columnMapping(["empresa", "etapa"]), "new")).toBe(false);
+  });
+});
+
+describe("CSV mapping keeps the importer's rescue rules", () => {
+  it("takes the first non-empty column of a field and still finds an email in an ignored column", async () => {
+    const { applyColumnMapping } = await import("./leads");
+    const out = applyColumnMapping([{ a: "", b: "Acme", c: "ana@acme.com" }], { a: "company", b: "company", c: null });
+    expect(out[0].company).toBe("Acme");
+    expect(Object.values(out[0])).toContain("ana@acme.com");
+  });
+});

@@ -1,0 +1,4 @@
+-- Priority as its own field: the AI used to write «… — prioridad 1; ACV objetivo por cuenta» into the
+-- segment name because there was nowhere else to put it. notes already exists for the methodology note.
+alter table public.segments add column priority integer check (priority is null or priority >= 1);
+comment on column public.segments.priority is '1 = first segment to sell to; null = not ranked';

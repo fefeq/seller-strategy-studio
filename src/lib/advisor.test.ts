@@ -46,6 +46,6 @@ describe("snapshot sent to the AI", () => {
     expect(snap.segmentos[0].real.win_rate_pct).toBe(50);
     expect(snap.segmentos[0].benchmarks.win_rate_objetivo_pct).toBe(30);
   });
-  it("coverage = quarter pipeline / quota", () => expect(snap.trimestre.cobertura).toBe("3x (sana, 3–4x)"));
+  it("coverage = quarter pipeline / quota", () => expect(snap.trimestre.cobertura).toBe("3,0x (sana, 3–4x)"));
   it("counts at-risk pipeline", () => expect(snap.pipeline.en_riesgo).toEqual({ deals: 1, importe: 30000 }));
 });

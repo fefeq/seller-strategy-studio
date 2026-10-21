@@ -50,12 +50,12 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
               <div key={s.id} className="py-1.5">
                 <div className="mb-1 flex flex-wrap justify-between gap-x-2 text-sm">
                   <span className="min-w-0">{s.label}</span>
-                  <span className="ml-auto font-mono text-xs text-muted-foreground">{s.count} · {pct(s.fromStart)} del total{s.fromPrev != null ? <span className="hidden sm:inline"> · {pct(s.fromPrev)} del paso anterior</span> : null}</span>
+                  <span className="ml-auto font-mono text-xs text-muted-foreground">{s.count} · {pct(s.fromStart)} del total{s.fromPrev != null && s.count > s.direct ? <span className="hidden sm:inline"> · {pct(s.fromPrev)} del paso anterior</span> : null}{s.direct > 0 ? ` · ${s.direct} entrada directa` : ""}</span>
                 </div>
                 <div className="h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${(s.count / max) * 100}%` }} /></div>
               </div>
             ))}
-            <p className="mt-3 text-xs text-muted-foreground">{f.disqualified} descartados en esta cohorte.</p>
+            <p className="mt-3 text-xs text-muted-foreground">{f.disqualified} descartados en esta cohorte.{f.steps.some((s) => s.direct > 0) ? " «Entrada directa»: leads que llegaron ya en esa etapa (por ejemplo, importados como oportunidad); no cuentan como pasados por las etapas anteriores." : ""}</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {([["Hasta MQL", f.medianDays.mql], ["Hasta SQL", f.medianDays.sql], ["Hasta oportunidad", f.medianDays.opportunity], ["Hasta ganado", f.medianDays.won]] as const).map(([label, v]) => (

@@ -134,6 +134,20 @@
       "when": 1792458675138,
       "tag": "0018_segment_zero_targets",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792459275138,
+      "tag": "0019_segment_priority",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1792459875138,
+      "tag": "0020_org_segment_template",
+      "breakpoints": true
     }
   ]
 }

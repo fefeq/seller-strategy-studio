@@ -62,7 +62,7 @@ function Strategy() {
 
 const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
 const SEG_COLS = [
-  ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["cycle_days", "Ciclo (días)"],
+  ["priority", "Prioridad"], ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["cycle_days", "Ciclo (días)"],
   ["sdr_per_ae", "SDR por AE"], ["ae_per_se", "AE por SE"], ["win_rate_target", "Win rate obj. %"], ["ae_quota", "Cuota anual AE"],
   ["cac_target", "CAC objetivo"], ["gross_margin_pct", "Margen bruto %"], ["payback_months", "Payback obj. (m)"],
 ] as const;
@@ -80,7 +80,8 @@ function Motions() {
   const [acvManual, setAcvManual] = useState<number | null>(null);
   const [basis, setBasis] = useState<"target" | "real">("target");
   const [forced, setForced] = useState("");
-  const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("acv_min")).data ?? [] });
+  // Ranked segments first (1, 2, 3…), then the rest by ACV.
+  const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("priority", { ascending: true, nullsFirst: false }).order("acv_min")).data ?? [] });
   const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
   const { data: costs = [] } = useQuery({ queryKey: ["segment-coverage", "cac-12m"], queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", lastQuarters())).data ?? [] });
   const year = new Date().getFullYear();
@@ -88,8 +89,13 @@ function Motions() {
   const budgets = useMemo(() => annualFromQuarters(budgetRows, year), [budgetRows, year]);
   const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
   const cacReal = useMemo(() => trailingCac(segs as SegLike[], deals, costs), [segs, deals, costs]);
-  // The ACV follows the real pipeline until the user types their own value.
-  const acv = acvManual ?? (real.overall.acv != null ? Math.round(real.overall.acv) : 20000);
+  // The ACV follows the real pipeline until the user types their own value; without deals it starts
+  // from the middle of the company's own segment ranges, and only with neither from a generic 20.000.
+  const ownAcv = useMemo(() => {
+    const mids = segs.filter((s) => s.acv_min != null && s.acv_max != null).map((s) => (Number(s.acv_min) + Number(s.acv_max)) / 2);
+    return mids.length ? Math.round(mids.reduce((a, b) => a + b, 0) / mids.length) : null;
+  }, [segs]);
+  const acv = acvManual ?? (real.overall.acv != null ? Math.round(real.overall.acv) : ownAcv ?? 20000);
   const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
   const segReal = seg ? real.bySegment[seg.id] : undefined;
   const segCac = seg ? cacReal[seg.id] : undefined;
@@ -149,7 +155,7 @@ function Motions() {
     const { error } = await supabase.from("organizations").update({ currency: c }).eq("id", me!.currentOrg!.org_id);
     if (error) return toast.error(errorText(error));
     await qc.invalidateQueries({ queryKey: ["me"] });
-    toast.success(`Moneda: ${CURRENCIES[c]}.`);
+    toast.success(`Moneda: ${CURRENCIES[c]}. Las cifras no se han convertido: revisa importes y benchmarks.`);
   }
   const fmt1 = (n: number | null) => (n == null ? "—" : n.toLocaleString("es-ES", { maximumFractionDigits: 1 }));
   // One editable cell, shared by the mobile cards and the desktop table.
@@ -175,7 +181,10 @@ function Motions() {
         <div className="space-y-4">
           <p className="eyebrow">Calculadora de estrategia GTM</p>
           <Field label="Moneda de la empresa">
-            {isOwner ? <Pick value={currency} options={CURRENCIES} onChange={setCurrency} /> : <p className="text-sm">{CURRENCIES[currency] ?? currency} <span className="text-xs text-muted-foreground">· solo el Owner la cambia</span></p>}
+            {isOwner ? <>
+              <Pick value={currency} options={CURRENCIES} onChange={setCurrency} />
+              <p className="text-xs text-muted-foreground">Cambiarla solo cambia el símbolo: no convierte ninguna cifra. Revisa importes y benchmarks después.</p>
+            </> : <p className="text-sm">{CURRENCIES[currency] ?? currency} <span className="text-xs text-muted-foreground">· solo el Owner la cambia</span></p>}
           </Field>
           <Field label={`Valor anual del contrato (ACV, ${symbol})`}>
             <Input type="number" value={acv} onChange={(e) => setAcvManual(Number(e.target.value))} />
@@ -183,7 +192,7 @@ function Motions() {
               acvManual == null
                 ? <p className="text-xs text-success">ACV real: media de {real.overall.acvSample} {real.overall.acvSample === 1 ? `deal ${real.overall.acvSource === "ganados" ? "ganado" : "abierto"}` : `deals ${real.overall.acvSource}`}. Se actualiza solo cuando entran leads.</p>
                 : <button className="text-xs text-signal underline-offset-2 hover:underline" onClick={() => setAcvManual(null)}>Volver al ACV real ({money(Math.round(real.overall.acv))})</button>
-            ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: valor de ejemplo. <Link to="/leads/entrada" className="underline">Conecta tus leads</Link>.</p>}
+            ) : <p className="text-xs text-muted-foreground">Sin deals con importe todavía: {acvManual == null && ownAcv != null ? "media de los rangos de ACV de tus segmentos" : "valor de ejemplo"}. <Link to="/leads/entrada" className="underline">Conecta tus leads</Link>.</p>}
           </Field>
           <Field label="Calcular con">
             <Pick value={basis} options={{ target: "Benchmarks objetivo del segmento", real: "Datos reales de la pipeline" }} onChange={(v) => setBasis(v as "target" | "real")} />

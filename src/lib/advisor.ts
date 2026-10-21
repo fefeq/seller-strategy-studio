@@ -1,6 +1,7 @@
 // GTM Advisor: builds a compact snapshot of pipeline, metrics and segments for the AI,
 // and defines the structured output it must return.
-import { coverage, daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "./metrics";
+import { daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "./metrics";
+import { formatRatio, quarterCoverage } from "./coverage";
 import { ROLES } from "./roles";
 
 /** Only Owner and Sales Leader may run the GTM advisor. */
@@ -52,7 +53,8 @@ export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; histo
   const inQ = (s: string | null) => !!s && new Date(s) >= start && new Date(s) < end;
   const openInQ = open.filter((d) => inQ(d.close_date));
   const quota = quotas.filter((q) => q.period === quarter).reduce((s, q) => s + Number(q.amount), 0);
-  const cov = coverage(sum(openInQ), quota);
+  // Same calculation as Métricas and the low_coverage suggestion.
+  const cov = quarterCoverage(open, quota, quarter);
   const wonQ = won.filter((d) => inQ(d.closed_at ?? d.updated_at));
   const commitQ = sum(openInQ.filter((d) => d.forecast_category === "commit")) + sum(wonQ);
 
@@ -88,7 +90,8 @@ export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; histo
       periodo: quarter,
       cuota: quota,
       pipeline_que_cierra: sum(openInQ),
-      cobertura: quota ? `${r1(cov.ratio)}x (${cov.status === "healthy" ? "sana, 3–4x" : cov.status === "low" ? "baja, <3x" : "alta, >4x"})` : "sin cuota definida",
+      cobertura: quota ? `${formatRatio(cov.ratio)} (${cov.status === "healthy" ? "sana, 3–4x" : cov.status === "low" ? "baja, <3x" : "alta, >4x"})` : "sin cuota definida",
+      deals_abiertos_sin_fecha_de_cierre: { deals: cov.undated.count, importe: cov.undated.amount, nota: "no cuentan en la cobertura de ningún trimestre" },
       ganado: sum(wonQ),
       commit_mas_ganado: commitQ,
     },

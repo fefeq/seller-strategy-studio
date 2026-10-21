@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { LEAD_STAGES, OPEN_LEAD_STAGES, leadStageLabel, type LeadSla } from "@/lib/lead-funnel";
 import { errorText } from "@/lib/errors";
+import { DateField } from "@/components/date-field";
 
 const NEW_STAGES = Object.fromEntries(LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label]));
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -53,7 +54,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
           <Field label="Origen"><Input value={f.source} onChange={(e) => set("source")(e.target.value)} placeholder="Webinar, LinkedIn, Referido…" /></Field>
           <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segments.map((s) => [s.id, s.name])) }} onChange={set("segment_id")} /></Field>
           <Field label="Etapa"><Pick value={f.stage} options={NEW_STAGES} onChange={set("stage")} /></Field>
-          <Field label="Próximo seguimiento"><Input type="date" value={f.next_step_at} onChange={(e) => set("next_step_at")(e.target.value)} /></Field>
+          <Field label="Próximo seguimiento"><DateField value={f.next_step_at} onChange={(iso) => set("next_step_at")(iso ?? "")} /></Field>
         </div>
         <Button className="mt-2 w-full" onClick={save}>Crear lead</Button>
       </DialogContent>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { quarterRange } from "@/lib/metrics";
 import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDealRow } from "@/lib/won-deals";
 import { errorText } from "@/lib/errors";
+import { DateField } from "@/components/date-field";
 
 const SELECT = "h-10 rounded-md border bg-background px-2 text-xs md:h-8";
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -117,9 +118,9 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
         {account && <p className="text-[11px] text-muted-foreground">{account}</p>}
       </td>
       <td className="px-2 py-1.5">
-        <Input type="date" aria-label={`Fecha de cierre · ${d.name}`} className="h-10 w-40 text-xs md:h-8" key={`${d.id}-${r.closedOn}`} defaultValue={r.closedOn}
-          onBlur={(e) => { const v = e.target.value; if (v && (v !== r.closedOn || r.dateSource === "estimada")) onUpdate({ closed_at: closedAtFromDay(v), close_date: v }); }} />
-        {r.dateSource === "estimada" && <p className="mt-0.5 text-[11px] text-signal">Estimada · confírmala</p>}
+        <DateField aria-label={`Fecha de cierre · ${d.name}`} className="h-10 w-40 text-xs md:h-8" value={r.closedOn}
+          onChange={(iso) => { if (iso) onUpdate({ closed_at: closedAtFromDay(iso), close_date: iso }); }} />
+        {r.dateSource === "estimada" && r.closedOn && <button type="button" className="mt-0.5 text-[11px] text-signal underline-offset-2 hover:underline" onClick={() => onUpdate({ closed_at: closedAtFromDay(r.closedOn!), close_date: r.closedOn! })}>Estimada · confirmar esta fecha</button>}
       </td>
       <td className="px-2 py-1.5 text-right">
         <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-10 w-32 text-right text-xs md:h-8" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
@@ -192,7 +193,7 @@ function AddWon({ quarter, segments, openDeals, onDone }: {
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Fecha de cierre</span>
-        <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="h-10 text-xs md:h-8" aria-label="Fecha de cierre del nuevo deal" />
+        <DateField value={day || null} onChange={(iso) => setDay(iso ?? "")} className="h-10 text-xs md:h-8" aria-label="Fecha de cierre del nuevo deal" />
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Valor anual</span>

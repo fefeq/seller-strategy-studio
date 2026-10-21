@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { parseCsv } from "@/lib/dedupe";
 import { hashLeadKey } from "@/lib/leads-ingest";
-import { INTAKE_STAGES, LEAD_LIMITS } from "@/lib/leads";
+import { applyColumnMapping, columnMapping, CSV_FIELD_LABELS, dealsWithoutCloseDate, INTAKE_STAGES, LEAD_LIMITS, type CsvField } from "@/lib/leads";
 import { importLeads } from "@/lib/leads.functions";
 import { errorText } from "@/lib/errors";
 
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/_authenticated/leads/entrada")({
 });
 
 const STAGE_OPTS: Record<string, string> = Object.fromEntries(INTAKE_STAGES.map((s) => [s.id, s.label]));
+const CSV_FIELD_OPTS: Record<string, string> = { "": "No importar", ...CSV_FIELD_LABELS };
 const STATUS: Record<string, [string, string]> = { created: ["Nuevo", "bg-success/15 text-success"], updated: ["Actualizado", "bg-muted text-foreground"], error: ["Error", "bg-destructive/15 text-destructive"] };
 
 /** Public base URL for external tools: the editor preview is private, so use the live domain there. */
@@ -191,19 +192,26 @@ function CsvImport() {
   const run = useServerFn(importLeads);
   const [stage, setStage] = useState("new");
   const [rows, setRows] = useState<Record<string, string>[] | null>(null);
+  const [mapping, setMapping] = useState<Record<string, CsvField | null>>({});
   const [progress, setProgress] = useState<number | null>(null);
   async function onFile(file: File) {
     const parsed = parseCsv(await file.text());
     if (!parsed.length) return toast.error("El archivo no tiene filas.");
     setRows(parsed);
+    setMapping(columnMapping(Object.keys(parsed[0] ?? {})));
   }
   async function start() {
     if (!rows) return;
+    if (!Object.values(mapping).includes("company") && !Object.values(mapping).some((f) => f === "domain" || f === "email")) {
+      return toast.error("Ninguna columna es la empresa, el dominio o el email: asigna una en la tabla de columnas.");
+    }
+    // The importer reads the columns as the person mapped them, not by guessing again.
+    const mapped = applyColumnMapping(rows, mapping);
     const total = { created: 0, updated: 0, errors: 0 };
     setProgress(0);
     try {
-      for (let i = 0; i < rows.length; i += LEAD_LIMITS.maxLeads) {
-        const r = await run({ data: { rows: rows.slice(i, i + LEAD_LIMITS.maxLeads), defaultStage: stage } });
+      for (let i = 0; i < mapped.length; i += LEAD_LIMITS.maxLeads) {
+        const r = await run({ data: { rows: mapped.slice(i, i + LEAD_LIMITS.maxLeads), defaultStage: stage } });
         total.created += r.created; total.updated += r.updated; total.errors += r.errors.length;
         setProgress(Math.min(rows.length, i + LEAD_LIMITS.maxLeads));
       }
@@ -217,16 +225,28 @@ function CsvImport() {
     }
   }
   const cols = rows ? Object.keys(rows[0] ?? {}) : [];
+  const noCloseDate = rows ? dealsWithoutCloseDate(rows, mapping, stage) : false;
+  const ignored = cols.filter((c) => mapping[c] == null);
   return (
     <section className="rounded-lg border bg-card p-6">
       <h2 className="text-3xl">Subir CSV o Excel</h2>
-      <p className="mb-4 mt-1 text-sm text-muted-foreground">Exporta tus leads a CSV (en Excel: Guardar como → CSV) con columnas como empresa, email, etapa, fecha e importe. Puedes repetir la subida: actualiza sin duplicar.</p>
+      <p className="mb-4 mt-1 text-sm text-muted-foreground">Exporta tus leads a CSV (en Excel: Guardar como → CSV) con columnas como empresa, email, etapa, fecha de entrada, fecha de cierre e importe. Antes de importar verás qué campo rellena cada columna. Puedes repetir la subida: actualiza sin duplicar.</p>
       <div className="space-y-3">
         <Field label="Etapa si la fila no trae ninguna"><Pick value={stage} options={STAGE_OPTS} onChange={setStage} /></Field>
         <Input type="file" accept=".csv,text/csv" onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])} />
         {rows && (
           <div className="rounded-md bg-muted/50 p-3 text-sm">
-            <p><strong>{rows.length}</strong> filas · columnas: {cols.slice(0, 8).join(", ")}{cols.length > 8 ? "…" : ""}</p>
+            <p><strong>{rows.length}</strong> filas · {cols.length} columnas. Revisa qué campo rellena cada una antes de importar:</p>
+            <div className="mt-2 divide-y divide-hairline border-y border-hairline">
+              {cols.map((c) => (
+                <div key={c} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] items-center gap-3 py-1.5">
+                  <span className="truncate font-mono text-xs" title={c}>{c} <span className="text-muted-foreground">· {rows[0]?.[c] || "vacía"}</span></span>
+                  <Pick value={mapping[c] ?? ""} options={CSV_FIELD_OPTS} onChange={(v) => setMapping({ ...mapping, [c]: (v || null) as CsvField | null })} />
+                </div>
+              ))}
+            </div>
+            {ignored.length > 0 && <p className="mt-2 text-xs text-muted-foreground">No se importan: {ignored.join(", ")}.</p>}
+            {noCloseDate && <p className="mt-2 text-xs text-destructive">Hay filas que crean deals y ninguna columna es la fecha de cierre: esos deals no contarán en la cobertura ni en el forecast de ningún trimestre. Si una columna es la fecha de cierre, asígnala arriba.</p>}
             <Button className="mt-3 w-full" disabled={progress != null} onClick={start}>{progress != null ? `Importando ${progress}/${rows.length}…` : `Importar ${rows.length} leads`}</Button>
           </div>
         )}

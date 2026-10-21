@@ -54,6 +54,7 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 ### Feedback de la configuración de Postin V2 (21 oct), una rama por fase
 
 - [x] Fase 0 — Confianza en el guardado (rama feedback/fase-0-confianza): el win rate 0 se guarda (la base de datos lo rechazaba); segmentos que se pueden eliminar con el impacto a la vista; validación por celda que nombra el campo; los guardados solo dicen «Guardado» si el servidor confirma la fila; Conocimiento no crea documentos vacíos; el hito de posicionamiento exige el marco de Dunford y la IA lo rellena; una cuenta solo con nombre ya no puntúa 100. Pendiente de ver a mano: Ctrl+A en los campos (sin causa en el código).
+- [x] Fase 1 — Una sola verdad en los datos (rama feedback/fase-1-datos): cobertura calculada en un solo sitio (src/lib/coverage.ts) para Métricas, la sugerencia y el Asesor, con los deals sin fecha aparte; las sugerencias abiertas actualizan su texto; el CSV enseña y deja cambiar qué campo rellena cada columna y avisa si los deals entran sin fecha de cierre; el embudo cuenta solo las etapas que el lead pasó de verdad («entrada directa»); todo deal nace con cuenta; fechas en día/mes/año; cuota con unidad y moneda; prioridad y nota del segmento en su campo; al crear la empresa se elige plantilla de segmentos o empezar de cero; el ACV de ejemplo sale de tus segmentos. Pendiente: juegos de benchmarks para ticket bajo (necesitan cifras con fuente).
 
 ### Fase B (necesita decisión de Fede)
 

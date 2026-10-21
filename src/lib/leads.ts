@@ -58,13 +58,72 @@ const FIELDS: { key: keyof NormalizedLead | "firstName" | "lastName"; exact: str
   { key: "title", exact: ["title", "job_title", "cargo", "puesto", "position", "rol", "role", "jobtitle"], contains: ["cargo", "puesto", "job_title"] },
   { key: "linkedin", exact: ["linkedin", "linkedin_url", "linkedin_profile"], contains: ["linkedin"] },
   { key: "stage", exact: ["stage", "etapa", "dealstage", "deal_stage", "fase", "estado", "status", "lifecyclestage", "lead_status"] },
-  { key: "enteredAt", exact: ["date", "fecha", "created_at", "createdate", "created", "fecha_entrada", "fecha_alta", "fecha_lead", "submitted_at", "add_time", "signup_date", "lead_date", "entered_at"] },
-  { key: "closeDate", exact: ["close_date", "closedate", "fecha_cierre", "expected_close_date", "cierre", "won_time", "close_time"] },
+  { key: "enteredAt", exact: ["date", "fecha", "created_at", "createdate", "created", "fecha_entrada", "fecha_de_entrada", "fecha_alta", "fecha_de_alta", "fecha_lead", "submitted_at", "add_time", "signup_date", "lead_date", "entered_at"] },
+  { key: "closeDate", exact: ["close_date", "closedate", "fecha_cierre", "fecha_de_cierre", "fecha_cierre_prevista", "fecha_prevista_de_cierre", "cierre_previsto", "expected_close_date", "cierre", "won_time", "close_time"], contains: ["cierre", "close_date"] },
   { key: "amount", exact: ["amount", "importe", "value", "valor", "deal_value", "acv", "arr", "presupuesto", "budget", "revenue", "monto"], contains: ["importe", "presupuesto", "budget"] },
   { key: "dealName", exact: ["deal_name", "dealname", "oportunidad", "nombre_oportunidad", "opportunity", "title_deal", "deal"] },
   { key: "segment", exact: ["segment", "segmento"] },
   { key: "source", exact: ["source", "origen", "fuente", "utm_source", "lead_source", "canal"] },
 ];
+
+export type CsvField =
+  | "externalId" | "email" | "domain" | "company" | "firstName" | "lastName" | "fullName" | "title" | "linkedin"
+  | "stage" | "enteredAt" | "closeDate" | "amount" | "dealName" | "segment" | "source";
+
+/** What each field is called on screen, for the CSV preview. */
+export const CSV_FIELD_LABELS: Record<CsvField, string> = {
+  externalId: "Id externo", email: "Email", domain: "Dominio / web", company: "Empresa", firstName: "Nombre de pila", lastName: "Apellidos",
+  fullName: "Nombre de la persona", title: "Cargo", linkedin: "LinkedIn", stage: "Etapa", enteredAt: "Fecha de entrada del lead",
+  closeDate: "Fecha de cierre del deal", amount: "Importe", dealName: "Nombre del deal", segment: "Segmento", source: "Origen",
+};
+
+/**
+ * Which field each CSV column will fill, decided on the headers alone with the same rules the
+ * importer applies (exact aliases first, then words inside long questions). null = ignored.
+ * The preview shows it so «fecha» is not read as the close date in silence.
+ */
+export function columnMapping(headers: string[]): Record<string, CsvField | null> {
+  const out: Record<string, CsvField | null> = Object.fromEntries(headers.map((h) => [h, null]));
+  const taken = new Set<CsvField>();
+  const keyed = headers.map((h) => [h, normKey(h)] as const).filter(([, k]) => k);
+  for (const f of FIELDS) {
+    const hit = keyed.find(([h, k]) => out[h] == null && f.exact.includes(k));
+    if (hit) { out[hit[0]] = f.key as CsvField; taken.add(f.key as CsvField); }
+  }
+  for (const f of FIELDS) {
+    if (taken.has(f.key as CsvField) || !f.contains) continue;
+    const hit = keyed.find(([h, k]) => out[h] == null && f.contains!.some((w) => k.includes(w)));
+    if (hit) { out[hit[0]] = f.key as CsvField; taken.add(f.key as CsvField); }
+  }
+  return out;
+}
+
+/**
+ * Renames each column to its field's canonical name, so the importer reads what the person chose.
+ * Two columns on one field: the first with a value in that row wins. Ignored columns travel under a
+ * neutral name so an email typed in an unlabeled column is still rescued by the importer.
+ */
+export function applyColumnMapping(rows: Record<string, string>[], mapping: Record<string, CsvField | null>): Record<string, string>[] {
+  const canonical = Object.fromEntries(FIELDS.map((f) => [f.key, f.exact[0]])) as Record<CsvField, string>;
+  return rows.map((r) => {
+    const out: Record<string, string> = {};
+    let extra = 0;
+    for (const [col, v] of Object.entries(r)) {
+      const f = mapping[col];
+      if (f) { if (!out[canonical[f]]?.trim()) out[canonical[f]] = v; }
+      else if (/@/.test(v ?? "")) out[`sin_mapear_${++extra}`] = v;
+    }
+    return out;
+  });
+}
+
+/** True when some row will create a deal (a sales stage) and no column fills the close date. */
+export function dealsWithoutCloseDate(rows: Record<string, string>[], mapping: Record<string, CsvField | null>, defaultStage: string): boolean {
+  if (Object.values(mapping).includes("closeDate")) return false;
+  const stageCol = Object.entries(mapping).find(([, f]) => f === "stage")?.[0];
+  const isDealStage = (s: string) => ["discovery", "qualified", "demo", "proposal", "negotiation", "won", "lost", "opportunity"].includes(s);
+  return rows.some((r) => isDealStage(stageCol && r[stageCol] ? mapStage(r[stageCol], defaultStage as IntakeStage).stage : defaultStage));
+}
 
 // Order matters for partial matches: "disqualified" must win over "qualified".
 const STAGE_WORDS: [IntakeStage, string[]][] = [

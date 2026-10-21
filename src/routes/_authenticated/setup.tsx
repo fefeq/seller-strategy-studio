@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check, Circle, FileText, Loader2, MessageSquare, Sparkles, ListChecks } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useMe } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
 import { useAgent } from "@/components/agent";
 import { Page } from "@/components/page";
@@ -18,6 +18,7 @@ import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } fr
 import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 import { errorText, isNetworkError } from "@/lib/errors";
+import { DateField } from "@/components/date-field";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -257,6 +258,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
   const apply = useServerFn(applySetupItems);
   const qc = useQueryClient();
   const { data: setup } = useSetup();
+  const { currency, symbol } = useCurrency();
   const { data: segs = [] } = useQuery({ queryKey: ["segments-full"], queryFn: async () => (await supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,ae_quota").order("acv_min")).data ?? [] });
   const [v, setV] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState(false);
@@ -326,9 +328,9 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
           ))}</tbody>
         </table>{!v.rows?.length && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}</div>
       </>)}
-      {id === "quota" && <div className="max-w-xs">{inp("amount", `Tu cuota para ${quarterOf(new Date())}`, { type: "number" })}<p className="mt-1 text-xs text-muted-foreground">Las cuotas del resto del equipo se fijan en Métricas.</p></div>}
+      {id === "quota" && <div className="max-w-xs">{inp("amount", `Tu cuota para ${quarterOf(new Date())} (${symbol})`, { type: "number" })}<p className="mt-1 text-xs text-muted-foreground">Importe de deals ganados (ACV nuevo) que tienes que cerrar en el trimestre, en {currency}. No es MRR ni número de deals. Las cuotas del resto del equipo se fijan en Métricas.</p></div>}
       {id === "accounts" && <label className="block text-sm">Una cuenta por línea<Textarea className="mt-1" rows={5} value={v.names ?? ""} onChange={(e) => setV({ ...v, names: e.target.value })} /></label>}
-      {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("amount", "Importe", { type: "number" })}{inp("close_date", "Fecha de cierre", { type: "date" })}</div>}
+      {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("amount", "Importe", { type: "number" })}<label className="text-sm">Fecha de cierre<div className="mt-1"><DateField value={v.close_date || null} onChange={(iso) => setV({ ...v, close_date: iso ?? "" })} /></div></label></div>}
       <Button onClick={save} disabled={busy}>{busy && <Loader2 className="size-4 animate-spin" />} Guardar y seguir</Button>
     </div>
   );

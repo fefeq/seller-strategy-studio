@@ -107,7 +107,7 @@ function LeadsPage() {
                 <div key={s.id} className="rounded-md bg-muted/50 p-3">
                   <p className="eyebrow">{s.label}</p>
                   <p className="font-display text-3xl">{s.count}</p>
-                  <p className="text-xs text-muted-foreground">{i === 0 ? "entraron" : s.fromPrev == null ? "" : `${pct(s.fromPrev)} del paso anterior`}</p>
+                  <p className="text-xs text-muted-foreground">{i === 0 ? "entraron" : [s.fromPrev != null && s.count > s.direct ? `${pct(s.fromPrev)} del paso anterior` : "", s.direct > 0 ? `${s.direct} entrada directa` : ""].filter(Boolean).join(" · ")}</p>
                 </div>
               ))}
             </div>

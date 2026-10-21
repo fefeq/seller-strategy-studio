@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue, STATUS_LABEL, type BoardItem } from "./suggestion-board";
-import { splitClosed } from "./org-data";
+import { splitClosed, staleTexts } from "./org-data";
 
 const now = new Date("2026-10-20T12:00:00Z");
 const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
@@ -34,5 +34,19 @@ describe("team suggestions panel", () => {
   it("a suggestion worked on with «Resolver» that stops applying counts as done", () => {
     const r = splitClosed([{ id: "a", status: "pending" }, { id: "b", status: "pending" }, { id: "c", status: "snoozed" }], ["a", "c"]);
     expect(r).toEqual({ done: ["a"], resolved: ["b", "c"] });
+  });
+});
+
+describe("staleTexts", () => {
+  it("refreshes an open suggestion whose numbers changed and leaves the rest", () => {
+    const open = [
+      { id: "a", dedupe_key: "low_coverage:2026-Q4", title: "Cobertura de pipeline 0.0x en 2026-Q4 (objetivo 3–4x)", body: "Faltan unos 28.032 de pipeline" },
+      { id: "b", dedupe_key: "setup_incomplete:quota", title: "Completa: Cuota", body: "igual" },
+    ];
+    const found = [
+      { dedupe_key: "low_coverage:2026-Q4", title: "Cobertura de pipeline 0,05x en 2026-Q4 (objetivo 3–4x)", body: "Faltan unos 28.032 €" },
+      { dedupe_key: "setup_incomplete:quota", title: "Completa: Cuota", body: "igual" },
+    ];
+    expect(staleTexts(open, found)).toEqual([{ id: "a", title: found[0].title, body: found[0].body }]);
   });
 });

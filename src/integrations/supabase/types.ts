@@ -2506,6 +2506,7 @@ export type Database = {
           notes: string | null
           org_id: string | null
           payback_months: number | null
+          priority: number | null
           sdr_per_ae: number | null
           updated_at: string
           updated_by: string | null
@@ -2527,6 +2528,7 @@ export type Database = {
           notes?: string | null
           org_id?: string | null
           payback_months?: number | null
+          priority?: number | null
           sdr_per_ae?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -2548,6 +2550,7 @@ export type Database = {
           notes?: string | null
           org_id?: string | null
           payback_months?: number | null
+          priority?: number | null
           sdr_per_ae?: number | null
           updated_at?: string
           updated_by?: string | null
@@ -3023,7 +3026,10 @@ export type Database = {
     }
     Functions: {
       accept_invites: { Args: never; Returns: number }
-      create_organization: { Args: { _name: string }; Returns: string }
+      create_organization: {
+        Args: { _name: string; _segments?: string }
+        Returns: string
+      }
       current_org: { Args: never; Returns: string }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
