@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { boardSummary, byOwner, canSeeTeam, isOverdue, type BoardItem } from "./suggestion-board";
+import { boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue, STATUS_LABEL, type BoardItem } from "./suggestion-board";
+import { splitClosed } from "./org-data";
 
 const now = new Date("2026-10-20T12:00:00Z");
 const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
@@ -24,5 +25,14 @@ describe("team suggestions panel", () => {
     const g = byOwner([S({ user_id: "a" }), S({ user_id: "b", priority: 1 }), S({ user_id: "a", status: "dismissed" })], now);
     expect(g.map((x) => x.owner)).toEqual(["b", "a"]);
     expect(g[1].pending).toBe(1);
+  });
+  it("keeps done by the user apart from solved on its own", () => {
+    expect(closedSummary([S({ status: "approved" }), S({ status: "approved" }), S({ status: "resolved" }), S({ status: "dismissed" }), S({})])).toEqual({ done: 2, solved: 1, dismissed: 1 });
+    expect(STATUS_LABEL.approved).toBe("Hecha");
+    expect(STATUS_LABEL.resolved).toBe("Resuelta sola");
+  });
+  it("a suggestion worked on with «Resolver» that stops applying counts as done", () => {
+    const r = splitClosed([{ id: "a", status: "pending" }, { id: "b", status: "pending" }, { id: "c", status: "snoozed" }], ["a", "c"]);
+    expect(r).toEqual({ done: ["a"], resolved: ["b", "c"] });
   });
 });

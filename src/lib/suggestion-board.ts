@@ -5,7 +5,7 @@ export const LEADER_ROLES = ["owner", "sales_leader"] as const;
 export const canSeeTeam = (roles: string[]) => roles.some((r) => (LEADER_ROLES as readonly string[]).includes(r));
 
 export const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente", snoozed: "Pospuesta", approved: "Aprobada", dismissed: "Descartada", resolved: "Resuelta sola",
+  pending: "Pendiente", snoozed: "Pospuesta", approved: "Hecha", dismissed: "Descartada", resolved: "Resuelta sola",
 };
 export const OPEN_STATUSES = ["pending", "snoozed"] as const;
 
@@ -39,4 +39,14 @@ export function byOwner(items: BoardItem[], now = new Date()) {
     m.set(s.user_id, g);
   }
   return [...m.values()].sort((a, b) => b.urgent - a.urgent || b.pending - a.pending);
+}
+
+/**
+ * Closed suggestions (the panel loads the last 30 days): done by the user (approved: «Hecho», «Aprobar y
+ * hacer» or fixed through «Resolver»), solved on their own (resolved) and dismissed — kept apart so we can
+ * see which suggestions lead to real action.
+ */
+export function closedSummary(items: Pick<BoardItem, "status">[]) {
+  const n = (st: string) => items.filter((s) => s.status === st).length;
+  return { done: n("approved"), solved: n("resolved"), dismissed: n("dismissed") };
 }

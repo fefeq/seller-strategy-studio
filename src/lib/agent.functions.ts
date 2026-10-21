@@ -141,10 +141,12 @@ export const applySetupItems = createServerFn({ method: "POST" })
 
 export const refreshSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  // touched: suggestions the user opened with «Resolver»; if they no longer apply they close as done by the user.
+  .inputValidator((d?: { touched?: string[] }) => ({ touched: Array.isArray(d?.touched) ? d!.touched.filter((x) => typeof x === "string").slice(0, 100) : [] }))
+  .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
     const snap = await loadSnapshot(ctx.db, ctx.orgId);
-    await syncSuggestions(ctx.db, ctx.orgId, detect(snap));
+    await syncSuggestions(ctx.db, ctx.orgId, detect(snap), data.touched);
     return { ok: true };
   });
 

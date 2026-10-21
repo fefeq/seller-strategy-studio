@@ -19,7 +19,12 @@ type Mode = "chat" | "interview";
 type Action = { id: string; summary: string; status: string; result?: string };
 type Msg = { id: string; role: "user" | "assistant"; content: string; actions?: Action[] };
 
-type OpenOpts = { mode?: Mode; prompt?: string; personaId?: string | null; workflowId?: string | null };
+/**
+ * fresh: start a new conversation (a «Resolver» must not land in an old thread).
+ * docked: open without blocking the page behind, so the user can work on the record while reading the proposal.
+ * onClose: called once when the panel closes (used to re-check suggestions).
+ */
+type OpenOpts = { mode?: Mode; prompt?: string; personaId?: string | null; workflowId?: string | null; fresh?: boolean; docked?: boolean; onClose?: () => void };
 const Ctx = createContext<{ open: (o?: OpenOpts) => void }>({ open: () => {} });
 export const useAgent = () => useContext(Ctx);
 
@@ -32,6 +37,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const send = useServerFn(sendAgentMessage);
   const decide = useServerFn(decideAgentAction);
   const [isOpen, setOpen] = useState(false);
+  const [docked, setDocked] = useState(false);
+  const onCloseRef = useRef<(() => void) | null>(null);
+  const wasOpen = useRef(false);
   const [mode, setMode] = useState<Mode>("chat");
   const [convId, setConvId] = useState<string | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -91,8 +99,30 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     } finally { setBusy(false); }
   }, [busy, send, personaId, workflowId]);
 
+  // On close: undock and tell whoever opened it (e.g. a «Resolver») so it can re-check.
+  useEffect(() => {
+    if (wasOpen.current && !isOpen) {
+      setDocked(false);
+      const cb = onCloseRef.current;
+      onCloseRef.current = null;
+      cb?.();
+    }
+    wasOpen.current = isOpen;
+  }, [isOpen]);
+
   const open = useCallback((o?: OpenOpts) => {
     setOpen(true);
+    setDocked(!!o?.docked);
+    onCloseRef.current = o?.onClose ?? null;
+    if (o?.fresh) {
+      const m = o.mode ?? "chat";
+      const pid = o.personaId ?? null;
+      const wid = o.workflowId ?? null;
+      loadedFor.current = orgId ?? null;
+      setMode(m); setPersonaId(pid); setWorkflowId(wid); setConvId(null); setMsgs([]);
+      if (o.prompt) setTimeout(() => submit(o.prompt!, m, null, pid, wid), 0);
+      return;
+    }
     const switchPersona = o?.personaId !== undefined && o.personaId !== personaId;
     const switchMode = !!o?.mode && o.mode !== mode;
     const nextMode = o?.mode ?? mode;
@@ -149,8 +179,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           <Brain className="size-4" /> Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
         </button>
       )}
-      <Sheet open={isOpen} onOpenChange={setOpen}>
-        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl">
+      <Sheet open={isOpen} onOpenChange={setOpen} modal={!docked}>
+        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={docked ? (e) => e.preventDefault() : undefined}>
           <SheetHeader className="border-b px-5 py-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-10 md:pr-8">
               <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-[22px] md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
