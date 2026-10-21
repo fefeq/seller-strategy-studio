@@ -7,6 +7,11 @@ describe("errorText", () => {
     expect(errorText({ code: "23503", message: "violates foreign key constraint" })).toMatch(/dependen/);
     expect(errorText({ code: "42501", message: "new row violates row-level security policy" })).toMatch(/Tu rol/);
   });
+  it("names the field when a check constraint fails", () => {
+    expect(errorText({ code: "23514", message: 'new row for relation "segments" violates check constraint "segments_gross_margin_pct_check"' })).toMatch(/«Margen bruto %»/);
+    expect(errorText({ code: "23514", message: 'violates check constraint "segments_win_rate_target_check"' })).toMatch(/«Win rate objetivo %»/);
+    expect(errorText({ code: "23514", message: 'violates check constraint "something_else_check"' })).toMatch(/^Algún valor/);
+  });
   it("translates RLS by message too", () => expect(errorText({ message: 'new row violates row-level security policy for table "deals"' })).toMatch(/Tu rol/));
   it("translates auth errors", () => {
     expect(errorText({ message: "Invalid login credentials", status: 400 })).toMatch(/contraseña no son correctos/);

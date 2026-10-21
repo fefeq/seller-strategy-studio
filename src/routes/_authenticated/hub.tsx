@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorText } from "@/lib/errors";
+import { confirmed, NOT_SAVED } from "@/lib/save";
 import { useServerFn } from "@tanstack/react-start";
 import { createPlaybookLibrary } from "@/lib/playbooks.functions";
 import { missingPlays } from "@/lib/playbooks/adapt";
@@ -64,19 +65,25 @@ function Hub() {
     onError: (e: Error) => toast.error(errorText(e)),
   });
 
+  // «+ Nuevo» opens an unsaved draft; nothing reaches the database until the person saves a title and a body.
+  const draft = (): Doc => ({ id: "", section, title: "", body: "", scope: section === "skills" ? "personal" : "team", created_by: null, updated_at: "" });
   const save = useMutation({
     mutationFn: async (d: Partial<Doc>) => {
-      if (d.id) {
-        const { error } = await supabase.from("knowledge_docs").update({ title: d.title, body: d.body, scope: d.scope }).eq("id", d.id);
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.from("knowledge_docs").insert({ section, title: d.title ?? "Nuevo documento", body: d.body ?? "", scope: d.scope ?? (section === "skills" ? "personal" : "team") }).select().single();
-        if (error) throw error;
-        setSelected(data as Doc);
-        revealOnMobile(editorRef.current);
-      }
+      const title = (d.title ?? "").trim();
+      const body = d.body ?? "";
+      if (!title || !body.trim()) throw new Error("Escribe un título y el contenido antes de guardar.");
+      const row = d.id
+        ? await confirmed(supabase.from("knowledge_docs").update({ title, body, scope: d.scope }).eq("id", d.id).select("*"))
+        : await confirmed(supabase.from("knowledge_docs").insert({ section, title, body, scope: d.scope ?? (section === "skills" ? "personal" : "team") }).select("*"));
+      // The toast reflects what the server stored, not what the form holds.
+      if ((row as Doc).body !== body || (row as Doc).title !== title) throw new Error(NOT_SAVED);
+      return row as Doc;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["docs"] }); toast.success("Guardado."); },
+    onSuccess: (row) => {
+      setSelected(row);
+      qc.invalidateQueries({ queryKey: ["docs"] });
+      toast.success("Guardado.");
+    },
     onError: (e: Error) => toast.error(errorText(e)),
   });
   const del = useMutation({
@@ -99,7 +106,7 @@ function Hub() {
         </nav>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{SECTIONS.find((s) => s[0] === section)?.[2]}</p>
-          <Button size="sm" variant="outline" className="w-full" onClick={() => save.mutate({})}>+ Nuevo</Button>
+          <Button size="sm" variant="outline" className="w-full" onClick={() => { setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
           {list.map((d) => (
             <button key={d.id} onClick={() => { setSelected(d); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}>
               <span className="font-medium">{d.title}</span>
@@ -110,7 +117,7 @@ function Hub() {
         </div>
         <div ref={editorRef} className="min-w-0 scroll-mt-20">
           {selected ? (
-            <Editor key={selected.id} doc={selected} isOwner={isOwner} onSave={(d) => save.mutate(d)} onDelete={() => del.mutate(selected.id)} />
+            <Editor key={selected.id || "draft"} doc={selected} isOwner={isOwner} saving={save.isPending} onSave={(d) => save.mutate(d)} onDelete={() => del.mutate(selected.id)} />
           ) : (
             <Empty>Selecciona o crea un documento.</Empty>
           )}
@@ -120,19 +127,24 @@ function Hub() {
   );
 }
 
-function Editor({ doc, isOwner, onSave, onDelete }: { doc: Doc; isOwner: boolean; onSave: (d: Partial<Doc>) => void; onDelete: () => void }) {
+function Editor({ doc, isOwner, saving, onSave, onDelete }: { doc: Doc; isOwner: boolean; saving: boolean; onSave: (d: Partial<Doc>) => void; onDelete: () => void }) {
   const [title, setTitle] = useState(doc.title);
   const [body, setBody] = useState(doc.body);
+  const isDraft = !doc.id;
+  const empty = !title.trim() || !body.trim();
+  const id = doc.id || undefined;
   return (
     <div className="space-y-3 rounded-lg border bg-card p-5">
-      <Input value={title} onChange={(e) => setTitle(e.target.value)} className="font-display text-2xl" />
-      <Textarea value={body} onChange={(e) => setBody(e.target.value)} rows={18} className="font-mono text-base md:text-sm" />
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => onSave({ id: doc.id, title, body, scope: doc.scope })}>Guardar</Button>
-        {doc.section === "skills" && doc.scope === "personal" && isOwner && (
-          <Button variant="outline" onClick={() => onSave({ id: doc.id, title, body, scope: "team" })}>Promover a equipo</Button>
+      {isDraft && <p className="eyebrow">Documento nuevo · sin guardar</p>}
+      <Input value={title} placeholder="Título" onChange={(e) => setTitle(e.target.value)} className="font-display text-2xl" />
+      <Textarea value={body} placeholder="Contenido" onChange={(e) => setBody(e.target.value)} rows={18} className="font-mono text-base md:text-sm" />
+      <div className="flex flex-wrap items-center gap-2">
+        <Button disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: doc.scope })}>{saving ? "Guardando…" : "Guardar"}</Button>
+        {doc.section === "skills" && doc.scope === "personal" && isOwner && !isDraft && (
+          <Button variant="outline" disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: "team" })}>Promover a equipo</Button>
         )}
-        {isOwner && <Button variant="ghost" className="ml-auto text-destructive" onClick={onDelete}>Eliminar</Button>}
+        {empty && <span className="text-xs text-muted-foreground">Escribe un título y el contenido para poder guardar.</span>}
+        {isOwner && !isDraft && <Button variant="ghost" className="ml-auto text-destructive" onClick={onDelete}>Eliminar</Button>}
       </div>
     </div>
   );

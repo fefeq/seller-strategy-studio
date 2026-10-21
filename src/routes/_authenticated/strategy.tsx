@@ -18,6 +18,12 @@ import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-bud
 import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { errorText } from "@/lib/errors";
+import { confirmed } from "@/lib/save";
+import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pillars"] as const;
 
@@ -99,14 +105,45 @@ function Motions() {
   const pct = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
   const days = (n: number | null | undefined) => (n == null ? "—" : `${n} días`);
 
+  // Cells whose last value was refused, so the person sees which one to fix.
+  const [invalid, setInvalid] = useState<Record<string, string>>({});
+  const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(null);
   async function upd(id: string, patch: Record<string, unknown>) {
-    const { error } = await supabase.from("segments").update(patch as any).eq("id", id);
-    if (error) toast.error(errorText(error));
-    qc.invalidateQueries({ queryKey: ["segments"] });
+    try {
+      await confirmed(supabase.from("segments").update(patch as any).eq("id", id).select("id"));
+      return true;
+    } catch (e) {
+      toast.error(errorText(e));
+      return false;
+    } finally {
+      qc.invalidateQueries({ queryKey: ["segments"] });
+      qc.invalidateQueries({ queryKey: ["setup"] });
+    }
+  }
+  /** Validates a typed benchmark, saves it and puts the saved value back in the cell if it was refused. */
+  async function updNumber(s: (typeof segs)[number], k: SegmentNumericField, input: HTMLInputElement) {
+    const cell = `${s.id}:${k}`;
+    const previous = (s as any)[k];
+    const check = checkSegmentField(k, input.value, s.name);
+    const next = check.ok ? check.value : null;
+    const rangeError = check.ok
+      ? checkAcvRange(k === "acv_min" ? next : (s as any).acv_min, k === "acv_max" ? next : (s as any).acv_max, s.name)
+      : null;
+    const error = !check.ok ? check.error : rangeError;
+    if (error) {
+      setInvalid((m) => ({ ...m, [cell]: error }));
+      toast.error(`${error} No se ha guardado.`);
+      input.value = previous == null ? "" : String(previous);
+      return;
+    }
+    setInvalid((m) => { const { [cell]: _, ...rest } = m; return rest; });
+    if ((previous == null ? null : Number(previous)) === next) return;
+    if (!(await upd(s.id, { [k]: next }))) input.value = previous == null ? "" : String(previous);
   }
   async function add() {
-    await supabase.from("segments").insert({ name: "Nuevo segmento" });
-    qc.invalidateQueries({ queryKey: ["segments"] });
+    try { await confirmed(supabase.from("segments").insert({ name: "Nuevo segmento" }).select("id")); }
+    catch (e) { toast.error(errorText(e)); }
+    qc.invalidateQueries({ queryKey: ["segments"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }
   async function setCurrency(c: string) {
     const { error } = await supabase.from("organizations").update({ currency: c }).eq("id", me!.currentOrg!.org_id);
@@ -124,7 +161,11 @@ function Motions() {
         {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
       </>;
     }
-    return <Input type="number" inputMode="decimal" defaultValue={(s as any)[k] ?? ""} onBlur={(e) => upd(s.id, { [k]: e.target.value === "" ? null : Number(e.target.value) })} />;
+    const error = invalid[`${s.id}:${k}`];
+    return <>
+      <Input type="number" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
+      {error && <p className="mt-1 text-[11px] text-destructive md:hidden">{error}</p>}
+    </>;
   };
 
   return (
@@ -229,12 +270,13 @@ function Motions() {
                 <div className="min-w-0"><dt className="eyebrow text-[10px]">Win rate real</dt><dd>{pct(real.bySegment[s.id]?.winRate)}</dd></div>
                 <div className="min-w-0"><dt className="eyebrow text-[10px]">Ciclo real</dt><dd>{days(real.bySegment[s.id]?.cycleDays)}</dd></div>
               </dl>
+              {isOwner && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setToDelete({ id: s.id, name: s.name })}>Eliminar segmento</Button>}
             </div>
           ))}
         </div>
         <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow sticky left-0 z-10 bg-background px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow sticky left-0 z-10 bg-background px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}{isOwner && <th className="px-3 py-3"><span className="sr-only">Acciones</span></th>}</tr></thead>
             <tbody>
               {segs.map((s) => {
                 return (
@@ -246,15 +288,79 @@ function Motions() {
                     <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
                     <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{pct(real.bySegment[s.id]?.winRate)}</td>
                     <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{days(real.bySegment[s.id]?.cycleDays)}</td>
+                    {isOwner && <td className="px-2 py-2"><Button variant="ghost" size="sm" className="text-destructive" aria-label={`Eliminar ${s.name}`} onClick={() => setToDelete({ id: s.id, name: s.name })}>Eliminar</Button></td>}
                   </tr>
                 );
               })}
             </tbody>
           </table>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los últimos 12 meses y se actualizan solas. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
+        <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los últimos 12 meses y se actualizan solas. Un win rate o una cuota de 0 vale para un segmento al que no vendes; si no es tuyo, elimínalo{isOwner ? "" : " (solo el Owner)"}. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
       </div>
+      <DeleteSegment target={toDelete} onClose={() => setToDelete(null)} onDeleted={() => { setForced(""); qc.invalidateQueries(); }} />
     </div>
+  );
+}
+
+/** What deleting a segment does to the rest of the data, counted before the person confirms. */
+const KEPT_WITHOUT_SEGMENT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"]] as const;
+const DELETED_WITH_SEGMENT = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"]] as const;
+
+function DeleteSegment({ target, onClose, onDeleted }: { target: { id: string; name: string } | null; onClose: () => void; onDeleted: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const { data: impact } = useQuery({
+    queryKey: ["segment-impact", target?.id],
+    enabled: !!target,
+    queryFn: async () => {
+      const count = async (table: string) => (await supabase.from(table as any).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
+      const [kept, gone] = await Promise.all([
+        Promise.all(KEPT_WITHOUT_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
+        Promise.all(DELETED_WITH_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
+      ]);
+      return { kept: kept.filter(([, n]) => n > 0), gone: gone.filter(([, n]) => n > 0) };
+    },
+  });
+  async function remove() {
+    if (!target) return;
+    setBusy(true);
+    try {
+      await confirmed(supabase.from("segments").delete().eq("id", target.id).select("id"));
+      toast.success(`Segmento «${target.name}» eliminado.`);
+      onDeleted();
+      onClose();
+    } catch (e) {
+      toast.error(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  const list = (xs: readonly (readonly [string, number])[]) => xs.map(([l, n]) => `${n} ${l}`).join(", ");
+  return (
+    <AlertDialog open={!!target} onOpenChange={(o) => !o && onClose()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>¿Eliminar el segmento «{target?.name}»?</AlertDialogTitle>
+          <AlertDialogDescription asChild>
+            <div className="space-y-2 text-sm">
+              {!impact ? <p>Comprobando qué datos dependen de este segmento…</p> : (
+                <>
+                  {impact.kept.length === 0 && impact.gone.length === 0 && <p>No hay datos asociados. Deja de contar en la configuración, las métricas y los selectores.</p>}
+                  {impact.kept.length > 0 && <p>Se quedan sin segmento, pero no se borran: {list(impact.kept)}.</p>}
+                  {impact.gone.length > 0 && <p className="text-destructive">Se borran con él: {list(impact.gone)}.</p>}
+                  <p>No se puede deshacer.</p>
+                </>
+              )}
+            </div>
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
+          <AlertDialogAction disabled={busy || !impact} onClick={(e) => { e.preventDefault(); remove(); }} className="bg-destructive text-destructive-foreground">
+            {busy ? "Eliminando…" : "Eliminar segmento"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -288,9 +394,9 @@ function Icp() {
   }
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, ...rest } = sel;
-    const { error } = await supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id);
-    if (error) return toast.error(errorText(error));
-    toast.success("ICP guardado."); qc.invalidateQueries({ queryKey: ["icp"] });
+    try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
+    catch (e) { return toast.error(errorText(e)); }
+    toast.success("ICP guardado."); qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }
   return (
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
@@ -346,9 +452,9 @@ function Positioning() {
   useEffect(() => { if (row) setF(row as any); }, [row]);
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, ...rest } = f as any;
-    const { error } = row ? await supabase.from("positioning").update(rest).eq("id", row.id) : await supabase.from("positioning").insert(rest);
-    if (error) return toast.error(errorText(error));
-    toast.success("Posicionamiento guardado."); qc.invalidateQueries({ queryKey: ["positioning"] });
+    try { await confirmed(row ? supabase.from("positioning").update(rest).eq("id", row.id).select("id") : supabase.from("positioning").insert(rest).select("id")); }
+    catch (e) { return toast.error(errorText(e)); }
+    toast.success("Posicionamiento guardado."); qc.invalidateQueries({ queryKey: ["positioning"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }
   const v = (k: string) => f[k] || `[${STATEMENT.find((s) => s[0] === k)?.[1].toLowerCase()}]`;
   return (
@@ -388,8 +494,9 @@ function Pillars() {
     qc.invalidateQueries({ queryKey: ["pillars"] });
   }
   async function upd(id: string, patch: Record<string, string>) {
-    await supabase.from("messaging_pillars").update(patch as any).eq("id", id);
-    qc.invalidateQueries({ queryKey: ["pillars"] });
+    try { await confirmed(supabase.from("messaging_pillars").update(patch as any).eq("id", id).select("id")); }
+    catch (e) { toast.error(errorText(e)); }
+    qc.invalidateQueries({ queryKey: ["pillars"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }
   return (
     <div className="space-y-4">

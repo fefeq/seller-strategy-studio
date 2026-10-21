@@ -32,6 +32,13 @@ describe("ICP fit", () => {
     expect(f.score).toBe(100);
     expect(f.criteria.find((c) => c.id === "segment")?.status).toBe("unknown");
   });
+  it("an account with only a name has no fit, even when the ICP defines an anti-ICP", () => {
+    // Before: «no coincide con el anti-ICP» counted as a match and a bare CSV account scored 100.
+    const f = accountFit({ segment_id: null, industry: null, size: null, tier: null, name: "Northwind" }, [ICP]);
+    expect(f.score).toBeNull();
+    expect(f.criteria.find((c) => c.id === "anti_icp")?.status).toBe("unknown");
+    expect(scoreAccount({ segment_id: null, industry: null, size: null, name: "Northwind", lastActivityAt: daysAgo(1), openDeals: 1 }, [ICP], now).total).toBeNull();
+  });
   it("with nothing to check the fit is null, never 0", () => {
     expect(accountFit({ segment_id: null, industry: null, size: null, tier: "B" }, [{ ...ICP, anti_icp: null }]).score).toBeNull();
     expect(accountFit({ segment_id: "mid", industry: "Fintech", size: "100" }, []).score).toBeNull();
