@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { CASE_CLINIC_STEPS } from "@/lib/theory-u";
 import { errorText } from "@/lib/errors";
+import { DateField } from "@/components/date-field";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -66,7 +67,7 @@ export function CaseClinics() {
           <div className="space-y-4 rounded-lg border bg-card p-5">
             <div className="grid gap-3 md:grid-cols-4">
               <Field label="Título"><Input value={sel.title} onChange={(e) => setSel({ ...sel, title: e.target.value })} /></Field>
-              <Field label="Fecha"><Input type="date" value={sel.held_on} onChange={(e) => setSel({ ...sel, held_on: e.target.value })} /></Field>
+              <Field label="Fecha"><DateField value={sel.held_on} onChange={(iso) => iso && setSel({ ...sel, held_on: iso })} /></Field>
               <Field label="Deal"><Pick value={sel.deal_id ?? ""} options={Object.fromEntries([["", "—"], ...(data?.deals ?? []).map((d) => [d.id, d.name])])} onChange={(v) => setSel({ ...sel, deal_id: v })} /></Field>
               <Field label="Estado"><Pick value={sel.status} options={{ open: "Abierto", closed: "Cerrado" }} onChange={(v) => setSel({ ...sel, status: v })} /></Field>
             </div>
