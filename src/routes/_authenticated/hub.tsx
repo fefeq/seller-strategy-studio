@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { errorText } from "@/lib/errors";
+import { useServerFn } from "@tanstack/react-start";
+import { createPlaybookLibrary } from "@/lib/playbooks.functions";
+import { missingPlays } from "@/lib/playbooks/adapt";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({ meta: [{ title: "Conocimiento — Nokko" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — Nokko" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
@@ -47,6 +50,19 @@ function Hub() {
   });
   const list = docs.filter((d) => d.section === section);
   const isOwner = canDelete(me?.roles ?? []);
+  const canLibrary = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
+  const missing = missingPlays(docs);
+  const createLibrary = useServerFn(createPlaybookLibrary);
+  const library = useMutation({
+    mutationFn: async () => createLibrary(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["docs"] });
+      if (r.skipped) return toast.info("Ya tienes todas las jugadas de la biblioteca.");
+      const adapted = r.created.filter((c) => c.adapted).length;
+      toast.success(`${r.created.length} ${r.created.length === 1 ? "jugada añadida" : "jugadas añadidas"}${r.hasContext ? `, ${adapted} adaptadas a tu empresa` : ", en versión base: completa el posicionamiento y el ICP en Estrategia para adaptarlas"}.`);
+    },
+    onError: (e: Error) => toast.error(errorText(e)),
+  });
 
   const save = useMutation({
     mutationFn: async (d: Partial<Doc>) => {
@@ -69,7 +85,9 @@ function Hub() {
   });
 
   return (
-    <Page eyebrow="Una sola fuente de verdad" title="Conocimiento">
+    <Page eyebrow="Una sola fuente de verdad" title="Conocimiento" actions={canLibrary && missing.length > 0 ? (
+      <Button variant="outline" disabled={library.isPending} onClick={() => library.mutate()}>{library.isPending ? "Adaptando la biblioteca…" : `Biblioteca de jugadas de Nokko (${missing.length})`}</Button>
+    ) : undefined}>
       <div className="grid gap-6 lg:grid-cols-[220px_280px_1fr]">
         {/* Phones: sections as a horizontal chip row; a column from lg. */}
         <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-5 sm:px-5 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
