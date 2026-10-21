@@ -21,8 +21,8 @@ export type BoardGroup = { id: "leads" | "opportunities" | "progress" | "won"; l
 
 /** Lead stages before the deal exists (an "Oportunidad" lead already has its Discovery deal). */
 const LEAD_COLS = [["new", "Nuevo"], ["contacted", "Contactado"], ["mql", "MQL"], ["sql", "SQL"]] as const;
-const OPP_COLS = [["discovery", "Discovery"], ["qualified", "Cualificado"]] as const;
-const PROGRESS_COLS = [["demo", "Demo / POC"], ["proposal", "Propuesta"], ["negotiation", "Negociación"]] as const;
+const OPP_COLS = [["discovery", "Descubrimiento"], ["qualified", "Cualificado"]] as const;
+const PROGRESS_COLS = [["demo", "Demo / prueba"], ["proposal", "Propuesta"], ["negotiation", "Negociación"]] as const;
 
 const DAY = 86_400_000;
 const closedAt = (d: BoardDeal) => new Date(d.closed_at ?? d.updated_at).getTime();

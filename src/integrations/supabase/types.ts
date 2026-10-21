@@ -2001,6 +2001,7 @@ export type Database = {
       organizations: {
         Row: {
           created_at: string
+          company_name: string | null
           created_by: string | null
           currency: string
           id: string
@@ -2008,6 +2009,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          company_name?: string | null
           created_by?: string | null
           currency?: string
           id?: string
@@ -2015,6 +2017,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          company_name?: string | null
           created_by?: string | null
           currency?: string
           id?: string

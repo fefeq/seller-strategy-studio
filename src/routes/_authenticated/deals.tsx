@@ -21,6 +21,7 @@ import { staleDeals, staleThreshold } from "@/lib/stale";
 import { actuals } from "@/lib/pipeline-real";
 import { StaleSettings, useStaleSettings } from "@/components/stale-settings";
 import { DateField } from "@/components/date-field";
+import { NewDealButton } from "@/components/new-deal";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -71,6 +72,7 @@ function Deals() {
     <Page eyebrow="Pipeline" title={pipelineHeadline({ openDeals: open.length, openAmount: open.reduce((s, d) => s + Number(d.amount ?? 0), 0), overdue: open.filter((d) => isOverdue(d.close_date)).length, cold: coldCount, money: eur })} actions={<>
       {me?.currentOrg?.org_id && <StaleSettings staleDays={staleCfg?.staleDays ?? null} cycleDays={actuals(deals, now).cycleDays} canEdit={canEditStale} orgId={me.currentOrg.org_id} />}
       <Button variant="outline" asChild><Link to="/leads/entrada">Conectar leads reales</Link></Button>
+      <NewDealButton />
     </>}>
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Kpi label="Pipeline abierto" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
@@ -93,7 +95,7 @@ function Deals() {
                     onClick={() => navigate({ search: { deal: d.id } })}
                     className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${cold.get(d.id)?.stale ? "border-signal/60" : ""}`}>
                     <span className="break-words font-medium">{d.name}</span>
-                    <span className="block text-xs text-muted-foreground">{d.accounts?.name}</span>
+                    {d.accounts?.name && d.accounts.name.trim().toLowerCase() !== d.name.trim().toLowerCase() && <span className="block text-xs text-muted-foreground">{d.accounts.name}</span>}
                     {cold.get(d.id)?.stale && <span className="mt-1 block text-[11px] text-signal">Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral {cold.get(d.id)!.threshold.days})</span>}
                     <span className="mt-2 flex items-center justify-between"><span className="font-mono text-xs">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
                   </button>

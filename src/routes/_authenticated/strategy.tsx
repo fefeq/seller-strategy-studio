@@ -61,6 +61,16 @@ function Strategy() {
 }
 
 const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
+const SEG_LABEL: Record<string, string> = {
+  priority: "Prioridad", acv_min: "ACV mín", acv_max: "ACV máx", motion: "Modelo de venta", cycle_days: "Ciclo (días)",
+  sdr_per_ae: "SDR por AE", ae_per_se: "AE por SE", win_rate_target: "Win rate obj. %", ae_quota: "Cuota anual AE",
+  cac_target: "CAC objetivo", gross_margin_pct: "Margen bruto %", payback_months: "Payback obj. (m)",
+};
+// [title, columns, show the «real» columns and actions in this block]
+const SEG_GROUPS = [
+  ["Económicos", ["priority", "acv_min", "acv_max", "win_rate_target", "ae_quota", "cac_target", "gross_margin_pct", "payback_months"], true],
+  ["Modelo de venta y capacidad", ["motion", "cycle_days", "sdr_per_ae", "ae_per_se"], false],
+] as const;
 const SEG_COLS = [
   ["priority", "Prioridad"], ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["cycle_days", "Ciclo (días)"],
   ["sdr_per_ae", "SDR por AE"], ["ae_per_se", "AE por SE"], ["win_rate_target", "Win rate obj. %"], ["ae_quota", "Cuota anual AE"],
@@ -284,27 +294,34 @@ function Motions() {
             </div>
           ))}
         </div>
-        <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow sticky left-0 z-10 bg-background px-3 py-3">Segmento</th>{SEG_COLS.map(([k, h]) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{h}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}{isOwner && <th className="px-3 py-3"><span className="sr-only">Acciones</span></th>}</tr></thead>
-            <tbody>
-              {segs.map((s) => {
-                return (
-                  <tr key={s.id} className={`border-b last:border-0 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
-                    <td className="sticky left-0 z-10 min-w-36 bg-background px-2 py-2"><Input defaultValue={s.name} onBlur={(e) => upd(s.id, { name: e.target.value })} /></td>
-                    {SEG_COLS.map(([k]) => (
-                      <td key={k} className={`px-2 py-2 ${k === "motion" ? "min-w-44" : MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>{segCell(s, k)}</td>
-                    ))}
-                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
-                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{pct(real.bySegment[s.id]?.winRate)}</td>
-                    <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{days(real.bySegment[s.id]?.cycleDays)}</td>
-                    {isOwner && <td className="px-2 py-2"><Button variant="ghost" size="sm" className="text-destructive" aria-label={`Eliminar ${s.name}`} onClick={() => setToDelete({ id: s.id, name: s.name })}>Eliminar</Button></td>}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {/* Desktop: two narrower tables instead of one with 15 columns, so the row never scrolls away
+            from its segment name and tabbing doesn't jump into the wrong column. */}
+        {SEG_GROUPS.map(([title, keys, showReal]) => (
+          <div key={title} className="mb-4 hidden md:block">
+            <p className="eyebrow mb-1">{title}</p>
+            <div className="overflow-x-auto rounded-lg border bg-card">
+              <table className="w-full text-sm">
+                <thead className="border-b bg-muted/50 text-left"><tr><th className="eyebrow sticky left-0 z-10 border-r bg-background px-3 py-3">Segmento</th>{keys.map((k) => <th key={k} className="eyebrow whitespace-nowrap px-3 py-3">{SEG_LABEL[k]}{MONEY_COLS.includes(k) ? ` (${symbol})` : ""}</th>)}{showReal && ["ACV real", "Win rate real", "Ciclo real"].map((h) => <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">{h}</th>)}{showReal && isOwner && <th className="px-3 py-3"><span className="sr-only">Acciones</span></th>}</tr></thead>
+                <tbody>
+                  {segs.map((s) => (
+                    <tr key={s.id} className={`border-b last:border-0 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
+                      <td className="sticky left-0 z-10 min-w-40 border-r bg-background px-2 py-2">{showReal ? <Input aria-label="Nombre del segmento" defaultValue={s.name} onBlur={(e) => e.target.value.trim() && e.target.value !== s.name && upd(s.id, { name: e.target.value.trim() })} /> : <span className="block px-1 font-medium">{s.name}</span>}</td>
+                      {keys.map((k) => (
+                        <td key={k} className={`px-2 py-2 ${k === "motion" ? "min-w-44" : MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>{segCell(s, k)}</td>
+                      ))}
+                      {showReal && <>
+                        <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
+                        <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{pct(real.bySegment[s.id]?.winRate)}</td>
+                        <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{days(real.bySegment[s.id]?.cycleDays)}</td>
+                        {isOwner && <td className="px-2 py-2"><Button variant="ghost" size="sm" className="text-destructive" aria-label={`Eliminar ${s.name}`} onClick={() => setToDelete({ id: s.id, name: s.name })}>Eliminar</Button></td>}
+                      </>}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ))}
         <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los últimos 12 meses y se actualizan solas. Un win rate o una cuota de 0 vale para un segmento al que no vendes; si no es tuyo, elimínalo{isOwner ? "" : " (solo el Owner)"}. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
       </div>
       <DeleteSegment target={toDelete} onClose={() => setToDelete(null)} onDeleted={() => { setForced(""); qc.invalidateQueries(); }} />

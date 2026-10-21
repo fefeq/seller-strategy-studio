@@ -9,8 +9,8 @@ export async function channelCtx(admin: Db, userId: string): Promise<(ToolCtx & 
   if (!orgId) return null;
   const [{ data: members }, { data: org }] = await Promise.all([
     admin.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId),
-    admin.from("organizations").select("name,currency").eq("id", orgId).maybeSingle(),
+    admin.from("organizations").select("name,company_name,currency").eq("id", orgId).maybeSingle(),
   ]);
   if (!members?.length) return null;
-  return { db: admin, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.name ?? "tu empresa" };
+  return { db: admin, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.company_name?.trim() || org?.name || "tu empresa" };
 }

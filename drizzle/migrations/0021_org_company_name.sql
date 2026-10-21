@@ -1,0 +1,4 @@
+-- The name of the company as it should appear in the documents the agents write. The workspace
+-- name («Postin V2») is how the team tells its organizations apart and used to leak into briefs and plans.
+alter table public.organizations add column company_name text;
+comment on column public.organizations.company_name is 'Company name used by the agents in deliverables; falls back to name';

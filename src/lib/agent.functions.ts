@@ -5,6 +5,7 @@ import { executeTool, type ToolCtx } from "@/lib/agent/tools";
 import { loadSnapshot, syncSuggestions, type Db } from "@/lib/org-data";
 import { detect } from "@/lib/proactive";
 import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
+import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 
 export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
@@ -13,10 +14,10 @@ export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & {
   if (!orgId) throw new Error("Selecciona una empresa");
   const [{ data: members }, { data: org }] = await Promise.all([
     supabase.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId),
-    supabase.from("organizations").select("name,currency").eq("id", orgId).single(),
+    supabase.from("organizations").select("name,company_name,currency").eq("id", orgId).single(),
   ]);
   if (!members?.length) throw new Error("No perteneces a esta empresa");
-  return { db: supabase, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.name ?? "tu empresa" };
+  return { db: supabase, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.company_name?.trim() || org?.name || "tu empresa" };
 }
 
 // ---------------- Agent ----------------
@@ -129,12 +130,31 @@ export const applySetupItems = createServerFn({ method: "POST" })
   .inputValidator((d: { items: { tool: string; args: Record<string, unknown> }[] }) => ({ items: (d.items ?? []).slice(0, 40) }))
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    const results: { tool: string; ok: boolean; error?: string }[] = [];
+    const results: { tool: string; ok: boolean; error?: string; undo?: UndoRef | null }[] = [];
     for (const it of data.items) {
-      try { await executeTool(ctx, it.tool, it.args); results.push({ tool: it.tool, ok: true }); }
+      try { const r = await executeTool(ctx, it.tool, it.args); results.push({ tool: it.tool, ok: true, undo: undoRefFor(it.tool, it.args, r) }); }
       catch (e) { results.push({ tool: it.tool, ok: false, error: errorText(e) }); }
     }
     return results;
+  });
+
+/**
+ * Deletes what a saved batch created (see src/lib/setup-undo.ts). Runs with the caller's client, so
+ * row-level security applies: deleting is the Owner's, as everywhere else.
+ */
+export const undoSetupItems = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { refs: unknown[] }) => ({ refs: (Array.isArray(d?.refs) ? d.refs : []).filter(isUndoRef).slice(0, 40) }))
+  .handler(async ({ data, context }) => {
+    const ctx = await userCtx(context.supabase as Db, context.userId);
+    if (!ctx.roles.includes("owner")) throw new Error("Solo el Owner puede deshacer un guardado: borra lo que se creó.");
+    let undone = 0;
+    const failed: string[] = [];
+    for (const r of data.refs) {
+      const { data: rows, error } = await ctx.db.from(r.table).delete().eq("org_id", ctx.orgId).eq("id", r.id).select("id");
+      if (error || !rows?.length) failed.push(r.table); else undone++;
+    }
+    return { undone, failed: failed.length };
   });
 
 // ---------------- Proactive suggestions ----------------

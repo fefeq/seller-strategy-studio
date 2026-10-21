@@ -29,7 +29,7 @@ describe("weekly report", () => {
         { deal_id: "old", from_stage: "discovery", to_stage: "demo", changed_at: ago(10) },
       ],
     });
-    expect(r.advanced).toEqual([{ id: "a", name: "A", from: "Cualificado", to: "Demo / POC" }]);
+    expect(r.advanced).toEqual([{ id: "a", name: "A", from: "Cualificado", to: "Demo / prueba" }]);
     expect(r.won).toEqual([{ id: "w", name: "W", amount: 10_000 }]);
     expect(r.headline).toBe("2 deals avanzaron y 0 se enfriaron; 1 ganado");
   });
@@ -51,7 +51,7 @@ describe("weekly report", () => {
     const r = weeklyReport({ ...base, deals: [deal("a", { close_date: "2026-10-01" }), deal("c", { updated_at: ago(20) })], history: [{ deal_id: "a", from_stage: "discovery", to_stage: "demo", changed_at: ago(1) }] });
     const t = reportText(r, money);
     expect(t).toContain("Pipeline abierto: 20000 € en 2 deals.");
-    expect(t).toContain("· A: Discovery → Demo / POC");
+    expect(t).toContain("· A: Descubrimiento → Demo / prueba");
     expect(t).toContain("· C: 20 días sin actividad");
     expect(t).toContain("Con el cierre vencido (1): A.");
     expect(t).toContain("1. Retomar C: 20 días sin actividad.");

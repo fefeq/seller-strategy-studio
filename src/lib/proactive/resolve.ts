@@ -53,6 +53,8 @@ const ASK: Record<string, (s: ResolvableSuggestion) => string> = {
     "Ayúdame a decidir si renovar o liberar este registro de partner: qué datos de Nokko apoyan cada opción (deals y actividad de la cuenta) y qué me recomiendas. Si falta información, dime qué preguntar al partner.",
   setup_incomplete: () =>
     "Ayúdame a completar este paso de la estrategia. Propón los valores a partir de lo que ya hay en Nokko y prepáralos como acciones para que los confirme; si no hay datos suficientes, hazme las preguntas mínimas para rellenarlo.",
+  setup_question: () =>
+    "Es una pregunta que dejó abierta la IA al proponer mi configuración. Ayúdame a responderla con lo que ya hay en Nokko; si la respuesta cambia algún dato de la estrategia, prepáralo como acción para que la confirme. Si es una decisión con varias posturas defendibles, dímelo y propón llevarla a Debates.",
   weekly_report: () =>
     "A partir de este informe semanal, dime las 2 o 3 acciones más importantes para esta semana, con el deal o lead concreto de cada una, y prepáralas como tareas para que las confirme.",
 };

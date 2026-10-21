@@ -13,6 +13,7 @@ import { accountsHeadline } from "@/lib/headlines";
 import { byScore, latestOf, scoreAccount, type Score } from "@/lib/scoring";
 import { ScoreBadge } from "@/components/score";
 import { Switch } from "@/components/ui/switch";
+import { AccountImport } from "@/components/account-import";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -64,6 +65,14 @@ function Accounts() {
   const list = byName ? filtered : [...filtered].sort(byScore((a) => scores.get(a.id)!));
   return (
     <Page eyebrow="Cuentas" title={accountsHeadline({ total: data.length, atRisk: data.filter((a) => a.health === "red").length })} actions={
+      <div className="flex flex-wrap gap-2">
+      <Dialog>
+        <DialogTrigger asChild><Button variant="outline">Importar CSV</Button></DialogTrigger>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Importar cuentas desde CSV</DialogTitle></DialogHeader>
+          <AccountImport />
+        </DialogContent>
+      </Dialog>
       <Dialog>
         <DialogTrigger asChild><Button>+ Nueva cuenta</Button></DialogTrigger>
         <DialogContent>
@@ -73,6 +82,7 @@ function Accounts() {
           <Button disabled={!name} onClick={create}>Crear</Button>
         </DialogContent>
       </Dialog>
+      </div>
     }>
       <div className="mb-4 flex flex-wrap items-center gap-4">
         <Input placeholder="Buscar cuenta…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
