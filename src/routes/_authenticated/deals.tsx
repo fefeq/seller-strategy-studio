@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useAgent } from "@/components/agent";
 import { DEAL_STAGES, MEDDPICC } from "@/lib/roles";
 import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 import { errorText } from "@/lib/errors";
@@ -31,6 +32,8 @@ function Deals() {
   const { money: eur } = useCurrency();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
+  // With the agent docked beside it («Resolver»), the deal panel must not block the agent.
+  const { docked: agentDocked } = useAgent();
   const qc = useQueryClient();
   const { data: deals = [] } = useQuery({
     queryKey: ["deals"],
@@ -99,8 +102,8 @@ function Deals() {
           );
         })}
       </div>
-      <Sheet open={!!selected} onOpenChange={(o) => !o && navigate({ search: { deal: undefined } })}>
-        <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">
+      <Sheet open={!!selected} onOpenChange={(o) => !o && navigate({ search: { deal: undefined } })} modal={!agentDocked}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-2xl" onInteractOutside={agentDocked ? (e) => e.preventDefault() : undefined}>
           {selected && <DealDetail deal={selected} onMove={(stage) => move(selected.id, stage)} onSaved={() => qc.invalidateQueries({ queryKey: ["deals"] })} />}
         </SheetContent>
       </Sheet>

@@ -19,7 +19,7 @@ export const meddpiccGaps: Detector = (s) =>
       priority: 2,
       title: `${d.name} está en ${d.stage === "proposal" ? "Propuesta" : "Negociación"} con MEDDPICC incompleto`,
       body: `Falta: ${missing.join(", ")}.`,
-      link: d.account_id ? `/accounts/${d.account_id}` : "/deals",
+      link: d.account_id ? `/accounts/${d.account_id}` : `/deals?deal=${d.id}`,
       action: null,
       user_id: d.owner_id,
     }));

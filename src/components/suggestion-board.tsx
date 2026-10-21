@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { decideSuggestion } from "@/lib/agent.functions";
-import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, isOverdue } from "@/lib/suggestion-board";
+import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue } from "@/lib/suggestion-board";
+import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
@@ -47,6 +48,7 @@ export function SuggestionBoard() {
   const name = (id: string | null) => (id ? data?.members.find((m) => m.id === id)?.name ?? "Ex-miembro" : "Sin responsable");
   const items = data?.items ?? [];
   const summary = useMemo(() => boardSummary(items), [items]);
+  const closed = useMemo(() => closedSummary(items), [items]);
   const groups = useMemo(() => byOwner(items), [items]);
   const rows = items.filter((s) =>
     (status === "open" ? s.status === "pending" || s.status === "snoozed" : status === "closed" ? !["pending", "snoozed"].includes(s.status) : s.status === status)
@@ -80,7 +82,7 @@ export function SuggestionBoard() {
     const open = s.status === "pending";
     return (
       <div className="flex gap-1">
-        {s.link && <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={s.link as any}><ArrowUpRight className="size-4" /></Link></Button>}
+        {s.link && (() => { const t = linkTarget(s.link)!; return <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={t.to as any} search={t.search as any}><ArrowUpRight className="size-4" /></Link></Button>; })()}
         {open && <Button size="icon" variant="ghost" aria-label={(s.action as any)?.tool ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><Check className="size-4" /></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Posponer 3 días" onClick={() => act(s.id, "snooze")}><Clock className="size-4" /></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Descartar" onClick={() => act(s.id, "dismiss")}><X className="size-4" /></Button>}
@@ -104,6 +106,13 @@ export function SuggestionBoard() {
         ))}
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        Últimos 30 días:{" "}
+        <button className="underline-offset-2 hover:underline" onClick={() => { setStatus("approved"); setOwner("all"); setPrio("all"); }}>{closed.done} hechas</button> ·{" "}
+        <button className="underline-offset-2 hover:underline" onClick={() => { setStatus("resolved"); setOwner("all"); setPrio("all"); }}>{closed.solved} resueltas solas</button> ·{" "}
+        <button className="underline-offset-2 hover:underline" onClick={() => { setStatus("dismissed"); setOwner("all"); setPrio("all"); }}>{closed.dismissed} descartadas</button>
+      </p>
+
       <div className="flex flex-wrap items-center gap-2">
         <select className={filterSel} value={owner} onChange={(e) => setOwner(e.target.value)} aria-label="Responsable">
           <option value="all">Todos los responsables</option>
@@ -112,6 +121,7 @@ export function SuggestionBoard() {
         </select>
         <select className={filterSel} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Estado">
           <option value="open">Abiertas</option><option value="pending">Pendientes</option><option value="snoozed">Pospuestas</option><option value="closed">Cerradas (30 días)</option>
+          <option value="approved">Hechas (30 días)</option><option value="resolved">Resueltas solas (30 días)</option><option value="dismissed">Descartadas (30 días)</option>
         </select>
         <select className={filterSel} value={prio} onChange={(e) => setPrio(e.target.value)} aria-label="Prioridad">
           <option value="all">Todas las prioridades</option><option value="1">Urgente</option><option value="2">Importante</option><option value="3">Cuando puedas</option>

@@ -64,8 +64,12 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
   };
 }
 
-/** Upserts detected suggestions (keeps dismissed/approved state) and resolves pending ones no longer detected. */
-export async function syncSuggestions(db: Db, orgId: string, found: import("@/lib/proactive/types").Suggestion[]) {
+/**
+ * Saves what the detectors found and closes what no longer applies. A pending suggestion the user worked
+ * on with «Resolver» (touched) closes as done by the user ("approved"); the rest close as "resolved"
+ * (solved on its own), so the metrics can tell them apart.
+ */
+export async function syncSuggestions(db: Db, orgId: string, found: import("@/lib/proactive/types").Suggestion[], touched: string[] = []) {
   if (found.length) {
     await db.from("suggestions").upsert(
       found.map((f) => ({ ...f, org_id: orgId, action: f.action as any })),
@@ -74,9 +78,19 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
   // The weekly report is not a detector: it stays until the user decides on it.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key").eq("org_id", orgId).in("status", ["pending", "snoozed"]).neq("detector", "weekly_report");
-  const stale = (open ?? []).filter((o) => !keys.has(o.dedupe_key)).map((o) => o.id);
-  if (stale.length) await db.from("suggestions").update({ status: "resolved", updated_at: new Date().toISOString() }).in("id", stale);
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status").eq("org_id", orgId).in("status", ["pending", "snoozed"]).neq("detector", "weekly_report");
+  const { done, resolved } = splitClosed((open ?? []).filter((o) => !keys.has(o.dedupe_key)), touched);
+  const at = new Date().toISOString();
+  if (done.length) await db.from("suggestions").update({ status: "approved", updated_at: at }).in("id", done);
+  if (resolved.length) await db.from("suggestions").update({ status: "resolved", updated_at: at }).in("id", resolved);
   // Wake up snoozed ones whose time has come.
   await db.from("suggestions").update({ status: "pending", snoozed_until: null }).eq("org_id", orgId).eq("status", "snoozed").lte("snoozed_until", new Date().toISOString());
+}
+
+/** Splits suggestions that stopped applying: pending ones the user opened with «Resolver» → done by the user; the rest → solved on their own. */
+export function splitClosed(stale: { id: string; status: string }[], touched: string[]) {
+  const t = new Set(touched);
+  const done = stale.filter((o) => o.status === "pending" && t.has(o.id)).map((o) => o.id);
+  const resolved = stale.filter((o) => !done.includes(o.id)).map((o) => o.id);
+  return { done, resolved };
 }
