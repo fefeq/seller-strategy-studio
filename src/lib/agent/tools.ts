@@ -35,8 +35,12 @@ const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.err
 
 /** The org's account with this name (case-insensitive), created if missing: same rule as lead intake. */
 async function accountByName(c: ToolCtx, name: string, segmentId?: string): Promise<string> {
-  const pattern = name.replace(/[\\%_]/g, (ch) => `\\${ch}`);
-  const { data: found } = await c.db.from("accounts").select("id").eq("org_id", c.orgId).ilike("name", pattern).limit(1).maybeSingle();
+  if (!name.trim()) throw new Error("Falta el nombre de la cuenta del deal.");
+  // % and _ are escaped; PostgREST reads * as a wildcard, so it becomes a one-character wildcard and the
+  // exact (case-insensitive) match is checked here: «A*B» never links the deal to another account.
+  const pattern = name.replace(/[\\%_]/g, (ch) => `\\${ch}`).replace(/\*/g, "_");
+  const { data: candidates } = await c.db.from("accounts").select("id,name").eq("org_id", c.orgId).ilike("name", pattern).limit(20);
+  const found = (candidates ?? []).find((a) => a.name.trim().toLowerCase() === name.trim().toLowerCase());
   if (found?.id) return found.id;
   const created = ok(await c.db.from("accounts").insert({ org_id: c.orgId, name, ...(segmentId ? { segment_id: segmentId } : {}) }).select("id").single());
   if (!created?.id) throw new Error("No se ha podido crear la cuenta del deal.");

@@ -165,8 +165,9 @@ export function leadFunnel(leads: LeadRow[], deals: DealOutcome[] | Map<string, 
       fromStart: total ? here.length / total : 0,
     };
   });
+  // Same rule as the counts: a step a lead skipped has no «days to reach it».
   const days = (step: FunnelStep) => median(leads.flatMap((l) => {
-    const at = reachedAt(l, step, map);
+    const at = passedThrough(l, step, map) ? reachedAt(l, step, map) : null;
     return at ? [Math.max(0, (new Date(at).getTime() - new Date(l.created_at).getTime()) / DAY)] : [];
   }));
   return {

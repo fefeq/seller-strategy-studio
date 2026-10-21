@@ -126,3 +126,12 @@ describe("CSV column mapping (preview)", () => {
     expect(dealsWithoutCloseDate([{ empresa: "Acme", etapa: "Nuevo" }], columnMapping(["empresa", "etapa"]), "new")).toBe(false);
   });
 });
+
+describe("CSV mapping keeps the importer's rescue rules", () => {
+  it("takes the first non-empty column of a field and still finds an email in an ignored column", async () => {
+    const { applyColumnMapping } = await import("./leads");
+    const out = applyColumnMapping([{ a: "", b: "Acme", c: "ana@acme.com" }], { a: "company", b: "company", c: null });
+    expect(out[0].company).toBe("Acme");
+    expect(Object.values(out[0])).toContain("ana@acme.com");
+  });
+});
