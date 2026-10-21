@@ -72,7 +72,7 @@ function LeadsPage() {
     if (lead.stage === "opportunity") return toast.info("Este lead ya es una oportunidad: síguelo desde Pipeline.");
     const { data: saved, error } = await supabase.from("leads").update({ stage }).eq("id", id).select("deal_id").single();
     if (error) return toast.error(errorText(error));
-    if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en Discovery.`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
+    if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en el pipeline.`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -162,7 +162,7 @@ function LeadsPage() {
                 })}
               </div>
             )}
-            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en Discovery dentro de la Pipeline.</p>
+            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">

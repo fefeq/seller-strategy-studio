@@ -3087,6 +3087,7 @@ export type Database = {
         Returns: string
       }
       current_org: { Args: never; Returns: string }
+      reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean

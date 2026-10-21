@@ -20,7 +20,7 @@ export type BoardItem = {
 export type BoardColumn = { stage: string; label: string; items: BoardItem[]; count: number; amount: number };
 export type BoardGroup = { id: "leads" | "opportunities" | "progress" | "won"; label: string; columns: BoardColumn[]; count: number; amount: number };
 
-/** Lead stages before the deal exists (an "Oportunidad" lead already has its Discovery deal). */
+/** Lead stages before the deal exists (an "Oportunidad" lead already has its deal in the first open stage). */
 const LEAD_COLS = [["new", "Nuevo"], ["contacted", "Contactado"], ["mql", "MQL"], ["sql", "SQL"]] as const;
 
 const DAY = 86_400_000;

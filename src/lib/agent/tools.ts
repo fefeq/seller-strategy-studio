@@ -8,7 +8,7 @@ import { setupStatus, POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
-import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
+import { BUYING_ROLES, type Role } from "@/lib/roles";
 import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { byScore, fitText, scoreLead } from "@/lib/scoring";
@@ -31,7 +31,6 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
 const STAGE_ARG = z.string().min(1).describe("Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost");
 const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
-const stageLabel = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 
 /** The company's stages (the default seven if it has none yet). */
 async function orgStages(c: ToolCtx): Promise<Stage[]> {
@@ -250,7 +249,7 @@ export const TOOLS: AgentTool[] = [
     name: "create_deal", kind: "write",
     description: "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads.",
     input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: STAGE_ARG.optional() }),
-    summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en ${stageLabel(a.stage)}` : ""}`,
+    summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}`,
     run: async (c, a) => {
       // Every way of creating a deal ends with an account, so the asistente, the pipeline and the CSV
       // produce the same data (a deal created here used to have no account; one from the CSV did).
@@ -271,7 +270,7 @@ export const TOOLS: AgentTool[] = [
       meddpicc_field: z.string().optional(), meddpicc_value: z.string().optional(),
     }),
     summarize: (a) => {
-      const parts = [a.stage && `etapa → ${stageLabel(a.stage)}`, a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
+      const parts = [a.stage && `etapa → «${a.stage}»`, a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
       return `Actualizar el deal: ${parts.join(", ") || "sin cambios"}`;
     },
     run: async (c, a) => {
@@ -291,7 +290,7 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "update_lead", kind: "write",
-    description: "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery.",
+    description: "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en la primera etapa del pipeline.",
     input: z.object({ lead_id: z.string().uuid(), stage: z.enum(LEAD_STAGE_IDS).optional(), next_step: z.string().optional(), next_step_at: z.string().optional().describe("AAAA-MM-DD"), disqualified_reason: z.string().optional() }),
     summarize: (a) => {
       const parts = [a.stage && `etapa → ${leadStageLabel(a.stage)}`, a.next_step && `próximo paso «${a.next_step}»`, a.next_step_at && `seguimiento ${a.next_step_at}`].filter(Boolean);

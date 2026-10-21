@@ -53,10 +53,12 @@ export const Route = createFileRoute("/api/public/leads")({
 
         const { ingestLead } = await import("@/lib/leads-ingest");
         const { data: segments } = await db.from("segments").select("id,name").eq("org_id", source.org_id);
-        const ctx = { orgId: source.org_id, sourceId: source.id, segments: segments ?? [] };
+        const { sortStages } = await import("@/lib/stages");
+        const { data: stageRows } = await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", source.org_id);
+        const ctx = { orgId: source.org_id, sourceId: source.id, segments: segments ?? [], stages: sortStages((stageRows ?? []) as import("@/lib/stages").Stage[]) };
         const results: { status: string; error?: string }[] = [];
         for (const rec of records) {
-          const n = normalizeLead(rec, { defaultStage: isIntakeStage(source.default_stage) ? source.default_stage : "new" });
+          const n = normalizeLead(rec, { defaultStage: isIntakeStage(source.default_stage, ctx.stages) ? source.default_stage : "new" });
           if ("error" in n) {
             results.push({ status: "error", error: n.error });
             await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: "error", summary: "Lead sin empresa", error: n.error });

@@ -77,11 +77,28 @@ describe("stages", () => {
     expect(stageByLabel("piloto", custom)).toBe("piloto");
     expect(stageByLabel("Primera  llamada", custom)).toBe("discovery");
     expect(stageByLabel("won", custom)).toBe("won");
+    expect(stageByLabel("cliente", custom)).toBe("won");
     expect(stageByLabel("Negociación", custom)).toBeNull();
   });
-  it("late stages are the last two open ones", () => {
+  it("late stages are the last two open ones, fewer when the pipeline is short", () => {
     expect([...lateStages(custom)]).toEqual(["piloto", "proposal"]);
     expect([...lateStages(null)]).toEqual(["proposal", "negotiation"]);
+    expect([...lateStages(custom.filter((s) => s.key !== "piloto"))]).toEqual(["proposal"]);
+    expect([...lateStages(custom.filter((s) => s.key !== "piloto" && s.key !== "demo"))]).toEqual([]);
+  });
+  it("an exact key wins over another stage's label", () => {
+    const swapped: Stage[] = [
+      { key: "qualified", label: "Demo", position: 1, kind: "open", board_group: "opportunity", probability: 25 },
+      { key: "demo", label: "Prueba técnica", position: 2, kind: "open", board_group: "progress", probability: 40 },
+    ];
+    expect(stageByLabel("demo", swapped)).toBe("demo");
+    expect(stageByLabel("Demo", swapped)).toBe("qualified");
+    expect(stageByLabel("prueba tecnica", swapped)).toBe("demo");
+  });
+  it("names that differ only in accents clash; standard keys stay reserved after a delete", () => {
+    expect(checkStageEdit("Proposta", 10, custom)).toBeNull();
+    expect(checkStageEdit("propuésta", 10, custom)).toMatch(/Ya hay/);
+    expect(newStageKey("Negotiation", custom)).toBe("negotiation_2");
   });
 });
 

@@ -5,7 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { isPreDealStage, type NormalizedLead } from "@/lib/leads";
 import { leadStageLabel } from "@/lib/lead-funnel";
-import { firstOpenStage, sortStages, type Stage } from "@/lib/stages";
+import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
 
 type Db = SupabaseClient<Database>;
 /** `stages`: the company's deal stages; loaded on first use when missing (pass them in a CSV loop). */
@@ -32,6 +32,13 @@ async function findLead(db: Db, orgId: string, k: { dealId?: string | null; exte
 
 export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): Promise<IngestResult> {
   const { orgId } = ctx;
+  ctx.stages ??= sortStages(((await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId)).data ?? []) as Stage[]);
+  const stages = ctx.stages;
+  // A stage the company created («Piloto», «Implementación») is matched by its name before the standard
+  // synonyms, unless the value is clearly a lead stage («Nuevo», «MQL»).
+  const own = lead.rawStage && !(lead.stageRecognized && isPreDealStage(lead.stage)) ? stageByLabel(lead.rawStage, stages) : null;
+  // Written on the lead itself so the caller's «Etapa no reconocida» warning sees the match too.
+  if (own) Object.assign(lead, { stage: own as NormalizedLead["stage"], stageRecognized: true });
 
   // 1. Account: same domain, otherwise same name.
   let account: { id: string; domain: string | null } | null = null;
@@ -98,13 +105,12 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
   }
 
   // 3b. Sales stage: the deal (same external id → open deal of the account → same closed deal from that day).
-  // The stage comes in as one of the standard keys; a company that removed it gets its first open stage
-  // on a new deal, and an existing deal keeps its stage rather than fail.
-  ctx.stages ??= sortStages(((await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId)).data ?? []) as Stage[]);
-  const known = ctx.stages.find((s) => s.key === lead.stage);
-  const target = known ?? firstOpenStage(ctx.stages);
+  // A standard stage the company removed gives a new deal its first open stage; an existing deal keeps
+  // its stage rather than fail.
+  const known = stages.find((s) => s.key === lead.stage);
+  const target = known ?? firstOpenStage(stages);
   const stage = target.key;
-  const stageName = (id: string) => ctx.stages!.find((s) => s.key === id)?.label ?? leadStageLabel(id);
+  const stageName = (id: string) => stages.find((s) => s.key === id)?.label ?? leadStageLabel(id);
   let deal: { id: string; stage: string } | null = null;
   if (lead.externalId) deal = (await db.from("deals").select("id,stage").eq("org_id", orgId).eq("external_id", lead.externalId).maybeSingle()).data;
   if (!deal && lead.externalId) {
@@ -120,7 +126,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
       ?? null;
   }
   const closedAt = closed(stage) ? (lead.closeDate ? `${lead.closeDate}T12:00:00Z` : new Date().toISOString()) : null;
-  const stageLabel = lead.stageGiven ? stageName(stage) : "sin cambio de etapa";
+  const stageLabel = lead.stageGiven && known ? stageName(stage) : "sin cambio de etapa";
   let status: IngestResult["status"] = "updated";
 
   if (deal) {

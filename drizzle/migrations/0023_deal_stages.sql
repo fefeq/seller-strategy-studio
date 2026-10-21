@@ -37,15 +37,19 @@ create policy "leaders delete" on public.deal_stages for delete to authenticated
 -- The stages every company starts with: the seven the app had until now, same keys and probabilities.
 create or replace function public.seed_deal_stages(_org uuid)
 returns void language sql security definer set search_path = public as $$
-  insert into public.deal_stages (org_id, key, label, position, kind, board_group, probability) values
-    (_org, 'discovery', 'Descubrimiento', 1, 'open', 'opportunity', 10),
-    (_org, 'qualified', 'Cualificado', 2, 'open', 'opportunity', 25),
-    (_org, 'demo', 'Demo / prueba', 3, 'open', 'progress', 40),
-    (_org, 'proposal', 'Propuesta', 4, 'open', 'progress', 60),
-    (_org, 'negotiation', 'Negociación', 5, 'open', 'progress', 80),
-    (_org, 'won', 'Ganado', 100, 'won', null, 100),
-    (_org, 'lost', 'Perdido', 101, 'lost', null, 0)
-  on conflict (org_id, key) do nothing;
+  insert into public.deal_stages (org_id, key, label, position, kind, board_group, probability)
+  select _org, v.key, v.label, v.position, v.kind, v.board_group, v.probability
+  from (values
+    ('discovery', 'Descubrimiento', 1, 'open', 'opportunity', 10),
+    ('qualified', 'Cualificado', 2, 'open', 'opportunity', 25),
+    ('demo', 'Demo / prueba', 3, 'open', 'progress', 40),
+    ('proposal', 'Propuesta', 4, 'open', 'progress', 60),
+    ('negotiation', 'Negociación', 5, 'open', 'progress', 80),
+    ('won', 'Ganado', 100, 'won', null, 100),
+    ('lost', 'Perdido', 101, 'lost', null, 0)
+  ) as v(key, label, position, kind, board_group, probability)
+  -- Skips what the company already has, so it can also repair a company (the guard runs even on conflict).
+  where not exists (select 1 from public.deal_stages s where s.org_id = _org and (s.key = v.key or (v.kind <> 'open' and s.kind = v.kind)));
 $$;
 revoke all on function public.seed_deal_stages(uuid) from public, anon, authenticated;
 
@@ -82,6 +86,8 @@ begin
   end if;
   -- DELETE. Removing the whole company (cascade) passes.
   if not exists (select 1 from public.organizations o where o.id = old.org_id) then return old; end if;
+  -- Two people deleting the last open stages at once: the second waits and sees the first's delete.
+  perform 1 from public.deal_stages s where s.org_id = old.org_id and s.kind = 'open' for update;
   if old.kind <> 'open' then
     raise exception 'Ganado y Perdido no se pueden borrar. Puedes cambiarles el nombre.' using errcode = '22023';
   end if;
@@ -97,26 +103,86 @@ end $$;
 create trigger deal_stages_guard before insert or update or delete on public.deal_stages
   for each row execute function public.deal_stages_guard();
 
--- A deal always sits in one of its company's stages. An insert with a stage the company doesn't
--- have (a webhook still sending «demo» after the company deleted it, the lead trigger creating
--- the deal in 'discovery') lands in the first open stage instead of failing; an update to an
--- unknown stage is refused, because a person or the agent chose it.
+-- A deal always sits in one of its company's stages. An insert without a stage, or with one the
+-- company doesn't have (a webhook still sending «demo» after the company deleted it), lands in the
+-- first open stage instead of failing; an insert without probability takes the stage's. An update to
+-- an unknown stage is refused, because a person or the agent chose it. security definer: the check
+-- must see the company's stages whatever the caller's current company is.
+alter table public.deals alter column stage drop default;
+alter table public.deals alter column probability drop default;
+
 create or replace function public.deals_stage_check()
-returns trigger language plpgsql set search_path = public as $$
+returns trigger language plpgsql security definer set search_path = public as $$
 declare s public.deal_stages;
 begin
   if tg_op = 'UPDATE' and new.stage is not distinct from old.stage then return new; end if;
-  select * into s from public.deal_stages where org_id = new.org_id and key = new.stage;
-  if found then return new; end if;
-  -- A company without stages yet (should not happen after this migration) keeps the old behaviour.
-  if not exists (select 1 from public.deal_stages where org_id = new.org_id) then return new; end if;
-  if tg_op = 'UPDATE' then
-    raise exception 'La etapa «%» no existe en esta empresa.', new.stage using errcode = '22023';
+  if new.stage is not null then
+    select * into s from public.deal_stages where org_id = new.org_id and key = new.stage;
   end if;
-  select * into s from public.deal_stages where org_id = new.org_id and kind = 'open' order by position, created_at limit 1;
-  new.stage := s.key;
-  new.probability := s.probability;
+  if not found or new.stage is null then
+    if tg_op = 'UPDATE' then
+      raise exception 'La etapa «%» no existe en esta empresa.', new.stage using errcode = '22023';
+    end if;
+    select * into s from public.deal_stages where org_id = new.org_id and kind = 'open' order by position, created_at limit 1;
+    if not found then
+      raise exception 'Esta empresa no tiene etapas abiertas en el pipeline.' using errcode = '22023';
+    end if;
+    new.stage := s.key;
+    new.probability := s.probability;
+  elsif tg_op = 'INSERT' and new.probability is null then
+    new.probability := s.probability;
+  end if;
   return new;
 end $$;
 create trigger deals_stage_check before insert or update of stage on public.deals
   for each row execute function public.deals_stage_check();
+
+-- And the database holds it: no deal can point at a stage its company doesn't have, even if two
+-- people delete a stage and move a deal into it at the same moment. NO ACTION (checked at the end of
+-- the statement) lets a whole company be deleted, deals and stages together.
+alter table public.deals add constraint deals_stage_fkey
+  foreign key (org_id, stage) references public.deal_stages (org_id, key) on update cascade;
+
+-- Renumber the open stages in one go, in the order given (keys the company doesn't have are ignored).
+create or replace function public.reorder_deal_stages(_keys text[])
+returns void language sql set search_path = public as $$
+  update public.deal_stages s set position = k.ord
+  from unnest(_keys) with ordinality as k(key, ord)
+  where s.org_id = public.current_org() and s.kind = 'open' and s.key = k.key and s.position is distinct from k.ord;
+$$;
+revoke all on function public.reorder_deal_stages(text[]) from public, anon;
+grant execute on function public.reorder_deal_stages(text[]) to authenticated;
+
+-- A lead that reaches «Oportunidad» now opens its deal in the company's first open stage, with that
+-- stage's probability (stage and probability left null for deals_stage_check), not always in 'discovery'.
+create or replace function public.lead_stage_change()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+declare
+  ord text[] := array['new','contacted','mql','sql','opportunity'];
+  idx int;
+  t timestamptz;
+begin
+  if tg_op = 'INSERT' or new.stage is distinct from old.stage then
+    t := case when tg_op = 'INSERT' then coalesce(new.created_at, now()) else now() end;
+    new.stage_entered_at := t;
+    idx := coalesce(array_position(ord, new.stage), 0);
+    if idx >= 2 then new.contacted_at := coalesce(new.contacted_at, t); end if;
+    if idx >= 3 then new.mql_at := coalesce(new.mql_at, t); end if;
+    if idx >= 4 then new.sql_at := coalesce(new.sql_at, t); end if;
+    if idx >= 5 then new.opportunity_at := coalesce(new.opportunity_at, t); end if;
+    if new.stage = 'disqualified' then new.disqualified_at := t; else new.disqualified_at := null; end if;
+  end if;
+  if new.stage = 'opportunity' and new.deal_id is null then
+    if new.account_id is null then
+      insert into public.accounts (org_id, name) values (new.org_id, new.company) returning id into new.account_id;
+    end if;
+    insert into public.deals (org_id, account_id, name, stage, probability, amount, source, segment_id, owner_id, lead_source_id, external_id)
+    values (new.org_id, new.account_id, new.company, null, null, new.amount, coalesce(new.source, 'Entrada de leads'), new.segment_id, new.owner_id, new.lead_source_id,
+      case when new.external_id is not null and not exists (select 1 from public.deals d where d.org_id = new.org_id and d.external_id = new.external_id) then new.external_id end)
+    returning id into new.deal_id;
+  end if;
+  return new;
+end $$;

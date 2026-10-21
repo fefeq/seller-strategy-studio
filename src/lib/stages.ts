@@ -28,6 +28,8 @@ export const DEFAULT_STAGES: Stage[] = [
 ];
 
 const use = (stages: Stage[] | null | undefined) => (stages && stages.length ? stages : DEFAULT_STAGES);
+/** Lowercase, no accents, letters and digits only: «Negociación» and «negociacion» are the same name. */
+const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 /** Open stages in order, then «Ganado», then «Perdido». */
 export function sortStages(stages?: Stage[] | null): Stage[] {
@@ -56,8 +58,15 @@ export const stagePath = (stages?: Stage[] | null): string[] => [...openStages(s
 /** Position of a stage on that path; -1 for «Perdido» or an unknown key. */
 export const stageIndex = (key: string, stages?: Stage[] | null) => stagePath(stages).indexOf(key);
 
-/** The last two open stages: where a deal should already be fully qualified. */
-export const lateStages = (stages?: Stage[] | null) => new Set(openStages(stages).slice(-2).map((s) => s.key));
+/**
+ * Where a deal should already be fully qualified: the last two open stages, or only the last one with
+ * three; none with fewer, because then every new deal would already be «late».
+ */
+export function lateStages(stages?: Stage[] | null): Set<string> {
+  const open = openStages(stages);
+  const n = open.length >= 4 ? 2 : open.length === 3 ? 1 : 0;
+  return new Set(n ? open.slice(-n).map((s) => s.key) : []);
+}
 
 /** `{ key: label }` for selects; `withClosed` adds «Ganado» and «Perdido». */
 export function stageOptions(stages?: Stage[] | null, withClosed = false): Record<string, string> {
@@ -69,12 +78,14 @@ export function newStageKey(label: string, stages?: Stage[] | null): string {
   const base =
     label
       .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "_")
       .replace(/^_+|_+$/g, "")
       .slice(0, 32) || "etapa";
-  const taken = new Set([...use(stages).map((s) => s.key), "won", "lost"]);
+  // The standard keys stay reserved even after a company deletes one: old webhooks, history and stage
+  // criteria still mean that stage, and a new stage must not inherit them.
+  const taken = new Set([...use(stages).map((s) => s.key), ...DEFAULT_STAGES.map((s) => s.key)]);
   if (!taken.has(base)) return base;
   for (let i = 2; ; i++) if (!taken.has(`${base}_${i}`)) return `${base}_${i}`;
 }
@@ -85,7 +96,7 @@ export function checkStageEdit(label: string, probability: number, stages: Stage
   if (!name) return "La etapa necesita un nombre.";
   if (name.length > 40) return "El nombre de la etapa tiene como máximo 40 caracteres.";
   if (!Number.isInteger(probability) || probability < 0 || probability > 100) return "La probabilidad tiene que ser un número entero entre 0 y 100.";
-  const clash = stages.find((s) => s.key !== key && s.label.trim().toLowerCase() === name.toLowerCase());
+  const clash = stages.find((s) => s.key !== key && norm(s.label) === norm(name));
   if (clash) return `Ya hay una etapa que se llama «${clash.label}».`;
   return null;
 }
@@ -101,10 +112,15 @@ export function reorderOpen(stages: Stage[], key: string, dir: -1 | 1): { key: s
   return next.map((s, idx) => ({ key: s.key, position: idx + 1 })).filter((p) => open.find((s) => s.key === p.key)?.position !== p.position);
 }
 
-/** Match a stage written by a person or another tool («Piloto», «piloto») to the company's stage key. */
+/**
+ * Match a stage written by a person or another tool to the company's stage key: the exact key first
+ * (what list_stages gives the agent), then the label without case, accents or spaces.
+ */
 export function stageByLabel(raw: string, stages?: Stage[] | null): string | null {
-  const norm = (x: string) => x.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  const list = use(stages);
+  const exact = list.find((s) => s.key === raw.trim());
+  if (exact) return exact.key;
   const n = norm(raw);
   if (!n) return null;
-  return use(stages).find((s) => norm(s.label) === n || norm(s.key) === n)?.key ?? null;
+  return list.find((s) => norm(s.label) === n)?.key ?? null;
 }

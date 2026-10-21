@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
@@ -26,6 +26,7 @@ export function useStages() {
 }
 
 const GROUPS: Record<BoardGroup, string> = { opportunity: "Oportunidad", progress: "En proceso" };
+type Draft = { label: string; probability: string };
 
 /** Owner and Sales Leader rename, reorder, add and remove stages. Rules the database also enforces are checked here first. */
 export function StageSettings({ canEdit }: { canEdit: boolean }) {
@@ -33,63 +34,81 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
   const { stages, data } = useStages();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [draft, setDraft] = useState<Record<string, { label: string; probability: string }>>({});
+  const [draft, setDraft] = useState<Record<string, Draft>>({});
   const [newLabel, setNewLabel] = useState("");
   const loaded = !!data?.length;
+  const editable = canEdit && loaded;
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ["deal-stages"] });
-  async function run(fn: () => Promise<unknown>, ok?: string) {
+  /** Runs a change, then waits for the fresh stages before letting the next one start. True if it saved. */
+  async function run(fn: () => Promise<unknown>, ok?: string): Promise<boolean> {
     setBusy(true);
     try {
       await fn();
+      await qc.invalidateQueries({ queryKey: ["deal-stages"] });
+      qc.invalidateQueries({ queryKey: ["deals"] });
       if (ok) toast.success(ok);
+      return true;
     } catch (e) {
       toast.error(errorText(e));
+      await qc.invalidateQueries({ queryKey: ["deal-stages"] });
+      return false;
     } finally {
       setBusy(false);
-      refresh();
-      qc.invalidateQueries({ queryKey: ["deals"] });
     }
   }
 
-  const value = (s: Stage) => draft[s.key] ?? { label: s.label, probability: String(s.probability) };
+  const value = (s: Stage): Draft => draft[s.key] ?? { label: s.label, probability: String(s.probability) };
+  const dropDraft = (key: string) => setDraft(({ [key]: _, ...rest }) => rest);
+
+  // Saved on blur only (Enter blurs), so a field never saves twice; the draft stays until the save lands.
   async function saveRow(s: Stage) {
-    const v = value(s);
-    const prob = Number(v.probability);
+    const v = draft[s.key];
+    if (!v || busy) return;
+    const fixed = s.kind !== "open";
+    const prob = fixed ? s.probability : v.probability.trim() === "" ? NaN : Number(v.probability);
+    if (v.label.trim() === s.label && prob === s.probability) return dropDraft(s.key);
     const err = checkStageEdit(v.label, prob, stages, s.key);
     if (err) return toast.error(err);
-    if (v.label.trim() === s.label && prob === s.probability) return;
-    await run(() => confirmed(supabase.from("deal_stages").update({ label: v.label.trim(), probability: prob }).eq("id", s.id!).select("id")), "Etapa guardada.");
-    setDraft(({ [s.key]: _, ...rest }) => rest);
+    const saved = await run(() => confirmed(supabase.from("deal_stages").update({ label: v.label.trim(), probability: prob }).eq("id", s.id!).select("id")), "Etapa guardada.");
+    if (saved) dropDraft(s.key);
   }
+  const blurOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") e.currentTarget.blur();
+  };
+
   async function setGroup(s: Stage, g: BoardGroup) {
     await run(() => confirmed(supabase.from("deal_stages").update({ board_group: g }).eq("id", s.id!).select("id")));
   }
   async function move(s: Stage, dir: -1 | 1) {
     const changes = reorderOpen(stages, s.key, dir);
+    if (!changes.length) return;
+    // One call renumbers every open stage in a single transaction.
+    const order = openStages(stages).map((x) => x.key);
+    const i = order.indexOf(s.key);
+    [order[i], order[i + dir]] = [order[i + dir], order[i]];
     await run(async () => {
-      for (const c of changes) {
-        const id = stages.find((x) => x.key === c.key)?.id;
-        if (id) await confirmed(supabase.from("deal_stages").update({ position: c.position }).eq("id", id).select("id"));
-      }
+      const { error } = await supabase.rpc("reorder_deal_stages", { _keys: order });
+      if (error) throw error;
     });
   }
   async function remove(s: Stage) {
     await run(() => confirmed(supabase.from("deal_stages").delete().eq("id", s.id!).select("id")), `«${s.label}» borrada.`);
   }
   async function add() {
+    if (busy || !newLabel.trim()) return;
     const err = checkStageEdit(newLabel, 50, stages);
     if (err) return toast.error(err);
     const opens = openStages(stages);
     const last = opens[opens.length - 1];
-    await run(
+    const label = newLabel.trim();
+    const saved = await run(
       () =>
         confirmed(
           supabase
             .from("deal_stages")
             .insert({
-              key: newStageKey(newLabel, stages),
-              label: newLabel.trim(),
+              key: newStageKey(label, stages),
+              label,
               position: (last?.position ?? 0) + 1,
               kind: "open",
               board_group: "progress",
@@ -97,9 +116,9 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
             })
             .select("id"),
         ),
-      `«${newLabel.trim()}» añadida al final de las etapas abiertas.`,
+      `«${label}» añadida al final de las etapas abiertas.`,
     );
-    setNewLabel("");
+    if (saved) setNewLabel("");
   }
 
   const opens = openStages(stages);
@@ -121,35 +140,37 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
           {stages.map((s) => {
             const v = value(s);
             const i = opens.findIndex((o) => o.key === s.key);
+            const fixed = s.kind !== "open";
             return (
               <li key={s.key} className="grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_5rem_8.5rem_auto]">
                 <Input
                   aria-label={`Nombre de la etapa ${s.label}`}
                   value={v.label}
-                  disabled={!canEdit || !loaded || busy}
+                  readOnly={!editable}
                   maxLength={40}
                   onChange={(e) => setDraft({ ...draft, [s.key]: { ...v, label: e.target.value } })}
                   onBlur={() => saveRow(s)}
-                  onKeyDown={(e) => e.key === "Enter" && saveRow(s)}
+                  onKeyDown={blurOnEnter}
                 />
                 <div className="flex items-center gap-1">
                   <Input
                     aria-label={`Probabilidad de ${s.label} en %`}
                     inputMode="numeric"
                     value={v.probability}
-                    disabled={!canEdit || !loaded || busy}
+                    readOnly={!editable || fixed}
+                    title={fixed ? "Ganado cuenta siempre al 100 % y Perdido al 0 %." : undefined}
                     onChange={(e) => setDraft({ ...draft, [s.key]: { ...v, probability: e.target.value } })}
                     onBlur={() => saveRow(s)}
-                    onKeyDown={(e) => e.key === "Enter" && saveRow(s)}
+                    onKeyDown={blurOnEnter}
                   />
                   <span className="text-xs text-muted-foreground">%</span>
                 </div>
                 {s.kind === "open" ? (
-                  <Pick value={s.board_group ?? "progress"} options={GROUPS} onChange={(g) => canEdit && loaded && setGroup(s, g as BoardGroup)} />
+                  <Pick aria-label={`Bloque del tablero de ${s.label}`} disabled={!editable || busy} value={s.board_group ?? "progress"} options={GROUPS} onChange={(g) => setGroup(s, g as BoardGroup)} />
                 ) : (
                   <span className="text-xs text-muted-foreground">{s.kind === "won" ? "Cierre ganado" : "Cierre perdido"}</span>
                 )}
-                {s.kind === "open" && canEdit && loaded ? (
+                {s.kind === "open" && editable ? (
                   <span className="flex gap-1">
                     <Button size="icon" variant="ghost" aria-label={`Subir ${s.label}`} disabled={busy || i === 0} onClick={() => move(s, -1)}><ArrowUp className="size-4" /></Button>
                     <Button size="icon" variant="ghost" aria-label={`Bajar ${s.label}`} disabled={busy || i === opens.length - 1} onClick={() => move(s, 1)}><ArrowDown className="size-4" /></Button>
@@ -162,9 +183,9 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
             );
           })}
         </ol>
-        {canEdit && loaded && (
+        {editable && (
           <div className="flex gap-2">
-            <Input aria-label="Nombre de la nueva etapa" placeholder="Nueva etapa, por ejemplo Piloto" maxLength={40} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} onKeyDown={(e) => e.key === "Enter" && newLabel.trim() && add()} />
+            <Input aria-label="Nombre de la nueva etapa" placeholder="Nueva etapa, por ejemplo Piloto" maxLength={40} value={newLabel} disabled={busy} onChange={(e) => setNewLabel(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
             <Button disabled={busy || !newLabel.trim()} onClick={add}>Añadir</Button>
           </div>
         )}
