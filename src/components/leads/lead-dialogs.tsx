@@ -68,12 +68,16 @@ export function SlaSettings({ sla, canEdit, orgId }: { sla: LeadSla; canEdit: bo
 
   async function save() {
     const clean = Object.fromEntries(OPEN_LEAD_STAGES.map((k) => [k, Math.max(1, Math.round(Number(v[k]) || 1))]));
-    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, sla: clean, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
+    // The same json holds the cold-deal threshold (stale_deal_days): keep whatever else is there.
+    const { data: current } = await supabase.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle();
+    const prev = current?.sla && typeof current.sla === "object" && !Array.isArray(current.sla) ? current.sla : {};
+    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, sla: { ...prev, ...clean }, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
     if (error) return toast.error(errorText(error));
     toast.success("Plazos guardados.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["lead-funnel"] });
+    qc.invalidateQueries({ queryKey: ["stale-settings"] });
   }
 
   return (
