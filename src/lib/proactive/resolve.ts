@@ -5,7 +5,8 @@
 import { SETUP_ITEMS } from "@/lib/setup-schema";
 
 export type ResolvableSuggestion = { detector: string; dedupe_key: string; title: string; body: string; link: string | null };
-export type ResolvePlan = { to: string | null; prompt: string };
+/** side: where the agent docks; "left" when the record opens as a panel on the right (a deal), so both are visible. */
+export type ResolvePlan = { to: string | null; prompt: string; side: "left" | "right" };
 
 /** Splits a stored link ("/deals?deal=1") into the route and its search params for the router. */
 export function linkTarget(link: string | null): { to: string; search: Record<string, string> } | null {
@@ -66,5 +67,6 @@ export function resolvePlan(s: ResolvableSuggestion): ResolvePlan {
   if (s.detector === "setup_incomplete") to = setupStepLink(keyPart(s.dedupe_key));
   const ask = ASK[s.detector]?.(s) ?? "Ayúdame a resolver esto: propón los pasos concretos y, si hay que cambiar datos, prepáralos como acciones para que los confirme.";
   const prompt = `Resolver sugerencia: «${s.title}»\n\nDetalle:\n${clip(s.body)}\n\n${ask}\n\n${RESOLVE_RULES}`;
-  return { to, prompt };
+  const side = to?.startsWith("/deals?deal=") ? "left" : "right";
+  return { to, prompt, side };
 }

@@ -16,11 +16,14 @@ describe("resolvePlan", () => {
   it("MEDDPICC: opens the deal itself when there is no account page", () => {
     const p = resolvePlan({ ...base, detector: "meddpicc_gaps", dedupe_key: "meddpicc_gaps:d1:proposal", link: "/deals" });
     expect(p.to).toBe("/deals?deal=d1");
+    expect(p.side).toBe("left");
     expect(p.prompt).toContain("MEDDPICC");
   });
 
   it("MEDDPICC: keeps the account page when the deal has one", () => {
-    expect(resolvePlan({ ...base, detector: "meddpicc_gaps", dedupe_key: "meddpicc_gaps:d1:proposal", link: "/accounts/a1" }).to).toBe("/accounts/a1");
+    const p = resolvePlan({ ...base, detector: "meddpicc_gaps", dedupe_key: "meddpicc_gaps:d1:proposal", link: "/accounts/a1" });
+    expect(p.to).toBe("/accounts/a1");
+    expect(p.side).toBe("right");
   });
 
   it("setup: goes to the exact step, even for old stored links", () => {

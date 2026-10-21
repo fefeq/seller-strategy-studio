@@ -22,10 +22,12 @@ type Msg = { id: string; role: "user" | "assistant"; content: string; actions?: 
 /**
  * fresh: start a new conversation (a «Resolver» must not land in an old thread).
  * docked: open without blocking the page behind, so the user can work on the record while reading the proposal.
+ * side: which edge it docks to; "left" when the record itself opens as a panel on the right (a deal).
  * onClose: called once when the panel closes (used to re-check suggestions).
  */
-type OpenOpts = { mode?: Mode; prompt?: string; personaId?: string | null; workflowId?: string | null; fresh?: boolean; docked?: boolean; onClose?: () => void };
-const Ctx = createContext<{ open: (o?: OpenOpts) => void }>({ open: () => {} });
+type OpenOpts = { mode?: Mode; prompt?: string; personaId?: string | null; workflowId?: string | null; fresh?: boolean; docked?: boolean; side?: "left" | "right"; onClose?: () => void };
+/** docked: the agent is open beside the page without blocking it, so other panels should not block it either. */
+const Ctx = createContext<{ open: (o?: OpenOpts) => void; docked: boolean }>({ open: () => {}, docked: false });
 export const useAgent = () => useContext(Ctx);
 
 const STARTERS = ["¿Qué debería hacer hoy?", "¿Cómo va la cobertura del trimestre?", "Deals en riesgo y por qué", "Crea una tarea para llamar a…"];
@@ -38,6 +40,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const decide = useServerFn(decideAgentAction);
   const [isOpen, setOpen] = useState(false);
   const [docked, setDocked] = useState(false);
+  const [side, setSide] = useState<"left" | "right">("right");
   const onCloseRef = useRef<(() => void) | null>(null);
   const wasOpen = useRef(false);
   const [mode, setMode] = useState<Mode>("chat");
@@ -103,6 +106,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (wasOpen.current && !isOpen) {
       setDocked(false);
+      setSide("right");
       const cb = onCloseRef.current;
       onCloseRef.current = null;
       cb?.();
@@ -113,6 +117,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const open = useCallback((o?: OpenOpts) => {
     setOpen(true);
     setDocked(!!o?.docked);
+    setSide(o?.docked && o.side === "left" ? "left" : "right");
     onCloseRef.current = o?.onClose ?? null;
     if (o?.fresh) {
       const m = o.mode ?? "chat";
@@ -172,7 +177,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   function newChat() { setConvId(null); setMsgs([]); setMode("chat"); setWorkflowId(null); }
 
   return (
-    <Ctx.Provider value={{ open }}>
+    <Ctx.Provider value={{ open, docked: isOpen && docked }}>
       {children}
       {orgId && (
         <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90 md:flex">
@@ -180,7 +185,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
         </button>
       )}
       <Sheet open={isOpen} onOpenChange={setOpen} modal={!docked}>
-        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={docked ? (e) => e.preventDefault() : undefined}>
+        <SheetContent side={side} className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={docked ? (e) => e.preventDefault() : undefined}>
           <SheetHeader className="border-b px-5 py-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-10 md:pr-8">
               <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-[22px] md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>

@@ -95,7 +95,7 @@ export function SuggestionCard({ s }: { s: S }) {
     const plan = resolvePlan(s);
     const orgId = me?.currentOrg?.org_id;
     if (orgId) markResolving(orgId, s.id);
-    open({ prompt: plan.prompt, fresh: true, docked: true, mode: "chat", personaId: null, workflowId: null, onClose: recheck });
+    open({ prompt: plan.prompt, fresh: true, docked: true, side: plan.side, mode: "chat", personaId: null, workflowId: null, onClose: recheck });
     const to = linkTarget(plan.to);
     if (to) navigate({ to: to.to as any, search: to.search as any });
   }
