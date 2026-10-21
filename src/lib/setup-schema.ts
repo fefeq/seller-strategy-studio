@@ -13,7 +13,18 @@ export type SetupData = {
   quarter: string;
 };
 
+// The five fields of April Dunford's framework come first: the statement and the pitch are built on them,
+// so the milestone is not done while they are empty.
+export const DUNFORD_FIELDS = [
+  ["best_customers", "Tus mejores clientes"],
+  ["alternatives", "Alternativas competitivas"],
+  ["differentiation", "Diferenciación"],
+  ["value", "Valor"],
+  ["trend", "Tendencia"],
+] as const;
+
 export const POSITIONING_FIELDS = [
+  ...DUNFORD_FIELDS,
   ["target_customer", "Cliente objetivo"],
   ["need", "Necesidad / dolor"],
   ["category", "Categoría de mercado"],
@@ -36,7 +47,7 @@ export type SetupItem = {
 };
 
 export const SETUP_ITEMS: SetupItem[] = [
-  { id: "positioning", label: "Posicionamiento (8 campos clave)", weight: 20, unlocks: "Mensajes coherentes en la preparación de llamadas, las propuestas y el agente", link: "/strategy",
+  { id: "positioning", label: "Posicionamiento (marco de Dunford y frase, 13 campos)", weight: 20, unlocks: "Mensajes coherentes en la preparación de llamadas, las propuestas y el agente", link: "/strategy",
     done: (d) => POSITIONING_FIELDS.every(([k]) => filled(d.positioning?.[k])) },
   { id: "icp", label: "Al menos un ICP con sectores, tamaño, encaje y anti-ICP", weight: 15, unlocks: "Priorización de cuentas y research de stakeholders", link: "/strategy",
     done: (d) => d.icps.some((i) => filled(i.industries) && filled(i.company_size) && filled(i.why_fit) && filled(i.anti_icp)) },

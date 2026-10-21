@@ -51,6 +51,10 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [ ] 6. Notas de llamada en 5 líneas + desmontaje de la llamada por la IA.
 - [ ] 7. Reparto de cuentas propuesto por la IA (por segmento o país); el Owner aprueba.
 
+### Feedback de la configuración de Postin V2 (21 oct), una rama por fase
+
+- [x] Fase 0 — Confianza en el guardado (rama feedback/fase-0-confianza): el win rate 0 se guarda (la base de datos lo rechazaba); segmentos que se pueden eliminar con el impacto a la vista; validación por celda que nombra el campo; los guardados solo dicen «Guardado» si el servidor confirma la fila; Conocimiento no crea documentos vacíos; el hito de posicionamiento exige el marco de Dunford y la IA lo rellena; una cuenta solo con nombre ya no puntúa 100. Pendiente de ver a mano: Ctrl+A en los campos (sin causa en el código).
+
 ### Fase B (necesita decisión de Fede)
 
 - [ ] Elegir proveedor de datos para señales, cuentas similares y contactos. Comparativa hecha (ver el documento del proyecto); la decisión real es con quién firmar un acuerdo de embed: Apollo (Data Reseller Program) o Lusha (Lusha as a service). Clay no como backend.

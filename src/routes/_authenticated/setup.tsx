@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { applySetupItems, extractSetup } from "@/lib/agent.functions";
 import { FIELD_LABELS, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
-import { POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
+import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 import { errorText, isNetworkError } from "@/lib/errors";
 
@@ -305,7 +305,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
 
   return (
     <div className="space-y-3">
-      {id === "positioning" && <div className="grid gap-3 sm:grid-cols-2">{POSITIONING_FIELDS.map(([k, l]) => inp(k, l, { area: k === "elevator_pitch" }))}</div>}
+      {id === "positioning" && <div className="grid gap-3 sm:grid-cols-2">{POSITIONING_FIELDS.map(([k, l]) => inp(k, l, { area: k === "elevator_pitch" || DUNFORD_FIELDS.some(([d]) => d === k) }))}</div>}
       {id === "icp" && <div className="grid gap-3 sm:grid-cols-2">{inp("name", "Nombre")}{inp("industries", "Sectores")}{inp("company_size", "Tamaño de empresa")}{inp("why_fit", "Por qué encaja", { area: true })}{inp("anti_icp", "Anti-ICP (a quién NO venderle)", { area: true })}</div>}
       {id === "pillars" && v.rows?.map((r: any, i: number) => (
         <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr]"><Input placeholder={`Pilar ${i + 1}`} value={r.title} onChange={(e) => setRow(i, "title", e.target.value)} /><Input placeholder="Mensaje" value={r.message} onChange={(e) => setRow(i, "message", e.target.value)} /></div>

@@ -6,7 +6,7 @@ import { canUseTool, getTool, toolsFor } from "@/lib/agent/tools";
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
-const fullPos = { target_customer: "a", need: "a", category: "a", key_benefit: "a", competitive_alternative: "a", differentiator: "a", one_liner: "a", elevator_pitch: "a" };
+const fullPos = { best_customers: "a", alternatives: "a", differentiation: "a", value: "a", trend: "a", target_customer: "a", need: "a", category: "a", key_benefit: "a", competitive_alternative: "a", differentiator: "a", one_liner: "a", elevator_pitch: "a" };
 const setup = (o: Partial<SetupData> = {}): SetupData => ({
   currency: "EUR",
   segments: [{ name: "SMB", acv_min: 5000, acv_max: 50000, win_rate_target: 25, ae_quota: 600000 }],
@@ -30,6 +30,11 @@ describe("setup completeness", () => {
     expect(st.next?.id).toBe("quota");
   });
   it("a quota from another quarter does not count", () => expect(setupStatus(setup({ quotas: [{ period: "2026-Q3", amount: 5 }] })).next?.id).toBe("quota"));
+  it("positioning is not done while the Dunford framework is empty", () => {
+    const st = setupStatus(setup({ positioning: { ...fullPos, best_customers: "", trend: null } }));
+    expect(st.items.find((i) => i.id === "positioning")?.done).toBe(false);
+  });
+  it("a win rate target of 0 counts as filled", () => expect(setupStatus(setup({ segments: [{ name: "Enterprise", acv_min: 50000, acv_max: null, win_rate_target: 0, ae_quota: 0 }] })).items.find((i) => i.id === "benchmarks")?.done).toBe(true));
   it("needs three pillars with message", () => expect(setupStatus(setup({ pillars: [{ title: "a", message: "m" }] })).next?.id).toBe("pillars"));
 });
 

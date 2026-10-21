@@ -10,7 +10,7 @@ const RULES: [(code: string, msg: string, status: number) => boolean, string][] 
   [(c) => c === "23505", "Ya existe un registro con esos datos. Revisa si está duplicado o cambia el valor."],
   [(c) => c === "23503", "Hay otros datos que dependen de este registro. Quita primero esa relación y vuelve a intentarlo."],
   [(c) => c === "23502", "Falta un campo obligatorio. Complétalo y vuelve a guardar."],
-  [(c) => c === "23514" || c === "22P02" || c === "22007" || c === "22008", "Algún valor no tiene el formato correcto. Revisa los campos y vuelve a guardar."],
+  [(c) => c === "23514" || c === "22P02" || c === "22007" || c === "22008", "Algún valor no tiene el formato correcto. Revisa los campos y vuelve a intentarlo."],
   [(c, m) => c === "42501" || /row-level security|permission denied|not allowed|insufficient privilege/i.test(m), "Tu rol no permite hacer este cambio. Pídeselo al Owner o a un Sales Leader de la empresa."],
   [(c, m, s) => c === "PGRST301" || /jwt|session.*(expired|missing)|refresh token|not authenticated|auth session missing/i.test(m) || s === 401, "Tu sesión ha caducado. Vuelve a entrar para seguir."],
   [(c, m) => c === "PGRST116" || /no rows|0 rows|not found/i.test(m), "Ese registro ya no existe. Recarga la página para ver los datos actuales."],
@@ -34,12 +34,31 @@ function looksSpanish(m: string) {
   return /[áéíóúñ¿¡]/i.test(m) || /\b(no|el|la|los|las|de|del|una?|para|con|ya|tu|es|hay|está)\b/i.test(m) && !/\b(the|is|are|not|failed|error|violates|invalid|with)\b/i.test(m);
 }
 
+/** Columns whose check constraints people hit while typing, so the message can name the field. */
+const CHECK_FIELDS: Record<string, string> = {
+  win_rate_target: "Win rate objetivo %", gross_margin_pct: "Margen bruto %", ae_quota: "Cuota anual AE", acv_min: "ACV mín", acv_max: "ACV máx",
+  cac_target: "CAC objetivo", payback_months: "Payback objetivo", cycle_days: "Ciclo (días)", amount: "Importe", currency: "Moneda", period: "Periodo",
+  plan_revenue: "Ingresos plan", plan_cost_to_serve: "Coste de servir plan", plan_acquisition: "Adquisición plan", plan_new_customers: "Clientes nuevos plan",
+  actual_revenue: "Ingresos reales", actual_cost_to_serve: "Coste de servir real",
+};
+
+/** «El valor de «Margen bruto %» no es válido…» when Postgres names a check constraint we know. */
+function checkFieldText(code: string, msg: string): string | null {
+  if (code !== "23514") return null;
+  const constraint = /constraint "([a-z0-9_]+)"/i.exec(msg)?.[1];
+  if (!constraint) return null;
+  const col = Object.keys(CHECK_FIELDS).sort((a, b) => b.length - a.length).find((c) => constraint.endsWith(`_${c}_check`));
+  return col ? `El valor de «${CHECK_FIELDS[col]}» no es válido y no se ha guardado. Corrígelo y vuelve a intentarlo.` : null;
+}
+
 /** Spanish, actionable text for any error value shown to a person. */
 export function errorText(e: unknown, fallback = GENERIC): string {
   const err = e as ErrLike;
   const msg = typeof err === "string" ? err : typeof err?.message === "string" ? err.message : "";
   const code = typeof err === "object" && err && typeof err.code === "string" ? err.code : "";
   const status = typeof err === "object" && err && typeof err.status === "number" ? err.status : 0;
+  const field = checkFieldText(code, msg);
+  if (field) return field;
   for (const [test, text] of RULES) if (test(code, msg, status)) return text;
   if (msg && looksSpanish(msg)) return msg;
   return fallback;

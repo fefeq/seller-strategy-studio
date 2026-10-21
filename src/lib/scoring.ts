@@ -96,7 +96,11 @@ function fitAgainst(a: AccountFitInput, icp: IcpProfile, segmentNames?: Map<stri
   else {
     const mine = new Set([...tokens(a.industry), ...tokens(a.size), ...tokens(a.name)]);
     const hit = overlap(tokens(icp.anti_icp), mine);
-    criteria.push({ id: "anti_icp", label: "Anti-ICP", status: hit.length ? "miss" : "match", weight: 2, note: hit.length ? `Coincide con el anti-ICP en ${hit.join(", ")}` : "No coincide con el anti-ICP" });
+    // A hit disqualifies even on the name alone; "no hit" only proves something when we know the
+    // account's sector or size. With just a name, not matching the anti-ICP says nothing.
+    if (hit.length) criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "miss", weight: 2, note: `Coincide con el anti-ICP en ${hit.join(", ")}` });
+    else if (a.industry || a.size) criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "match", weight: 2, note: "No coincide con el anti-ICP" });
+    else criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "unknown", weight: 2, note: "La cuenta no tiene sector ni tamaño para compararla con el anti-ICP" });
   }
 
   const tier = (a.tier ?? "").toUpperCase();
