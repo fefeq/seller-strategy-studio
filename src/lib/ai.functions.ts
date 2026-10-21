@@ -10,12 +10,14 @@ async function accountContext(supabase: any, accountId: string) {
     supabase.from("stakeholders").select("name,title,buying_role,support,priorities,research").eq("account_id", accountId),
     supabase.from("calls").select("title,occurred_at,summary,next_steps").eq("account_id", accountId).order("occurred_at", { ascending: false }).limit(5),
     supabase.from("deals").select("name,stage,amount,meddpicc").eq("account_id", accountId),
-    supabase.from("knowledge_docs").select("section,title,body").in("section", ["company", "objections", "playbooks", "methodology"]).limit(20),
+    supabase.from("knowledge_docs").select("section,title,body").in("section", ["company", "objections", "playbooks", "methodology"]).order("section").limit(30),
     supabase.from("positioning").select("target_customer,need,product_name,category,key_benefit,competitive_alternative,differentiator,tagline,one_liner,short_pitch,elevator_pitch,alternatives,differentiation,value,trend").limit(1).maybeSingle(),
     supabase.from("messaging_pillars").select("title,pain,message,proof").order("position"),
     supabase.from("icp_profiles").select("name,industries,company_size,tech_stack,growth_stage,hiring_signals,funding_signals,why_fit,anti_icp").limit(5),
   ]);
-  return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: docs.data, posicionamiento: pos.data, pilares_de_mensaje: pillars.data, icp: icp.data });
+  // Playbooks (discovery, objections, demo, negotiation) are what the call prep must follow; cap each so the prompt stays bounded.
+  const conocimiento = (docs.data ?? []).map((d: { section: string; title: string; body: string }) => ({ ...d, body: d.body.slice(0, 5000) }));
+  return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: conocimiento, posicionamiento: pos.data, pilares_de_mensaje: pillars.data, icp: icp.data });
 }
 
 export const generateMeetingBrief = createServerFn({ method: "POST" })
@@ -27,7 +29,7 @@ export const generateMeetingBrief = createServerFn({ method: "POST" })
     if (error || !m) throw new Error("Reunión no encontrada");
     const ctx = m.account_id ? await accountContext(supabase, m.account_id) : "{}";
     const brief = await ask(
-      "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
+      "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Si en conocimiento_empresa hay playbooks de discovery, objeciones, demo o negociación, síguelos: toma de ahí las preguntas y las respuestas y adáptalas a esta cuenta en vez de inventar otras. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
       `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
     );
     await supabase.from("meetings").update({ ai_brief: brief }).eq("id", m.id);
