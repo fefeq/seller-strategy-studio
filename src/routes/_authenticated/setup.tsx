@@ -13,7 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { applySetupItems, extractSetup } from "@/lib/agent.functions";
+import { applySetupItems, extractSetup, undoSetupItems } from "@/lib/agent.functions";
+import type { UndoRef } from "@/lib/setup-undo";
 import { FIELD_LABELS, itemDetail, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
@@ -166,7 +167,22 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
   const [off, setOff] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState<{ label: string; group: string; ok: boolean; error?: string }[] | null>(null);
+  const [saved, setSaved] = useState<{ label: string; group: string; ok: boolean; error?: string; undo?: UndoRef | null }[] | null>(null);
+  const [undone, setUndone] = useState(false);
+  const undo = useServerFn(undoSetupItems);
+  const isOwner = (me?.roles ?? []).includes("owner");
+  async function undoBatch() {
+    const refs = (saved ?? []).flatMap((x) => (x.undo ? [x.undo] : []));
+    if (!refs.length) return;
+    if (!window.confirm(`Se borrarán los ${refs.length} elementos que creó este guardado. Lo que se actualizó (posicionamiento, segmentos que ya existían, moneda) se queda como está. ¿Seguir?`)) return;
+    setBusy(true);
+    try {
+      const r = await undo({ data: { refs } });
+      setUndone(true);
+      toast[r.failed ? "warning" : "success"](`${r.undone} elementos borrados${r.failed ? ` · ${r.failed} no se han podido borrar` : ""}.`);
+      qc.invalidateQueries();
+    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+  }
   // Rebuild the cards from the proposal until the person edits one or saves: a background refresh must
   // not overwrite their edits, and a saved batch must not be saveable twice.
   const touched = useRef(false);
@@ -182,7 +198,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
       const bad = r.filter((x) => !x.ok);
       // Say what was written, item by item, not just how many.
       touched.current = true;
-      setSaved(r.map((x, i) => ({ label: chosen[i]?.label ?? x.tool, group: chosen[i]?.group ?? "", ok: x.ok, error: x.error })));
+      setSaved(r.map((x, i) => ({ label: chosen[i]?.label ?? x.tool, group: chosen[i]?.group ?? "", ok: x.ok, error: x.error, undo: x.undo })));
       toast[bad.length ? "warning" : "success"](`${r.length - bad.length} guardados${bad.length ? ` · ${bad.length} con error` : ""}. Abajo tienes el detalle.`);
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
@@ -212,8 +228,14 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
           <ul className="mt-2 space-y-1">
             {saved.map((x, i) => <li key={i} className={x.ok ? "" : "text-destructive"}>{x.ok ? "✓" : "✗"} {x.group ? `${x.group} · ` : ""}{x.label}{x.error ? ` — ${x.error}` : ""}</li>)}
           </ul>
-          <p className="mt-2 text-xs text-muted-foreground">Para cambiar algo, edítalo en <Link to="/strategy" className="underline">Estrategia</Link> o en Paso a paso. Deshacer un lote entero todavía no es posible.</p>
-          <Button size="sm" variant="outline" className="mt-3" onClick={onReset}>Cerrar esta propuesta</Button>
+          <p className="mt-2 text-xs text-muted-foreground">Para cambiar algo, edítalo en <Link to="/strategy" className="underline">Estrategia</Link> o en Paso a paso. Deshacer borra lo que este guardado creó; lo que actualizó en su sitio no vuelve atrás.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={onReset}>Cerrar esta propuesta</Button>
+            {saved.some((x) => x.undo) && !undone && (isOwner
+              ? <Button size="sm" variant="ghost" className="text-destructive" disabled={busy} onClick={undoBatch}>Deshacer este guardado</Button>
+              : <span className="self-center text-xs text-muted-foreground">Deshacer el guardado lo puede hacer el Owner.</span>)}
+            {undone && <span className="self-center text-xs text-muted-foreground">Guardado deshecho.</span>}
+          </div>
         </div>
       )}
       {groups.map((g) => (

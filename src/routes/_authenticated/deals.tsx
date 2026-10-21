@@ -216,7 +216,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         </div>
         <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-2 sm:flex">
           <Input placeholder="Hito (p. ej. revisión de seguridad)" className="col-span-3 sm:col-span-1" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
-          <Input type="date" className="w-full sm:w-40" value={due} onChange={(e) => setDue(e.target.value)} />
+          <DateField aria-label="Fecha del hito" className="w-full sm:w-40" value={due || null} onChange={(iso) => setDue(iso ?? "")} />
           <select className="h-10 rounded-md border bg-background px-2 text-base md:h-auto md:text-sm" value={side} onChange={(e) => setSide(e.target.value)}><option value="nosotros">Nosotros</option><option value="cliente">Cliente</option></select>
           <Button disabled={!newItem} onClick={addItem}>+</Button>
         </div>
