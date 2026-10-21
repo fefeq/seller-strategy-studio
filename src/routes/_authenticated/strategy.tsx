@@ -19,6 +19,7 @@ import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
+import { mergeServerEdits } from "@/lib/merge-edits";
 import { keepApprovals, positioningStatement, STATEMENT_SLOTS, type CopyStatus } from "@/lib/positioning";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
 import {
@@ -479,7 +480,13 @@ function Positioning() {
   const canApprove = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { data: row } = useQuery({ queryKey: ["positioning"], queryFn: async () => (await supabase.from("positioning").select("*").order("created_at").limit(1).maybeSingle()).data });
   const [f, setF] = useState<Record<string, any>>({});
-  useEffect(() => { if (row) setF(row as any); }, [row]);
+  // A refresh (after approving a text, or another person's save) keeps what the person is typing.
+  const prevRow = useRef<Record<string, any> | null>(null);
+  useEffect(() => {
+    if (!row) return;
+    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, row as any) : (row as any)));
+    prevRow.current = row as any;
+  }, [row]);
   const copyStatus = ((row as any)?.copy_status ?? {}) as CopyStatus;
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, copy_status: _cs, ...rest } = f as any;
