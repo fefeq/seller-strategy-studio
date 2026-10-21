@@ -14,7 +14,8 @@ describe("headlines", () => {
   });
   it("pipeline counts overdue deals", () => {
     expect(pipelineHeadline({ openDeals: 9, openAmount: 409500, overdue: 3, money })).toBe("409.500 € abiertos, 3 deals con el cierre vencido");
-    expect(pipelineHeadline({ openDeals: 1, openAmount: 8000, overdue: 0, money })).toBe("8000 € abiertos en 1 deal, todos en fecha");
+    expect(pipelineHeadline({ openDeals: 4, openAmount: 8000, overdue: 0, cold: 2, money })).toBe("8000 € abiertos, 2 deals enfriados sin actividad");
+    expect(pipelineHeadline({ openDeals: 1, openAmount: 8000, overdue: 0, money })).toBe("8000 € abiertos en 1 deal, todos en fecha y con actividad");
     expect(pipelineHeadline({ openDeals: 0, openAmount: 0, overdue: 0, money })).toBe("Pipeline");
   });
   it("metrics reads coverage, never invents it without a quota", () => {

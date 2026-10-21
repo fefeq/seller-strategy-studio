@@ -44,7 +44,7 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 ### Fase A (pipeline), un PR por pieza
 
 - [x] 1. Puntuación de leads y cuentas.
-- [ ] 2. Umbral de enfriado según el ciclo real del segmento (mínimo 14 días, ajustable por empresa); sustituye el umbral fijo de 14 días.
+- [x] 2. Umbral de enfriado según el ciclo real del segmento (un cuarto del ciclo, entre 14 y 60 días; ajustable por empresa en Pipeline); sustituye el umbral fijo de 14 días en el detector, la Pipeline y el agente.
 - [ ] 3. Informe semanal del lunes (quién avanzó, quién se enfrió, qué hacer) en la app, por email con Resend y por Telegram. Necesita de Fede: verificar nokko.ai en Resend y guardar la clave en los secretos de Lovable Cloud.
 - [ ] 4. Seguimientos día 3/7/14: detector + borrador del agente en Sugerencias.
 - [ ] 5. Biblioteca de jugadas (discovery, objeciones, demo, negociación): base de Nokko adaptada por la IA al contexto aprobado; la usa la Preparación de llamada.

@@ -14,11 +14,12 @@ export function homeHeadline(p: { riskDeals: number; riskAmount: number; pending
   return p.fallback;
 }
 
-/** Pipeline: open value and how many open deals are past their close date. */
-export function pipelineHeadline(p: { openDeals: number; openAmount: number; overdue: number; money: Money }) {
+/** Pipeline: open value, then deals past their close date, then deals gone cold. */
+export function pipelineHeadline(p: { openDeals: number; openAmount: number; overdue: number; cold?: number; money: Money }) {
   if (p.openDeals === 0) return "Pipeline";
   if (p.overdue > 0) return `${p.money(p.openAmount)} abiertos, ${plural(p.overdue, "deal con el cierre vencido", "deals con el cierre vencido")}`;
-  return `${p.money(p.openAmount)} abiertos en ${plural(p.openDeals, "deal", "deals")}, todos en fecha`;
+  if (p.cold) return `${p.money(p.openAmount)} abiertos, ${plural(p.cold, "deal enfriado", "deals enfriados")} sin actividad`;
+  return `${p.money(p.openAmount)} abiertos en ${plural(p.openDeals, "deal", "deals")}, todos en fecha y con actividad`;
 }
 
 /** Métricas: pipeline coverage of the quarter's quota (healthy band 3–4x). */
