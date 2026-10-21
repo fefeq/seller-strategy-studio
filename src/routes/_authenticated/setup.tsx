@@ -153,14 +153,19 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
   const { data: me } = useMe();
   const qc = useQueryClient();
   const apply = useServerFn(applySetupItems);
-  const { data: segs = [] } = useQuery({ queryKey: ["segments-min", me?.currentOrg?.org_id], queryFn: async () => (await supabase.from("segments").select("id,name")).data ?? [] });
+  const segsQ = useQuery({ queryKey: ["segments-min", me?.currentOrg?.org_id], queryFn: async () => (await supabase.from("segments").select("id,name")).data ?? [] });
+  // A stable array: a fresh [] on every render while loading re-ran the effects below in a loop.
+  const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
   const base = useMemo(() => proposalItems(proposal, segs, me?.currentOrg?.currency ?? null), [proposal, segs, me]);
   const [items, setItems] = useState<ProposalItem[]>([]);
   const [off, setOff] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState<{ label: string; group: string; ok: boolean; error?: string }[] | null>(null);
-  useEffect(() => setItems(base), [base]);
+  // Rebuild the cards from the proposal until the person edits one or saves: a background refresh must
+  // not overwrite their edits, and a saved batch must not be saveable twice.
+  const touched = useRef(false);
+  useEffect(() => { if (!touched.current) setItems(base); }, [base]);
 
   const groups = [...new Set(items.map((i) => i.group))];
   const chosen = items.filter((i) => !off.has(i.key));
@@ -171,20 +176,21 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
       const r = await apply({ data: { items: chosen.map(({ tool, args }) => ({ tool, args })) } });
       const bad = r.filter((x) => !x.ok);
       // Say what was written, item by item, not just how many.
+      touched.current = true;
       setSaved(r.map((x, i) => ({ label: chosen[i]?.label ?? x.tool, group: chosen[i]?.group ?? "", ok: x.ok, error: x.error })));
       toast[bad.length ? "warning" : "success"](`${r.length - bad.length} guardados${bad.length ? ` · ${bad.length} con error` : ""}. Abajo tienes el detalle.`);
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
-  const setArg = (key: string, path: string[], value: string) => setItems((list) => list.map((i) => {
+  const setArg = (key: string, path: string[], value: string) => { touched.current = true; setItems((list) => list.map((i) => {
     if (i.key !== key) return i;
     const args = structuredClone(i.args) as any;
     let o = args; for (const p of path.slice(0, -1)) o = o[p];
     const last = path[path.length - 1];
     o[last] = typeof o[last] === "number" ? (value === "" ? undefined : Number(value)) : value;
     return { ...i, args };
-  }));
+  })); };
 
   return (
     <div className="space-y-6">
@@ -231,7 +237,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
         </section>
       ))}
       <div className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
-        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Guardar {chosen.length} elementos</Button>
+        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length || !!saved}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {saved ? "Guardado" : `Guardar ${chosen.length} elementos`}</Button>
         <Button variant="outline" onClick={onWizard}><span className="sm:hidden">Seguir paso a paso</span><span className="hidden sm:inline">Completar el resto paso a paso</span></Button>
         <Button variant="ghost" onClick={onReset}>Empezar de nuevo</Button>
       </div>
@@ -338,7 +344,8 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
   const qc = useQueryClient();
   const { data: setup } = useSetup();
   const { currency, symbol } = useCurrency();
-  const { data: segs = [] } = useQuery({ queryKey: ["segments-full"], queryFn: async () => (await supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,ae_quota").order("acv_min")).data ?? [] });
+  const segsQ = useQuery({ queryKey: ["segments-full"], queryFn: async () => (await supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,ae_quota").order("acv_min")).data ?? [] });
+  const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
   const [v, setV] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState(false);
 
