@@ -159,7 +159,7 @@ function Team() {
           )}
         </div>
       </div>
-      <div className="mt-8 grid gap-6 lg:grid-cols-2"><McpConnect /><TelegramLink /></div>
+      <div id="mcp" className="mt-8 scroll-mt-20 grid gap-6 lg:grid-cols-2"><McpConnect /><TelegramLink /></div>
     </Page>
   );
 }

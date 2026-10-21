@@ -70,6 +70,11 @@ function SetupPage() {
               </li>
             ))}
           </ul>
+          <div className="mt-5 border-t border-hairline pt-4 text-sm">
+            <p className="font-medium">Trabaja con Nokko desde Claude, ChatGPT o Codex</p>
+            <p className="mt-1 text-xs text-muted-foreground">Conecta tu asistente por MCP: consulta pipeline, leads y estrategia sin salir de él. Lo que quiera cambiar te llega aquí para confirmar.</p>
+            <Link to="/team" hash="mcp" className="mt-2 inline-block text-xs underline">Conectar mi asistente</Link>
+          </div>
         </aside>
       </div>
     </Page>

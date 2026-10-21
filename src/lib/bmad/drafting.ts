@@ -3,19 +3,27 @@ import { ask } from "@/lib/ai-gateway";
 import { loadSetupData, type Db } from "@/lib/org-data";
 import { ARTIFACTS, getWorkflow, missingPrereqs, type ArtifactKind } from "./workflows";
 import { PERSONAS } from "./personas";
+import { knowledgeForAgents, MANDATORY_RULE } from "./sources";
 
 type Ctx = { db: Db; orgId: string; userId: string; currency: string; orgName?: string };
 export const STYLE = "Español neutro (tú), sin signos de exclamación ni emoji; empieza por la conclusión. Concreto, basado en los datos; si falta información, dilo y marca supuestos como [Supuesto].";
 
-/** Company context loaded by every BMAD agent: setup data + latest approved artifacts. */
+/** Company context loaded by every BMAD agent: setup data, latest approved artifacts and the Conocimiento docs they must follow. */
 export async function companyContext(db: Db, orgId: string) {
-  const [setup, arts] = await Promise.all([
+  const [setup, arts, docs] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("gtm_artifacts").select("kind,title,version,content").eq("org_id", orgId).eq("status", "approved").order("version", { ascending: false }),
+    db.from("knowledge_docs").select("title,body,section,scope,mandatory").eq("org_id", orgId).eq("scope", "team").order("updated_at", { ascending: false }).limit(60),
   ]);
   const latest: Record<string, string> = {};
-  for (const a of arts.data ?? []) if (!latest[a.kind]) latest[a.kind] = `${a.title} v${a.version}\n${a.content.slice(0, 6000)}`;
-  return { setup, documentos_aprobados: latest };
+  const approvedSources: string[] = [];
+  for (const a of arts.data ?? []) if (!latest[a.kind]) { latest[a.kind] = `${a.title} v${a.version}\n${a.content.slice(0, 6000)}`; approvedSources.push(`${a.title} v${a.version}`); }
+  const k = knowledgeForAgents(docs.data ?? []);
+  return {
+    setup, documentos_aprobados: latest, reglas_obligatorias: k.reglas_obligatorias, conocimiento_empresa: k.conocimiento_empresa,
+    /** What the draft was built from, saved in its meta and shown under the document. */
+    sources: { documentos_aprobados: approvedSources, ...k.sources },
+  };
 }
 
 export async function subjectData(db: Db, orgId: string, type: string | null, id: string | null) {
@@ -58,15 +66,16 @@ export async function draftArtifactCore(ctx: Ctx, data: { kind: ArtifactKind; no
     const missing = missingPrereqs(wf, Object.keys(cc.documentos_aprobados) as ArtifactKind[]);
     const spec = ARTIFACTS[data.kind];
     const extra = data.dealId ? await subjectData(ctx.db, ctx.orgId, "deal", data.dealId) : await cycleData(ctx.db, ctx.orgId, data.kind);
+    const { sources, ...contexto } = cc;
     const content = (await ask(
-      `Eres ${persona.name} (${persona.title}) en Nokko. ${persona.tone}\nRedacta el documento "${spec.label}" en markdown con exactamente estas secciones (## título): ${spec.sections.join(" · ")}. ${STYLE} Moneda: ${ctx.currency}. Máximo ~900 palabras.${missing.length ? ` Aviso: faltan documentos aprobados previos (${missing.map((k) => ARTIFACTS[k].label).join(", ")}); indícalo al inicio y trabaja con lo disponible.` : ""}`,
-      JSON.stringify({ empresa: (ctx.orgName ?? "la empresa"), contexto: cc, datos: extra, notas_del_usuario: data.notes || null }),
+      `Eres ${persona.name} (${persona.title}) en Nokko. ${persona.tone}\nRedacta el documento "${spec.label}" en markdown con exactamente estas secciones (## título): ${spec.sections.join(" · ")}. ${STYLE} ${MANDATORY_RULE} Moneda: ${ctx.currency}. Máximo ~900 palabras.${missing.length ? ` Aviso: faltan documentos aprobados previos (${missing.map((k) => ARTIFACTS[k].label).join(", ")}); indícalo al inicio y trabaja con lo disponible.` : ""}`,
+      JSON.stringify({ empresa: (ctx.orgName ?? "la empresa"), contexto, datos: extra, notas_del_usuario: data.notes || null }),
       { effort: "medium" },
     )).trim();
     if (!content) throw new Error("La IA no devolvió el documento. Inténtalo de nuevo.");
     const { data: prev } = await ctx.db.from("gtm_artifacts").select("version").eq("org_id", ctx.orgId).eq("kind", data.kind).order("version", { ascending: false }).limit(1).maybeSingle();
     const title = data.dealId && extra && "name" in (extra as object) ? `${spec.label}: ${(extra as { name: string }).name}` : spec.label;
-    const { data: row, error } = await ctx.db.from("gtm_artifacts").insert({ org_id: ctx.orgId, kind: data.kind, title, version: (prev?.version ?? 0) + 1, content, persona: persona.id, meta: data.dealId ? { deal_id: data.dealId } : {} }).select("id").single();
+    const { data: row, error } = await ctx.db.from("gtm_artifacts").insert({ org_id: ctx.orgId, kind: data.kind, title, version: (prev?.version ?? 0) + 1, content, persona: persona.id, meta: { ...(data.dealId ? { deal_id: data.dealId } : {}), sources } }).select("id").single();
     if (error) throw new Error(error.message);
     return { id: row.id as string };
 }

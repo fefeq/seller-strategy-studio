@@ -22,6 +22,7 @@ import { TRACKS } from "@/lib/bmad/tracks";
 import { canUseAdvisor } from "@/lib/advisor";
 import { deepReview, draftArtifact } from "@/lib/bmad.functions";
 import { errorText } from "@/lib/errors";
+import { AiProgress } from "@/components/ai-progress";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   head: () => ({ meta: [
@@ -60,6 +61,12 @@ function CyclePage() {
     queryFn: async () => ((await supabase.from("gtm_artifacts").select("id,kind,title,version,status,content,persona,updated_at,meta").order("version", { ascending: false })).data ?? []) as Art[],
   });
   const phaseIdx = PHASES.findIndex((p) => p.id === cycle?.phase);
+  // Retro and Win/Loss read closed deals: with none, a draft would be invented.
+  const { data: closedCount = 0 } = useQuery({
+    queryKey: ["closed-deals-count", me?.currentOrg?.org_id],
+    enabled: !!me?.currentOrg,
+    queryFn: async () => (await supabase.from("deals").select("id", { count: "exact", head: true }).in("stage", ["won", "lost"])).count ?? 0,
+  });
 
   return (
     <Page eyebrow="Como BMAD, pero para vender" title="Ciclo GTM">
@@ -92,7 +99,9 @@ function CyclePage() {
                       ))}
                       {list.length === 0 && <p className="text-xs text-muted-foreground">Aún no hay ninguno.</p>}
                     </div>
-                    <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>
+                    {(k === "retro" || k === "winloss") && closedCount === 0
+                      ? <p className="mt-1 text-xs text-muted-foreground">Necesita al menos un deal ganado o perdido. Sin cierres, el borrador sería inventado.</p>
+                      : <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>}
                   </div>
                 );
               })}
@@ -134,7 +143,9 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
           </select>
         )}
         <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas o foco opcional (p. ej. «priorizamos mid-market en España este trimestre»)" />
-        <Button onClick={go} disabled={busy}>{busy ? <><Loader2 className="size-4 animate-spin" /> Redactando…</> : "Crear borrador"}</Button>
+        {busy
+          ? <AiProgress typicalSeconds={70} stages={["Leyendo el contexto de empresa y las reglas", "Leyendo los documentos aprobados", `Redactando con ${p?.name ?? "el agente"}`, "Comprobando las secciones"]} />
+          : <Button onClick={go}>Crear borrador</Button>}
       </DialogContent>
     </Dialog>
   );
@@ -173,6 +184,18 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
     if (error) return toast.error(errorText(error));
     setResult(null); refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador.`);
   }
+  // An approved document is never edited in place: a new version starts as a draft from it.
+  async function newVersion() {
+    const { data, error } = await supabase.from("gtm_artifacts").insert({ kind, title: art!.title, version: nextVersion, content: art!.content, persona: art!.persona, meta: { ...(art!.meta ?? {}), from_version: art!.version } }).select("id").single();
+    if (error) return toast.error(errorText(error));
+    refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador. La v${art!.version} sigue alimentando a los agentes hasta que apruebes la nueva.`);
+  }
+  async function withdraw() {
+    if (!window.confirm(`Retirar la aprobación de la v${art!.version}: dejará de alimentar a los agentes y la fase volverá a quedar pendiente. ¿Seguir?`)) return;
+    const { error } = await supabase.from("gtm_artifacts").update({ status: "draft", approved_by: null, approved_at: null }).eq("id", art!.id);
+    if (error) return toast.error(errorText(error));
+    refresh(); toast.success("Aprobación retirada: el documento vuelve a borrador.");
+  }
   async function remove() {
     const { error } = await supabase.from("gtm_artifacts").delete().eq("id", art!.id);
     if (error) return toast.error(errorText(error));
@@ -184,7 +207,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">
         <SheetHeader className="text-left">
           <SheetTitle className="break-words pr-10 font-display text-2xl [overflow-wrap:anywhere] md:text-3xl">{art.title} · v{art.version}</SheetTitle>
-          <p className="text-xs text-muted-foreground">{STATUS[art.status]} · redactado con {getPersona(art.persona)?.name ?? "Nokko"} · {new Date(art.updated_at).toLocaleDateString("es-ES")}</p>
+          <p className="text-xs text-muted-foreground">{STATUS[art.status]}{art.status === "approved" ? " · alimenta a los agentes" : ""} · redactado con {getPersona(art.persona)?.name ?? "Nokko"} · {new Date(art.updated_at).toLocaleDateString("es-ES")}{art.meta?.from_version ? ` · parte de la v${art.meta.from_version}` : ""}</p>
         </SheetHeader>
         <div className="mt-4 flex flex-wrap gap-2">
           {art.status === "draft" && (edit === null
@@ -192,6 +215,10 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             : <><Button size="sm" onClick={save}>Guardar</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancelar</Button></>)}
           {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}><CheckCircle2 className="size-4" /> Aprobar</Button>}
           {art.status === "draft" && !leader && <span className="self-center text-xs text-muted-foreground">Solo Owner o Sales Leader pueden aprobar.</span>}
+          {art.status === "approved" && leader && <>
+            <Button size="sm" variant="outline" onClick={newVersion}>Crear v{nextVersion} para editar</Button>
+            <Button size="sm" variant="ghost" onClick={withdraw}>Retirar aprobación</Button>
+          </>}
           <span className="flex w-full items-center gap-1.5 sm:ml-auto sm:w-auto">
             <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
@@ -200,6 +227,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
           </span>
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}
         </div>
+        {busy && <AiProgress className="mt-4" typicalSeconds={120} stages={["Leyendo el documento y el contexto", `Aplicando ${METHODS.find(([v]) => v === method)?.[1] ?? "el método"}`, "Ordenando los hallazgos", "Reescribiendo el documento"]} />}
         {result && (
           <div className="mt-4 rounded-lg border bg-accent/40 p-4">
             <p className="text-sm font-medium">{result.summary}</p>
@@ -209,6 +237,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={applyRevision}>Aceptar cambios (nueva versión)</Button><Button size="sm" variant="ghost" onClick={() => setResult(null)}>Descartar</Button></div>
           </div>
         )}
+        <Sources meta={art.meta} />
         <div className="mt-6">
           {edit !== null
             ? <Textarea rows={28} className="font-mono text-base md:text-xs" value={edit} onChange={(e) => setEdit(e.target.value)} />
@@ -216,5 +245,23 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** What a draft was built from (saved by the drafting core in meta.sources). Older drafts have none. */
+function Sources({ meta }: { meta: any }) {
+  const src = meta?.sources as { documentos_aprobados?: string[]; obligatorios?: string[]; conocimiento?: string[] } | undefined;
+  if (!src) return null;
+  const rows: [string, string[] | undefined][] = [["Reglas de obligado cumplimiento", src.obligatorios], ["Conocimiento de empresa", src.conocimiento], ["Documentos aprobados", src.documentos_aprobados]];
+  return (
+    <details className="mt-4 rounded-md border p-3 text-xs">
+      <summary className="cursor-pointer font-medium">Fuentes usadas</summary>
+      <dl className="mt-2 space-y-1.5">
+        {rows.map(([label, list]) => (
+          <div key={label}><dt className="text-muted-foreground">{label}</dt><dd>{list?.length ? list.join(" · ") : "ninguna"}</dd></div>
+        ))}
+        <div><dt className="text-muted-foreground">Además</dt><dd>La configuración de la estrategia (posicionamiento, ICP, segmentos, pilares, cuotas).</dd></div>
+      </dl>
+    </details>
   );
 }

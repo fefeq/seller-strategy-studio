@@ -1,0 +1,41 @@
+-- Knowledge docs the agents must follow in every deliverable (the Reglas section always counts as such).
+alter table public.knowledge_docs add column mandatory boolean not null default false;
+comment on column public.knowledge_docs.mandatory is 'Always loaded into GTM cycle drafts and listed as a source; the rules section is mandatory regardless';
+-- Per-piece status of public-facing copy in positioning (tagline, pitches): { "<field>": { "status": "approved", "by": uuid, "at": ts } }.
+-- A piece without an entry is an internal draft.
+alter table public.positioning add column copy_status jsonb not null default '{}'::jsonb;
+comment on column public.positioning.copy_status is 'Approval of public-facing copy per field; missing = internal draft';
+
+-- Enforced in the database so every path (screens, AI setup, agent, MCP) follows the same rules:
+-- a public text that changes loses its approval, and only Owner or Sales Leader can approve one.
+create or replace function public.positioning_copy_guard()
+returns trigger language plpgsql set search_path = public as $$
+declare f text; old_t text; new_t text; result jsonb := coalesce(new.copy_status, '{}'::jsonb);
+begin
+  foreach f in array array['tagline','one_liner','short_pitch','elevator_pitch'] loop
+    old_t := coalesce(to_jsonb(old) ->> f, '');
+    new_t := coalesce(to_jsonb(new) ->> f, '');
+    if old_t is distinct from new_t then result := result - f; end if;
+  end loop;
+  -- Adding or changing an approval needs the role; removing one doesn't. Privileged jobs (no user) pass.
+  if auth.uid() is not null
+     and exists (select 1 from jsonb_object_keys(result) k where (old.copy_status -> k) is distinct from (result -> k))
+     and not (public.has_org_role(new.org_id, 'owner') or public.has_org_role(new.org_id, 'sales_leader')) then
+    raise exception 'Solo el Owner o el Sales Leader pueden aprobar textos para uso externo.' using errcode = '42501';
+  end if;
+  new.copy_status := result;
+  return new;
+end $$;
+create trigger positioning_copy_guard before update on public.positioning for each row execute function public.positioning_copy_guard();
+
+-- Withdrawing the approval of a GTM cycle document changes what every agent reads: same roles as approving it.
+create or replace function public.gtm_artifact_unapprove_guard()
+returns trigger language plpgsql set search_path = public as $$
+begin
+  if old.status = 'approved' and new.status is distinct from 'approved' and auth.uid() is not null
+     and not (public.has_org_role(old.org_id, 'owner') or public.has_org_role(old.org_id, 'sales_leader')) then
+    raise exception 'Solo el Owner o el Sales Leader pueden retirar la aprobación de un documento.' using errcode = '42501';
+  end if;
+  return new;
+end $$;
+create trigger gtm_artifact_unapprove_guard before update on public.gtm_artifacts for each row execute function public.gtm_artifact_unapprove_guard();

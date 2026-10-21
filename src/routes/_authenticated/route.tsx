@@ -43,7 +43,7 @@ const NAV = [
   { to: "/people", label: "Personas" },
   { to: "/approvals", label: "Aprobaciones" },
   { to: "/integrations", label: "Integraciones" },
-  { to: "/team", label: "Equipo" },
+  { to: "/team", label: "Equipo y conexiones" },
 ] as const;
 
 function Shell() {

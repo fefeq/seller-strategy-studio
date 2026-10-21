@@ -1375,6 +1375,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          mandatory: boolean
           org_id: string | null
           scope: string
           section: string
@@ -1387,6 +1388,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          mandatory?: boolean
           org_id?: string | null
           scope?: string
           section: string
@@ -1399,6 +1401,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          mandatory?: boolean
           org_id?: string | null
           scope?: string
           section?: string
@@ -2156,6 +2159,7 @@ export type Database = {
           best_customers: string | null
           category: string | null
           competitive_alternative: string | null
+          copy_status: Json
           created_at: string
           created_by: string | null
           differentiation: string | null
@@ -2180,6 +2184,7 @@ export type Database = {
           best_customers?: string | null
           category?: string | null
           competitive_alternative?: string | null
+          copy_status?: Json
           created_at?: string
           created_by?: string | null
           differentiation?: string | null
@@ -2204,6 +2209,7 @@ export type Database = {
           best_customers?: string | null
           category?: string | null
           competitive_alternative?: string | null
+          copy_status?: Json
           created_at?: string
           created_by?: string | null
           differentiation?: string | null

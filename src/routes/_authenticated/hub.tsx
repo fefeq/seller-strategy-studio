@@ -37,7 +37,7 @@ function revealOnMobile(el: HTMLElement | null) {
   }
 }
 
-type Doc = { id: string; section: string; title: string; body: string; scope: string; created_by: string | null; updated_at: string };
+type Doc = { id: string; section: string; title: string; body: string; scope: string; mandatory?: boolean; created_by: string | null; updated_at: string };
 
 function Hub() {
   const qc = useQueryClient();
@@ -68,15 +68,15 @@ function Hub() {
   });
 
   // «+ Nuevo» opens an unsaved draft; nothing reaches the database until the person saves a title and a body.
-  const draft = (): Doc => ({ id: "", section, title: "", body: "", scope: section === "skills" ? "personal" : "team", created_by: null, updated_at: "" });
+  const draft = (): Doc => ({ id: "", section, title: "", body: "", scope: section === "skills" ? "personal" : "team", mandatory: false, created_by: null, updated_at: "" });
   const save = useMutation({
     mutationFn: async (d: Partial<Doc>) => {
       const title = (d.title ?? "").trim();
       const body = d.body ?? "";
       if (!title || !body.trim()) throw new Error("Escribe un título y el contenido antes de guardar.");
       const row = d.id
-        ? await confirmed(supabase.from("knowledge_docs").update({ title, body, scope: d.scope }).eq("id", d.id).select("*"))
-        : await confirmed(supabase.from("knowledge_docs").insert({ section, title, body, scope: d.scope ?? (section === "skills" ? "personal" : "team") }).select("*"));
+        ? await confirmed(supabase.from("knowledge_docs").update({ title, body, scope: d.scope, mandatory: !!d.mandatory }).eq("id", d.id).select("*"))
+        : await confirmed(supabase.from("knowledge_docs").insert({ section, title, body, scope: d.scope ?? (section === "skills" ? "personal" : "team"), mandatory: !!d.mandatory }).select("*"));
       // The toast reflects what the server stored, not what the form holds.
       if ((row as Doc).body !== body || (row as Doc).title !== title) throw new Error(NOT_SAVED);
       return row as Doc;
@@ -113,6 +113,7 @@ function Hub() {
             <button key={d.id} onClick={() => { setSelected(d); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}>
               <span className="font-medium">{d.title}</span>
               {d.scope === "personal" && <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">personal</span>}
+              {d.scope === "team" && (d.mandatory || d.section === "rules") && <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">obligatorio</span>}
             </button>
           ))}
           {list.length === 0 && <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>}
@@ -132,7 +133,9 @@ function Hub() {
 function Editor({ doc, isOwner, saving, onSave, onDelete }: { doc: Doc; isOwner: boolean; saving: boolean; onSave: (d: Partial<Doc>) => void; onDelete: () => void }) {
   const [title, setTitle] = useState(doc.title);
   const [body, setBody] = useState(doc.body);
+  const [mandatory, setMandatory] = useState(!!doc.mandatory);
   const isDraft = !doc.id;
+  const isRules = doc.section === "rules";
   const empty = !title.trim() || !body.trim();
   const id = doc.id || undefined;
   return (
@@ -140,10 +143,16 @@ function Editor({ doc, isOwner, saving, onSave, onDelete }: { doc: Doc; isOwner:
       {isDraft && <p className="eyebrow">Documento nuevo · sin guardar</p>}
       <Input value={title} placeholder="Título" onChange={(e) => setTitle(e.target.value)} className="font-display text-2xl" />
       <Textarea value={body} placeholder="Contenido" onChange={(e) => setBody(e.target.value)} rows={18} className="font-mono text-base md:text-sm" />
+      {doc.scope === "team" && (
+        <label className="flex items-start gap-2 text-sm">
+          <input type="checkbox" className="mt-1" checked={isRules || mandatory} disabled={isRules} onChange={(e) => setMandatory(e.target.checked)} />
+          <span>De obligado cumplimiento<span className="block text-xs text-muted-foreground">{isRules ? "Todo lo de Reglas lo es: " : ""}los agentes lo leen siempre al redactar el brief, el plan y los demás documentos del Ciclo GTM, y aparece en sus fuentes.</span></span>
+        </label>
+      )}
       <div className="flex flex-wrap items-center gap-2">
-        <Button disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: doc.scope })}>{saving ? "Guardando…" : "Guardar"}</Button>
+        <Button disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: doc.scope, mandatory })}>{saving ? "Guardando…" : "Guardar"}</Button>
         {doc.section === "skills" && doc.scope === "personal" && isOwner && !isDraft && (
-          <Button variant="outline" disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: "team" })}>Promover a equipo</Button>
+          <Button variant="outline" disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: "team", mandatory })}>Promover a equipo</Button>
         )}
         {empty && <span className="text-xs text-muted-foreground">Escribe un título y el contenido para poder guardar.</span>}
         {isOwner && !isDraft && <Button variant="ghost" className="ml-auto text-destructive" onClick={onDelete}>Eliminar</Button>}
