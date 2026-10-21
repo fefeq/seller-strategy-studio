@@ -19,6 +19,7 @@ import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
+import { keepApprovals, positioningStatement, STATEMENT_SLOTS, type CopyStatus } from "@/lib/positioning";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
@@ -473,16 +474,32 @@ const HIERARCHY = [
 
 function Positioning() {
   const qc = useQueryClient();
+  const { data: me } = useMe();
+  const canApprove = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { data: row } = useQuery({ queryKey: ["positioning"], queryFn: async () => (await supabase.from("positioning").select("*").order("created_at").limit(1).maybeSingle()).data });
-  const [f, setF] = useState<Record<string, string>>({});
+  const [f, setF] = useState<Record<string, any>>({});
   useEffect(() => { if (row) setF(row as any); }, [row]);
+  const copyStatus = ((row as any)?.copy_status ?? {}) as CopyStatus;
   async function save() {
-    const { id, created_at, updated_at, created_by, updated_by, ...rest } = f as any;
-    try { await confirmed(row ? supabase.from("positioning").update(rest).eq("id", row.id).select("id") : supabase.from("positioning").insert(rest).select("id")); }
+    const { id, created_at, updated_at, created_by, updated_by, copy_status: _cs, ...rest } = f as any;
+    // A public piece whose text changed goes back to internal draft.
+    const kept = keepApprovals(copyStatus, (row ?? {}) as Record<string, unknown>, rest);
+    try { await confirmed(row ? supabase.from("positioning").update({ ...rest, copy_status: kept }).eq("id", row.id).select("id") : supabase.from("positioning").insert(rest).select("id")); }
     catch (e) { return toast.error(errorText(e)); }
-    toast.success("Posicionamiento guardado."); qc.invalidateQueries({ queryKey: ["positioning"] }); qc.invalidateQueries({ queryKey: ["setup"] });
+    toast.success(Object.keys(kept).length < Object.keys(copyStatus).length ? "Posicionamiento guardado. Los textos públicos que has cambiado vuelven a borrador." : "Posicionamiento guardado.");
+    qc.invalidateQueries({ queryKey: ["positioning"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }
-  const v = (k: string) => f[k] || `[${STATEMENT.find((s) => s[0] === k)?.[1].toLowerCase()}]`;
+  async function setApproval(k: string, approve: boolean) {
+    if (!row) return;
+    if (approve && (f[k] ?? "") !== ((row as any)[k] ?? "")) return toast.error("Guarda el texto antes de aprobarlo.");
+    const next: CopyStatus = { ...copyStatus };
+    if (approve) next[k] = { status: "approved", by: me?.user.id ?? null, at: new Date().toISOString() };
+    else delete next[k];
+    try { await confirmed(supabase.from("positioning").update({ copy_status: next }).eq("id", row.id).select("id")); }
+    catch (e) { return toast.error(errorText(e)); }
+    qc.invalidateQueries({ queryKey: ["positioning"] });
+  }
+  const placeholder = (k: string) => `[${STATEMENT.find((s) => s[0] === k)?.[1].toLowerCase()}]`;
   return (
     <div className="space-y-8">
       <div>
@@ -493,17 +510,36 @@ function Positioning() {
       </div>
       <div>
         <h3 className="text-3xl">Frase de posicionamiento</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Cada campo es un trozo de la frase, no una frase entera: escribe en minúscula y sin punto final. Debajo de cada uno ves dónde encaja.</p>
         <div className="mt-3 grid gap-3 md:grid-cols-4">
-          {STATEMENT.map(([k, l]) => <Field key={k} label={l}><Input value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>)}
+          {STATEMENT.map(([k, l]) => (
+            <Field key={k} label={l}>
+              <Input value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+              <p className="text-[11px] text-muted-foreground">{STATEMENT_SLOTS[k].before} <span className="text-foreground">[{l.toLowerCase()}]</span> {STATEMENT_SLOTS[k].after}</p>
+            </Field>
+          ))}
         </div>
         <blockquote className="mt-4 border-l-4 border-signal bg-card p-5 font-display text-2xl leading-snug">
-          Para {v("target_customer")} que {v("need")}, {v("product_name")} es {v("category")} que {v("key_benefit")}. A diferencia de {v("competitive_alternative")}, nosotros {v("differentiator")}.
+          {positioningStatement(f, placeholder)}
         </blockquote>
       </div>
       <div>
         <h3 className="text-3xl">Jerarquía de la propuesta de valor</h3>
+        <p className="mt-1 text-xs text-muted-foreground">Estos textos pueden acabar en la web o en anuncios. Son borrador interno hasta que alguien con rol de Owner o Sales Leader los apruebe para uso externo; si cambias uno aprobado, vuelve a borrador.</p>
         <div className="mt-3 space-y-3">
-          {HIERARCHY.map(([k, l, rows]) => <Field key={k} label={l}><Textarea rows={rows} value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} /></Field>)}
+          {HIERARCHY.map(([k, l, rows]) => {
+            const st = copyStatus[k];
+            return (
+              <Field key={k} label={l}>
+                <Textarea rows={rows} value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                  <span className={`rounded px-1.5 py-0.5 font-mono uppercase ${st ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{st ? "Aprobado para uso externo" : "Borrador interno"}</span>
+                  {st && <span className="text-muted-foreground">{new Date(st.at).toLocaleDateString("es-ES")}</span>}
+                  {canApprove && row && (f[k] ?? "").trim() && <button type="button" className="underline-offset-2 hover:underline" onClick={() => setApproval(k, !st)}>{st ? "Retirar aprobación" : "Aprobar para uso externo"}</button>}
+                </div>
+              </Field>
+            );
+          })}
         </div>
       </div>
       <Button onClick={save}>Guardar posicionamiento</Button>

@@ -6,6 +6,10 @@ const Toaster = ({ ...props }: ToasterProps) => {
   return (
     <Sonner
       className="toaster group"
+      // Toasts close themselves and can be closed by hand; they never pile up over the content.
+      duration={5000}
+      visibleToasts={3}
+      closeButton
       mobileOffset={{ bottom: "calc(4.5rem + env(safe-area-inset-bottom))" }}
       toastOptions={{
         classNames: {
