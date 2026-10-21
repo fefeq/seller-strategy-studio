@@ -3,6 +3,7 @@
 // the generic «algún valor no tiene el formato correcto».
 
 export type SegmentNumericField =
+  | "priority"
   | "acv_min"
   | "acv_max"
   | "cycle_days"
@@ -17,6 +18,7 @@ export type SegmentNumericField =
 type Rule = { label: string; min: number; max?: number; integer?: boolean };
 
 export const SEGMENT_FIELD_RULES: Record<SegmentNumericField, Rule> = {
+  priority: { label: "Prioridad", min: 1, integer: true },
   acv_min: { label: "ACV mín", min: 0 },
   acv_max: { label: "ACV máx", min: 0 },
   cycle_days: { label: "Ciclo (días)", min: 0, integer: true },

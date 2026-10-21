@@ -40,10 +40,20 @@ describe("full funnel Lead → Contactado → MQL → SQL → Oportunidad → Ga
   ];
   const deals = [{ id: "d1", stage: "won", closed_at: "2026-10-31T00:00:00Z" }, { id: "d2", stage: "proposal", closed_at: null }];
 
-  it("counts every lead that reached each step, including discarded ones", () => {
+  it("counts every lead that passed through each step, including discarded ones", () => {
     const f = leadFunnel(leads, deals);
-    expect(f.steps.map((s) => s.count)).toEqual([4, 3, 3, 2, 2, 1]);
+    // b entered as MQL: its contacted_at was stamped with mql_at, so it never was «Contactado».
+    expect(f.steps.map((s) => s.count)).toEqual([4, 2, 3, 2, 2, 1]);
+    expect(f.steps.map((s) => s.direct)).toEqual([0, 0, 1, 0, 0, 0]);
     expect(f.disqualified).toBe(1);
+  });
+  it("leads imported straight as Oportunidad are direct entries, not a 100 % funnel", () => {
+    const at = "2026-10-21T10:00:00Z";
+    const imported = ["x", "y"].map((id) => L(id, { stage: "opportunity", created_at: at, stage_entered_at: at, contacted_at: at, mql_at: at, sql_at: at, opportunity_at: at }));
+    const f = leadFunnel(imported, []);
+    expect(f.steps.map((s) => s.count)).toEqual([2, 0, 0, 0, 2, 0]);
+    expect(f.steps.find((s) => s.id === "opportunity")?.direct).toBe(2);
+    expect(f.steps.find((s) => s.id === "opportunity")?.fromPrev).toBe(0);
   });
   it("conversion is step to step and from the first step", () => {
     const f = leadFunnel(leads, deals);

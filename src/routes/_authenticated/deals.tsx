@@ -20,6 +20,7 @@ import { isOverdue, pipelineHeadline } from "@/lib/headlines";
 import { staleDeals, staleThreshold } from "@/lib/stale";
 import { actuals } from "@/lib/pipeline-real";
 import { StaleSettings, useStaleSettings } from "@/components/stale-settings";
+import { DateField } from "@/components/date-field";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -169,7 +170,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         <Field label="Etapa"><Pick value={deal.stage} options={Object.fromEntries(DEAL_STAGES.map((s) => [s.id, s.label]))} onChange={(v) => { if (v !== deal.stage) void onMove(v); }} /></Field>
         <Field label="Nombre"><Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
         <Field label={`Importe (${symbol})`}><Input type="number" value={d.amount ?? 0} onChange={(e) => setD({ ...d, amount: Number(e.target.value) })} /></Field>
-        <Field label="Fecha de cierre"><Input type="date" value={d.close_date ?? ""} onChange={(e) => setD({ ...d, close_date: e.target.value })} /></Field>
+        <Field label="Fecha de cierre"><DateField value={d.close_date} onChange={(iso) => setD({ ...d, close_date: iso })} /></Field>
         <Field label="Probabilidad (%)"><Input type="number" min={0} max={100} value={d.probability ?? 0} onChange={(e) => setD({ ...d, probability: Number(e.target.value) })} /></Field>
         <Field label="Salud"><Pick value={d.health} options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }} onChange={(v) => setD({ ...d, health: v })} /></Field>
         <Field label="Categoría de forecast"><Pick value={d.forecast_category ?? "pipeline"} options={{ commit: "Commit", best_case: "Best case", pipeline: "Pipeline", omitted: "Omitido" }} onChange={(v) => setD({ ...d, forecast_category: v })} /></Field>

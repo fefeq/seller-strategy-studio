@@ -1,3 +1,4 @@
+import { formatRatio } from "@/lib/coverage";
 // Screen headlines written as conclusions with the number inside (Nokko voice: «31 cuentas llevan
 // 21 días sin contacto»). Pure: each screen passes the data it already has. When there is no data
 // the headline falls back to the section name, so a number is never invented.
@@ -25,7 +26,7 @@ export function pipelineHeadline(p: { openDeals: number; openAmount: number; ove
 /** Métricas: pipeline coverage of the quarter's quota (healthy band 3–4x). */
 export function metricsHeadline(p: { quota: number; ratio: number; status: "low" | "healthy" | "high" }) {
   if (!p.quota) return "Métricas";
-  const x = `${p.ratio.toLocaleString("es-ES", { minimumFractionDigits: 1, maximumFractionDigits: 1 })}x`;
+  const x = formatRatio(p.ratio);
   if (p.status === "low") return `Cobertura de ${x}: falta pipeline para la cuota del trimestre`;
   if (p.status === "high") return `Cobertura de ${x}: sobra pipeline, revisa su calidad`;
   return `Cobertura de ${x}: el pipeline cubre la cuota del trimestre`;

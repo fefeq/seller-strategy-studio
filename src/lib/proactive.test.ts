@@ -144,3 +144,18 @@ describe("setup proposal mapping", () => {
   });
   it("same currency is not proposed", () => expect(proposalItems(p, [], "USD")[0].tool).toBe("update_positioning"));
 });
+
+describe("segment proposals", () => {
+  it("flag a range with mín = máx and keep priority and note out of the name", async () => {
+    const { segmentRangeWarning } = await import("@/lib/setup-extraction");
+    expect(segmentRangeWarning(6000, 6000)).toMatch(/iguales/);
+    expect(segmentRangeWarning(1428, 14280)).toBeNull();
+    const p: SetupProposal = { summary: "", currency: null, positioning: {}, icps: [], pillars: [], target_accounts: [], questions: [],
+      segments: [{ name: "Agencias de marca personal", priority: 1, notes: "ACV por cuenta", acv_min: 6000, acv_max: 6000, motion: "inside", win_rate_target: null, ae_quota: null }] };
+    const [item] = proposalItems(p, [], "EUR");
+    expect(item.label).toBe("Agencias de marca personal");
+    expect(item.detail).toMatch(/Prioridad 1/);
+    expect(item.detail).toMatch(/iguales/);
+    expect(item.args).toMatchObject({ priority: 1, notes: "ACV por cuenta" });
+  });
+});

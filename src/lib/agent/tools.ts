@@ -32,6 +32,16 @@ const STAGES = DEAL_STAGES.map((s) => s.id) as [string, ...string[]];
 const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
 const stageLabel = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
+
+/** The org's account with this name (case-insensitive), created if missing: same rule as lead intake. */
+async function accountByName(c: ToolCtx, name: string, segmentId?: string): Promise<string> {
+  const pattern = name.replace(/[\\%_]/g, (ch) => `\\${ch}`);
+  const { data: found } = await c.db.from("accounts").select("id").eq("org_id", c.orgId).ilike("name", pattern).limit(1).maybeSingle();
+  if (found?.id) return found.id;
+  const created = ok(await c.db.from("accounts").insert({ org_id: c.orgId, name, ...(segmentId ? { segment_id: segmentId } : {}) }).select("id").single());
+  if (!created?.id) throw new Error("No se ha podido crear la cuenta del deal.");
+  return created.id;
+}
 const like = (q: string) => `%${q.replace(/[%_,()]/g, " ").trim()}%`;
 
 export const TOOLS: AgentTool[] = [
@@ -141,7 +151,7 @@ export const TOOLS: AgentTool[] = [
       const f = leadFunnel(leadCohort(l.data ?? [], start, end), d.data ?? []);
       return {
         plazos_dias: sla,
-        embudo_trimestre: f.steps.map((st) => ({ paso: st.label, leads: st.count, conversion_paso_anterior: st.fromPrev })),
+        embudo_trimestre: f.steps.map((st) => ({ paso: st.label, leads: st.count, entrada_directa: st.direct, conversion_paso_anterior: st.fromPrev })),
         leads: list.map((x) => ({ id: x.id, empresa: x.company, contacto: x.contact_name ?? x.email, etapa: leadStageLabel(x.stage), origen: x.source, puntuacion: x.score.total, encaje_icp: x.score.total == null ? "sin datos" : fitText(x.score.fit), actividad: x.score.activity, proximo_paso: x.next_step, seguimiento: x.next_step_at, retraso: x.delay.late ? delayText(x.delay) : null, deal_id: x.deal_id })),
       };
     },
@@ -211,10 +221,16 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "create_deal", kind: "write",
-    description: "Crea un deal (oportunidad).",
-    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: z.enum(STAGES).optional() }),
+    description: "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads.",
+    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: z.enum(STAGES).optional() }),
     summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en ${stageLabel(a.stage)}` : ""}`,
-    run: async (c, a) => ok(await c.db.from("deals").insert({ ...a, stage: a.stage ?? "discovery", org_id: c.orgId, owner_id: c.userId }).select("id,name").single()),
+    run: async (c, a) => {
+      // Every way of creating a deal ends with an account, so the asistente, the pipeline and the CSV
+      // produce the same data (a deal created here used to have no account; one from the CSV did).
+      const { account_name, ...deal } = a;
+      const account_id = deal.account_id ?? (await accountByName(c, (account_name ?? deal.name).trim(), deal.segment_id));
+      return ok(await c.db.from("deals").insert({ ...deal, account_id, stage: deal.stage ?? "discovery", org_id: c.orgId, owner_id: c.userId }).select("id,name,account_id").single());
+    },
   }),
   def({
     name: "update_deal", kind: "write",
@@ -336,8 +352,8 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "upsert_segment", kind: "write", roles: ["owner", "sales_leader"],
-    description: "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%) y cuota anual AE.",
-    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), win_rate_target: z.number().optional(), ae_quota: z.number().optional() }),
+    description: "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos.",
+    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), win_rate_target: z.number().min(0).max(100).optional(), ae_quota: z.number().min(0).optional(), priority: z.number().int().min(1).optional(), notes: z.string().optional() }),
     summarize: (a) => `${a.segment_id ? "Actualizar" : "Crear"} el segmento «${a.name}»`,
     run: async (c, a) => {
       const { segment_id, ...rest } = a;

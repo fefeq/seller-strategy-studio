@@ -15,6 +15,7 @@ import { errorText } from "@/lib/errors";
 import { ScoreDetail } from "@/components/score";
 import type { Score } from "@/lib/scoring";
 import { FOLLOWUP_STEPS, followupStatus } from "@/lib/followup";
+import { DateField } from "@/components/date-field";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -93,7 +94,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
         <Field label="Origen"><Input value={f.source ?? ""} onChange={(e) => set("source", e.target.value)} /></Field>
         <Field label="Segmento"><Pick value={f.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(data.segments.map((s) => [s.id, s.name])) }} onChange={(v) => set("segment_id", v || null)} /></Field>
         <Field label={`Valor estimado (${symbol})`}><Input type="number" value={f.amount ?? ""} onChange={(e) => set("amount", e.target.value === "" ? null : Number(e.target.value))} /></Field>
-        <Field label="Próximo seguimiento"><Input type="date" value={f.next_step_at ?? ""} onChange={(e) => set("next_step_at", e.target.value || null)} /></Field>
+        <Field label="Próximo seguimiento"><DateField value={f.next_step_at} onChange={(iso) => set("next_step_at", iso)} /></Field>
         <div className="sm:col-span-2"><Field label="Próximo paso"><Input value={f.next_step ?? ""} onChange={(e) => set("next_step", e.target.value)} placeholder="Llamada de cualificación, enviar caso de éxito…" /></Field></div>
         {f.stage === "disqualified" && <div className="sm:col-span-2"><Field label="Motivo del descarte"><Input value={f.disqualified_reason ?? ""} onChange={(e) => set("disqualified_reason", e.target.value)} placeholder="Sin presupuesto, fuera de ICP, sin respuesta…" /></Field></div>}
         <div className="sm:col-span-2"><Field label="Notas"><Textarea rows={4} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)} /></Field></div>

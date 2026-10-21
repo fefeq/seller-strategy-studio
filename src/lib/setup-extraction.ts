@@ -9,7 +9,7 @@ export const SETUP_EXTRACTION_SCHEMA = obj({
   summary: { type: "string" },
   currency: str,
   positioning: obj({ best_customers: str, alternatives: str, differentiation: str, value: str, trend: str, product_name: str, target_customer: str, need: str, category: str, key_benefit: str, competitive_alternative: str, differentiator: str, one_liner: str, elevator_pitch: str, tagline: str }),
-  segments: { type: "array", items: obj({ name: { type: "string" }, acv_min: num, acv_max: num, motion: { type: "string", enum: ["plg", "inside", "field", "strategic"] }, win_rate_target: num, ae_quota: num }) },
+  segments: { type: "array", items: obj({ name: { type: "string" }, priority: num, notes: str, acv_min: num, acv_max: num, motion: { type: "string", enum: ["plg", "inside", "field", "strategic"] }, win_rate_target: num, ae_quota: num }) },
   icps: { type: "array", items: obj({ name: { type: "string" }, industries: str, company_size: str, geography: str, why_fit: str, anti_icp: str }) },
   pillars: { type: "array", items: obj({ title: { type: "string" }, pain: str, message: str, proof: str }) },
   target_accounts: { type: "array", items: obj({ name: { type: "string" }, domain: str, why: str }) },
@@ -20,7 +20,7 @@ export type SetupProposal = {
   summary: string;
   currency: string | null;
   positioning: Record<string, string | null>;
-  segments: { name: string; acv_min: number | null; acv_max: number | null; motion: string; win_rate_target: number | null; ae_quota: number | null }[];
+  segments: { name: string; priority?: number | null; notes?: string | null; acv_min: number | null; acv_max: number | null; motion: string; win_rate_target: number | null; ae_quota: number | null }[];
   icps: { name: string; industries: string | null; company_size: string | null; geography: string | null; why_fit: string | null; anti_icp: string | null }[];
   pillars: { title: string; pain: string | null; message: string | null; proof: string | null }[];
   target_accounts: { name: string; domain: string | null; why: string | null }[];
@@ -33,7 +33,7 @@ export const FIELD_LABELS: Record<string, string> = {
   best_customers: "Mejores clientes", alternatives: "Alternativas", differentiation: "Diferenciación", value: "Valor", trend: "Tendencia",
   product_name: "Producto", target_customer: "Cliente objetivo", need: "Necesidad", category: "Categoría", key_benefit: "Beneficio clave",
   competitive_alternative: "Alternativa competitiva", differentiator: "Diferenciador", one_liner: "Frase de una línea", elevator_pitch: "Elevator pitch",
-  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
+  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", priority: "Prioridad", notes: "Nota", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
   industries: "Sectores", company_size: "Tamaño", geography: "Geografía", why_fit: "Por qué encaja", anti_icp: "Anti-ICP", title: "Título", pain: "Dolor",
   message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda",
 };
@@ -52,10 +52,19 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
   }
   p.segments.forEach((s, i) => {
     const ex = existingSegments.find((e) => e.name.trim().toLowerCase() === s.name.trim().toLowerCase());
-    items.push({ key: `seg${i}`, group: "Segmentos", label: s.name, detail: `ACV ${s.acv_min ?? "?"}–${s.acv_max ?? "?"} · ${s.motion}${s.win_rate_target != null ? ` · win rate ${s.win_rate_target}%` : ""}${s.ae_quota != null ? ` · cuota AE ${s.ae_quota}` : ""}`, tool: "upsert_segment", args: clean({ ...s, segment_id: ex?.id }) });
+    const flat = segmentRangeWarning(s.acv_min, s.acv_max);
+    items.push({ key: `seg${i}`, group: "Segmentos", label: s.name, detail: `${s.priority != null ? `Prioridad ${s.priority} · ` : ""}ACV ${s.acv_min ?? "?"}–${s.acv_max ?? "?"} · ${s.motion}${s.win_rate_target != null ? ` · win rate ${s.win_rate_target}%` : ""}${s.ae_quota != null ? ` · cuota AE ${s.ae_quota}` : ""}${s.notes ? `\nNota: ${s.notes}` : ""}${flat ? `\n${flat}` : ""}`, tool: "upsert_segment", args: clean({ ...s, segment_id: ex?.id }) });
   });
   p.icps.forEach((c, i) => items.push({ key: `icp${i}`, group: "ICP", label: c.name, detail: [c.industries, c.company_size, c.why_fit && `Encaje: ${c.why_fit}`, c.anti_icp && `Anti-ICP: ${c.anti_icp}`].filter(Boolean).join(" · "), tool: "create_icp", args: clean(c) }));
   p.pillars.forEach((x, i) => items.push({ key: `pil${i}`, group: "Pilares de mensaje", label: x.title, detail: [x.pain, x.message, x.proof && `Prueba: ${x.proof}`].filter(Boolean).join(" · "), tool: "create_pillar", args: clean(x) }));
   p.target_accounts.forEach((a, i) => items.push({ key: `acc${i}`, group: "Cuentas objetivo", label: a.name, detail: a.why ?? a.domain ?? "", tool: "create_account", args: clean({ name: a.name, domain: a.domain, is_target: true }) }));
   return items;
+}
+
+/** A range with mín = máx is a point: the capacity and payback maths work on it as if it were a range. */
+export function segmentRangeWarning(min: number | null | undefined, max: number | null | undefined): string | null {
+  if (min == null || max == null) return null;
+  if (min === max) return "Atención: el ACV mín y el máx son iguales. Ajusta la horquilla antes de guardar.";
+  if (min > max) return "Atención: el ACV mín es mayor que el máx.";
+  return null;
 }

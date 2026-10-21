@@ -12,10 +12,11 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [segments, setSegments] = useState<"template" | "empty">("template");
 
   async function create() {
     setBusy(true);
-    const { error } = await supabase.rpc("create_organization", { _name: name });
+    const { error } = await supabase.rpc("create_organization", { _name: name, _segments: segments });
     setBusy(false);
     if (error) return toast.error(errorText(error));
     track("org_created", { location: "onboarding" });
@@ -40,6 +41,19 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
           <Input placeholder="Nombre de la empresa" value={name} onChange={(e) => setName(e.target.value)} />
           <Button disabled={!name.trim() || busy} onClick={create}>Crear</Button>
         </div>
+        <fieldset className="space-y-2 text-sm">
+          <legend className="eyebrow mb-2">Segmentos para empezar</legend>
+          {([
+            ["template", "Plantilla por tamaño de contrato", "SMB, Mid-market, Enterprise y Strategic, con benchmarks de referencia. Para quien vende desde unos miles al año hacia arriba."],
+            ["empty", "Empezar sin segmentos", "Creas los tuyos en la configuración (o los propone la IA). Mejor si tu ticket es bajo o tus segmentos no son por tamaño."],
+          ] as const).map(([v, label, help]) => (
+            <label key={v} className={`flex cursor-pointer gap-3 border p-3 ${segments === v ? "border-signal" : ""}`}>
+              <input type="radio" name="segments" className="mt-1" checked={segments === v} onChange={() => setSegments(v)} />
+              <span><span className="font-medium">{label}</span><span className="block text-xs text-muted-foreground">{help}</span></span>
+            </label>
+          ))}
+          <p className="text-xs text-muted-foreground">Podrás eliminar o añadir segmentos después en Estrategia.</p>
+        </fieldset>
         {memberships.length > 0 && (
           <div className="space-y-2">
             <p className="eyebrow">O entra en una existente</p>

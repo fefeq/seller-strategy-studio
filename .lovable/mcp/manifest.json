@@ -395,7 +395,7 @@
       {
         "name": "create_deal",
         "title": "Crear deal",
-        "description": "Crea un deal (oportunidad). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -410,6 +410,14 @@
               "minLength": 1
             },
             "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "account_name": {
+              "type": "string"
+            },
+            "segment_id": {
               "type": "string",
               "format": "uuid",
               "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
@@ -845,7 +853,7 @@
       {
         "name": "upsert_segment",
         "title": "Crear o actualizar segmento",
-        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%) y cuota anual AE. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -880,10 +888,21 @@
               ]
             },
             "win_rate_target": {
-              "type": "number"
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             },
             "ae_quota": {
-              "type": "number"
+              "type": "number",
+              "minimum": 0
+            },
+            "priority": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "notes": {
+              "type": "string"
             }
           },
           "required": [

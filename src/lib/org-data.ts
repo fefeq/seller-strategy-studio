@@ -78,13 +78,25 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
   // The weekly report is not a detector: it stays until the user decides on it.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status").eq("org_id", orgId).in("status", ["pending", "snoozed"]).neq("detector", "weekly_report");
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).neq("detector", "weekly_report");
+  // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
+  // never contradicts the screen it links to.
+  for (const u of staleTexts(open ?? [], found)) await db.from("suggestions").update({ title: u.title, body: u.body ?? "" }).eq("id", u.id);
   const { done, resolved } = splitClosed((open ?? []).filter((o) => !keys.has(o.dedupe_key)), touched);
   const at = new Date().toISOString();
   if (done.length) await db.from("suggestions").update({ status: "approved", updated_at: at }).in("id", done);
   if (resolved.length) await db.from("suggestions").update({ status: "resolved", updated_at: at }).in("id", resolved);
   // Wake up snoozed ones whose time has come.
   await db.from("suggestions").update({ status: "pending", snoozed_until: null }).eq("org_id", orgId).eq("status", "snoozed").lte("snoozed_until", new Date().toISOString());
+}
+
+/** Open suggestions whose detector now says something different (same key, new title or body). */
+export function staleTexts(open: { id: string; dedupe_key: string; title: string | null; body: string | null }[], found: { dedupe_key: string; title: string; body: string | null }[]) {
+  const byKey = new Map(found.map((f) => [f.dedupe_key, f]));
+  return open.flatMap((o) => {
+    const f = byKey.get(o.dedupe_key);
+    return f && (f.title !== o.title || (f.body ?? null) !== (o.body ?? null)) ? [{ id: o.id, title: f.title, body: f.body ?? null }] : [];
+  });
 }
 
 /** Splits suggestions that stopped applying: pending ones the user opened with «Resolver» → done by the user; the rest → solved on their own. */

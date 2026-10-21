@@ -42,16 +42,17 @@ export function nextSteps(s: CycleState, roles: string[]): NextStep[] {
 
   if (s.setupPct < 60) add({ id: "context", title: "Completa el contexto de empresa", why: `Está al ${s.setupPct}%: todos los agentes trabajan mejor con él.`, persona: "paul", workflow: "company_context", priority: 1 });
 
-  const phaseDoc = (kind: ArtifactKind, persona: string, workflow: string, title: string, prio: number) => {
+  // The article goes with the title: «Crea la revisión», never «Crea el revisión».
+  const phaseDoc = (kind: ArtifactKind, persona: string, workflow: string, title: string, article: "el" | "la", prio: number) => {
     if (ok.has(kind)) return;
     if (draft.has(kind)) add({ id: `approve_${kind}`, title: `Revisa y aprueba: ${title}`, why: "Hay un borrador esperando aprobación.", persona, workflow, priority: prio });
-    else add({ id: `draft_${kind}`, title: `Crea el ${title}`, why: "Es la entrada de la siguiente fase.", persona, workflow, priority: prio });
+    else add({ id: `draft_${kind}`, title: `Crea ${article} ${title}`, why: "Es la entrada de la siguiente fase.", persona, workflow, priority: prio });
   };
 
-  if (leader || roles.includes("marketing")) phaseDoc("brief", "paul", "brief", "Brief GTM", 2);
-  if (leader && ok.has("brief")) phaseDoc("plan", "reid", "plan", "Plan GTM", 2);
-  if (leader && ok.has("plan")) phaseDoc("architecture", "benioff", "architecture", "Arquitectura de revenue", 3);
-  if (leader && ok.has("plan") && ok.has("architecture")) phaseDoc("readiness", "benioff", "readiness", "revisión antes de salir al mercado", 3);
+  if (leader || roles.includes("marketing")) phaseDoc("brief", "paul", "brief", "Brief GTM", "el", 2);
+  if (leader && ok.has("brief")) phaseDoc("plan", "reid", "plan", "Plan GTM", "el", 2);
+  if (leader && ok.has("plan")) phaseDoc("architecture", "benioff", "architecture", "Arquitectura de revenue", "la", 3);
+  if (leader && ok.has("plan") && ok.has("architecture")) phaseDoc("readiness", "benioff", "readiness", "revisión antes de salir al mercado", "la", 3);
 
   if (s.openDeals > 0) {
     if (roles.includes("sales_leader")) add({ id: "weekly", title: "Prepara el plan de la semana", why: `${s.openDeals} deals abiertos que priorizar.`, persona: "sheryl", workflow: "weekly_plan", priority: 4 });
