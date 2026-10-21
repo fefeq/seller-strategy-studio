@@ -73,7 +73,8 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
     );
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key").eq("org_id", orgId).in("status", ["pending", "snoozed"]);
+  // The weekly report is not a detector: it stays until the user decides on it.
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key").eq("org_id", orgId).in("status", ["pending", "snoozed"]).neq("detector", "weekly_report");
   const stale = (open ?? []).filter((o) => !keys.has(o.dedupe_key)).map((o) => o.id);
   if (stale.length) await db.from("suggestions").update({ status: "resolved", updated_at: new Date().toISOString() }).in("id", stale);
   // Wake up snoozed ones whose time has come.
