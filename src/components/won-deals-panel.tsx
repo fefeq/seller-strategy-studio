@@ -27,7 +27,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
     enabled: !!orgId,
     queryFn: async () => {
       const [d, s, a] = await Promise.all([
-        supabase.from("deals").select("id,name,account_id,segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+        supabase.from("deals").select("id,name,account_id,segment_id,amount,stage,close_date,closed_at,updated_at,created_at,deal_lines(count)"),
         supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
         supabase.from("accounts").select("id,name"),
       ]);
@@ -123,12 +123,14 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
         {r.dateSource === "estimada" && r.closedOn && <button type="button" className="mt-0.5 text-[11px] text-signal underline-offset-2 hover:underline" onClick={() => onUpdate({ closed_at: closedAtFromDay(r.closedOn!), close_date: r.closedOn! })}>Estimada · confirmar esta fecha</button>}
       </td>
       <td className="px-2 py-1.5 text-right">
-        <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-10 w-32 text-right text-xs md:h-8" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
+        {((d as { deal_lines?: { count: number }[] }).deal_lines?.[0]?.count ?? 0) > 0 ? (
+          <span className="font-mono text-xs" title="Suma de las líneas del deal: se cambia desde su ficha en Pipeline">{Number(d.amount ?? 0).toLocaleString("es-ES")} · de sus líneas</span>
+        ) : <Input type="number" min={0} aria-label={`Valor · ${d.name}`} className="ml-auto h-10 w-32 text-right text-xs md:h-8" key={`${d.id}-${d.amount ?? ""}`} defaultValue={d.amount ?? ""} placeholder="0"
           onBlur={(e) => {
             const v = e.target.value === "" ? null : Number(e.target.value);
             if (v != null && (!Number.isFinite(v) || v < 0)) return toast.error("Introduce un valor válido.");
             if (v !== (d.amount == null ? null : Number(d.amount))) onUpdate({ amount: v });
-          }} />
+          }} />}
       </td>
       <td className="px-2 py-1.5">
         <select aria-label={`Segmento · ${d.name}`} className={SELECT} value={r.segmentSource === "manual" ? d.segment_id ?? "" : ""} onChange={(e) => onUpdate({ segment_id: e.target.value || null })}>

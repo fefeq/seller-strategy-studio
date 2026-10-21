@@ -94,7 +94,7 @@ function Motions() {
   const [forced, setForced] = useState("");
   // Ranked segments first (1, 2, 3…), then the rest by ACV.
   const { data: segs = [] } = useQuery({ queryKey: ["segments"], queryFn: async () => (await supabase.from("segments").select("*").order("priority", { ascending: true, nullsFirst: false }).order("acv_min")).data ?? [] });
-  const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
+  const { data: deals = [] } = useQuery({ queryKey: ["deals-real"], queryFn: async () => (await supabase.from("deals").select("gross_margin,segment_id,amount,stage,close_date,closed_at,updated_at,created_at")).data ?? [] });
   const { data: costs = [] } = useQuery({ queryKey: ["segment-coverage", "cac-12m"], queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", lastQuarters())).data ?? [] });
   const year = new Date().getFullYear();
   const { data: budgetRows = [] } = useQuery({ queryKey: ["segment-coverage", "budget-quarters", year], queryFn: async () => (await supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year))).data ?? [] });

@@ -3,6 +3,8 @@
 // yearly (a monthly line counts twelve times); margin = amount − Σ quantity × cost, unknown if any line
 // has no cost.
 
+import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-coverage";
+
 export type Billing = "monthly" | "annual" | "one_off";
 
 export const BILLING_LABELS: Record<Billing, string> = { monthly: "Mensual", annual: "Anual", one_off: "Pago único" };
@@ -43,11 +45,14 @@ export const lineCost = (l: DealLine) => (l.unit_cost == null || l.unit_cost ===
 export type DealTotals = { amount: number; cost: number | null; margin: number | null; marginPct: number | null; unknownCost: number };
 
 export function dealTotals(lines: DealLine[]): DealTotals {
-  const amount = round2(lines.reduce((s, l) => s + lineRevenue(l), 0));
+  // Rounded like the trigger: round(revenue) and round(revenue − cost), never a difference of rounded sums.
+  const rev = lines.reduce((s, l) => s + lineRevenue(l), 0);
+  const amount = round2(rev);
   const costs = lines.map(lineCost);
   const unknownCost = costs.filter((c) => c == null).length;
-  const cost = unknownCost ? null : round2(costs.reduce((s: number, c) => s + (c ?? 0), 0));
-  const margin = cost == null ? null : round2(amount - cost);
+  const rawCost = costs.reduce((s: number, c) => s + (c ?? 0), 0);
+  const cost = unknownCost ? null : round2(rawCost);
+  const margin = unknownCost ? null : round2(rev - rawCost);
   return { amount, cost, margin, marginPct: margin != null && amount > 0 ? (margin / amount) * 100 : null, unknownCost };
 }
 
@@ -72,21 +77,31 @@ export function checkLineField(field: "quantity" | "unit_price" | "unit_cost" | 
   return { ok: true, value: v };
 }
 
-export type MarginDeal = { stage: string; amount: number | string | null; gross_margin: number | string | null; segment_id: string | null; closed_at?: string | null; updated_at?: string };
+export type MarginDeal = { stage: string; amount: number | string | null; gross_margin?: number | string | null; segment_id: string | null; closed_at?: string | null; updated_at?: string };
+
+const YEAR = 365 * 86_400_000;
 
 /**
- * Gross margin % of the deals won with lines and known cost, overall and per segment, optionally only
- * those closed before `until` (a period's end). Weighted by amount: Σ margin / Σ amount.
+ * Gross margin % of the deals won with lines and known cost in the 12 months before `until` (a period's
+ * end; now by default), overall and per segment. Weighted by amount: Σ margin / Σ amount. With `segments`,
+ * a deal without segment is placed by its amount, like CAC and coverage do.
  */
-export function wonDealsMargin(deals: MarginDeal[], until?: Date): { all: { pct: number; deals: number } | null; bySegment: Record<string, { pct: number; deals: number }> } {
-  const won = deals.filter((d) => d.stage === "won" && d.gross_margin != null && n(d.amount) > 0 && (!until || new Date(d.closed_at ?? d.updated_at ?? 0) < until));
+export function wonDealsMargin(deals: MarginDeal[], until?: Date, segments?: SegLike[]): { all: { pct: number; deals: number } | null; bySegment: Record<string, { pct: number; deals: number }> } {
+  const end = (until ?? new Date()).getTime();
+  const won = deals.filter((d) => {
+    if (d.stage !== "won" || d.gross_margin == null || n(d.amount) <= 0) return false;
+    const t = new Date(d.closed_at ?? d.updated_at ?? 0).getTime();
+    return t < end && t >= end - YEAR;
+  });
   const agg = (list: MarginDeal[]) => {
     const amount = list.reduce((s, d) => s + n(d.amount), 0);
     return list.length && amount > 0 ? { pct: (list.reduce((s, d) => s + n(d.gross_margin), 0) / amount) * 100, deals: list.length } : null;
   };
   const bySegment: Record<string, { pct: number; deals: number }> = {};
-  for (const seg of new Set(won.map((d) => d.segment_id).filter((x): x is string => !!x))) {
-    const m = agg(won.filter((d) => d.segment_id === seg));
+  const segOf = (d: MarginDeal) => (segments ? assignSegment({ segment_id: d.segment_id, amount: n(d.amount) } as DealLike, segments) : d.segment_id);
+  const placed = won.map((d) => [segOf(d), d] as const);
+  for (const seg of new Set(placed.map(([s]) => s).filter((x): x is string => !!x))) {
+    const m = agg(placed.filter(([s]) => s === seg).map(([, d]) => d));
     if (m) bySegment[seg] = m;
   }
   return { all: agg(won), bySegment };

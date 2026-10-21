@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 // Everything that reads deals or leads; refreshed when a lead arrives or a deal changes anywhere.
-const KEYS = new Set(["deals", "deals-real", "metrics", "segment-coverage", "home", "accounts", "people", "lead-events", "lead-sources", "setup", "suggestions", "leads"]);
+const KEYS = new Set(["deals", "deal-lines", "deal-stages", "products", "deals-real", "metrics", "segment-coverage", "home", "accounts", "people", "lead-events", "lead-sources", "setup", "suggestions", "leads"]);
 
 /** Keeps pipeline, metrics and the strategy calculator live for the current company. */
 export function useLivePipeline(orgId: string | null | undefined) {

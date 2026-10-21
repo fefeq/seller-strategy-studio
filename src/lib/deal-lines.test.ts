@@ -49,13 +49,22 @@ describe("margin of won deals", () => {
     { stage: "won", amount: 1000, gross_margin: 900, segment_id: "b", closed_at: "2026-12-15T00:00:00Z" },
   ];
   it("weights by amount and ignores open deals and deals without margin", () => {
-    const m = wonDealsMargin(deals);
+    const m = wonDealsMargin(deals, new Date("2027-01-01"));
     expect(m.bySegment.a.deals).toBe(2);
     expect(m.bySegment.a.pct).toBeCloseTo(57.5);
     expect(m.all!.deals).toBe(3);
   });
-  it("only counts deals closed before the period ends", () => {
+  it("only counts deals closed in the 12 months before the period ends", () => {
     expect(wonDealsMargin(deals, new Date("2026-10-01")).bySegment.b).toBeUndefined();
+    expect(wonDealsMargin(deals, new Date("2027-09-02")).bySegment.a).toBeUndefined();
+  });
+  it("places a deal without segment by its amount, like CAC and coverage", () => {
+    const segs = [
+      { id: "smb", name: "SMB", acv_min: 0, acv_max: 5000, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null },
+      { id: "mid", name: "Mid", acv_min: 5000, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null },
+    ] as SegLike[];
+    const m = wonDealsMargin([{ stage: "won", amount: 3000, gross_margin: 1500, segment_id: null, closed_at: "2026-09-01T00:00:00Z" }], new Date("2026-10-01"), segs);
+    expect(m.bySegment.smb).toEqual({ pct: 50, deals: 1 });
   });
   it("comes after the budget's real margin and before plan and target", () => {
     const segs = [

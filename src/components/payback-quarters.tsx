@@ -31,7 +31,7 @@ export function usePaybackQuarters(count: number) {
     queryFn: async () => (await supabase.from("segment_budget_quarters").select("*").in("period", years.flatMap((y) => [1, 2, 3, 4].map((n) => `${y}-Q${n}`)))).data ?? [],
   });
   const rows = useMemo(
-    () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withPeriodMargin(segs as SegLike[], budgets, q, wonDealsMargin(deals, quarterRange(q)?.end).bySegment)),
+    () => paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) => withPeriodMargin(segs as SegLike[], budgets, q, wonDealsMargin(deals, quarterRange(q)?.end, segs as SegLike[]).bySegment)),
     [segs, deals, costs, budgets, quarters.join()],
   );
   return { quarters, rows, segs };

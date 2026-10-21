@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/products")({
   component: Products,
 });
 
-const EMPTY = { name: "", price: "", cost: "", billing: "annual" as Billing, sku: "" };
+const EMPTY = { name: "", price: "", cost: "", billing: "annual" as Billing };
 
 function Products() {
   const qc = useQueryClient();
@@ -29,6 +29,8 @@ function Products() {
   const { data: products = [], isLoading } = useProducts();
   const [f, setF] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
+  // Bumped when a save fails, so the fields go back to what the server has.
+  const [rev, setRev] = useState(0);
 
   async function save(fn: () => Promise<unknown>, ok?: string) {
     setBusy(true);
@@ -52,19 +54,22 @@ function Products() {
     if (!price.ok) return toast.error(price.error);
     if (!cost.ok) return toast.error(cost.error);
     const ok = await save(
-      () => confirmed(supabase.from("products").insert({ name: f.name.trim(), price: price.value ?? 0, cost: cost.value, billing: f.billing, sku: f.sku.trim() || null }).select("id")),
+      () => confirmed(supabase.from("products").insert({ name: f.name.trim(), price: price.value ?? 0, cost: cost.value, billing: f.billing }).select("id")),
       `«${f.name.trim()}» añadido al catálogo.`,
     );
     if (ok) setF(EMPTY);
   }
 
   async function update(p: Product, patch: Partial<Record<"name" | "price" | "cost" | "billing" | "active", unknown>>) {
-    await save(() => confirmed(supabase.from("products").update(patch as never).eq("id", p.id).select("id")));
+    if (!(await save(() => confirmed(supabase.from("products").update(patch as never).eq("id", p.id).select("id"))))) setRev((r) => r + 1);
   }
-  function numField(p: Product, field: "price" | "cost", raw: string) {
-    const r = checkLineField(field, raw);
-    if (!r.ok) return toast.error(r.error);
+  function numField(p: Product, field: "price" | "cost", input: HTMLInputElement) {
     const cur = p[field] == null ? null : Number(p[field]);
+    const r = checkLineField(field, input.value);
+    if (!r.ok) {
+      input.value = cur == null ? "" : String(cur);
+      return toast.error(r.error);
+    }
     if (r.value !== cur) void update(p, { [field]: r.value });
   }
 
@@ -96,19 +101,19 @@ function Products() {
         {products.map((p) => {
           const m = productMarginPct(p);
           return (
-            <li key={p.id} className={`grid gap-3 py-3 text-sm sm:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_7rem] sm:items-center ${p.active ? "" : "opacity-60"}`}>
+            <li key={`${p.id}-${p.name}-${p.price}-${p.cost}-${p.billing}-${rev}`} className={`grid gap-3 py-3 text-sm sm:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))_7rem] sm:items-center ${p.active ? "" : "opacity-60"}`}>
               {canEdit ? (
-                <Input aria-label={`Nombre de ${p.name}`} defaultValue={p.name} maxLength={120} onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== p.name && update(p, { name: e.target.value.trim() })} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
+                <Input aria-label={`Nombre de ${p.name}`} defaultValue={p.name} maxLength={120} onBlur={(e) => { const v = e.currentTarget.value.trim(); if (!v) { e.currentTarget.value = p.name; return; } if (v !== p.name) void update(p, { name: v }); }} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
               ) : (
                 <span className="font-medium">{p.name}</span>
               )}
               {canEdit ? (
-                <Input aria-label={`Precio de ${p.name}`} inputMode="decimal" defaultValue={String(p.price)} onBlur={(e) => numField(p, "price", e.target.value)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
+                <Input aria-label={`Precio de ${p.name}`} inputMode="decimal" defaultValue={String(p.price)} onBlur={(e) => numField(p, "price", e.currentTarget)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
               ) : (
                 <span className="font-mono">{money(Number(p.price))}{BILLING_SUFFIX[p.billing as Billing]}</span>
               )}
               {canEdit ? (
-                <Input aria-label={`Coste de ${p.name}`} inputMode="decimal" placeholder="sin coste" defaultValue={p.cost == null ? "" : String(p.cost)} onBlur={(e) => numField(p, "cost", e.target.value)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
+                <Input aria-label={`Coste de ${p.name}`} inputMode="decimal" placeholder="sin coste" defaultValue={p.cost == null ? "" : String(p.cost)} onBlur={(e) => numField(p, "cost", e.currentTarget)} onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
               ) : (
                 <span className="font-mono">{p.cost == null ? "sin coste" : money(Number(p.cost))}</span>
               )}

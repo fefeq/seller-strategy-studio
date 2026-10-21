@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrency } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,11 +54,16 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
   const [productId, setProductId] = useState("");
   const [busy, setBusy] = useState(false);
   const active = products.filter((p) => p.active);
+  // Same rule as the database: price, cost and discount are for Owner, Sales Leader and Deal Desk.
+  const { data: me } = useMe();
+  const canPrice = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader" || r === "deal_desk");
 
-  async function run(fn: () => Promise<unknown>) {
+  async function run(fn: () => Promise<unknown>): Promise<boolean> {
     setBusy(true);
+    let saved = false;
     try {
       await fn();
+      saved = true;
     } catch (e) {
       toast.error(errorText(e));
     } finally {
@@ -66,6 +71,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
       await qc.invalidateQueries({ queryKey: ["deal-lines", dealId] });
       qc.invalidateQueries({ queryKey: ["deals"] });
     }
+    return saved;
   }
   async function add() {
     const p = products.find((x) => x.id === productId);
@@ -73,12 +79,18 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
     await run(() => confirmed(supabase.from("deal_lines").insert({ ...lineFromProduct(p), deal_id: dealId, ...(orgId ? { org_id: orgId } : {}) } as never).select("id")));
     setProductId("");
   }
-  function setField(l: SavedLine, field: NumField, raw: string) {
-    const r = checkLineField(field, raw);
-    if (!r.ok) return toast.error(r.error);
+  function setField(l: SavedLine, field: NumField, input: HTMLInputElement) {
     const cur = l[field] == null || l[field] === "" ? null : Number(l[field]);
+    const r = checkLineField(field, input.value);
+    if (!r.ok) {
+      input.value = cur == null ? "" : String(cur);
+      return toast.error(r.error);
+    }
     if (r.value === cur) return;
-    void run(() => confirmed(supabase.from("deal_lines").update({ [field]: r.value } as never).eq("id", l.id).select("id")));
+    const before = input.value;
+    void run(() => confirmed(supabase.from("deal_lines").update({ [field]: r.value } as never).eq("id", l.id).select("id"))).then((saved) => {
+      if (!saved && input.value === before) input.value = cur == null ? "" : String(cur);
+    });
   }
 
   const t = dealTotals(lines);
@@ -108,8 +120,9 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
                         className="h-9"
                         placeholder={field === "unit_cost" ? "sin coste" : undefined}
                         defaultValue={l[field] == null ? "" : String(l[field])}
-                        readOnly={busy}
-                        onBlur={(e) => setField(l, field, e.target.value)}
+                        readOnly={busy || (field !== "quantity" && !canPrice)}
+                        title={field !== "quantity" && !canPrice ? "Lo fija Deal Desk: pide el descuento desde el deal." : undefined}
+                        onBlur={(e) => setField(l, field, e.currentTarget)}
                         onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
                       />
                     </label>

@@ -85,6 +85,21 @@ begin
   if tg_op = 'UPDATE' and new.deal_id is distinct from old.deal_id then
     raise exception 'Una línea no se puede mover a otro deal.' using errcode = '22023';
   end if;
+  if tg_op = 'INSERT' then new.created_by := coalesce(auth.uid(), new.created_by); end if;
+  -- Prices are Deal Desk's: without a pricing role (Owner, Sales Leader, Deal Desk) a person adds
+  -- catalogue products at their list price and cost, without discount, and changes only the quantity.
+  -- A discount goes through «Solicitar descuento». Privileged jobs (no user) pass.
+  if auth.uid() is not null and not (public.has_org_role(d_org, 'owner') or public.has_org_role(d_org, 'sales_leader') or public.has_org_role(d_org, 'deal_desk')) then
+    if tg_op = 'INSERT' and not exists (
+      select 1 from public.products p where p.id = new.product_id
+        and p.price = new.unit_price and p.cost is not distinct from new.unit_cost and p.billing = new.billing and new.discount_pct = 0
+    ) then
+      raise exception 'Solo el Owner, el Sales Leader o Deal Desk pueden fijar precios, costes o descuentos. Añade el producto tal como está en el catálogo y pide el descuento a Deal Desk.' using errcode = '42501';
+    end if;
+    if tg_op = 'UPDATE' and (new.unit_price, new.unit_cost, new.discount_pct, new.billing, new.name, new.product_id) is distinct from (old.unit_price, old.unit_cost, old.discount_pct, old.billing, old.name, old.product_id) then
+      raise exception 'Solo el Owner, el Sales Leader o Deal Desk pueden cambiar precios, costes o descuentos. Puedes cambiar la cantidad o pedir el descuento a Deal Desk.' using errcode = '42501';
+    end if;
+  end if;
   return new;
 end $$;
 create trigger deal_lines_scope before insert or update on public.deal_lines
@@ -100,18 +115,47 @@ create or replace function public.deal_lines_sync()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare _deal uuid := coalesce(new.deal_id, old.deal_id); n int; rev numeric; cst numeric; unknown int;
 begin
+  -- Two people changing lines of the same deal at once: the second waits and sums both.
+  perform 1 from public.deals where id = _deal for update;
   select count(*),
          coalesce(sum(l.quantity * l.unit_price * (1 - l.discount_pct / 100) * case l.billing when 'monthly' then 12 else 1 end), 0),
          coalesce(sum(l.quantity * coalesce(l.unit_cost, 0) * case l.billing when 'monthly' then 12 else 1 end), 0),
          count(*) filter (where l.unit_cost is null)
     into n, rev, cst, unknown
     from public.deal_lines l where l.deal_id = _deal;
+  perform set_config('app.deal_lines_sync', 'on', true);
   if n = 0 then
     update public.deals set gross_margin = null where id = _deal;
   else
     update public.deals set amount = round(rev, 2), gross_margin = case when unknown > 0 then null else round(rev - cst, 2) end where id = _deal;
   end if;
+  perform set_config('app.deal_lines_sync', 'off', true);
   return null;
 end $$;
 create trigger deal_lines_sync after insert or update or delete on public.deal_lines
   for each row execute function public.deal_lines_sync();
+
+-- Only the lines write a deal's margin, and a deal with lines keeps the amount they give: a screen,
+-- the agent or a CRM webhook that writes amount (or gross_margin) is ignored on those two columns
+-- instead of leaving a margin that no longer matches the amount. The sync itself doesn't count as
+-- activity (updated_at stays), so a line change doesn't move a won deal to this quarter.
+create or replace function public.deals_lines_guard()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if tg_op = 'INSERT' then
+    new.gross_margin := null;
+    return new;
+  end if;
+  if coalesce(current_setting('app.deal_lines_sync', true), 'off') = 'on' then
+    new.updated_at := old.updated_at;
+    new.updated_by := old.updated_by;
+    return new;
+  end if;
+  new.gross_margin := old.gross_margin;
+  if exists (select 1 from public.deal_lines l where l.deal_id = new.id) then
+    new.amount := old.amount;
+  end if;
+  return new;
+end $$;
+create trigger deals_lines_guard before insert or update on public.deals
+  for each row execute function public.deals_lines_guard();

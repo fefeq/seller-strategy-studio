@@ -36,7 +36,7 @@ export function useSegmentCoverageData(quarter: string) {
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
       ]);
       return {
-        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter, wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end).bySegment), deals: d.data ?? [], costs: c.data ?? [],
+        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter, wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment), deals: d.data ?? [], costs: c.data ?? [],
         targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
       };
     },

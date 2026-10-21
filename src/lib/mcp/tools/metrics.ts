@@ -52,7 +52,7 @@ export const segmentCoverageTool = defineTool({
     ]);
     const costs = (yearCosts ?? []).filter((x) => x.period === q);
     const t = Object.fromEntries((targets ?? []).map((x) => [x.segment_id, Number(x.amount)]));
-    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q, wonDealsMargin(deals ?? [], range.end).bySegment), deals ?? [], t, range, costs);
+    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q, wonDealsMargin(deals ?? [], range.end, (segs ?? []) as SegLike[]).bySegment), deals ?? [], t, range, costs);
     const qb = quarterlyBudget((segs ?? []) as SegLike[], deals ?? [], budgets ?? [], yearCosts ?? [], year);
     const quarterB = qb.byQuarter[q], budget = qb.year;
     return json({
@@ -60,7 +60,8 @@ export const segmentCoverageTool = defineTool({
       segments: rows.map((r, i) => ({
         name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
         cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target },
-        gross_margin: { pct: round(quarterB[i].margin.pct), source: quarterB[i].margin.source },
+        // The margin the payback above used (budget actuals → won deals with lines → plan → target).
+        gross_margin: { pct: round((r.segment as { gross_margin_pct: number | null }).gross_margin_pct), source: (r.segment as { margin_source?: string | null }).margin_source ?? null },
         budget_quarter: { plan: quarterB[i].plan, actual: quarterB[i].actual, revenue_attainment: quarterB[i].revenueAttainment },
         payback: { ...r.payback, real: round(r.payback.real) },
         budget_year: { year, plan: budget[i].plan, actual: budget[i].actual, revenue_attainment: budget[i].revenueAttainment },
