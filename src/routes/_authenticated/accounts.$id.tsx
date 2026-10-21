@@ -14,7 +14,9 @@ import { Label } from "@/components/ui/label";
 import { Field, Pick } from "@/components/fields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { BUYING_ROLES, SUPPORT, DEAL_STAGES } from "@/lib/roles";
+import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
+import { stageLabel } from "@/lib/stages";
+import { useStages } from "@/components/stage-settings";
 import { generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
@@ -344,6 +346,7 @@ function CallsTab({ accountId, list, onChange }: { accountId: string; list: any[
 }
 
 function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[]; onChange: () => void }) {
+  const { stages } = useStages();
   const { money: eur } = useCurrency();
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
@@ -358,7 +361,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
       {list.map((d) => (
         <Link key={d.id} to="/deals" search={{ deal: d.id }} className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-sm hover:border-signal sm:flex-row sm:items-center sm:justify-between">
           <span className="min-w-0 break-words font-medium">{d.name}</span>
-          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:shrink-0"><span>{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><span className="font-mono">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
+          <span className="flex flex-wrap items-center gap-x-4 gap-y-1 sm:shrink-0"><span>{stageLabel(d.stage, stages)}</span><span className="font-mono">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>
         </Link>
       ))}
     </div>

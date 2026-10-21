@@ -3,6 +3,7 @@
 import { daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "./metrics";
 import { formatRatio, quarterCoverage } from "./coverage";
 import { ROLES } from "./roles";
+import { openStages, stagePath, type Stage } from "./stages";
 
 /** Only Owner and Sales Leader may run the GTM advisor. */
 export function canUseAdvisor(roles: string[]) {
@@ -18,7 +19,6 @@ export const HORIZONS: Record<string, string> = {
 export const LEVELS: Record<string, string> = { high: "Alto", medium: "Medio", low: "Bajo" };
 export const WINDOWS: Record<string, string> = { "30d": "30 días", "90d": "90 días", "180d": "6 meses" };
 
-const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation", "won"];
 
 type Deal = {
   id: string; name: string; stage: string; amount: number | null; probability: number | null; health: string | null;
@@ -42,8 +42,9 @@ function meddpiccFilled(m: unknown) {
   return Object.values(m as Record<string, unknown>).filter((v) => typeof v === "string" ? v.trim() !== "" : !!v).length;
 }
 
-export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; history: History[]; quotas: Quota[]; currency: string; now?: Date }) {
+export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; history: History[]; quotas: Quota[]; currency: string; now?: Date; stages?: Stage[] | null }) {
   const now = input.now ?? new Date();
+  const OPEN_ORDER = stagePath(input.stages);
   const { deals, segments, history, quotas } = input;
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const won = deals.filter((d) => d.stage === "won");
@@ -73,7 +74,7 @@ export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; histo
       abiertos: open.length,
       importe_abierto: sum(open),
       forecast_ponderado: Math.round(open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0)),
-      por_etapa: OPEN_ORDER.slice(0, -1).map((st) => ({ etapa: st, deals: open.filter((d) => d.stage === st).length, importe: sum(open.filter((d) => d.stage === st)) })),
+      por_etapa: openStages(input.stages).map((st) => ({ etapa: st.label, clave: st.key, deals: open.filter((d) => d.stage === st.key).length, importe: sum(open.filter((d) => d.stage === st.key)) })),
       ganados: { deals: won.length, importe: sum(won), ticket_medio: won.length ? Math.round(sum(won) / won.length) : 0 },
       perdidos: { deals: lost.length, importe: sum(lost) },
       win_rate_global_pct: pct(winRate(won.length, lost.length)),

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ask } from "@/lib/ai-gateway";
 import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
+import type { Stage } from "@/lib/stages";
 
 async function accountContext(supabase: any, accountId: string) {
   const [acc, plan, sh, calls, deals, docs, pos, pillars, icp] = await Promise.all([
@@ -149,14 +150,16 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
     const { data: member } = await supabase.from("org_members").select("role, organizations(currency)").eq("org_id", orgId).eq("user_id", userId).maybeSingle();
     if (!member || !canUseAdvisor([member.role])) throw new Error("Solo el Owner y el Sales Leader pueden usar el Asesor GTM");
 
-    const [deals, segments, history, quotas, strat] = await Promise.all([
+    const [deals, segments, history, quotas, strat, stages] = await Promise.all([
       supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,updated_at,source,segment_id,slip_count,forecast_category,meddpicc,partner_id"),
       supabase.from("segments").select("id,name,acv_min,acv_max,motion,cycle_days,sdr_per_ae,ae_per_se,cac_target,payback_months,win_rate_target,ae_quota,gross_margin_pct").order("acv_min"),
       supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
       supabase.from("quotas").select("period,amount"),
       strategyContext(supabase),
+      supabase.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
     ]);
     const snapshot = buildSnapshot({
+      stages: (stages.data ?? []) as Stage[],
       deals: (deals.data ?? []) as any,
       segments: (segments.data ?? []) as any,
       history: history.data ?? [],

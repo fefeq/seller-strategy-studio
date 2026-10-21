@@ -3,17 +3,17 @@
 // so every query scopes org_id explicitly.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { STAGE_PROBABILITY, isPreDealStage, type DealStage, type NormalizedLead } from "@/lib/leads";
+import { isPreDealStage, type NormalizedLead } from "@/lib/leads";
 import { leadStageLabel } from "@/lib/lead-funnel";
-import { DEAL_STAGES } from "@/lib/roles";
+import { firstOpenStage, sortStages, type Stage } from "@/lib/stages";
 
 type Db = SupabaseClient<Database>;
-export type IngestCtx = { orgId: string; sourceId?: string | null; segments: { id: string; name: string }[] };
+/** `stages`: the company's deal stages; loaded on first use when missing (pass them in a CSV loop). */
+export type IngestCtx = { orgId: string; sourceId?: string | null; segments: { id: string; name: string }[]; stages?: Stage[] };
 export type IngestResult = { status: "created" | "updated"; accountId: string; dealId: string | null; leadId: string | null; accountCreated: boolean; summary: string };
 type LeadUpdate = Database["public"]["Tables"]["leads"]["Update"];
 
 const like = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
-const stageName = (id: string) => DEAL_STAGES.find((s) => s.id === id)?.label ?? leadStageLabel(id);
 const closed = (stage: string) => stage === "won" || stage === "lost";
 const OPEN_LEAD = "(new,contacted,mql,sql)";
 
@@ -98,7 +98,13 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
   }
 
   // 3b. Sales stage: the deal (same external id → open deal of the account → same closed deal from that day).
-  const stage = lead.stage as DealStage;
+  // The stage comes in as one of the standard keys; a company that removed it gets its first open stage
+  // on a new deal, and an existing deal keeps its stage rather than fail.
+  ctx.stages ??= sortStages(((await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId)).data ?? []) as Stage[]);
+  const known = ctx.stages.find((s) => s.key === lead.stage);
+  const target = known ?? firstOpenStage(ctx.stages);
+  const stage = target.key;
+  const stageName = (id: string) => ctx.stages!.find((s) => s.key === id)?.label ?? leadStageLabel(id);
   let deal: { id: string; stage: string } | null = null;
   if (lead.externalId) deal = (await db.from("deals").select("id,stage").eq("org_id", orgId).eq("external_id", lead.externalId).maybeSingle()).data;
   if (!deal && lead.externalId) {
@@ -119,7 +125,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
 
   if (deal) {
     const patch: Database["public"]["Tables"]["deals"]["Update"] = {};
-    if (lead.stageGiven) { patch.stage = stage; patch.probability = STAGE_PROBABILITY[stage]; if (closedAt && !closed(deal.stage)) patch.closed_at = closedAt; }
+    if (lead.stageGiven && known) { patch.stage = stage; patch.probability = target.probability; if (closedAt && !closed(deal.stage)) patch.closed_at = closedAt; }
     if (lead.amount != null) patch.amount = lead.amount;
     if (lead.closeDate) patch.close_date = lead.closeDate;
     if (segmentId) patch.segment_id = segmentId;
@@ -134,7 +140,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead): 
       account_id: account.id,
       name: lead.dealName ?? lead.company,
       stage,
-      probability: STAGE_PROBABILITY[stage],
+      probability: target.probability,
       amount: lead.amount,
       close_date: lead.closeDate,
       source: lead.source ?? "Entrada de leads",
