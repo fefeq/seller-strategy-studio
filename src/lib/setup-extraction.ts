@@ -48,15 +48,16 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
   }
   const pos = clean(p.positioning ?? {}) as Record<string, string>;
   if (Object.keys(pos).length) {
-    items.push({ key: "positioning", group: "Posicionamiento", label: pos.one_liner ?? "Posicionamiento", detail: Object.entries(pos).map(([k, v]) => `${FIELD_LABELS[k] ?? k}: ${v}`).join("\n"), tool: "update_positioning", args: { fields: pos } });
+    const args = { fields: pos };
+    items.push({ key: "positioning", group: "Posicionamiento", label: pos.one_liner ?? "Posicionamiento", detail: itemDetail("update_positioning", args) ?? "", tool: "update_positioning", args });
   }
   p.segments.forEach((s, i) => {
     const ex = existingSegments.find((e) => e.name.trim().toLowerCase() === s.name.trim().toLowerCase());
-    const flat = segmentRangeWarning(s.acv_min, s.acv_max);
-    items.push({ key: `seg${i}`, group: "Segmentos", label: s.name, detail: `${s.priority != null ? `Prioridad ${s.priority} · ` : ""}ACV ${s.acv_min ?? "?"}–${s.acv_max ?? "?"} · ${s.motion}${s.win_rate_target != null ? ` · win rate ${s.win_rate_target}%` : ""}${s.ae_quota != null ? ` · cuota AE ${s.ae_quota}` : ""}${s.notes ? `\nNota: ${s.notes}` : ""}${flat ? `\n${flat}` : ""}`, tool: "upsert_segment", args: clean({ ...s, segment_id: ex?.id }) });
+    const args = clean({ ...s, segment_id: ex?.id });
+    items.push({ key: `seg${i}`, group: "Segmentos", label: s.name, detail: itemDetail("upsert_segment", args) ?? "", tool: "upsert_segment", args });
   });
-  p.icps.forEach((c, i) => items.push({ key: `icp${i}`, group: "ICP", label: c.name, detail: [c.industries, c.company_size, c.why_fit && `Encaje: ${c.why_fit}`, c.anti_icp && `Anti-ICP: ${c.anti_icp}`].filter(Boolean).join(" · "), tool: "create_icp", args: clean(c) }));
-  p.pillars.forEach((x, i) => items.push({ key: `pil${i}`, group: "Pilares de mensaje", label: x.title, detail: [x.pain, x.message, x.proof && `Prueba: ${x.proof}`].filter(Boolean).join(" · "), tool: "create_pillar", args: clean(x) }));
+  p.icps.forEach((c, i) => { const args = clean(c); items.push({ key: `icp${i}`, group: "ICP", label: c.name, detail: itemDetail("create_icp", args) ?? "", tool: "create_icp", args }); });
+  p.pillars.forEach((x, i) => { const args = clean(x); items.push({ key: `pil${i}`, group: "Pilares de mensaje", label: x.title, detail: itemDetail("create_pillar", args) ?? "", tool: "create_pillar", args }); });
   p.target_accounts.forEach((a, i) => items.push({ key: `acc${i}`, group: "Cuentas objetivo", label: a.name, detail: a.why ?? a.domain ?? "", tool: "create_account", args: clean({ name: a.name, domain: a.domain, is_target: true }) }));
   return items;
 }
@@ -67,4 +68,26 @@ export function segmentRangeWarning(min: number | null | undefined, max: number 
   if (min === max) return "Atención: el ACV mín y el máx son iguales. Ajusta la horquilla antes de guardar.";
   if (min > max) return "Atención: el ACV mín es mayor que el máx.";
   return null;
+}
+
+/**
+ * The one-line summary of an item, rebuilt from its current args so an edit shows at once
+ * (the card used to keep «ACV 6000–6000» after the fields were changed). null = keep the original text.
+ */
+export function itemDetail(tool: string, a: Record<string, unknown>): string | null {
+  const v = (k: string) => (a[k] == null || a[k] === "" ? null : a[k]);
+  switch (tool) {
+    case "update_positioning":
+      return Object.entries((a.fields ?? {}) as Record<string, unknown>).filter(([, x]) => x != null && x !== "").map(([k, x]) => `${FIELD_LABELS[k] ?? k}: ${x}`).join("\n");
+    case "upsert_segment": {
+      const flat = segmentRangeWarning(v("acv_min") as number | null, v("acv_max") as number | null);
+      return `${v("priority") != null ? `Prioridad ${v("priority")} · ` : ""}ACV ${v("acv_min") ?? "?"}–${v("acv_max") ?? "?"} · ${v("motion") ?? "?"}${v("win_rate_target") != null ? ` · win rate ${v("win_rate_target")}%` : ""}${v("ae_quota") != null ? ` · cuota AE ${v("ae_quota")}` : ""}${v("notes") ? `\nNota: ${v("notes")}` : ""}${flat ? `\n${flat}` : ""}`;
+    }
+    case "create_icp":
+      return [v("industries"), v("company_size"), v("why_fit") && `Encaje: ${v("why_fit")}`, v("anti_icp") && `Anti-ICP: ${v("anti_icp")}`].filter(Boolean).join(" · ");
+    case "create_pillar":
+      return [v("pain"), v("message"), v("proof") && `Prueba: ${v("proof")}`].filter(Boolean).join(" · ");
+    default:
+      return null;
+  }
 }

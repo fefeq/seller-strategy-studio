@@ -12,9 +12,9 @@ export const ROLES = {
 export type Role = keyof typeof ROLES;
 
 export const DEAL_STAGES = [
-  { id: "discovery", label: "Discovery" },
+  { id: "discovery", label: "Descubrimiento" },
   { id: "qualified", label: "Cualificado" },
-  { id: "demo", label: "Demo / POC" },
+  { id: "demo", label: "Demo / prueba" },
   { id: "proposal", label: "Propuesta" },
   { id: "negotiation", label: "Negociación" },
   { id: "won", label: "Ganado" },

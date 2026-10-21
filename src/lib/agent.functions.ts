@@ -13,10 +13,10 @@ export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & {
   if (!orgId) throw new Error("Selecciona una empresa");
   const [{ data: members }, { data: org }] = await Promise.all([
     supabase.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId),
-    supabase.from("organizations").select("name,currency").eq("id", orgId).single(),
+    supabase.from("organizations").select("name,company_name,currency").eq("id", orgId).single(),
   ]);
   if (!members?.length) throw new Error("No perteneces a esta empresa");
-  return { db: supabase, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.name ?? "tu empresa" };
+  return { db: supabase, orgId, userId, roles: members.map((m) => m.role), currency: org?.currency ?? "EUR", orgName: org?.company_name?.trim() || org?.name || "tu empresa" };
 }
 
 // ---------------- Agent ----------------

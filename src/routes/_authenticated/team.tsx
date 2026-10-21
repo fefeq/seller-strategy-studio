@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { ROLES, type Role } from "@/lib/roles";
 import { TelegramLink } from "@/components/telegram-link";
 import { McpConnect } from "@/components/mcp-connect";
+import { confirmed } from "@/lib/save";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/team")({
@@ -27,6 +28,12 @@ function Team() {
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("ae");
   const [orgName, setOrgName] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string | null>(null);
+  const { data: org } = useQuery({
+    queryKey: ["org-company-name", orgId],
+    enabled: !!orgId,
+    queryFn: async () => (await supabase.from("organizations").select("company_name").eq("id", orgId!).maybeSingle()).data,
+  });
 
   const { data } = useQuery({
     queryKey: ["team", orgId],
@@ -76,13 +83,32 @@ function Team() {
     qc.invalidateQueries({ queryKey: ["me"] });
   }
 
+  async function saveCompanyName() {
+    if (companyName === null) return;
+    try {
+      await confirmed(supabase.from("organizations").update({ company_name: companyName.trim() || null }).eq("id", orgId!).select("id"));
+      toast.success("Guardado. Los agentes usarán este nombre en los documentos nuevos.");
+      setCompanyName(null);
+      qc.invalidateQueries({ queryKey: ["org-company-name", orgId] });
+    } catch (e) {
+      toast.error(errorText(e));
+    }
+  }
+
   return (
     <Page eyebrow={me?.currentOrg?.name ?? ""} title="Equipo">
       {isOwner && (
         <div className="mb-6 flex flex-wrap items-end gap-6">
           <div className="flex w-full flex-wrap gap-2 sm:w-auto">
             <Input className="w-full sm:w-64" value={orgName ?? me?.currentOrg?.name ?? ""} onChange={(e) => setOrgName(e.target.value)} />
-            <Button variant="outline" disabled={orgName === null} onClick={rename}>Renombrar empresa</Button>
+            <Button variant="outline" disabled={orgName === null} onClick={rename}>Renombrar espacio</Button>
+          </div>
+          <div className="w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2">
+              <Input className="w-full sm:w-64" aria-label="Nombre de la empresa en los documentos" placeholder={me?.currentOrg?.name ?? "Nombre de la empresa"} value={companyName ?? org?.company_name ?? ""} onChange={(e) => setCompanyName(e.target.value)} />
+              <Button variant="outline" disabled={companyName === null} onClick={saveCompanyName}>Guardar nombre</Button>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">Cómo se llama tu empresa en los documentos de los agentes (brief, plan, propuestas). Si lo dejas vacío, usan el nombre del espacio.</p>
           </div>
         </div>
       )}

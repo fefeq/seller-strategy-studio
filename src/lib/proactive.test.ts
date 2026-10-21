@@ -159,3 +159,12 @@ describe("segment proposals", () => {
     expect(item.args).toMatchObject({ priority: 1, notes: "ACV por cuenta" });
   });
 });
+
+describe("proposal item summaries", () => {
+  it("follow the edited values instead of the original text", async () => {
+    const { itemDetail } = await import("@/lib/setup-extraction");
+    expect(itemDetail("upsert_segment", { name: "Agencias", acv_min: 1428, acv_max: 14280, motion: "inside" })).toBe("ACV 1428–14280 · inside");
+    expect(itemDetail("upsert_segment", { name: "Agencias", acv_min: 6000, acv_max: 6000, motion: "inside" })).toMatch(/iguales/);
+    expect(itemDetail("create_account", { name: "Acme" })).toBeNull();
+  });
+});
