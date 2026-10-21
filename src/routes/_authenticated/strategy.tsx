@@ -19,6 +19,7 @@ import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
+import { mergeServerEdits } from "@/lib/merge-edits";
 import { keepApprovals, positioningStatement, STATEMENT_SLOTS, type CopyStatus } from "@/lib/positioning";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
 import {
@@ -180,7 +181,8 @@ function Motions() {
     }
     const error = invalid[`${s.id}:${k}`];
     return <>
-      <Input type="number" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
+      {/* Text with a decimal keyboard, not type=number: a number field hands back "" for «97,5» in some browsers, which read as «empty» and wiped the value. */}
+      <Input type="text" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onFocus={(e) => e.currentTarget.select()} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
       {error && <p className="mt-1 text-[11px] text-destructive md:hidden">{error}</p>}
     </>;
   };
@@ -478,7 +480,13 @@ function Positioning() {
   const canApprove = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { data: row } = useQuery({ queryKey: ["positioning"], queryFn: async () => (await supabase.from("positioning").select("*").order("created_at").limit(1).maybeSingle()).data });
   const [f, setF] = useState<Record<string, any>>({});
-  useEffect(() => { if (row) setF(row as any); }, [row]);
+  // A refresh (after approving a text, or another person's save) keeps what the person is typing.
+  const prevRow = useRef<Record<string, any> | null>(null);
+  useEffect(() => {
+    if (!row) return;
+    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, row as any) : (row as any)));
+    prevRow.current = row as any;
+  }, [row]);
   const copyStatus = ((row as any)?.copy_status ?? {}) as CopyStatus;
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, copy_status: _cs, ...rest } = f as any;
