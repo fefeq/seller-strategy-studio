@@ -24,15 +24,15 @@ begin
   -- notes. CAC stays empty: no public source gives it by ACV; the payback target bounds it instead.
   if _segments = 'low_ticket' then
     insert into public.segments (org_id, name, acv_min, acv_max, motion, cycle_days, win_rate_target, gross_margin_pct, payback_months, notes) values
-      (o, 'Self-service', 0, 1200, 'plg', null, 5, 77, 12,
+      (o, 'Self-service', 0, 1200, 'plg', null, null, 77, 12,
        'Plantilla ticket bajo (fuentes públicas, octubre de 2026; en dólares, aquí en tu moneda sin convertir). '
-       || 'Win rate = conversión de prueba a pago: 4–6 % con prueba sin tarjeta (mediana), 25–35 % con tarjeta, 3–5 % freemium (ChartMogul y ProductLed, The Conversion Report 2026). '
-       || 'Payback 12 meses (High Alpha 2025; OpenView 2023). Margen bruto 77 % (High Alpha 2025, empresas de 1–5 M$ de ARR). '
+       || 'Win rate vacío a propósito: en self-service lo que se mide es la conversión de prueba a pago, que se sigue en el embudo de pruebas de Métricas. Referencia: 4–6 % con prueba sin tarjeta (mediana), 25–35 % con tarjeta, 3–5 % freemium (ChartMogul y ProductLed, The Conversion Report 2026). '
+       || 'Payback 12 meses: referencia conservadora para pymes (High Alpha 2025 da 5–8 meses y OpenView 2023 da 8–11 para empresas de menos de 5 M$ de ARR). Margen bruto 77 % (High Alpha 2025, empresas de 1–5 M$ de ARR). '
        || 'Churn de clientes esperado: 3–4 % al mes, más del 5 % si el precio es menor de 25 $ al mes (ChartMogul 2022). NRR 85 % (ChartMogul 2023). '
-       || 'CAC sin fijar: el máximo que cabe es payback × precio mensual × margen. El corte de 1.200 al año (100 al mes) entre Self-service y Venta asistida es una propuesta: ajústalo a tus precios.'),
+       || 'CAC sin fijar: el máximo que cabe es payback × precio mensual × margen. Self-service es lo que vale menos de 1.200 al año (100 al mes); de 1.200 en adelante es Venta asistida. Ese corte es una propuesta: ajústalo a tus precios.'),
       (o, 'Venta asistida', 1200, 5000, 'inside', 60, 19, 77, 12,
        'Plantilla ticket bajo (fuentes públicas, octubre de 2026). Win rate 19 %: media de todos los tamaños de contrato, no hay dato fiable solo para ticket bajo (Bridge Group, SaaS AE Report 2024). '
-       || 'Ciclo de unos 60 días para contratos de menos de 5.000 $ al año (KBCM 2021, muestra pequeña). Payback, margen, churn y NRR como en Self-service.');
+       || 'Ciclo de unos 60 días: estimación a partir de KBCM 2021 (contratos de menos de 5.000 $ al año, 11 empresas, cifra leída de un gráfico). Payback, margen, churn y NRR como en Self-service.');
   end if;
   insert into public.positioning (org_id) values (o);
   insert into public.integrations (org_id, category, name, purpose) values

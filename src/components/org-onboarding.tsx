@@ -46,7 +46,7 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
           <legend className="eyebrow mb-2">Segmentos para empezar</legend>
           {([
             ["template", "Plantilla por tamaño de contrato", "SMB, Mid-market, Enterprise y Strategic, con benchmarks de referencia. Para quien vende desde unos miles al año hacia arriba."],
-            ["low_ticket", "Plantilla de ticket bajo", "Self-service y Venta asistida, para contratos de menos de 5.000 al año, con benchmarks públicos y su fuente."],
+            ["low_ticket", "Plantilla de ticket bajo", "Self-service y Venta asistida, para contratos de menos de 5.000 al año en tu moneda, con benchmarks públicos y su fuente."],
             ["empty", "Empezar sin segmentos", "Creas los tuyos en la configuración (o los propone la IA). Mejor si tus segmentos no son por tamaño de contrato."],
           ] as const).map(([v, label, help]) => (
             <label key={v} className={`flex cursor-pointer gap-3 border p-3 ${segments === v ? "border-signal" : ""}`}>
