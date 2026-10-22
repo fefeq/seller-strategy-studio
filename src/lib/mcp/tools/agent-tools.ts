@@ -33,6 +33,7 @@ const TITLES: Record<string, string> = {
   list_tasks: "Listar tareas",
   log_trial: "Registrar prueba (self-service)",
   prepare_meeting_brief: "Preparar brief de reunión",
+  save_call_notes: "Guardar notas de llamada en 5 líneas",
   search: "Buscar",
   search_knowledge: "Buscar en el conocimiento",
   draft_followup: "Redactar seguimiento de un lead",

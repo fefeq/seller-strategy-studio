@@ -101,6 +101,14 @@ describe("detectors", () => {
     expect(detect(snap({ meetings: [m] })).find((x) => x.detector === "meeting_no_prep")?.action?.tool).toBe("prepare_meeting_brief");
     expect(keys(snap({ meetings: [{ ...m, scheduled_at: new Date(NOW.getTime() + 3 * 864e5).toISOString() }] }))).not.toContain("meeting_no_prep");
   });
+  it("past meeting without notes asks for the five lines, linked to that meeting", () => {
+    const m = { id: "m1", title: "Discovery", scheduled_at: new Date(NOW.getTime() - 5 * 3_600_000).toISOString(), ai_brief: "x", account_id: "a1", created_by: "u1", notes: null, call_notes: {} };
+    const s = detect(snap({ meetings: [m] })).find((x) => x.detector === "meeting_no_notes");
+    expect(s?.link).toBe("/accounts/a1?tab=meetings&meeting=m1");
+    expect(s?.action).toBeNull();
+    expect(keys(snap({ meetings: [{ ...m, call_notes: { dolor: "Pierden leads" } }] }))).not.toContain("meeting_no_notes");
+    expect(keys(snap({ meetings: [{ ...m, scheduled_at: new Date(NOW.getTime() - 9 * 864e5).toISOString() }] }))).not.toContain("meeting_no_notes");
+  });
   it("target account without decision maker", () => {
     const accounts = [{ id: "a1", name: "Acme", is_target: true, owner_id: null }];
     expect(keys(snap({ accounts, stakeholders: [{ account_id: "a1", buying_role: "champion" }] }))).toContain("no_decision_maker");

@@ -16,6 +16,7 @@ import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
 import { FOLLOWUP_STEPS, followupDraft, followupStatus } from "@/lib/followup";
 import { ask } from "@/lib/ai-gateway";
+import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
 
@@ -357,6 +358,25 @@ export const TOOLS: AgentTool[] = [
       );
       ok(await c.db.from("meetings").update({ ai_brief: brief }).eq("org_id", c.orgId).eq("id", a.meeting_id).select("id").single());
       return { ok: true, meeting: m.title };
+    },
+  }),
+  def({
+    name: "save_call_notes", kind: "write",
+    description: `Guarda las notas de una reunión en 5 líneas (después de la llamada). Campos: ${CALL_NOTE_FIELDS.map((f) => `${f.key} = ${f.label.toLowerCase()}`).join("; ")}. Solo lo que el usuario dijo: no completes huecos. Los campos vacíos mantienen lo que ya había.`,
+    input: z.object({
+      meeting_id: z.string().uuid(),
+      dolor: z.string().optional(), impacto: z.string().optional(), decision: z.string().optional(), freno: z.string().optional(), siguiente: z.string().optional(),
+    }),
+    summarize: (a) => `Guardar las notas de la reunión (${filledCount(mergeCallNotes({}, a))} de 5 líneas)`,
+    run: async (c, a) => {
+      const { meeting_id, ...lines } = a;
+      const m = ok(await c.db.from("meetings").select("id,title,account_id,deal_id,scheduled_at,notes,next_steps,call_notes").eq("org_id", c.orgId).eq("id", meeting_id).single()) as any;
+      const call_notes = mergeCallNotes(m.call_notes, lines);
+      const log = callLogEntry({ ...m, call_notes });
+      ok(await c.db.from("meetings").update({ call_notes, ...(call_notes.siguiente ? { next_steps: call_notes.siguiente } : {}) }).eq("org_id", c.orgId).eq("id", meeting_id).select("id").single());
+      // Same call-log row the meeting screen writes, so the account history and the call prep see it.
+      if (log.hasContent) await c.db.from("calls").upsert({ id: m.id, org_id: c.orgId, account_id: m.account_id, deal_id: m.deal_id, title: m.title, occurred_at: m.scheduled_at, summary: log.summary, next_steps: log.next_steps });
+      return { ok: true, meeting: m.title, lineas: filledCount(call_notes) };
     },
   }),
   def({

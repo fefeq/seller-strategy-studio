@@ -1847,6 +1847,8 @@ export type Database = {
           agenda: string | null
           ai_brief: string | null
           attendees: string | null
+          call_notes: Json
+          call_review: string
           created_at: string
           created_by: string | null
           deal_id: string | null
@@ -1872,6 +1874,8 @@ export type Database = {
           agenda?: string | null
           ai_brief?: string | null
           attendees?: string | null
+          call_notes?: Json
+          call_review?: string
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -1897,6 +1901,8 @@ export type Database = {
           agenda?: string | null
           ai_brief?: string | null
           attendees?: string | null
+          call_notes?: Json
+          call_review?: string
           created_at?: string
           created_by?: string | null
           deal_id?: string | null

@@ -55,6 +55,8 @@ const ASK: Record<string, (s: ResolvableSuggestion) => string> = {
     "Ayúdame a completar este paso de la estrategia. Propón los valores a partir de lo que ya hay en Nokko y prepáralos como acciones para que los confirme; si no hay datos suficientes, hazme las preguntas mínimas para rellenarlo.",
   setup_question: () =>
     "Es una pregunta que dejó abierta la IA al proponer mi configuración. Ayúdame a responderla con lo que ya hay en Nokko; si la respuesta cambia algún dato de la estrategia, prepáralo como acción para que la confirme. Si es una decisión con varias posturas defendibles, dímelo y propón llevarla a Debates.",
+  meeting_no_notes: (s) =>
+    `Ayúdame a apuntar las notas de esta reunión (id ${keyPart(s.dedupe_key)}) en 5 líneas. Hazme las preguntas de una en una: qué les duele, qué les cuesta no resolverlo, quién decide y cómo, qué les frena y el próximo paso acordado (qué, quién y cuándo). Cuando conteste, guárdalas con save_call_notes para que lo confirme, usando solo mis palabras. Después dime que puedo desmontar la llamada con IA desde la reunión.`,
   weekly_report: () =>
     "A partir de este informe semanal, dime las 2 o 3 acciones más importantes para esta semana, con el deal o lead concreto de cada una, y prepáralas como tareas para que las confirme.",
 };

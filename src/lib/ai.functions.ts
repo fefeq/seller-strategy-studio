@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ask } from "@/lib/ai-gateway";
+import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
 import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
 
@@ -35,6 +36,35 @@ export const generateMeetingBrief = createServerFn({ method: "POST" })
     );
     await supabase.from("meetings").update({ ai_brief: brief }).eq("id", m.id);
     return { brief };
+  });
+
+/**
+ * AI teardown of a call: compares the five-line notes (and free notes) with the meeting's goal, the brief
+ * and the deal's MEDDPICC, and says what worked, what is missing and what to update. Saved on the meeting.
+ */
+export const callTeardown = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { meetingId: string }) => ({ meetingId: String(d?.meetingId ?? "") }))
+  .handler(async ({ data, context }) => {
+    const { supabase } = context;
+    const { data: m } = await supabase.from("meetings").select("id,title,scheduled_at,objective,desired_outcome,agenda,questions,objections,attendees,ai_brief,notes,call_notes,account_id,deal_id").eq("id", data.meetingId).maybeSingle();
+    if (!m) throw new Error("Reunión no encontrada");
+    const lines = normalizeCallNotes(m.call_notes);
+    if (!hasCallNotes(lines) && !(m.notes ?? "").trim()) throw new Error("Escribe primero las notas de la llamada (las 5 líneas o tus notas libres)");
+    const [deal, ctx] = await Promise.all([
+      m.deal_id ? supabase.from("deals").select("name,stage,amount,close_date,meddpicc").eq("id", m.deal_id).maybeSingle() : Promise.resolve({ data: null }),
+      m.account_id ? accountContext(supabase, m.account_id) : Promise.resolve("{}"),
+    ]);
+    const reunion = {
+      titulo: m.title, fecha: m.scheduled_at, objetivo: m.objective, resultado_deseado: m.desired_outcome, agenda: m.agenda,
+      preguntas_previstas: m.questions, objeciones_esperadas: m.objections, asistentes: m.attendees,
+      preparacion: (m.ai_brief ?? "").slice(0, 6000),
+      notas_en_5_lineas: callNotesText(lines) || "(sin notas en 5 líneas)", notas_libres: m.notes ?? "",
+    };
+    const text = await ask(TEARDOWN_SYSTEM, `Reunión:\n${JSON.stringify(reunion)}\n\nDeal:\n${JSON.stringify(deal.data ?? null)}\n\nContexto de la cuenta:\n${ctx}`, { effort: "medium" });
+    const { error } = await supabase.from("meetings").update({ call_review: text }).eq("id", m.id);
+    if (error) throw new Error(error.message);
+    return { text };
   });
 
 export const generateProposal = createServerFn({ method: "POST" })
@@ -121,12 +151,13 @@ export const listeningCoaching = createServerFn({ method: "POST" })
   .inputValidator((d: { meetingId: string }) => d)
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: m } = await supabase.from("meetings").select("title,objective,attendees,questions,notes,next_steps,listening_level,listening_reflection,accounts(name)").eq("id", data.meetingId).single();
+    const { data: m } = await supabase.from("meetings").select("title,objective,attendees,questions,notes,next_steps,call_notes,listening_level,listening_reflection,accounts(name)").eq("id", data.meetingId).single();
     if (!m) throw new Error("Reunión no encontrada");
-    if (!m.notes && !m.listening_reflection) throw new Error("Escribe las notas o tu reflexión de la reunión primero");
+    const lines = normalizeCallNotes(m.call_notes);
+    if (!m.notes && !hasCallNotes(lines) && !m.listening_reflection) throw new Error("Escribe las notas o tu reflexión de la reunión primero");
     const text = await ask(
       `${U_SYSTEM} Eres coach de escucha para vendedores. Niveles: 1 Descarga (confirmo lo que ya sé), 2 Factual (noto lo nuevo), 3 Empática (veo con sus ojos), 4 Generativa (escucho lo que emerge). Estructura: 1) Nivel que reflejan las notas (con evidencias citadas) frente al nivel autoevaluado 2) Momentos donde se pudo escuchar más hondo 3) Qué hacer para subir un nivel en la próxima reunión (3 prácticas concretas) 4) Cinco preguntas abiertas para la próxima conversación con esta cuenta.`,
-      JSON.stringify(m),
+      JSON.stringify({ ...m, call_notes: undefined, notas_en_5_lineas: callNotesText(lines) }),
     );
     await supabase.from("meetings").update({ listening_coaching: text }).eq("id", data.meetingId);
     return { text };
