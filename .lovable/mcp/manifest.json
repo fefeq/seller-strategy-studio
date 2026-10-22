@@ -18,7 +18,7 @@
     "tools": [
       {
         "name": "list_companies",
-        "title": "List companies",
+        "title": "Listar empresas",
         "description": "Lista las empresas a las que pertenece el usuario, su rol y cuál está activa.",
         "annotations": {
           "readOnlyHint": true,
@@ -35,7 +35,7 @@
       },
       {
         "name": "switch_company",
-        "title": "Switch company",
+        "title": "Cambiar de empresa",
         "description": "Cambia la empresa activa del usuario (también en la app). Usa el id de list_companies.",
         "annotations": {
           "readOnlyHint": false,
@@ -63,7 +63,7 @@
       },
       {
         "name": "get_real_metrics",
-        "title": "Real pipeline metrics",
+        "title": "Métricas reales de pipeline",
         "description": "ACV, win rate y ciclo de venta reales (últimos 12 meses), total y por segmento, frente a los objetivos del segmento.",
         "annotations": {
           "readOnlyHint": true,
@@ -80,7 +80,7 @@
       },
       {
         "name": "get_segment_coverage",
-        "title": "Segment coverage",
+        "title": "Cobertura por segmento",
         "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
         "annotations": {
           "readOnlyHint": true,
@@ -146,7 +146,7 @@
       {
         "name": "get_account",
         "title": "Ver cuenta",
-        "description": "Detalle de una cuenta: Account Plan, stakeholders, deals, reuniones y tareas abiertas.",
+        "description": "Detalle de una cuenta: plan de cuenta, stakeholders, deals, reuniones y tareas abiertas.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -227,7 +227,7 @@
       {
         "name": "list_deals",
         "title": "Listar deals",
-        "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja) o con fecha de cierre pasada.",
+        "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja), con fecha de cierre pasada o enfriados (sin actividad más días que el umbral de su segmento: un cuarto del ciclo real, 14–60 días, o el número fijado por la empresa). Cada deal trae dias_sin_actividad, umbral_enfriado y enfriado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -250,6 +250,9 @@
             },
             "overdue": {
               "type": "boolean"
+            },
+            "cold": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false
@@ -259,7 +262,7 @@
       {
         "name": "list_leads",
         "title": "Listar leads",
-        "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
+        "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado), ordenados por puntuación (encaje con el ICP 70 % + actividad 30 %): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -349,7 +352,7 @@
         "description": "Redacta con IA el seguimiento del día 3, 7 o 14 para un lead contactado sin respuesta, con el posicionamiento y los pilares de la empresa. Solo devuelve el borrador: no envía nada ni cambia el lead. Si no se indica el paso, usa el que toca.",
         "annotations": {
           "readOnlyHint": true,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         },
         "inputSchema": {
@@ -358,20 +361,21 @@
           "properties": {
             "lead_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "step": {
+              "description": "nudge = día 3, value = día 7, breakup = día 14",
               "type": "string",
               "enum": [
                 "nudge",
                 "value",
                 "breakup"
-              ],
-              "description": "nudge = día 3, value = día 7, breakup = día 14"
+              ]
             },
             "tone": {
-              "type": "string",
-              "description": "p. ej. más directo, más cercano, más corto"
+              "description": "p. ej. más directo, más cercano, más corto",
+              "type": "string"
             }
           },
           "required": [
@@ -441,6 +445,135 @@
         "outputSchema": null
       },
       {
+        "name": "update_account",
+        "title": "Actualizar cuenta",
+        "description": "Actualiza una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras), segmento, tier (A, B, C), tier ABM, salud (green/yellow/red), si es objetivo, notas y responsable. Segmento, sector y tamaño son lo que mide el encaje con el ICP. Solo cambia los campos que se pasan. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1
+            },
+            "domain": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "industry": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "size": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "country": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 2
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "segment_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tier": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "A",
+                    "B",
+                    "C"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "abm_tier": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "health": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "green",
+                    "yellow",
+                    "red"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "is_target": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "owner_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "create_deal",
         "title": "Crear deal",
         "description": "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads. (Queda pendiente: el usuario la confirma en Nokko.)",
@@ -484,9 +617,10 @@
               "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
             },
             "product_id": {
+              "description": "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas",
               "type": "string",
               "format": "uuid",
-              "description": "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas"
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "quantity": {
               "type": "number",
@@ -650,7 +784,7 @@
       {
         "name": "create_meeting",
         "title": "Planificar reunión",
-        "description": "Planifica una reunión (Meeting Planner). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Planifica una reunión (planificador de reuniones). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -692,7 +826,7 @@
       {
         "name": "prepare_meeting_brief",
         "title": "Preparar brief de reunión",
-        "description": "Genera con IA el Call Prep de una reunión y lo guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Genera con IA la preparación de llamada de una reunión y la guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -907,7 +1041,7 @@
       {
         "name": "update_positioning",
         "title": "Actualizar posicionamiento",
-        "description": "Guarda campos de posicionamiento. Campos: target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Guarda campos de posicionamiento. Campos: best_customers, alternatives, differentiation, value, trend, target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -979,6 +1113,11 @@
             "ae_quota": {
               "type": "number",
               "minimum": 0
+            },
+            "gross_margin_pct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             },
             "priority": {
               "type": "integer",
@@ -1138,7 +1277,7 @@
       {
         "name": "get_cycle_status",
         "title": "Estado del ciclo GTM",
-        "description": "Estado del Ciclo GTM: fase actual, documentos (Brief, Plan, Arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
+        "description": "Estado del Ciclo GTM: fase actual, documentos (brief, plan, arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

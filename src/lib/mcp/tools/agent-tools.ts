@@ -40,6 +40,7 @@ const TITLES: Record<string, string> = {
   draft_followup: "Redactar seguimiento de un lead",
   set_currency: "Cambiar moneda",
   set_quota: "Fijar cuota",
+  update_account: "Actualizar cuenta",
   update_deal: "Actualizar deal",
   update_lead: "Actualizar lead",
   update_positioning: "Actualizar posicionamiento",
