@@ -50,6 +50,13 @@ describe("resolvePlan", () => {
     expect(p.prompt).toContain("save_call_notes");
   });
 
+  it("account assignment: the reminder never assigns by itself; the notice asks where to start", () => {
+    const p = resolvePlan({ ...base, detector: "unassigned_accounts", dedupe_key: "unassigned_accounts:a1", link: "/accounts/assignment" });
+    expect(p.to).toBe("/accounts/assignment");
+    expect(p.prompt).toMatch(/no asignes cuentas tú/);
+    expect(resolvePlan({ ...base, detector: "account_assigned", dedupe_key: "account_assigned:u:1", link: "/accounts" }).prompt).toMatch(/por cuál empiezo/);
+  });
+
   it("weekly report: asks for this week's actions", () => {
     const p = resolvePlan({ ...base, detector: "weekly_report", dedupe_key: "weekly:2026-10-19", link: "/deals" });
     expect(p.to).toBe("/deals");

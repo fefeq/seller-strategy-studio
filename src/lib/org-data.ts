@@ -36,11 +36,11 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages] = await Promise.all([
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
-    db.from("accounts").select("id,name,is_target,owner_id").eq("org_id", orgId),
+    db.from("accounts").select("id,name,is_target,owner_id,created_at").eq("org_id", orgId),
     db.from("stakeholders").select("account_id,buying_role").eq("org_id", orgId),
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
     db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
@@ -48,6 +48,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
+    db.from("org_members").select("user_id,role").eq("org_id", orgId),
   ]);
   return {
     now, orgId, setup,
@@ -55,6 +56,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     deals: (deals.data ?? []) as any,
     meetings: meetings.data ?? [],
     accounts: accounts.data ?? [],
+    members: (members.data ?? []).map((m) => ({ user_id: m.user_id, role: String(m.role) })),
     stakeholders: sh.data ?? [],
     registrations: regs.data ?? [],
     trials: (trials.data ?? []) as any,
@@ -80,8 +82,8 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
     );
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
-  // The weekly report and the AI's setup questions are not detectors: they stay until the user decides on them.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question)");
+  // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned)");
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
   // never contradicts the screen it links to.
   for (const u of staleTexts(open ?? [], found)) await db.from("suggestions").update({ title: u.title, body: u.body ?? "" }).eq("id", u.id);

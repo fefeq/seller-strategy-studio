@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_assignment_rules: {
+        Row: {
+          country: string | null
+          created_at: string
+          id: string
+          members: string[]
+          org_id: string
+          position: number
+          region: string | null
+          segment_id: string | null
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          members?: string[]
+          org_id?: string
+          position?: number
+          region?: string | null
+          segment_id?: string | null
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          id?: string
+          members?: string[]
+          org_id?: string
+          position?: number
+          region?: string | null
+          segment_id?: string | null
+        }
+        Relationships: []
+      }
       account_plans: {
         Row: {
           account_id: string
@@ -140,6 +173,7 @@ export type Database = {
       accounts: {
         Row: {
           abm_tier: string | null
+          country: string | null
           created_at: string
           created_by: string | null
           domain: string | null
@@ -159,6 +193,7 @@ export type Database = {
         }
         Insert: {
           abm_tier?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
@@ -178,6 +213,7 @@ export type Database = {
         }
         Update: {
           abm_tier?: string | null
+          country?: string | null
           created_at?: string
           created_by?: string | null
           domain?: string | null
@@ -2099,6 +2135,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          max_accounts: number | null
           org_id: string
           role: Database["public"]["Enums"]["app_role"]
           user_id: string
@@ -2106,6 +2143,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          max_accounts?: number | null
           org_id: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id: string
@@ -2113,6 +2151,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          max_accounts?: number | null
           org_id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
@@ -3329,6 +3368,7 @@ export type Database = {
     }
     Functions: {
       accept_invites: { Args: never; Returns: number }
+      apply_account_assignment: { Args: { _rows: Json }; Returns: Json }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string
