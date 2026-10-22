@@ -42,13 +42,38 @@ describe("stripe metrics", () => {
     expect(m.newCustomers).toBe(1);
     expect(m.newMrr).toBe(15);
     expect(m.churnedCustomers).toBe(1);
-    expect(m.churnedMrr).toBe(59); // c4 49 + c1's add-on 10
+    expect(m.churnedMrr).toBe(49); // c4 only: c1 cancelled an add-on but still pays
     expect(m.logoChurnPct).toBeCloseTo((1 / 3) * 100);
     expect(m.otherCurrencies).toEqual({ USD: { mrr: 50, customers: 1 } });
   });
+  it("a fixed discount on an annual plan is spread over the year; metered prices aren't guessed", () => {
+    const annual = sub("s", "c", "active", [{ quantity: 1, price: price(120000, "year") }], { discount: { coupon: { percent_off: null, amount_off: 10000, currency: "eur", duration: "forever" } } });
+    expect(subscriptionMrr(annual).mrr).toBeCloseTo(100 - 100 / 12);
+    const metered = { quantity: null, price: { ...price(5), recurring: { interval: "month" as const, interval_count: 1, usage_type: "metered" as const } } };
+    expect(itemMonthly(metered)).toBeNull();
+  });
+  it("a cancelled trial is not churn; a converted trial is a new customer; a plan change is neither", () => {
+    const subs = [
+      ...Array.from({ length: 4 }, (_, i) => sub(`p${i}`, `k${i}`, "active", [{ quantity: 1, price: price(10000) }])),
+      // Trial that ended without paying, this month.
+      sub("t", "trial1", "canceled", [{ quantity: 1, price: price(10000) }], { trial_start: day("2026-09-20"), trial_end: day("2026-10-04"), ended_at: day("2026-10-04") }),
+      // Trial started 40 days ago, paying since 26 days ago.
+      sub("v", "conv", "active", [{ quantity: 1, price: price(10000) }], { start_date: day("2026-09-12"), trial_end: day("2026-09-26") }),
+      // Plan change: old plan cancelled, new one started, same customer.
+      sub("o", "chg", "canceled", [{ quantity: 1, price: price(5000) }], { ended_at: day("2026-10-10") }),
+      sub("n", "chg", "active", [{ quantity: 1, price: price(9000) }], { start_date: day("2026-10-10") }),
+    ];
+    const m = stripeMetrics(subs, "EUR", NOW);
+    expect(m.churnedCustomers).toBe(0);
+    expect(m.churnedMrr).toBe(0);
+    expect(m.logoChurnPct).toBe(0);
+    expect(m.newCustomers).toBe(1);
+    expect(m.newMrr).toBe(100);
+  });
   it("checks the key shape", () => {
     expect(checkStripeKey(" rk_live_51AbCdEfGhIjKl ")).toMatchObject({ ok: true, live: true, restricted: true });
-    expect(checkStripeKey("sk_test_51AbCdEfGhIjKl")).toMatchObject({ ok: true, live: false, restricted: false });
+    expect(checkStripeKey("rk_test_51AbCdEfGhIjKl")).toMatchObject({ ok: true, live: false });
+    expect(checkStripeKey("sk_live_51AbCdEfGhIjKl")).toMatchObject({ ok: false, error: expect.stringMatching(/secreta/) });
     expect(checkStripeKey("pk_live_51AbCdEfGhIjKl").ok).toBe(false);
     expect(checkStripeKey("hola").ok).toBe(false);
   });

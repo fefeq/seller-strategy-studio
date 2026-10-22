@@ -8,10 +8,16 @@ import { stripeMetrics, type StripeSubscription } from "@/lib/stripe/metrics";
 type Admin = SupabaseClient<Database>;
 
 const API = "https://api.stripe.com/v1";
-// Pinned so the response shape (discounts with their coupon) doesn't change under us.
+// Pinned so the response shape (subscription.discount with its coupon) doesn't change under us.
 const STRIPE_VERSION = "2024-06-20";
-const MAX_PAGES = 50; // 5.000 subscriptions; beyond that the figures say they are partial.
+/** Pages of 100 per status; beyond that the figures say they are partial. */
+const MAX_PAGES = 15;
+const TIMEOUT_MS = 10_000;
 export const SYNC_EVERY_HOURS = 6;
+/** Companies per hourly run: keeps the job inside its time and request limits. */
+export const SYNC_BATCH = 5;
+/** «Leer ahora» at most this often, to spare the customer's Stripe rate limit. */
+export const MANUAL_SYNC_MINUTES = 2;
 
 export class StripeError extends Error {
   constructor(message: string, readonly status: number) {
@@ -28,16 +34,18 @@ export function stripeErrorText(status: number, code?: string): string {
   return "Stripe ha devuelto un error al leer las suscripciones. Se volverá a intentar en la próxima sincronización.";
 }
 
-export async function fetchSubscriptions(key: string, fetcher: typeof fetch = fetch): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
+async function fetchPages(key: string, params: Record<string, string>, fetcher: typeof fetch): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
   const subs: StripeSubscription[] = [];
   let after: string | null = null;
   for (let page = 0; page < MAX_PAGES; page++) {
-    const q = new URLSearchParams({ status: "all", limit: "100" });
-    q.append("expand[]", "data.discounts");
+    const q = new URLSearchParams({ ...params, limit: "100" });
     if (after) q.set("starting_after", after);
     let res: Response;
     try {
-      res = await fetcher(`${API}/subscriptions?${q}`, { headers: { Authorization: `Bearer ${key}`, "Stripe-Version": STRIPE_VERSION } });
+      res = await fetcher(`${API}/subscriptions?${q}`, {
+        headers: { Authorization: `Bearer ${key}`, "Stripe-Version": STRIPE_VERSION },
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
     } catch {
       throw new StripeError(stripeErrorText(0, "network"), 0);
     }
@@ -50,14 +58,31 @@ export async function fetchSubscriptions(key: string, fetcher: typeof fetch = fe
   return { subs, truncated: true };
 }
 
+/**
+ * What the metrics need, and nothing older: every paying or trialing subscription, plus the cancelled
+ * ones whose last period reached into the window (a subscription that ended in the window always has
+ * current_period_end inside or after it). Never the whole cancelled history.
+ */
+export async function fetchSubscriptions(key: string, fetcher: typeof fetch = fetch, now = new Date(), windowDays = 30): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
+  const since = String(Math.floor(now.getTime() / 1000) - windowDays * 86_400);
+  const parts = [];
+  for (const status of ["active", "past_due", "trialing"]) parts.push(await fetchPages(key, { status }, fetcher));
+  parts.push(await fetchPages(key, { status: "canceled", "current_period_end[gte]": since }, fetcher));
+  return { subs: parts.flatMap((p) => p.subs), truncated: parts.some((p) => p.truncated) };
+}
+
 /** Syncs one company. Never throws: the outcome is written on its connection. */
 export async function syncStripeOrg(db: Admin, orgId: string, now = new Date(), fetcher: typeof fetch = fetch): Promise<{ ok: boolean; error?: string }> {
   const { data: key, error: keyError } = await db.rpc("stripe_key_for", { _org: orgId });
-  if (keyError || !key) return { ok: false, error: "Esta empresa no tiene Stripe conectado." };
+  if (keyError || !key) {
+    const message = keyError ? "No se ha podido leer la clave guardada. Se volverá a intentar en la próxima sincronización." : "No hay ninguna clave guardada para Stripe. Vuelve a conectarla en Conexiones.";
+    await db.from("stripe_connections").update({ status: "error", last_error: message, last_synced_at: now.toISOString() }).eq("org_id", orgId);
+    return { ok: false, error: message };
+  }
   const { data: org } = await db.from("organizations").select("currency").eq("id", orgId).maybeSingle();
   const currency = org?.currency ?? "EUR";
   try {
-    const { subs, truncated } = await fetchSubscriptions(key as string, fetcher);
+    const { subs, truncated } = await fetchSubscriptions(key as string, fetcher, now);
     const m = stripeMetrics(subs, currency, now);
     const { error } = await db.from("stripe_snapshots").insert({
       org_id: orgId,
@@ -85,13 +110,23 @@ export async function syncStripeOrg(db: Admin, orgId: string, now = new Date(), 
   }
 }
 
-/** Every company whose last sync is older than SYNC_EVERY_HOURS (or never ran). */
+/**
+ * The companies whose last sync is oldest (never first), SYNC_BATCH at a time. last_synced_at is
+ * written before reading Stripe, so a company that makes the run fall over goes to the back of the
+ * queue instead of blocking the others every hour.
+ */
 export async function runStripeSyncs(db: Admin, now = new Date()): Promise<{ synced: number; failed: number }> {
   const before = new Date(now.getTime() - SYNC_EVERY_HOURS * 3_600_000).toISOString();
-  const { data } = await db.from("stripe_connections").select("org_id").or(`last_synced_at.is.null,last_synced_at.lt.${before}`).limit(100);
+  const { data } = await db
+    .from("stripe_connections")
+    .select("org_id")
+    .or(`last_synced_at.is.null,last_synced_at.lt.${before}`)
+    .order("last_synced_at", { ascending: true, nullsFirst: true })
+    .limit(SYNC_BATCH);
   let synced = 0;
   let failed = 0;
   for (const c of data ?? []) {
+    await db.from("stripe_connections").update({ last_synced_at: now.toISOString() }).eq("org_id", c.org_id);
     const r = await syncStripeOrg(db, c.org_id, now);
     if (r.ok) synced++;
     else failed++;

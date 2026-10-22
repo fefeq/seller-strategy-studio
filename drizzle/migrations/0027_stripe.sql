@@ -16,14 +16,17 @@ create table public.stripe_connections (
   created_at timestamptz not null default now()
 );
 comment on table public.stripe_connections is 'One Stripe account per company; the key itself lives in vault.secrets';
--- Every column but the Vault id: the browser has no use for it.
+-- Every column but the Vault id: the browser has no use for it (and Supabase's default grants are
+-- revoked first, or the column list would hide nothing).
+revoke all on public.stripe_connections from anon, authenticated;
 grant select (org_id, key_hint, livemode, restricted, account_name, status, last_error, last_synced_at, connected_by, created_at) on public.stripe_connections to authenticated;
 grant all on public.stripe_connections to service_role;
 alter table public.stripe_connections enable row level security;
 create policy "org read" on public.stripe_connections for select to authenticated
   using (org_id = public.current_org() and public.is_org_member(org_id));
 
--- What each sync read, so Métricas and the agent show the figures with their date.
+-- What each sync read, so Métricas and the agent show the figures with their date. Revenue is for
+-- Owner, Sales Leader and Deal Desk (finance), like the GTM advisor.
 create table public.stripe_snapshots (
   id uuid primary key default gen_random_uuid(),
   org_id uuid not null references public.organizations(id) on delete cascade,
@@ -42,45 +45,49 @@ create table public.stripe_snapshots (
   details jsonb not null default '{}'::jsonb
 );
 create index stripe_snapshots_org_taken on public.stripe_snapshots (org_id, taken_at desc);
+revoke all on public.stripe_snapshots from anon, authenticated;
 grant select on public.stripe_snapshots to authenticated;
 grant all on public.stripe_snapshots to service_role;
 alter table public.stripe_snapshots enable row level security;
-create policy "org read" on public.stripe_snapshots for select to authenticated
-  using (org_id = public.current_org() and public.is_org_member(org_id));
+create policy "revenue read" on public.stripe_snapshots for select to authenticated
+  using (org_id = public.current_org() and (public.has_org_role(org_id, 'owner') or public.has_org_role(org_id, 'sales_leader') or public.has_org_role(org_id, 'deal_desk')));
 
--- The Owner connects or replaces the key of the current company.
+-- The Owner connects or replaces the key of the current company. Only restricted keys: a secret key
+-- (sk_) can charge, refund and delete in the customer's Stripe, and Nokko only reads.
 create or replace function public.set_stripe_key(_key text)
-returns void language plpgsql security definer set search_path = public, vault as $$
+returns void language plpgsql security definer set search_path = '' as $$
 declare o uuid := public.current_org(); existing uuid; k text := trim(_key);
 begin
   if o is null or not public.has_org_role(o, 'owner') then
     raise exception 'Solo el Owner puede conectar Stripe.' using errcode = '42501';
   end if;
-  if k !~ '^(rk|sk)_(live|test)_[A-Za-z0-9]{10,}$' then
+  if k ~ '^sk_(live|test)_' then
+    raise exception 'Esa es una clave secreta con permisos completos. Crea una clave restringida de solo lectura (empieza por rk_live_).' using errcode = '22023';
+  end if;
+  if k !~ '^rk_(live|test)_[A-Za-z0-9]{10,}$' then
     raise exception 'Esa no parece una clave de Stripe. Copia la clave restringida completa: empieza por rk_live_.' using errcode = '22023';
   end if;
-  select vault_secret_id into existing from public.stripe_connections where org_id = o;
+  select c.vault_secret_id into existing from public.stripe_connections c where c.org_id = o;
   if existing is not null then
     perform vault.update_secret(existing, k);
-    update public.stripe_connections set key_hint = right(k, 4), livemode = k like '%\_live\_%', restricted = k like 'rk\_%',
+    update public.stripe_connections set key_hint = right(k, 4), livemode = k like 'rk\_live\_%', restricted = true,
       status = 'pending', last_error = null, connected_by = auth.uid() where org_id = o;
   else
     insert into public.stripe_connections (org_id, vault_secret_id, key_hint, livemode, restricted)
-    values (o, vault.create_secret(k, 'stripe:' || o::text, 'Stripe key of organization ' || o::text), right(k, 4), k like '%\_live\_%', k like 'rk\_%');
+    values (o, vault.create_secret(k, 'stripe:' || o::text, 'Stripe key of organization ' || o::text), right(k, 4), k like 'rk\_live\_%', true);
   end if;
 end $$;
 revoke all on function public.set_stripe_key(text) from public, anon;
 grant execute on function public.set_stripe_key(text) to authenticated;
 
--- The Owner disconnects: the key is deleted from Vault; past snapshots stay as history.
+-- The Owner disconnects: stripe_connections_cleanup deletes the key from Vault; past snapshots stay.
 create or replace function public.remove_stripe_key()
-returns void language plpgsql security definer set search_path = public, vault as $$
+returns void language plpgsql security definer set search_path = '' as $$
 declare o uuid := public.current_org();
 begin
   if o is null or not public.has_org_role(o, 'owner') then
     raise exception 'Solo el Owner puede desconectar Stripe.' using errcode = '42501';
   end if;
-  -- stripe_connections_cleanup deletes the key from Vault.
   delete from public.stripe_connections where org_id = o;
 end $$;
 revoke all on function public.remove_stripe_key() from public, anon;
@@ -88,15 +95,15 @@ grant execute on function public.remove_stripe_key() to authenticated;
 
 -- Only the server reads the key back, to call Stripe.
 create or replace function public.stripe_key_for(_org uuid)
-returns text language sql security definer set search_path = public, vault as $$
+returns text language sql security definer set search_path = '' as $$
   select s.decrypted_secret from public.stripe_connections c join vault.decrypted_secrets s on s.id = c.vault_secret_id where c.org_id = _org;
 $$;
 revoke all on function public.stripe_key_for(uuid) from public, anon, authenticated;
 grant execute on function public.stripe_key_for(uuid) to service_role;
 
--- A deleted company takes its key with it.
+-- A deleted connection (or company) takes its key with it.
 create or replace function public.stripe_connections_cleanup()
-returns trigger language plpgsql security definer set search_path = public, vault as $$
+returns trigger language plpgsql security definer set search_path = '' as $$
 begin
   delete from vault.secrets where id = old.vault_secret_id;
   return old;

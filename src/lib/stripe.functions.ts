@@ -39,6 +39,9 @@ export const syncStripeNow = createServerFn({ method: "POST" })
     const { orgId, role } = await currentOrg(context.supabase, context.userId);
     if (role !== "owner" && role !== "sales_leader") throw new Error("Solo el Owner o el Sales Leader pueden sincronizar Stripe.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { syncStripeOrg } = await import("@/lib/stripe/sync.server");
+    const { syncStripeOrg, MANUAL_SYNC_MINUTES } = await import("@/lib/stripe/sync.server");
+    const { data: c } = await supabaseAdmin.from("stripe_connections").select("last_synced_at").eq("org_id", orgId).maybeSingle();
+    if (c?.last_synced_at && Date.now() - new Date(c.last_synced_at).getTime() < MANUAL_SYNC_MINUTES * 60_000)
+      return { ok: false, error: `Stripe se ha leído hace menos de ${MANUAL_SYNC_MINUTES} minutos. Espera un poco antes de volver a leerlo.` };
     return syncStripeOrg(supabaseAdmin, orgId);
   });
