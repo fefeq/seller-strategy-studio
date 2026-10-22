@@ -121,6 +121,23 @@ export const TOOLS: AgentTool[] = [
     },
   }),
   def({
+    name: "get_stripe_metrics", kind: "read",
+    description: "Ingresos reales leídos de Stripe (si la empresa lo ha conectado): MRR, ARR, clientes de pago, en prueba, altas y bajas de los últimos 30 días y churn de clientes y de MRR, con la fecha de la lectura.",
+    input: z.object({}),
+    run: async (c) => {
+      const [conn, snap] = await Promise.all([
+        c.db.from("stripe_connections").select("status,last_error,last_synced_at,livemode").eq("org_id", c.orgId).maybeSingle(),
+        c.db.from("stripe_snapshots").select("*").eq("org_id", c.orgId).order("taken_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      if (!conn.data && !snap.data) return { conectado: false, nota: "Stripe no está conectado, o tu rol no ve los ingresos (solo Owner, Sales Leader y Deal Desk). El Owner puede conectarlo en Conexiones." };
+      const x = snap.data;
+      return {
+        conectado: !!conn.data, ...(conn.data ? {} : { nota: "Stripe está desconectado: es la última lectura y ya no se actualiza." }), estado: conn.data?.status ?? null, error: conn.data?.last_error ?? null, datos_de_prueba: conn.data ? !conn.data.livemode : null,
+        lectura: x ? { fecha: x.taken_at, moneda: x.currency, mrr: Number(x.mrr), arr: Number(x.mrr) * 12, clientes_de_pago: x.active_customers, en_prueba: x.trialing, ventana_dias: x.window_days, altas: x.new_customers, mrr_nuevo: Number(x.new_mrr), bajas: x.churned_customers, mrr_perdido: Number(x.churned_mrr), churn_clientes_pct: x.logo_churn_pct, churn_mrr_pct: x.revenue_churn_pct, detalles: x.details } : null,
+      };
+    },
+  }),
+  def({
     name: "list_products", kind: "read",
     description: "Catálogo de productos de la empresa: id, nombre, precio y coste por periodo, cobro (monthly/annual/one_off) y margen %. Úsalo para crear deals con producto.",
     input: z.object({ include_inactive: z.boolean().optional() }),

@@ -20,6 +20,7 @@ import { metricsHeadline } from "@/lib/headlines";
 import { formatRatio, quarterCoverage } from "@/lib/coverage";
 import { openStages, stageLabel, stagePath } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
+import { StripeMetricsPanel } from "@/components/stripe-panel";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -111,6 +112,7 @@ function Metrics() {
             <Kpi label="Win rate global" v={pct(m.overall)} hint={`${m.created} deals creados este trimestre`} />
           </div>
 
+          <StripeMetricsPanel />
           <QuarterKpisPanel quarter={quarter} />
           <PipelineBoardPanel quarter={quarter} />
           <SegmentCoverage quarter={quarter} />

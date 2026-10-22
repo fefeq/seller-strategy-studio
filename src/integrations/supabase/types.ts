@@ -2915,6 +2915,118 @@ export type Database = {
           },
         ]
       }
+      stripe_connections: {
+        Row: {
+          account_name: string | null
+          connected_by: string | null
+          created_at: string
+          key_hint: string
+          last_error: string | null
+          last_synced_at: string | null
+          livemode: boolean
+          org_id: string
+          restricted: boolean
+          status: string
+          vault_secret_id: string
+        }
+        Insert: {
+          account_name?: string | null
+          connected_by?: string | null
+          created_at?: string
+          key_hint: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode: boolean
+          org_id: string
+          restricted: boolean
+          status?: string
+          vault_secret_id: string
+        }
+        Update: {
+          account_name?: string | null
+          connected_by?: string | null
+          created_at?: string
+          key_hint?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          livemode?: boolean
+          org_id?: string
+          restricted?: boolean
+          status?: string
+          vault_secret_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stripe_snapshots: {
+        Row: {
+          active_customers: number
+          churned_customers: number
+          churned_mrr: number
+          currency: string
+          details: Json
+          id: string
+          logo_churn_pct: number | null
+          mrr: number
+          new_customers: number
+          new_mrr: number
+          org_id: string
+          revenue_churn_pct: number | null
+          taken_at: string
+          trialing: number
+          window_days: number
+        }
+        Insert: {
+          active_customers: number
+          churned_customers?: number
+          churned_mrr?: number
+          currency: string
+          details?: Json
+          id?: string
+          logo_churn_pct?: number | null
+          mrr: number
+          new_customers?: number
+          new_mrr?: number
+          org_id: string
+          revenue_churn_pct?: number | null
+          taken_at?: string
+          trialing?: number
+          window_days?: number
+        }
+        Update: {
+          active_customers?: number
+          churned_customers?: number
+          churned_mrr?: number
+          currency?: string
+          details?: Json
+          id?: string
+          logo_churn_pct?: number | null
+          mrr?: number
+          new_customers?: number
+          new_mrr?: number
+          org_id?: string
+          revenue_churn_pct?: number | null
+          taken_at?: string
+          trialing?: number
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stripe_snapshots_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggestions: {
         Row: {
           action: Json | null
@@ -3223,6 +3335,9 @@ export type Database = {
       }
       current_org: { Args: never; Returns: string }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
+      remove_stripe_key: { Args: never; Returns: undefined }
+      set_stripe_key: { Args: { _key: string }; Returns: undefined }
+      stripe_key_for: { Args: { _org: string }; Returns: string }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean

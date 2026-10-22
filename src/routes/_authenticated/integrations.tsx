@@ -6,6 +6,7 @@ import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
+import { StripeConnect } from "@/components/stripe-panel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({ meta: [{ title: "Conexiones — Nokko" }, { name: "description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }, { property: "og:title", content: "Conexiones — Nokko" }, { property: "og:description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }] }),
@@ -25,7 +26,7 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
 ];
 
 /** Native connections not built yet. Listed so nobody looks for them in the plan below. */
-const NOT_YET = ["Stripe (clientes, MRR y churn reales para Métricas)", "HubSpot, Pipedrive, Attio o Salesforce en sincronización nativa (hoy entran por webhook)", "Google Calendar y Gmail", "Gong y Fireflies"];
+const NOT_YET = ["HubSpot, Pipedrive, Attio o Salesforce en sincronización nativa (hoy entran por webhook)", "Google Calendar y Gmail", "Gong y Fireflies"];
 
 function Integrations() {
   const qc = useQueryClient();
@@ -52,6 +53,7 @@ function Integrations() {
             </Link>
           ))}
         </div>
+        <div className="mt-3 grid gap-3 md:grid-cols-2"><StripeConnect /></div>
         <p className="mt-4 text-xs text-muted-foreground">Aún sin conexión nativa: {NOT_YET.join(" · ")}.</p>
       </section>
 

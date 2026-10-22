@@ -25,6 +25,7 @@ const TITLES: Record<string, string> = {
   get_cycle_status: "Estado del ciclo GTM",
   get_overview: "Resumen de la empresa",
   get_setup_status: "Estado de la configuración",
+  get_stripe_metrics: "Ingresos en Stripe",
   list_deals: "Listar deals",
   list_products: "Listar productos",
   list_stages: "Listar etapas del pipeline",
