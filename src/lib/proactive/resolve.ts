@@ -57,6 +57,10 @@ const ASK: Record<string, (s: ResolvableSuggestion) => string> = {
     "Es una pregunta que dejó abierta la IA al proponer mi configuración. Ayúdame a responderla con lo que ya hay en Nokko; si la respuesta cambia algún dato de la estrategia, prepáralo como acción para que la confirme. Si es una decisión con varias posturas defendibles, dímelo y propón llevarla a Debates.",
   meeting_no_notes: (s) =>
     `Ayúdame a apuntar las notas de esta reunión (id ${keyPart(s.dedupe_key)}) en 5 líneas. Hazme las preguntas de una en una: qué les duele, qué les cuesta no resolverlo, quién decide y cómo, qué les frena y el próximo paso acordado (qué, quién y cuándo). Cuando conteste, guárdalas con save_call_notes para que lo confirme, usando solo mis palabras. Después dime que puedo desmontar la llamada con IA desde la reunión.`,
+  unassigned_accounts: () =>
+    "Hay cuentas sin responsable. Dime en pocas líneas qué les falta para repartirlas bien (país, segmento o tier) y si con el equipo y las reglas actuales alguna se quedaría sin dueño. El reparto se propone y se aprueba en esta pantalla («Proponer reparto»): no asignes cuentas tú.",
+  account_assigned: () =>
+    "Me acaban de asignar estas cuentas. Dime por cuál empiezo y por qué (encaje con el ICP, deals y leads abiertos, última actividad) y el primer paso concreto para cada una. Si quiero crear tareas, prepáralas como acciones para que las confirme.",
   weekly_report: () =>
     "A partir de este informe semanal, dime las 2 o 3 acciones más importantes para esta semana, con el deal o lead concreto de cada una, y prepáralas como tareas para que las confirme.",
 };

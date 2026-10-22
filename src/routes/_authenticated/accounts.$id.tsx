@@ -21,6 +21,7 @@ import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type CallNotes } from "@/lib/call-notes";
 import { useAgent } from "@/components/agent";
 import { AiText } from "@/components/ai-text";
+import { CountryPick } from "@/components/country-pick";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
@@ -106,9 +107,15 @@ function AccountPage() {
 }
 
 /** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
-function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null; country?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
   const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
   useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
+  // Country decides the region for the account assignment rules (Cuentas → Reparto).
+  async function saveCountry(country: string | null) {
+    const { error } = await supabase.from("accounts").update({ country }).eq("id", account.id);
+    if (error) return toast.error(errorText(error));
+    onSaved();
+  }
   async function save(patch: Partial<typeof f>) {
     const next = { ...f, ...patch };
     setF(next);
@@ -123,6 +130,7 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; segm
       <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segNames) }} onChange={(v) => save({ segment_id: v })} /></Field>
       <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
+      <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
     </div>
   );
 }

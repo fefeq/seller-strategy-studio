@@ -60,7 +60,9 @@ async function notifyUrgent(db: Admin) {
     const { data: prof } = await db.from("profiles").select("current_org_id").eq("id", l.user_id).maybeSingle();
     if (!prof?.current_org_id) continue;
     const { data: urgent } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("priority", 1).is("notified_at", null).or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(3);
-    for (const s of urgent ?? []) {
+    // «Te han asignado N cuentas» goes to its person too, though it is not urgent.
+    const { data: assigned } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("detector", "account_assigned").eq("user_id", l.user_id).is("notified_at", null).limit(3);
+    for (const s of [...(urgent ?? []), ...(assigned ?? [])]) {
       try {
         await sendText(l.chat_id!, `${s.title}\n${s.body}`, [[{ text: (s.action as any)?.tool ? "Aprobar y hacer" : "Hecho", data: `s:${s.id}:approve` }, { text: "En 3 días", data: `s:${s.id}:snooze` }, { text: "Descartar", data: `s:${s.id}:dismiss` }]]);
         await db.from("suggestions").update({ notified_at: new Date().toISOString() }).eq("id", s.id);

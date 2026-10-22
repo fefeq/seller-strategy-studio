@@ -35,6 +35,7 @@ import { Route as AuthenticatedTheoryURouteImport } from './routes/_authenticate
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as AuthenticatedAccountsIndexRouteImport } from './routes/_authenticated/accounts.index'
 import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authenticated/accounts.$id'
+import { Route as AuthenticatedAccountsAssignmentRouteImport } from './routes/_authenticated/accounts.assignment'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
@@ -173,6 +174,12 @@ const AuthenticatedAccountsIdRoute = AuthenticatedAccountsIdRouteImport.update({
   path: '/accounts/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAccountsAssignmentRoute =
+  AuthenticatedAccountsAssignmentRouteImport.update({
+    id: '/accounts/assignment',
+    path: '/accounts/assignment',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLeadsIndexRoute = AuthenticatedLeadsIndexRouteImport.update({
   id: '/leads/',
   path: '/leads/',
@@ -226,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
@@ -292,6 +301,7 @@ export interface FileRoutesById {
   '/_authenticated/theory-u': typeof AuthenticatedTheoryURoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
+  '/_authenticated/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/_authenticated/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/.lovable/oauth/consent'
     | '/accounts/$id'
+    | '/accounts/assignment'
     | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts/'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/theory-u'
     | '/.lovable/oauth/consent'
     | '/accounts/$id'
+    | '/accounts/assignment'
     | '/leads/entrada'
     | '/api/public/leads'
     | '/accounts'
@@ -391,6 +403,7 @@ export interface FileRouteTypes {
     | '/_authenticated/theory-u'
     | '/.lovable/oauth/consent'
     | '/_authenticated/accounts/$id'
+    | '/_authenticated/accounts/assignment'
     | '/_authenticated/leads/entrada'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAccountsIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/accounts/assignment': {
+      id: '/_authenticated/accounts/assignment'
+      path: '/accounts/assignment'
+      fullPath: '/accounts/assignment'
+      preLoaderRoute: typeof AuthenticatedAccountsAssignmentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/leads/': {
       id: '/_authenticated/leads/'
       path: '/leads'
@@ -653,6 +673,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
   AuthenticatedTheoryURoute: typeof AuthenticatedTheoryURoute
   AuthenticatedAccountsIdRoute: typeof AuthenticatedAccountsIdRoute
+  AuthenticatedAccountsAssignmentRoute: typeof AuthenticatedAccountsAssignmentRoute
   AuthenticatedLeadsEntradaRoute: typeof AuthenticatedLeadsEntradaRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
   AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
@@ -677,6 +698,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,
   AuthenticatedTheoryURoute: AuthenticatedTheoryURoute,
   AuthenticatedAccountsIdRoute: AuthenticatedAccountsIdRoute,
+  AuthenticatedAccountsAssignmentRoute: AuthenticatedAccountsAssignmentRoute,
   AuthenticatedLeadsEntradaRoute: AuthenticatedLeadsEntradaRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
   AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,

@@ -109,6 +109,19 @@ describe("detectors", () => {
     expect(keys(snap({ meetings: [{ ...m, call_notes: { dolor: "Pierden leads" } }] }))).not.toContain("meeting_no_notes");
     expect(keys(snap({ meetings: [{ ...m, scheduled_at: new Date(NOW.getTime() - 9 * 864e5).toISOString() }] }))).not.toContain("meeting_no_notes");
   });
+  it("unowned accounts with two people who can take them: one reminder to the Owner, keyed on the newest", () => {
+    const members = [{ user_id: "own", role: "owner" }, { user_id: "ae1", role: "ae" }, { user_id: "mk", role: "marketing" }];
+    const accounts = [
+      { id: "a1", name: "Acme", is_target: false, owner_id: null, created_at: "2026-10-01T00:00:00Z" },
+      { id: "a2", name: "Beta", is_target: false, owner_id: null, created_at: "2026-10-10T00:00:00Z" },
+      { id: "a3", name: "Gamma", is_target: false, owner_id: "ae1", created_at: "2026-10-12T00:00:00Z" },
+    ];
+    const s = detect(snap({ accounts, members })).find((x) => x.detector === "unassigned_accounts");
+    expect(s).toMatchObject({ dedupe_key: "unassigned_accounts:a2", title: "2 cuentas sin responsable", user_id: "own", link: "/accounts/assignment" });
+    expect(keys(snap({ accounts, members: [members[0], members[2]] }))).not.toContain("unassigned_accounts");
+    expect(keys(snap({ accounts: [accounts[2]], members }))).not.toContain("unassigned_accounts");
+    expect(keys(snap({ accounts }))).not.toContain("unassigned_accounts");
+  });
   it("target account without decision maker", () => {
     const accounts = [{ id: "a1", name: "Acme", is_target: true, owner_id: null }];
     expect(keys(snap({ accounts, stakeholders: [{ account_id: "a1", buying_role: "champion" }] }))).toContain("no_decision_maker");

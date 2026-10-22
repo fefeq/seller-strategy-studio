@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrency } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
+import { useTeam } from "@/hooks/use-team";
+import { canApproveAssignment } from "@/lib/assignment";
 import { Page, Empty, HealthDot } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +25,10 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 function Accounts() {
   const { money: eur } = useCurrency();
   const navigate = useNavigate();
+  const { data: me } = useMe();
+  const { data: team = [] } = useTeam();
+  const ownerName = (id: string | null) => (id ? team.find((m) => m.user_id === id)?.name ?? "Ex-miembro" : null);
+  const leader = canApproveAssignment(me?.roles ?? []);
   const [q, setQ] = useState("");
   const [byName, setByName] = useState(false);
   const { data = [] } = useQuery({
@@ -66,6 +72,7 @@ function Accounts() {
   return (
     <Page eyebrow="Cuentas" title={accountsHeadline({ total: data.length, atRisk: data.filter((a) => a.health === "red").length })} actions={
       <div className="flex flex-wrap gap-2">
+      {leader && <Button variant="outline" asChild><Link to="/accounts/assignment">Reparto{data.some((a) => !a.owner_id) ? ` (${data.filter((a) => !a.owner_id).length} sin responsable)` : ""}</Link></Button>}
       <Dialog>
         <DialogTrigger asChild><Button variant="outline">Importar CSV</Button></DialogTrigger>
         <DialogContent>
@@ -91,12 +98,13 @@ function Accounts() {
       {list.length === 0 ? <Empty>Aún no hay cuentas. Crea la primera para empezar su plan de cuenta.</Empty> : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Puntuación", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Puntuación", "Responsable", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" || h === "Responsable" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>
             <tbody>
               {list.map((a) => (
                 <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
                   <td className="px-3 py-3 sm:px-4"><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link><span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">{a.domain}</span></td>
                   <td className="px-3 py-3 sm:px-4"><ScoreBadge score={scores.get(a.id)!} /></td>
+                  <td className="hidden px-4 py-3 sm:table-cell">{ownerName(a.owner_id) ?? <span className="text-signal">Sin responsable</span>}</td>
                   <td className="hidden px-4 py-3 font-mono sm:table-cell">{a.tier}</td>
                   <td className="whitespace-nowrap px-3 py-3 sm:px-4"><HealthDot value={a.health} /></td>
                   <td className="hidden px-4 py-3 sm:table-cell">{a.stakeholders?.length ?? 0}</td>
