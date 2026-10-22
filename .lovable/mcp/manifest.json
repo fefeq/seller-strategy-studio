@@ -170,6 +170,23 @@
         "outputSchema": null
       },
       {
+        "name": "get_stripe_metrics",
+        "title": "Ingresos en Stripe",
+        "description": "Ingresos reales leídos de Stripe (si la empresa lo ha conectado): MRR, ARR, clientes de pago, en prueba, altas y bajas de los últimos 30 días y churn de clientes y de MRR, con la fecha de la lectura.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_products",
         "title": "Listar productos",
         "description": "Catálogo de productos de la empresa: id, nombre, precio y coste por periodo, cobro (monthly/annual/one_off) y margen %. Úsalo para crear deals con producto.",

@@ -37,7 +37,10 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Monday morning: this week's pipeline report for every company (idempotent, once per week).
           const { runWeeklyReports } = await import("@/lib/weekly-report.server");
           const weekly = await runWeeklyReports(db, now).catch((e) => { console.error("weekly reports failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly });
+          // Stripe: every connected company, at most every few hours.
+          const { runStripeSyncs } = await import("@/lib/stripe/sync.server");
+          const stripe = await runStripeSyncs(db, now).catch((e) => { console.error("stripe syncs failed", e); return null; });
+          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }
