@@ -1,13 +1,11 @@
 // Monday pipeline report: who moved last week, who went cold, and what to do first. Pure so the
 // app (Sugerencias and Inicio), Telegram and email all say exactly the same thing.
-import { DEAL_STAGES } from "@/lib/roles";
+import { stageIndex, stageLabel, type Stage } from "@/lib/stages";
 import { staleDeals } from "@/lib/stale";
 import type { DealLike, SegLike } from "@/lib/segment-coverage";
 import { isOpenLeadStage, leadDelay, type LeadSla } from "@/lib/lead-funnel";
 
 const DAY = 86_400_000;
-const STAGE_INDEX = Object.fromEntries(DEAL_STAGES.map((s, i) => [s.id, i]));
-const stageLabel = (id: string) => DEAL_STAGES.find((s) => s.id === id)?.label ?? id;
 
 /** ISO date of the Monday that starts the week containing `now` (UTC). */
 export function weekStart(now: Date): string {
@@ -30,6 +28,8 @@ export type WeeklyReportInput = {
   staleDays: number | null;
   leadSla: LeadSla;
   money: (n: number) => string;
+  /** The company's stages; the default seven when missing. */
+  stages?: Stage[] | null;
 };
 
 export type WeeklyReport = {
@@ -62,8 +62,8 @@ export function weeklyReport(i: WeeklyReportInput): WeeklyReport {
   const advanced: WeeklyReport["advanced"] = [];
   for (const [id, h] of lastMove) {
     const d = byId.get(id);
-    if (!d || h.to_stage === "won" || h.to_stage === "lost" || !h.from_stage) continue;
-    if ((STAGE_INDEX[h.to_stage] ?? -1) > (STAGE_INDEX[h.from_stage] ?? -1)) advanced.push({ id, name: d.name, from: stageLabel(h.from_stage), to: stageLabel(h.to_stage) });
+    if (!d || h.to_stage === "won" || h.to_stage === "lost" || !h.from_stage || h.from_stage === "lost") continue;
+    if (stageIndex(h.to_stage, i.stages) > stageIndex(h.from_stage, i.stages)) advanced.push({ id, name: d.name, from: stageLabel(h.from_stage, i.stages), to: stageLabel(h.to_stage, i.stages) });
   }
   const closedThisWeek = (stage: "won" | "lost") => i.deals.filter((d) => d.stage === stage && (d.closed_at ?? d.updated_at) >= sinceIso);
   const won = closedThisWeek("won").map((d) => ({ id: d.id, name: d.name, amount: Number(d.amount ?? 0) }));

@@ -170,6 +170,23 @@
         "outputSchema": null
       },
       {
+        "name": "list_stages",
+        "title": "Listar etapas del pipeline",
+        "description": "Etapas del pipeline de la empresa en orden: clave, nombre, tipo (open/won/lost) y probabilidad. Úsalas al crear o mover deals.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_deals",
         "title": "Listar deals",
         "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja) o con fecha de cierre pasada.",
@@ -184,15 +201,8 @@
           "properties": {
             "stage": {
               "type": "string",
-              "enum": [
-                "discovery",
-                "qualified",
-                "demo",
-                "proposal",
-                "negotiation",
-                "won",
-                "lost"
-              ]
+              "minLength": 1,
+              "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
             },
             "mine": {
               "type": "boolean"
@@ -432,15 +442,8 @@
             },
             "stage": {
               "type": "string",
-              "enum": [
-                "discovery",
-                "qualified",
-                "demo",
-                "proposal",
-                "negotiation",
-                "won",
-                "lost"
-              ]
+              "minLength": 1,
+              "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
             }
           },
           "required": [
@@ -470,15 +473,8 @@
             },
             "stage": {
               "type": "string",
-              "enum": [
-                "discovery",
-                "qualified",
-                "demo",
-                "proposal",
-                "negotiation",
-                "won",
-                "lost"
-              ]
+              "minLength": 1,
+              "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
             },
             "amount": {
               "type": "number",
@@ -520,7 +516,7 @@
       {
         "name": "update_lead",
         "title": "Actualizar lead",
-        "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en la primera etapa del pipeline. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,

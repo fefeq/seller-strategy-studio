@@ -9,7 +9,9 @@ import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
-import { DEAL_STAGES, ROLES, type Role } from "@/lib/roles";
+import { ROLES, type Role } from "@/lib/roles";
+import { stageLabel } from "@/lib/stages";
+import { useStages } from "@/components/stage-settings";
 import { homeHeadline } from "@/lib/headlines";
 
 export const Route = createFileRoute("/_authenticated/home")({
@@ -19,6 +21,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 
 function HomePage() {
+  const { stages } = useStages();
   const { data: me } = useMe();
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
@@ -92,7 +95,7 @@ function HomePage() {
           {((role === "sales_leader" || role === "owner") ? risk : mine).slice(0, 6).map((d) => (
             <div key={d.id} className="flex items-center justify-between gap-3 border-b py-2.5 text-sm last:border-0">
               <span className="min-w-0 break-words">{d.name}</span>
-              <span className="flex shrink-0 items-center gap-3"><span className="text-muted-foreground">{DEAL_STAGES.find((s) => s.id === d.stage)?.label}</span><HealthDot value={d.health} /></span>
+              <span className="flex shrink-0 items-center gap-3"><span className="text-muted-foreground">{stageLabel(d.stage, stages)}</span><HealthDot value={d.health} /></span>
             </div>
           ))}
           {((role === "sales_leader" || role === "owner") ? risk : mine).length === 0 && <p className="text-sm text-muted-foreground">Nada por aquí todavía.</p>}

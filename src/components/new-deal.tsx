@@ -16,12 +16,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { applySetupItems } from "@/lib/agent.functions";
-import { DEAL_STAGES } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
-
-const OPEN_STAGES = Object.fromEntries(
-  DEAL_STAGES.filter((s) => s.id !== "won" && s.id !== "lost").map((s) => [s.id, s.label]),
-);
+import { firstOpenStage, stageOptions } from "@/lib/stages";
+import { useStages } from "@/components/stage-settings";
 
 /**
  * New deal from the pipeline itself, with account, segment and stage at birth. It goes through the same
@@ -31,13 +28,14 @@ export function NewDealButton() {
   const qc = useQueryClient();
   const { symbol } = useCurrency();
   const apply = useServerFn(applySetupItems);
+  const { stages } = useStages();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
     name: "",
     account: "",
     segment: "",
-    stage: "discovery",
+    stage: "",
     amount: "",
     close: null as string | null,
   });
@@ -64,7 +62,7 @@ export function NewDealButton() {
           account_id: existing?.id,
           account_name: existing ? undefined : f.account.trim() || undefined,
           segment_id: f.segment || undefined,
-          stage: f.stage,
+          stage: f.stage || firstOpenStage(stages).key,
           amount: f.amount === "" ? undefined : Number(f.amount.replace(",", ".")),
           close_date: f.close ?? undefined,
         }).filter(([, v]) => v !== undefined),
@@ -74,7 +72,7 @@ export function NewDealButton() {
       toast.success(
         `Deal «${f.name.trim()}» creado${f.close ? "" : ". Ponle fecha de cierre para que cuente en la cobertura"}.`,
       );
-      setF({ name: "", account: "", segment: "", stage: "discovery", amount: "", close: null });
+      setF({ name: "", account: "", segment: "", stage: "", amount: "", close: null });
       setOpen(false);
       qc.invalidateQueries();
     } catch (e) {
@@ -123,8 +121,8 @@ export function NewDealButton() {
           </Field>
           <Field label="Etapa">
             <Pick
-              value={f.stage}
-              options={OPEN_STAGES}
+              value={f.stage || firstOpenStage(stages).key}
+              options={stageOptions(stages)}
               onChange={(v) => setF({ ...f, stage: v })}
             />
           </Field>

@@ -18,6 +18,8 @@ export type Snapshot = {
   cycleDeals?: (import("@/lib/segment-coverage").DealLike & { id: string })[];
   cycleSegments?: import("@/lib/segment-coverage").SegLike[];
   staleDays?: number | null;
+  /** The company's deal stages; the default seven when missing. */
+  stages?: import("@/lib/stages").Stage[];
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };

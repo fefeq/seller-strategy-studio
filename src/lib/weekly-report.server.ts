@@ -1,6 +1,7 @@
 // Builds the Monday report per company, stores it as a suggestion (detector weekly_report, one per
 // week) and delivers it once by Telegram and email. Runs inside the hourly proactive job: on a Monday
 // the first run after 06:00 UTC creates it, and the dedupe key stops the following hours.
+import type { Stage } from "@/lib/stages";
 import type { Db } from "@/lib/org-data";
 import { readSla } from "@/lib/lead-funnel";
 import { readStaleDays } from "@/lib/stale";
@@ -15,17 +16,18 @@ export const isReportTime = (now: Date) => now.getUTCDay() === 1 && now.getUTCHo
 
 export async function buildOrgReport(db: Db, orgId: string, now = new Date()): Promise<{ report: WeeklyReport; text: string; currency: string }> {
   const since = new Date(now.getTime() - 8 * 86_400_000).toISOString();
-  const [org, deals, hist, leads, segs, settings] = await Promise.all([
+  const [org, deals, hist, leads, segs, settings, stages] = await Promise.all([
     db.from("organizations").select("currency").eq("id", orgId).maybeSingle(),
     db.from("deals").select("id,name,stage,amount,segment_id,close_date,closed_at,created_at,updated_at,owner_id").eq("org_id", orgId),
     db.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at").eq("org_id", orgId).gte("changed_at", since),
     db.from("leads").select("id,company,stage,created_at,sql_at,opportunity_at,stage_entered_at,next_step_at").eq("org_id", orgId).limit(2000),
     db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", orgId),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
+    db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
   ]);
   const currency = org.data?.currency ?? "EUR";
   const money = (n: number) => formatMoney(n, currency, true);
-  const report = weeklyReport({ now, deals: deals.data ?? [], history: hist.data ?? [], leads: leads.data ?? [], segments: segs.data ?? [], staleDays: readStaleDays(settings.data?.sla), leadSla: readSla(settings.data?.sla), money });
+  const report = weeklyReport({ now, deals: deals.data ?? [], history: hist.data ?? [], leads: leads.data ?? [], segments: segs.data ?? [], staleDays: readStaleDays(settings.data?.sla), leadSla: readSla(settings.data?.sla), money, stages: (stages.data ?? []) as Stage[] });
   return { report, text: reportText(report, money), currency };
 }
 

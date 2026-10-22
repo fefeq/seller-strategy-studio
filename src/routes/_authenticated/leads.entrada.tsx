@@ -15,7 +15,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { parseCsv } from "@/lib/dedupe";
 import { hashLeadKey } from "@/lib/leads-ingest";
-import { applyColumnMapping, columnMapping, CSV_FIELD_LABELS, dealsWithoutCloseDate, INTAKE_STAGES, LEAD_LIMITS, type CsvField } from "@/lib/leads";
+import { applyColumnMapping, columnMapping, CSV_FIELD_LABELS, dealsWithoutCloseDate, intakeStageOptions, LEAD_LIMITS, type CsvField } from "@/lib/leads";
+import { useStages } from "@/components/stage-settings";
 import { importLeads } from "@/lib/leads.functions";
 import { errorText } from "@/lib/errors";
 
@@ -31,7 +32,6 @@ export const Route = createFileRoute("/_authenticated/leads/entrada")({
   component: Leads,
 });
 
-const STAGE_OPTS: Record<string, string> = Object.fromEntries(INTAKE_STAGES.map((s) => [s.id, s.label]));
 const CSV_FIELD_OPTS: Record<string, string> = { "": "No importar", ...CSV_FIELD_LABELS };
 const STATUS: Record<string, [string, string]> = { created: ["Nuevo", "bg-success/15 text-success"], updated: ["Actualizado", "bg-muted text-foreground"], error: ["Error", "bg-destructive/15 text-destructive"] };
 
@@ -48,7 +48,7 @@ function Leads() {
   return (
     <Page eyebrow="Leads reales" title="Entrada de leads" actions={<Button variant="outline" asChild><Link to="/leads">Ver leads</Link></Button>}>
       <p className="-mt-4 mb-8 max-w-3xl text-sm text-muted-foreground">
-        Cada lead entra en <strong>Leads</strong> con su cuenta, su contacto, su etapa (Nuevo, Contactado, MQL o SQL) y su fecha. Si ya trae una etapa de venta (Discovery, Propuesta…), entra directamente como <strong>oportunidad</strong> en la pipeline.
+        Cada lead entra en <strong>Leads</strong> con su cuenta, su contacto, su etapa (Nuevo, Contactado, MQL o SQL) y su fecha. Si ya trae una etapa de venta (Propuesta, Negociación… o una de las etapas de tu pipeline), entra directamente como <strong>oportunidad</strong> en la pipeline.
         Si vuelve a llegar el mismo lead, se actualiza en lugar de duplicarse. Leads, pipeline, métricas y la calculadora de Estrategia GTM se recalculan solas al momento.
       </p>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
@@ -61,6 +61,7 @@ function Leads() {
 }
 
 function Sources({ canManage, isOwner }: { canManage: boolean; isOwner: boolean }) {
+  const STAGE_OPTS = intakeStageOptions(useStages().stages);
   const qc = useQueryClient();
   const { data: sources = [] } = useQuery({ queryKey: ["lead-sources"], queryFn: async () => (await supabase.from("lead_sources").select("*").order("created_at")).data ?? [] });
   async function upd(id: string, patch: { active?: boolean; default_stage?: string }) {
@@ -102,6 +103,7 @@ function Sources({ canManage, isOwner }: { canManage: boolean; isOwner: boolean 
 }
 
 function NewSource() {
+  const STAGE_OPTS = intakeStageOptions(useStages().stages);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Formulario web");
@@ -162,7 +164,7 @@ function HowTo() {
         <AccordionContent className="space-y-2 text-sm text-muted-foreground">
           <p>Reconoce nombres en español o inglés y las preguntas de tus formularios. Solo es obligatoria la <strong>empresa</strong> (o su web, o un email de empresa).</p>
           <ul className="list-disc space-y-1 pl-5">
-            <li><strong>Etapa del lead:</strong> Nuevo, Contactado, MQL, SQL o Descartado. <strong>Etapa de venta:</strong> Oportunidad, Discovery, Cualificado, Demo, Propuesta, Negociación, Ganado o Perdido (entra como deal). También las de HubSpot, Pipedrive o Salesforce (p. ej. «marketingqualifiedlead» o «closedwon»).</li>
+            <li><strong>Etapa del lead:</strong> Nuevo, Contactado, MQL, SQL o Descartado. <strong>Etapa de venta:</strong> Oportunidad, Descubrimiento, Cualificado, Demo, Propuesta, Negociación, Ganado, Perdido o el nombre de cualquier etapa de tu pipeline (entra como deal). También las de HubSpot, Pipedrive o Salesforce (p. ej. «marketingqualifiedlead» o «closedwon»).</li>
             <li><strong>Fecha:</strong> cuándo entró el lead. <strong>Fecha de cierre:</strong> prevista o real. Admite 15/10/2026 o 2026-10-15.</li>
             <li><strong>Importe:</strong> valor anual del deal. Con él se calcula el ACV real.</li>
             <li><strong>id:</strong> el identificador en tu herramienta. Con él, cada actualización cae en el mismo lead o deal.</li>
@@ -188,6 +190,7 @@ function HowTo() {
 }
 
 function CsvImport() {
+  const STAGE_OPTS = intakeStageOptions(useStages().stages);
   const qc = useQueryClient();
   const run = useServerFn(importLeads);
   const [stage, setStage] = useState("new");

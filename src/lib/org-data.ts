@@ -35,7 +35,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings] = await Promise.all([
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by").eq("org_id", orgId).gte("scheduled_at", now.toISOString()),
@@ -46,9 +46,11 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", orgId),
     db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
+    db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
   ]);
   return {
     now, orgId, setup,
+    stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
     deals: (deals.data ?? []) as any,
     meetings: meetings.data ?? [],
     accounts: accounts.data ?? [],

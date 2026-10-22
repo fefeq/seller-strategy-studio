@@ -6,7 +6,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { Input } from "@/components/ui/input";
-import { DEAL_STAGES } from "@/lib/roles";
 import { daysInStage, forecastAccuracy, quarterOf, quarterRange, stageConversion, winRate } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
@@ -19,6 +18,8 @@ import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
 import { metricsHeadline } from "@/lib/headlines";
 import { formatRatio, quarterCoverage } from "@/lib/coverage";
+import { openStages, stageLabel, stagePath } from "@/lib/stages";
+import { useStages } from "@/components/stage-settings";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
@@ -26,7 +27,6 @@ export const Route = createFileRoute("/_authenticated/metrics")({
 });
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
-const OPEN_ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation", "won"];
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
 function Metrics() {
@@ -52,6 +52,8 @@ function Metrics() {
     },
   });
 
+  const { stages } = useStages();
+  const lab = (k: string) => stageLabel(k, stages);
   const m = useMemo(() => {
     if (!data) return null;
     const { start, end } = quarterRange(quarter);
@@ -75,7 +77,7 @@ function Metrics() {
     return {
       openPipe: openInQ.reduce((s, d) => s + Number(d.amount ?? 0), 0),
       quota, cov: quarterCoverage(data.deals, quota, quarter),
-      conv: stageConversion(data.history, OPEN_ORDER),
+      conv: stageConversion(data.history, stagePath(stages)),
       days: daysInStage(data.history),
       bySource: group((d) => d.source ?? "outbound"),
       byRep: group((d) => data.profiles.find((p) => p.id === d.owner_id)?.full_name ?? "Sin asignar"),
@@ -84,7 +86,7 @@ function Metrics() {
       commit, actual, acc: forecastAccuracy(commit, actual), created,
       overall: winRate(data.deals.filter((d) => d.stage === "won").length, data.deals.filter((d) => d.stage === "lost").length),
     };
-  }, [data, quarter]);
+  }, [data, quarter, stages]);
 
   async function setQuota(userId: string, amount: number) {
     const { error } = await supabase.from("quotas").upsert({ org_id: orgId!, user_id: userId, period: quarter, amount }, { onConflict: "org_id,user_id,period" });
@@ -124,7 +126,7 @@ function Metrics() {
               ))}
             </Panel>
             <Panel title="Velocidad: días medios por etapa">
-              {OPEN_ORDER.slice(0, -1).map((s) => {
+              {openStages(stages).map(({ key: s }) => {
                 const d = m.days[s] ?? 0;
                 const max = Math.max(1, ...Object.values(m.days));
                 return <Bar key={s} label={lab(s)} value={d / max} right={`${d.toFixed(1)} días`} />;
@@ -169,7 +171,6 @@ function Metrics() {
   );
 }
 
-const lab = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
 function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
   return <div className="min-w-0 rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 break-words font-display text-3xl">{v}</p><p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>{hint}</p></div>;
 }

@@ -10,6 +10,7 @@ import { actuals } from "@/lib/pipeline-real";
 import { quarterKpis } from "@/lib/quarter-kpis";
 import { closingIn, pipelineBoard, pipelineEconomics, type BoardColumn, type BoardGroup } from "@/lib/pipeline-board";
 import type { SegLike } from "@/lib/segment-coverage";
+import { useStages } from "@/components/stage-settings";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const SHOW = 5;
@@ -36,10 +37,11 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     },
   });
 
+  const { stages } = useStages();
   const view = useMemo(() => {
     if (!data || !leadsData) return null;
     const range = quarterRange(quarter);
-    const board = pipelineBoard(leadsData.leads, data.deals, range, leadsData.sla);
+    const board = pipelineBoard(leadsData.leads, data.deals, range, leadsData.sla, new Date(), stages);
     const [k] = quarterKpis(data.segments, data.deals, data.budgets, data.costs, [quarter]);
     const real = actuals(data.deals);
     const segMargins = data.segments.map((s) => s.gross_margin_pct).filter((x): x is number => x != null).map(Number);
@@ -51,7 +53,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       board, cost, won, closing, real, margin,
       eco: pipelineEconomics({ cost, won, closing: closing.length, winRatePct: real.winRate, acv: real.acv, marginPct: margin }),
     };
-  }, [data, leadsData, quarter]);
+  }, [data, leadsData, quarter, stages]);
 
   if (!view) return null;
   const owner = (id: string | null) => (id ? leadsData?.members.find((m) => m.id === id)?.full_name ?? "—" : "Sin asignar");

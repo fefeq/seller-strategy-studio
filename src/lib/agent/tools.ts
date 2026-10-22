@@ -8,7 +8,8 @@ import { setupStatus, POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
-import { DEAL_STAGES, BUYING_ROLES, type Role } from "@/lib/roles";
+import { BUYING_ROLES, type Role } from "@/lib/roles";
+import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
@@ -28,9 +29,22 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 };
 
 const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
-const STAGES = DEAL_STAGES.map((s) => s.id) as [string, ...string[]];
+const STAGE_ARG = z.string().min(1).describe("Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost");
 const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
-const stageLabel = (s: string) => DEAL_STAGES.find((x) => x.id === s)?.label ?? s;
+
+/** The company's stages (the default seven if it has none yet). */
+async function orgStages(c: ToolCtx): Promise<Stage[]> {
+  const { data } = await c.db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", c.orgId);
+  return sortStages((data ?? []) as Stage[]);
+}
+/** A stage the agent named, by key or label, as the company's key; refuses one the company doesn't have. */
+async function resolveStage(c: ToolCtx, raw: string): Promise<{ key: string; probability: number; stages: Stage[] }> {
+  const stages = await orgStages(c);
+  const key = stageByLabel(raw, stages);
+  const st = stages.find((s) => s.key === key);
+  if (!st) throw new Error(`La etapa «${raw}» no existe en esta empresa. Etapas: ${stages.map((s) => `${s.label} (${s.key})`).join(", ")}.`);
+  return { key: st.key, probability: st.probability, stages };
+}
 const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
 
 /** The org's account with this name (case-insensitive), created if missing: same rule as lead intake. */
@@ -55,18 +69,19 @@ export const TOOLS: AgentTool[] = [
     description: "Resumen del negocio: pipeline abierto, forecast, cobertura del trimestre, win rate, deals en riesgo y funnel self-service del trimestre.",
     input: z.object({}),
     run: async (c) => {
-      const [deals, segs, hist, quotas, trials] = await Promise.all([
+      const [deals, segs, hist, quotas, trials, stages] = await Promise.all([
         c.db.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,updated_at,source,segment_id,slip_count,forecast_category,meddpicc,partner_id").eq("org_id", c.orgId),
         c.db.from("segments").select("id,name,acv_min,acv_max,motion,cycle_days,sdr_per_ae,ae_per_se,cac_target,payback_months,win_rate_target,ae_quota,gross_margin_pct").eq("org_id", c.orgId),
         c.db.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at").eq("org_id", c.orgId),
         c.db.from("quotas").select("period,amount").eq("org_id", c.orgId),
         c.db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", c.orgId),
+        orgStages(c),
       ]);
       const { start, end } = quarterRange(quarterOf(new Date()));
       const co = cohort((trials.data ?? []) as any[], start, end);
       return {
         moneda: c.currency,
-        pipeline: buildSnapshot({ deals: (deals.data ?? []) as any, segments: (segs.data ?? []) as any, history: hist.data ?? [], quotas: (quotas.data ?? []) as any, currency: c.currency }),
+        pipeline: buildSnapshot({ deals: (deals.data ?? []) as any, segments: (segs.data ?? []) as any, history: hist.data ?? [], quotas: (quotas.data ?? []) as any, currency: c.currency, stages }),
         self_service_trimestre: { total: funnelStats(co as any), por_segmento: funnelBySegment(co as any) },
       };
     },
@@ -104,10 +119,17 @@ export const TOOLS: AgentTool[] = [
     },
   }),
   def({
+    name: "list_stages", kind: "read",
+    description: "Etapas del pipeline de la empresa en orden: clave, nombre, tipo (open/won/lost) y probabilidad. Úsalas al crear o mover deals.",
+    input: z.object({}),
+    run: async (c) => (await orgStages(c)).map((s) => ({ clave: s.key, nombre: s.label, tipo: s.kind, probabilidad: s.probability })),
+  }),
+  def({
     name: "list_deals", kind: "read",
     description: "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja), con fecha de cierre pasada o enfriados (sin actividad más días que el umbral de su segmento: un cuarto del ciclo real, 14–60 días, o el número fijado por la empresa). Cada deal trae dias_sin_actividad, umbral_enfriado y enfriado.",
-    input: z.object({ stage: z.enum(STAGES).optional(), mine: z.boolean().optional(), at_risk: z.boolean().optional(), overdue: z.boolean().optional(), cold: z.boolean().optional() }),
+    input: z.object({ stage: STAGE_ARG.optional(), mine: z.boolean().optional(), at_risk: z.boolean().optional(), overdue: z.boolean().optional(), cold: z.boolean().optional() }),
     run: async (c, a) => {
+      const stageKey = a.stage ? (await resolveStage(c, a.stage)).key : null;
       const [all, seg, cfg] = await Promise.all([
         c.db.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,created_at,updated_at,segment_id,owner_id,account_id,forecast_category").eq("org_id", c.orgId).order("close_date"),
         c.db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", c.orgId),
@@ -118,7 +140,7 @@ export const TOOLS: AgentTool[] = [
       const cold = new Map(staleDeals(all.data ?? [], seg.data ?? [], readStaleDays(cfg.data?.sla), now).map((r) => [r.deal.id, r]));
       const today = now.toISOString().slice(0, 10);
       const list = (all.data ?? [])
-        .filter((d) => (a.stage ? d.stage === a.stage : d.stage !== "won" && d.stage !== "lost"))
+        .filter((d) => (stageKey ? d.stage === stageKey : d.stage !== "won" && d.stage !== "lost"))
         .filter((d) => (!a.mine || d.owner_id === c.userId) && (!a.at_risk || d.health === "red") && (!a.overdue || (!!d.close_date && d.close_date < today)) && (!a.cold || !!cold.get(d.id)?.stale))
         .slice(0, 40)
         .map(({ closed_at: _c, created_at: _cr, updated_at: _u, segment_id: _s, ...d }) => {
@@ -226,14 +248,16 @@ export const TOOLS: AgentTool[] = [
   def({
     name: "create_deal", kind: "write",
     description: "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads.",
-    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: z.enum(STAGES).optional() }),
-    summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en ${stageLabel(a.stage)}` : ""}`,
+    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: STAGE_ARG.optional() }),
+    summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}`,
     run: async (c, a) => {
       // Every way of creating a deal ends with an account, so the asistente, the pipeline and the CSV
       // produce the same data (a deal created here used to have no account; one from the CSV did).
       const { account_name, ...deal } = a;
+      const st = deal.stage ? await resolveStage(c, deal.stage) : null;
+      const first = st ? null : firstOpenStage(await orgStages(c));
       const account_id = deal.account_id ?? (await accountByName(c, (account_name ?? deal.name).trim(), deal.segment_id));
-      return ok(await c.db.from("deals").insert({ ...deal, account_id, stage: deal.stage ?? "discovery", org_id: c.orgId, owner_id: c.userId }).select("id,name,account_id").single());
+      return ok(await c.db.from("deals").insert({ ...deal, account_id, stage: st?.key ?? first!.key, probability: st?.probability ?? first!.probability, org_id: c.orgId, owner_id: c.userId }).select("id,name,account_id").single());
     },
   }),
   def({
@@ -241,17 +265,22 @@ export const TOOLS: AgentTool[] = [
     description: "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC.",
     input: z.object({
       deal_id: z.string().uuid(),
-      stage: z.enum(STAGES).optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional(),
+      stage: STAGE_ARG.optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional(),
       health: z.enum(["green", "yellow", "red"]).optional(), forecast_category: z.enum(["pipeline", "best_case", "commit"]).optional(),
       meddpicc_field: z.string().optional(), meddpicc_value: z.string().optional(),
     }),
     summarize: (a) => {
-      const parts = [a.stage && `etapa → ${stageLabel(a.stage)}`, a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
+      const parts = [a.stage && `etapa → «${a.stage}»`, a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
       return `Actualizar el deal: ${parts.join(", ") || "sin cambios"}`;
     },
     run: async (c, a) => {
       const { deal_id, meddpicc_field, meddpicc_value, ...rest } = a;
       const patch: any = { ...rest };
+      if (rest.stage) {
+        const st = await resolveStage(c, rest.stage);
+        patch.stage = st.key;
+        patch.probability = st.probability;
+      }
       if (meddpicc_field) {
         const cur = ok(await c.db.from("deals").select("meddpicc").eq("org_id", c.orgId).eq("id", deal_id).single());
         patch.meddpicc = { ...((cur as any)?.meddpicc ?? {}), [meddpicc_field]: meddpicc_value ?? "" };
@@ -261,7 +290,7 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "update_lead", kind: "write",
-    description: "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en Discovery.",
+    description: "Actualiza un lead: etapa (new, contacted, mql, sql, opportunity, disqualified), próximo paso y fecha de seguimiento. Pasarlo a opportunity crea su deal en la primera etapa del pipeline.",
     input: z.object({ lead_id: z.string().uuid(), stage: z.enum(LEAD_STAGE_IDS).optional(), next_step: z.string().optional(), next_step_at: z.string().optional().describe("AAAA-MM-DD"), disqualified_reason: z.string().optional() }),
     summarize: (a) => {
       const parts = [a.stage && `etapa → ${leadStageLabel(a.stage)}`, a.next_step && `próximo paso «${a.next_step}»`, a.next_step_at && `seguimiento ${a.next_step_at}`].filter(Boolean);

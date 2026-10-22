@@ -18,7 +18,8 @@ import type { UndoRef } from "@/lib/setup-undo";
 import { FIELD_LABELS, itemDetail, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
-import { DEAL_STAGES } from "@/lib/roles";
+import { firstOpenStage, stageOptions } from "@/lib/stages";
+import { useStages } from "@/components/stage-settings";
 import { Pick } from "@/components/fields";
 import { errorText, isNetworkError } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
@@ -371,6 +372,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
   const qc = useQueryClient();
   const { data: setup } = useSetup();
   const { currency, symbol } = useCurrency();
+  const { stages } = useStages();
   const segsQ = useQuery({ queryKey: ["segments-full"], queryFn: async () => (await supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,ae_quota").order("acv_min")).data ?? [] });
   const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
   const [v, setV] = useState<Record<string, any>>({});
@@ -384,7 +386,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
     else if (id === "segments" || id === "benchmarks") setV({ rows: segs.map((s) => { const p = proposal?.segments.find((x) => x.name.toLowerCase() === s.name.toLowerCase()); return { ...s, win_rate_target: s.win_rate_target ?? p?.win_rate_target ?? "", ae_quota: s.ae_quota ?? p?.ae_quota ?? "", acv_min: s.acv_min ?? "", acv_max: s.acv_max ?? "" }; }) });
     else if (id === "quota") setV({ amount: "" });
     else if (id === "accounts") setV({ names: (proposal?.target_accounts ?? []).map((a) => a.name).join("\n") });
-    else if (id === "deals") setV({ name: "", account_name: "", segment_id: "", stage: "discovery", amount: "", close_date: "" });
+    else if (id === "deals") setV({ name: "", account_name: "", segment_id: "", stage: "", amount: "", close_date: "" });
   }, [id, proposal, setup, segs]);
 
   const num = (x: any) => (x === "" || x == null ? undefined : Number(x));
@@ -446,7 +448,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
         <div><p className="mb-2 text-sm font-medium">Desde un CSV</p><AccountImport onDone={(n) => n > 0 && onSaved()} /></div>
         <label className="block text-sm"><span className="font-medium">O escribe una cuenta por línea</span><Textarea className="mt-1" rows={5} value={v.names ?? ""} onChange={(e) => setV({ ...v, names: e.target.value })} /><span className="mt-1 block text-xs text-muted-foreground">Se crean como cuentas objetivo solo con el nombre; completa sector y tamaño en su ficha para que puntúen.</span></label>
       </div>}
-      {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("account_name", "Cuenta (se crea si no existe)")}<label className="text-sm">Segmento<div className="mt-1"><Pick value={v.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(segs.map((x) => [x.id, x.name])) }} onChange={(x) => setV({ ...v, segment_id: x })} /></div></label><label className="text-sm">Etapa<div className="mt-1"><Pick value={v.stage ?? "discovery"} options={Object.fromEntries(DEAL_STAGES.filter((x) => x.id !== "won" && x.id !== "lost").map((x) => [x.id, x.label]))} onChange={(x) => setV({ ...v, stage: x })} /></div></label>{inp("amount", `Importe (ACV, ${symbol})`, { type: "number" })}<label className="text-sm">Fecha de cierre<div className="mt-1"><DateField value={v.close_date || null} onChange={(iso) => setV({ ...v, close_date: iso ?? "" })} /></div></label></div>}
+      {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("account_name", "Cuenta (se crea si no existe)")}<label className="text-sm">Segmento<div className="mt-1"><Pick value={v.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(segs.map((x) => [x.id, x.name])) }} onChange={(x) => setV({ ...v, segment_id: x })} /></div></label><label className="text-sm">Etapa<div className="mt-1"><Pick value={v.stage || firstOpenStage(stages).key} options={stageOptions(stages)} onChange={(x) => setV({ ...v, stage: x })} /></div></label>{inp("amount", `Importe (ACV, ${symbol})`, { type: "number" })}<label className="text-sm">Fecha de cierre<div className="mt-1"><DateField value={v.close_date || null} onChange={(iso) => setV({ ...v, close_date: iso ?? "" })} /></div></label></div>}
       <Button onClick={save} disabled={busy}>{busy && <Loader2 className="size-4 animate-spin" />} Guardar y seguir</Button>
     </div>
   );

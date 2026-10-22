@@ -35,12 +35,17 @@ export function covered(v: unknown) {
 }
 
 /** Missing MEDDPICC criteria (labels) to move a deal into `toStage`, cumulative over skipped stages. */
-export function stageGate(deal: { amount: number | null; meddpicc: Record<string, unknown> | null }, toStage: string) {
+/** `order` is the company's path (open stage keys then 'won'); stages it added have no criteria of their own. */
+export function stageGate(deal: { amount: number | null; meddpicc: Record<string, unknown> | null }, toStage: string, order: string[] = ORDER) {
   const track = trackFor(deal.amount);
-  const idx = ORDER.indexOf(toStage);
+  const idx = order.indexOf(toStage);
   if (idx < 0) return { track, missing: [] as string[] };
+  // The stages walked so far, plus the standard ones the company removed before the last standard
+  // stage walked: deleting «Cualificado» must not drop «Identify pain» from every later stage.
+  const walked = order.slice(0, idx + 1);
+  const lastStd = Math.max(-1, ...walked.map((st) => ORDER.indexOf(st)));
   const keys = new Set<Key>();
-  for (const st of ORDER.slice(0, idx + 1)) for (const k of GATES[track][st] ?? []) keys.add(k);
+  for (const st of new Set([...walked, ...ORDER.slice(0, lastStd + 1)])) for (const k of GATES[track][st] ?? []) keys.add(k);
   const m = deal.meddpicc ?? {};
   const missing = MEDDPICC.filter(([k]) => keys.has(k) && !covered(m[k])).map(([, label]) => label);
   return { track, missing };

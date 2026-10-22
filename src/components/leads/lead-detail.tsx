@@ -99,7 +99,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
         {f.stage === "disqualified" && <div className="sm:col-span-2"><Field label="Motivo del descarte"><Input value={f.disqualified_reason ?? ""} onChange={(e) => set("disqualified_reason", e.target.value)} placeholder="Sin presupuesto, fuera de ICP, sin respuesta…" /></Field></div>}
         <div className="sm:col-span-2"><Field label="Notas"><Textarea rows={4} value={f.notes ?? ""} onChange={(e) => set("notes", e.target.value)} /></Field></div>
       </div>
-      {!converted && f.stage === "opportunity" && <p className="text-xs text-muted-foreground">Al guardar se creará su deal en Discovery dentro de la Pipeline.</p>}
+      {!converted && f.stage === "opportunity" && <p className="text-xs text-muted-foreground">Al guardar se creará su deal en la primera etapa del pipeline.</p>}
       <div className="flex gap-2">
         <Button className="flex-1" onClick={save}>Guardar</Button>
         {canDelete && <Button variant="ghost" onClick={remove}>Borrar</Button>}

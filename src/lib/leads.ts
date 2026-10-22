@@ -2,6 +2,7 @@
 // public link, the CSV import and the tests all agree on the same rules.
 import { DEAL_STAGES } from "@/lib/roles";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
+import { openStages, type Stage } from "@/lib/stages";
 
 export type DealStage = (typeof DEAL_STAGES)[number]["id"];
 /** Stages before an opportunity exists: the lead stays on the Leads screen, no deal yet. */
@@ -26,6 +27,8 @@ export type NormalizedLead = {
   /** False when the payload had no stage (then existing leads/deals keep theirs). */
   stageGiven: boolean;
   stageRecognized: boolean;
+  /** The stage as it came in («Piloto»), so a stage the company created can be matched by name. */
+  rawStage: string | null;
   /** When the lead entered (deal created_at). */
   enteredAt: string | null;
   /** Expected or actual close date (YYYY-MM-DD). */
@@ -121,7 +124,7 @@ export function applyColumnMapping(rows: Record<string, string>[], mapping: Reco
 export function dealsWithoutCloseDate(rows: Record<string, string>[], mapping: Record<string, CsvField | null>, defaultStage: string): boolean {
   if (Object.values(mapping).includes("closeDate")) return false;
   const stageCol = Object.entries(mapping).find(([, f]) => f === "stage")?.[0];
-  const isDealStage = (s: string) => ["discovery", "qualified", "demo", "proposal", "negotiation", "won", "lost", "opportunity"].includes(s);
+  const isDealStage = (s: string) => !isPreDealStage(s);
   return rows.some((r) => isDealStage(stageCol && r[stageCol] ? mapStage(r[stageCol], defaultStage as IntakeStage).stage : defaultStage));
 }
 
@@ -155,8 +158,17 @@ export function mapStage(raw: unknown, fallback: IntakeStage = "new"): { stage: 
   return { stage: fallback, recognized: false };
 }
 
-export function isIntakeStage(s: unknown): s is IntakeStage {
-  return typeof s === "string" && (INTAKE_STAGES.some((x) => x.id === s) || s === "won" || s === "lost" || s === "disqualified");
+/** A stage a lead can enter with: a lead stage, a standard deal stage, or one of the company's own (`stages`). */
+export function isIntakeStage(s: unknown, stages?: { key: string }[] | null): s is IntakeStage {
+  return typeof s === "string" && (INTAKE_STAGES.some((x) => x.id === s) || s === "won" || s === "lost" || s === "disqualified" || !!stages?.some((x) => x.key === s));
+}
+
+/** Options for «Etapa por defecto»: the lead stages, then the company's open deal stages. */
+export function intakeStageOptions(stages?: Stage[] | null): Record<string, string> {
+  return Object.fromEntries([
+    ...LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label]),
+    ...openStages(stages).map((s) => [s.key, `Oportunidad · ${s.label}`]),
+  ]);
 }
 
 /** Accepts ISO dates, dd/mm/yyyy (Spanish order), and Unix seconds/milliseconds. */
@@ -303,6 +315,7 @@ export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage
       stage,
       stageGiven: !!picked.stage,
       stageRecognized: recognized,
+      rawStage: picked.stage?.trim().slice(0, 80) || null,
       enteredAt: entered ? entered.toISOString() : null,
       closeDate: close ? close.toISOString().slice(0, 10) : null,
       amount: parseAmount(picked.amount),

@@ -869,6 +869,53 @@ export type Database = {
           },
         ]
       }
+      deal_stages: {
+        Row: {
+          board_group: string | null
+          color: string | null
+          created_at: string
+          id: string
+          key: string
+          kind: string
+          label: string
+          org_id: string
+          position: number
+          probability: number
+        }
+        Insert: {
+          board_group?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          key: string
+          kind?: string
+          label: string
+          org_id?: string
+          position?: number
+          probability?: number
+        }
+        Update: {
+          board_group?: string | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          kind?: string
+          label?: string
+          org_id?: string
+          position?: number
+          probability?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_stages_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           account_id: string | null
@@ -3040,6 +3087,7 @@ export type Database = {
         Returns: string
       }
       current_org: { Args: never; Returns: string }
+      reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean

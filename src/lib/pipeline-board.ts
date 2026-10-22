@@ -2,6 +2,7 @@
 // plus what it means for the real CAC and payback. Pure so the panel and future AI snapshots agree.
 import { delayText, leadDelay, type LeadSla } from "@/lib/lead-funnel";
 import { capacityPlan } from "@/lib/metrics";
+import { openStages, type Stage } from "@/lib/stages";
 
 export type BoardLead = {
   id: string; company: string; contact_name: string | null; owner_id: string | null; stage: string;
@@ -19,10 +20,8 @@ export type BoardItem = {
 export type BoardColumn = { stage: string; label: string; items: BoardItem[]; count: number; amount: number };
 export type BoardGroup = { id: "leads" | "opportunities" | "progress" | "won"; label: string; columns: BoardColumn[]; count: number; amount: number };
 
-/** Lead stages before the deal exists (an "Oportunidad" lead already has its Discovery deal). */
+/** Lead stages before the deal exists (an "Oportunidad" lead already has its deal in the first open stage). */
 const LEAD_COLS = [["new", "Nuevo"], ["contacted", "Contactado"], ["mql", "MQL"], ["sql", "SQL"]] as const;
-const OPP_COLS = [["discovery", "Descubrimiento"], ["qualified", "Cualificado"]] as const;
-const PROGRESS_COLS = [["demo", "Demo / prueba"], ["proposal", "Propuesta"], ["negotiation", "Negociación"]] as const;
 
 const DAY = 86_400_000;
 const closedAt = (d: BoardDeal) => new Date(d.closed_at ?? d.updated_at).getTime();
@@ -49,7 +48,7 @@ function dealItem(d: BoardDeal, now: Date): BoardItem {
  * Leads still open, opportunities, deals in progress and deals won in `range`.
  * Leads are ordered by time waiting in their stage (oldest first); deals by close date (soonest first).
  */
-export function pipelineBoard(leads: BoardLead[], deals: BoardDeal[], range: { start: Date; end: Date }, sla: LeadSla, now = new Date()): BoardGroup[] {
+export function pipelineBoard(leads: BoardLead[], deals: BoardDeal[], range: { start: Date; end: Date }, sla: LeadSla, now = new Date(), stages?: Stage[] | null): BoardGroup[] {
   const leadCol = (stage: string, label: string) => column(stage, label, leads
     .filter((l) => l.stage === stage)
     .sort((a, b) => a.stage_entered_at.localeCompare(b.stage_entered_at))
@@ -60,6 +59,7 @@ export function pipelineBoard(leads: BoardLead[], deals: BoardDeal[], range: { s
         since: l.stage_entered_at, late: d.late, lateText: d.late ? delayText(d) : null,
       };
     }));
+  const open = openStages(stages);
   const byClose = (a: BoardDeal, b: BoardDeal) => (a.close_date ?? "9999").localeCompare(b.close_date ?? "9999");
   const dealCol = (stage: string, label: string) => column(stage, label, deals.filter((d) => d.stage === stage).sort(byClose).map((d) => dealItem(d, now)));
   const won = deals
@@ -72,8 +72,8 @@ export function pipelineBoard(leads: BoardLead[], deals: BoardDeal[], range: { s
 
   return [
     group("leads", "Leads", LEAD_COLS.map(([s, l]) => leadCol(s, l))),
-    group("opportunities", "Oportunidades", OPP_COLS.map(([s, l]) => dealCol(s, l))),
-    group("progress", "Deals en proceso", PROGRESS_COLS.map(([s, l]) => dealCol(s, l))),
+    group("opportunities", "Oportunidades", open.filter((s) => s.board_group === "opportunity").map((s) => dealCol(s.key, s.label))),
+    group("progress", "Deals en proceso", open.filter((s) => s.board_group !== "opportunity").map((s) => dealCol(s.key, s.label))),
     group("won", "Ganados", [column("won", "Ganados", won)]),
   ];
 }
