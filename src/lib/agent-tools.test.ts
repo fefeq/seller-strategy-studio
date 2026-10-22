@@ -125,6 +125,8 @@ describe("decide_approval", () => {
     expect(claim).toBeGreaterThan(-1);
     expect(move).toBeGreaterThan(claim);
     expect(eq(log[claim], "status", "pending")).toBe(true);
+    // The decider travels with the claim so the trigger can check it on the privileged path (Telegram).
+    expect(log[claim].payload).toEqual({ status: "applied", decided_by: ME });
     expect(log[move].payload).toEqual({ stage: "won", probability: 100 });
     expect(r.mensaje).toContain("Aplicada");
     expectScoped(log);

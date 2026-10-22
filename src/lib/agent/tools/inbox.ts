@@ -60,7 +60,9 @@ export const INBOX_TOOLS: AgentTool[] = [
       if (ap.status !== "pending") return { estado: ap.status, mensaje: "Esa aprobación ya estaba decidida." };
       const status = a.decision === "apply" ? "applied" : "skipped";
       // Claim first: a double confirmation cannot apply it twice, and nothing moves if the decision is refused.
-      const claimed = ok(await c.db.from("approvals").update({ status }).eq("org_id", c.orgId).eq("id", ap.id).eq("status", "pending").select("id"));
+      // decided_by is how the guard_approval trigger knows the decider on the privileged path (Telegram);
+      // with a signed-in user the trigger sets it from auth.uid() itself.
+      const claimed = ok(await c.db.from("approvals").update({ status, decided_by: c.userId }).eq("org_id", c.orgId).eq("id", ap.id).eq("status", "pending").select("id"));
       if (!claimed?.length) return { estado: status, mensaje: "Esa aprobación ya estaba decidida." };
       if (status === "applied" && ap.kind === "stage_change") {
         // Like the Aprobaciones screen: evidence that is not structured is applied as a plain decision.
