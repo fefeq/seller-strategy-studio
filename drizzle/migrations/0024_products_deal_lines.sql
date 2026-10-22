@@ -105,29 +105,34 @@ end $$;
 create trigger deal_lines_scope before insert or update on public.deal_lines
   for each row execute function public.deal_lines_scope();
 
--- The deal's amount (ACV) and gross margin follow its lines. Monthly lines count twelve times; a line
--- without cost leaves the margin unknown. With no lines left, the amount stays as it was (the person
--- can type it again) and the margin is cleared.
+-- The deal's amount (ACV) and gross margin follow its recurring lines (monthly lines count twelve
+-- times); one-off lines (set-up, training…) go to one_off_amount and stay out of the ACV, as the usual
+-- definition of ACV asks. A recurring line without cost leaves the margin unknown. With no lines left,
+-- the amount stays as it was (the person can type it again) and margin and one-off are cleared.
 alter table public.deals add column gross_margin numeric;
-comment on column public.deals.gross_margin is 'Yearly gross margin from deal_lines (revenue - cost); null = no lines or a line without cost';
+alter table public.deals add column one_off_amount numeric;
+comment on column public.deals.gross_margin is 'Yearly gross margin of the recurring deal_lines (revenue - cost); null = no lines or a recurring line without cost';
+comment on column public.deals.one_off_amount is 'Sum of one-off deal_lines (not part of the ACV in amount); null = no lines';
 
 create or replace function public.deal_lines_sync()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare _deal uuid := coalesce(new.deal_id, old.deal_id); n int; rev numeric; cst numeric; unknown int;
+declare _deal uuid := coalesce(new.deal_id, old.deal_id); n int; rev numeric; cst numeric; unknown int; once numeric;
 begin
   -- Two people changing lines of the same deal at once: the second waits and sums both.
   perform 1 from public.deals where id = _deal for update;
   select count(*),
-         coalesce(sum(l.quantity * l.unit_price * (1 - l.discount_pct / 100) * case l.billing when 'monthly' then 12 else 1 end), 0),
-         coalesce(sum(l.quantity * coalesce(l.unit_cost, 0) * case l.billing when 'monthly' then 12 else 1 end), 0),
-         count(*) filter (where l.unit_cost is null)
-    into n, rev, cst, unknown
+         coalesce(sum(l.quantity * l.unit_price * (1 - l.discount_pct / 100) * case l.billing when 'monthly' then 12 else 1 end) filter (where l.billing <> 'one_off'), 0),
+         coalesce(sum(l.quantity * coalesce(l.unit_cost, 0) * case l.billing when 'monthly' then 12 else 1 end) filter (where l.billing <> 'one_off'), 0),
+         count(*) filter (where l.unit_cost is null and l.billing <> 'one_off'),
+         coalesce(sum(l.quantity * l.unit_price * (1 - l.discount_pct / 100)) filter (where l.billing = 'one_off'), 0)
+    into n, rev, cst, unknown, once
     from public.deal_lines l where l.deal_id = _deal;
   perform set_config('app.deal_lines_sync', 'on', true);
   if n = 0 then
-    update public.deals set gross_margin = null where id = _deal;
+    update public.deals set gross_margin = null, one_off_amount = null where id = _deal;
   else
-    update public.deals set amount = round(rev, 2), gross_margin = case when unknown > 0 then null else round(rev - cst, 2) end where id = _deal;
+    update public.deals set amount = round(rev, 2), one_off_amount = round(once, 2),
+      gross_margin = case when unknown > 0 or rev = 0 then null else round(rev - cst, 2) end where id = _deal;
   end if;
   perform set_config('app.deal_lines_sync', 'off', true);
   return null;
@@ -135,8 +140,8 @@ end $$;
 create trigger deal_lines_sync after insert or update or delete on public.deal_lines
   for each row execute function public.deal_lines_sync();
 
--- Only the lines write a deal's margin, and a deal with lines keeps the amount they give: a screen,
--- the agent or a CRM webhook that writes amount (or gross_margin) is ignored on those two columns
+-- Only the lines write a deal's margin and one-off total, and a deal with lines keeps the amount they
+-- give: a screen, the agent or a CRM webhook that writes them is ignored on those columns
 -- instead of leaving a margin that no longer matches the amount. The sync itself doesn't count as
 -- activity (updated_at stays), so a line change doesn't move a won deal to this quarter.
 create or replace function public.deals_lines_guard()
@@ -144,6 +149,7 @@ returns trigger language plpgsql security definer set search_path = public as $$
 begin
   if tg_op = 'INSERT' then
     new.gross_margin := null;
+    new.one_off_amount := null;
     return new;
   end if;
   if coalesce(current_setting('app.deal_lines_sync', true), 'off') = 'on' then
@@ -152,6 +158,7 @@ begin
     return new;
   end if;
   new.gross_margin := old.gross_margin;
+  new.one_off_amount := old.one_off_amount;
   if exists (select 1 from public.deal_lines l where l.deal_id = new.id) then
     new.amount := old.amount;
   end if;

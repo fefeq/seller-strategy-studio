@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
-import { BILLING_LABELS, BILLING_SUFFIX, checkLineField, dealTotals, lineCost, lineFromProduct, lineRevenue, type Billing, type DealLine, type Product } from "@/lib/deal-lines";
+import { BILLING_LABELS, BILLING_SUFFIX, checkLineField, dealTotals, isOneOff, lineCost, lineFromProduct, lineRevenue, type Billing, type DealLine, type Product } from "@/lib/deal-lines";
 
 /** The company's catalogue, active and not. Key "products". */
 export function useProducts() {
@@ -129,19 +129,19 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
                   ))}
                 </div>
                 <p className="mt-2 flex justify-between text-xs">
-                  <span className="text-muted-foreground">{money(rev)} al año</span>
+                  <span className="text-muted-foreground">{isOneOff(l) ? `${money(rev)} una vez · fuera del ACV` : `${money(rev)} al año`}</span>
                   <span className={cost == null ? "text-muted-foreground" : rev - cost >= 0 ? "text-success" : "text-destructive"}>{cost == null ? "margen sin coste" : `margen ${money(rev - cost)}`}</span>
                 </p>
               </div>
             );
           })}
           <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/50 p-3 text-sm">
-            <div><p className="text-xs text-muted-foreground">Importe (1 año)</p><p className="font-mono">{money(t.amount)}</p></div>
+            <div><p className="text-xs text-muted-foreground">Importe (ACV)</p><p className="font-mono">{money(t.amount)}</p>{t.oneOff > 0 && <p className="text-[11px] text-muted-foreground">+ {money(t.oneOff)} pago único</p>}</div>
             <div><p className="text-xs text-muted-foreground">Margen</p><p className="font-mono">{t.margin == null ? "—" : money(t.margin)}</p></div>
             <div><p className="text-xs text-muted-foreground">Margen %</p><p className="font-mono">{t.marginPct == null ? "—" : `${Math.round(t.marginPct)} %`}</p></div>
           </div>
           <p className="text-xs text-muted-foreground">
-            El importe del deal es la suma de estas líneas en un año.
+            El importe del deal (ACV) es la suma de las líneas recurrentes en un año; los pagos únicos se suman aparte y no cuentan en el ACV ni en el margen.
             {t.unknownCost ? ` ${t.unknownCost === 1 ? "Una línea no tiene" : `${t.unknownCost} líneas no tienen`} coste: sin él no hay margen del deal.` : ""}
           </p>
         </div>
