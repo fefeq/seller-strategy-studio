@@ -183,7 +183,7 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
 
     const [deals, segments, history, quotas, strat, stages] = await Promise.all([
       supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,closed_at,updated_at,source,segment_id,slip_count,forecast_category,meddpicc,partner_id"),
-      supabase.from("segments").select("id,name,acv_min,acv_max,motion,cycle_days,sdr_per_ae,ae_per_se,cac_target,payback_months,win_rate_target,ae_quota,gross_margin_pct").order("acv_min"),
+      supabase.from("segments").select("id,name,acv_min,acv_max,motion,cycle_days,sdr_per_ae,ae_per_se,cac_target,payback_months,win_rate_target,ae_quota,gross_margin_pct,notes").order("acv_min"),
       supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
       supabase.from("quotas").select("period,amount"),
       strategyContext(supabase),

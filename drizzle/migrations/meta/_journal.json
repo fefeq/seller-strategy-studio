@@ -197,6 +197,13 @@
       "when": 1792464075138,
       "tag": "0027_stripe",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1792464675138,
+      "tag": "0028_low_ticket_template",
+      "breakpoints": true
     }
   ]
 }

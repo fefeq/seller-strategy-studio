@@ -28,7 +28,7 @@ type Deal = {
 type Segment = {
   id: string; name: string; acv_min: number | null; acv_max: number | null; motion: string; cycle_days: number | null;
   sdr_per_ae: number | null; ae_per_se: number | null; cac_target: number | null; payback_months: number | null;
-  win_rate_target: number | null; ae_quota: number | null; gross_margin_pct: number | null;
+  win_rate_target: number | null; ae_quota: number | null; gross_margin_pct: number | null; notes?: string | null;
 };
 type History = { deal_id: string; from_stage: string | null; to_stage: string; changed_at: string };
 type Quota = { period: string; amount: number };
@@ -107,6 +107,7 @@ export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; histo
         benchmarks: {
           acv: `${s.acv_min ?? 0}–${s.acv_max ?? "sin límite"}`, motion: s.motion, ciclo_dias: s.cycle_days, sdr_por_ae: s.sdr_per_ae, ae_por_se: s.ae_per_se,
           win_rate_objetivo_pct: s.win_rate_target, cuota_anual_ae: s.ae_quota, cac_objetivo: s.cac_target, margen_bruto_pct: s.gross_margin_pct, payback_objetivo_meses: s.payback_months,
+          ...(s.notes?.trim() ? { notas_y_fuentes: s.notes.trim().slice(0, 1200) } : {}),
         },
         real: {
           pipeline_abierto: sum(sd.filter((d) => d.stage !== "won" && d.stage !== "lost")),

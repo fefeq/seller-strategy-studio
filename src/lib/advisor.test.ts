@@ -48,4 +48,12 @@ describe("snapshot sent to the AI", () => {
   });
   it("coverage = quarter pipeline / quota", () => expect(snap.trimestre.cobertura).toBe("3,0x (sana, 3–4x)"));
   it("counts at-risk pipeline", () => expect(snap.pipeline.en_riesgo).toEqual({ deals: 1, importe: 30000 }));
+  it("passes the segment's sources and notes only when it has them", () => {
+    expect(snap.segmentos[0].benchmarks).not.toHaveProperty("notas_y_fuentes");
+    const withNotes = buildSnapshot({
+      currency: "EUR", now: new Date("2026-10-15"), deals: [], history: [], quotas: [],
+      segments: [{ id: "s", name: "Self-service", acv_min: 0, acv_max: 1200, motion: "plg", cycle_days: null, sdr_per_ae: null, ae_per_se: null, cac_target: null, payback_months: 12, win_rate_target: 5, ae_quota: null, gross_margin_pct: 77, notes: " NRR 85 % (ChartMogul 2023). " }],
+    });
+    expect(withNotes.segmentos[0].benchmarks).toMatchObject({ notas_y_fuentes: "NRR 85 % (ChartMogul 2023)." });
+  });
 });
