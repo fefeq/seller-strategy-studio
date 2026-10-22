@@ -8,8 +8,9 @@ const obj = (properties: Record<string, unknown>) => ({ type: "object", addition
 export const SETUP_EXTRACTION_SCHEMA = obj({
   summary: { type: "string" },
   currency: str,
+  quarter_quota: num,
   positioning: obj({ best_customers: str, alternatives: str, differentiation: str, value: str, trend: str, product_name: str, target_customer: str, need: str, category: str, key_benefit: str, competitive_alternative: str, differentiator: str, one_liner: str, short_pitch: str, elevator_pitch: str, tagline: str }),
-  segments: { type: "array", items: obj({ name: { type: "string" }, priority: num, notes: str, acv_min: num, acv_max: num, motion: { type: "string", enum: ["plg", "inside", "field", "strategic"] }, win_rate_target: num, ae_quota: num }) },
+  segments: { type: "array", items: obj({ name: { type: "string" }, priority: num, notes: str, acv_min: num, acv_max: num, motion: { type: "string", enum: ["plg", "inside", "field", "strategic"] }, win_rate_target: num, ae_quota: num, gross_margin_pct: num }) },
   icps: { type: "array", items: obj({ name: { type: "string" }, industries: str, company_size: str, geography: str, why_fit: str, anti_icp: str }) },
   pillars: { type: "array", items: obj({ title: { type: "string" }, pain: str, message: str, proof: str }) },
   target_accounts: { type: "array", items: obj({ name: { type: "string" }, domain: str, why: str }) },
@@ -19,8 +20,10 @@ export const SETUP_EXTRACTION_SCHEMA = obj({
 export type SetupProposal = {
   summary: string;
   currency: string | null;
+  /** New ACV to close this quarter, when the sources say it. */
+  quarter_quota?: number | null;
   positioning: Record<string, string | null>;
-  segments: { name: string; priority?: number | null; notes?: string | null; acv_min: number | null; acv_max: number | null; motion: string; win_rate_target: number | null; ae_quota: number | null }[];
+  segments: { name: string; priority?: number | null; notes?: string | null; acv_min: number | null; acv_max: number | null; motion: string; win_rate_target: number | null; ae_quota: number | null; gross_margin_pct?: number | null }[];
   icps: { name: string; industries: string | null; company_size: string | null; geography: string | null; why_fit: string | null; anti_icp: string | null }[];
   pillars: { title: string; pain: string | null; message: string | null; proof: string | null }[];
   target_accounts: { name: string; domain: string | null; why: string | null }[];
@@ -33,7 +36,7 @@ export const FIELD_LABELS: Record<string, string> = {
   best_customers: "Mejores clientes", alternatives: "Alternativas", differentiation: "Diferenciación", value: "Valor", trend: "Tendencia",
   product_name: "Producto", target_customer: "Cliente objetivo", need: "Necesidad", category: "Categoría", key_benefit: "Beneficio clave",
   competitive_alternative: "Alternativa competitiva", differentiator: "Diferenciador", one_liner: "Frase de una línea", short_pitch: "Pitch corto", elevator_pitch: "Elevator pitch",
-  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", priority: "Prioridad", notes: "Nota", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE",
+  tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", priority: "Prioridad", notes: "Nota", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE", gross_margin_pct: "Margen bruto %",
   industries: "Sectores", company_size: "Tamaño", geography: "Geografía", why_fit: "Por qué encaja", anti_icp: "Anti-ICP", title: "Título", pain: "Dolor",
   message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda",
 };
@@ -45,6 +48,9 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
   const items: ProposalItem[] = [];
   if (p.currency && /^[A-Z]{3}$/.test(p.currency) && p.currency !== currentCurrency) {
     items.push({ key: "currency", group: "Empresa", label: `Moneda: ${p.currency}`, detail: "Solo reetiqueta importes", tool: "set_currency", args: { currency: p.currency } });
+  }
+  if (p.quarter_quota != null && p.quarter_quota > 0) {
+    items.push({ key: "quota", group: "Cuota", label: `Cuota de este trimestre: ${p.quarter_quota}`, detail: "ACV nuevo a cerrar en el trimestre actual (tu cuota)", tool: "set_quota", args: { amount: p.quarter_quota } });
   }
   const pos = clean(p.positioning ?? {}) as Record<string, string>;
   if (Object.keys(pos).length) {
@@ -65,7 +71,7 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
 /** A range with mín = máx is a point: the capacity and payback maths work on it as if it were a range. */
 export function segmentRangeWarning(min: number | null | undefined, max: number | null | undefined): string | null {
   if (min == null || max == null) return null;
-  if (min === max) return "Atención: el ACV mín y el máx son iguales. Ajusta la horquilla antes de guardar.";
+  if (min === max) return "El ACV mín y el máx son iguales: está bien si el segmento tiene un único precio; si no, ajusta la horquilla.";
   if (min > max) return "Atención: el ACV mín es mayor que el máx.";
   return null;
 }

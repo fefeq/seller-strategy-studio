@@ -16,6 +16,8 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [name, setName] = useState("");
+  // Same choice as the first company: the ACV template only helps companies that sell by contract size.
+  const [segments, setSegments] = useState<"template" | "empty">("empty");
 
   async function switchTo(orgId: string) {
     const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", userId);
@@ -25,7 +27,7 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
     await qc.resetQueries();
   }
   async function create() {
-    const { error } = await supabase.rpc("create_organization", { _name: name });
+    const { error } = await supabase.rpc("create_organization", { _name: name, _segments: segments });
     if (error) return toast.error(errorText(error));
     track("org_created", { location: "switcher" });
     setName(""); setCreating(false); setOpen(false);
@@ -54,9 +56,15 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
         ))}
         <div className="mt-1 border-t p-1">
           {creating ? (
-            <div className="flex gap-1">
-              <Input autoFocus className="h-10 md:h-8" placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name.trim() && create()} />
-              <Button size="sm" className="h-10 md:h-6" disabled={!name.trim()} onClick={create}>Crear</Button>
+            <div className="space-y-1">
+              <div className="flex gap-1">
+                <Input autoFocus className="h-10 md:h-8" placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && name.trim() && create()} />
+                <Button size="sm" className="h-10 md:h-6" disabled={!name.trim()} onClick={create}>Crear</Button>
+              </div>
+              <select aria-label="Segmentos de la nueva empresa" className="h-10 w-full rounded border bg-background px-2 text-xs md:h-8" value={segments} onChange={(e) => setSegments(e.target.value as "template" | "empty")}>
+                <option value="empty">Sin segmentos: los creas tú o la IA</option>
+                <option value="template">Plantilla SMB, Mid-market, Enterprise y Strategic</option>
+              </select>
             </div>
           ) : (
             <button onClick={() => setCreating(true)} className="flex w-full items-center gap-2 rounded px-2 py-2.5 text-sm hover:bg-muted md:py-1.5"><Plus className="size-4" /> Nueva empresa</button>

@@ -442,6 +442,17 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
             <tr key={r.id}><td className="py-1 pr-2">{r.name}</td>{SEG_COLS.map(([k]) => <td key={k} className="pr-2"><Input type="number" value={r[k]} onChange={(e) => setRow(i, k, e.target.value)} /></td>)}</tr>
           ))}</tbody>
         </table>{!v.rows?.length && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}</div>
+        {(() => {
+          // The step only counts as done when every segment has its values: say which ones are missing, so a
+          // template segment the company doesn't use isn't a silent blocker.
+          const empty = (x: unknown) => x == null || String(x).trim() === "";
+          const missing = (v.rows ?? []).filter((r: any) => (id === "segments" ? empty(r.acv_min) && empty(r.acv_max) : empty(r.win_rate_target) || empty(r.ae_quota))).map((r: any) => r.name);
+          return missing.length ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Para completar este paso, {id === "segments" ? "cada segmento necesita un ACV mínimo o máximo" : "cada segmento necesita win rate y cuota (0 vale si no aplica)"}. Faltan: {missing.join(", ")}. Si alguno no es tuyo, por ejemplo uno de la plantilla, elimínalo en <Link to="/strategy" className="underline">Estrategia GTM</Link>.
+            </p>
+          ) : null;
+        })()}
       </>)}
       {id === "quota" && <div className="max-w-xs">{inp("amount", `Tu cuota para ${quarterOf(new Date())} (${symbol})`, { type: "number" })}<p className="mt-1 text-xs text-muted-foreground">Importe de deals ganados (ACV nuevo) que tienes que cerrar en el trimestre, en {currency}. No es MRR ni número de deals. Las cuotas del resto del equipo se fijan en Métricas.</p></div>}
       {id === "accounts" && <div className="grid gap-6 md:grid-cols-2">
