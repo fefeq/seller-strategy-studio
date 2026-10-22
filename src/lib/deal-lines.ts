@@ -1,7 +1,8 @@
 // Products and deal lines. Pure so the deal sheet, the catalogue and Métricas compute amount and
-// margin exactly like the database trigger deal_lines_sync: amount = Σ quantity × price × (1 − discount),
-// yearly (a monthly line counts twelve times); margin = amount − Σ quantity × cost, unknown if any line
-// has no cost.
+// margin exactly like the database trigger deal_lines_sync: amount (ACV) = Σ quantity × price ×
+// (1 − discount) of the recurring lines, yearly (a monthly line counts twelve times); margin = amount −
+// Σ quantity × cost, unknown if a recurring line has no cost. One-off lines (set-up, training…) are
+// summed apart and stay out of the ACV.
 
 import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-coverage";
 
@@ -37,23 +38,27 @@ const n = (v: number | string | null | undefined) => (v == null || v === "" ? 0 
 const periods = (b: string) => (b === "monthly" ? 12 : 1);
 const round2 = (x: number) => Math.round(x * 100) / 100;
 
-/** Yearly revenue of one line (ACV contribution). */
+export const isOneOff = (l: { billing: string }) => l.billing === "one_off";
+/** Revenue of one line: a year of it if recurring (its ACV contribution), its total if one-off. */
 export const lineRevenue = (l: DealLine) => n(l.quantity) * n(l.unit_price) * (1 - Math.min(100, Math.max(0, n(l.discount_pct))) / 100) * periods(String(l.billing));
 /** Yearly cost of one line, or null when its cost is unknown. */
 export const lineCost = (l: DealLine) => (l.unit_cost == null || l.unit_cost === "" ? null : n(l.quantity) * n(l.unit_cost) * periods(String(l.billing)));
 
-export type DealTotals = { amount: number; cost: number | null; margin: number | null; marginPct: number | null; unknownCost: number };
+/** amount = ACV of the recurring lines; oneOff = one-off lines, outside the ACV; margin and cost of the recurring part. */
+export type DealTotals = { amount: number; oneOff: number; cost: number | null; margin: number | null; marginPct: number | null; unknownCost: number };
 
 export function dealTotals(lines: DealLine[]): DealTotals {
   // Rounded like the trigger: round(revenue) and round(revenue − cost), never a difference of rounded sums.
-  const rev = lines.reduce((s, l) => s + lineRevenue(l), 0);
+  const recurring = lines.filter((l) => !isOneOff(l));
+  const rev = recurring.reduce((s, l) => s + lineRevenue(l), 0);
   const amount = round2(rev);
-  const costs = lines.map(lineCost);
+  const oneOff = round2(lines.filter(isOneOff).reduce((s, l) => s + lineRevenue(l), 0));
+  const costs = recurring.map(lineCost);
   const unknownCost = costs.filter((c) => c == null).length;
   const rawCost = costs.reduce((s: number, c) => s + (c ?? 0), 0);
-  const cost = unknownCost ? null : round2(rawCost);
-  const margin = unknownCost ? null : round2(rev - rawCost);
-  return { amount, cost, margin, marginPct: margin != null && amount > 0 ? (margin / amount) * 100 : null, unknownCost };
+  const cost = unknownCost || !recurring.length ? null : round2(rawCost);
+  const margin = unknownCost || rev === 0 ? null : round2(rev - rawCost);
+  return { amount, oneOff, cost, margin, marginPct: margin != null && amount > 0 ? (margin / amount) * 100 : null, unknownCost };
 }
 
 /** A new line from a catalogue product: its name, price, cost and billing copied as they are today. */

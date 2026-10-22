@@ -10,18 +10,20 @@ describe("deal lines", () => {
   it("a monthly line counts twelve times and the discount applies to the price", () => {
     expect(lineRevenue(monthly)).toBeCloseTo(3 * 49 * 0.9 * 12);
   });
-  it("totals amount and margin like the database trigger", () => {
+  it("totals ACV and margin like the database trigger; one-off lines stay out of both", () => {
     const t = dealTotals([monthly, setup]);
-    expect(t.amount).toBe(2087.6); // 1587.6 + 500
-    expect(t.cost).toBe(524); // 3 × 9 × 12 + 200
-    expect(t.margin).toBe(1563.6);
-    expect(Math.round(t.marginPct!)).toBe(75);
+    expect(t.amount).toBe(1587.6);
+    expect(t.oneOff).toBe(500);
+    expect(t.cost).toBe(324); // 3 × 9 × 12
+    expect(t.margin).toBe(1263.6);
+    expect(Math.round(t.marginPct!)).toBe(80);
   });
-  it("a line without cost leaves the margin unknown, and says how many", () => {
-    const t = dealTotals([monthly, { ...setup, unit_cost: null }]);
+  it("a recurring line without cost leaves the margin unknown; a one-off without cost doesn't", () => {
+    const t = dealTotals([{ ...monthly, unit_cost: null }, setup]);
     expect(t.margin).toBeNull();
-    expect(t.marginPct).toBeNull();
     expect(t.unknownCost).toBe(1);
+    expect(dealTotals([monthly, { ...setup, unit_cost: null }]).margin).toBe(1263.6);
+    expect(dealTotals([setup])).toMatchObject({ amount: 0, oneOff: 500, margin: null });
     expect(dealTotals([]).amount).toBe(0);
   });
   it("copies price, cost and billing from the product", () => {
