@@ -44,7 +44,7 @@ export function NewDealButton() {
     product: "",
   });
   const product = products.find((p) => p.id === f.product);
-  const productAmount = product ? dealTotals([lineFromProduct(product)]).amount : null;
+  const productTotals = product ? dealTotals([lineFromProduct(product)]) : null;
   const { data } = useQuery({
     queryKey: ["new-deal-options"],
     enabled: open,
@@ -141,8 +141,8 @@ export function NewDealButton() {
             />
           </Field>
           <Field label={`Importe (ACV, ${symbol})`}>
-            {productAmount != null ? (
-              <p className="flex h-10 items-center font-mono text-sm md:h-9">{money(productAmount)} · del producto</p>
+            {productTotals ? (
+              <p className="flex h-10 items-center font-mono text-sm md:h-9">{money(productTotals.amount)}{productTotals.oneOff ? ` + ${money(productTotals.oneOff)} pago único` : " · del producto"}</p>
             ) : (
               <Input
                 type="number"

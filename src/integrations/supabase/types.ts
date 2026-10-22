@@ -994,6 +994,7 @@ export type Database = {
           external_id: string | null
           forecast_category: string | null
           gross_margin: number | null
+          one_off_amount: number | null
           health: string | null
           id: string
           lead_source_id: string | null
@@ -1020,6 +1021,7 @@ export type Database = {
           external_id?: string | null
           forecast_category?: string | null
           gross_margin?: number | null
+          one_off_amount?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
@@ -1046,6 +1048,7 @@ export type Database = {
           external_id?: string | null
           forecast_category?: string | null
           gross_margin?: number | null
+          one_off_amount?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
