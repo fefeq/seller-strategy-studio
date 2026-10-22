@@ -18,7 +18,7 @@
     "tools": [
       {
         "name": "list_companies",
-        "title": "List companies",
+        "title": "Listar empresas",
         "description": "Lista las empresas a las que pertenece el usuario, su rol y cuál está activa.",
         "annotations": {
           "readOnlyHint": true,
@@ -35,7 +35,7 @@
       },
       {
         "name": "switch_company",
-        "title": "Switch company",
+        "title": "Cambiar de empresa",
         "description": "Cambia la empresa activa del usuario (también en la app). Usa el id de list_companies.",
         "annotations": {
           "readOnlyHint": false,
@@ -63,7 +63,7 @@
       },
       {
         "name": "get_real_metrics",
-        "title": "Real pipeline metrics",
+        "title": "Métricas reales de pipeline",
         "description": "ACV, win rate y ciclo de venta reales (últimos 12 meses), total y por segmento, frente a los objetivos del segmento.",
         "annotations": {
           "readOnlyHint": true,
@@ -80,7 +80,7 @@
       },
       {
         "name": "get_segment_coverage",
-        "title": "Segment coverage",
+        "title": "Cobertura por segmento",
         "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
         "annotations": {
           "readOnlyHint": true,
@@ -146,7 +146,7 @@
       {
         "name": "get_account",
         "title": "Ver cuenta",
-        "description": "Detalle de una cuenta: Account Plan, stakeholders, deals, reuniones y tareas abiertas.",
+        "description": "Detalle de una cuenta: plan de cuenta, stakeholders, deals, reuniones y tareas abiertas.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -227,7 +227,7 @@
       {
         "name": "list_deals",
         "title": "Listar deals",
-        "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja) o con fecha de cierre pasada.",
+        "description": "Lista deals con filtros opcionales: etapa, solo míos, solo en riesgo (salud roja), con fecha de cierre pasada o enfriados (sin actividad más días que el umbral de su segmento: un cuarto del ciclo real, 14–60 días, o el número fijado por la empresa). Cada deal trae dias_sin_actividad, umbral_enfriado y enfriado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -250,6 +250,9 @@
             },
             "overdue": {
               "type": "boolean"
+            },
+            "cold": {
+              "type": "boolean"
             }
           },
           "additionalProperties": false
@@ -259,7 +262,7 @@
       {
         "name": "list_leads",
         "title": "Listar leads",
-        "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
+        "description": "Leads antes de ser oportunidad (Nuevo, Contactado, MQL, SQL, Oportunidad, Descartado), ordenados por puntuación (encaje con el ICP 70 % + actividad 30 %): filtra por etapa o solo los retrasados (más días en la etapa de lo permitido o seguimiento vencido). Incluye el embudo del trimestre.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -291,7 +294,7 @@
       {
         "name": "list_tasks",
         "title": "Listar tareas",
-        "description": "Tareas abiertas (por defecto las mías).",
+        "description": "Tareas abiertas (por defecto las mías y las sin responsable). Filtros: de todo el equipo, vencidas, para hoy, para los próximos 7 días, de un deal o de una cuenta.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -303,6 +306,24 @@
           "properties": {
             "all": {
               "type": "boolean"
+            },
+            "due": {
+              "type": "string",
+              "enum": [
+                "overdue",
+                "today",
+                "week"
+              ]
+            },
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             }
           },
           "additionalProperties": false
@@ -349,7 +370,7 @@
         "description": "Redacta con IA el seguimiento del día 3, 7 o 14 para un lead contactado sin respuesta, con el posicionamiento y los pilares de la empresa. Solo devuelve el borrador: no envía nada ni cambia el lead. Si no se indica el paso, usa el que toca.",
         "annotations": {
           "readOnlyHint": true,
-          "idempotentHint": false,
+          "idempotentHint": true,
           "openWorldHint": false
         },
         "inputSchema": {
@@ -358,20 +379,21 @@
           "properties": {
             "lead_id": {
               "type": "string",
-              "format": "uuid"
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "step": {
+              "description": "nudge = día 3, value = día 7, breakup = día 14",
               "type": "string",
               "enum": [
                 "nudge",
                 "value",
                 "breakup"
-              ],
-              "description": "nudge = día 3, value = día 7, breakup = día 14"
+              ]
             },
             "tone": {
-              "type": "string",
-              "description": "p. ej. más directo, más cercano, más corto"
+              "description": "p. ej. más directo, más cercano, más corto",
+              "type": "string"
             }
           },
           "required": [
@@ -484,9 +506,10 @@
               "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
             },
             "product_id": {
+              "description": "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas",
               "type": "string",
               "format": "uuid",
-              "description": "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas"
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
             },
             "quantity": {
               "type": "number",
@@ -503,7 +526,7 @@
       {
         "name": "update_deal",
         "title": "Actualizar deal",
-        "description": "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. Como en Pipeline, pasar a Ganado no se aplica directamente: crea una aprobación. Si el deal tiene líneas de producto, su importe sale de ellas y no se cambia aquí. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -650,7 +673,7 @@
       {
         "name": "create_meeting",
         "title": "Planificar reunión",
-        "description": "Planifica una reunión (Meeting Planner). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Planifica una reunión (planificador de reuniones). (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -692,7 +715,7 @@
       {
         "name": "prepare_meeting_brief",
         "title": "Preparar brief de reunión",
-        "description": "Genera con IA el Call Prep de una reunión y lo guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Genera con IA la preparación de llamada de una reunión y la guarda. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -907,7 +930,7 @@
       {
         "name": "update_positioning",
         "title": "Actualizar posicionamiento",
-        "description": "Guarda campos de posicionamiento. Campos: target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Guarda campos de posicionamiento. Campos: best_customers, alternatives, differentiation, value, trend, target_customer, need, category, key_benefit, competitive_alternative, differentiator, one_liner, elevator_pitch, tagline, short_pitch, product_name. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -979,6 +1002,11 @@
             "ae_quota": {
               "type": "number",
               "minimum": 0
+            },
+            "gross_margin_pct": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 100
             },
             "priority": {
               "type": "integer",
@@ -1138,7 +1166,7 @@
       {
         "name": "get_cycle_status",
         "title": "Estado del ciclo GTM",
-        "description": "Estado del Ciclo GTM: fase actual, documentos (Brief, Plan, Arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
+        "description": "Estado del Ciclo GTM: fase actual, documentos (brief, plan, arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -1222,6 +1250,1463 @@
           },
           "required": [
             "kind"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_accounts",
+        "title": "Listar cuentas",
+        "description": "Lista cuentas ordenadas por puntuación (encaje con el ICP 70 % + actividad 30 %, como la pantalla Cuentas). Filtros: texto, segmento, tier (A/B/C), solo mías o sin propietario, solo objetivo ABM y cuentas a las que les falta un dato (segmento, sector, tamaño o país).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string"
+            },
+            "segment_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "owner": {
+              "type": "string",
+              "enum": [
+                "mine",
+                "unowned"
+              ]
+            },
+            "target_only": {
+              "type": "boolean"
+            },
+            "missing": {
+              "type": "string",
+              "enum": [
+                "segment",
+                "industry",
+                "size",
+                "country"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_account",
+        "title": "Actualizar cuenta",
+        "description": "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (ISO 2 letras), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "domain": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "industry": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "size": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "country": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "segment_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            },
+            "abm_tier": {
+              "type": "string",
+              "enum": [
+                "1",
+                "2",
+                "3"
+              ]
+            },
+            "health": {
+              "type": "string",
+              "enum": [
+                "green",
+                "yellow",
+                "red"
+              ]
+            },
+            "is_target": {
+              "type": "boolean"
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "log_touch",
+        "title": "Registrar toque con una cuenta",
+        "description": "Registra un toque con una cuenta (cuenta para la actividad de la puntuación y el engagement ABM). Canales: web_visit, email, linkedin, direct_mail, event, call, meeting. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "channel": {
+              "type": "string",
+              "enum": [
+                "web_visit",
+                "email",
+                "linkedin",
+                "direct_mail",
+                "event",
+                "call",
+                "meeting"
+              ]
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "occurred_at": {
+              "description": "ISO 8601; por defecto, ahora",
+              "type": "string"
+            }
+          },
+          "required": [
+            "account_id",
+            "channel"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "upsert_account_plan",
+        "title": "Guardar plan de cuenta",
+        "description": "Guarda campos del plan de cuenta (los que no se indican se mantienen): current_state, pains, objectives, initiatives, whitespace, risks, competitors, action_plan. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "current_state": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "pains": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "objectives": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "initiatives": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "whitespace": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "risks": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "competitors": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "action_plan": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_stakeholder",
+        "title": "Actualizar stakeholder",
+        "description": "Actualiza un stakeholder: nombre, cargo, email, LinkedIn, rol de compra (decision_maker, champion, influencer, blocker, user), apoyo (advocate, neutral, skeptic, opponent), prioridades y a quién reporta (otro stakeholder de la misma cuenta). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stakeholder_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "linkedin_url": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "buying_role": {
+              "type": "string",
+              "enum": [
+                "decision_maker",
+                "champion",
+                "influencer",
+                "blocker",
+                "user"
+              ]
+            },
+            "support": {
+              "type": "string",
+              "enum": [
+                "advocate",
+                "neutral",
+                "skeptic",
+                "opponent"
+              ]
+            },
+            "priorities": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "reports_to": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "research_stakeholder",
+        "title": "Investigación de stakeholders",
+        "description": "Investigación de stakeholders con IA: hipótesis de prioridades, encaje de la propuesta, riesgos y 3 aperturas de conversación, con el contexto de la cuenta. Se guarda en el stakeholder. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stakeholder_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "draft_proposal",
+        "title": "Redactar propuesta de una cuenta",
+        "description": "Redacta con IA un borrador de propuesta / business case para una cuenta (resumen, dolores, solución, impacto y ROI con supuestos marcados, plan y próximos pasos). Solo devuelve el borrador: no guarda ni envía nada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_people",
+        "title": "Listar personas",
+        "description": "Base única de personas (sin duplicados). Filtros: texto (nombre, empresa, email), cuenta, etapa CRM (lead, mql, sql, opportunity, customer, disqualified) y estado de secuencia (none, active, finished, paused).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string"
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "crm_stage": {
+              "type": "string",
+              "enum": [
+                "lead",
+                "mql",
+                "sql",
+                "opportunity",
+                "customer",
+                "disqualified"
+              ]
+            },
+            "sequence_stage": {
+              "type": "string",
+              "enum": [
+                "none",
+                "active",
+                "finished",
+                "paused"
+              ]
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_person",
+        "title": "Añadir persona",
+        "description": "Añade una persona a la base. Necesita email o LinkedIn y no se crea si ya existe alguien con el mismo email o LinkedIn (misma regla que la importación). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "full_name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "linkedin_url": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "company": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "source": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          "required": [
+            "full_name"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_person",
+        "title": "Actualizar persona",
+        "description": "Actualiza una persona: nombre, email, LinkedIn, empresa, cargo, cuenta, etapa CRM (lead, mql, sql, opportunity, customer, disqualified), estado de secuencia (none, active, finished, paused) y tier. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "person_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "full_name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "linkedin_url": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "company": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "account_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "crm_stage": {
+              "type": "string",
+              "enum": [
+                "lead",
+                "mql",
+                "sql",
+                "opportunity",
+                "customer",
+                "disqualified"
+              ]
+            },
+            "sequence_stage": {
+              "type": "string",
+              "enum": [
+                "none",
+                "active",
+                "finished",
+                "paused"
+              ]
+            },
+            "tier": {
+              "type": "string",
+              "enum": [
+                "A",
+                "B",
+                "C"
+              ]
+            }
+          },
+          "required": [
+            "person_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_lead",
+        "title": "Ver lead",
+        "description": "Detalle de un lead: datos, etapa, retraso frente al plazo de su etapa, puntuación con el encaje ICP explicado, estado de la secuencia de seguimiento (día 3, 7, 14) y sus últimas entradas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "lead_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "lead_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_lead",
+        "title": "Dar de alta lead",
+        "description": "Da de alta un lead a mano por el mismo camino que la importación CSV y el enlace de leads: busca la cuenta por dominio o nombre (y la crea si no existe), la persona por email y no duplica un lead abierto. Etapas: new, contacted, mql, sql, disqualified (por defecto new). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "company": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "contact_name": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "email": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "title": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "linkedin_url": {
+              "type": "string",
+              "maxLength": 500
+            },
+            "domain": {
+              "type": "string",
+              "maxLength": 200
+            },
+            "stage": {
+              "type": "string",
+              "enum": [
+                "new",
+                "contacted",
+                "mql",
+                "sql",
+                "disqualified"
+              ]
+            },
+            "source": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "segment": {
+              "description": "Nombre del segmento",
+              "type": "string",
+              "maxLength": 200
+            },
+            "amount": {
+              "type": "number",
+              "minimum": 0
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "required": [
+            "company"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_deal",
+        "title": "Ver deal",
+        "description": "Detalle de un deal: cuenta, etapa, importe, cierre, salud, forecast, MEDDPICC, líneas de producto con margen, historial de etapas, plan de acción mutuo, tareas abiertas y reuniones.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "deal_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "assign_deal",
+        "title": "Asignar deal",
+        "description": "Cambia el propietario de un deal (owner_id de un miembro del equipo, o null para dejarlo sin propietario). Owner y Sales Leader pueden reasignar cualquiera; el resto, los suyos o los que no tienen propietario. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "owner_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "deal_id",
+            "owner_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_deal_line",
+        "title": "Añadir línea a un deal",
+        "description": "Añade una línea a un deal: un producto del catálogo (product_id, con su precio, coste y cobro de hoy) o una línea libre (name, unit_price y billing monthly/annual/one_off). El importe del deal pasa a ser el de sus líneas; los pagos únicos no cuentan en el ACV. Las líneas libres y cambiar precio, coste o descuento son de Owner, Sales Leader o Deal Desk; el resto pide el descuento con request_approval. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "unit_price": {
+              "type": "number"
+            },
+            "billing": {
+              "type": "string",
+              "enum": [
+                "monthly",
+                "annual",
+                "one_off"
+              ]
+            },
+            "unit_cost": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "quantity": {
+              "type": "number"
+            },
+            "discount_pct": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "deal_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_deal_line",
+        "title": "Cambiar línea de un deal",
+        "description": "Cambia la cantidad, el precio unitario, el coste unitario (null = sin coste) o el descuento (%) de una línea de un deal. Precio, coste y descuento son de Owner, Sales Leader o Deal Desk; el resto solo cambia la cantidad. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "line_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "quantity": {
+              "type": "number"
+            },
+            "unit_price": {
+              "type": "number"
+            },
+            "unit_cost": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "discount_pct": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "line_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_deal_line",
+        "title": "Quitar línea de un deal",
+        "description": "Quita una línea de un deal; el importe del deal se recalcula con las que quedan. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "line_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "line_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_mutual_action_item",
+        "title": "Añadir hito al plan de acción mutuo",
+        "description": "Añade un hito al plan de acción mutuo de un deal, con fecha y de qué lado es (nosotros o cliente). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "due_date": {
+              "type": "string",
+              "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+              "description": "AAAA-MM-DD"
+            },
+            "owner_side": {
+              "type": "string",
+              "enum": [
+                "nosotros",
+                "cliente"
+              ]
+            }
+          },
+          "required": [
+            "deal_id",
+            "title"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "complete_mutual_action_item",
+        "title": "Completar hito del plan de acción mutuo",
+        "description": "Marca un hito del plan de acción mutuo como hecho (o lo reabre con done = false). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "item_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "done": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "item_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_pipeline_board",
+        "title": "Tablero del trimestre",
+        "description": "Tablero del trimestre como en Métricas: leads abiertos (Nuevo→SQL), oportunidades, deals en curso y ganados, con número, importe y retrasos por columna, más los deals abiertos que cierran en el trimestre.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "quarter": {
+              "type": "string",
+              "pattern": "^\\d{4}-Q[1-4]$",
+              "description": "AAAA-QN; por defecto, el actual"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_weekly_report",
+        "title": "Informe semanal",
+        "description": "Informe semanal del pipeline calculado ahora (lo mismo que llega los lunes): avances de etapa, ganados y perdidos, deals enfriados, cierres vencidos, leads y lo que toca esta semana. No envía nada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_meetings",
+        "title": "Listar reuniones",
+        "description": "Lista reuniones: próximas (por defecto), pasadas o sin notas (pasaron hace entre 2 horas y 7 días y no tienen notas, como el recordatorio de Sugerencias). Filtra por cuenta o deal.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "when": {
+              "type": "string",
+              "enum": [
+                "upcoming",
+                "past",
+                "no_notes"
+              ]
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_meeting",
+        "title": "Ver reunión",
+        "description": "Detalle de una reunión: objetivo, asistentes, agenda, preguntas, objeciones, materiales, resultado deseado, notas en 5 líneas, notas libres, preparación de llamada, revisión de la llamada y coaching de escucha.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "meeting_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "meeting_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_meeting",
+        "title": "Actualizar reunión",
+        "description": "Actualiza una reunión: título, fecha (ISO 8601), deal, notas libres y los campos de preparación (objective, attendees, agenda, questions, objections, materials, desired_outcome). Las 5 líneas de notas van con save_call_notes. Con notas, la llamada queda registrada en el historial de la cuenta. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "meeting_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "scheduled_at": {
+              "type": "string"
+            },
+            "deal_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "objective": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "attendees": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "agenda": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "questions": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "objections": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "materials": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "desired_outcome": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "required": [
+            "meeting_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "review_call",
+        "title": "Revisar llamada",
+        "description": "Revisión de la llamada con IA: compara las notas (5 líneas o libres) con el objetivo, la preparación y el MEDDPICC del deal, y dice qué funcionó, qué falta y qué actualizar. Se guarda en la reunión. Necesita notas. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "meeting_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "meeting_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listening_coaching",
+        "title": "Coaching de escucha",
+        "description": "Coaching de escucha con IA sobre una reunión (nivel de escucha que reflejan las notas, momentos para escuchar más hondo, prácticas y preguntas abiertas). Se guarda en la reunión. Necesita notas o reflexión. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "meeting_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "meeting_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "log_call",
+        "title": "Registrar llamada",
+        "description": "Registra una llamada que no estaba planificada como reunión, en el historial de la cuenta (cuenta para la actividad de la puntuación y para la preparación de llamada). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "next_steps": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "occurred_at": {
+              "description": "ISO 8601; por defecto, ahora",
+              "type": "string"
+            },
+            "deal_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id",
+            "title"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_task",
+        "title": "Actualizar tarea",
+        "description": "Actualiza una tarea: título, fecha (AAAA-MM-DD o null), responsable (miembro del equipo o null), notas, o la reabre con done = false. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "task_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "due_date": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                  "description": "AAAA-MM-DD"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "owner_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "notes": {
+              "type": "string",
+              "maxLength": 4000
+            },
+            "done": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "task_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "decide_suggestion",
+        "title": "Gestionar sugerencia",
+        "description": "Gestiona una sugerencia pendiente (ids de list_suggestions): approve ejecuta su acción si tiene una (o la marca hecha), snooze la pospone 3 días y dismiss la descarta para siempre. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "suggestion_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "decision": {
+              "type": "string",
+              "enum": [
+                "approve",
+                "snooze",
+                "dismiss"
+              ]
+            }
+          },
+          "required": [
+            "suggestion_id",
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "assign_suggestion",
+        "title": "Asignar sugerencia",
+        "description": "Asigna una sugerencia a un miembro del equipo (user_id) o la deja sin asignar (null), como el panel de equipo de Sugerencias. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "suggestion_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "user_id": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid",
+                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "suggestion_id",
+            "user_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_approvals",
+        "title": "Listar aprobaciones",
+        "description": "Aprobaciones (cambios importantes con evidencia): pendientes por defecto, o aplicadas u omitidas. Incluye si el usuario puede decidirlas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "pending",
+                "applied",
+                "skipped"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "decide_approval",
+        "title": "Decidir aprobación",
+        "description": "Aplica u omite una aprobación pendiente. Aplicar un cambio de etapa (p. ej. pasar a Ganado) mueve el deal. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "approval_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "decision": {
+              "type": "string",
+              "enum": [
+                "apply",
+                "skip"
+              ]
+            }
+          },
+          "required": [
+            "approval_id",
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "request_approval",
+        "title": "Pedir aprobación",
+        "description": "Pide una aprobación con evidencia (p. ej. un descuento para Deal Desk). Para pasar un deal a Ganado usa update_deal: la aprobación se crea sola. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "discount",
+                "other"
+              ]
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 300
+            },
+            "evidence": {
+              "type": "string",
+              "maxLength": 4000
+            }
+          },
+          "required": [
+            "kind",
+            "title"
           ],
           "additionalProperties": false
         },

@@ -1,26 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ask } from "@/lib/ai-gateway";
-import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
+import { accountContext, callTeardownCore, listeningCoachingCore, proposalCore, researchStakeholderCore, U_SYSTEM } from "@/lib/ai-core";
 import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
-
-async function accountContext(supabase: any, accountId: string) {
-  const [acc, plan, sh, calls, deals, docs, pos, pillars, icp] = await Promise.all([
-    supabase.from("accounts").select("*").eq("id", accountId).maybeSingle(),
-    supabase.from("account_plans").select("*").eq("account_id", accountId).maybeSingle(),
-    supabase.from("stakeholders").select("name,title,buying_role,support,priorities,research").eq("account_id", accountId),
-    supabase.from("calls").select("title,occurred_at,summary,next_steps").eq("account_id", accountId).order("occurred_at", { ascending: false }).limit(5),
-    supabase.from("deals").select("name,stage,amount,meddpicc").eq("account_id", accountId),
-    supabase.from("knowledge_docs").select("section,title,body").in("section", ["company", "objections", "playbooks", "methodology"]).order("section").limit(30),
-    supabase.from("positioning").select("target_customer,need,product_name,category,key_benefit,competitive_alternative,differentiator,tagline,one_liner,short_pitch,elevator_pitch,alternatives,differentiation,value,trend").limit(1).maybeSingle(),
-    supabase.from("messaging_pillars").select("title,pain,message,proof").order("position"),
-    supabase.from("icp_profiles").select("name,industries,company_size,tech_stack,growth_stage,hiring_signals,funding_signals,why_fit,anti_icp").limit(5),
-  ]);
-  // Playbooks (discovery, objections, demo, negotiation) are what the call prep must follow; cap each so the prompt stays bounded.
-  const conocimiento = (docs.data ?? []).map((d: { section: string; title: string; body: string }) => ({ ...d, body: d.body.slice(0, 5000) }));
-  return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: conocimiento, posicionamiento: pos.data, pilares_de_mensaje: pillars.data, icp: icp.data });
-}
 
 export const generateMeetingBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -38,66 +21,23 @@ export const generateMeetingBrief = createServerFn({ method: "POST" })
     return { brief };
   });
 
-/**
- * AI teardown of a call: compares the five-line notes (and free notes) with the meeting's goal, the brief
- * and the deal's MEDDPICC, and says what worked, what is missing and what to update. Saved on the meeting.
- */
+/** AI teardown of a call, saved on the meeting (src/lib/ai-core.ts). */
 export const callTeardown = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { meetingId: string }) => ({ meetingId: String(d?.meetingId ?? "") }))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: m } = await supabase.from("meetings").select("id,title,scheduled_at,objective,desired_outcome,agenda,questions,objections,attendees,ai_brief,notes,call_notes,account_id,deal_id").eq("id", data.meetingId).maybeSingle();
-    if (!m) throw new Error("Reunión no encontrada");
-    const lines = normalizeCallNotes(m.call_notes);
-    if (!hasCallNotes(lines) && !(m.notes ?? "").trim()) throw new Error("Escribe primero las notas de la llamada (las 5 líneas o tus notas libres)");
-    const [deal, ctx] = await Promise.all([
-      m.deal_id ? supabase.from("deals").select("name,stage,amount,close_date,meddpicc").eq("id", m.deal_id).maybeSingle() : Promise.resolve({ data: null }),
-      m.account_id ? accountContext(supabase, m.account_id) : Promise.resolve("{}"),
-    ]);
-    const reunion = {
-      titulo: m.title, fecha: m.scheduled_at, objetivo: m.objective, resultado_deseado: m.desired_outcome, agenda: m.agenda,
-      preguntas_previstas: m.questions, objeciones_esperadas: m.objections, asistentes: m.attendees,
-      preparacion: (m.ai_brief ?? "").slice(0, 6000),
-      notas_en_5_lineas: callNotesText(lines) || "(sin notas en 5 líneas)", notas_libres: m.notes ?? "",
-    };
-    const text = await ask(TEARDOWN_SYSTEM, `Reunión:\n${JSON.stringify(reunion)}\n\nDeal:\n${JSON.stringify(deal.data ?? null)}\n\nContexto de la cuenta:\n${ctx}`, { effort: "medium" });
-    const { error } = await supabase.from("meetings").update({ call_review: text }).eq("id", m.id);
-    if (error) throw new Error(error.message);
-    return { text };
-  });
+  .handler(async ({ data, context }) => ({ text: (await callTeardownCore(context.supabase, data.meetingId)).text }));
 
 export const generateProposal = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { accountId: string }) => d)
-  .handler(async ({ data, context }) => {
-    const ctx = await accountContext(context.supabase, data.accountId);
-    const text = await ask(
-      "Eres un estratega comercial. Redacta en español neutro (tú), sin signos de exclamación ni emoji, en markdown, un borrador de propuesta / business case: resumen ejecutivo, situación y dolores, solución propuesta, impacto y ROI estimado (indica supuestos), plan de implementación, próximos pasos. No inventes cifras sin marcarlas como supuesto.",
-      ctx,
-    );
-    return { text };
-  });
+  .handler(async ({ data, context }) => proposalCore(context.supabase, data.accountId));
 
 export const researchStakeholder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { stakeholderId: string }) => d)
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: s } = await supabase.from("stakeholders").select("*").eq("id", data.stakeholderId).single();
-    if (!s) throw new Error("No encontrado");
-    const ctx = await accountContext(supabase, s.account_id);
-    const text = await ask(
-      "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve: hipótesis de prioridades de esta persona según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos, y 3 aperturas de conversación. Marca como hipótesis lo que no esté en el contexto.",
-      `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nContexto:\n${ctx}`,
-    );
-    await supabase.from("stakeholders").update({ research: text }).eq("id", s.id);
-    return { text };
-  });
+  .handler(async ({ data, context }) => ({ text: (await researchStakeholderCore(context.supabase, data.stakeholderId)).text }));
 
 // ---------- Theory U ----------
-
-const U_SYSTEM = "Eres facilitador experto en Theory U (Otto Scharmer, Presencing Institute) aplicada a go-to-market B2B. Respondes en español neutro (tú), markdown conciso y accionable; empiezas por la conclusión, sin signos de exclamación ni emoji. Distingues lo observado (datos) de las hipótesis.";
 
 async function strategyContext(supabase: any) {
   const [pos, pillars, icp, segments] = await Promise.all([
@@ -149,19 +89,7 @@ export const sensingPatterns = createServerFn({ method: "POST" })
 export const listeningCoaching = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { meetingId: string }) => d)
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: m } = await supabase.from("meetings").select("title,objective,attendees,questions,notes,next_steps,call_notes,listening_level,listening_reflection,accounts(name)").eq("id", data.meetingId).single();
-    if (!m) throw new Error("Reunión no encontrada");
-    const lines = normalizeCallNotes(m.call_notes);
-    if (!m.notes && !hasCallNotes(lines) && !m.listening_reflection) throw new Error("Escribe las notas o tu reflexión de la reunión primero");
-    const text = await ask(
-      `${U_SYSTEM} Eres coach de escucha para vendedores. Niveles: 1 Descarga (confirmo lo que ya sé), 2 Factual (noto lo nuevo), 3 Empática (veo con sus ojos), 4 Generativa (escucho lo que emerge). Estructura: 1) Nivel que reflejan las notas (con evidencias citadas) frente al nivel autoevaluado 2) Momentos donde se pudo escuchar más hondo 3) Qué hacer para subir un nivel en la próxima reunión (3 prácticas concretas) 4) Cinco preguntas abiertas para la próxima conversación con esta cuenta.`,
-      JSON.stringify({ ...m, call_notes: undefined, notas_en_5_lineas: callNotesText(lines) }),
-    );
-    await supabase.from("meetings").update({ listening_coaching: text }).eq("id", data.meetingId);
-    return { text };
-  });
+  .handler(async ({ data, context }) => ({ text: (await listeningCoachingCore(context.supabase, data.meetingId)).text }));
 
 // ---------- GTM Advisor (Owner / Sales Leader) ----------
 

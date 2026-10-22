@@ -3,6 +3,8 @@
 export const OVERDUE_DAYS = 7;
 export const LEADER_ROLES = ["owner", "sales_leader"] as const;
 export const canSeeTeam = (roles: string[]) => roles.some((r) => (LEADER_ROLES as readonly string[]).includes(r));
+/** Whether a user may see and act on a suggestion: own or unassigned, or any for Owner/Sales Leader (the RLS rule, applied in code for privileged clients). */
+export const canActOnSuggestion = (s: { user_id: string | null }, userId: string, roles: string[]) => !s.user_id || s.user_id === userId || canSeeTeam(roles);
 
 export const STATUS_LABEL: Record<string, string> = {
   pending: "Pendiente", snoozed: "Pospuesta", approved: "Hecha", dismissed: "Descartada", resolved: "Resuelta sola",
