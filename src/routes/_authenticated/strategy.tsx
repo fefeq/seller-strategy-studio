@@ -325,6 +325,16 @@ function Motions() {
           </div>
         ))}
         <p className="mt-2 text-xs text-muted-foreground">Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los últimos 12 meses y se actualizan solas. Un win rate o una cuota de 0 vale para un segmento al que no vendes; si no es tuyo, elimínalo{isOwner ? "" : " (solo el Owner)"}. La mayoría de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.</p>
+        {segs.some((s) => s.notes?.trim()) && (
+          <details className="mt-3 text-sm">
+            <summary className="cursor-pointer text-xs text-signal">De dónde salen estos benchmarks</summary>
+            <div className="mt-2 space-y-2">
+              {segs.filter((s) => s.notes?.trim()).map((s) => (
+                <p key={s.id} className="text-xs text-muted-foreground"><span className="font-medium text-foreground">{s.name}.</span> {s.notes}</p>
+              ))}
+            </div>
+          </details>
+        )}
       </div>
       <DeleteSegment target={toDelete} onClose={() => setToDelete(null)} onDeleted={() => { setForced(""); qc.invalidateQueries(); }} />
     </div>
