@@ -1,0 +1,289 @@
+import { describe, expect, it } from "vitest";
+import { z } from "zod";
+import { TOOLS, canUseTool, executeTool, getTool, type ToolCtx } from "@/lib/agent/tools";
+import { TITLES } from "@/lib/mcp/tools/agent-tools";
+import { canActOnSuggestion } from "@/lib/suggestion-board";
+
+// A fake Supabase client: records every query (table, operation, filters, payload) and answers from `reply`.
+type Q = { table: string; op: "select" | "insert" | "update" | "upsert" | "delete"; payload?: any; filters: unknown[][]; head?: boolean };
+type Reply = { data?: unknown; error?: { message: string } | null; count?: number } | undefined;
+function fakeDb(reply: (q: Q) => Reply = () => undefined) {
+  const log: Q[] = [];
+  const from = (table: string) => {
+    const q: Q = { table, op: "select", filters: [] };
+    const proxy: any = new Proxy({}, {
+      get(_t, prop: string) {
+        if (prop === "then") {
+          log.push(q);
+          const r = reply(q) ?? {};
+          const res = { data: r.data ?? null, error: r.error ?? null, count: r.count ?? null };
+          return (res1: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve(res).then(res1, rej);
+        }
+        return (...args: unknown[]) => {
+          if (prop === "insert" || prop === "update" || prop === "upsert" || prop === "delete") { q.op = prop; q.payload = args[0]; }
+          else if (prop === "select") { if (q.op === "select") q.head = !!(args[1] as { head?: boolean } | undefined)?.head; }
+          else if (!["single", "maybeSingle", "order", "limit"].includes(prop)) q.filters.push([prop, ...args]);
+          return proxy;
+        };
+      },
+    });
+    return proxy;
+  };
+  return { db: { from } as unknown as ToolCtx["db"], log };
+}
+const ORG = "org-1";
+const ME = "11111111-1111-4111-8111-111111111111";
+const OTHER = "22222222-2222-4222-8222-222222222222";
+const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
+const ctxWith = (db: ToolCtx["db"], roles = ["ae"]): ToolCtx => ({ db, orgId: ORG, userId: ME, roles, currency: "EUR" });
+const eq = (q: Q, col: string, val: unknown) => q.filters.some(([op, c, v]) => op === "eq" && c === col && v === val);
+const writes = (log: Q[], table?: string) => log.filter((q) => q.op !== "select" && (!table || q.table === table));
+/** Every query reads or writes only the caller's company: the rule that keeps Telegram (privileged client) safe. */
+function expectScoped(log: Q[]) {
+  for (const q of log) {
+    if (q.op === "insert" || q.op === "upsert") expect([q.payload].flat().every((p: any) => p.org_id === ORG), `${q.op} ${q.table}`).toBe(true);
+    else expect(eq(q, "org_id", ORG), `${q.op} ${q.table}`).toBe(true);
+  }
+}
+
+describe("agent registry", () => {
+  it("has unique names, an object schema, a summary for every write and an MCP title for every tool", () => {
+    const names = TOOLS.map((t) => t.name);
+    expect(new Set(names).size).toBe(names.length);
+    for (const t of TOOLS) {
+      expect(t.input instanceof z.ZodObject, t.name).toBe(true);
+      expect(t.description.length, t.name).toBeGreaterThan(10);
+      if (t.kind === "write") expect(typeof t.summarize, t.name).toBe("function");
+      expect(TITLES[t.name], t.name).toBeTruthy();
+    }
+    expect(names.length).toBeGreaterThanOrEqual(67);
+  });
+
+  it("limits decisions to the roles the database allows", () => {
+    expect(canUseTool(getTool("decide_approval")!, ["deal_desk"])).toBe(true);
+    expect(canUseTool(getTool("decide_approval")!, ["ae"])).toBe(false);
+    expect(canUseTool(getTool("assign_suggestion")!, ["sales_leader"])).toBe(true);
+    expect(canUseTool(getTool("assign_suggestion")!, ["sdr"])).toBe(false);
+  });
+
+  it("applies the suggestion visibility rule in code (own, unassigned, or any for leaders)", () => {
+    expect(canActOnSuggestion({ user_id: null }, ME, ["ae"])).toBe(true);
+    expect(canActOnSuggestion({ user_id: ME }, ME, ["ae"])).toBe(true);
+    expect(canActOnSuggestion({ user_id: OTHER }, ME, ["ae"])).toBe(false);
+    expect(canActOnSuggestion({ user_id: OTHER }, ME, ["sales_leader"])).toBe(true);
+  });
+});
+
+describe("update_deal behaves like the Pipeline screen", () => {
+  const deal = { id: ID(1), name: "Acme", amount: 60000, meddpicc: {} };
+
+  it("sends Ganado to Aprobaciones instead of moving the deal", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" && q.op === "select" ? { data: deal } : q.table === "approvals" ? { data: { id: ID(9) } } : undefined));
+    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "won" })) as { mensaje: string };
+    const ap = writes(log, "approvals")[0];
+    expect(ap.payload).toMatchObject({ kind: "stage_change", title: "Marcar como Ganado: Acme" });
+    expect(JSON.parse(ap.payload.evidence)).toEqual({ deal_id: ID(1), stage: "won" });
+    expect(writes(log, "deals")).toHaveLength(0);
+    expect(r.mensaje).toContain("Aprobaciones");
+    expectScoped(log);
+  });
+
+  it("moves to an open stage with its probability and warns about missing MEDDPICC", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: q.op === "select" ? deal : { id: ID(1), name: "Acme", stage: "proposal" } } : undefined));
+    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "Propuesta" })) as { mensaje?: string };
+    const up = writes(log, "deals")[0];
+    expect(up.payload).toMatchObject({ stage: "proposal", probability: 60 });
+    expect(r.mensaje).toMatch(/falta/);
+    expectScoped(log);
+  });
+
+  it("does not overwrite the amount of a deal priced by its product lines", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: deal } : q.table === "deal_lines" ? { count: 2 } : undefined));
+    await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), amount: 5 })).rejects.toThrow(/líneas de producto/);
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("refuses a deal from another company", async () => {
+    const { db, log } = fakeDb();
+    await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), health: "red" })).rejects.toThrow(/No encuentro ese deal/);
+    expect(writes(log)).toHaveLength(0);
+  });
+});
+
+describe("decide_approval", () => {
+  const approval = { id: ID(5), kind: "stage_change", title: "Marcar como Ganado: Acme", status: "pending", evidence: JSON.stringify({ deal_id: ID(1), stage: "won" }) };
+
+  it("claims the approval before moving the deal, with the won stage probability", async () => {
+    const { db, log } = fakeDb((q) => {
+      if (q.table === "approvals" && q.op === "select") return { data: approval };
+      if (q.table === "approvals" && q.op === "update") return { data: [{ id: ID(5) }] };
+      if (q.table === "deals") return { data: { id: ID(1) } };
+    });
+    const r = (await executeTool(ctxWith(db, ["deal_desk"]), "decide_approval", { approval_id: ID(5), decision: "apply" })) as { mensaje: string };
+    const claim = log.findIndex((q) => q.table === "approvals" && q.op === "update");
+    const move = log.findIndex((q) => q.table === "deals" && q.op === "update");
+    expect(claim).toBeGreaterThan(-1);
+    expect(move).toBeGreaterThan(claim);
+    expect(eq(log[claim], "status", "pending")).toBe(true);
+    expect(log[move].payload).toEqual({ stage: "won", probability: 100 });
+    expect(r.mensaje).toContain("Aplicada");
+    expectScoped(log);
+  });
+
+  it("puts the approval back to pending when the deal cannot be moved", async () => {
+    const { db, log } = fakeDb((q) => {
+      if (q.table === "approvals" && q.op === "select") return { data: approval };
+      if (q.table === "approvals" && q.op === "update") return { data: [{ id: ID(5) }] };
+      if (q.table === "deals") return { error: { message: "boom" } };
+    });
+    await expect(executeTool(ctxWith(db, ["owner"]), "decide_approval", { approval_id: ID(5), decision: "apply" })).rejects.toThrow(/sigue pendiente/);
+    const ups = writes(log, "approvals");
+    expect(ups.at(-1)?.payload).toEqual({ status: "pending" });
+  });
+
+  it("is refused to roles that cannot decide", async () => {
+    const { db } = fakeDb();
+    await expect(executeTool(ctxWith(db, ["ae"]), "decide_approval", { approval_id: ID(5), decision: "skip" })).rejects.toThrow(/rol/);
+  });
+});
+
+describe("ids must belong to the caller's company", () => {
+  it("log_touch refuses an account it cannot find in the company", async () => {
+    const { db, log } = fakeDb();
+    await expect(executeTool(ctxWith(db), "log_touch", { account_id: ID(3), channel: "email" })).rejects.toThrow(/No encuentro esa cuenta/);
+    expect(writes(log)).toHaveLength(0);
+    expectScoped(log);
+  });
+
+  it("update_account refuses a segment of another company and an empty change", async () => {
+    const { db } = fakeDb((q) => (q.table === "accounts" ? { data: { id: ID(3) } } : undefined));
+    await expect(executeTool(ctxWith(db), "update_account", { account_id: ID(3), segment_id: ID(4) })).rejects.toThrow(/segmento/);
+    await expect(executeTool(ctxWith(db), "update_account", { account_id: ID(3) })).rejects.toThrow(/qué cambiar/);
+  });
+
+  it("update_account takes ISO country codes only", () => {
+    const t = getTool("update_account")!;
+    expect(t.input.safeParse({ account_id: ID(3), country: "mx" }).success).toBe(true);
+    expect(t.input.safeParse({ account_id: ID(3), country: "Mexico" }).success).toBe(false);
+  });
+});
+
+describe("assign_deal", () => {
+  const replyFor = (owner: string | null, member = true) => (q: Q): Reply => {
+    if (q.table === "deals" && q.op === "select") return { data: { id: ID(1), owner_id: owner, name: "Acme" } };
+    if (q.table === "org_members") return { data: member ? [{ user_id: OTHER }] : [] };
+    if (q.table === "deals") return { data: { id: ID(1) } };
+  };
+  it("lets a member hand over their own deal but not take someone else's", async () => {
+    const mine = fakeDb(replyFor(ME));
+    await executeTool(ctxWith(mine.db), "assign_deal", { deal_id: ID(1), owner_id: OTHER });
+    expect(writes(mine.log, "deals")[0].payload).toEqual({ owner_id: OTHER });
+    expectScoped(mine.log);
+    const theirs = fakeDb(replyFor(OTHER));
+    await expect(executeTool(ctxWith(theirs.db), "assign_deal", { deal_id: ID(1), owner_id: ME })).rejects.toThrow(/Owner o Sales Leader/);
+    const leader = fakeDb(replyFor(OTHER));
+    await executeTool(ctxWith(leader.db, ["sales_leader"]), "assign_deal", { deal_id: ID(1), owner_id: null });
+    expect(writes(leader.log, "deals")).toHaveLength(1);
+  });
+  it("refuses an owner who is not in the team", async () => {
+    const { db } = fakeDb(replyFor(ME, false));
+    await expect(executeTool(ctxWith(db), "assign_deal", { deal_id: ID(1), owner_id: OTHER })).rejects.toThrow(/no es miembro/);
+  });
+});
+
+describe("deal lines", () => {
+  it("refuses a product that is no longer for sale and invalid values, like the line editor", async () => {
+    const { db } = fakeDb((q) => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: { id: ID(2), name: "Plan Pro", price: 100, cost: null, billing: "monthly", active: false } } : undefined));
+    await expect(executeTool(ctxWith(db), "add_deal_line", { deal_id: ID(1), product_id: ID(2) })).rejects.toThrow(/ya no está a la venta/);
+    await expect(executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", { deal_id: ID(1), name: "Setup" })).rejects.toThrow(/precio unitario/);
+    await expect(executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", { deal_id: ID(1), name: "Setup", unit_price: 500, billing: "one_off", discount_pct: 120 })).rejects.toThrow(/entre 0 y 100/);
+  });
+  it("adds a catalogue line with its price, cost and billing of today", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: { id: ID(2), name: "Plan Pro", price: 100, cost: 20, billing: "monthly", active: true } } : q.table === "deal_lines" ? { data: { id: ID(7) } } : undefined));
+    await executeTool(ctxWith(db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), quantity: 3 });
+    expect(writes(log, "deal_lines")[0].payload).toMatchObject({ product_id: ID(2), name: "Plan Pro", unit_price: 100, unit_cost: 20, billing: "monthly", quantity: 3, deal_id: ID(1) });
+    expectScoped(log);
+  });
+});
+
+describe("people", () => {
+  it("create_person never duplicates an email or LinkedIn and needs one of them", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "people" && q.op === "select" ? { data: [{ email: "ana@acme.com", linkedin_url: null }] } : undefined));
+    const r = (await executeTool(ctxWith(db), "create_person", { full_name: "Ana", email: " ANA@acme.com " })) as { duplicada?: boolean };
+    expect(r.duplicada).toBe(true);
+    expect(writes(log)).toHaveLength(0);
+    await expect(executeTool(ctxWith(db), "create_person", { full_name: "Sin datos" })).rejects.toThrow(/email o su LinkedIn/);
+  });
+});
+
+describe("meetings", () => {
+  it("update_meeting with notes writes the same call-log row as the meeting screen", async () => {
+    const m = { id: ID(8), title: "Demo", account_id: ID(3), deal_id: null, scheduled_at: "2026-10-20T10:00:00Z", notes: null, next_steps: null, call_notes: {} };
+    const { db, log } = fakeDb((q) => (q.table === "meetings" ? { data: q.op === "select" ? m : { id: ID(8) } } : undefined));
+    await executeTool(ctxWith(db), "update_meeting", { meeting_id: ID(8), notes: "Le preocupa la integración" });
+    const call = writes(log, "calls")[0];
+    expect(call.op).toBe("upsert");
+    expect(call.payload).toMatchObject({ id: ID(8), account_id: ID(3), title: "Demo" });
+    expect(call.payload.summary).toContain("integración");
+    expectScoped(log);
+  });
+});
+
+describe("summaries the user confirms", () => {
+  it("say what will happen in plain Spanish", () => {
+    expect(getTool("update_deal")!.summarize!({ deal_id: ID(1), stage: "won" })).toBe("Actualizar el deal: pedir aprobación para pasar a Ganado");
+    expect(getTool("decide_suggestion")!.summarize!({ suggestion_id: ID(1), decision: "snooze" })).toBe("Posponer la sugerencia 3 días");
+    expect(getTool("update_account")!.summarize!({ account_id: ID(1), tier: "A", health: "red" })).toBe("Actualizar la cuenta: tier, health");
+    expect(getTool("create_lead")!.summarize!({ company: "Acme", contact_name: "Ana", stage: "mql" })).toBe("Dar de alta el lead «Acme» (Ana) en MQL");
+  });
+});
+
+describe("fixes from review", () => {
+  const product = { id: ID(2), name: "Plan Pro", price: 100, cost: 20, billing: "monthly", active: true };
+  const lineReply = (q: Q): Reply => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: product } : q.table === "deal_lines" ? { data: { id: ID(7), deal_id: ID(1), name: "Plan Pro" } } : undefined);
+
+  it("only pricing roles set prices, costs or discounts on lines (the trigger Telegram skips)", async () => {
+    const ae = fakeDb(lineReply);
+    await expect(executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), name: "Setup", unit_price: 1, billing: "annual" })).rejects.toThrow(/Deal Desk/);
+    await expect(executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), discount_pct: 50 })).rejects.toThrow(/Deal Desk/);
+    await expect(executeTool(ctxWith(ae.db), "update_deal_line", { line_id: ID(7), unit_price: 0 })).rejects.toThrow(/Deal Desk/);
+    await executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), quantity: 2 });
+    await executeTool(ctxWith(ae.db), "update_deal_line", { line_id: ID(7), quantity: 4 });
+    expect(writes(ae.log, "deal_lines")).toHaveLength(2);
+    const desk = fakeDb(lineReply);
+    await executeTool(ctxWith(desk.db, ["deal_desk"]), "update_deal_line", { line_id: ID(7), discount_pct: 15 });
+    expect(writes(desk.log, "deal_lines")[0].payload).toEqual({ discount_pct: 15 });
+  });
+
+  it("applies a stage-change approval whose evidence is not structured, like the screen", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "approvals" ? { data: q.op === "select" ? { id: ID(5), kind: "stage_change", title: "Antigua", status: "pending", evidence: "texto libre" } : [{ id: ID(5) }] } : undefined));
+    const r = (await executeTool(ctxWith(db, ["owner"]), "decide_approval", { approval_id: ID(5), decision: "apply" })) as { estado: string };
+    expect(r.estado).toBe("applied");
+    expect(writes(log, "deals")).toHaveLength(0);
+  });
+
+  it("checks ids in the tools that already existed", async () => {
+    const { db, log } = fakeDb();
+    await expect(executeTool(ctxWith(db), "create_meeting", { title: "Demo", account_id: ID(3) })).rejects.toThrow(/esa cuenta/);
+    await expect(executeTool(ctxWith(db), "create_stakeholder", { account_id: ID(3), name: "Ana" })).rejects.toThrow(/esa cuenta/);
+    await expect(executeTool(ctxWith(db), "create_task", { title: "Llamar", owner_id: OTHER })).rejects.toThrow(/no es miembro/);
+    await expect(executeTool(ctxWith(db), "create_deal", { name: "Nuevo", account_id: ID(3) })).rejects.toThrow(/esa cuenta/);
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("search_knowledge hides other people's personal docs", async () => {
+    const { db } = fakeDb(() => ({ data: [
+      { section: "playbooks", title: "Equipo", body: "x", scope: "team", created_by: OTHER },
+      { section: "skills", title: "Mío", body: "x", scope: "personal", created_by: ME },
+      { section: "skills", title: "De otro", body: "x", scope: "personal", created_by: OTHER },
+    ] }));
+    const r = (await executeTool(ctxWith(db), "search_knowledge", { query: "x" })) as { title: string }[];
+    expect(r.map((d) => d.title)).toEqual(["Equipo", "Mío"]);
+  });
+
+  it("update_account clears a text field with null, as the screen saves it", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "accounts" ? { data: { id: ID(3), name: "Acme" } } : undefined));
+    await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "  " });
+    expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
+  });
+});

@@ -7,6 +7,7 @@ import { detect } from "@/lib/proactive";
 import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
 import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
+import { canActOnSuggestion } from "@/lib/suggestion-board";
 
 export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
   const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
@@ -67,8 +68,10 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
   const { data: claimed } = await ctx.db.from("agent_pending_actions").update({ status: "confirmed", decided_at: new Date().toISOString() }).eq("id", id).eq("status", "pending").select("id");
   if (!claimed?.length) return { status: "confirmed", result: "" };
   try {
-    await executeTool(ctx, act.tool, act.args);
-    const result = `Hecho: ${act.summary}`;
+    const out = await executeTool(ctx, act.tool, act.args);
+    // A tool can add what the user must know after confirming (a warning, or that it went to Aprobaciones).
+    const note = out && typeof out === "object" && typeof (out as { mensaje?: unknown }).mensaje === "string" ? (out as { mensaje: string }).mensaje : "";
+    const result = note ? `Hecho: ${act.summary}. ${note}` : `Hecho: ${act.summary}`;
     await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id);
     if (act.conversation_id) await ctx.db.from("agent_messages").insert({ conversation_id: act.conversation_id, role: "assistant", content: result });
     return { status: "confirmed", result };
@@ -180,7 +183,8 @@ export const decideSuggestion = createServerFn({ method: "POST" })
 
 export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "approve" | "snooze" | "dismiss") {
   const { data: s } = await ctx.db.from("suggestions").select("*").eq("id", id).eq("org_id", ctx.orgId).maybeSingle();
-  if (!s) throw new Error("Sugerencia no encontrada");
+  // Telegram runs this with the privileged client: the visibility rule RLS applies in the app is checked here.
+  if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles)) throw new Error("Sugerencia no encontrada");
   if (s.status !== "pending") return { status: s.status, message: "Ya estaba gestionada" };
   const now = new Date().toISOString();
   if (decision === "snooze") {
@@ -194,14 +198,18 @@ export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "
   const { data: claimed } = await ctx.db.from("suggestions").update({ status: "approved", updated_at: now }).eq("id", id).eq("status", "pending").select("id");
   if (!claimed?.length) return { status: "approved", message: "Ya estaba gestionada" };
   const action = s.action as { tool: string; args: Record<string, unknown> } | null;
+  let note = "";
   if (action?.tool) {
-    try { await executeTool(ctx, action.tool, action.args); }
+    try {
+      const out = await executeTool(ctx, action.tool, action.args);
+      if (out && typeof out === "object" && typeof (out as { mensaje?: unknown }).mensaje === "string") note = (out as { mensaje: string }).mensaje;
+    }
     catch (e) {
       await ctx.db.from("suggestions").update({ status: "pending" }).eq("id", id);
       throw new Error((e as Error).message);
     }
   }
-  return { status: "approved", message: action ? "Hecho" : "Marcada como hecha" };
+  return { status: "approved", message: action ? (note ? `Hecho. ${note}` : "Hecho") : "Marcada como hecha" };
 }
 
 // ---------------- Telegram linking ----------------

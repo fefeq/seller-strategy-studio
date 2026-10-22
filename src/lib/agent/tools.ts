@@ -2,14 +2,19 @@
 // Read tools run immediately; write tools only run after the user confirms.
 // Every handler filters/sets org_id explicitly (safe with privileged clients too).
 import { z } from "zod";
-import type { Db } from "@/lib/org-data";
 import { loadSetupData } from "@/lib/org-data";
+import { ACCOUNT_TOOLS } from "./tools/accounts";
+import { PIPELINE_TOOLS } from "./tools/pipeline";
+import { MEETING_TOOLS } from "./tools/meetings";
+import { INBOX_TOOLS } from "./tools/inbox";
+import { STAGE_ARG, accountByName, def, like, mustBeMember, mustFind, ok, orgStages, resolveStage, type AgentTool, type ToolCtx } from "./tool-kit";
 import { setupStatus, POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
-import { BUYING_ROLES, type Role } from "@/lib/roles";
-import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
+import { BUYING_ROLES } from "@/lib/roles";
+import { firstOpenStage, stagePath } from "@/lib/stages";
+import { TRACKS, stageGate } from "@/lib/bmad/tracks";
 import { lineFromProduct, productMarginPct, type Product } from "@/lib/deal-lines";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { byScore, fitText, scoreLead } from "@/lib/scoring";
@@ -18,53 +23,10 @@ import { FOLLOWUP_STEPS, followupDraft, followupStatus } from "@/lib/followup";
 import { ask } from "@/lib/ai-gateway";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
 
-export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
-
-export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
-  name: string;
-  description: string;
-  kind: "read" | "write";
-  roles?: Role[]; // allowed roles; undefined = every member
-  input: S;
-  summarize?: (args: z.infer<S>) => string;
-  run: (ctx: ToolCtx, args: z.infer<S>) => Promise<unknown>;
-};
-
-const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
-const STAGE_ARG = z.string().min(1).describe("Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost");
+export type { AgentTool, ToolCtx } from "./tool-kit";
 const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
 
-/** The company's stages (the default seven if it has none yet). */
-async function orgStages(c: ToolCtx): Promise<Stage[]> {
-  const { data } = await c.db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", c.orgId);
-  return sortStages((data ?? []) as Stage[]);
-}
-/** A stage the agent named, by key or label, as the company's key; refuses one the company doesn't have. */
-async function resolveStage(c: ToolCtx, raw: string): Promise<{ key: string; probability: number; stages: Stage[] }> {
-  const stages = await orgStages(c);
-  const key = stageByLabel(raw, stages);
-  const st = stages.find((s) => s.key === key);
-  if (!st) throw new Error(`La etapa «${raw}» no existe en esta empresa. Etapas: ${stages.map((s) => `${s.label} (${s.key})`).join(", ")}.`);
-  return { key: st.key, probability: st.probability, stages };
-}
-const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
-
-/** The org's account with this name (case-insensitive), created if missing: same rule as lead intake. */
-async function accountByName(c: ToolCtx, name: string, segmentId?: string): Promise<string> {
-  if (!name.trim()) throw new Error("Falta el nombre de la cuenta del deal.");
-  // % and _ are escaped; PostgREST reads * as a wildcard, so it becomes a one-character wildcard and the
-  // exact (case-insensitive) match is checked here: «A*B» never links the deal to another account.
-  const pattern = name.replace(/[\\%_]/g, (ch) => `\\${ch}`).replace(/\*/g, "_");
-  const { data: candidates } = await c.db.from("accounts").select("id,name").eq("org_id", c.orgId).ilike("name", pattern).limit(20);
-  const found = (candidates ?? []).find((a) => a.name.trim().toLowerCase() === name.trim().toLowerCase());
-  if (found?.id) return found.id;
-  const created = ok(await c.db.from("accounts").insert({ org_id: c.orgId, name, ...(segmentId ? { segment_id: segmentId } : {}) }).select("id").single());
-  if (!created?.id) throw new Error("No se ha podido crear la cuenta del deal.");
-  return created.id;
-}
-const like = (q: string) => `%${q.replace(/[%_,()]/g, " ").trim()}%`;
-
-export const TOOLS: AgentTool[] = [
+const CORE_TOOLS: AgentTool[] = [
   // ---------- READ ----------
   def({
     name: "get_overview", kind: "read",
@@ -212,11 +174,17 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "list_tasks", kind: "read",
-    description: "Tareas abiertas (por defecto las mías).",
-    input: z.object({ all: z.boolean().optional() }),
+    description: "Tareas abiertas (por defecto las mías y las sin responsable). Filtros: de todo el equipo, vencidas, para hoy, para los próximos 7 días, de un deal o de una cuenta.",
+    input: z.object({ all: z.boolean().optional(), due: z.enum(["overdue", "today", "week"]).optional(), deal_id: z.string().uuid().optional(), account_id: z.string().uuid().optional() }),
     run: async (c, a) => {
       let q = c.db.from("tasks").select("id,title,due_date,deal_id,account_id,owner_id").eq("org_id", c.orgId).eq("done", false).order("due_date");
       if (!a.all) q = q.or(`owner_id.eq.${c.userId},owner_id.is.null`);
+      const today = new Date().toISOString().slice(0, 10);
+      if (a.due === "overdue") q = q.lt("due_date", today);
+      if (a.due === "today") q = q.eq("due_date", today);
+      if (a.due === "week") q = q.gte("due_date", today).lte("due_date", new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10));
+      if (a.deal_id) q = q.eq("deal_id", a.deal_id);
+      if (a.account_id) q = q.eq("account_id", a.account_id);
       return ok(await q.limit(40));
     },
   }),
@@ -262,7 +230,11 @@ export const TOOLS: AgentTool[] = [
     name: "search_knowledge", kind: "read",
     description: "Busca en el hub de conocimiento (playbooks, objeciones, metodología, empresa).",
     input: z.object({ query: z.string().min(1) }),
-    run: async (c, a) => ok(await c.db.from("knowledge_docs").select("section,title,body").eq("org_id", c.orgId).or(`title.ilike.${like(a.query)},body.ilike.${like(a.query)}`).limit(6)),
+    run: async (c, a) => {
+      // RLS hides other people's personal docs in the app; Telegram uses the privileged client, so filter here too.
+      const rows = ok(await c.db.from("knowledge_docs").select("section,title,body,scope,created_by").eq("org_id", c.orgId).or(`title.ilike.${like(a.query)},body.ilike.${like(a.query)}`).limit(30));
+      return (rows ?? []).filter((d) => d.scope === "team" || d.created_by === c.userId).slice(0, 6).map(({ scope: _s, created_by: _c, ...d }) => d);
+    },
   }),
 
   // ---------- WRITE (require confirmation) ----------
@@ -285,6 +257,8 @@ export const TOOLS: AgentTool[] = [
       const product = product_id ? ok(await c.db.from("products").select("id,name,price,cost,billing,active").eq("org_id", c.orgId).eq("id", product_id).maybeSingle()) : null;
       if (product_id && !product) throw new Error("Ese producto no existe en el catálogo de esta empresa.");
       if (product && !(product as Product).active) throw new Error(`«${(product as Product).name}» ya no está a la venta. Elige otro producto o vuelve a ponerlo a la venta en Productos.`);
+      if (deal.account_id) await mustFind(c, "accounts", deal.account_id, "esa cuenta");
+      if (deal.segment_id) await mustFind(c, "segments", deal.segment_id, "ese segmento");
       const st = deal.stage ? await resolveStage(c, deal.stage) : null;
       const first = st ? null : firstOpenStage(await orgStages(c));
       const account_id = deal.account_id ?? (await accountByName(c, (account_name ?? deal.name).trim(), deal.segment_id));
@@ -302,7 +276,7 @@ export const TOOLS: AgentTool[] = [
   }),
   def({
     name: "update_deal", kind: "write",
-    description: "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC.",
+    description: "Actualiza un deal: etapa, importe, fecha de cierre, salud (green/yellow/red), categoría de forecast (pipeline/best_case/commit) o un campo MEDDPICC. Como en Pipeline, pasar a Ganado no se aplica directamente: crea una aprobación. Si el deal tiene líneas de producto, su importe sale de ellas y no se cambia aquí.",
     input: z.object({
       deal_id: z.string().uuid(),
       stage: STAGE_ARG.optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional(),
@@ -310,22 +284,40 @@ export const TOOLS: AgentTool[] = [
       meddpicc_field: z.string().optional(), meddpicc_value: z.string().optional(),
     }),
     summarize: (a) => {
-      const parts = [a.stage && `etapa → «${a.stage}»`, a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
+      const won = !!a.stage && ["won", "ganado"].includes(a.stage.trim().toLowerCase());
+      const parts = [a.stage && (won ? "pedir aprobación para pasar a Ganado" : `etapa → «${a.stage}»`), a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
       return `Actualizar el deal: ${parts.join(", ") || "sin cambios"}`;
     },
     run: async (c, a) => {
       const { deal_id, meddpicc_field, meddpicc_value, ...rest } = a;
-      const patch: any = { ...rest };
+      const cur = ok(await c.db.from("deals").select("id,name,amount,meddpicc").eq("org_id", c.orgId).eq("id", deal_id).maybeSingle()) as { id: string; name: string; amount: number | null; meddpicc: Record<string, unknown> | null } | null;
+      if (!cur) throw new Error("No encuentro ese deal en esta empresa. Búscalo primero con search o list_deals.");
+      const patch: Record<string, unknown> = { ...rest };
+      const notes: string[] = [];
+      if (rest.amount != null) {
+        const { count } = await c.db.from("deal_lines").select("id", { count: "exact", head: true }).eq("org_id", c.orgId).eq("deal_id", deal_id);
+        if (count) throw new Error("Este deal tiene líneas de producto: su importe sale de ellas. Cambia las líneas (update_deal_line) en vez del importe.");
+      }
+      if (meddpicc_field) patch.meddpicc = { ...(cur.meddpicc ?? {}), [meddpicc_field]: meddpicc_value ?? "" };
+      let wonKey: string | null = null;
       if (rest.stage) {
         const st = await resolveStage(c, rest.stage);
-        patch.stage = st.key;
-        patch.probability = st.probability;
+        if (st.kind !== "lost") {
+          // Same MEDDPICC warning Pipeline shows on every move except to Perdido: it informs, it does not block.
+          const gate = stageGate({ amount: (rest.amount ?? cur.amount) == null ? null : Number(rest.amount ?? cur.amount), meddpicc: (patch.meddpicc as Record<string, unknown> | undefined) ?? cur.meddpicc }, st.key, stagePath(st.stages));
+          if (gate.missing.length) notes.push(`Camino ${TRACKS[gate.track].label}: para esta etapa falta ${gate.missing.join(", ")}; complétalo en el MEDDPICC del deal.`);
+        }
+        if (st.kind === "won") { delete patch.stage; wonKey = st.key; }
+        else { patch.stage = st.key; patch.probability = st.probability; }
       }
-      if (meddpicc_field) {
-        const cur = ok(await c.db.from("deals").select("meddpicc").eq("org_id", c.orgId).eq("id", deal_id).single());
-        patch.meddpicc = { ...((cur as any)?.meddpicc ?? {}), [meddpicc_field]: meddpicc_value ?? "" };
+      if (!Object.keys(patch).length && !wonKey) throw new Error("No has indicado qué cambiar del deal.");
+      // The approval goes first: if it cannot be created, nothing of the deal has changed either.
+      if (wonKey) {
+        ok(await c.db.from("approvals").insert({ org_id: c.orgId, kind: "stage_change", title: `Marcar como Ganado: ${cur.name}`, evidence: JSON.stringify({ deal_id, stage: wonKey }) }).select("id").single());
+        notes.push("Pasar a Ganado requiere aprobación: lo he enviado a Aprobaciones.");
       }
-      return ok(await c.db.from("deals").update(patch).eq("org_id", c.orgId).eq("id", deal_id).select("id,name,stage,close_date").single());
+      const row = Object.keys(patch).length ? ok(await c.db.from("deals").update(patch as never).eq("org_id", c.orgId).eq("id", deal_id).select("id,name,stage,close_date").single()) : cur;
+      return { ...row, ...(notes.length ? { mensaje: notes.join(" ") } : {}) };
     },
   }),
   def({
@@ -348,14 +340,21 @@ export const TOOLS: AgentTool[] = [
     description: `Añade un stakeholder a una cuenta. buying_role: ${Object.keys(BUYING_ROLES).join(", ")}.`,
     input: z.object({ account_id: z.string().uuid(), name: z.string().min(1), title: z.string().optional(), buying_role: z.string().optional(), email: z.string().optional() }),
     summarize: (a) => `Añadir a ${a.name}${a.title ? ` (${a.title})` : ""} como stakeholder`,
-    run: async (c, a) => ok(await c.db.from("stakeholders").insert({ ...a, org_id: c.orgId }).select("id,name").single()),
+    run: async (c, a) => {
+      await mustFind(c, "accounts", a.account_id, "esa cuenta");
+      return ok(await c.db.from("stakeholders").insert({ ...a, org_id: c.orgId }).select("id,name").single());
+    },
   }),
   def({
     name: "create_meeting", kind: "write",
     description: "Planifica una reunión (planificador de reuniones).",
     input: z.object({ title: z.string().min(1), account_id: z.string().uuid().optional(), deal_id: z.string().uuid().optional(), scheduled_at: z.string().optional().describe("ISO 8601"), objective: z.string().optional() }),
     summarize: (a) => `Planificar la reunión «${a.title}»${a.scheduled_at ? ` el ${a.scheduled_at.slice(0, 16).replace("T", " ")}` : ""}`,
-    run: async (c, a) => ok(await c.db.from("meetings").insert({ ...a, org_id: c.orgId }).select("id,title").single()),
+    run: async (c, a) => {
+      if (a.account_id) await mustFind(c, "accounts", a.account_id, "esa cuenta");
+      if (a.deal_id) await mustFind(c, "deals", a.deal_id, "ese deal");
+      return ok(await c.db.from("meetings").insert({ ...a, org_id: c.orgId }).select("id,title").single());
+    },
   }),
   def({
     name: "prepare_meeting_brief", kind: "write",
@@ -401,7 +400,12 @@ export const TOOLS: AgentTool[] = [
     description: "Crea una tarea (opcionalmente ligada a un deal o cuenta).",
     input: z.object({ title: z.string().min(1), due_date: z.string().optional(), deal_id: z.string().uuid().optional(), account_id: z.string().uuid().optional(), owner_id: z.string().uuid().nullable().optional() }),
     summarize: (a) => `Crear la tarea «${a.title}»${a.due_date ? ` para el ${a.due_date}` : ""}`,
-    run: async (c, a) => ok(await c.db.from("tasks").insert({ ...a, owner_id: a.owner_id ?? c.userId, org_id: c.orgId, source: "agent" }).select("id,title").single()),
+    run: async (c, a) => {
+      if (a.deal_id) await mustFind(c, "deals", a.deal_id, "ese deal");
+      if (a.account_id) await mustFind(c, "accounts", a.account_id, "esa cuenta");
+      if (a.owner_id) await mustBeMember(c, a.owner_id);
+      return ok(await c.db.from("tasks").insert({ ...a, owner_id: a.owner_id ?? c.userId, org_id: c.orgId, source: "agent" }).select("id,title").single());
+    },
   }),
   def({
     name: "complete_task", kind: "write",
@@ -482,7 +486,10 @@ export const TOOLS: AgentTool[] = [
     description: "Fija la cuota de un usuario para un trimestre (AAAA-QN). Sin user_id = la mía.",
     input: z.object({ amount: z.number().positive(), period: z.string().regex(/^\d{4}-Q[1-4]$/).optional(), user_id: z.string().uuid().optional() }),
     summarize: (a) => `Fijar cuota de ${a.amount} para ${a.period ?? quarterOf(new Date())}`,
-    run: async (c, a) => ok(await c.db.from("quotas").upsert({ org_id: c.orgId, user_id: a.user_id ?? c.userId, period: a.period ?? quarterOf(new Date()), amount: a.amount }, { onConflict: "org_id,user_id,period" }).select("id").single()),
+    run: async (c, a) => {
+      if (a.user_id) await mustBeMember(c, a.user_id);
+      return ok(await c.db.from("quotas").upsert({ org_id: c.orgId, user_id: a.user_id ?? c.userId, period: a.period ?? quarterOf(new Date()), amount: a.amount }, { onConflict: "org_id,user_id,period" }).select("id").single());
+    },
   }),
   // ---------- CICLO GTM (BMAD) ----------
   def({
@@ -517,6 +524,8 @@ export const TOOLS: AgentTool[] = [
     },
   }),
 ];
+
+export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS];
 
 export function getTool(name: string) {
   return TOOLS.find((t) => t.name === name);
