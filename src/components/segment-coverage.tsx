@@ -1,3 +1,4 @@
+import { wonDealsMargin } from "@/lib/deal-lines";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
@@ -10,7 +11,7 @@ import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/se
 import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
 
-const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", plan: "margen presupuestado", objetivo: "margen objetivo" };
+const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", deals: "margen de los deals ganados", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
 const pct = (n: number) => `${Math.round(n * 100)}%`;
 const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos", rango: "punto medio del rango" };
@@ -29,13 +30,13 @@ export function useSegmentCoverageData(quarter: string) {
     queryFn: async () => {
       const [s, d, t, c, b] = await Promise.all([
         supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
-        supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+        supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin"),
         supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
         supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
       ]);
       return {
-        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter), deals: d.data ?? [], costs: c.data ?? [],
+        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter, wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment), deals: d.data ?? [], costs: c.data ?? [],
         targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
       };
     },

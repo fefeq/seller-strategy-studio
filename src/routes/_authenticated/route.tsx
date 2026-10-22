@@ -37,6 +37,7 @@ const NAV = [
   { to: "/accounts", label: "Cuentas" },
   { to: "/leads", label: "Leads" },
   { to: "/deals", label: "Pipeline" },
+  { to: "/products", label: "Productos" },
   { to: "/metrics", label: "Métricas" },
   { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
   { to: "/abm", label: "ABM y partners" },

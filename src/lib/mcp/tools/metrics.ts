@@ -1,3 +1,4 @@
+import { wonDealsMargin } from "@/lib/deal-lines";
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { segmentActuals } from "@/lib/pipeline-real";
@@ -19,7 +20,7 @@ export const realMetrics = defineTool({
     const c = await mcpCtx(ctx);
     const [{ data: segs }, { data: deals }] = await Promise.all([
       c.db.from("segments").select("*").eq("org_id", c.orgId),
-      c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at").eq("org_id", c.orgId),
+      c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin").eq("org_id", c.orgId),
     ]);
     const r = segmentActuals((segs ?? []) as SegLike[], deals ?? []);
     return json({
@@ -44,14 +45,14 @@ export const segmentCoverageTool = defineTool({
     const year = Number(q.slice(0, 4));
     const [{ data: segs }, { data: deals }, { data: targets }, { data: yearCosts }, { data: budgets }] = await Promise.all([
       c.db.from("segments").select("*").eq("org_id", c.orgId),
-      c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at").eq("org_id", c.orgId),
+      c.db.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin").eq("org_id", c.orgId),
       c.db.from("segment_targets").select("segment_id,amount").eq("org_id", c.orgId).eq("period", q),
       c.db.from("cac_costs").select("segment_id,channel,amount,period").eq("org_id", c.orgId).in("period", quartersOfYear(year)),
       c.db.from("segment_budget_quarters").select("*").eq("org_id", c.orgId).in("period", quartersOfYear(year)),
     ]);
     const costs = (yearCosts ?? []).filter((x) => x.period === q);
     const t = Object.fromEntries((targets ?? []).map((x) => [x.segment_id, Number(x.amount)]));
-    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q), deals ?? [], t, range, costs);
+    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q, wonDealsMargin(deals ?? [], range.end, (segs ?? []) as SegLike[]).bySegment), deals ?? [], t, range, costs);
     const qb = quarterlyBudget((segs ?? []) as SegLike[], deals ?? [], budgets ?? [], yearCosts ?? [], year);
     const quarterB = qb.byQuarter[q], budget = qb.year;
     return json({
@@ -59,7 +60,8 @@ export const segmentCoverageTool = defineTool({
       segments: rows.map((r, i) => ({
         name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
         cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target },
-        gross_margin: { pct: round(quarterB[i].margin.pct), source: quarterB[i].margin.source },
+        // The margin the payback above used (budget actuals → won deals with lines → plan → target).
+        gross_margin: { pct: round((r.segment as { gross_margin_pct: number | null }).gross_margin_pct), source: (r.segment as { margin_source?: string | null }).margin_source ?? null },
         budget_quarter: { plan: quarterB[i].plan, actual: quarterB[i].actual, revenue_attainment: quarterB[i].revenueAttainment },
         payback: { ...r.payback, real: round(r.payback.real) },
         budget_year: { year, plan: budget[i].plan, actual: budget[i].actual, revenue_attainment: budget[i].revenueAttainment },

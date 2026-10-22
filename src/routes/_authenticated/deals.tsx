@@ -22,6 +22,7 @@ import { actuals } from "@/lib/pipeline-real";
 import { StaleSettings, useStaleSettings } from "@/components/stale-settings";
 import { DateField } from "@/components/date-field";
 import { NewDealButton } from "@/components/new-deal";
+import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 
@@ -149,9 +150,12 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
     },
   });
   const total = MEDDPICC.reduce((s, [k]) => s + (m[k]?.score ?? 0), 0);
+  // With product lines the amount is theirs (the database recomputes it): the form must not overwrite it.
+  const { data: lines = [] } = useDealLines(deal.id);
+  const hasLines = lines.length > 0;
 
   async function save() {
-    const { error } = await supabase.from("deals").update({ name: d.name, amount: d.amount, close_date: d.close_date || null, probability: d.probability, health: d.health, meddpicc: d.meddpicc, forecast_category: d.forecast_category, source: d.source, segment_id: d.segment_id || null, partner_id: d.partner_id || null }).eq("id", d.id);
+    const { error } = await supabase.from("deals").update({ name: d.name, ...(hasLines ? {} : { amount: d.amount }), close_date: d.close_date || null, probability: d.probability, health: d.health, meddpicc: d.meddpicc, forecast_category: d.forecast_category, source: d.source, segment_id: d.segment_id || null, partner_id: d.partner_id || null }).eq("id", d.id);
     if (error) return toast.error(errorText(error));
     toast.success("Deal guardado."); onSaved();
   }
@@ -176,7 +180,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}
         <Field label="Etapa"><Pick value={deal.stage} options={stageOptions(stages, true)} onChange={(v) => { if (v !== deal.stage) void onMove(v); }} /></Field>
         <Field label="Nombre"><Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} /></Field>
-        <Field label={`Importe (${symbol})`}><Input type="number" value={d.amount ?? 0} onChange={(e) => setD({ ...d, amount: Number(e.target.value) })} /></Field>
+        <Field label={`Importe (${symbol})`}>{hasLines ? <p className="flex h-10 items-center font-mono text-sm md:h-9" title="Suma de las líneas del deal en un año">{eur(Number(deal.amount ?? 0))} · de sus líneas</p> : <Input type="number" value={d.amount ?? 0} onChange={(e) => setD({ ...d, amount: Number(e.target.value) })} />}</Field>
         <Field label="Fecha de cierre"><DateField value={d.close_date} onChange={(iso) => setD({ ...d, close_date: iso })} /></Field>
         <Field label="Probabilidad (%)"><Input type="number" min={0} max={100} value={d.probability ?? 0} onChange={(e) => setD({ ...d, probability: Number(e.target.value) })} /></Field>
         <Field label="Salud"><Pick value={d.health} options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }} onChange={(v) => setD({ ...d, health: v })} /></Field>
@@ -185,6 +189,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         <Field label="Segmento"><Pick value={d.segment_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.segments.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, segment_id: v })} /></Field>
         <Field label="Partner"><Pick value={d.partner_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.partners.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, partner_id: v })} /></Field>
       </div>
+      <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
       {d.slip_count > 0 && <p className="text-xs text-signal">La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.</p>}
 
       <div>

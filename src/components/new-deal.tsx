@@ -19,6 +19,8 @@ import { applySetupItems } from "@/lib/agent.functions";
 import { errorText } from "@/lib/errors";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
+import { useProducts } from "@/components/deal-lines";
+import { BILLING_SUFFIX, dealTotals, lineFromProduct, type Billing } from "@/lib/deal-lines";
 
 /**
  * New deal from the pipeline itself, with account, segment and stage at birth. It goes through the same
@@ -26,9 +28,10 @@ import { useStages } from "@/components/stage-settings";
  */
 export function NewDealButton() {
   const qc = useQueryClient();
-  const { symbol } = useCurrency();
+  const { symbol, money } = useCurrency();
   const apply = useServerFn(applySetupItems);
   const { stages } = useStages();
+  const { data: products = [] } = useProducts();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [f, setF] = useState({
@@ -38,7 +41,10 @@ export function NewDealButton() {
     stage: "",
     amount: "",
     close: null as string | null,
+    product: "",
   });
+  const product = products.find((p) => p.id === f.product);
+  const productAmount = product ? dealTotals([lineFromProduct(product)]).amount : null;
   const { data } = useQuery({
     queryKey: ["new-deal-options"],
     enabled: open,
@@ -63,7 +69,8 @@ export function NewDealButton() {
           account_name: existing ? undefined : f.account.trim() || undefined,
           segment_id: f.segment || undefined,
           stage: f.stage || firstOpenStage(stages).key,
-          amount: f.amount === "" ? undefined : Number(f.amount.replace(",", ".")),
+          amount: product ? undefined : f.amount === "" ? undefined : Number(f.amount.replace(",", ".")),
+          product_id: product?.id,
           close_date: f.close ?? undefined,
         }).filter(([, v]) => v !== undefined),
       );
@@ -72,7 +79,7 @@ export function NewDealButton() {
       toast.success(
         `Deal «${f.name.trim()}» creado${f.close ? "" : ". Ponle fecha de cierre para que cuente en la cobertura"}.`,
       );
-      setF({ name: "", account: "", segment: "", stage: "", amount: "", close: null });
+      setF({ name: "", account: "", segment: "", stage: "", amount: "", close: null, product: "" });
       setOpen(false);
       qc.invalidateQueries();
     } catch (e) {
@@ -126,13 +133,24 @@ export function NewDealButton() {
               onChange={(v) => setF({ ...f, stage: v })}
             />
           </Field>
-          <Field label={`Importe (ACV, ${symbol})`}>
-            <Input
-              type="number"
-              inputMode="decimal"
-              value={f.amount}
-              onChange={(e) => setF({ ...f, amount: e.target.value })}
+          <Field label="Producto (opcional)">
+            <Pick
+              value={f.product}
+              options={{ "": "Sin producto", ...Object.fromEntries(products.filter((p) => p.active).map((p) => [p.id, `${p.name} · ${money(Number(p.price))}${BILLING_SUFFIX[p.billing as Billing]}`])) }}
+              onChange={(v) => setF({ ...f, product: v, name: f.name || products.find((p) => p.id === v)?.name || "" })}
             />
+          </Field>
+          <Field label={`Importe (ACV, ${symbol})`}>
+            {productAmount != null ? (
+              <p className="flex h-10 items-center font-mono text-sm md:h-9">{money(productAmount)} · del producto</p>
+            ) : (
+              <Input
+                type="number"
+                inputMode="decimal"
+                value={f.amount}
+                onChange={(e) => setF({ ...f, amount: e.target.value })}
+              />
+            )}
           </Field>
           <Field label="Fecha de cierre">
             <DateField value={f.close} onChange={(iso) => setF({ ...f, close: iso })} />

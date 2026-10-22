@@ -27,6 +27,7 @@ import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedMetricsRouteImport } from './routes/_authenticated/metrics'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
+import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
@@ -131,6 +132,11 @@ const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
   path: '/people',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
+  id: '/products',
+  path: '/products',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -213,6 +219,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
+  '/products': typeof AuthenticatedProductsRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
+  '/products': typeof AuthenticatedProductsRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/metrics': typeof AuthenticatedMetricsRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
+  '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/metrics'
     | '/people'
+    | '/products'
     | '/setup'
     | '/strategy'
     | '/team'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/metrics'
     | '/people'
+    | '/products'
     | '/setup'
     | '/strategy'
     | '/team'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/metrics'
     | '/_authenticated/people'
+    | '/_authenticated/products'
     | '/_authenticated/setup'
     | '/_authenticated/strategy'
     | '/_authenticated/team'
@@ -528,6 +540,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPeopleRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/products': {
+      id: '/_authenticated/products'
+      path: '/products'
+      fullPath: '/products'
+      preLoaderRoute: typeof AuthenticatedProductsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/setup': {
       id: '/_authenticated/setup'
       path: '/setup'
@@ -628,6 +647,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMetricsRoute: typeof AuthenticatedMetricsRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
+  AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedStrategyRoute: typeof AuthenticatedStrategyRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
@@ -651,6 +671,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMetricsRoute: AuthenticatedMetricsRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
+  AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedStrategyRoute: AuthenticatedStrategyRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,

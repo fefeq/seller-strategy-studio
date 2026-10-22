@@ -170,6 +170,27 @@
         "outputSchema": null
       },
       {
+        "name": "list_products",
+        "title": "Listar productos",
+        "description": "Catálogo de productos de la empresa: id, nombre, precio y coste por periodo, cobro (monthly/annual/one_off) y margen %. Úsalo para crear deals con producto.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "include_inactive": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_stages",
         "title": "Listar etapas del pipeline",
         "description": "Etapas del pipeline de la empresa en orden: clave, nombre, tipo (open/won/lost) y probabilidad. Úsalas al crear o mover deals.",
@@ -444,6 +465,15 @@
               "type": "string",
               "minLength": 1,
               "description": "Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost"
+            },
+            "product_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas"
+            },
+            "quantity": {
+              "type": "number",
+              "exclusiveMinimum": 0
             }
           },
           "required": [

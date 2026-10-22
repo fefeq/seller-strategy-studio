@@ -169,6 +169,13 @@
       "when": 1792461675138,
       "tag": "0023_deal_stages",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792462275138,
+      "tag": "0024_products_deal_lines",
+      "breakpoints": true
     }
   ]
 }

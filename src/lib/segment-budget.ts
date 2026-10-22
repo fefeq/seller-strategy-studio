@@ -12,7 +12,8 @@ export type QuarterBudgetLike = BudgetValues & { segment_id: string; period: str
 /** Annual budget of a segment (derived: sum of its quarters). `*_margin` = margin over quarters that have both revenue and cost. */
 export type BudgetLike = BudgetValues & { segment_id: string; year: number; plan_margin?: number | null; actual_margin?: number | null };
 
-export type MarginSource = "real" | "plan" | "objetivo";
+/** real: budget actuals · deals: margin of the deals won with product lines · plan · objetivo: segment target. */
+export type MarginSource = "real" | "deals" | "plan" | "objetivo";
 
 const num = (v: number | string | null | undefined) => (v == null || v === "" ? null : Number(v));
 
@@ -89,14 +90,22 @@ export function withBudgetMargin<S extends SegLike>(segments: S[], budgets: Budg
   return segments.map((s) => applyMargin(s, marginFor(s, budgets.find((b) => b.segment_id === s.id && b.year === year))));
 }
 
-/** Same, from quarterly rows: for a quarter ("2026-Q3") the quarter first, then its year; for a year ("2026") the year. */
-export function withPeriodMargin<S extends SegLike>(segments: S[], rows: QuarterBudgetLike[], period: string): MarginSeg<S>[] {
+/**
+ * Same, from quarterly rows: for a quarter ("2026-Q3") the quarter first, then its year; for a year ("2026") the year.
+ * `dealMargins` (segment → margin % of its won deals with product lines) comes right after the budget's real
+ * margin: what was actually sold beats a plan or a target.
+ */
+export function withPeriodMargin<S extends SegLike>(segments: S[], rows: QuarterBudgetLike[], period: string, dealMargins?: Record<string, { pct: number }>): MarginSeg<S>[] {
   const annual = annualFromQuarters(rows, Number(period.slice(0, 4)));
-  return segments.map((s) => applyMargin(s, marginFor(
-    s,
-    period.includes("-Q") ? rows.find((r) => r.segment_id === s.id && r.period === period) : undefined,
-    annual.find((b) => b.segment_id === s.id),
-  )));
+  return segments.map((s) => {
+    const m = marginFor(
+      s,
+      period.includes("-Q") ? rows.find((r) => r.segment_id === s.id && r.period === period) : undefined,
+      annual.find((b) => b.segment_id === s.id),
+    );
+    const sold = dealMargins?.[s.id];
+    return applyMargin(s, m.source !== "real" && sold ? { pct: sold.pct, source: "deals" } : m);
+  });
 }
 
 /**

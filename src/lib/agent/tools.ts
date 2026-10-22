@@ -10,6 +10,7 @@ import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { BUYING_ROLES, type Role } from "@/lib/roles";
 import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
+import { lineFromProduct, productMarginPct, type Product } from "@/lib/deal-lines";
 import { DISQUALIFIED, LEAD_STAGES, delayText, leadCohort, leadDelay, leadFunnel, leadStageLabel, readSla } from "@/lib/lead-funnel";
 import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
@@ -116,6 +117,15 @@ export const TOOLS: AgentTool[] = [
       ]);
       if (!acc.data) return { error: "Cuenta no encontrada" };
       return { cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, deals: deals.data, reuniones: meet.data, tareas: tasks.data };
+    },
+  }),
+  def({
+    name: "list_products", kind: "read",
+    description: "Catálogo de productos de la empresa: id, nombre, precio y coste por periodo, cobro (monthly/annual/one_off) y margen %. Úsalo para crear deals con producto.",
+    input: z.object({ include_inactive: z.boolean().optional() }),
+    run: async (c, a) => {
+      const rows = ok(await c.db.from("products").select("id,name,price,cost,billing,active").eq("org_id", c.orgId).order("name")) as Product[];
+      return rows.filter((p) => a.include_inactive || p.active).map((p) => ({ id: p.id, nombre: p.name, precio: Number(p.price), coste: p.cost == null ? null : Number(p.cost), cobro: p.billing, margen_pct: productMarginPct(p) == null ? null : Math.round(productMarginPct(p)!), a_la_venta: p.active }));
     },
   }),
   def({
@@ -248,16 +258,28 @@ export const TOOLS: AgentTool[] = [
   def({
     name: "create_deal", kind: "write",
     description: "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads.",
-    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: STAGE_ARG.optional() }),
-    summarize: (a) => `Crear el deal «${a.name}»${a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}`,
+    input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: STAGE_ARG.optional(), product_id: z.string().uuid().optional().describe("Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas"), quantity: z.number().positive().optional() }),
+    summarize: (a) => `Crear el deal «${a.name}»${a.product_id ? ` con ${a.quantity ?? 1} × un producto del catálogo (el importe sale de su precio)` : a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}`,
     run: async (c, a) => {
       // Every way of creating a deal ends with an account, so the asistente, the pipeline and the CSV
       // produce the same data (a deal created here used to have no account; one from the CSV did).
-      const { account_name, ...deal } = a;
+      const { account_name, product_id, quantity, ...deal } = a;
+      const product = product_id ? ok(await c.db.from("products").select("id,name,price,cost,billing,active").eq("org_id", c.orgId).eq("id", product_id).maybeSingle()) : null;
+      if (product_id && !product) throw new Error("Ese producto no existe en el catálogo de esta empresa.");
+      if (product && !(product as Product).active) throw new Error(`«${(product as Product).name}» ya no está a la venta. Elige otro producto o vuelve a ponerlo a la venta en Productos.`);
       const st = deal.stage ? await resolveStage(c, deal.stage) : null;
       const first = st ? null : firstOpenStage(await orgStages(c));
       const account_id = deal.account_id ?? (await accountByName(c, (account_name ?? deal.name).trim(), deal.segment_id));
-      return ok(await c.db.from("deals").insert({ ...deal, account_id, stage: st?.key ?? first!.key, probability: st?.probability ?? first!.probability, org_id: c.orgId, owner_id: c.userId }).select("id,name,account_id").single());
+      const created = ok(await c.db.from("deals").insert({ ...deal, account_id, stage: st?.key ?? first!.key, probability: st?.probability ?? first!.probability, org_id: c.orgId, owner_id: c.userId }).select("id,name,account_id").single());
+      if (product) {
+        const line = await c.db.from("deal_lines").insert({ ...lineFromProduct(product as Product, quantity ?? 1), deal_id: (created as { id: string }).id, org_id: c.orgId } as never).select("id");
+        if (line.error) {
+          // No half-created deal: without its line it would have no amount and a retry would duplicate it.
+          await c.db.from("deals").delete().eq("org_id", c.orgId).eq("id", (created as { id: string }).id);
+          throw new Error(`No se ha creado el deal: no se pudo añadir el producto (${line.error.message}).`);
+        }
+      }
+      return created;
     },
   }),
   def({
