@@ -428,7 +428,7 @@ export const TOOLS: AgentTool[] = [
   def({
     name: "upsert_segment", kind: "write", roles: ["owner", "sales_leader"],
     description: "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos.",
-    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), win_rate_target: z.number().min(0).max(100).optional(), ae_quota: z.number().min(0).optional(), priority: z.number().int().min(1).optional(), notes: z.string().optional() }),
+    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), win_rate_target: z.number().min(0).max(100).optional(), ae_quota: z.number().min(0).optional(), gross_margin_pct: z.number().min(0).max(100).optional(), priority: z.number().int().min(1).optional(), notes: z.string().optional() }),
     summarize: (a) => `${a.segment_id ? "Actualizar" : "Crear"} el segmento «${a.name}»`,
     run: async (c, a) => {
       const { segment_id, ...rest } = a;

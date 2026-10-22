@@ -77,7 +77,7 @@ function Products() {
     <Page eyebrow="Pipeline" title={products.length ? `${products.filter((p) => p.active).length} productos a la venta` : "Qué vendes"}>
       <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
         Cada producto lleva su precio y su coste por periodo, en {symbol}. Al añadirlo a un deal, la línea copia el precio y el coste de ese momento: cambiar el catálogo no reescribe deals ya negociados.
-        El importe del deal pasa a ser la suma de sus líneas en un año (un plan mensual cuenta doce veces) y su margen alimenta el payback de Métricas cuando hay deals ganados con líneas.
+        El importe del deal (ACV) pasa a ser la suma de sus líneas recurrentes en un año (un plan mensual cuenta doce veces); los pagos únicos, como una puesta en marcha, se suman aparte y no cuentan en el ACV ni en el margen. El margen de los deals ganados con líneas alimenta el payback de Métricas.
       </p>
 
       {canEdit && (

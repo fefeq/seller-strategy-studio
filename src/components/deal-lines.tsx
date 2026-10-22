@@ -130,7 +130,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
                 </div>
                 <p className="mt-2 flex justify-between text-xs">
                   <span className="text-muted-foreground">{isOneOff(l) ? `${money(rev)} una vez · fuera del ACV` : `${money(rev)} al año`}</span>
-                  <span className={cost == null ? "text-muted-foreground" : rev - cost >= 0 ? "text-success" : "text-destructive"}>{cost == null ? "margen sin coste" : `margen ${money(rev - cost)}`}</span>
+                  {isOneOff(l) ? <span className="text-muted-foreground">no cuenta en el margen</span> : <span className={cost == null ? "text-muted-foreground" : rev - cost >= 0 ? "text-success" : "text-destructive"}>{cost == null ? "sin coste: el deal queda sin margen" : `margen ${money(rev - cost)}`}</span>}
                 </p>
               </div>
             );

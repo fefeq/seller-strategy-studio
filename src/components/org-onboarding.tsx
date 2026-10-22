@@ -12,7 +12,7 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   const qc = useQueryClient();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
-  const [segments, setSegments] = useState<"template" | "empty">("template");
+  const [segments, setSegments] = useState<"template" | "empty">("empty");
 
   async function create() {
     setBusy(true);
