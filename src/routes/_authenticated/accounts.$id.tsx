@@ -15,7 +15,7 @@ import { Field, Pick } from "@/components/fields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
-import { stageLabel } from "@/lib/stages";
+import { firstOpenStage, stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type CallNotes } from "@/lib/call-notes";
@@ -422,7 +422,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
   const { money: eur } = useCurrency();
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", owner_id: user?.id });
+    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", stage: firstOpenStage(stages).key, owner_id: user?.id });
     if (error) return toast.error(errorText(error));
     onChange();
   }
