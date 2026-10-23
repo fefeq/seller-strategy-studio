@@ -84,7 +84,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
         const { enrichAccount } = await import("@/lib/apollo-gateway");
         const r = await enrichAccount({ db: db as any, orgId, userId: lead.owner_id ?? "", roles: ["owner"], currency: "EUR" }, acc.id);
         // Only empty fields: Nokko never overwrites what the team typed.
-        const patch = Object.fromEntries(r.changes.filter((ch) => ch.empty).map((ch) => [ch.field, ch.proposed]));
+        const patch = Object.fromEntries(r.changes.filter((ch) => ch.empty).map((ch) => [ch.field, ch.proposed])) as Database["public"]["Tables"]["accounts"]["Update"];
         if (Object.keys(patch).length) { await db.from("accounts").update(patch).eq("org_id", orgId).eq("id", acc.id); Object.assign(acc, patch); lines.push(`Empresa completada con Apollo: ${Object.keys(patch).map((k) => ({ industry: "sector", size: "tamaño", country: "país", notes: "descripción" } as Record<string, string>)[k] ?? k).join(", ")}.`); }
       } catch (e) { console.error("lead enrich apollo", (e as Error).message); }
     }

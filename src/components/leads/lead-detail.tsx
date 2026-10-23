@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLeadTouched } from "@/components/background";
 import { Link } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -24,6 +25,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
   const { symbol } = useCurrency();
   const qc = useQueryClient();
   const [f, setF] = useState(lead);
+  const touchLead = useLeadTouched();
   useEffect(() => setF(lead), [lead]);
   const set = <K extends keyof Lead>(k: K, v: Lead[K]) => setF((p) => ({ ...p, [k]: v }));
   const delay = leadDelay(lead, data.sla);
@@ -46,6 +48,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
       disqualified_reason: f.stage === "disqualified" ? f.disqualified_reason || null : null,
     }).eq("id", lead.id).select("deal_id").single();
     if (error) return toast.error(errorText(error));
+    touchLead(lead.id);
     toast.success(!converted && f.stage === "opportunity" && saved?.deal_id ? "Convertido en oportunidad: ya está en Pipeline" : "Lead guardado");
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
