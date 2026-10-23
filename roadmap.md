@@ -22,6 +22,8 @@
 - [x] Clay: prospectar cuentas, buscar stakeholders, completar cuentas; también desde el agente y MCP
 - [x] Página «Conectar asistentes» (/connect): dirección, pasos por asistente y cómo actualizar
 - [x] Apollo.io: completar cuentas, buscar personas y empresas, revelar emails y móviles (estos tres requieren plan de pago de Apollo); también desde el agente y MCP
+- [ ] Firecrawl: configuración desde la web, investigar cuentas, señales y noticias, research de stakeholders con fuentes; agente y MCP
+- [ ] Perplexity: integrar (falta decidir para qué, según el tipo de conexión)
 
 ## Pendiente
 
