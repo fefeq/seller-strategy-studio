@@ -63,6 +63,10 @@ const ASK: Record<string, (s: ResolvableSuggestion) => string> = {
     "Me acaban de asignar estas cuentas. Dime por cuál empiezo y por qué (encaje con el ICP, deals y leads abiertos, última actividad) y el primer paso concreto para cada una. Si quiero crear tareas, prepáralas como acciones para que las confirme.",
   account_signal: () =>
     "Hay una novedad reciente en esta cuenta. Dime en pocas líneas si abre una oportunidad o un riesgo para nosotros según nuestro posicionamiento y lo que sabemos de la cuenta en Nokko, a quién de sus stakeholders escribiría y un borrador de mensaje breve que mencione la noticia. Si conviene una tarea o actualizar el plan de cuenta, prepáralo como acción para que lo confirme.",
+  product_qualified: () =>
+    "Esta cuenta usa nuestro producto cada vez más y aún no es cliente. Dime en pocas líneas a quién contactar (stakeholders y personas de la cuenta), con qué mensaje breve basado en su uso, y prepara como acción el deal o la tarea que convenga para que lo confirme.",
+  usage_drop: () =>
+    "Esta cuenta es cliente y su uso del producto ha caído. Dime en pocas líneas las causas probables según lo que sabemos en Nokko, a quién llamar y qué preguntarle, y prepara como acción una tarea de seguimiento para que la confirme.",
   weekly_report: () =>
     "A partir de este informe semanal, dime las 2 o 3 acciones más importantes para esta semana, con el deal o lead concreto de cada una, y prepáralas como tareas para que las confirme.",
 };
