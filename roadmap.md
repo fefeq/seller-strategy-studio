@@ -19,6 +19,9 @@
 - [x] Papel blanco roto y modo claro/oscuro con interruptor (recuerda la elección o sigue al sistema)
 - [x] Puntuación de leads y cuentas: encaje con el ICP (70 %) + actividad reciente (30 %), con los criterios explicados; ordena Leads y Cuentas y la lista de leads del agente; segmento, sector y tamaño editables en la ficha de la cuenta
 - [x] Textos revisados con la guía de voz: sin exclamaciones ni emoji, sin inglés visible, vocabulario de producto, estados vacíos con qué hacer; la IA tutea y empieza por la conclusión
+- [x] Clay: prospectar cuentas, buscar stakeholders, completar cuentas; también desde el agente y MCP
+- [ ] Página «Conectar asistentes» (/connect): dirección, pasos por asistente y cómo actualizar
+- [ ] Apollo.io: integrar (falta decidir usos: emails, teléfonos, búsqueda de personas/empresas, quién gasta créditos)
 
 ## Pendiente
 
