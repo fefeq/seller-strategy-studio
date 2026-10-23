@@ -43,7 +43,10 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // News signals (Firecrawl) for a few ABM target accounts per run, each at most weekly.
           const { runSignalRefresh } = await import("@/lib/web-research-core");
           const signals = await runSignalRefresh(db, now).catch((e) => { console.error("signal refresh failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe, signals });
+          // Each company's PostHog (product usage and sign-ups), at most every few hours.
+          const { runPosthogSyncs } = await import("@/lib/posthog-sync.server");
+          const posthog = await runPosthogSyncs(db, now).catch((e) => { console.error("posthog syncs failed", e); return null; });
+          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe, signals, posthog });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }

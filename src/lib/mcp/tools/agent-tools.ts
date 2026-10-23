@@ -7,10 +7,12 @@ import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
 const APP_URL = "https://nokko.ai/inbox";
-const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competitor_reviews$|create_battlecard_from_reviews$|research_account$|refresh_account_signals$|research_stakeholder$)/;
+const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competitor_reviews$|create_battlecard_from_reviews$|sync_product_data$|research_account$|refresh_account_signals$|research_stakeholder$)/;
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  get_product_usage: "Uso del producto por cuenta (PostHog)",
+  sync_product_data: "Leer ahora los datos de PostHog",
   create_battlecard_from_reviews: "Battlecard desde reseñas de G2",
   competitor_reviews: "Reseñas de un competidor en G2",
   company_job_postings: "Ofertas de empleo de una cuenta",

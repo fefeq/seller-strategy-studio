@@ -253,6 +253,13 @@
       "when": 1792797507974,
       "tag": "0035_posthog_product_data",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792797730931,
+      "tag": "0036_posthog_connection_status",
+      "breakpoints": true
     }
   ]
 }

@@ -12,6 +12,7 @@ import { APOLLO_TOOLS } from "./tools/apollo";
 import { WEB_TOOLS } from "./tools/web";
 import { DRIVE_TOOLS } from "./tools/drive";
 import { LINKEDIN_TOOLS } from "./tools/linkedin";
+import { PRODUCT_TOOLS } from "./tools/product";
 import { STAGE_ARG, accountByName, def, like, mustBeMember, mustFind, ok, orgStages, resolveStage, type AgentTool, type ToolCtx } from "./tool-kit";
 import { setupStatus, POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { buildSnapshot } from "@/lib/advisor";
@@ -530,7 +531,7 @@ const CORE_TOOLS: AgentTool[] = [
   }),
 ];
 
-export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS];
+export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS];
 
 export function getTool(name: string) {
   return TOOLS.find((t) => t.name === name);

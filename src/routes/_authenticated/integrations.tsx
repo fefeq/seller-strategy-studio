@@ -7,6 +7,7 @@ import { Page } from "@/components/page";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { StripeConnect } from "@/components/stripe-panel";
+import { PosthogConnect } from "@/components/posthog-panel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({ meta: [{ title: "Conexiones — Nokko" }, { name: "description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }, { property: "og:title", content: "Conexiones — Nokko" }, { property: "og:description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }] }),
@@ -59,7 +60,7 @@ function Integrations() {
             </Link>
           ))}
         </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-2"><StripeConnect /></div>
+        <div className="mt-3 grid gap-3 md:grid-cols-2"><StripeConnect /><PosthogConnect /></div>
         <p className="mt-4 text-xs text-muted-foreground">Aún sin conexión nativa: {NOT_YET.join(" · ")}.</p>
       </section>
 

@@ -25,6 +25,8 @@ export type Snapshot = {
   stages?: import("@/lib/stages").Stage[];
   /** Account news signals found in the last 14 days (Firecrawl). Optional so older snapshots still work. */
   signals?: { id: string; account_id: string; title: string; kind: string; summary: string; relevance: string; url: string; found_at: string }[];
+  /** Product usage per company domain from the company's PostHog. Optional so older snapshots still work. */
+  usage?: { domain: string; account_id: string | null; active_users_7d: number; active_users_prev_7d: number }[];
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };

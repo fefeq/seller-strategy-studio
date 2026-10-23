@@ -189,3 +189,18 @@ describe("proposal item summaries", () => {
     expect(itemDetail("create_account", { name: "Acme" })).toBeNull();
   });
 });
+
+describe("product usage detectors", () => {
+  const accounts = [{ id: "a1", name: "Acme", is_target: false, owner_id: "u1" }, { id: "a2", name: "Beta", is_target: false, owner_id: "u2" }];
+  it("flags a growing non-customer and a company not in Nokko", () => {
+    const s = snap({ accounts, usage: [{ domain: "acme.com", account_id: "a1", active_users_7d: 4, active_users_prev_7d: 2 }, { domain: "new.io", account_id: null, active_users_7d: 5, active_users_prev_7d: 1 }] });
+    const found = detect(s).filter((x) => x.detector === "product_qualified");
+    expect(found.map((x) => x.dedupe_key)).toEqual(["pql:a1:2026-10", "pql_new:new.io"]);
+    expect(found[1]!.action).toEqual({ tool: "create_account", args: { name: "new.io", domain: "new.io" } });
+  });
+  it("does not flag customers as product-qualified but warns when their usage halves", () => {
+    const s = snap({ accounts, deals: [deal({ account_id: "a2", stage: "won" })], usage: [{ domain: "beta.com", account_id: "a2", active_users_7d: 0, active_users_prev_7d: 6 }, { domain: "acme.com", account_id: "a1", active_users_7d: 1, active_users_prev_7d: 6 }] });
+    const k = detect(s).filter((x) => x.detector === "product_qualified" || x.detector === "usage_drop");
+    expect(k.map((x) => [x.detector, x.dedupe_key, x.priority])).toEqual([["usage_drop", "usage_drop:a2:2026-10-19", 1]]);
+  });
+});

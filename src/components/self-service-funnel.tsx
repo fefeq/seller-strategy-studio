@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -57,7 +58,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         <div>
           <p className="eyebrow">Self-service · PLG</p>
           <h2 className="text-3xl">Funnel self-service {quarter}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Cohorte de registros del trimestre: cuántos se activan, cuántos pasan a pago y cuánto tardan.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Cohorte de registros del trimestre: cuántos se activan, cuántos pasan a pago y cuánto tardan. {(data?.trials ?? []).some((t) => t.source === "PostHog") ? "Las altas llegan solas desde tu PostHog." : <>Para llenarlo solo, <Link to="/integrations" className="underline">conecta tu PostHog en Conexiones</Link>.</>}</p>
         </div>
         <ManageTrials trials={data?.trials ?? []} segments={data?.segments ?? []} />
       </div>

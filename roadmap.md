@@ -83,4 +83,4 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Google Drive (Drive de Fede, una carpeta por empresa y por cuenta): importar al hub y a la configuración, guardar plan/propuesta/documentos del ciclo/docs del hub, agente y MCP
 - [x] Apify: LinkedIn (publicaciones de cuentas y stakeholders, ofertas de empleo) en Señales y research; battlecards desde reseñas de G2; agente y MCP
 - [ ] n8n: avisar de eventos, lanzar flujos a mano, panel de flujos, agente/MCP (Owner y Sales Leader). Bloqueado: el usuario canceló la conexión y lo deja para más tarde
-- [ ] PostHog: traer datos de producto de cada empresa cliente (no medir Nokko); quitar la medición de Nokko ya montada
+- [x] PostHog por empresa: funnel self-service, uso por cuenta, avisos de PQL y caída de uso, agente/MCP; medición de Nokko retirada
