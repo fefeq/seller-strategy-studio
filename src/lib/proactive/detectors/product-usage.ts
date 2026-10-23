@@ -1,5 +1,5 @@
 import { isProductQualified, isUsageDrop, PQL_MIN_USERS } from "@/lib/product-usage";
-import type { Detector, Snapshot } from "../types";
+import type { Detector, Snapshot, Suggestion } from "../types";
 
 /** Accounts with a won deal (by the company's won stages, else «won»). */
 function customers(s: Snapshot) {
@@ -14,7 +14,7 @@ const week = (d: Date) => { const t = new Date(Date.UTC(d.getUTCFullYear(), d.ge
 export const productQualified: Detector = (s) => {
   const cust = customers(s);
   const byId = new Map(s.accounts.map((a) => [a.id, a]));
-  return (s.usage ?? []).flatMap((u) => {
+  return (s.usage ?? []).flatMap((u): Suggestion[] => {
     if (u.account_id) {
       const acc = byId.get(u.account_id);
       if (!acc || !isProductQualified(u, cust.has(acc.id))) return [];
