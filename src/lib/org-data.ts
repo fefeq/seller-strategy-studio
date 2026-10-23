@@ -7,6 +7,7 @@ import type { SetupData } from "@/lib/setup-schema";
 import type { Snapshot } from "@/lib/proactive/types";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
+import { readCustomerSettings } from "@/lib/customers";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
 
 export type Db = SupabaseClient<Database>;
@@ -36,11 +37,12 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members] = await Promise.all([
+  const nowIso = now.toISOString();
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, dealLines, touches, calls, pastMeetings] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
-    db.from("accounts").select("id,name,is_target,owner_id,created_at").eq("org_id", orgId),
+    db.from("accounts").select("id,name,is_target,owner_id,created_at,health").eq("org_id", orgId),
     db.from("stakeholders").select("account_id,buying_role").eq("org_id", orgId),
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
     db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
@@ -49,6 +51,10 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
     db.from("org_members").select("user_id,role").eq("org_id", orgId),
+    db.from("deal_lines").select("deal_id,billing,product_id").eq("org_id", orgId).limit(5000),
+    db.from("account_touches").select("account_id,occurred_at").eq("org_id", orgId).lte("occurred_at", nowIso).order("occurred_at", { ascending: false }).limit(5000),
+    db.from("calls").select("account_id,occurred_at").eq("org_id", orgId).lte("occurred_at", nowIso).order("occurred_at", { ascending: false }).limit(5000),
+    db.from("meetings").select("account_id,scheduled_at").eq("org_id", orgId).lte("scheduled_at", nowIso).order("scheduled_at", { ascending: false }).limit(5000),
   ]);
   return {
     now, orgId, setup,
@@ -66,6 +72,16 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     cycleDeals: (deals.data ?? []) as any,
     cycleSegments: segs.data ?? [],
     staleDays: readStaleDays(leadSettings.data?.sla),
+    dealLines: dealLines.data ?? [],
+    // Dated activity per account (touches, calls, past meetings, deal updates): the same sources as the Cuentas score.
+    activity: [
+      ...(touches.data ?? []).map((r) => ({ account_id: r.account_id, at: r.occurred_at })),
+      ...(calls.data ?? []).map((r) => ({ account_id: r.account_id, at: r.occurred_at })),
+      ...(pastMeetings.data ?? []).map((r) => ({ account_id: r.account_id, at: r.scheduled_at })),
+      ...(deals.data ?? []).map((r) => ({ account_id: r.account_id, at: r.updated_at })),
+    ],
+    accountHealth: (accounts.data ?? []).map((a) => ({ id: a.id, health: a.health })),
+    customerSettings: readCustomerSettings(leadSettings.data?.sla),
   };
 }
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "sdk_version": "3.1.1",
+  "sdk_version": "3.3.0",
   "path": "/mcp",
   "auth": {
     "type": "oauth",
@@ -2708,6 +2708,81 @@
             "kind",
             "title"
           ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_renewals",
+        "title": "Renovaciones próximas",
+        "description": "Renovaciones próximas de clientes (cuentas con un deal ganado con líneas anuales). La fecha es una estimación: el aniversario del cierre del deal. Los deals mensuales o de pago único no tienen renovación. La ventana por defecto es la de la empresa; con within_days se cambia.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "within_days": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 730
+            },
+            "mine": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_customer_health",
+        "title": "Salud de un cliente",
+        "description": "Salud de una cuenta cliente: nivel (sano, vigilar, riesgo o sin datos) y la evidencia de cada señal (salud de la ficha, actividad reciente, pagos). No hay puntuación numérica y lo que falta se dice como «sin datos». Incluye su próxima renovación estimada si tiene.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_expansion_opportunities",
+        "title": "Oportunidades de expansión",
+        "description": "Clientes con margen para crecer: whitespace escrito en su plan de cuenta y productos activos del catálogo que aún no tienen contratados en ningún deal ganado. Indica cuántos deals abiertos tiene cada uno (si ya hay uno, alguien lo está trabajando).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
           "additionalProperties": false
         },
         "outputSchema": null

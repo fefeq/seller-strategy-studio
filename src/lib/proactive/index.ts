@@ -12,9 +12,11 @@ import { lateLeads } from "./detectors/late-leads";
 import { followupSequence } from "./detectors/followup-sequence";
 import { meetingNoNotes } from "./detectors/meeting-no-notes";
 import { unassignedAccounts } from "./detectors/unassigned-accounts";
+import { renewalUpcoming } from "./detectors/renewal-upcoming";
+import { customerAtRisk } from "./detectors/customer-at-risk";
 
 /** Adding a rule = adding a file in ./detectors and listing it here. */
-export const DETECTORS: Detector[] = [staleDeal, pastCloseDate, lowCoverage, meddpiccGaps, meetingNoPrep, noDecisionMaker, trialConversion, setupIncomplete, registrationExpiring, lateLeads, followupSequence, meetingNoNotes, unassignedAccounts];
+export const DETECTORS: Detector[] = [staleDeal, pastCloseDate, lowCoverage, meddpiccGaps, meetingNoPrep, noDecisionMaker, trialConversion, setupIncomplete, registrationExpiring, lateLeads, followupSequence, meetingNoNotes, unassignedAccounts, renewalUpcoming, customerAtRisk];
 
 export function detect(s: Snapshot): Suggestion[] {
   const out = DETECTORS.flatMap((d) => d(s));

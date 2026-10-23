@@ -287,3 +287,64 @@ describe("fixes from review", () => {
     expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
   });
 });
+
+describe("customer tools", () => {
+  const nowIso = () => new Date().toISOString();
+  const yearAgoPlus = (days: number) => { const d = new Date(); d.setUTCFullYear(d.getUTCFullYear() - 1); d.setUTCDate(d.getUTCDate() + days); return d.toISOString(); };
+  const wonDeal = (id: number, account: number, closed: string) => ({ id: ID(id), name: `Deal ${id}`, account_id: ID(account), stage: "won", amount: 12000, closed_at: closed, close_date: null, updated_at: nowIso(), owner_id: ME });
+  const reply = (q: Q): Reply => {
+    if (q.table === "deals") return { data: [wonDeal(1, 3, yearAgoPlus(10))] };
+    if (q.table === "deal_lines") return { data: [{ deal_id: ID(1), billing: "annual", product_id: ID(8) }] };
+    if (q.table === "accounts") return { data: [{ id: ID(3), name: "Acme", health: "green" }] };
+    return undefined;
+  };
+
+  it("are registered as read tools with an MCP title", () => {
+    for (const n of ["list_renewals", "get_customer_health", "list_expansion_opportunities"]) {
+      expect(getTool(n)?.kind, n).toBe("read");
+      expect(TITLES[n], n).toBeTruthy();
+    }
+  });
+
+  it("list_renewals returns the renewal inside the window and stays inside the company", async () => {
+    const { db, log } = fakeDb(reply);
+    const r = (await executeTool(ctxWith(db), "list_renewals", {})) as { renovaciones: { cuenta_id: string; dias: number }[]; fuente_ventana: string };
+    expect(r.fuente_ventana).toBe("defecto");
+    expect(r.renovaciones).toHaveLength(1);
+    expect(r.renovaciones[0].cuenta_id).toBe(ID(3));
+    expect(r.renovaciones[0].dias).toBeLessThanOrEqual(10);
+    expect(writes(log)).toHaveLength(0);
+    expectScoped(log);
+  });
+
+  it("list_renewals with mine hides other owners' renewals", async () => {
+    const { db } = fakeDb((q) => (q.table === "deals" ? { data: [{ ...wonDeal(1, 3, yearAgoPlus(10)), owner_id: OTHER }] } : reply(q)));
+    const r = (await executeTool(ctxWith(db), "list_renewals", { mine: true })) as { renovaciones: unknown[] };
+    expect(r.renovaciones).toHaveLength(0);
+  });
+
+  it("get_customer_health says a prospect is not a customer instead of inventing a level", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: [] } : reply(q)));
+    const r = (await executeTool(ctxWith(db), "get_customer_health", { account_id: ID(3) })) as { cliente: boolean; nivel?: string };
+    expect(r.cliente).toBe(false);
+    expect(r.nivel).toBeUndefined();
+    expectScoped(log);
+  });
+
+  it("get_customer_health reports the payment signal as unknown", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "accounts" ? { data: { id: ID(3), name: "Acme", health: "green" } } : reply(q)));
+    const r = (await executeTool(ctxWith(db), "get_customer_health", { account_id: ID(3) })) as { cliente: boolean; senales: { id: string; estado: string }[] };
+    expect(r.cliente).toBe(true);
+    expect(r.senales.find((s) => s.id === "pago")?.estado).toBe("sin datos");
+    expectScoped(log);
+  });
+
+  it("list_expansion_opportunities is read-only, scoped, and explains an empty result", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: [] } : reply(q)));
+    const r = (await executeTool(ctxWith(db), "list_expansion_opportunities", {})) as { oportunidades: unknown[]; mensaje?: string };
+    expect(r.oportunidades).toEqual([]);
+    expect(r.mensaje).toBeTruthy();
+    expect(writes(log)).toHaveLength(0);
+    expectScoped(log);
+  });
+});

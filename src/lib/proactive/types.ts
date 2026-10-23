@@ -23,6 +23,12 @@ export type Snapshot = {
   staleDays?: number | null;
   /** The company's deal stages; the default seven when missing. */
   stages?: import("@/lib/stages").Stage[];
+  /** For renewals and customer health: lines of every deal, dated activity per account and the company limits. Optional so older snapshots still work. */
+  dealLines?: import("@/lib/customers").DealLine[];
+  activity?: { account_id: string | null; at: string | null }[];
+  /** Health marked on each account sheet (green/yellow/red). */
+  accountHealth?: { id: string; health: string | null }[];
+  customerSettings?: import("@/lib/customers").CustomerSettings;
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };

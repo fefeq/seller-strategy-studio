@@ -61,6 +61,10 @@ const ASK: Record<string, (s: ResolvableSuggestion) => string> = {
     "Hay cuentas sin responsable. Dime en pocas líneas qué les falta para repartirlas bien (país, segmento o tier) y si con el equipo y las reglas actuales alguna se quedaría sin dueño. El reparto se propone y se aprueba en esta pantalla («Proponer reparto»): no asignes cuentas tú.",
   account_assigned: () =>
     "Me acaban de asignar estas cuentas. Dime por cuál empiezo y por qué (encaje con el ICP, deals y leads abiertos, última actividad) y el primer paso concreto para cada una. Si quiero crear tareas, prepáralas como acciones para que las confirme.",
+  renewal_upcoming: () =>
+    "Prepara esta renovación: con los datos de Nokko (deal ganado, plan de cuenta, reuniones y actividad), dime qué hay que revisar antes de la fecha y quién de la cuenta decide. La fecha es una estimación (aniversario del cierre): si no coincide con el contrato real, dímelo para corregir el deal. No inventes condiciones del contrato.",
+  customer_at_risk: () =>
+    "Ayúdame a entender este cliente en riesgo con lo que hay en Nokko: la señal que ha saltado, su última actividad y sus stakeholders. Propón el primer paso para retomar el contacto y, si hay datos que no están en Nokko (por ejemplo pagos), dime qué preguntar. Prepara las tareas como acciones para que las confirme.",
   weekly_report: () =>
     "A partir de este informe semanal, dime las 2 o 3 acciones más importantes para esta semana, con el deal o lead concreto de cada una, y prepáralas como tareas para que las confirme.",
 };
