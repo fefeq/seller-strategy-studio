@@ -45,7 +45,22 @@ export type Database = {
           region?: string | null
           segment_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "account_assignment_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_assignment_rules_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       account_plans: {
         Row: {
@@ -783,6 +798,73 @@ export type Database = {
         }
         Relationships: []
       }
+      deal_lines: {
+        Row: {
+          billing: string
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          discount_pct: number
+          id: string
+          name: string
+          org_id: string
+          product_id: string | null
+          quantity: number
+          unit_cost: number | null
+          unit_price: number
+        }
+        Insert: {
+          billing?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          discount_pct?: number
+          id?: string
+          name: string
+          org_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number | null
+          unit_price?: number
+        }
+        Update: {
+          billing?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          discount_pct?: number
+          id?: string
+          name?: string
+          org_id?: string
+          product_id?: string | null
+          quantity?: number
+          unit_cost?: number | null
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_lines_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_lines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_registrations: {
         Row: {
           account_id: string | null
@@ -856,73 +938,6 @@ export type Database = {
             columns: ["partner_id"]
             isOneToOne: false
             referencedRelation: "partners"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      deal_lines: {
-        Row: {
-          billing: string
-          created_at: string
-          created_by: string | null
-          deal_id: string
-          discount_pct: number
-          id: string
-          name: string
-          org_id: string
-          product_id: string | null
-          quantity: number
-          unit_cost: number | null
-          unit_price: number
-        }
-        Insert: {
-          billing?: string
-          created_at?: string
-          created_by?: string | null
-          deal_id: string
-          discount_pct?: number
-          id?: string
-          name: string
-          org_id?: string
-          product_id?: string | null
-          quantity?: number
-          unit_cost?: number | null
-          unit_price?: number
-        }
-        Update: {
-          billing?: string
-          created_at?: string
-          created_by?: string | null
-          deal_id?: string
-          discount_pct?: number
-          id?: string
-          name?: string
-          org_id?: string
-          product_id?: string | null
-          quantity?: number
-          unit_cost?: number | null
-          unit_price?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "deal_lines_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deal_lines_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "deal_lines_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
             referencedColumns: ["id"]
           },
         ]
@@ -1030,12 +1045,12 @@ export type Database = {
           external_id: string | null
           forecast_category: string | null
           gross_margin: number | null
-          one_off_amount: number | null
           health: string | null
           id: string
           lead_source_id: string | null
           meddpicc: Json
           name: string
+          one_off_amount: number | null
           org_id: string | null
           owner_id: string | null
           partner_id: string | null
@@ -1057,12 +1072,12 @@ export type Database = {
           external_id?: string | null
           forecast_category?: string | null
           gross_margin?: number | null
-          one_off_amount?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
           meddpicc?: Json
           name: string
+          one_off_amount?: number | null
           org_id?: string | null
           owner_id?: string | null
           partner_id?: string | null
@@ -1070,7 +1085,7 @@ export type Database = {
           segment_id?: string | null
           slip_count?: number
           source?: string | null
-          stage?: string
+          stage: string
           updated_at?: string
           updated_by?: string | null
         }
@@ -1084,12 +1099,12 @@ export type Database = {
           external_id?: string | null
           forecast_category?: string | null
           gross_margin?: number | null
-          one_off_amount?: number | null
           health?: string | null
           id?: string
           lead_source_id?: string | null
           meddpicc?: Json
           name?: string
+          one_off_amount?: number | null
           org_id?: string | null
           owner_id?: string | null
           partner_id?: string | null
@@ -1136,6 +1151,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "segments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_stage_fkey"
+            columns: ["org_id", "stage"]
+            isOneToOne: false
+            referencedRelation: "deal_stages"
+            referencedColumns: ["org_id", "key"]
           },
         ]
       }
@@ -2168,24 +2190,24 @@ export type Database = {
       }
       organizations: {
         Row: {
-          created_at: string
           company_name: string | null
+          created_at: string
           created_by: string | null
           currency: string
           id: string
           name: string
         }
         Insert: {
-          created_at?: string
           company_name?: string | null
+          created_at?: string
           created_by?: string | null
           currency?: string
           id?: string
           name: string
         }
         Update: {
-          created_at?: string
           company_name?: string | null
+          created_at?: string
           created_by?: string | null
           currency?: string
           id?: string
@@ -3374,10 +3396,6 @@ export type Database = {
         Returns: string
       }
       current_org: { Args: never; Returns: string }
-      reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
-      remove_stripe_key: { Args: never; Returns: undefined }
-      set_stripe_key: { Args: { _key: string }; Returns: undefined }
-      stripe_key_for: { Args: { _org: string }; Returns: string }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
@@ -3390,7 +3408,12 @@ export type Database = {
         Returns: boolean
       }
       is_org_member: { Args: { _org: string }; Returns: boolean }
+      remove_stripe_key: { Args: never; Returns: undefined }
+      reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
+      seed_deal_stages: { Args: { _org: string }; Returns: undefined }
+      set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }
+      stripe_key_for: { Args: { _org: string }; Returns: string }
     }
     Enums: {
       app_role:
