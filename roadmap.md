@@ -81,3 +81,4 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [ ] Lanzar el Asesor GTM desde el agente.
 - [ ] Sincronización nativa con un CRM (HubSpot, Pipedrive, Attio, Salesforce) si el cliente lo usa; hoy entra por webhook/Zapier.
 - [x] Google Drive (Drive de Fede, una carpeta por empresa y por cuenta): importar al hub y a la configuración, guardar plan/propuesta/documentos del ciclo/docs del hub, agente y MCP
+- [x] Apify: LinkedIn (publicaciones de cuentas y stakeholders, ofertas de empleo) en Señales y research; battlecards desde reseñas de G2; agente y MCP
