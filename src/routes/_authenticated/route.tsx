@@ -44,6 +44,7 @@ const NAV = [
   { to: "/people", label: "Personas" },
   { to: "/approvals", label: "Aprobaciones" },
   { to: "/integrations", label: "Conexiones" },
+  { to: "/connect", label: "Conectar asistentes" },
   { to: "/team", label: "Equipo y conexiones" },
 ] as const;
 

@@ -18,6 +18,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedConnectRouteImport } from './routes/_authenticated/connect'
 import { Route as AuthenticatedCycleRouteImport } from './routes/_authenticated/cycle'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDebatesRouteImport } from './routes/_authenticated/debates'
@@ -85,6 +86,11 @@ const AuthenticatedAdvisorRoute = AuthenticatedAdvisorRouteImport.update({
 const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedConnectRoute = AuthenticatedConnectRouteImport.update({
+  id: '/connect',
+  path: '/connect',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCycleRoute = AuthenticatedCycleRouteImport.update({
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/connect': typeof AuthenticatedConnectRoute
   '/_authenticated/cycle': typeof AuthenticatedCycleRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/debates': typeof AuthenticatedDebatesRoute
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/connect'
     | '/cycle'
     | '/deals'
     | '/debates'
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/connect'
     | '/cycle'
     | '/deals'
     | '/debates'
@@ -387,6 +398,7 @@ export interface FileRouteTypes {
     | '/_authenticated/abm'
     | '/_authenticated/advisor'
     | '/_authenticated/approvals'
+    | '/_authenticated/connect'
     | '/_authenticated/cycle'
     | '/_authenticated/deals'
     | '/_authenticated/debates'
@@ -488,6 +500,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/connect': {
+      id: '/_authenticated/connect'
+      path: '/connect'
+      fullPath: '/connect'
+      preLoaderRoute: typeof AuthenticatedConnectRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cycle': {
@@ -658,6 +677,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAbmRoute: typeof AuthenticatedAbmRoute
   AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedConnectRoute: typeof AuthenticatedConnectRoute
   AuthenticatedCycleRoute: typeof AuthenticatedCycleRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedDebatesRoute: typeof AuthenticatedDebatesRoute
@@ -683,6 +703,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAbmRoute: AuthenticatedAbmRoute,
   AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedConnectRoute: AuthenticatedConnectRoute,
   AuthenticatedCycleRoute: AuthenticatedCycleRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedDebatesRoute: AuthenticatedDebatesRoute,
