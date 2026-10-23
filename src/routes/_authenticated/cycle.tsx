@@ -12,6 +12,7 @@ import { useCycle } from "@/hooks/use-cycle";
 import { useAgent } from "@/components/agent";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
+import { SaveToDriveButton } from "@/components/drive";
 import { Textarea } from "@/components/ui/textarea";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -225,6 +226,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             </select>
             <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Revisión profunda</Button>
           </span>
+          <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}
         </div>
         {busy && <AiProgress className="mt-4" typicalSeconds={120} stages={["Leyendo el documento y el contexto", `Aplicando ${METHODS.find(([v]) => v === method)?.[1] ?? "el método"}`, "Ordenando los hallazgos", "Reescribiendo el documento"]} />}

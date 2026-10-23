@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { DriveSetupButton } from "@/components/drive";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -135,6 +136,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
         <label className="text-sm font-medium">Documentos (PDF, deck exportado, notas)</label>
         <Input className="mt-1" type="file" multiple accept=".pdf,.txt,.md,.csv" onChange={(e) => onFiles(e.target.files)} />
         {files.length > 0 && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><FileText className="size-3" /> {files.map((f) => f.filename).join(", ")}</p>}
+        <div className="mt-2"><DriveSetupButton onText={(name, body) => setText((t) => `${t}\n\n--- ${name} (Google Drive) ---\n${body}`.slice(0, TEXT_LIMIT))} /></div>
       </div>
       <div>
         <div className="flex items-baseline justify-between gap-3">

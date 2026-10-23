@@ -29,8 +29,10 @@ import { ScoreDetail } from "@/components/score";
 import { ClayEnrich, ClayPeopleButton } from "@/components/clay";
 import { AccountResearch, SignalsTab } from "@/components/web-research";
 import { ApolloEnrich, ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
+import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
+import { planMarkdown } from "@/lib/drive";
 
-const ACCOUNT_TABS = ["plan", "signals", "stakeholders", "meetings", "calls", "deals"] as const;
+const ACCOUNT_TABS = ["plan", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
@@ -99,13 +101,15 @@ function AccountPage() {
           <TabsTrigger value="meetings">Planificador de reuniones ({data.meetings.length})</TabsTrigger>
           <TabsTrigger value="calls">Llamadas ({data.calls.length})</TabsTrigger>
           <TabsTrigger value="deals">Deals ({data.deals.length})</TabsTrigger>
+          <TabsTrigger value="drive">Drive</TabsTrigger>
         </TabsList>
-        <TabsContent value="plan"><PlanTab accountId={id} hasDomain={!!a.domain} plan={data.plan} onSaved={refresh} /></TabsContent>
+        <TabsContent value="plan"><PlanTab accountId={id} accountName={a.name} hasDomain={!!a.domain} plan={data.plan} onSaved={refresh} /></TabsContent>
         <TabsContent value="signals"><SignalsTab accountId={id} hasDomain={!!a.domain} /></TabsContent>
         <TabsContent value="stakeholders"><StakeholdersTab accountId={id} hasDomain={!!a.domain} list={data.stakeholders} onChange={refresh} /></TabsContent>
         <TabsContent value="meetings"><MeetingsTab accountId={id} openMeetingId={search.meeting} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>
         <TabsContent value="calls"><CallsTab accountId={id} list={data.calls} onChange={refresh} /></TabsContent>
         <TabsContent value="deals"><DealsTab accountId={id} list={data.deals} onChange={refresh} /></TabsContent>
+        <TabsContent value="drive"><AccountDriveTab accountId={id} /></TabsContent>
       </Tabs>
     </Page>
   );
@@ -155,7 +159,7 @@ const PLAN_FIELDS = [
   ["action_plan", "Plan de acción", "Acción · responsable · fecha"],
 ] as const;
 
-function PlanTab({ accountId, hasDomain, plan, onSaved }: { accountId: string; hasDomain: boolean; plan: Record<string, any> | null; onSaved: () => void }) {
+function PlanTab({ accountId, accountName, hasDomain, plan, onSaved }: { accountId: string; accountName: string; hasDomain: boolean; plan: Record<string, any> | null; onSaved: () => void }) {
   const [form, setForm] = useState<Record<string, string>>({});
   const [proposal, setProposal] = useState("");
   const [busy, setBusy] = useState(false);
@@ -192,10 +196,14 @@ function PlanTab({ accountId, hasDomain, plan, onSaved }: { accountId: string; h
       </div>
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => save()}>Guardar plan</Button>
+        <SaveToDriveButton title={`Plan de cuenta · ${accountName}`} accountId={accountId} markdown={() => planMarkdown(accountName, PLAN_FIELDS.map(([k, label]) => [label, form[k]]))} label="Guardar plan en Drive" />
         <Button variant="outline" onClick={genProposal} disabled={busy}><Sparkles className="size-4" /> {busy ? "Generando…" : "Borrador de propuesta con IA"}</Button>
       </div>
       <AccountResearch accountId={accountId} hasDomain={hasDomain} onApply={applyResearch} />
-      {proposal && <pre className="whitespace-pre-wrap break-words rounded-lg border bg-card p-6 font-sans text-sm">{proposal}</pre>}
+      {proposal && <>
+        <pre className="whitespace-pre-wrap break-words rounded-lg border bg-card p-6 font-sans text-sm">{proposal}</pre>
+        <SaveToDriveButton title={`Propuesta · ${accountName}`} accountId={accountId} markdown={proposal} label="Guardar propuesta en Drive" />
+      </>}
     </div>
   );
 }

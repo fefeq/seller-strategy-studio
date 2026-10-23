@@ -1277,6 +1277,54 @@ export type Database = {
           },
         ]
       }
+      drive_folders: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          created_by: string | null
+          created_by_app: boolean
+          folder_id: string
+          id: string
+          name: string
+          org_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_app?: boolean
+          folder_id: string
+          id?: string
+          name?: string
+          org_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          created_by_app?: boolean
+          folder_id?: string
+          id?: string
+          name?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_folders_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drive_folders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gtm_advisories: {
         Row: {
           created_at: string
