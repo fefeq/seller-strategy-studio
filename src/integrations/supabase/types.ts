@@ -2606,6 +2606,7 @@ export type Database = {
           paid_event: string | null
           project_id: string
           signup_event: string | null
+          status: string
           updated_at: string
         }
         Insert: {
@@ -2622,6 +2623,7 @@ export type Database = {
           paid_event?: string | null
           project_id: string
           signup_event?: string | null
+          status?: string
           updated_at?: string
         }
         Update: {
@@ -2638,6 +2640,7 @@ export type Database = {
           paid_event?: string | null
           project_id?: string
           signup_event?: string | null
+          status?: string
           updated_at?: string
         }
         Relationships: [
