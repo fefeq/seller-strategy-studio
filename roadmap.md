@@ -82,5 +82,5 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [ ] Sincronización nativa con un CRM (HubSpot, Pipedrive, Attio, Salesforce) si el cliente lo usa; hoy entra por webhook/Zapier.
 - [x] Google Drive (Drive de Fede, una carpeta por empresa y por cuenta): importar al hub y a la configuración, guardar plan/propuesta/documentos del ciclo/docs del hub, agente y MCP
 - [x] Apify: LinkedIn (publicaciones de cuentas y stakeholders, ofertas de empleo) en Señales y research; battlecards desde reseñas de G2; agente y MCP
-- [ ] n8n: avisar de eventos, lanzar flujos a mano, panel de flujos, agente/MCP (Owner y Sales Leader)
-- [ ] PostHog: integrar (decidir uso tras n8n)
+- [ ] n8n: avisar de eventos, lanzar flujos a mano, panel de flujos, agente/MCP (Owner y Sales Leader). Bloqueado: el usuario canceló la conexión y lo deja para más tarde
+- [ ] PostHog: traer datos de producto de cada empresa cliente (no medir Nokko); quitar la medición de Nokko ya montada
