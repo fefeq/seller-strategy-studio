@@ -27,6 +27,7 @@ import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
 import { ClayEnrich, ClayPeopleButton } from "@/components/clay";
+import { ApolloEnrich, ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
 
 const ACCOUNT_TABS = ["plan", "stakeholders", "meetings", "calls", "deals"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
@@ -132,7 +133,10 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; doma
       <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
-      <ClayEnrich account={account} onSaved={onSaved} />
+      <div className="space-y-2">
+        <ClayEnrich account={account} onSaved={onSaved} />
+        <ApolloEnrich account={account} onSaved={onSaved} />
+      </div>
     </div>
   );
 }
@@ -196,8 +200,8 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
     setSel(data); onChange();
   }
   async function save() {
-    const { id, name, title, email, linkedin_url, buying_role, support, priorities, reports_to } = sel;
-    const { error } = await supabase.from("stakeholders").update({ name, title, email, linkedin_url, buying_role, support, priorities, reports_to: reports_to || null }).eq("id", id);
+    const { id, name, title, email, phone, linkedin_url, buying_role, support, priorities, reports_to } = sel;
+    const { error } = await supabase.from("stakeholders").update({ name, title, email, phone: phone || null, linkedin_url, buying_role, support, priorities, reports_to: reports_to || null }).eq("id", id);
     if (error) return toast.error(errorText(error));
     toast.success("Guardado."); onChange();
   }
@@ -223,7 +227,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex gap-2"><ClayPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><ClayPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><ApolloPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
         {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
@@ -232,11 +236,13 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
             <Field label="Nombre"><Input value={sel.name ?? ""} onChange={(e) => setSel({ ...sel, name: e.target.value })} /></Field>
             <Field label="Cargo"><Input value={sel.title ?? ""} onChange={(e) => setSel({ ...sel, title: e.target.value })} /></Field>
             <Field label="Email"><Input value={sel.email ?? ""} onChange={(e) => setSel({ ...sel, email: e.target.value })} /></Field>
+            <Field label="Teléfono"><Input value={sel.phone ?? ""} onChange={(e) => setSel({ ...sel, phone: e.target.value })} /></Field>
             <Field label="LinkedIn"><Input value={sel.linkedin_url ?? ""} onChange={(e) => setSel({ ...sel, linkedin_url: e.target.value })} /></Field>
             <Field label="Rol en la compra"><Pick value={sel.buying_role} options={BUYING_ROLES} onChange={(v) => setSel({ ...sel, buying_role: v })} /></Field>
             <Field label="Nivel de apoyo"><Pick value={sel.support} options={SUPPORT} onChange={(v) => setSel({ ...sel, support: v })} /></Field>
             <Field label="Reporta a"><Pick value={sel.reports_to ?? ""} options={Object.fromEntries([["", "—"], ...list.filter((x) => x.id !== sel.id).map((x) => [x.id, x.name])])} onChange={(v) => setSel({ ...sel, reports_to: v })} /></Field>
           </div>
+          <ApolloReveal stakeholderId={sel.id} onChange={async () => { const { data: fresh } = await supabase.from("stakeholders").select("email,phone,linkedin_url,title").eq("id", sel.id).single(); if (fresh) setSel((cur: any) => (cur?.id === sel.id ? { ...cur, ...Object.fromEntries(Object.entries(fresh).filter(([k]) => !cur[k])) } : cur)); onChange(); }} />
           <Field label="Prioridades y notas"><Textarea rows={3} value={sel.priorities ?? ""} onChange={(e) => setSel({ ...sel, priorities: e.target.value })} /></Field>
           <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button></div>
           {sel.research && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
