@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -18,6 +18,8 @@ import { DriveImportButton, SaveToDriveButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 
 export const Route = createFileRoute("/_authenticated/hub")({
+  // doc: opened from a notice (an import or a battlecard made in the background).
+  validateSearch: (s: Record<string, unknown>): { doc?: string } => (typeof s.doc === "string" ? { doc: s.doc } : {}),
   head: () => ({ meta: [{ title: "Conocimiento — Nokko" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — Nokko" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
   component: Hub,
 });
@@ -54,6 +56,11 @@ function Hub() {
     queryFn: async () => ((await supabase.from("knowledge_docs").select("*").order("updated_at", { ascending: false })).data ?? []) as Doc[],
   });
   const list = docs.filter((d) => d.section === section);
+  const { doc: docParam } = Route.useSearch();
+  useEffect(() => {
+    const d = docParam ? docs.find((x) => x.id === docParam) : undefined;
+    if (d) { setSection(d.section); setSelected(d); }
+  }, [docParam, docs.length]);
   /** After an import or a generated doc: refresh and open it. */
   async function openDoc(docId: string) {
     await qc.invalidateQueries({ queryKey: ["docs"] });

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLeadTouched } from "@/components/background";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
   const [open, setOpen] = useState(false);
   const empty = { company: "", contact_name: "", email: "", source: "", segment_id: "", stage: "new", next_step_at: "" };
   const [f, setF] = useState(empty);
+  const touchLead = useLeadTouched();
   const set = (k: keyof typeof empty) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
   async function save() {
@@ -25,7 +27,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
     if (!company) return toast.error("Escribe la empresa.");
     // Reuse the account if it already exists; otherwise it is created when the lead becomes an opportunity.
     const { data: acc } = await supabase.from("accounts").select("id").ilike("name", escapeLike(company)).limit(1).maybeSingle();
-    const { error } = await supabase.from("leads").insert({
+    const { data: created, error } = await supabase.from("leads").insert({
       company,
       contact_name: f.contact_name.trim() || null,
       email: f.email.trim().toLowerCase() || null,
@@ -34,8 +36,9 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
       stage: f.stage,
       next_step_at: f.next_step_at || null,
       account_id: acc?.id ?? null,
-    });
+    }).select("id").single();
     if (error) return toast.error(errorText(error));
+    touchLead(created?.id);
     toast.success(`Lead ${company} creado.`);
     setF(empty);
     setOpen(false);

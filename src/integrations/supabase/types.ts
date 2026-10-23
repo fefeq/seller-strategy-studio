@@ -509,6 +509,56 @@ export type Database = {
           },
         ]
       }
+      background_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json
+          kind: string
+          label: string
+          org_id: string
+          result: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          kind: string
+          label?: string
+          org_id?: string
+          result?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          kind?: string
+          label?: string
+          org_id?: string
+          result?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cac_costs: {
         Row: {
           amount: number
@@ -1884,6 +1934,7 @@ export type Database = {
           disqualified_at: string | null
           disqualified_reason: string | null
           email: string | null
+          enriched_at: string | null
           external_id: string | null
           id: string
           lead_source_id: string | null
@@ -1916,6 +1967,7 @@ export type Database = {
           disqualified_at?: string | null
           disqualified_reason?: string | null
           email?: string | null
+          enriched_at?: string | null
           external_id?: string | null
           id?: string
           lead_source_id?: string | null
@@ -1948,6 +2000,7 @@ export type Database = {
           disqualified_at?: string | null
           disqualified_reason?: string | null
           email?: string | null
+          enriched_at?: string | null
           external_id?: string | null
           id?: string
           lead_source_id?: string | null

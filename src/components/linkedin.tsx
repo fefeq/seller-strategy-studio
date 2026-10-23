@@ -1,5 +1,6 @@
 // Apify on the screens: open job offers of an account and battlecards written from competitors' G2 reviews.
 import { useState } from "react";
+import { BackgroundButton } from "@/components/background";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -77,6 +78,7 @@ export function BattlecardFromReviews({ onSaved }: { onSaved: (docId: string) =>
             {[10, 20, 40].map((n) => <option key={n} value={n}>{n} reseñas</option>)}
           </select>
           <Button type="submit" disabled={busy || competitor.trim().length < 2}>{busy ? "Leyendo reseñas…" : "Leer y redactar"}</Button>
+          <BackgroundButton disabled={busy || competitor.trim().length < 2} label="En segundo plano (se guarda sola)" job={() => ({ kind: "battlecard", input: { competitor: competitor.trim(), max }, label: `Battlecard de ${competitor.trim()}` })} onStarted={() => { setOpen(false); setCompetitor(""); }} />
         </form>
         <p className="text-xs text-muted-foreground">Gasta saldo de Apify: unos 0,06 $ por cada 10 reseñas. Tarda menos de un minuto.</p>
         {card && (

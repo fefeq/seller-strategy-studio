@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useLeadTouched } from "@/components/background";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
@@ -47,6 +48,7 @@ function LeadsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const go = useNavigate();
+  const touchLead = useLeadTouched();
   const qc = useQueryClient();
   const { data } = useLeads(orgId);
 
@@ -72,6 +74,7 @@ function LeadsPage() {
     if (lead.stage === "opportunity") return toast.info("Este lead ya es una oportunidad: síguelo desde Pipeline.");
     const { data: saved, error } = await supabase.from("leads").update({ stage }).eq("id", id).select("deal_id").single();
     if (error) return toast.error(errorText(error));
+    touchLead(id);
     if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en el pipeline.`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });

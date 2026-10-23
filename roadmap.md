@@ -84,3 +84,5 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Apify: LinkedIn (publicaciones de cuentas y stakeholders, ofertas de empleo) en Señales y research; battlecards desde reseñas de G2; agente y MCP
 - [ ] n8n: avisar de eventos, lanzar flujos a mano, panel de flujos, agente/MCP (Owner y Sales Leader). Bloqueado: el usuario canceló la conexión y lo deja para más tarde
 - [x] PostHog por empresa: funnel self-service, uso por cuenta, avisos de PQL y caída de uso, agente/MCP; medición de Nokko retirada
+- [x] Inngest: procesos por empresa con reintentos, enriquecimiento de leads nuevos, tareas largas en segundo plano, secuencia de seguimiento con esperas
+- [ ] Inngest: tras publicar, sincronizar la app en Inngest con https://nokko.ai/api/public/inngest (lo hace el usuario en el panel de Inngest)

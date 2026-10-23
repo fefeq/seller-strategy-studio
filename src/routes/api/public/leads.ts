@@ -57,6 +57,7 @@ export const Route = createFileRoute("/api/public/leads")({
         const { data: stageRows } = await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", source.org_id);
         const ctx = { orgId: source.org_id, sourceId: source.id, segments: segments ?? [], stages: sortStages((stageRows ?? []) as import("@/lib/stages").Stage[]) };
         const results: { status: string; error?: string }[] = [];
+        const newLeads: string[] = [];
         for (const rec of records) {
           const n = normalizeLead(rec, { defaultStage: isIntakeStage(source.default_stage, ctx.stages) ? source.default_stage : "new" });
           if ("error" in n) {
@@ -69,12 +70,19 @@ export const Route = createFileRoute("/api/public/leads")({
             const warn = n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto";
             results.push({ status: r.status, ...(warn ? { error: warn } : {}) });
             await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: r.status, summary: r.summary, error: warn, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId });
+            if (r.status === "created" && r.leadId) newLeads.push(r.leadId);
           } catch (e) {
             const msg = (e as Error).message.slice(0, 300);
             console.error("lead ingest failed", msg);
             results.push({ status: "error", error: "No se pudo guardar el lead" });
             await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: "error", summary: n.lead.company, error: msg });
           }
+        }
+        // New leads are enriched in the background (Inngest); the hourly sweep catches any that miss this.
+        if (newLeads.length) {
+          const { EV } = await import("@/lib/inngest/events");
+          const { trySend } = await import("@/lib/inngest/send.server");
+          await trySend(newLeads.map((id) => ({ name: EV.leadCreated, data: { org_id: source.org_id, lead_id: id } })));
         }
         await db.from("lead_sources").update({ received_count: source.received_count + records.length, last_received_at: new Date().toISOString() }).eq("id", source.id);
         const ok = results.filter((r) => r.status !== "error").length;
