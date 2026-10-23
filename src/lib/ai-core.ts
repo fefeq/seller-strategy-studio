@@ -83,16 +83,24 @@ export async function researchStakeholderCore(db: Db, stakeholderId: string, sco
   ]);
   let web: NewsItem[] = [];
   let webNote = "";
+  // Their own LinkedIn posts (Apify), when the stakeholder has a profile; never blocks the research.
+  const postsP = (async () => {
+    if (!process.env["APIFY_API_KEY"] || !s.linkedin_url) return [];
+    const [{ linkedinProfileUrl }, { profilePosts }] = await Promise.all([import("@/lib/apify"), import("@/lib/apify-core")]);
+    const url = linkedinProfileUrl(s.linkedin_url);
+    return url ? profilePosts(url, 3).catch((e) => { console.error("Apify profile posts failed", (e as Error).message); return []; }) : [];
+  })();
   try {
     const who = `"${s.name}" ${companyName(acc?.name, acc?.domain)}`.trim();
     web = await searchBoth({ query: `${who} ${s.title ?? ""}`.trim(), limit: 6, sources: ["web", "news"] }, { queries: [`${who} ${s.title ?? ""}`.trim(), `${who} entrevista OR podcast OR nombramiento`], maxResults: 4 }, 8);
     if (!web.length) webNote = "No he encontrado resultados en internet sobre esta persona.";
   } catch (e) { webNote = `No he podido buscar en internet: ${(e as Error).message}`; }
+  const posts = await postsP;
   const body = await ask(
-    "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve. Primero «Lo que dicen las fuentes»: solo hechos de resultados_web sobre esta persona, cada uno con su enlace markdown a la fuente; si los resultados son de un homónimo o de otra empresa, ignóralos y dilo. Después: prioridades probables según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos y 3 aperturas de conversación, marcando como «(hipótesis)» lo que no venga de las fuentes ni del contexto.",
-    `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, empresa: acc?.name ?? null, linkedin: s.linkedin_url, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nresultados_web: ${JSON.stringify(web.map((w) => ({ titulo: w.title, url: w.url, extracto: w.snippet, fecha: w.date })))}\n\nContexto:\n${ctx}`,
+    "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve. Primero «Lo que dicen las fuentes»: solo hechos de resultados_web sobre esta persona, cada uno con su enlace markdown a la fuente; si los resultados son de un homónimo o de otra empresa, ignóralos y dilo. Si hay publicaciones_linkedin (suyas o que ha compartido), añade «De qué habla en LinkedIn» con los temas y su enlace. Después: prioridades probables según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos y 3 aperturas de conversación, marcando como «(hipótesis)» lo que no venga de las fuentes ni del contexto.",
+    `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, empresa: acc?.name ?? null, linkedin: s.linkedin_url, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nresultados_web: ${JSON.stringify(web.map((w) => ({ titulo: w.title, url: w.url, extracto: w.snippet, fecha: w.date })))}\n\npublicaciones_linkedin: ${JSON.stringify(posts.map((p) => ({ url: p.url, fecha: p.date, compartida: p.repost, texto: p.text })))}\n\nContexto:\n${ctx}`,
   );
-  const text = `${webNote ? `_${webNote}_\n\n` : ""}${body}${sourcesMarkdown(web)}`;
+  const text = `${webNote ? `_${webNote}_\n\n` : ""}${body}${sourcesMarkdown([...web, ...posts.map((p) => ({ title: `LinkedIn · ${p.text.slice(0, 80)}`, url: p.url, snippet: "", date: p.date, source: "LinkedIn" }))])}`;
   await inOrg(db.from("stakeholders").update({ research: text }).eq("id", s.id), scope);
   return { text, name: s.name as string };
 }

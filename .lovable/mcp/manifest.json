@@ -3390,6 +3390,147 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "linkedin_company_posts",
+        "title": "Publicaciones de LinkedIn de una cuenta",
+        "description": "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "linkedin_profile_posts",
+        "title": "Publicaciones de LinkedIn de un stakeholder",
+        "description": "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stakeholder_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "company_job_postings",
+        "title": "Ofertas de empleo de una cuenta",
+        "description": "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "competitor_reviews",
+        "title": "Reseñas de un competidor en G2",
+        "description": "Reseñas recientes de un competidor en G2 (por nombre del producto o enlace de G2): nota, qué valoran, qué critican y por qué se cambian. Gasta saldo de Apify (unos 0,06 $ por cada 10 reseñas).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "competitor": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            },
+            "max": {
+              "description": "Reseñas a leer (20 por defecto)",
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 40
+            }
+          },
+          "required": [
+            "competitor"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "create_battlecard_from_reviews",
+        "title": "Battlecard desde reseñas de G2",
+        "description": "Lee reseñas recientes de un competidor en G2, redacta una battlecard (fortalezas, críticas, por qué se cambian, objeciones y respuestas, preguntas de discovery) y la guarda en el hub, sección Objeciones y battlecards. Gasta saldo de Apify. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "competitor": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 200
+            },
+            "max": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 40
+            }
+          },
+          "required": [
+            "competitor"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

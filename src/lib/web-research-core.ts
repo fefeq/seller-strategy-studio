@@ -92,12 +92,18 @@ export type SignalRow = { id: string; title: string; url: string; kind: SignalKi
 
 /** Looks for the account's news of the last month, keeps the ones about it with a commercial angle, saves new ones. */
 export async function refreshSignalsCore(db: Db, accountId: string, scope: AiScope = null): Promise<{ checked: number; added: SignalRow[] }> {
-  const { data: acc } = await inOrg(db.from("accounts").select("id,org_id,name,domain").eq("id", accountId), scope).maybeSingle();
+  const { data: acc } = await inOrg(db.from("accounts").select("id,org_id,name,domain,linkedin_url").eq("id", accountId), scope).maybeSingle();
   if (!acc) throw new Error("No encuentro esa cuenta en esta empresa.");
   const now = new Date().toISOString();
   const name = companyName(acc.name, cleanDomain(acc.domain));
   if (!name) throw new Error("La cuenta no tiene nombre ni dominio para buscar sus noticias.");
-  const items = await searchBoth({ query: `"${name}"`, limit: 10, sources: ["news"], tbs: "qdr:m" }, { queries: signalQueries(name), maxResults: 5, recency: "month" }, 18);
+  // News (Firecrawl + Perplexity) and LinkedIn (Apify: the company's posts and job offers) in parallel; LinkedIn never blocks the news.
+  const { linkedinSignalItems } = await import("@/lib/apify-core");
+  const [news, linkedin] = await Promise.all([
+    searchBoth({ query: `"${name}"`, limit: 10, sources: ["news"], tbs: "qdr:m" }, { queries: signalQueries(name), maxResults: 5, recency: "month" }, 18),
+    linkedinSignalItems(db, acc).catch((e) => { console.error("LinkedIn signals failed", (e as Error).message); return [] as NewsItem[]; }),
+  ]);
+  const items = [...news, ...linkedin];
   const { data: existing } = await db.from("account_signals").select("url").eq("org_id", acc.org_id).eq("account_id", acc.id);
   const seen = new Set((existing ?? []).map((r: { url: string }) => r.url));
   const fresh = items.filter((n) => !seen.has(n.url));
@@ -105,7 +111,7 @@ export async function refreshSignalsCore(db: Db, accountId: string, scope: AiSco
   if (fresh.length) {
     const { data: pos } = await db.from("positioning").select("one_liner,category,target_customer").eq("org_id", acc.org_id).limit(1).maybeSingle();
     const raw = await ask(
-      `Clasificas noticias sobre una cuenta B2B para un equipo comercial. Marca relevant=false si no trata de esta empresa (fíjate en el dominio; un caso de éxito de un competidor que solo la menciona no cuenta) o no tiene ángulo comercial. leadership = nombramientos y cambios de dirección; case_study = caso de éxito publicado por la empresa o sobre ella (qué proveedor usa y qué resultados obtuvo). ${STYLE}`,
+      `Clasificas noticias sobre una cuenta B2B para un equipo comercial. Marca relevant=false si no trata de esta empresa (fíjate en el dominio; un caso de éxito de un competidor que solo la menciona no cuenta) o no tiene ángulo comercial. leadership = nombramientos y cambios de dirección; case_study = caso de éxito publicado por la empresa o sobre ella (qué proveedor usa y qué resultados obtuvo). Fuente «LinkedIn» = publicación de la propia empresa: relevante solo si anuncia algo (lanzamiento, cliente, alianza, resultados, evento propio, expansión), no si es contenido genérico. Fuente «LinkedIn Empleo» = oferta de empleo abierta: kind hiring, relevante solo si el puesto revela una prioridad o un presupuesto que nos toca (por ejemplo un Head of Sales o RevOps = están montando o cambiando el equipo comercial); el resto, relevant=false. ${STYLE}`,
       JSON.stringify({ cuenta: { nombre: acc.name, dominio: acc.domain }, nosotros: pos ?? null, noticias: fresh.map((n, index) => ({ index, titulo: n.title, fuente: n.source, fecha: n.date, extracto: n.snippet })) }),
       { effort: "low", schema: { name: "account_signals", schema: SIGNAL_SCHEMA } },
     );

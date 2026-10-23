@@ -253,6 +253,7 @@ export type Database = {
           id: string
           industry: string | null
           is_target: boolean
+          linkedin_url: string | null
           name: string
           notes: string | null
           org_id: string | null
@@ -274,6 +275,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target?: boolean
+          linkedin_url?: string | null
           name: string
           notes?: string | null
           org_id?: string | null
@@ -295,6 +297,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target?: boolean
+          linkedin_url?: string | null
           name?: string
           notes?: string | null
           org_id?: string | null
