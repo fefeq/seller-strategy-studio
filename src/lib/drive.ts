@@ -67,7 +67,7 @@ export const driveQ = (s: string) => s.replace(/\\/g, "\\\\").replace(/'/g, "\\'
 
 /** Export text cleaned: no BOM, Unix line ends, no runs of blank lines, cut to the limit. */
 export function cleanText(raw: string, max = MAX_TEXT): { text: string; truncated: boolean } {
-  const t = raw.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+  const t = raw.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").replace(/^(#{1,6}) \*\*(.+)\*\*$/gm, "$1 $2").replace(/\\([_*])/g, "$1").replace(/\n{3,}/g, "\n\n").trim();
   return t.length > max ? { text: `${t.slice(0, max)}…`, truncated: true } : { text: t, truncated: false };
 }
 
@@ -85,6 +85,7 @@ function inline(s: string): string {
     .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t, u) => `<a href="${u}">${t}</a>`)
     .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
     .replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>")
+    .replace(/(^|[\s(])_([^_\s][^_]*)_(?=$|[\s).,;:])/g, "$1<i>$2</i>")
     .replace(/`([^`]+)`/g, "<code>$1</code>");
 }
 

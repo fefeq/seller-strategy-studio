@@ -35,6 +35,7 @@ describe("texts", () => {
     expect(kindLabel("application/pdf")).toBe("PDF");
     expect(driveQ("O'Neil")).toBe("O\\'Neil");
     expect(cleanText("\uFEFFHola\r\n\r\n\r\n\r\nmundo")).toEqual({ text: "Hola\n\nmundo", truncated: false });
+    expect(cleanText("# **Plan**\n\n\\_nota\\_").text).toBe("# Plan\n\n_nota_");
     expect(cleanText("abcdef", 3)).toEqual({ text: "abc…", truncated: true });
     expect(safeName(" Acme / Iberia\n ")).toBe("Acme Iberia");
     expect(safeName("  ")).toBe("Sin título");
@@ -51,6 +52,8 @@ describe("markdownToHtml", () => {
     const html = markdownToHtml("# Título\n\nTexto **clave** y [web](https://acme.com)\n\n- uno\n- dos\n\n1. a\n2. b\n\n<script>");
     expect(html).toContain("<h1>Título</h1>");
     expect(html).toContain("<b>clave</b>");
+    expect(markdownToHtml("_Exportado hoy_")).toContain("<i>Exportado hoy</i>");
+    expect(markdownToHtml("snake_case_name")).not.toContain("<i>");
     expect(html).toContain('<a href="https://acme.com">web</a>');
     expect(html).toContain("<ul><li>uno</li><li>dos</li></ul>");
     expect(html).toContain("<ol><li>a</li><li>b</li></ol>");
