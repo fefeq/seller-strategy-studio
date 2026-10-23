@@ -6,6 +6,7 @@ export const EV = {
   leadContacted: "nokko/lead.contacted",
   leadChanged: "nokko/lead.changed",
   jobRequested: "nokko/job.requested",
+  parallelRun: "nokko/parallel.run",
 } as const;
 
 export type NokkoEvent =
@@ -14,7 +15,8 @@ export type NokkoEvent =
   | { name: typeof EV.leadCreated; data: { org_id: string; lead_id: string } }
   | { name: typeof EV.leadContacted; data: { org_id: string; lead_id: string; contacted_at: string } }
   | { name: typeof EV.leadChanged; data: { org_id: string; lead_id: string; stage: string } }
-  | { name: typeof EV.jobRequested; data: { job_id: string } };
+  | { name: typeof EV.jobRequested; data: { job_id: string } }
+  | { name: typeof EV.parallelRun; data: { research_id: string } };
 
 /** Background is used only when Inngest answered recently (its heartbeat is fresh). */
 export const HEARTBEAT_LOCK = "inngest:heartbeat";

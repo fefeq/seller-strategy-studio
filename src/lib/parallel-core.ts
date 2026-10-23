@@ -9,7 +9,7 @@ const admin = async () => (await import("@/integrations/supabase/client.server")
 
 async function queuePoll(researchId: string) {
   const [{ inngestReady, sendEvents }, db] = await Promise.all([import("@/lib/inngest/send.server"), admin()]);
-  if (await inngestReady(db)) await sendEvents([{ name: "nokko/parallel.run" as any, data: { research_id: researchId } as any }]).catch(() => undefined);
+  if (await inngestReady(db)) await sendEvents([{ name: "nokko/parallel.run", data: { research_id: researchId } }]).catch(() => undefined);
 }
 
 /** Starts the deep report of an account (Task run, minutes). Returns the research row id. */

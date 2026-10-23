@@ -60,7 +60,20 @@ function build() {
     async ({ event, step }) => step.run("run", async () => { const { runBackgroundJob } = await import("@/lib/inngest/tasks.server"); return runBackgroundJob(await admin(), event.data.job_id as string); }),
   );
 
-  return serve({ client: inngest, functions: [ping, orgMaintenance, leadEnrich, followup, backgroundJob], servePath: "/api/public/inngest" });
+  // Parallel research runs take minutes: checked every 30 s until done, so results land with nobody watching.
+  const parallelRun = inngest.createFunction(
+    { id: "parallel-run", triggers: [{ event: EV.parallelRun }], retries: 2, idempotency: "event.data.research_id" },
+    async ({ event, step }) => {
+      for (let i = 0; i < 120; i++) {
+        await step.sleep(`wait-${i}`, i < 4 ? "30s" : "60s");
+        const r = await step.run(`check-${i}`, async () => { const { checkRun } = await import("@/lib/parallel-core"); return checkRun(null, event.data.research_id as string); });
+        if (r.status !== "running") return r;
+      }
+      return { status: "timeout" };
+    },
+  );
+
+  return serve({ client: inngest, functions: [ping, orgMaintenance, leadEnrich, followup, backgroundJob, parallelRun], servePath: "/api/public/inngest" });
 }
 
 export function inngestHandler() {
