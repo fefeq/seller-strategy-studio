@@ -117,7 +117,7 @@ export function personToStakeholder(p: ClayPerson): StakeholderDraft {
     name: name || "Sin nombre",
     title: (p.matched_experience?.job_title ?? p.latest_experience_title)?.trim() || null,
     linkedin_url: p.url?.trim() || null,
-    location: [loc?.city, loc?.country].filter(Boolean).join(", ") || null,
+    location: [...new Set([loc?.city, loc?.country].filter((x): x is string => !!x?.trim()))].join(", ") || null,
   };
 }
 
