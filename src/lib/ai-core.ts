@@ -3,6 +3,8 @@
 // the company and team knowledge, so the privileged path reads exactly what the user could read in the app.
 import { ask } from "@/lib/ai-gateway";
 import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
+import { search } from "@/lib/firecrawl";
+import { newsItems, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
 
 /** Company and user the generation runs for; null = the caller's RLS client already limits the rows. */
 export type AiScope = { orgId: string; userId: string } | null;
@@ -67,15 +69,29 @@ export async function proposalCore(db: Db, accountId: string, scope: AiScope = n
   return { text };
 }
 
-/** Research hypotheses about a stakeholder, saved on the stakeholder. */
+/**
+ * Stakeholder research: searches the web (Firecrawl) for the person at their company, then writes facts
+ * with their source links and marks the rest as hypotheses. Without web results it falls back to
+ * hypotheses from the account context. Saved on the stakeholder.
+ */
 export async function researchStakeholderCore(db: Db, stakeholderId: string, scope: AiScope = null) {
   const { data: s } = await inOrg(db.from("stakeholders").select("*").eq("id", stakeholderId), scope).maybeSingle();
   if (!s) throw new Error("No encontrado");
-  const ctx = await accountContext(db, s.account_id, scope);
-  const text = await ask(
-    "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve: hipótesis de prioridades de esta persona según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos, y 3 aperturas de conversación. Marca como hipótesis lo que no esté en el contexto.",
-    `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nContexto:\n${ctx}`,
+  const [{ data: acc }, ctx] = await Promise.all([
+    inOrg(db.from("accounts").select("name,domain").eq("id", s.account_id), scope).maybeSingle(),
+    accountContext(db, s.account_id, scope),
+  ]);
+  let web: NewsItem[] = [];
+  let webNote = "";
+  try {
+    web = newsItems(await search(`"${s.name}" ${acc?.name ?? ""} ${s.title ?? ""}`.trim(), { limit: 6, sources: ["web", "news"] }), 6);
+    if (!web.length) webNote = "No he encontrado resultados en internet sobre esta persona.";
+  } catch (e) { webNote = `No he podido buscar en internet: ${(e as Error).message}`; }
+  const body = await ask(
+    "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve. Primero «Lo que dicen las fuentes»: solo hechos de resultados_web sobre esta persona, cada uno con su enlace markdown a la fuente; si los resultados son de un homónimo o de otra empresa, ignóralos y dilo. Después: prioridades probables según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos y 3 aperturas de conversación, marcando como «(hipótesis)» lo que no venga de las fuentes ni del contexto.",
+    `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, empresa: acc?.name ?? null, linkedin: s.linkedin_url, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nresultados_web: ${JSON.stringify(web.map((w) => ({ titulo: w.title, url: w.url, extracto: w.snippet, fecha: w.date })))}\n\nContexto:\n${ctx}`,
   );
+  const text = `${webNote ? `_${webNote}_\n\n` : ""}${body}${sourcesMarkdown(web)}`;
   await inOrg(db.from("stakeholders").update({ research: text }).eq("id", s.id), scope);
   return { text, name: s.name as string };
 }
