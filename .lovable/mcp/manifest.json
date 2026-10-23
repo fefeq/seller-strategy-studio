@@ -3198,6 +3198,198 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "drive_search",
+        "title": "Buscar en Google Drive",
+        "description": "Busca archivos en la carpeta de la empresa en Google Drive (por nombre o contenido). Sin texto, lista lo que hay en la carpeta de la empresa o en la subcarpeta indicada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "maxLength": 100
+            },
+            "folder_id": {
+              "description": "Subcarpeta a listar (id o enlace)",
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 500
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "drive_list_account_files",
+        "title": "Archivos de Drive de una cuenta",
+        "description": "Archivos de la carpeta de Google Drive de una cuenta (si tiene carpeta).",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "drive_read_file",
+        "title": "Leer un archivo de Drive",
+        "description": "Lee el texto de un archivo de la carpeta de la empresa en Google Drive (documentos, hojas, presentaciones, PDF, Word, texto). Los PDF los transcribe la IA y tardan unos segundos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 500,
+              "description": "Enlace de Google Drive o id del archivo (de drive_search o drive_list_account_files)"
+            }
+          },
+          "required": [
+            "file"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "drive_import_to_knowledge",
+        "title": "Importar archivo de Drive al hub",
+        "description": "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "file": {
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 500,
+              "description": "Enlace de Google Drive o id del archivo (de drive_search o drive_list_account_files)"
+            },
+            "section": {
+              "type": "string",
+              "enum": [
+                "company",
+                "objections",
+                "playbooks",
+                "methodology",
+                "campaigns",
+                "skills",
+                "rules"
+              ],
+              "description": "Sección del hub: company (empresa), objections (objeciones y battlecards), playbooks, methodology, campaigns, skills, rules"
+            }
+          },
+          "required": [
+            "file",
+            "section"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "drive_save_document",
+        "title": "Guardar documento en Drive",
+        "description": "Guarda un texto en Markdown como Google Doc en la carpeta de Drive de la cuenta (la crea si no existe) o, sin cuenta, en la carpeta de la empresa. Úsalo para propuestas, planes de cuenta, briefs o documentos del ciclo. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "content": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100000,
+              "description": "Contenido en Markdown"
+            },
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "title",
+            "content"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "drive_link_account_folder",
+        "title": "Carpeta de Drive de una cuenta",
+        "description": "Da a una cuenta su carpeta de Google Drive: enlaza una carpeta existente (debe estar dentro de la carpeta de la empresa) o, sin enlace, crea una nueva con el nombre de la cuenta. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "folder": {
+              "description": "Enlace o id de una carpeta existente",
+              "type": "string",
+              "minLength": 5,
+              "maxLength": 500
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
