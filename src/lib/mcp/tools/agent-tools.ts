@@ -14,6 +14,9 @@ export const TITLES: Record<string, string> = {
   add_mutual_action_item: "Añadir hito al plan de acción mutuo",
   assign_deal: "Asignar deal",
   assign_suggestion: "Asignar sugerencia",
+  clay_enrich_account: "Completar cuenta con Clay",
+  clay_find_companies: "Buscar empresas en Clay",
+  clay_find_people: "Buscar personas de una cuenta en Clay",
   complete_mutual_action_item: "Completar hito del plan de acción mutuo",
   complete_task: "Completar tarea",
   create_account: "Crear cuenta",
@@ -85,8 +88,9 @@ export const agentMcpTools = TOOLS.map((t) =>
     title: TITLES[t.name] ?? t.name.replace(/_/g, " "),
     description: t.kind === "write" ? `${t.description} (Queda pendiente: el usuario la confirma en Nokko.)` : t.description,
     inputSchema: ((t.input as z.ZodObject<z.ZodRawShape>).shape ?? {}) as z.ZodRawShape,
+    // Clay tools reach an outside data source and each call spends the workspace's Clay allowance.
     annotations: t.kind === "read"
-      ? { readOnlyHint: true, idempotentHint: true, openWorldHint: false }
+      ? { readOnlyHint: true, idempotentHint: !t.name.startsWith("clay_"), openWorldHint: t.name.startsWith("clay_") }
       : { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
     handler: async (args, ctx) => {
       const c = await mcpCtx(ctx);
