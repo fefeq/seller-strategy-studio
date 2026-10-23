@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
@@ -93,6 +94,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     setMsgs((x) => [...x, { id: `u${Date.now()}`, role: "user", content: t }]);
     try {
       const r = await send({ data: { conversationId: conv, text: t, mode: m, personaId: pid, workflowId: wid } });
+      track("agent_message", { location: pid ? "persona" : "agent" });
       setConvId(r.conversationId);
       setMsgs((x) => [...x, { id: `a${Date.now()}`, role: "assistant", content: r.text, actions: r.pending }]);
     } catch (e) {

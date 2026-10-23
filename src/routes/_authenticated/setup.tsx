@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { DriveSetupButton } from "@/components/drive";
 import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -198,6 +199,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
     setBusy(true);
     try {
       const r = await apply({ data: { items: chosen.map(({ tool, args }) => ({ tool, args })) } });
+      if (r.some((x) => x.ok)) track("setup_saved", { location: "ai_fill" });
       const bad = r.filter((x) => !x.ok);
       // Say what was written, item by item, not just how many.
       touched.current = true;
@@ -409,6 +411,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
     setBusy(true);
     try {
       const r = await apply({ data: { items: items() } });
+      if (r.some((x) => x.ok)) track("setup_saved", { location: "wizard" });
       const bad = r.filter((x) => !x.ok);
       if (bad.length) toast.error(errorText(bad[0].error)); else { toast.success("Guardado."); onSaved(); }
       qc.invalidateQueries();
