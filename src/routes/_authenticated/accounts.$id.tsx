@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { track } from "@/lib/analytics";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -465,6 +466,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", stage: firstOpenStage(stages).key, owner_id: user?.id });
     if (error) return toast.error(errorText(error));
+    track("deal_created", { location: "account" });
     onChange();
   }
   return (
