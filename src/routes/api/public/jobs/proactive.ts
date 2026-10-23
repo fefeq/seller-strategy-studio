@@ -22,9 +22,23 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
 
         try {
           if (body.kind === "digest") return Response.json(await sendDigests(db));
+          const { data: orgs } = await db.from("organizations").select("id").order("created_at").limit(BATCH);
+          // Inngest answers a ping each hour; while its heartbeat is fresh, each company runs as its own
+          // background job with retries (one failing company never blocks the rest). Otherwise, inline as before.
+          const { EV, hourKey } = await import("@/lib/inngest/events");
+          const { inngestReady, sendEvents, trySend } = await import("@/lib/inngest/send.server");
+          await trySend([{ name: EV.ping, data: { at: now.toISOString() } }]);
+          if (await inngestReady(db, now)) {
+            const queued = await sendEvents((orgs ?? []).map((o) => ({ name: EV.orgMaintenance, data: { org_id: o.id, hour: hourKey(now) } }))).then(() => true).catch((e) => { console.error("inngest dispatch failed", e); return false; });
+            if (queued) {
+              await notifyUrgent(db);
+              const { runWeeklyReports } = await import("@/lib/weekly-report.server");
+              const weekly = await runWeeklyReports(db, now).catch((e) => { console.error("weekly reports failed", e); return null; });
+              return Response.json({ orgs: orgs?.length ?? 0, mode: "background", weekly });
+            }
+          }
           const { loadSnapshot, syncSuggestions } = await import("@/lib/org-data");
           const { detect } = await import("@/lib/proactive");
-          const { data: orgs } = await db.from("organizations").select("id").order("created_at").limit(BATCH);
           let total = 0;
           for (const o of orgs ?? []) {
             try {
@@ -46,7 +60,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Each company's PostHog (product usage and sign-ups), at most every few hours.
           const { runPosthogSyncs } = await import("@/lib/posthog-sync.server");
           const posthog = await runPosthogSyncs(db, now).catch((e) => { console.error("posthog syncs failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe, signals, posthog });
+          return Response.json({ orgs: orgs?.length ?? 0, mode: "inline", detected: total, weekly, stripe, signals, posthog });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }
