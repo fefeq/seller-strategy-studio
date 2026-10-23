@@ -22,6 +22,7 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
   { name: "CSV de leads y de cuentas", what: "Importación con vista previa de columnas.", to: "/leads/entrada" },
   { name: "Claude, ChatGPT y Codex (MCP)", what: "Tu asistente consulta Nokko y propone cambios que confirmas aquí.", to: "/connect" },
   { name: "Firecrawl (lectura web)", what: "Lee tu web en la configuración, investiga cuentas, busca noticias de cuentas objetivo y da fuentes al research de stakeholders.", to: "/accounts" },
+  { name: "Apify (LinkedIn y G2)", what: "Publicaciones y ofertas de empleo de las cuentas en LinkedIn como señales, publicaciones de stakeholders en su research y battlecards desde reseñas de G2.", to: "/hub" },
   { name: "Google Drive", what: "Carpeta por empresa y por cuenta: importa documentos al hub y a la configuración con IA, y guarda planes, propuestas y documentos del ciclo.", to: "/hub" },
   { name: "Perplexity (búsqueda)", what: "Segunda fuente de búsqueda para noticias, nombramientos, casos de éxito, investigación de cuentas y research de stakeholders.", to: "/accounts" },
   { name: "Apollo.io", what: "Completa cuentas y, con un plan de pago de Apollo, busca personas y empresas y revela emails y móviles.", to: "/accounts" },

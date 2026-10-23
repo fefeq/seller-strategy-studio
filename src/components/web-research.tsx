@@ -86,7 +86,7 @@ export function SignalsTab({ accountId, hasDomain }: { accountId: string; hasDom
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-2xl text-sm text-muted-foreground">Noticias del último mes sobre esta cuenta: rondas, contrataciones, lanzamientos, nombramientos y casos de éxito, buscadas con Firecrawl y Perplexity. Las cuentas objetivo ABM se revisan solas cada semana y lo importante llega a Sugerencias.</p>
+        <p className="max-w-2xl text-sm text-muted-foreground">Noticias del último mes sobre esta cuenta: rondas, contrataciones, lanzamientos, nombramientos y casos de éxito, buscadas con Firecrawl y Perplexity, más sus publicaciones y ofertas de empleo en LinkedIn. Las cuentas objetivo ABM se revisan solas cada semana y lo importante llega a Sugerencias.</p>
         <Button variant="outline" onClick={go} disabled={busy || !hasDomain} title={hasDomain ? undefined : "Añade el dominio de la cuenta"}>{busy ? "Buscando…" : "Buscar novedades"}</Button>
       </div>
       {isLoading ? null : data.length === 0 ? <Empty>Aún no hay señales de esta cuenta. Pulsa «Buscar novedades».</Empty> : (

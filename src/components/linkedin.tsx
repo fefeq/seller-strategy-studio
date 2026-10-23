@@ -82,7 +82,7 @@ export function BattlecardFromReviews({ onSaved }: { onSaved: (docId: string) =>
         {card && (
           <div className="space-y-3 border-t pt-4">
             <p className="eyebrow">{card.product.name} · {card.count} reseñas{card.average !== null ? ` · ${card.average.toLocaleString("es-ES")}/5` : ""}</p>
-            <AiText text={card.markdown} />
+            <AiText>{card.markdown}</AiText>
             <div className="flex flex-wrap gap-2">
               <Button onClick={save}>Guardar en Objeciones y battlecards</Button>
               <Button variant="ghost" onClick={() => setCard(null)}>Descartar</Button>

@@ -31,6 +31,8 @@ import { AccountResearch, SignalsTab } from "@/components/web-research";
 import { ApolloEnrich, ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
 import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
+import { linkedinCompanyUrl } from "@/lib/apify";
+import { AccountJobs } from "@/components/linkedin";
 
 const ACCOUNT_TABS = ["plan", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
@@ -104,7 +106,7 @@ function AccountPage() {
           <TabsTrigger value="drive">Drive</TabsTrigger>
         </TabsList>
         <TabsContent value="plan"><PlanTab accountId={id} accountName={a.name} hasDomain={!!a.domain} plan={data.plan} onSaved={refresh} /></TabsContent>
-        <TabsContent value="signals"><SignalsTab accountId={id} hasDomain={!!a.domain} /></TabsContent>
+        <TabsContent value="signals"><SignalsTab accountId={id} hasDomain={!!a.domain} /><div className="mt-6"><AccountJobs accountId={id} /></div></TabsContent>
         <TabsContent value="stakeholders"><StakeholdersTab accountId={id} hasDomain={!!a.domain} list={data.stakeholders} onChange={refresh} /></TabsContent>
         <TabsContent value="meetings"><MeetingsTab accountId={id} openMeetingId={search.meeting} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>
         <TabsContent value="calls"><CallsTab accountId={id} list={data.calls} onChange={refresh} /></TabsContent>
@@ -116,9 +118,22 @@ function AccountPage() {
 }
 
 /** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
-function FitFields({ account, segNames, onSaved }: { account: { id: string; domain: string | null; segment_id: string | null; industry: string | null; size: string | null; country?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+function FitFields({ account, segNames, onSaved }: { account: { id: string; domain: string | null; segment_id: string | null; industry: string | null; size: string | null; country?: string | null; linkedin_url?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
   const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
   useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
+  const [linkedin, setLinkedin] = useState(account.linkedin_url ?? "");
+  useEffect(() => setLinkedin(account.linkedin_url ?? ""), [account.linkedin_url]);
+  // The company's LinkedIn page: its posts and job offers feed Señales (found automatically when empty).
+  async function saveLinkedin() {
+    const raw = linkedin.trim();
+    const url = raw ? linkedinCompanyUrl(raw) : null;
+    if (raw && !url) return toast.error("Pega el enlace de la página de empresa: linkedin.com/company/…");
+    if (url === (account.linkedin_url ?? null)) return;
+    const { error } = await supabase.from("accounts").update({ linkedin_url: url }).eq("id", account.id);
+    if (error) return toast.error(errorText(error));
+    setLinkedin(url ?? "");
+    onSaved();
+  }
   // Country decides the region for the account assignment rules (Cuentas → Reparto).
   async function saveCountry(country: string | null) {
     const { error } = await supabase.from("accounts").update({ country }).eq("id", account.id);
@@ -140,6 +155,7 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; doma
       <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
+      <Field label="LinkedIn de la empresa"><Input value={linkedin} placeholder="linkedin.com/company/…" onChange={(e) => setLinkedin(e.target.value)} onBlur={saveLinkedin} /></Field>
       <div className="space-y-2">
         <ClayEnrich account={account} onSaved={onSaved} />
         <ApolloEnrich account={account} onSaved={onSaved} />
