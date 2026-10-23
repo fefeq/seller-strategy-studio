@@ -23,7 +23,8 @@
 - [x] Página «Conectar asistentes» (/connect): dirección, pasos por asistente y cómo actualizar
 - [x] Apollo.io: completar cuentas, buscar personas y empresas, revelar emails y móviles (estos tres requieren plan de pago de Apollo); también desde el agente y MCP
 - [x] Firecrawl: configuración desde la web, investigar cuentas, señales y noticias, research de stakeholders con fuentes; agente y MCP
-- [ ] Perplexity: integrar (falta decidir para qué, según el tipo de conexión)
+- [x] Perplexity (conexión de Lovable, solo búsqueda): segunda fuente para señales (noticias, nombramientos, casos de éxito), investigación de cuentas y research de stakeholders
+- [ ] Perplexity: informe profundo de cuenta e informes financieros (SEC). Bloqueado: necesita conectar la clave propia de Perplexity (pplx-)
 
 ## Pendiente
 

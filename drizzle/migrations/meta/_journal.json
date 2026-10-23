@@ -225,6 +225,13 @@
       "when": 1792794156554,
       "tag": "0031_account_signals",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1792794788403,
+      "tag": "0032_account_signals_case_study",
+      "breakpoints": true
     }
   ]
 }

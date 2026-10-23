@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountsToRefresh, ageText, companyName, firecrawlErrorText, newsItems, pickPages, publicUrl, sourcesMarkdown } from "./web-research";
+import { accountsToRefresh, ageText, companyName, signalQueries, firecrawlErrorText, newsItems, pickPages, publicUrl, sourcesMarkdown } from "./web-research";
 import { accountSignal } from "./proactive/detectors/account-signal";
 import type { Snapshot } from "./proactive/types";
 
@@ -62,6 +62,13 @@ describe("companyName", () => {
     expect(companyName("Acme Logística S.L.")).toBe("Acme Logística");
     expect(companyName("Globex, Inc.")).toBe("Globex");
     expect(companyName("", "www.initech.io")).toBe("initech");
+  });
+});
+
+describe("signalQueries", () => {
+  it("asks the second source for news, appointments and success stories", () => {
+    expect(signalQueries("Acme")).toEqual(["Acme noticias", 'Acme nombramiento OR appoints OR "new CEO" OR hires', 'Acme "caso de éxito" OR "case study"']);
+    expect(signalQueries(" ")).toEqual([]);
   });
 });
 
