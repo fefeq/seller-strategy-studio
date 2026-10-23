@@ -2340,6 +2340,60 @@ export type Database = {
           },
         ]
       }
+      phone_reveals: {
+        Row: {
+          apollo_person_id: string
+          id: string
+          name: string
+          org_id: string
+          phones: Json
+          received_at: string | null
+          requested_at: string
+          requested_by: string | null
+          stakeholder_id: string | null
+          status: string
+        }
+        Insert: {
+          apollo_person_id: string
+          id?: string
+          name?: string
+          org_id?: string
+          phones?: Json
+          received_at?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          stakeholder_id?: string | null
+          status?: string
+        }
+        Update: {
+          apollo_person_id?: string
+          id?: string
+          name?: string
+          org_id?: string
+          phones?: Json
+          received_at?: string | null
+          requested_at?: string
+          requested_by?: string | null
+          stakeholder_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_reveals_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "phone_reveals_stakeholder_id_fkey"
+            columns: ["stakeholder_id"]
+            isOneToOne: false
+            referencedRelation: "stakeholders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       positioning: {
         Row: {
           alternatives: string | null
@@ -2908,6 +2962,7 @@ export type Database = {
           linkedin_url: string | null
           name: string
           org_id: string | null
+          phone: string | null
           priorities: string | null
           reports_to: string | null
           research: string | null
@@ -2926,6 +2981,7 @@ export type Database = {
           linkedin_url?: string | null
           name: string
           org_id?: string | null
+          phone?: string | null
           priorities?: string | null
           reports_to?: string | null
           research?: string | null
@@ -2944,6 +3000,7 @@ export type Database = {
           linkedin_url?: string | null
           name?: string
           org_id?: string | null
+          phone?: string | null
           priorities?: string | null
           reports_to?: string | null
           research?: string | null
