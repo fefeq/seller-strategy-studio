@@ -131,6 +131,63 @@ export type Database = {
           },
         ]
       }
+      account_signals: {
+        Row: {
+          account_id: string
+          found_at: string
+          id: string
+          kind: string
+          org_id: string
+          published_at: string | null
+          relevance: string
+          source: string
+          summary: string
+          title: string
+          url: string
+        }
+        Insert: {
+          account_id: string
+          found_at?: string
+          id?: string
+          kind?: string
+          org_id?: string
+          published_at?: string | null
+          relevance?: string
+          source?: string
+          summary?: string
+          title: string
+          url: string
+        }
+        Update: {
+          account_id?: string
+          found_at?: string
+          id?: string
+          kind?: string
+          org_id?: string
+          published_at?: string | null
+          relevance?: string
+          source?: string
+          summary?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_signals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_signals_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_touches: {
         Row: {
           account_id: string
@@ -201,6 +258,7 @@ export type Database = {
           org_id: string | null
           owner_id: string | null
           segment_id: string | null
+          signals_checked_at: string | null
           size: string | null
           tier: string | null
           updated_at: string
@@ -221,6 +279,7 @@ export type Database = {
           org_id?: string | null
           owner_id?: string | null
           segment_id?: string | null
+          signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
           updated_at?: string
@@ -241,6 +300,7 @@ export type Database = {
           org_id?: string | null
           owner_id?: string | null
           segment_id?: string | null
+          signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
           updated_at?: string

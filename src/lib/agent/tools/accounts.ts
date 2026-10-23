@@ -130,7 +130,7 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
   }),
   def({
     name: "research_stakeholder", kind: "write",
-    description: "Investigación de stakeholders con IA: hipótesis de prioridades, encaje de la propuesta, riesgos y 3 aperturas de conversación, con el contexto de la cuenta. Se guarda en el stakeholder.",
+    description: "Investigación de stakeholders: busca a la persona en internet, resume lo que dicen las fuentes con sus enlaces y añade prioridades probables, encaje de la propuesta, riesgos y 3 aperturas de conversación (lo no comprobado, como hipótesis). Se guarda en el stakeholder.",
     input: z.object({ stakeholder_id: z.string().uuid() }),
     summarize: () => "Investigar al stakeholder con IA y guardar el resultado",
     run: async (c, a) => {

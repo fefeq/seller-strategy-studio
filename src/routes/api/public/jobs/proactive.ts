@@ -40,7 +40,10 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Stripe: every connected company, at most every few hours.
           const { runStripeSyncs } = await import("@/lib/stripe/sync.server");
           const stripe = await runStripeSyncs(db, now).catch((e) => { console.error("stripe syncs failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe });
+          // News signals (Firecrawl) for a few ABM target accounts per run, each at most weekly.
+          const { runSignalRefresh } = await import("@/lib/web-research-core");
+          const signals = await runSignalRefresh(db, now).catch((e) => { console.error("signal refresh failed", e); return null; });
+          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe, signals });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }

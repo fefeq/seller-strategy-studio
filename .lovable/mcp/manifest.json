@@ -1591,11 +1591,11 @@
       {
         "name": "research_stakeholder",
         "title": "Investigación de stakeholders",
-        "description": "Investigación de stakeholders con IA: hipótesis de prioridades, encaje de la propuesta, riesgos y 3 aperturas de conversación, con el contexto de la cuenta. Se guarda en el stakeholder. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Investigación de stakeholders: busca a la persona en internet, resume lo que dicen las fuentes con sus enlaces y añade prioridades probables, encaje de la propuesta, riesgos y 3 aperturas de conversación (lo no comprobado, como hipótesis). Se guarda en el stakeholder. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
-          "openWorldHint": false
+          "openWorldHint": true
         },
         "inputSchema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -3108,6 +3108,92 @@
           },
           "required": [
             "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "research_account",
+        "title": "Investigar una cuenta en la web",
+        "description": "Investiga una cuenta en la web (su web y noticias del último año) y propone qué escribir en su plan de cuenta (situación, dolores, iniciativas, competencia, riesgos, whitespace) con fuentes. No guarda nada: para guardarlo usa upsert_account_plan. Tarda unos segundos y gasta créditos de lectura web.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_account_signals",
+        "title": "Ver señales y noticias de cuentas",
+        "description": "Señales y noticias recientes guardadas de las cuentas (rondas, contrataciones, lanzamientos, cambios de dirección, alianzas, expansión, riesgos), con por qué importan. Filtra por cuenta o lista las últimas de toda la empresa.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "days": {
+              "description": "Antigüedad máxima en días (30 por defecto)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 365
+            },
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "refresh_account_signals",
+        "title": "Buscar noticias recientes de una cuenta",
+        "description": "Busca noticias del último mes de una cuenta en la web, guarda las que tratan de ella y tienen ángulo comercial, y devuelve las nuevas. Gasta créditos de lectura web. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
           ],
           "additionalProperties": false
         },

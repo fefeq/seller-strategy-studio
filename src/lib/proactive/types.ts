@@ -23,6 +23,8 @@ export type Snapshot = {
   staleDays?: number | null;
   /** The company's deal stages; the default seven when missing. */
   stages?: import("@/lib/stages").Stage[];
+  /** Account news signals found in the last 14 days (Firecrawl). Optional so older snapshots still work. */
+  signals?: { id: string; account_id: string; title: string; kind: string; summary: string; relevance: string; url: string; found_at: string }[];
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };

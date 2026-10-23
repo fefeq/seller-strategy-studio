@@ -36,7 +36,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members] = await Promise.all([
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals] = await Promise.all([
     loadSetupData(db, orgId),
     db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
@@ -49,6 +49,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
     db.from("org_members").select("user_id,role").eq("org_id", orgId),
+    db.from("account_signals").select("id,account_id,title,kind,summary,relevance,url,found_at").eq("org_id", orgId).gte("found_at", new Date(now.getTime() - 14 * 86_400_000).toISOString()).limit(200),
   ]);
   return {
     now, orgId, setup,
@@ -66,6 +67,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     cycleDeals: (deals.data ?? []) as any,
     cycleSegments: segs.data ?? [],
     staleDays: readStaleDays(leadSettings.data?.sla),
+    signals: signals.data ?? [],
   };
 }
 

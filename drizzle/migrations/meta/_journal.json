@@ -218,6 +218,13 @@
       "when": 1792793236601,
       "tag": "0030_apollo_phone_reveals",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1792794156554,
+      "tag": "0031_account_signals",
+      "breakpoints": true
     }
   ]
 }

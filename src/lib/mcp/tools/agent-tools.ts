@@ -7,7 +7,7 @@ import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
 const APP_URL = "https://nokko.ai/inbox";
-const EXTERNAL = /^(clay|apollo)_/;
+const EXTERNAL = /^(clay_|apollo_|research_account$|refresh_account_signals$|research_stakeholder$)/;
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
@@ -68,6 +68,9 @@ export const TITLES: Record<string, string> = {
   prepare_meeting_brief: "Preparar brief de reunión",
   remove_deal_line: "Quitar línea de un deal",
   request_approval: "Pedir aprobación",
+  refresh_account_signals: "Buscar noticias recientes de una cuenta",
+  research_account: "Investigar una cuenta en la web",
+  list_account_signals: "Ver señales y noticias de cuentas",
   research_stakeholder: "Investigación de stakeholders",
   review_call: "Revisar llamada",
   save_call_notes: "Guardar notas de llamada en 5 líneas",
