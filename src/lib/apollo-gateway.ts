@@ -88,6 +88,7 @@ export async function revealToAccount(c: ToolCtx, a: { accountId: string; apollo
       if (Object.keys(patch).length) ok(await c.db.from("stakeholders").update(patch).eq("org_id", c.orgId).eq("id", found));
     } else {
       const row = ok(await c.db.from("stakeholders").insert({ org_id: c.orgId, account_id: acc.id, name: m.name, title: m.title, email: m.email, linkedin_url: m.linkedin_url }).select("id").single());
+      if (!row?.id) throw new Error("No se ha podido añadir a la persona al mapa.");
       stakeholderId = row.id;
     }
     if (a.phone) await requestPhone(c, m, stakeholderId!);
