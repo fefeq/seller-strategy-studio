@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { BackgroundJobsWatcher } from "@/components/background";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Brain, Home, Inbox, KanbanSquare, Menu, PanelLeftClose, PanelLeftOpen, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -121,6 +122,7 @@ function Shell() {
 
   return (
     <AgentProvider>
+    <BackgroundJobsWatcher userId={me?.user.id} />
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Mobile top bar: brand + current section + menu toggle. It stays above the drawer so ☰/✕ always works. */}
       <header className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}>

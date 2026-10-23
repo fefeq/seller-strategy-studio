@@ -1,6 +1,7 @@
 // Web research on the account page: «Investigar con la web» (plan-of-account proposals with sources)
 // and the Señales tab (recent news with why it matters). Searches run on the server with Firecrawl.
 import { useState } from "react";
+import { BackgroundButton } from "@/components/background";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -89,7 +90,10 @@ export function SignalsTab({ accountId, hasDomain }: { accountId: string; hasDom
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-2xl text-sm text-muted-foreground">Noticias del último mes sobre esta cuenta: rondas, contrataciones, lanzamientos, nombramientos y casos de éxito, buscadas con Firecrawl y Perplexity, más sus publicaciones y ofertas de empleo en LinkedIn. Las cuentas objetivo ABM se revisan solas cada semana y lo importante llega a Sugerencias.</p>
-        <Button variant="outline" onClick={go} disabled={busy || !hasDomain} title={hasDomain ? undefined : "Añade el dominio de la cuenta"}>{busy ? "Buscando…" : "Buscar novedades"}</Button>
+        <div className="flex flex-wrap gap-1">
+          <Button variant="outline" onClick={go} disabled={busy || !hasDomain} title={hasDomain ? undefined : "Añade el dominio de la cuenta"}>{busy ? "Buscando…" : "Buscar novedades"}</Button>
+          <BackgroundButton size="default" disabled={busy || !hasDomain} job={() => ({ kind: "account_signals", input: { accountId } })} />
+        </div>
       </div>
       {isLoading ? null : data.length === 0 ? <Empty>Aún no hay señales de esta cuenta. Pulsa «Buscar novedades».</Empty> : (
         <ul className="divide-y border-t">

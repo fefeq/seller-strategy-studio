@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { BackgroundButton } from "@/components/background";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -280,7 +281,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
           </div>
           <ApolloReveal stakeholderId={sel.id} onChange={async () => { const { data: fresh } = await supabase.from("stakeholders").select("email,phone,linkedin_url,title").eq("id", sel.id).single(); if (fresh) setSel((cur: any) => (cur?.id === sel.id ? { ...cur, ...Object.fromEntries(Object.entries(fresh).filter(([k]) => !cur[k])) } : cur)); onChange(); }} />
           <Field label="Prioridades y notas"><Textarea rows={3} value={sel.priorities ?? ""} onChange={(e) => setSel({ ...sel, priorities: e.target.value })} /></Field>
-          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button></div>
+          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button><BackgroundButton size="default" disabled={busy} job={() => ({ kind: "stakeholder_research", input: { stakeholderId: sel.id }, label: `Research de ${sel.name}` })} /></div>
           {sel.research && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
         </div>
       ) : <Empty>Selecciona una persona del mapa.</Empty>}
