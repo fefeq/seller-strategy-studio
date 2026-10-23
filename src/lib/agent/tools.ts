@@ -8,6 +8,7 @@ import { PIPELINE_TOOLS } from "./tools/pipeline";
 import { MEETING_TOOLS } from "./tools/meetings";
 import { INBOX_TOOLS } from "./tools/inbox";
 import { CLAY_TOOLS } from "./tools/clay";
+import { APOLLO_TOOLS } from "./tools/apollo";
 import { STAGE_ARG, accountByName, def, like, mustBeMember, mustFind, ok, orgStages, resolveStage, type AgentTool, type ToolCtx } from "./tool-kit";
 import { setupStatus, POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { buildSnapshot } from "@/lib/advisor";

@@ -7,12 +7,18 @@ import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
 const APP_URL = "https://nokko.ai/inbox";
+const EXTERNAL = /^(clay|apollo)_/;
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
   add_deal_line: "Añadir línea a un deal",
   add_mutual_action_item: "Añadir hito al plan de acción mutuo",
   assign_deal: "Asignar deal",
+  apollo_enrich_account: "Completar cuenta con Apollo",
+  apollo_find_companies: "Buscar empresas en Apollo",
+  apollo_find_people: "Buscar personas de una cuenta en Apollo",
+  apollo_reveal_contacts: "Revelar contactos con Apollo",
+  apollo_reveal_stakeholder: "Revelar email o móvil de un stakeholder con Apollo",
   assign_suggestion: "Asignar sugerencia",
   clay_enrich_account: "Completar cuenta con Clay",
   clay_find_companies: "Buscar empresas en Clay",
@@ -88,10 +94,10 @@ export const agentMcpTools = TOOLS.map((t) =>
     title: TITLES[t.name] ?? t.name.replace(/_/g, " "),
     description: t.kind === "write" ? `${t.description} (Queda pendiente: el usuario la confirma en Nokko.)` : t.description,
     inputSchema: ((t.input as z.ZodObject<z.ZodRawShape>).shape ?? {}) as z.ZodRawShape,
-    // Clay tools reach an outside data source and each call spends the workspace's Clay allowance.
+    // Clay and Apollo tools reach an outside data source and spend the workspace's allowance or credits.
     annotations: t.kind === "read"
-      ? { readOnlyHint: true, idempotentHint: !t.name.startsWith("clay_"), openWorldHint: t.name.startsWith("clay_") }
-      : { readOnlyHint: false, destructiveHint: false, openWorldHint: false },
+      ? { readOnlyHint: true, idempotentHint: !EXTERNAL.test(t.name), openWorldHint: EXTERNAL.test(t.name) }
+      : { readOnlyHint: false, destructiveHint: false, openWorldHint: EXTERNAL.test(t.name) },
     handler: async (args, ctx) => {
       const c = await mcpCtx(ctx);
       if (!canUseTool(t, c.roles)) throw new ToolError("Tu rol en esta empresa no permite esta acción");
