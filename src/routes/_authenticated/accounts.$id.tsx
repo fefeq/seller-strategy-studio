@@ -33,6 +33,7 @@ import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
 import { linkedinCompanyUrl } from "@/lib/apify";
 import { AccountJobs } from "@/components/linkedin";
+import { ProductUsageCard } from "@/components/posthog-panel";
 
 const ACCOUNT_TABS = ["plan", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
@@ -92,7 +93,7 @@ function AccountPage() {
       </div>
     }>
       <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_minmax(0,20rem)]">
-        <ScoreDetail score={score} />
+        <div className="space-y-4"><ScoreDetail score={score} /><ProductUsageCard accountId={id} /></div>
         <FitFields account={a} segNames={data.segNames} onSaved={refresh} />
       </div>
       <Tabs key={`${id}-${search.tab ?? "plan"}-${search.meeting ?? ""}`} defaultValue={search.tab ?? "plan"}>
