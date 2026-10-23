@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountsToRefresh, ageText, firecrawlErrorText, newsItems, pickPages, publicUrl, sourcesMarkdown } from "./web-research";
+import { accountsToRefresh, ageText, companyName, firecrawlErrorText, newsItems, pickPages, publicUrl, sourcesMarkdown } from "./web-research";
 import { accountSignal } from "./proactive/detectors/account-signal";
 import type { Snapshot } from "./proactive/types";
 
