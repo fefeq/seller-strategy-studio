@@ -7,7 +7,7 @@ import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
 const APP_URL = "https://nokko.ai/inbox";
-const EXTERNAL = /^(clay_|apollo_|research_account$|refresh_account_signals$|research_stakeholder$)/;
+const EXTERNAL = /^(clay_|apollo_|drive_|research_account$|refresh_account_signals$|research_stakeholder$)/;
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
@@ -37,6 +37,12 @@ export const TITLES: Record<string, string> = {
   create_task: "Crear tarea",
   decide_approval: "Decidir aprobación",
   decide_suggestion: "Gestionar sugerencia",
+  drive_import_to_knowledge: "Importar archivo de Drive al hub",
+  drive_link_account_folder: "Carpeta de Drive de una cuenta",
+  drive_list_account_files: "Archivos de Drive de una cuenta",
+  drive_read_file: "Leer un archivo de Drive",
+  drive_save_document: "Guardar documento en Drive",
+  drive_search: "Buscar en Google Drive",
   draft_artifact: "Redactar documento del ciclo GTM",
   draft_followup: "Redactar seguimiento de un lead",
   draft_proposal: "Redactar propuesta de una cuenta",
