@@ -4,7 +4,7 @@
 import { ask } from "@/lib/ai-gateway";
 import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
 import { search } from "@/lib/firecrawl";
-import { newsItems, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
+import { companyName, newsItems, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
 
 /** Company and user the generation runs for; null = the caller's RLS client already limits the rows. */
 export type AiScope = { orgId: string; userId: string } | null;
@@ -84,7 +84,7 @@ export async function researchStakeholderCore(db: Db, stakeholderId: string, sco
   let web: NewsItem[] = [];
   let webNote = "";
   try {
-    web = newsItems(await search(`"${s.name}" ${acc?.name ?? ""} ${s.title ?? ""}`.trim(), { limit: 6, sources: ["web", "news"] }), 6);
+    web = newsItems(await search(`"${s.name}" ${companyName(acc?.name, acc?.domain)} ${s.title ?? ""}`.trim(), { limit: 6, sources: ["web", "news"] }), 6);
     if (!web.length) webNote = "No he encontrado resultados en internet sobre esta persona.";
   } catch (e) { webNote = `No he podido buscar en internet: ${(e as Error).message}`; }
   const body = await ask(

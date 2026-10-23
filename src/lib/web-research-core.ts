@@ -4,7 +4,7 @@ import { ask } from "@/lib/ai-gateway";
 import { accountContext, type AiScope } from "@/lib/ai-core";
 import { mapSite, scrapeMarkdown, search } from "@/lib/firecrawl";
 import { cleanDomain } from "@/lib/leads";
-import { SIGNAL_KINDS, newsItems, pickPages, publicUrl, type NewsItem, type SignalKind } from "@/lib/web-research";
+import { SIGNAL_KINDS, companyName, newsItems, pickPages, publicUrl, type NewsItem, type SignalKind } from "@/lib/web-research";
 
 type Db = any;
 const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
@@ -44,7 +44,7 @@ export async function researchAccountCore(db: Db, accountId: string, scope: AiSc
   let siteError: Error | null = null;
   const [site, news] = await Promise.all([
     readCompanySite(domain, 18_000).catch((e: Error) => { siteError = e; return { text: "", pages: [] as string[] }; }),
-    search(`"${acc.name}"`, { limit: 8, sources: ["news", "web"], tbs: "qdr:y" }).then((d) => newsItems(d, 8)).catch(() => [] as NewsItem[]),
+    search(`"${companyName(acc.name, domain)}"`, { limit: 8, sources: ["news", "web"], tbs: "qdr:y" }).then((d) => newsItems(d, 8)).catch(() => [] as NewsItem[]),
   ]);
   if (!site.text && !news.length) throw siteError ?? new Error("No he podido leer la web ni encontrar noticias de esta cuenta.");
   const ctx = await accountContext(db, accountId, scope);
@@ -90,7 +90,9 @@ export async function refreshSignalsCore(db: Db, accountId: string, scope: AiSco
   const { data: acc } = await inOrg(db.from("accounts").select("id,org_id,name,domain").eq("id", accountId), scope).maybeSingle();
   if (!acc) throw new Error("No encuentro esa cuenta en esta empresa.");
   const now = new Date().toISOString();
-  const items = newsItems(await search(`"${acc.name}"`, { limit: 10, sources: ["news"], tbs: "qdr:m" }), 10);
+  const name = companyName(acc.name, cleanDomain(acc.domain));
+  if (!name) throw new Error("La cuenta no tiene nombre ni dominio para buscar sus noticias.");
+  const items = newsItems(await search(`"${name}"`, { limit: 10, sources: ["news"], tbs: "qdr:m" }), 10);
   const { data: existing } = await db.from("account_signals").select("url").eq("org_id", acc.org_id).eq("account_id", acc.id);
   const seen = new Set((existing ?? []).map((r: { url: string }) => r.url));
   const fresh = items.filter((n) => !seen.has(n.url));
