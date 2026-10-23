@@ -34,7 +34,11 @@ export function BackgroundJobsWatcher({ userId }: { userId: string | undefined }
   return null;
 }
 
-type JobArgs = Parameters<typeof startBackgroundJob>[0]["data"];
+type JobArgs =
+  | { kind: "battlecard"; input: { competitor: string; max: number }; label?: string }
+  | { kind: "stakeholder_research"; input: { stakeholderId: string }; label?: string }
+  | { kind: "account_signals"; input: { accountId: string }; label?: string }
+  | { kind: "drive_import"; input: { file: string; section: "company" | "objections" | "playbooks" | "methodology" | "campaigns" | "skills" | "rules" }; label?: string };
 
 /** «En segundo plano»: starts the task and lets the person keep working; hidden while Inngest is not answering. */
 export function BackgroundButton({ job, onStarted, size = "sm", label = "En segundo plano", disabled }: { job: () => JobArgs | null; onStarted?: () => void; size?: "sm" | "default"; label?: string; disabled?: boolean }) {

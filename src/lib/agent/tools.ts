@@ -341,8 +341,8 @@ const CORE_TOOLS: AgentTool[] = [
       const saved = ok(await c.db.from("leads").update(patch).eq("org_id", c.orgId).eq("id", lead_id).select("id,company,stage,deal_id,next_step_at,contacted_at,enriched_at,created_at").single());
       // Keeps the follow-up sequence with waits in step (Inngest); never blocks the change.
       const [{ leadEvents }, { trySend }] = await Promise.all([import("@/lib/inngest/lead-events"), import("@/lib/inngest/send.server")]);
-      await trySend(leadEvents(c.orgId, saved as any));
-      return { id: saved.id, company: saved.company, stage: saved.stage, deal_id: saved.deal_id, next_step_at: saved.next_step_at };
+      if (saved) await trySend(leadEvents(c.orgId, saved as any));
+      return saved && { id: saved.id, company: saved.company, stage: saved.stage, deal_id: saved.deal_id, next_step_at: saved.next_step_at };
     },
   }),
   def({
