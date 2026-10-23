@@ -14,6 +14,7 @@ import { confirmed, NOT_SAVED } from "@/lib/save";
 import { useServerFn } from "@tanstack/react-start";
 import { createPlaybookLibrary } from "@/lib/playbooks.functions";
 import { missingPlays } from "@/lib/playbooks/adapt";
+import { DriveImportButton, SaveToDriveButton } from "@/components/drive";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   head: () => ({ meta: [{ title: "Conocimiento — Nokko" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — Nokko" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
@@ -109,6 +110,11 @@ function Hub() {
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{SECTIONS.find((s) => s[0] === section)?.[2]}</p>
           <Button size="sm" variant="outline" className="w-full" onClick={() => { setDraftSeq((n) => n + 1); setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
+          <DriveImportButton section={section} onImported={async (docId) => {
+            await qc.invalidateQueries({ queryKey: ["docs"] });
+            const row = (qc.getQueryData<Doc[]>(["docs"]) ?? []).find((d) => d.id === docId);
+            if (row) { setSelected(row); revealOnMobile(editorRef.current); }
+          }} />
           {list.map((d) => (
             <button key={d.id} onClick={() => { setSelected(d); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}>
               <span className="font-medium">{d.title}</span>
@@ -155,6 +161,7 @@ function Editor({ doc, isOwner, saving, onSave, onDelete }: { doc: Doc; isOwner:
           <Button variant="outline" disabled={empty || saving} onClick={() => onSave({ id, title, body, scope: "team", mandatory })}>Promover a equipo</Button>
         )}
         {empty && <span className="text-xs text-muted-foreground">Escribe un título y el contenido para poder guardar.</span>}
+        {!isDraft && <SaveToDriveButton title={title || doc.title} markdown={`# ${title}\n\n${body}`} />}
         {isOwner && !isDraft && <Button variant="ghost" className="ml-auto text-destructive" onClick={onDelete}>Eliminar</Button>}
       </div>
     </div>
