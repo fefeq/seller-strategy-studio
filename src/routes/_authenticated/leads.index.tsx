@@ -48,6 +48,7 @@ function LeadsPage() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const go = useNavigate();
+  const touchLead = useLeadTouched();
   const qc = useQueryClient();
   const { data } = useLeads(orgId);
 
