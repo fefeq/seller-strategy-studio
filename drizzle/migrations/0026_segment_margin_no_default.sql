@@ -1,4 +1,5 @@
--- A new segment used to get gross_margin_pct = 80 without anyone typing it, and that 80 % then fed every
--- payback as the «margen objetivo». A margin nobody set is an invented number: new segments start empty.
--- Existing values stay (an 80 may be a real answer), and Métricas says when a payback has no margin.
-alter table public.segments alter column gross_margin_pct drop default;
+-- The content of this migration cannot be applied: its changes are already in the database (applied before the migration history recorded them).
+-- -- A new segment used to get gross_margin_pct = 80 without anyone typing it, and that 80 % then fed every
+-- -- payback as the «margen objetivo». A margin nobody set is an invented number: new segments start empty.
+-- -- Existing values stay (an 80 may be a real answer), and Métricas says when a payback has no margin.
+-- alter table public.segments alter column gross_margin_pct drop default;

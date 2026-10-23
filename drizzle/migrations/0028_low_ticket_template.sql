@@ -1,62 +1,63 @@
--- New companies can also start from a low-ticket template (ACV under 5,000): Self-service and Venta
--- asistida with public benchmarks and their sources in the segment notes. Same signature, so no grants change.
-create or replace function public.create_organization(_name text, _segments text default 'template')
-returns uuid language plpgsql security definer set search_path = public as $$
-declare o uuid; u uuid := auth.uid();
-begin
-  if u is null then raise exception 'No autenticado'; end if;
-  if coalesce(trim(_name), '') = '' then raise exception 'Nombre requerido'; end if;
-  if _segments not in ('template', 'low_ticket', 'empty') then raise exception 'Plantilla de segmentos no válida'; end if;
-  insert into public.organizations (name, created_by) values (trim(_name), u) returning id into o;
-  insert into public.org_members (org_id, user_id, role) values (o, u, 'owner');
-  update public.profiles set current_org_id = o where id = u;
+-- The content of this migration cannot be applied: its changes are already in the database (applied before the migration history recorded them).
+-- -- New companies can also start from a low-ticket template (ACV under 5,000): Self-service and Venta
+-- -- asistida with public benchmarks and their sources in the segment notes. Same signature, so no grants change.
+-- create or replace function public.create_organization(_name text, _segments text default 'template')
+-- returns uuid language plpgsql security definer set search_path = public as $$
+-- declare o uuid; u uuid := auth.uid();
+-- begin
+--   if u is null then raise exception 'No autenticado'; end if;
+--   if coalesce(trim(_name), '') = '' then raise exception 'Nombre requerido'; end if;
+--   if _segments not in ('template', 'low_ticket', 'empty') then raise exception 'Plantilla de segmentos no válida'; end if;
+--   insert into public.organizations (name, created_by) values (trim(_name), u) returning id into o;
+--   insert into public.org_members (org_id, user_id, role) values (o, u, 'owner');
+--   update public.profiles set current_org_id = o where id = u;
 
-  -- The ACV template only when asked for: a company that sells below 5K a year would otherwise start
-  -- with Enterprise and Strategic segments it can't delete from its numbers.
-  if _segments = 'template' then
-    insert into public.segments (org_id, name, acv_min, acv_max, motion, cycle_days, sdr_per_ae, ae_per_se, cac_target, payback_months) values
-      (o, 'SMB', 0, 5000, 'plg', 14, null, null, 500, 6),
-      (o, 'Mid-market', 5000, 50000, 'inside', 60, 2.5, null, 15000, 12),
-      (o, 'Enterprise', 50000, 250000, 'field', 135, 2, 2.5, 100000, 24),
-      (o, 'Strategic', 250000, null, 'strategic', 270, 2, 2, null, null);
-  end if;
-  -- Low ticket (ACV under 5,000): public benchmarks approved by Fede on 2026-10-22, with their source in
-  -- notes. CAC stays empty: no public source gives it by ACV; the payback target bounds it instead.
-  if _segments = 'low_ticket' then
-    insert into public.segments (org_id, name, acv_min, acv_max, motion, cycle_days, win_rate_target, gross_margin_pct, payback_months, notes) values
-      (o, 'Self-service', 0, 1200, 'plg', null, null, 77, 12,
-       'Plantilla ticket bajo (fuentes públicas, octubre de 2026; en dólares, aquí en tu moneda sin convertir). '
-       || 'Win rate vacío a propósito: en self-service lo que se mide es la conversión de prueba a pago, que se sigue en el embudo de pruebas de Métricas. Referencia: 4–6 % con prueba sin tarjeta (mediana), 25–35 % con tarjeta, 3–5 % freemium (ChartMogul y ProductLed, The Conversion Report 2026). '
-       || 'Payback 12 meses: referencia conservadora para pymes (High Alpha 2025 da 5–8 meses y OpenView 2023 da 8–11 para empresas de menos de 5 M$ de ARR). Margen bruto 77 % (High Alpha 2025, empresas de 1–5 M$ de ARR). '
-       || 'Churn de clientes esperado: 3–4 % al mes, más del 5 % si el precio es menor de 25 $ al mes (ChartMogul 2022). NRR 85 % (ChartMogul 2023). '
-       || 'CAC sin fijar: el máximo que cabe es payback × precio mensual × margen. Self-service es lo que vale menos de 1.200 al año (100 al mes); de 1.200 en adelante es Venta asistida. Ese corte es una propuesta: ajústalo a tus precios.'),
-      (o, 'Venta asistida', 1200, 5000, 'inside', 60, 19, 77, 12,
-       'Plantilla ticket bajo (fuentes públicas, octubre de 2026). Win rate 19 %: media de todos los tamaños de contrato, no hay dato fiable solo para ticket bajo (Bridge Group, SaaS AE Report 2024). '
-       || 'Ciclo de unos 60 días: estimación a partir de KBCM 2021 (contratos de menos de 5.000 $ al año, 11 empresas, cifra leída de un gráfico). Payback, margen, churn y NRR como en Self-service.');
-  end if;
-  insert into public.positioning (org_id) values (o);
-  insert into public.integrations (org_id, category, name, purpose) values
-    (o,'Conocimiento','GitHub','Repositorio del cerebro GTM'),
-    (o,'Llamadas','Fireflies','Transcripciones de llamadas'),
-    (o,'Llamadas','Gong','Inteligencia conversacional'),
-    (o,'CRM','Attio','CRM de personas con intención'),
-    (o,'CRM','HubSpot','CRM alternativo'),
-    (o,'Comunicación','Slack','Aprobaciones y alertas'),
-    (o,'Email y calendario','Gmail','Emails y seguimiento'),
-    (o,'Email y calendario','Google Calendar','Reuniones del Meeting Planner'),
-    (o,'Enriquecimiento','Apollo','Datos de contacto'),
-    (o,'Enriquecimiento','Clay','Enriquecimiento y research'),
-    (o,'Enriquecimiento','LinkedIn Sales Navigator','Research de stakeholders'),
-    (o,'Secuencias','Instantly','Secuencias de cold email'),
-    (o,'Secuencias','Lemlist','Secuencias multicanal'),
-    (o,'Firma y propuestas','DocuSign','Firma de contratos'),
-    (o,'Firma y propuestas','PandaDoc','Propuestas');
-  insert into public.knowledge_docs (org_id, section, title, body) values
-    (o,'company','ICP','Describe aquí tu cliente ideal: industria, tamaño, cargo comprador, disparadores de compra.'),
-    (o,'playbooks','Discovery', E'1. Contexto\n2. Dolor\n3. Impacto\n4. Proceso de decisión\n5. Próximos pasos'),
-    (o,'methodology','MEDDPICC','Metrics, Economic buyer, Decision criteria, Decision process, Paper process, Identify pain, Champion, Competition'),
-    (o,'rules','Aprobación humana','Ningún agente envía propuestas, cambia precios ni mueve deals a "Ganado" sin aprobación de una persona.');
-  return o;
-end $$;
-revoke all on function public.create_organization(text, text) from public, anon;
-grant execute on function public.create_organization(text, text) to authenticated;
+--   -- The ACV template only when asked for: a company that sells below 5K a year would otherwise start
+--   -- with Enterprise and Strategic segments it can't delete from its numbers.
+--   if _segments = 'template' then
+--     insert into public.segments (org_id, name, acv_min, acv_max, motion, cycle_days, sdr_per_ae, ae_per_se, cac_target, payback_months) values
+--       (o, 'SMB', 0, 5000, 'plg', 14, null, null, 500, 6),
+--       (o, 'Mid-market', 5000, 50000, 'inside', 60, 2.5, null, 15000, 12),
+--       (o, 'Enterprise', 50000, 250000, 'field', 135, 2, 2.5, 100000, 24),
+--       (o, 'Strategic', 250000, null, 'strategic', 270, 2, 2, null, null);
+--   end if;
+--   -- Low ticket (ACV under 5,000): public benchmarks approved by Fede on 2026-10-22, with their source in
+--   -- notes. CAC stays empty: no public source gives it by ACV; the payback target bounds it instead.
+--   if _segments = 'low_ticket' then
+--     insert into public.segments (org_id, name, acv_min, acv_max, motion, cycle_days, win_rate_target, gross_margin_pct, payback_months, notes) values
+--       (o, 'Self-service', 0, 1200, 'plg', null, null, 77, 12,
+--        'Plantilla ticket bajo (fuentes públicas, octubre de 2026; en dólares, aquí en tu moneda sin convertir). '
+--        || 'Win rate vacío a propósito: en self-service lo que se mide es la conversión de prueba a pago, que se sigue en el embudo de pruebas de Métricas. Referencia: 4–6 % con prueba sin tarjeta (mediana), 25–35 % con tarjeta, 3–5 % freemium (ChartMogul y ProductLed, The Conversion Report 2026). '
+--        || 'Payback 12 meses: referencia conservadora para pymes (High Alpha 2025 da 5–8 meses y OpenView 2023 da 8–11 para empresas de menos de 5 M$ de ARR). Margen bruto 77 % (High Alpha 2025, empresas de 1–5 M$ de ARR). '
+--        || 'Churn de clientes esperado: 3–4 % al mes, más del 5 % si el precio es menor de 25 $ al mes (ChartMogul 2022). NRR 85 % (ChartMogul 2023). '
+--        || 'CAC sin fijar: el máximo que cabe es payback × precio mensual × margen. Self-service es lo que vale menos de 1.200 al año (100 al mes); de 1.200 en adelante es Venta asistida. Ese corte es una propuesta: ajústalo a tus precios.'),
+--       (o, 'Venta asistida', 1200, 5000, 'inside', 60, 19, 77, 12,
+--        'Plantilla ticket bajo (fuentes públicas, octubre de 2026). Win rate 19 %: media de todos los tamaños de contrato, no hay dato fiable solo para ticket bajo (Bridge Group, SaaS AE Report 2024). '
+--        || 'Ciclo de unos 60 días: estimación a partir de KBCM 2021 (contratos de menos de 5.000 $ al año, 11 empresas, cifra leída de un gráfico). Payback, margen, churn y NRR como en Self-service.');
+--   end if;
+--   insert into public.positioning (org_id) values (o);
+--   insert into public.integrations (org_id, category, name, purpose) values
+--     (o,'Conocimiento','GitHub','Repositorio del cerebro GTM'),
+--     (o,'Llamadas','Fireflies','Transcripciones de llamadas'),
+--     (o,'Llamadas','Gong','Inteligencia conversacional'),
+--     (o,'CRM','Attio','CRM de personas con intención'),
+--     (o,'CRM','HubSpot','CRM alternativo'),
+--     (o,'Comunicación','Slack','Aprobaciones y alertas'),
+--     (o,'Email y calendario','Gmail','Emails y seguimiento'),
+--     (o,'Email y calendario','Google Calendar','Reuniones del Meeting Planner'),
+--     (o,'Enriquecimiento','Apollo','Datos de contacto'),
+--     (o,'Enriquecimiento','Clay','Enriquecimiento y research'),
+--     (o,'Enriquecimiento','LinkedIn Sales Navigator','Research de stakeholders'),
+--     (o,'Secuencias','Instantly','Secuencias de cold email'),
+--     (o,'Secuencias','Lemlist','Secuencias multicanal'),
+--     (o,'Firma y propuestas','DocuSign','Firma de contratos'),
+--     (o,'Firma y propuestas','PandaDoc','Propuestas');
+--   insert into public.knowledge_docs (org_id, section, title, body) values
+--     (o,'company','ICP','Describe aquí tu cliente ideal: industria, tamaño, cargo comprador, disparadores de compra.'),
+--     (o,'playbooks','Discovery', E'1. Contexto\n2. Dolor\n3. Impacto\n4. Proceso de decisión\n5. Próximos pasos'),
+--     (o,'methodology','MEDDPICC','Metrics, Economic buyer, Decision criteria, Decision process, Paper process, Identify pain, Champion, Competition'),
+--     (o,'rules','Aprobación humana','Ningún agente envía propuestas, cambia precios ni mueve deals a "Ganado" sin aprobación de una persona.');
+--   return o;
+-- end $$;
+-- revoke all on function public.create_organization(text, text) from public, anon;
+-- grant execute on function public.create_organization(text, text) to authenticated;

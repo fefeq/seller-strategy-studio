@@ -40,6 +40,7 @@ import { Route as AuthenticatedAccountsAssignmentRouteImport } from './routes/_a
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
+import { Route as ApiPublicApolloPhoneWebhookRouteImport } from './routes/api/public/apollo/phone-webhook'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
@@ -202,6 +203,12 @@ const ApiPublicLeadsRoute = ApiPublicLeadsRouteImport.update({
   path: '/api/public/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicApolloPhoneWebhookRoute =
+  ApiPublicApolloPhoneWebhookRouteImport.update({
+    id: '/api/public/apollo/phone-webhook',
+    path: '/api/public/apollo/phone-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicJobsProactiveRoute = ApiPublicJobsProactiveRouteImport.update({
   id: '/api/public/jobs/proactive',
   path: '/api/public/jobs/proactive',
@@ -245,6 +252,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -279,6 +287,7 @@ export interface FileRoutesByTo {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
+  '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -315,6 +324,7 @@ export interface FileRoutesById {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts/'
     | '/leads/'
+    | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -385,6 +396,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts'
     | '/leads'
+    | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   id:
@@ -420,6 +432,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/_authenticated/accounts/'
     | '/_authenticated/leads/'
+    | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -433,6 +446,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
+  ApiPublicApolloPhoneWebhookRoute: typeof ApiPublicApolloPhoneWebhookRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -656,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/apollo/phone-webhook': {
+      id: '/api/public/apollo/phone-webhook'
+      path: '/api/public/apollo/phone-webhook'
+      fullPath: '/api/public/apollo/phone-webhook'
+      preLoaderRoute: typeof ApiPublicApolloPhoneWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/proactive': {
       id: '/api/public/jobs/proactive'
       path: '/api/public/jobs/proactive'
@@ -738,6 +759,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
+  ApiPublicApolloPhoneWebhookRoute: ApiPublicApolloPhoneWebhookRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }

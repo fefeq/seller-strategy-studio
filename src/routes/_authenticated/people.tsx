@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { dedupePeople, parseCsv } from "@/lib/dedupe";
 import { CAMPAIGN_RESULTS, SOURCES } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
+import { ApolloPhones } from "@/components/apollo";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -110,6 +111,7 @@ function People() {
         </div>
         </>
       )}
+      <ApolloPhones />
     </Page>
   );
 }
