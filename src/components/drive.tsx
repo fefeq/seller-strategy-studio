@@ -1,4 +1,6 @@
 // Google Drive on the screens: the file picker (company folder only), import to the hub, documents for the
+import { useBackgroundReady } from "@/components/background";
+import { startBackgroundJob } from "@/lib/background.functions";
 // AI setup, «Guardar en Drive» and the Drive tab of an account. All calls run on the server (drive.functions.ts).
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -88,11 +90,20 @@ export function DrivePicker({ open, onOpenChange, onPick, title, busy }: { open:
 /** Hub: import a Drive file as a document of the current section. */
 export function DriveImportButton({ section, onImported }: { section: string; onImported: (docId: string) => void }) {
   const run = useServerFn(driveImport);
+  const startJob = useServerFn(startBackgroundJob);
+  const background = useBackgroundReady();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   async function pick(f: Picked) {
     setBusy(true);
     try {
+      // PDFs are transcribed by the AI and take a while: in the background when available.
+      if (background && /\.pdf$/i.test(f.name)) {
+        await startJob({ data: { kind: "drive_import", input: { file: f.id, section: section as "company" }, label: `Importar «${f.name}»` } });
+        toast.success("Importando en segundo plano. Te aviso aquí cuando esté en el hub.");
+        setOpen(false);
+        return;
+      }
       const r = await run({ data: { file: f.id, section: section as "company" } });
       toast.success(`«${r.title}» importado.${r.truncated ? " El original es muy largo: se ha guardado el principio." : ""}`);
       setOpen(false); onImported(r.docId);
