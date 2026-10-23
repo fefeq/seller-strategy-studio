@@ -1,7 +1,7 @@
 // Web research on the account page: «Investigar con la web» (plan-of-account proposals with sources)
 // and the Señales tab (recent news with why it matters). Searches run on the server with Firecrawl.
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +70,7 @@ export function AccountResearch({ accountId, hasDomain, onApply }: { accountId: 
 /** Recent news on the account, newest first, with why it matters for selling. */
 export function SignalsTab({ accountId, hasDomain }: { accountId: string; hasDomain: boolean }) {
   const refresh = useServerFn(refreshSignals);
+  const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
   const { data = [], refetch, isLoading } = useQuery({
     queryKey: ["account-signals", accountId],
@@ -81,6 +82,7 @@ export function SignalsTab({ accountId, hasDomain }: { accountId: string; hasDom
       const r = await refresh({ data: { accountId } });
       toast.success(r.added ? `${r.added} ${r.added === 1 ? "novedad nueva" : "novedades nuevas"}.` : r.checked ? "Nada nuevo con interés comercial en el último mes." : "No hay noticias de esta empresa en el último mes.");
       await refetch();
+      qc.invalidateQueries({ queryKey: ["account", accountId] }); // the LinkedIn page may have been found and saved
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   return (
