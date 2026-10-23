@@ -2591,6 +2591,119 @@ export type Database = {
           },
         ]
       }
+      posthog_connections: {
+        Row: {
+          activation_event: string | null
+          api_key_enc: string
+          created_at: string
+          created_by: string | null
+          domain_property: string | null
+          host: string
+          key_hint: string
+          last_error: string | null
+          last_synced_at: string | null
+          org_id: string
+          paid_event: string | null
+          project_id: string
+          signup_event: string | null
+          updated_at: string
+        }
+        Insert: {
+          activation_event?: string | null
+          api_key_enc: string
+          created_at?: string
+          created_by?: string | null
+          domain_property?: string | null
+          host?: string
+          key_hint?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          org_id: string
+          paid_event?: string | null
+          project_id: string
+          signup_event?: string | null
+          updated_at?: string
+        }
+        Update: {
+          activation_event?: string | null
+          api_key_enc?: string
+          created_at?: string
+          created_by?: string | null
+          domain_property?: string | null
+          host?: string
+          key_hint?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          org_id?: string
+          paid_event?: string | null
+          project_id?: string
+          signup_event?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posthog_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_usage: {
+        Row: {
+          account_id: string | null
+          active_users_30d: number
+          active_users_7d: number
+          active_users_prev_7d: number
+          domain: string
+          events_30d: number
+          id: string
+          last_seen_at: string | null
+          org_id: string
+          synced_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          active_users_30d?: number
+          active_users_7d?: number
+          active_users_prev_7d?: number
+          domain: string
+          events_30d?: number
+          id?: string
+          last_seen_at?: string | null
+          org_id?: string
+          synced_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          active_users_30d?: number
+          active_users_7d?: number
+          active_users_prev_7d?: number
+          domain?: string
+          events_30d?: number
+          id?: string
+          last_seen_at?: string | null
+          org_id?: string
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_usage_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_usage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           active: boolean
@@ -3427,6 +3540,7 @@ export type Database = {
           mrr: number | null
           org_id: string | null
           plan: string
+          posthog_person_id: string | null
           segment_id: string | null
           signed_up_at: string
           source: string
@@ -3444,6 +3558,7 @@ export type Database = {
           mrr?: number | null
           org_id?: string | null
           plan?: string
+          posthog_person_id?: string | null
           segment_id?: string | null
           signed_up_at?: string
           source?: string
@@ -3461,6 +3576,7 @@ export type Database = {
           mrr?: number | null
           org_id?: string | null
           plan?: string
+          posthog_person_id?: string | null
           segment_id?: string | null
           signed_up_at?: string
           source?: string
