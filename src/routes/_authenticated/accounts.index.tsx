@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { AccountImport } from "@/components/account-import";
 import { ClayProspectButton } from "@/components/clay";
 import { ApolloProspectButton } from "@/components/apollo";
+import { EnrichTableButton, IcpListButton } from "@/components/parallel";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -77,6 +78,8 @@ function Accounts() {
       {leader && <Button variant="outline" asChild><Link to="/accounts/assignment">Reparto{data.some((a) => !a.owner_id) ? ` (${data.filter((a) => !a.owner_id).length} sin responsable)` : ""}</Link></Button>}
       <ClayProspectButton />
       <ApolloProspectButton />
+      <IcpListButton />
+      <EnrichTableButton />
       <Dialog>
         <DialogTrigger asChild><Button variant="outline">Importar CSV</Button></DialogTrigger>
         <DialogContent>

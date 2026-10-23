@@ -35,8 +35,9 @@ import { planMarkdown } from "@/lib/drive";
 import { linkedinCompanyUrl } from "@/lib/apify";
 import { AccountJobs } from "@/components/linkedin";
 import { ProductUsageCard } from "@/components/posthog-panel";
+import { AccountReportTab } from "@/components/parallel";
 
-const ACCOUNT_TABS = ["plan", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
+const ACCOUNT_TABS = ["plan", "report", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
@@ -100,6 +101,7 @@ function AccountPage() {
       <Tabs key={`${id}-${search.tab ?? "plan"}-${search.meeting ?? ""}`} defaultValue={search.tab ?? "plan"}>
         <TabsList className="mb-6">
           <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
+          <TabsTrigger value="report">Informe</TabsTrigger>
           <TabsTrigger value="signals">Señales</TabsTrigger>
           <TabsTrigger value="stakeholders">Stakeholders ({data.stakeholders.length})</TabsTrigger>
           <TabsTrigger value="meetings">Planificador de reuniones ({data.meetings.length})</TabsTrigger>
@@ -108,6 +110,7 @@ function AccountPage() {
           <TabsTrigger value="drive">Drive</TabsTrigger>
         </TabsList>
         <TabsContent value="plan"><PlanTab accountId={id} accountName={a.name} hasDomain={!!a.domain} plan={data.plan} onSaved={refresh} /></TabsContent>
+        <TabsContent value="report"><AccountReportTab accountId={id} accountName={a.name} /></TabsContent>
         <TabsContent value="signals"><SignalsTab accountId={id} hasDomain={!!a.domain} /><div className="mt-6"><AccountJobs accountId={id} /></div></TabsContent>
         <TabsContent value="stakeholders"><StakeholdersTab accountId={id} hasDomain={!!a.domain} list={data.stakeholders} onChange={refresh} /></TabsContent>
         <TabsContent value="meetings"><MeetingsTab accountId={id} openMeetingId={search.meeting} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>

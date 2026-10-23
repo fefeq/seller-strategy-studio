@@ -28,6 +28,12 @@ export function BackgroundJobsWatcher({ userId }: { userId: string | undefined }
         if (j.status === "done") toast.success(j.result?.title ?? `${j.label}: listo`, j.result?.link ? { duration: 15_000, action: { label: "Abrir", onClick: () => navigate({ to: j.result!.link! as "/" }) } } : undefined);
         if (j.status === "failed") toast.error(`${j.label}: ${j.error ?? "no se ha podido terminar"}`);
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "research_runs", filter: `user_id=eq.${userId}` }, (p) => {
+        const r = p.new as { status: string; kind: string; label: string; error: string | null; account_id: string | null };
+        const link = r.kind === "account_report" && r.account_id ? `/accounts/${r.account_id}?tab=report` : "/accounts";
+        if (r.status === "done") toast.success(`${r.label}: listo`, { duration: 15_000, action: { label: "Abrir", onClick: () => navigate({ to: link as "/" }) } });
+        if (r.status === "failed") toast.error(`${r.label}: ${r.error ?? "no se ha podido terminar"}`);
+      })
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
   }, [userId, navigate]);
