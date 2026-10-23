@@ -16,11 +16,11 @@ const CompaniesIn = z.object({
   query: z.object({
     keywords: words, industries: words, countries: words, revenues: z.array(z.enum(CLAY_REVENUES)).default([]),
     minEmployees: z.number().int().min(1).nullable().optional(), maxEmployees: z.number().int().min(1).nullable().optional(),
-  }).default({}),
+  }).optional(),
 });
 const PeopleIn = z.object({
   accountId: z.string().uuid(), searchId, limit,
-  query: z.object({ titles: words, seniority: z.array(z.enum(CLAY_SENIORITY)).default([]), countries: words }).default({}),
+  query: z.object({ titles: words, seniority: z.array(z.enum(CLAY_SENIORITY)).default([]), countries: words }).optional(),
 });
 
 export const clayCompanies = createServerFn({ method: "POST" })
