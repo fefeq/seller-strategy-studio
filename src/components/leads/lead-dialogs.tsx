@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { track } from "@/lib/analytics";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +36,6 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
       account_id: acc?.id ?? null,
     });
     if (error) return toast.error(errorText(error));
-    track("lead_created", { location: "manual" });
     toast.success(`Lead ${company} creado.`);
     setF(empty);
     setOpen(false);

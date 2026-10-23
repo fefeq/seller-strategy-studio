@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { track } from "@/lib/analytics";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -77,7 +76,6 @@ export function NewDealButton() {
       );
       const [r] = await apply({ data: { items: [{ tool: "create_deal", args }] } });
       if (!r?.ok) throw new Error(r?.error ?? "No se ha podido crear el deal.");
-      track("deal_created", { location: "new_deal" });
       toast.success(
         `Deal «${f.name.trim()}» creado${f.close ? "" : ". Ponle fecha de cierre para que cuente en la cobertura"}.`,
       );

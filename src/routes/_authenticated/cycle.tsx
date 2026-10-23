@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { track } from "@/lib/analytics";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -130,7 +129,7 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
   async function go() {
     if (kind === "winloss" && !dealId) return toast.error("Elige el deal cerrado.");
     setBusy(true);
-    try { const r = await draft({ data: { kind: kind!, notes, dealId: dealId || null } }); track("artifact_drafted", { location: kind! }); setNotes(""); setDealId(""); toast.success("Borrador creado."); onDone(r.id); }
+    try { const r = await draft({ data: { kind: kind!, notes, dealId: dealId || null } }); setNotes(""); setDealId(""); toast.success("Borrador creado."); onDone(r.id); }
     catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   return (

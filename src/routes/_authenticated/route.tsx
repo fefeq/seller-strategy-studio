@@ -1,6 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { forgetAnalyticsUser } from "@/lib/analytics";
-import { setIdentity } from "@/lib/posthog";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Brain, Home, Inbox, KanbanSquare, Menu, PanelLeftClose, PanelLeftOpen, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -58,14 +56,11 @@ function Shell() {
     await qc.cancelQueries();
     qc.clear();
     await supabase.auth.signOut();
-    forgetAnalyticsUser();
     navigate({ to: "/auth", replace: true });
   }
   const role = me?.roles[0] as Role | undefined;
   const hasOrg = !!me?.currentOrg;
   useLivePipeline(me?.currentOrg?.org_id);
-  // Product analytics know the person only by ids and role (src/lib/posthog.ts).
-  useEffect(() => { if (me?.user.id) setIdentity(me.user.id, { org_id: me.currentOrg?.org_id ?? null, role: me.currentOrg?.role ?? null }); }, [me?.user.id, me?.currentOrg?.org_id, me?.currentOrg?.role]);
   const [navOpen, setNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useCollapsedSidebar();
   const path = useRouterState({ select: (r) => r.location.pathname });
