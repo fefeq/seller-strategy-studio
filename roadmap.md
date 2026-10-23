@@ -21,7 +21,7 @@
 - [x] Textos revisados con la guía de voz: sin exclamaciones ni emoji, sin inglés visible, vocabulario de producto, estados vacíos con qué hacer; la IA tutea y empieza por la conclusión
 - [x] Clay: prospectar cuentas, buscar stakeholders, completar cuentas; también desde el agente y MCP
 - [x] Página «Conectar asistentes» (/connect): dirección, pasos por asistente y cómo actualizar
-- [ ] Apollo.io: integrar (falta decidir usos: emails, teléfonos, búsqueda de personas/empresas, quién gasta créditos)
+- [x] Apollo.io: completar cuentas, buscar personas y empresas, revelar emails y móviles (estos tres requieren plan de pago de Apollo); también desde el agente y MCP
 
 ## Pendiente
 
