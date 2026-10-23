@@ -2904,6 +2904,214 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "apollo_find_people",
+        "title": "Buscar personas de una cuenta en Apollo",
+        "description": "Busca en Apollo personas de una cuenta de Nokko por su dominio, cargo y seniority. Gratis, pero el apellido y el contacto vienen ocultos: para verlos y añadirlas al mapa usa apollo_reveal_contacts con sus apollo_id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "titles": {
+              "description": "Cargos, p. ej. «Head of Sales», «CFO»",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "seniorities": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "owner",
+                  "founder",
+                  "c_suite",
+                  "partner",
+                  "vp",
+                  "head",
+                  "director",
+                  "manager",
+                  "senior",
+                  "entry"
+                ]
+              }
+            },
+            "page": {
+              "description": "Página de resultados (1 por defecto)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "apollo_find_companies",
+        "title": "Buscar empresas en Apollo",
+        "description": "Busca empresas nuevas en Apollo por palabras clave, país ISO y empleados. Gasta créditos de Apollo por página: pide solo las páginas necesarias. Marca las que ya están en Nokko; para guardarlas usa create_account.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "description": "Palabras clave del sector o producto (mejor en inglés)",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "countries": {
+              "description": "Códigos ISO de país (ES, MX, US…)",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "min_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "max_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "page": {
+              "description": "Página de resultados (1 por defecto)",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "apollo_enrich_account",
+        "title": "Completar cuenta con Apollo",
+        "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account. Gasta 1 crédito de Apollo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "apollo_reveal_contacts",
+        "title": "Revelar contactos con Apollo",
+        "description": "Revela con Apollo (nombre completo, email, LinkedIn) hasta 10 personas encontradas con apollo_find_people y las añade al mapa de stakeholders de la cuenta (o completa las que ya estén). Opcional: pedir también el móvil. Gasta créditos por persona. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "apollo_ids": {
+              "minItems": 1,
+              "maxItems": 10,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9]{6,64}$"
+              }
+            },
+            "phone": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "account_id",
+            "apollo_ids"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "apollo_reveal_stakeholder",
+        "title": "Revelar email o móvil de un stakeholder con Apollo",
+        "description": "Revela con Apollo el email (y si se pide, el móvil) de un stakeholder que ya está en un mapa y lo guarda en su ficha. Gasta créditos; el móvil llega en unos minutos y, si ya se pidió antes, se reutiliza sin coste. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stakeholder_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "phone": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
