@@ -56,6 +56,15 @@ describe("signals", () => {
   });
 });
 
+describe("companyName", () => {
+  it("drops notes in brackets and legal suffixes, else uses the domain stem", () => {
+    expect(companyName("Typeform (prueba)")).toBe("Typeform");
+    expect(companyName("Acme Logística S.L.")).toBe("Acme Logística");
+    expect(companyName("Globex, Inc.")).toBe("Globex");
+    expect(companyName("", "www.initech.io")).toBe("initech");
+  });
+});
+
 describe("texts", () => {
   it("ages, sources and errors read well", () => {
     expect(ageText("2026-10-21T00:00:00Z", new Date("2026-10-24T00:00:00Z"))).toBe("hace 3 días");

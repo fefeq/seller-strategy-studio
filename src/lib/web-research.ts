@@ -97,6 +97,16 @@ export function accountsToRefresh(accounts: { id: string; domain: string | null;
     .slice(0, max);
 }
 
+const LEGAL = /\b(s\.?\s?l\.?u?|s\.?\s?a\.?|s\.?\s?a\.?\s?s|inc|ltd|llc|gmbh|corp|co|plc|bv|ag|sas|srl|sl|sa)\.?$/i;
+
+/** The company name as people write it in the news: no notes in brackets, no legal suffix; else the domain's stem. */
+export function companyName(name: string | null | undefined, domain?: string | null): string {
+  let n = (name ?? "").replace(/\([^)]*\)|\[[^\]]*\]/g, " ").replace(/\s+/g, " ").trim().replace(/[,.\s]+$/, "");
+  for (let i = 0; i < 2; i++) n = n.replace(/[,\s]+$/, "").replace(LEGAL, "").trim().replace(/[,.\s]+$/, "");
+  if (n) return n;
+  return (domain ?? "").replace(/^www\./, "").split(".")[0] ?? "";
+}
+
 /** Markdown list of sources appended to an AI text, so every claim can be checked. */
 export function sourcesMarkdown(sources: { title: string; url: string }[]): string {
   const list = sources.filter((s) => /^https?:\/\//.test(s.url)).slice(0, 10);
