@@ -239,6 +239,13 @@
       "when": 1792795215621,
       "tag": "0033_drive_folders",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1792795850437,
+      "tag": "0034_accounts_linkedin_url",
+      "breakpoints": true
     }
   ]
 }
