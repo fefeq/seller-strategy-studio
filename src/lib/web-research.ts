@@ -65,15 +65,22 @@ export function newsItems(data: unknown, max = 8): NewsItem[] {
   return out;
 }
 
-export const SIGNAL_KINDS = ["funding", "hiring", "launch", "leadership", "partnership", "expansion", "results", "risk", "other"] as const;
+export const SIGNAL_KINDS = ["funding", "hiring", "launch", "leadership", "partnership", "expansion", "results", "case_study", "risk", "other"] as const;
 export type SignalKind = (typeof SIGNAL_KINDS)[number];
 export const SIGNAL_LABEL: Record<SignalKind, string> = {
   funding: "Ronda o inversión", hiring: "Contrataciones", launch: "Lanzamiento", leadership: "Cambio de dirección", partnership: "Alianza",
-  expansion: "Expansión", results: "Resultados", risk: "Riesgo", other: "Novedad",
+  expansion: "Expansión", results: "Resultados", case_study: "Caso de éxito", risk: "Riesgo", other: "Novedad",
 };
 
 /** Signals worth a suggestion: the ones that open or threaten a sale (not every mention). */
-export const ACTIONABLE_SIGNALS: SignalKind[] = ["funding", "hiring", "launch", "leadership", "partnership", "expansion", "risk"];
+export const ACTIONABLE_SIGNALS: SignalKind[] = ["funding", "hiring", "launch", "leadership", "partnership", "expansion", "case_study", "risk"];
+
+/** Second-source searches for an account: news, appointments and success stories. */
+export function signalQueries(name: string): string[] {
+  const n = name.trim();
+  if (!n) return [];
+  return [`${n} noticias`, `${n} nombramiento OR appoints OR "new CEO" OR hires`, `${n} "caso de éxito" OR "case study"`];
+}
 
 /** «hace 3 días» style age for a date (found or published). */
 export function ageText(iso: string | null | undefined, now = new Date()): string {

@@ -2,9 +2,10 @@
 // job. With a scope, every query filters by the company (privileged path), like src/lib/ai-core.ts.
 import { ask } from "@/lib/ai-gateway";
 import { accountContext, type AiScope } from "@/lib/ai-core";
-import { mapSite, scrapeMarkdown, search } from "@/lib/firecrawl";
+import { mapSite, scrapeMarkdown } from "@/lib/firecrawl";
+import { searchBoth } from "@/lib/web-search";
 import { cleanDomain } from "@/lib/leads";
-import { SIGNAL_KINDS, companyName, newsItems, pickPages, publicUrl, type NewsItem, type SignalKind } from "@/lib/web-research";
+import { SIGNAL_KINDS, companyName, pickPages, publicUrl, signalQueries, type NewsItem, type SignalKind } from "@/lib/web-research";
 
 type Db = any;
 const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
@@ -44,7 +45,11 @@ export async function researchAccountCore(db: Db, accountId: string, scope: AiSc
   let siteError: Error | null = null;
   const [site, news] = await Promise.all([
     readCompanySite(domain, 18_000).catch((e: Error) => { siteError = e; return { text: "", pages: [] as string[] }; }),
-    search(`"${companyName(acc.name, domain)}"`, { limit: 8, sources: ["news", "web"], tbs: "qdr:y" }).then((d) => newsItems(d, 8)).catch(() => [] as NewsItem[]),
+    searchBoth(
+      { query: `"${companyName(acc.name, domain)}"`, limit: 8, sources: ["news", "web"], tbs: "qdr:y" },
+      { queries: [`${companyName(acc.name, domain)} estrategia noticias`, `${companyName(acc.name, domain)} "case study" OR "caso de éxito"`], maxResults: 5, recency: "year" },
+      12,
+    ).catch(() => [] as NewsItem[]),
   ]);
   if (!site.text && !news.length) throw siteError ?? new Error("No he podido leer la web ni encontrar noticias de esta cuenta.");
   const ctx = await accountContext(db, accountId, scope);
@@ -92,7 +97,7 @@ export async function refreshSignalsCore(db: Db, accountId: string, scope: AiSco
   const now = new Date().toISOString();
   const name = companyName(acc.name, cleanDomain(acc.domain));
   if (!name) throw new Error("La cuenta no tiene nombre ni dominio para buscar sus noticias.");
-  const items = newsItems(await search(`"${name}"`, { limit: 10, sources: ["news"], tbs: "qdr:m" }), 10);
+  const items = await searchBoth({ query: `"${name}"`, limit: 10, sources: ["news"], tbs: "qdr:m" }, { queries: signalQueries(name), maxResults: 5, recency: "month" }, 18);
   const { data: existing } = await db.from("account_signals").select("url").eq("org_id", acc.org_id).eq("account_id", acc.id);
   const seen = new Set((existing ?? []).map((r: { url: string }) => r.url));
   const fresh = items.filter((n) => !seen.has(n.url));
@@ -100,7 +105,7 @@ export async function refreshSignalsCore(db: Db, accountId: string, scope: AiSco
   if (fresh.length) {
     const { data: pos } = await db.from("positioning").select("one_liner,category,target_customer").eq("org_id", acc.org_id).limit(1).maybeSingle();
     const raw = await ask(
-      `Clasificas noticias sobre una cuenta B2B para un equipo comercial. Marca relevant=false si no trata de esta empresa (fíjate en el dominio) o no tiene ángulo comercial. ${STYLE}`,
+      `Clasificas noticias sobre una cuenta B2B para un equipo comercial. Marca relevant=false si no trata de esta empresa (fíjate en el dominio; un caso de éxito de un competidor que solo la menciona no cuenta) o no tiene ángulo comercial. leadership = nombramientos y cambios de dirección; case_study = caso de éxito publicado por la empresa o sobre ella (qué proveedor usa y qué resultados obtuvo). ${STYLE}`,
       JSON.stringify({ cuenta: { nombre: acc.name, dominio: acc.domain }, nosotros: pos ?? null, noticias: fresh.map((n, index) => ({ index, titulo: n.title, fuente: n.source, fecha: n.date, extracto: n.snippet })) }),
       { effort: "low", schema: { name: "account_signals", schema: SIGNAL_SCHEMA } },
     );
