@@ -21,6 +21,7 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
   { name: "Formularios, Zapier, Make y CRMs por webhook", what: "Cada lead entra con su empresa, persona, etapa y deal.", to: "/leads/entrada" },
   { name: "CSV de leads y de cuentas", what: "Importación con vista previa de columnas.", to: "/leads/entrada" },
   { name: "Claude, ChatGPT y Codex (MCP)", what: "Tu asistente consulta Nokko y propone cambios que confirmas aquí.", to: "/connect" },
+  { name: "Apollo.io", what: "Completa cuentas y, con un plan de pago de Apollo, busca personas y empresas y revela emails y móviles.", to: "/accounts" },
   { name: "Clay", what: "Busca empresas y stakeholders y completa cuentas desde Cuentas, el agente o tu asistente.", to: "/accounts" },
   { name: "Telegram", what: "Avisos, resumen diario y el agente en el móvil.", to: "/team", hash: "mcp", pending: "Falta crear el bot de Nokko" },
   { name: "Email del informe semanal", what: "Los lunes, a Owner y Sales Leader.", to: "/inbox", pending: "Falta verificar el dominio de envío" },
