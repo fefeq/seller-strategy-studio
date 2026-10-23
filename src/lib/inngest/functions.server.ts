@@ -1,0 +1,69 @@
+// Nokko's Inngest functions and the serve handler, built on the first request (env is read then, never at
+// module scope). Each step is retried on its own, so one failing company or provider does not stop the rest.
+import { Inngest } from "inngest";
+import { serve } from "inngest/edge";
+import { EV } from "@/lib/inngest/events";
+
+let handler: ((req: Request) => Promise<Response>) | null = null;
+const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
+const DAY = 86_400_000;
+
+function build() {
+  const inngest = new Inngest({ id: "nokko", signingKey: process.env["INNGEST_SIGNING_KEY"], isDev: false });
+
+  const ping = inngest.createFunction({ id: "heartbeat", triggers: [{ event: EV.ping }], retries: 1 }, async ({ step }) => {
+    await step.run("mark", async () => { const { markHeartbeat } = await import("@/lib/inngest/send.server"); await markHeartbeat(await admin()); });
+  });
+
+  const orgMaintenance = inngest.createFunction(
+    { id: "org-maintenance", triggers: [{ event: EV.orgMaintenance }], retries: 3, concurrency: { limit: 5 }, idempotency: "event.data.org_id + '-' + event.data.hour" },
+    async ({ event, step }) => {
+      const orgId = event.data.org_id as string;
+      const t = await import("@/lib/inngest/tasks.server");
+      const suggestions = await step.run("suggestions", async () => t.maintainSuggestions(await admin(), orgId));
+      const stripe = await step.run("stripe", async () => t.maintainStripe(await admin(), orgId));
+      const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
+      const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
+      const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
+      if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
+      return { suggestions, stripe, posthog, signals, leads: leads.length };
+    },
+  );
+
+  const leadEnrich = inngest.createFunction(
+    { id: "lead-enrich", triggers: [{ event: EV.leadCreated }], retries: 2, concurrency: { limit: 2, key: "event.data.org_id" }, idempotency: "event.data.lead_id" },
+    async ({ event, step }) => {
+      await step.sleep("let-the-lead-settle", "1m"); // the person may still be editing the lead
+      return step.run("enrich", async () => { const { enrichLead } = await import("@/lib/inngest/tasks.server"); return enrichLead(await admin(), event.data.org_id as string, event.data.lead_id as string); });
+    },
+  );
+
+  const followup = inngest.createFunction(
+    {
+      id: "lead-followup", triggers: [{ event: EV.leadContacted }], retries: 2, idempotency: "event.data.lead_id + '-' + event.data.contacted_at",
+      // Any move out of Contactado (or a new contact date) ends this sequence.
+      cancelOn: [{ event: EV.leadChanged, if: "async.data.lead_id == event.data.lead_id && async.data.stage != 'contacted'" }, { event: EV.leadContacted, if: "async.data.lead_id == event.data.lead_id && async.data.contacted_at != event.data.contacted_at" }],
+    },
+    async ({ event, step }) => {
+      const start = new Date(event.data.contacted_at as string).getTime();
+      for (const day of [3, 7, 14, 21]) {
+        await step.sleepUntil(`day-${day}`, new Date(start + day * DAY + 9 * 3_600_000));
+        const r = await step.run(`step-day-${day}`, async () => { const { followupStep } = await import("@/lib/inngest/tasks.server"); return followupStep(await admin(), event.data.org_id as string, event.data.lead_id as string); });
+        if (r.stop) return { stoppedAt: day };
+      }
+      return { done: true };
+    },
+  );
+
+  const backgroundJob = inngest.createFunction(
+    { id: "background-job", triggers: [{ event: EV.jobRequested }], retries: 2, concurrency: { limit: 4 }, idempotency: "event.data.job_id" },
+    async ({ event, step }) => step.run("run", async () => { const { runBackgroundJob } = await import("@/lib/inngest/tasks.server"); return runBackgroundJob(await admin(), event.data.job_id as string); }),
+  );
+
+  return serve({ client: inngest, functions: [ping, orgMaintenance, leadEnrich, followup, backgroundJob], servePath: "/api/public/inngest" });
+}
+
+export function inngestHandler() {
+  handler ??= build();
+  return handler;
+}
