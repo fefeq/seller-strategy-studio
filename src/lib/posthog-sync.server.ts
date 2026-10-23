@@ -17,7 +17,7 @@ export class PosthogError extends Error {
 }
 
 export function posthogErrorText(status: number, body = ""): string {
-  if (status === 401) return "PostHog no acepta la clave: puede que esté revocada o mal copiada. Crea una nueva clave personal y vuelve a conectarla.";
+  if (status === 401 || /authentication_failed|is invalid/i.test(body)) return "PostHog no acepta la clave: puede que esté revocada o mal copiada. Crea una nueva clave personal y vuelve a conectarla.";
   if (status === 403) return "La clave no tiene permiso para leer ese proyecto. En PostHog, edita la clave personal y dale «Query: Read» en ese proyecto.";
   if (status === 404) return "No encuentro ese proyecto en PostHog. Revisa el ID del proyecto y la región (EU o US).";
   if (status === 429) return "PostHog ha limitado las peticiones. Se volverá a intentar en la próxima sincronización.";
