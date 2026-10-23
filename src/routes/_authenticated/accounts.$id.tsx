@@ -15,7 +15,7 @@ import { Field, Pick } from "@/components/fields";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
-import { stageLabel } from "@/lib/stages";
+import { firstOpenStage, stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type CallNotes } from "@/lib/call-notes";
@@ -26,6 +26,7 @@ import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
+import { ClayEnrich, ClayPeopleButton } from "@/components/clay";
 
 const ACCOUNT_TABS = ["plan", "stakeholders", "meetings", "calls", "deals"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
@@ -97,7 +98,7 @@ function AccountPage() {
           <TabsTrigger value="deals">Deals ({data.deals.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="plan"><PlanTab accountId={id} plan={data.plan} onSaved={refresh} /></TabsContent>
-        <TabsContent value="stakeholders"><StakeholdersTab accountId={id} list={data.stakeholders} onChange={refresh} /></TabsContent>
+        <TabsContent value="stakeholders"><StakeholdersTab accountId={id} hasDomain={!!a.domain} list={data.stakeholders} onChange={refresh} /></TabsContent>
         <TabsContent value="meetings"><MeetingsTab accountId={id} openMeetingId={search.meeting} list={data.meetings} stakeholders={data.stakeholders} deals={data.deals} onChange={refresh} /></TabsContent>
         <TabsContent value="calls"><CallsTab accountId={id} list={data.calls} onChange={refresh} /></TabsContent>
         <TabsContent value="deals"><DealsTab accountId={id} list={data.deals} onChange={refresh} /></TabsContent>
@@ -107,7 +108,7 @@ function AccountPage() {
 }
 
 /** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
-function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null; country?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+function FitFields({ account, segNames, onSaved }: { account: { id: string; domain: string | null; segment_id: string | null; industry: string | null; size: string | null; country?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
   const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
   useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
   // Country decides the region for the account assignment rules (Cuentas → Reparto).
@@ -131,6 +132,7 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; segm
       <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
       <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
+      <ClayEnrich account={account} onSaved={onSaved} />
     </div>
   );
 }
@@ -183,7 +185,7 @@ function PlanTab({ accountId, plan, onSaved }: { accountId: string; plan: Record
   );
 }
 
-function StakeholdersTab({ accountId, list, onChange }: { accountId: string; list: any[]; onChange: () => void }) {
+function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: string; hasDomain: boolean; list: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const detailRef = useRevealOnMobile(sel?.id);
@@ -221,7 +223,7 @@ function StakeholdersTab({ accountId, list, onChange }: { accountId: string; lis
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><Button size="sm" onClick={add}>+ Persona</Button></div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex gap-2"><ClayPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
         {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
@@ -420,7 +422,7 @@ function DealsTab({ accountId, list, onChange }: { accountId: string; list: any[
   const { money: eur } = useCurrency();
   async function add() {
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", owner_id: user?.id });
+    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", stage: firstOpenStage(stages).key, owner_id: user?.id });
     if (error) return toast.error(errorText(error));
     onChange();
   }

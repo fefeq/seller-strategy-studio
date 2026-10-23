@@ -2711,6 +2711,199 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "clay_find_companies",
+        "title": "Buscar empresas en Clay",
+        "description": "Busca empresas nuevas en Clay para prospectar (por palabras clave en su descripción, sector de LinkedIn en inglés, país ISO, empleados e ingresos). Marca las que ya están en Nokko. Gasta cupo de Clay: pide pocos resultados. Para guardarlas usa create_account; para más resultados repite con search_id.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "description": "Palabras clave en la descripción de la empresa (mejor en inglés)",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "industries": {
+              "description": "Sectores de LinkedIn en inglés, p. ej. «Software Development», «Financial Services»",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "countries": {
+              "description": "Códigos ISO de país (ES, MX, US…)",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "min_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "max_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "revenues": {
+              "description": "Rangos de ingresos anuales en USD",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "0-500K",
+                  "500K-1M",
+                  "1M-5M",
+                  "5M-10M",
+                  "10M-25M",
+                  "25M-75M",
+                  "75M-200M",
+                  "200M-500M",
+                  "500M-1B",
+                  "1B-10B",
+                  "10B-100B",
+                  "100B-1T"
+                ]
+              }
+            },
+            "search_id": {
+              "description": "search_id de una búsqueda anterior para traer los siguientes resultados",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{4,80}$"
+            },
+            "limit": {
+              "description": "Resultados a traer (1–25, por defecto 10). Cada uno gasta cupo de Clay.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "clay_find_people",
+        "title": "Buscar personas de una cuenta en Clay",
+        "description": "Busca en Clay personas de una cuenta de Nokko (por su dominio): cargos y seniority. Marca las que ya están en su mapa de stakeholders. Gasta cupo de Clay. Para añadirlas usa create_stakeholder con nombre, cargo y LinkedIn.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "titles": {
+              "description": "Palabras del cargo, p. ej. «Sales», «Revenue», «CFO»",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "seniority": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "founder",
+                  "owner",
+                  "board-member",
+                  "partner",
+                  "c-suite",
+                  "vp",
+                  "director",
+                  "head",
+                  "manager",
+                  "senior",
+                  "mid-level",
+                  "entry"
+                ]
+              }
+            },
+            "countries": {
+              "description": "Códigos ISO de país donde trabaja la persona",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "search_id": {
+              "description": "search_id de una búsqueda anterior para traer los siguientes resultados",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]{4,80}$"
+            },
+            "limit": {
+              "description": "Resultados a traer (1–25, por defecto 10). Cada uno gasta cupo de Clay.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 25
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "clay_enrich_account",
+        "title": "Completar cuenta con Clay",
+        "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
