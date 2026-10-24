@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
 import { ageText } from "@/lib/web-research";
 import { TREND_LABEL, usageTrend } from "@/lib/product-usage";
-import { configurePosthogFn, connectPosthogFn, disconnectPosthogFn, posthogEventsFn, syncPosthogFn } from "@/lib/posthog.functions";
+import { configurePosthogFn, connectPosthogFn, disconnectPosthogFn, posthogEventsFn } from "@/lib/posthog.functions";
 
 export function usePosthog() {
   return useQuery({
