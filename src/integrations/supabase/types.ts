@@ -2989,28 +2989,34 @@ export type Database = {
       }
       organizations: {
         Row: {
+          archived_at: string | null
           company_name: string | null
           created_at: string
           created_by: string | null
           currency: string
           id: string
           name: string
+          website: string | null
         }
         Insert: {
+          archived_at?: string | null
           company_name?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           id?: string
           name: string
+          website?: string | null
         }
         Update: {
+          archived_at?: string | null
           company_name?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           id?: string
           name?: string
+          website?: string | null
         }
         Relationships: []
       }
@@ -4432,11 +4438,28 @@ export type Database = {
     Functions: {
       accept_invites: { Args: never; Returns: number }
       apply_account_assignment: { Args: { _rows: Json }; Returns: Json }
+      archive_organization: {
+        Args: { _archived: boolean; _org: string }
+        Returns: undefined
+      }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string
       }
+      create_organization_full: {
+        Args: {
+          _currency?: string
+          _name: string
+          _segments?: string
+          _website?: string
+        }
+        Returns: string
+      }
       current_org: { Args: never; Returns: string }
+      delete_organization: {
+        Args: { _confirm_name: string; _org: string }
+        Returns: undefined
+      }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
