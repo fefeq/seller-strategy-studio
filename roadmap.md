@@ -9,3 +9,13 @@
 - [ ] Telegram: conectar el bot y vincular cada persona (bloqueado: falta conectar Telegram)
 - [ ] Email diario 8:00 (bloqueado: falta dominio de envío)
 - [ ] Publicar para que el segundo plano de nokko.ai use el código nuevo
+
+## Orden del código (plan aprobado 2026-10-24)
+- [x] 1. Listas completas (fetchAll en Leads, Cuentas, Pipeline, Personas, Métricas, avisos)
+- [x] 2. Errores visibles (Sugerencias, Parallel)
+- [x] 3. Una regla de dominios y un formato de porcentaje
+- [x] 4. Tablas antiguas marcadas como retiradas (borrarlas es un cambio que rompe y está bloqueado)
+- [ ] 5. Dividir archivos grandes
+- [ ] 6. Quitar `as any`
+- [ ] 7. Diseño: iconos, colores a mano, ventanas del navegador
+- [ ] 8. Precarga de pantallas
