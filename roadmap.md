@@ -96,6 +96,7 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 ### Nokko decide, recuerda y se adelanta (plan aprobado 24 oct)
 - [x] Fase 1a: menú en 5 bloques (Hoy, Vender, Estrategia, Conocimiento, Ajustes)
 - [x] Fase 1b: reglas del orquestador (catálogo de necesidades, elección de servicios, límite 80/100 %) y tablas de gasto
-- [ ] Fase 1c: herramientas del agente y MCP por necesidad; botones de pantalla por necesidad; límite mensual en Conexiones
+- [x] Fase 1c: «Completar datos» por necesidad (Apollo→Clay), gasto registrado en investigación, panel de gasto y límite en Conexiones, herramientas complete_account e integration_budget (agente y MCP)
+- [ ] Fase 1d: «Buscar personas clave» y prospección por ICP por necesidad (sustituir los botones de Apollo/Clay del mapa de poder y de Cuentas)
 - [ ] Fase 2: memoria (negocio, usuario, cuenta, resultados, tareas), aprendizaje automático, pantalla Memoria
 - [ ] Fase 3: briefing en Inicio, Descubiertos semanal, motor ampliado, email diario 8:00 (necesita dominio de envío)
