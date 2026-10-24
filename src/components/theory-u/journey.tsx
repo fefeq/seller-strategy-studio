@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty } from "@/components/page";
 import { Field } from "@/components/fields";
@@ -87,7 +86,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
   const phase = U_PHASES[phaseIndex(view)] ?? U_PHASES[0];
 
   async function save(patch: Record<string, unknown> = {}) {
-    const { error } = await supabase.from("u_journeys").update({ title, intention, answers, ...patch } as any).eq("id", journey.id);
+    const { error } = await supabase.from("u_journeys").update({ title, intention, answers, ...patch }).eq("id", journey.id);
     if (error) { toast.error(errorText(error)); return false; }
     qc.invalidateQueries({ queryKey: ["u_journeys"] });
     return true;
@@ -141,8 +140,8 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
           return <Field key={k} label={q}><Textarea rows={3} value={answers[k] ?? ""} onChange={(e) => setAnswers({ ...answers, [k]: e.target.value })} onBlur={() => save()} /></Field>;
         })}
         <div className="flex flex-wrap gap-2">
-          {phaseIndex(view) === current && nextPhase(journey.phase) && <Button className="h-auto min-h-10 whitespace-normal py-2 text-left md:min-h-0 md:whitespace-nowrap" onClick={advance}>Avanzar a {U_PHASES[current + 1].label} <ArrowRight className="size-4" /></Button>}
-          <Button variant="outline" onClick={runSynth} disabled={busy}><Sparkles className="size-4" /> {busy ? "Sintetizando…" : "Sintetizar con IA"}</Button>
+          {phaseIndex(view) === current && nextPhase(journey.phase) && <Button className="h-auto min-h-10 whitespace-normal py-2 text-left md:min-h-0 md:whitespace-nowrap" onClick={advance}>Avanzar a {U_PHASES[current + 1].label}</Button>}
+          <Button variant="outline" onClick={runSynth} disabled={busy}>{busy ? "Sintetizando…" : "Sintetizar con IA"}</Button>
         </div>
       </div>
 

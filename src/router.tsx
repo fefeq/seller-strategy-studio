@@ -9,6 +9,8 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Hovering or touching a link prepares that screen's data (route loaders), so it opens filled.
+    defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
   });
 

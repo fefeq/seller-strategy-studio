@@ -1,11 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { currencySymbol, formatMoney } from "@/lib/money";
 
 export type Membership = { org_id: string; role: string; name: string; currency: string };
 
-export function useMe() {
-  return useQuery({
+/** The signed-in user, their companies and the current one. Shared by useMe and the route loaders. */
+export const meQuery = queryOptions({
     queryKey: ["me"],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -27,7 +27,10 @@ export function useMe() {
         roles: current ? [current.role] : [],
       };
     },
-  });
+});
+
+export function useMe() {
+  return useQuery(meQuery);
 }
 
 /** Currency of the current company plus formatters bound to it. */

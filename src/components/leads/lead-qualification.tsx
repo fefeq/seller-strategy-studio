@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { PROPOSAL_LABEL, qualificationView, readQualSettings, readQualification, type QualSettings, type QualView } from "@/lib/lead-qualification";
 import { leadStageLabel } from "@/lib/lead-funnel";
 import { errorText } from "@/lib/errors";
+import type { Json } from "@/integrations/supabase/types";
 
 /** The stored Jev answers read with the company's weights; null when the lead was never qualified. */
 export function leadQualView(lead: Lead, settings: QualSettings): QualView | null {
@@ -102,7 +103,7 @@ export function QualSettingsDialog({ settings, canEdit, orgId }: { settings: Qua
 
   async function save() {
     const clean = readQualSettings(v);
-    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, qualification: clean as any, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
+    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, qualification: clean as unknown as Json, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
     if (error) return toast.error(errorText(error));
     toast.success("Pesos guardados: las propuestas se recalculan sin volver a usar la IA.");
     setOpen(false);

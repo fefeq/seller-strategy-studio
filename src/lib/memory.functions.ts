@@ -15,5 +15,5 @@ export const learnFromMeeting = createServerFn({ method: "POST" })
     const cn = (m.call_notes ?? {}) as Record<string, string>;
     const text = [`Reunión: ${m.title ?? ""}`, m.objective && `Objetivo: ${m.objective}`, ...Object.entries(cn).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`), m.notes && `Notas: ${m.notes}`, m.next_steps && `Siguientes pasos: ${m.next_steps}`].filter(Boolean).join("\n");
     const { learnFrom } = await import("@/lib/memory.server");
-    return learnFrom(c, { source: "meeting", text, accountId: m.account_id, accountName: (m as any).accounts?.name ?? null });
+    return learnFrom(c, { source: "meeting", text, accountId: m.account_id, accountName: (m).accounts?.name ?? null });
   });

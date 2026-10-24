@@ -3,7 +3,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Clock, Check, X, ArrowUpRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,7 @@ import { decideSuggestion, refreshSuggestions } from "@/lib/agent.functions";
 import { digest } from "@/lib/proactive";
 import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
+import { actionTool } from "@/lib/json";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 
@@ -88,7 +88,7 @@ export function SuggestionCard({ s }: { s: S }) {
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
-  const hasAction = !!(s.action as any)?.tool;
+  const hasAction = !!actionTool(s.action);
   const target = linkTarget(s.link);
   // «Resolver»: go to the exact record and open the agent beside it with the problem already set out.
   function resolve() {
@@ -97,7 +97,7 @@ export function SuggestionCard({ s }: { s: S }) {
     if (orgId) markResolving(orgId, s.id);
     open({ prompt: plan.prompt, fresh: true, docked: true, side: plan.side, mode: "chat", personaId: null, workflowId: null, onClose: recheck });
     const to = linkTarget(plan.to);
-    if (to) navigate({ to: to.to as any, search: to.search as any });
+    if (to) navigate({ to: to.to, search: to.search });
   }
   return (
     <div className="rounded-lg border bg-card p-4">
@@ -107,17 +107,17 @@ export function SuggestionCard({ s }: { s: S }) {
           <p className="mt-0.5 break-words font-medium">{s.title}</p>
           <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">{s.body}</p>
         </div>
-        {target && <Link to={target.to as any} search={target.search as any} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><ArrowUpRight className="size-4" /></Link>}
+        {target && <Link to={target.to} search={target.search} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {hasAction
-          ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> Aprobar y hacer</Button>
+          ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}>Aprobar y hacer</Button>
           : <>
-              <Button size="sm" disabled={!!busy} onClick={resolve}><Sparkles className="size-3.5" /> Resolver</Button>
-              <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> Hecho</Button>
+              <Button size="sm" disabled={!!busy} onClick={resolve}>Resolver</Button>
+              <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("approve")}>Hecho</Button>
             </>}
-        <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}><Clock className="size-3.5" /> En 3 días</Button>
-        <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}><X className="size-3.5" /> Descartar</Button>
+        <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>En 3 días</Button>
+        <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}>Descartar</Button>
       </div>
     </div>
   );

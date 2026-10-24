@@ -9,6 +9,8 @@ import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
 import { fetchAll } from "@/lib/fetch-all";
+import type { Json } from "@/integrations/supabase/types";
+import { jsonObject } from "@/lib/json";
 
 export type Db = SupabaseClient<Database>;
 
@@ -27,7 +29,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     currency: org.data?.currency ?? null,
     segments: (seg.data ?? []) as SetupData["segments"],
     icps: icp.data ?? [],
-    positioning: (pos.data as any) ?? null,
+    positioning: pos.data ? (({ copy_status: _copy, ...p }) => p)(pos.data) : null,
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,
@@ -56,17 +58,17 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
   return {
     now, orgId, setup,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
-    deals: (deals.data ?? []) as any,
+    deals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     meetings: meetings.data ?? [],
     accounts: accounts.data ?? [],
     members: (members.data ?? []).map((m) => ({ user_id: m.user_id, role: String(m.role) })),
     stakeholders: sh.data ?? [],
     registrations: regs.data ?? [],
-    trials: (trials.data ?? []) as any,
+    trials: trials.data ?? [],
     segments: segs.data ?? [],
     leads: leads.data ?? [],
     leadSla: readSla(leadSettings.data?.sla),
-    cycleDeals: (deals.data ?? []) as any,
+    cycleDeals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     cycleSegments: segs.data ?? [],
     staleDays: readStaleDays(leadSettings.data?.sla),
     signals: signals.data ?? [],
@@ -82,7 +84,7 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
 export async function syncSuggestions(db: Db, orgId: string, found: import("@/lib/proactive/types").Suggestion[], touched: string[] = []) {
   if (found.length) {
     await db.from("suggestions").upsert(
-      found.map((f) => ({ ...f, org_id: orgId, action: f.action as any })),
+      found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })),
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
   }

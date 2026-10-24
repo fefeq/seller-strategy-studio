@@ -1,7 +1,6 @@
 import { useState, type KeyboardEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -172,9 +171,9 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
                 )}
                 {s.kind === "open" && editable ? (
                   <span className="flex gap-1">
-                    <Button size="icon" variant="ghost" aria-label={`Subir ${s.label}`} disabled={busy || i === 0} onClick={() => move(s, -1)}><ArrowUp className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label={`Bajar ${s.label}`} disabled={busy || i === opens.length - 1} onClick={() => move(s, 1)}><ArrowDown className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label={`Borrar ${s.label}`} disabled={busy || opens.length === 1} onClick={() => remove(s)}><Trash2 className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" aria-label={`Subir ${s.label}`} disabled={busy || i === 0} onClick={() => move(s, -1)}><span aria-hidden>↑</span></Button>
+                    <Button size="icon" variant="ghost" aria-label={`Bajar ${s.label}`} disabled={busy || i === opens.length - 1} onClick={() => move(s, 1)}><span aria-hidden>↓</span></Button>
+                    <Button size="icon" variant="ghost" aria-label={`Borrar ${s.label}`} disabled={busy || opens.length === 1} onClick={() => remove(s)}><span aria-hidden>×</span></Button>
                   </span>
                 ) : (
                   <span className="hidden sm:block" />

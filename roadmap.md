@@ -15,7 +15,7 @@
 - [x] 2. Errores visibles (Sugerencias, Parallel)
 - [x] 3. Una regla de dominios y un formato de porcentaje
 - [x] 4. Tablas antiguas marcadas como retiradas (borrarlas es un cambio que rompe y está bloqueado)
-- [ ] 5. Dividir archivos grandes
-- [ ] 6. Quitar `as any`
-- [ ] 7. Diseño: iconos, colores a mano, ventanas del navegador
-- [ ] 8. Precarga de pantallas
+- [x] 5. Dividir archivos grandes
+- [x] 6. Quitar `as any`
+- [x] 7. Diseño: iconos, colores a mano, ventanas del navegador
+- [x] 8. Precarga de pantallas

@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Brain, Check, Loader2, Plus, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -181,15 +180,15 @@ export function AgentProvider({ children }: { children: ReactNode }) {
       {children}
       {orgId && (
         <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90 md:flex">
-          <Brain className="size-4" /> Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
+          Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
         </button>
       )}
       <Sheet open={isOpen} onOpenChange={setOpen} modal={!docked}>
         <SheetContent side={side} className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={docked ? (e) => e.preventDefault() : undefined}>
           <SheetHeader className="border-b px-5 py-4 text-left">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pr-10 md:pr-8">
-              <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-[22px] md:text-2xl"><Brain className="size-5" /> {persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
-              <Button variant="ghost" size="sm" onClick={newChat}><Plus className="size-4" /> Nueva</Button>
+              <SheetTitle className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 break-words text-left font-display text-[22px] md:text-2xl">{persona ? `${persona.name} · ${persona.title}` : "Agente GTM"} {mode === "interview" && <span className="whitespace-nowrap rounded bg-accent px-2 py-0.5 font-sans text-xs">Entrevista de configuración</span>}</SheetTitle>
+              <Button variant="ghost" size="sm" onClick={newChat}>Nueva</Button>
             </div>
             <div className="mt-3 flex gap-1.5 overflow-x-auto pb-1">
               <button onClick={() => pickPersona(null)} className={`min-h-9 shrink-0 rounded-none border px-3 py-2 text-xs md:min-h-0 md:py-1 ${!personaId ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>Nokko</button>
@@ -227,8 +226,8 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                           <span className="min-w-0 break-words text-sm">{a.summary}</span>
                           {a.status === "pending" ? (
                             <span className="flex shrink-0 gap-1.5">
-                              <Button size="sm" onClick={() => onDecide(m.id, a, "confirm")}><Check className="size-3.5" /> Confirmar</Button>
-                              <Button size="sm" variant="ghost" onClick={() => onDecide(m.id, a, "cancel")}><X className="size-3.5" /></Button>
+                              <Button size="sm" onClick={() => onDecide(m.id, a, "confirm")}>Confirmar</Button>
+                              <Button size="sm" variant="ghost" onClick={() => onDecide(m.id, a, "cancel")}>Descartar</Button>
                             </span>
                           ) : <span className={`shrink-0 text-xs ${a.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{a.status === "confirmed" ? "Hecho" : a.status === "cancelled" ? "Cancelado" : a.result || "Error"}</span>}
                         </div>
@@ -236,13 +235,13 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                     </div>}
               </div>
             ))}
-            {busy && <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Pensando…</p>}
+            {busy && <p className="flex items-center gap-2 text-sm text-muted-foreground">Pensando…</p>}
             <div ref={endRef} />
           </div>
           <form className="flex items-end gap-2 border-t p-4" onSubmit={(e) => { e.preventDefault(); submit(text, mode, convId); }}>
             <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={mode === "interview" ? "Responde o di «sí» para aceptar la propuesta…" : "Pregunta o pide una acción…"} className="min-h-[44px] resize-none"
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(text, mode, convId); } }} />
-            <Button type="submit" size="icon" disabled={busy || !text.trim()} aria-label="Enviar"><Send className="size-4" /></Button>
+            <Button type="submit" size="icon" disabled={busy || !text.trim()} aria-label="Enviar">→</Button>
           </form>
         </SheetContent>
       </Sheet>

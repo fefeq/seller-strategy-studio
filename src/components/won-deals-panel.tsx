@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
@@ -65,7 +64,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
             <p className="text-xs text-muted-foreground">ganados en el trimestre</p>
           </div>
           <Button size="sm" variant={adding ? "ghost" : "default"} onClick={() => setAdding((x) => !x)}>
-            {adding ? "Cerrar" : <><Plus className="mr-1 h-3.5 w-3.5" /> Añadir deal ganado</>}
+            {adding ? "Cerrar" : <>Añadir deal ganado</>}
           </Button>
         </div>
       </div>
@@ -77,7 +76,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
           </span>
         ))}
         {summary.unassigned > 0 && <span className="rounded-none border border-signal px-3 py-1 text-signal">Sin segmento: {summary.unassigned}</span>}
-        {summary.withIssues > 0 && <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-signal"><AlertTriangle className="h-3 w-3" /> {summary.withIssues} por revisar</span>}
+        {summary.withIssues > 0 && <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-signal">{summary.withIssues} por revisar</span>}
       </div>
 
       {adding && <AddWon quarter={quarter} segments={segments} openDeals={openDeals} onDone={() => { setAdding(false); refresh(); }} />}

@@ -27,10 +27,12 @@ import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
+import { dealsQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
   head: () => ({ meta: [{ title: "Pipeline — Nokko" }, { name: "description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }, { property: "og:title", content: "Pipeline — Nokko" }, { property: "og:description", content: "Pipeline por etapas, forecast y cualificación MEDDPICC." }] }),
+  loader: ({ context }) => settle(context.queryClient.ensureQueryData(dealsQuery)),
   component: Deals,
 });
 
@@ -42,10 +44,7 @@ function Deals() {
   // With the agent docked beside it («Resolver»), the deal panel must not block the agent.
   const { docked: agentDocked } = useAgent();
   const qc = useQueryClient();
-  const { data: deals = [] } = useQuery({
-    queryKey: ["deals"],
-    queryFn: async () => (await fetchAll((a, b) => supabase.from("deals").select("*, accounts(name,domain)").order("created_at").order("id").range(a, b))).rows,
-  });
+  const { data: deals = [] } = useQuery(dealsQuery);
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const selected = deals.find((d) => d.id === search.deal);
   const { data: me } = useMe();

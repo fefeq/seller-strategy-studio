@@ -9,6 +9,7 @@ import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
+import type { Json } from "@/integrations/supabase/types";
 
 const MODEL = "openai/gpt-6-astra";
 
@@ -67,8 +68,8 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
       text = await runWith(kind, ctx, opts, system, messages, pending);
       break;
     } catch (e) {
-      const status = Number((e as any)?.statusCode ?? 0);
-      const body = String((e as any)?.responseBody ?? "");
+      const status = Number((e as { statusCode?: number })?.statusCode ?? 0);
+      const body = String((e as { responseBody?: string })?.responseBody ?? "");
       const canFallBack = kind !== "lovable" && i < chain.length - 1 && pending.length === 0 && !opts.signal?.aborted && shouldFallBack(status, body);
       if (canFallBack) { console.warn(`Agent provider ${kind} failed (${status}); trying ${chain[i + 1]}`); continue; }
       console.error("Agent error", e);
@@ -110,7 +111,7 @@ async function runWith(kind: AiProvider, ctx: ToolCtx, opts: { conversationId: s
             try { return await t.run(ctx, args as never); } catch (e) { return { error: (e as Error).message }; }
           }
           const summary = summarizeAction(t.name, args);
-          const { data, error } = await ctx.db.from("agent_pending_actions").insert({ org_id: ctx.orgId, user_id: ctx.userId, conversation_id: opts.conversationId, tool: t.name, args: args as any, summary }).select("id").single();
+          const { data, error } = await ctx.db.from("agent_pending_actions").insert({ org_id: ctx.orgId, user_id: ctx.userId, conversation_id: opts.conversationId, tool: t.name, args: args as unknown as Json, summary }).select("id").single();
           if (error) return { error: error.message };
           pending.push({ id: data.id, tool: t.name, summary, status: "pending" });
           return { status: "pendiente_de_confirmacion", resumen: summary };
@@ -164,6 +165,6 @@ async function runWith(kind: AiProvider, ctx: ToolCtx, opts: { conversationId: s
   } catch (caught) {
     const e = streamError ?? caught;
     // AI_RetryError wraps the real API error.
-    throw (e as any)?.lastError ?? e;
+    throw (e as { lastError?: unknown })?.lastError ?? e;
   }
 }

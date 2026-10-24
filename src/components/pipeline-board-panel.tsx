@@ -2,7 +2,6 @@ import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useLeads } from "@/hooks/use-leads";
@@ -73,7 +72,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
           </p>
         </div>
         {late > 0 && (
-          <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-xs text-signal"><AlertTriangle className="h-3 w-3" /> {late} con retraso</span>
+          <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-xs text-signal">{late} con retraso</span>
         )}
       </div>
 

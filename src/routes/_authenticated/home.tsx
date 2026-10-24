@@ -13,9 +13,11 @@ import { ROLES, type Role } from "@/lib/roles";
 import { stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { homeHeadline } from "@/lib/headlines";
+import { homeQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Inicio — Nokko" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — Nokko" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
+  loader: ({ context }) => settle(context.queryClient.ensureQueryData(homeQuery)),
   component: HomePage,
 });
 
@@ -26,19 +28,7 @@ function HomePage() {
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
   const { open: openAgent } = useAgent();
-  const { data } = useQuery({
-    queryKey: ["home"],
-    queryFn: async () => {
-      const [deals, meetings, approvals, people, accounts] = await Promise.all([
-        supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,owner_id"),
-        supabase.from("meetings").select("id,title,scheduled_at,account_id").gte("scheduled_at", new Date(Date.now() - 864e5).toISOString()).order("scheduled_at").limit(6),
-        supabase.from("approvals").select("id").eq("status", "pending"),
-        supabase.from("people").select("id,tier,crm_stage"),
-        supabase.from("accounts").select("id,name,health"),
-      ]);
-      return { deals: deals.data ?? [], meetings: meetings.data ?? [], approvals: approvals.data ?? [], people: people.data ?? [], accounts: accounts.data ?? [] };
-    },
-  });
+  const { data } = useQuery(homeQuery);
   const role = (me?.roles[0] ?? "ae") as Role;
   const open = (data?.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost");
   const pipeline = open.reduce((s, d) => s + Number(d.amount ?? 0), 0);

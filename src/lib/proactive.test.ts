@@ -152,7 +152,7 @@ describe("agent tool permissions", () => {
 
 describe("setup proposal mapping", () => {
   const p: SetupProposal = {
-    summary: "", currency: "USD", positioning: { one_liner: "X", need: null } as any,
+    summary: "", currency: "USD", positioning: { one_liner: "X", need: null },
     segments: [{ name: "smb", acv_min: 1, acv_max: 2, motion: "inside", win_rate_target: null, ae_quota: null }],
     icps: [], pillars: [], target_accounts: [{ name: "Acme", domain: null, why: null }], questions: [],
   };

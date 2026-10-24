@@ -15,6 +15,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { DialogHost } from "@/components/confirm-dialog";
 import { CookieBanner } from "@/components/cookie-banner";
 import { CONSENT_BOOT } from "@/lib/analytics";
 import { ANALYTICS_ENABLED, GOOGLE_SITE_VERIFICATION, GTM_ID, SITE_NAME } from "@/lib/site";
@@ -156,6 +157,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <Outlet />
       <Toaster />
+      <DialogHost />
       <CookieBanner />
     </QueryClientProvider>
   );

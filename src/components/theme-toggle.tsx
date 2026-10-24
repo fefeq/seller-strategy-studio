@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Moon, Sun } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
@@ -46,15 +45,15 @@ export function useTheme() {
   return { theme, setTheme: set, toggle: () => set(theme === "dark" ? "light" : "dark") };
 }
 
-/** Light/dark switch. `compact` = icon only (collapsed sidebar, tight headers). */
+/** Light/dark switch. `compact` = one word only (collapsed sidebar, tight headers). */
 export function ThemeToggle({ compact = false, className }: { compact?: boolean; className?: string }) {
   const { theme, toggle } = useTheme();
   const dark = theme === "dark";
   const label = dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
   if (compact) {
     return (
-      <button onClick={toggle} aria-label={label} title={label} className={cn("flex size-9 items-center justify-center text-ink-mid hover:text-ink", className)}>
-        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+      <button onClick={toggle} aria-label={label} title={label} className={cn("flex h-9 items-center justify-center px-1 text-ink-mid hover:text-ink", className)}>
+        <span className="smallcaps">{dark ? "Claro" : "Oscuro"}</span>
       </button>
     );
   }
@@ -67,7 +66,6 @@ export function ThemeToggle({ compact = false, className }: { compact?: boolean;
       className={cn("group flex w-full items-center justify-between gap-3 py-2 text-xs text-ink-mid hover:text-ink md:py-1", className)}
     >
       <span className="flex items-center gap-2">
-        {dark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
         {dark ? "Modo oscuro" : "Modo claro"}
       </span>
       {/* The switch: a hairline track with a square knob, no radius (design system). */}

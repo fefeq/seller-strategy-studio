@@ -117,9 +117,9 @@ export function engagementScore(touches: { channel: string; occurred_at: string 
 }
 
 /** A partner registration conflicts if another active (pending/approved, not expired) one exists for the same account name. */
-export function registrationConflict(
+export function registrationConflict<R extends { account_name: string; status: string; expires_at: string | null; partner_id: string }>(
   name: string,
-  regs: { account_name: string; status: string; expires_at: string | null; partner_id: string }[],
+  regs: R[],
   partnerId: string,
   today = new Date(),
 ) {

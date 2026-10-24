@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
@@ -158,7 +157,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
           </div>
           {canEdit && totalCost === 0 && (
             <Button variant="outline" size="sm" onClick={copyPrevious} disabled={copying}>
-              <Copy className="mr-1 h-3.5 w-3.5" /> Copiar de {previousQuarter(quarter)}
+              Copiar de {previousQuarter(quarter)}
             </Button>
           )}
         </div>
@@ -222,7 +221,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
         {canEdit ? (
           <form className="flex w-full flex-wrap items-center gap-2 sm:w-auto" onSubmit={(e) => { e.preventDefault(); addChannel(); }}>
             <Input value={newChannel} onChange={(e) => setNewChannel(e.target.value)} placeholder="Otro canal (p. ej. LinkedIn Ads)" className="h-10 w-full sm:w-56 md:h-8" />
-            <Button type="submit" size="sm" variant="ghost" disabled={!newChannel.trim()}><Plus className="mr-1 h-3.5 w-3.5" /> Añadir canal</Button>
+            <Button type="submit" size="sm" variant="ghost" disabled={!newChannel.trim()}>Añadir canal</Button>
           </form>
         ) : <p className="text-xs text-muted-foreground">Solo Owner, Sales Leader y Marketing pueden introducir costes.</p>}
         {byChannel.length > 0 && (

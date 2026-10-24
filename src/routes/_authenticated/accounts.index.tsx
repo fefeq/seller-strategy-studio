@@ -22,9 +22,12 @@ import { IcpCompaniesButton } from "@/components/orchestrator";
 import { duplicateOf } from "@/lib/match";
 import { EnrichTableButton } from "@/components/parallel";
 import { fetchAll } from "@/lib/fetch-all";
+import { askConfirm } from "@/components/confirm-dialog";
+import { accountsQuery, accountsScoreContextQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
+  loader: ({ context }) => settle(context.queryClient.ensureQueryData(accountsQuery), context.queryClient.ensureQueryData(accountsScoreContextQuery)),
   component: Accounts,
 });
 
@@ -37,20 +40,8 @@ function Accounts() {
   const leader = canApproveAssignment(me?.roles ?? []);
   const [q, setQ] = useState("");
   const [byName, setByName] = useState(false);
-  const { data = [] } = useQuery({
-    queryKey: ["accounts"],
-    queryFn: async () => (await fetchAll((a, b) => supabase.from("accounts").select("*, deals(amount,stage,updated_at), stakeholders(id), account_touches(occurred_at), meetings(scheduled_at), calls(occurred_at)").order("name").order("id").range(a, b))).rows,
-  });
-  const { data: ctx } = useQuery({
-    queryKey: ["accounts-score-context"],
-    queryFn: async () => {
-      const [icp, seg] = await Promise.all([
-        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
-        supabase.from("segments").select("id,name"),
-      ]);
-      return { icps: icp.data ?? [], segNames: new Map((seg.data ?? []).map((s) => [s.id, s.name])) };
-    },
-  });
+  const { data = [] } = useQuery(accountsQuery);
+  const { data: ctx } = useQuery(accountsScoreContextQuery);
   const scores = useMemo(() => {
     const now = new Date();
     const today = now.toISOString();
@@ -69,7 +60,7 @@ function Accounts() {
   const [domain, setDomain] = useState("");
   const dup = name.trim() || domain.trim() ? duplicateOf({ name, domain }, data.map((a) => ({ id: a.id, name: a.name, domain: a.domain }))) : null;
   async function create() {
-    if (dup?.kind === "same" && !window.confirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}. ¿Crear otra igualmente?`)) return;
+    if (dup?.kind === "same" && !(await askConfirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}`, { body: "¿Crear otra cuenta igualmente?", confirmLabel: "Crear igualmente" }))) return;
     const { data: a, error } = await supabase.from("accounts").insert({ name, domain }).select().single();
     if (error) return toast.error(errorText(error));
     await supabase.from("account_plans").insert({ account_id: a.id });

@@ -13,7 +13,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
   const out = { researched: 0, prepped: 0, cooling: 0, notes: [] as string[] };
   const actor = (await db.from("org_members").select("user_id").eq("org_id", orgId).eq("role", "owner").limit(1).maybeSingle()).data?.user_id ?? "";
   const { data: org } = await db.from("organizations").select("currency").eq("id", orgId).maybeSingle();
-  const ctx = { db: db as any, orgId, userId: actor, roles: ["owner"], currency: org?.currency ?? "EUR" };
+  const ctx = { db, orgId, userId: actor, roles: ["owner"], currency: org?.currency ?? "EUR" };
   const scope = { orgId, userId: actor };
 
   // 1 · New accounts: complete empty fields and research the web into the empty parts of the account plan.

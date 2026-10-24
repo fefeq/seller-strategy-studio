@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Empty } from "@/components/page";
 import { approveImport, discardImport, undoImport } from "@/lib/imports.functions";
 import { errorText } from "@/lib/errors";
+import { askConfirm } from "@/components/confirm-dialog";
 
 const BATCH: Record<string, string> = { pending: "Pendiente", partial: "En parte", approved: "Aprobado", discarded: "Descartado", undone: "Deshecho" };
 const ROW: Record<string, string> = { pending: "Pendiente", applied: "Entró", discarded: "Descartada", error: "Error", undone: "Deshecha" };
@@ -72,7 +73,7 @@ function Batch({ batch: b, canManage, isOwner, open = false }: { batch: any; can
           <Button size="sm" variant="outline" disabled={busy} onClick={() => act(() => discard({ data: { batchId: b.id } }), () => "Lote descartado.")}>Descartar</Button>
         </>}
         {isOwner && (b.status === "approved" || b.status === "partial") && (
-          <Button size="sm" variant="outline" disabled={busy} onClick={() => confirm("¿Deshacer este lote? Se borran las cuentas y leads que creó y que nadie ha tocado desde entonces. Lo que actualizó de registros existentes se queda.") && act(() => undo({ data: { batchId: b.id } }), (r) => `${r.undone} filas deshechas${r.kept ? ` · ${r.kept} se quedan (ya existían o se han modificado)` : ""}.`)}>Deshacer lote</Button>
+          <Button size="sm" variant="outline" disabled={busy} onClick={async () => (await askConfirm("¿Deshacer este lote?", { body: "Se borran las cuentas y leads que creó y que nadie ha tocado desde entonces. Lo que actualizó de registros existentes se queda.", confirmLabel: "Deshacer lote" })) && act(() => undo({ data: { batchId: b.id } }), (r) => `${r.undone} filas deshechas${r.kept ? ` · ${r.kept} se quedan (ya existían o se han modificado)` : ""}.`)}>Deshacer lote</Button>
         )}
       </div>
       {show && (

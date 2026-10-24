@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
 
 /**
  * What a long AI call is doing while the person waits. The server does not stream its steps, so the
@@ -31,7 +30,6 @@ export function AiProgress({
       aria-live="polite"
     >
       <div className="flex items-center gap-2">
-        <Loader2 className="size-4 shrink-0 animate-spin" />
         <span className="min-w-0 flex-1">{stages[current]}…</span>
         <span className="shrink-0 font-mono text-xs text-muted-foreground">{seconds} s</span>
       </div>

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
@@ -39,7 +38,7 @@ export function TelegramLink() {
 
   return (
     <div className="rounded-lg border bg-card p-5">
-      <h3 className="flex items-center gap-2 text-2xl"><Send className="size-5" /> Telegram</h3>
+      <h3 className="flex items-center gap-2 text-2xl">Telegram</h3>
       <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Habla con el agente desde Telegram, recibe cada mañana tus 3 prioridades y aprueba las sugerencias urgentes con un botón. Usa tus permisos y tu empresa activa.</p>
       {!bot?.connected ? (
         <p className="mt-3 text-sm">El bot de Telegram todavía no está conectado a Nokko.</p>

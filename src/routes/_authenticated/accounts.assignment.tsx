@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Sparkles, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useTeam, type TeamMember } from "@/hooks/use-team";
@@ -199,7 +198,7 @@ function Assignment() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-2xl">Reglas</h3>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={aiRules} disabled={!!busy || !eligible.length}><Sparkles className="size-4" /> {busy === "rules" ? "Pensando reglas…" : "Proponer reglas con IA"}</Button>
+            <Button variant="outline" onClick={aiRules} disabled={!!busy || !eligible.length}>{busy === "rules" ? "Pensando reglas…" : "Proponer reglas con IA"}</Button>
             <Button variant="outline" onClick={() => setRules([...draft, { id: null, key: newKey(), segment_id: null, region: null, country: null, members: [] }])}>+ Añadir regla</Button>
             <Button onClick={saveRules} disabled={!dirtyRules || !!busy}>{busy === "save" ? "Guardando…" : "Guardar reglas"}</Button>
           </div>
@@ -212,9 +211,9 @@ function Assignment() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <p className="eyebrow">{i + 1}. {ruleLabel(r, segNames)}{r.id ? "" : " · sin guardar"}</p>
                   <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" aria-label="Subir" disabled={i === 0} onClick={() => moveRule(i, -1)}><ArrowUp className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="Bajar" disabled={i === draft.length - 1} onClick={() => moveRule(i, 1)}><ArrowDown className="size-4" /></Button>
-                    <Button size="icon" variant="ghost" aria-label="Quitar regla" onClick={() => setRules(draft.filter((x) => x.key !== r.key))}><Trash2 className="size-4" /></Button>
+                    <Button size="icon" variant="ghost" aria-label="Subir" disabled={i === 0} onClick={() => moveRule(i, -1)}><span aria-hidden>↑</span></Button>
+                    <Button size="icon" variant="ghost" aria-label="Bajar" disabled={i === draft.length - 1} onClick={() => moveRule(i, 1)}><span aria-hidden>↓</span></Button>
+                    <Button size="icon" variant="ghost" aria-label="Quitar regla" onClick={() => setRules(draft.filter((x) => x.key !== r.key))}><span aria-hidden>×</span></Button>
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">

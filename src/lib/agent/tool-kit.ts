@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { Db } from "@/lib/org-data";
 import type { Role } from "@/lib/roles";
 import { sortStages, stageByLabel, type Stage } from "@/lib/stages";
+import { DISQUALIFIED, LEAD_STAGES } from "@/lib/lead-funnel";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
 
@@ -22,9 +23,16 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 export const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
 export const STAGE_ARG = z.string().min(1).describe("Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost");
 export const DATE_ARG = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha en formato AAAA-MM-DD").describe("AAAA-MM-DD");
+export const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
 export const HEALTH = z.enum(["green", "yellow", "red"]);
 
 export const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
+/** Like ok(), for a query that must return one row: a missing row is a clear error instead of a crash. */
+export const one = <T>(r: { data: T; error: { message: string } | null }, what = "el registro"): NonNullable<T> => {
+  const d = ok(r);
+  if (d == null) throw new Error(`No encuentro ${what} en esta empresa.`);
+  return d;
+};
 export const like = (q: string) => `%${q.replace(/[%_,()]/g, " ").trim()}%`;
 export const isLeader = (roles: string[]) => roles.some((r) => r === "owner" || r === "sales_leader");
 /** Who may set prices, costs and discounts on deal lines (the deal_lines_scope trigger, which privileged clients skip). */
@@ -40,7 +48,7 @@ type OrgTable = "accounts" | "deals" | "leads" | "meetings" | "people" | "stakeh
 
 /** The row with this id in the caller's company (selected columns), or a clear error naming what was missing. */
 export async function mustFind<T = Record<string, unknown>>(c: ToolCtx, table: OrgTable, id: string, what: string, cols = "id"): Promise<T> {
-  const { data, error } = await (c.db.from(table) as any).select(cols).eq("org_id", c.orgId).eq("id", id).maybeSingle();
+  const { data, error } = await (c.db.from(table)).select(cols).eq("org_id", c.orgId).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error(`No encuentro ${what} en esta empresa. Búscalo primero con search o con la herramienta de listado.`);
   return data as T;

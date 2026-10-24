@@ -36,18 +36,18 @@ export const PIPELINE_TOOLS: AgentTool[] = [
     description: "Detalle de un lead: datos, etapa, retraso frente al plazo de su etapa, puntuación con el encaje ICP explicado, estado de la secuencia de seguimiento (día 3, 7, 14) y sus últimas entradas.",
     input: z.object({ lead_id: z.string().uuid() }),
     run: async (c, a) => {
-      const l = ok(await c.db.from("leads").select("*").eq("org_id", c.orgId).eq("id", a.lead_id).maybeSingle()) as any;
+      const l = ok(await c.db.from("leads").select("*").eq("org_id", c.orgId).eq("id", a.lead_id).maybeSingle());
       if (!l) return { error: "Lead no encontrado en esta empresa" };
       const [s, icp, acc, seg, events] = await Promise.all([
         c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
         c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords").eq("org_id", c.orgId),
-        l.account_id ? c.db.from("accounts").select("id,segment_id,industry,size,tier,name").eq("org_id", c.orgId).eq("id", l.account_id) : Promise.resolve({ data: [] as any[] }),
+        l.account_id ? c.db.from("accounts").select("id,segment_id,industry,size,tier,name").eq("org_id", c.orgId).eq("id", l.account_id) : Promise.resolve({ data: [] }),
         c.db.from("segments").select("id,name").eq("org_id", c.orgId),
         c.db.from("lead_events").select("received_at,channel,status,summary").eq("org_id", c.orgId).eq("lead_id", a.lead_id).order("received_at", { ascending: false }).limit(5),
       ]);
       const now = new Date();
       const delay = leadDelay(l, readSla(s.data?.sla), now);
-      const score = scoreLead({ ...l, late: delay.late }, (icp.data ?? []) as any, new Map((acc.data ?? []).map((x: any) => [x.id, x])), now, new Map((seg.data ?? []).map((x) => [x.id, x.name])));
+      const score = scoreLead({ ...l, late: delay.late }, (icp.data ?? []), new Map((acc.data ?? []).map((x: any) => [x.id, x])), now, new Map((seg.data ?? []).map((x) => [x.id, x.name])));
       const seq = followupStatus(l, now);
       return {
         id: l.id, empresa: l.company, contacto: l.contact_name, email: l.email, cargo: l.title, etapa: leadStageLabel(l.stage), origen: l.source,
@@ -93,7 +93,7 @@ export const PIPELINE_TOOLS: AgentTool[] = [
     description: "Detalle de un deal: cuenta, etapa, importe, cierre, salud, forecast, MEDDPICC, líneas de producto con margen, historial de etapas, plan de acción mutuo, tareas abiertas y reuniones.",
     input: z.object({ deal_id: z.string().uuid() }),
     run: async (c, a) => {
-      const d = ok(await c.db.from("deals").select("*").eq("org_id", c.orgId).eq("id", a.deal_id).maybeSingle()) as any;
+      const d = ok(await c.db.from("deals").select("*").eq("org_id", c.orgId).eq("id", a.deal_id).maybeSingle());
       if (!d) return { error: "Deal no encontrado en esta empresa" };
       const [lines, hist, map, tasks, meet, stages] = await Promise.all([
         c.db.from("deal_lines").select("id,product_id,name,quantity,unit_price,unit_cost,discount_pct,billing").eq("org_id", c.orgId).eq("deal_id", a.deal_id),
@@ -106,7 +106,7 @@ export const PIPELINE_TOOLS: AgentTool[] = [
       const names = await accountNames(c, [d.account_id]);
       const t = dealTotals((lines.data ?? []) as DealLine[]);
       return {
-        id: d.id, nombre: d.name, cuenta: names.get(d.account_id) ?? null, cuenta_id: d.account_id, etapa: stageLabel(d.stage, stages), probabilidad: d.probability,
+        id: d.id, nombre: d.name, cuenta: (d.account_id && names.get(d.account_id)) ?? null, cuenta_id: d.account_id, etapa: stageLabel(d.stage, stages), probabilidad: d.probability,
         importe: d.amount, cierre: d.close_date, salud: d.health, forecast: d.forecast_category, propietario_id: d.owner_id, origen: d.source, meddpicc: d.meddpicc,
         lineas: lines.data, totales: (lines.data ?? []).length ? { importe: t.amount, pagos_unicos: t.oneOff, margen: t.margin, margen_pct: t.marginPct == null ? null : Math.round(t.marginPct) } : null,
         historial: (hist.data ?? []).map((h) => ({ de: h.from_stage ? stageLabel(h.from_stage, stages) : null, a: stageLabel(h.to_stage, stages), fecha: h.changed_at })),
@@ -207,8 +207,8 @@ export const PIPELINE_TOOLS: AgentTool[] = [
         c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
         orgStages(c),
       ]);
-      const deals = (d.data ?? []) as any[];
-      const board = pipelineBoard((l.data ?? []) as any, deals, range, readSla(s.data?.sla), new Date(), stages);
+      const deals = (d.data ?? []);
+      const board = pipelineBoard((l.data ?? []), deals, range, readSla(s.data?.sla), new Date(), stages);
       const closing = closingIn(deals, range);
       return {
         trimestre: a.quarter ?? quarterOf(new Date()),

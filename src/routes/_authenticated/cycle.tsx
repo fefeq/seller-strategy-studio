@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CheckCircle2, FileText, Loader2, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -24,6 +23,7 @@ import { JobProgress, useJob, type BgJob } from "@/components/background";
 import { freshResult } from "@/lib/jobs";
 import type { DeepReview } from "@/lib/bmad/debate-core";
 import { errorText } from "@/lib/errors";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   // artifact: link from a notice («Borrador listo…», «Revisión a fondo lista…») straight to the document.
@@ -89,7 +89,7 @@ function CyclePage() {
           return (
             <div key={ph.id} className={`rounded-lg border bg-card p-4 ${i === phaseIdx ? "ring-2 ring-signal" : ""}`}>
               <p className="eyebrow">{i + 1}. {ph.bmad}</p>
-              <h3 className="mt-1 flex items-center gap-2 text-2xl">{ph.label} {i < phaseIdx && <CheckCircle2 className="size-4 text-success" />}</h3>
+              <h3 className="mt-1 flex items-center gap-2 text-2xl">{ph.label} {i < phaseIdx && <span className="smallcaps text-success">Hecha</span>}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{ph.description}</p>
               {ph.id === "execution" && (
                 <div className="mt-3 space-y-1.5 text-xs">
@@ -105,7 +105,7 @@ function CyclePage() {
                     <div className="mt-1.5 space-y-1">
                       {list.slice(0, k === "winloss" ? 5 : 3).map((a) => (
                         <button key={a.id} onClick={() => setSelected(a.id)} className="flex min-h-10 w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-xs hover:bg-accent md:min-h-0">
-                          <span className="truncate"><FileText className="mr-1 inline size-3" />{k === "winloss" ? a.title.replace("Win/Loss: ", "") : `v${a.version}`}</span>
+                          <span className="truncate">{k === "winloss" ? a.title.replace("Win/Loss: ", "") : `v${a.version}`}</span>
                           <span className={`shrink-0 ${a.status === "approved" ? "text-success" : "text-muted-foreground"}`}>{STATUS[a.status]}</span>
                         </button>
                       ))}
@@ -113,7 +113,7 @@ function CyclePage() {
                     </div>
                     {(k === "retro" || k === "winloss") && closedCount === 0
                       ? <p className="mt-1 text-xs text-muted-foreground">Necesita al menos un deal ganado o perdido. Sin cierres, el borrador sería inventado.</p>
-                      : <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>}
+                      : <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}>Borrador con IA</Button>}
                   </div>
                 );
               })}
@@ -203,7 +203,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
     refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador. La v${art!.version} sigue alimentando a los agentes hasta que apruebes la nueva.`);
   }
   async function withdraw() {
-    if (!window.confirm(`Retirar la aprobación de la v${art!.version}: dejará de alimentar a los agentes y la fase volverá a quedar pendiente. ¿Seguir?`)) return;
+    if (!(await askConfirm(`¿Retirar la aprobación de la v${art!.version}?`, { body: "Dejará de alimentar a los agentes y la fase volverá a quedar pendiente.", confirmLabel: "Retirar aprobación" }))) return;
     const { error } = await supabase.from("gtm_artifacts").update({ status: "draft", approved_by: null, approved_at: null }).eq("id", art!.id);
     if (error) return toast.error(errorText(error));
     refresh(); toast.success("Aprobación retirada: el documento vuelve a borrador.");
@@ -225,7 +225,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
           {art.status === "draft" && (edit === null
             ? <Button size="sm" variant="outline" onClick={() => setEdit(art.content)}>Editar</Button>
             : <><Button size="sm" onClick={save}>Guardar</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancelar</Button></>)}
-          {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}><CheckCircle2 className="size-4" /> Aprobar</Button>}
+          {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}>Aprobar</Button>}
           {art.status === "draft" && !leader && <span className="self-center text-xs text-muted-foreground">Solo Owner o Sales Leader pueden aprobar.</span>}
           {art.status === "approved" && leader && <>
             <Button size="sm" variant="outline" onClick={newVersion}>Crear v{nextVersion} para editar</Button>
@@ -235,7 +235,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Revisión profunda</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? "Revisando…" : "Revisión profunda"}</Button>
           </span>
           <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}
