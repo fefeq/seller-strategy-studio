@@ -32,7 +32,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Hoy", items: [{ to: "/home", label: "Inicio" }, { to: "/inbox", label: "Sugerencias" }] },
   { title: "Vender", items: [{ to: "/accounts", label: "Cuentas" }, { to: "/leads", label: "Leads" }, { to: "/deals", label: "Pipeline" }, { to: "/people", label: "Personas" }, { to: "/approvals", label: "Aprobaciones" }] },
   { title: "Estrategia", items: [{ to: "/strategy", label: "Estrategia GTM" }, { to: "/metrics", label: "Métricas" }, { to: "/advisor", label: "Asesor GTM", leadersOnly: true }, { to: "/cycle", label: "Ciclo GTM" }, { to: "/debates", label: "Debates" }, { to: "/abm", label: "ABM y partners" }, { to: "/theory-u", label: "Theory U" }, { to: "/products", label: "Productos" }] },
-  { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }] },
+  { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }, { to: "/memory", label: "Memoria" }] },
   { title: "Ajustes", items: [{ to: "/setup", label: "Configuración" }, { to: "/team", label: "Equipo" }, { to: "/integrations", label: "Conexiones" }, { to: "/connect", label: "Conectar asistentes" }] },
 ];
 const NAV = NAV_GROUPS.flatMap((g) => g.items);

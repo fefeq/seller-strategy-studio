@@ -29,6 +29,7 @@ import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
 import { CompleteAccount, KeyPeopleButton } from "@/components/orchestrator";
+import { learnFromMeeting } from "@/lib/memory.functions";
 import { AccountResearch, SignalsTab } from "@/components/web-research";
 import { ApolloReveal } from "@/components/apollo";
 import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
@@ -316,6 +317,7 @@ function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deals, onCh
   const detailRef = useRevealOnMobile(sel?.id);
   const brief = useServerFn(generateMeetingBrief);
   const coach = useServerFn(listeningCoaching);
+  const learnMeeting = useServerFn(learnFromMeeting);
   async function add() {
     const { data, error } = await supabase.from("meetings").insert({ account_id: accountId, title: "Nueva reunión", scheduled_at: new Date(Date.now() + 864e5).toISOString() }).select().single();
     if (error) return toast.error(errorText(error));
@@ -332,6 +334,8 @@ function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deals, onCh
     const log = callLogEntry({ notes: rest.notes, next_steps: rest.next_steps, call_notes });
     if (log.hasContent) {
       await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: log.summary, next_steps: log.next_steps });
+      // Nokko remembers what matters from the notes (in the background; it never blocks saving).
+      void learnMeeting({ data: { meetingId: id } }).catch(() => undefined);
     }
     toast.success("Reunión guardada."); onChange();
     return true;
