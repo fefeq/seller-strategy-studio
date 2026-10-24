@@ -104,15 +104,17 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
   // 2 · Company data through the orchestrator (budget-aware; fills only empty fields).
   if (!acc) flow.steps.complete = { status: "skipped", note: "Sin cuenta." };
   else if (!acc.domain) flow.steps.complete = { status: "skipped", note: "Sin dominio (email personal o vacío): añade la web de la empresa y repite." };
+  else if (trigger === "automatic" && (await db.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data?.auto_enrich === false)
+    flow.steps.complete = { status: "skipped", note: "Completado automático desactivado en esta empresa: pulsa «Repetir el flujo» para hacerlo a mano." };
   else {
     try {
-      const { completeAccount } = await import("@/lib/orchestrator/runner");
+      const { completeAccount, applyAutoChanges } = await import("@/lib/orchestrator/runner");
       const r = await completeAccount(ctx, acc.id, trigger);
       if (r.blocked) flow.steps.complete = { status: "blocked", note: r.blocked };
       else {
-        const patch = Object.fromEntries(r.changes.filter((ch) => ch.empty && ch.proposed != null && ch.proposed !== "").map((ch) => [ch.field, ch.proposed])) as Database["public"]["Tables"]["accounts"]["Update"];
-        if (Object.keys(patch).length) { await db.from("accounts").update(patch).eq("org_id", orgId).eq("id", acc.id); Object.assign(acc, patch); }
-        const names = Object.keys(patch).map((k) => ({ industry: "sector", size: "tamaño", country: "país", notes: "descripción", linkedin_url: "LinkedIn" } as Record<string, string>)[k] ?? k);
+        const written = await applyAutoChanges(ctx, acc.id, r.changes, now.toISOString());
+        for (const ch of r.changes) if (written.includes(ch.field)) (acc as Record<string, unknown>)[ch.field] = ch.proposed;
+        const names = written.map((k) => ({ industry: "sector", size: "tamaño", country: "país", notes: "descripción", linkedin_url: "LinkedIn" } as Record<string, string>)[k] ?? k);
         flow.steps.complete = { status: "done", note: names.length ? `Completado ${names.join(", ")}${r.sources ? ` (${r.sources})` : ""}.` : r.found ? "Ya tenía los datos." : "Los servicios no encontraron la empresa." };
       }
     } catch (e) { flow.steps.complete = { status: "failed", note: (e as Error).message.slice(0, 200) }; }

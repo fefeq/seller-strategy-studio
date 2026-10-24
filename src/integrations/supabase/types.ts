@@ -250,6 +250,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           domain: string | null
+          field_sources: Json
           health: string | null
           id: string
           industry: string | null
@@ -273,6 +274,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           domain?: string | null
+          field_sources?: Json
           health?: string | null
           id?: string
           industry?: string | null
@@ -296,6 +298,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           domain?: string | null
+          field_sources?: Json
           health?: string | null
           id?: string
           industry?: string | null
@@ -1992,6 +1995,7 @@ export type Database = {
       }
       lead_settings: {
         Row: {
+          auto_enrich: boolean
           org_id: string
           qualification: Json
           sla: Json
@@ -1999,6 +2003,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          auto_enrich?: boolean
           org_id?: string
           qualification?: Json
           sla?: Json
@@ -2006,6 +2011,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          auto_enrich?: boolean
           org_id?: string
           qualification?: Json
           sla?: Json

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { LeadDetail } from "@/components/leads/lead-detail";
-import { NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
+import { AutoEnrichSwitch, NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
 import { DISQUALIFIED, LEAD_STAGES, delayText, funnelBy, leadCohort, leadDelay, leadFunnel, leadStageLabel, type LeadDelay } from "@/lib/lead-funnel";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
@@ -94,6 +94,7 @@ function LeadsPage() {
       <Button variant="outline" asChild><Link to="/leads/entrada"><ArrowDownToLine className="mr-1 size-4" />Entrada de leads</Link></Button>
       {view && <QualifyPending pending={view.pending} />}
       {data && <QualSettingsDialog settings={data.qualSettings} canEdit={canSettings} orgId={orgId!} />}
+      {orgId && <AutoEnrichSwitch canEdit={roles.some((r) => r === "owner" || r === "sales_leader")} orgId={orgId} />}
       {data && <SlaSettings sla={data.sla} canEdit={canSettings} orgId={orgId!} />}
       {data && <NewLead segments={data.segments} />}
     </>}>

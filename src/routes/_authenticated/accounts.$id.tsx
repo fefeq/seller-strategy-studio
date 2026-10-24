@@ -24,6 +24,7 @@ import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type C
 import { useAgent } from "@/components/agent";
 import { AiText } from "@/components/ai-text";
 import { CountryPick } from "@/components/country-pick";
+import { readSources, sourceText } from "@/lib/provenance";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
@@ -125,7 +126,7 @@ function AccountPage() {
 }
 
 /** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
-function FitFields({ account, segNames, onSaved }: { account: { id: string; domain: string | null; segment_id: string | null; industry: string | null; size: string | null; country?: string | null; linkedin_url?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+function FitFields({ account, segNames, onSaved }: { account: { id: string; domain: string | null; segment_id: string | null; industry: string | null; size: string | null; country?: string | null; linkedin_url?: string | null; field_sources?: unknown }; segNames: Map<string, string>; onSaved: () => void }) {
   const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
   useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
   const [linkedin, setLinkedin] = useState(account.linkedin_url ?? "");
@@ -155,14 +156,16 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; doma
     if (error) return toast.error(errorText(error));
     onSaved();
   }
+  const marks = readSources(account.field_sources);
+  const mark = (k: string) => { const t = sourceText(marks[k]); return t ? <p className="mt-1 font-mono text-xs text-muted-foreground" title={marks[k]?.quote ? `«${marks[k]!.quote}»` : undefined}>{t}</p> : null; };
   return (
     <div className="space-y-3 rounded-lg border bg-card p-4">
       <p className="eyebrow">Datos para el encaje</p>
       <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segNames) }} onChange={(v) => save({ segment_id: v })} /></Field>
-      <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
-      <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
-      <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
-      <Field label="LinkedIn de la empresa"><Input value={linkedin} placeholder="linkedin.com/company/…" onChange={(e) => setLinkedin(e.target.value)} onBlur={saveLinkedin} /></Field>
+      <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>{mark("industry")}
+      <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>{mark("size")}
+      <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>{mark("country")}
+      <Field label="LinkedIn de la empresa"><Input value={linkedin} placeholder="linkedin.com/company/…" onChange={(e) => setLinkedin(e.target.value)} onBlur={saveLinkedin} /></Field>{mark("linkedin_url")}
       <div className="space-y-2">
         <CompleteAccount account={account} onSaved={onSaved} />
       </div>

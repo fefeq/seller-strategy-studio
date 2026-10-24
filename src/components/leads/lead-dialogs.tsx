@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLeadTouched } from "@/components/background";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, Pick } from "@/components/fields";
@@ -100,5 +101,27 @@ export function SlaSettings({ sla, canEdit, orgId }: { sla: LeadSla; canEdit: bo
         {canEdit ? <Button className="w-full" onClick={save}>Guardar plazos</Button> : <p className="text-xs text-muted-foreground">Solo Owner, Sales Leader o Marketing pueden cambiar los plazos.</p>}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Per-company switch for the automatic completion of new leads' accounts (Apollo → Clay → web). Owner/Sales Leader change it. */
+export function AutoEnrichSwitch({ canEdit, orgId }: { canEdit: boolean; orgId: string }) {
+  const qc = useQueryClient();
+  const { data: on } = useQuery({
+    queryKey: ["auto-enrich", orgId],
+    queryFn: async () => (await supabase.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data?.auto_enrich !== false,
+  });
+  async function toggle(next: boolean) {
+    const { error } = await supabase.from("lead_settings").upsert({ org_id: orgId, auto_enrich: next, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
+    if (error) return toast.error(errorText(error));
+    toast.success(next ? "Completado automático activado." : "Completado automático desactivado: los leads nuevos no gastarán créditos solos.");
+    qc.invalidateQueries({ queryKey: ["auto-enrich", orgId] });
+  }
+  if (on === undefined) return null;
+  return (
+    <label className="flex items-center gap-2 text-sm" title={canEdit ? undefined : "Solo Owner o Sales Leader pueden cambiarlo."}>
+      <Switch checked={on} disabled={!canEdit} onCheckedChange={toggle} aria-label="Completar cuentas automáticamente" />
+      Completar solo {on ? "· Activo" : "· Pausado"}
+    </label>
   );
 }

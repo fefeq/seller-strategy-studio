@@ -4,7 +4,7 @@
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
 import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
-import type { AccountDraft, CompanyQuery, EnrichChange } from "@/lib/clay";
+import type { AccountDraft, CompanyQuery, EnrichChange, EnrichField } from "@/lib/clay";
 import { budgetState, planFor, sourcesLine, CAPABILITIES, type Need, type Service } from "./planner";
 import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
 
@@ -42,16 +42,44 @@ async function planNeed(c: ToolCtx, need: Need, trigger: Trigger, depth: "quick"
   return planFor({ need, connected: connectedServices(), depth, budget: { remaining: b.remaining, automatic: trigger === "automatic", paused: b.paused } });
 }
 
-export type CompleteResult = { changes: EnrichChange[]; found: boolean; used: Used[]; sources: string; tried: string[]; blocked: string | null };
+export type SourcedChange = EnrichChange & { source: string; quote?: string };
+export type CompleteResult = { changes: SourcedChange[]; found: boolean; used: Used[]; sources: string; tried: string[]; blocked: string | null };
 
-/** «Completar datos de una cuenta»: tries the planned services in order and merges what each adds (first one wins per field). */
+const WEB_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["industry", "size", "country", "notes"],
+  properties: Object.fromEntries(["industry", "size", "country", "notes"].map((f) => [f, {
+    type: "object", additionalProperties: false, required: ["value", "quote"],
+    properties: { value: { type: "string", description: "Valor breve; cadena vacía si la web no lo dice" }, quote: { type: "string", description: "Frase copiada literalmente de la web que lo demuestra; vacía si no hay" } },
+  }])),
+};
+
+/** Last source: the company's own website. Only values backed by a literal quote found in the page survive. */
+async function webFallback(c: ToolCtx, accountId: string, fields: EnrichField[]): Promise<SourcedChange[]> {
+  const { data: acc } = await c.db.from("accounts").select("domain").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
+  if (!acc?.domain) return [];
+  const [{ readCompanySite }, { ask }, { quoteFound }] = await Promise.all([import("@/lib/web-research-core"), import("@/lib/ai-gateway"), import("@/lib/provenance")]);
+  const site = await readCompanySite(acc.domain, 20_000);
+  const raw = await ask(
+    "Extraes datos de empresa SOLO de su web. Para cada campo copia literalmente la frase que lo demuestra. Si la web no lo dice, deja valor y cita vacíos. Nunca deduzcas ni inventes. industry = sector en español; size = nº de empleados o rango; country = país de la sede; notes = qué hace la empresa en 1-2 frases en español.",
+    site.text, { effort: "low", schema: { name: "web_company", schema: WEB_SCHEMA } },
+  );
+  let parsed: Record<string, { value: string; quote: string }> = {};
+  try { parsed = JSON.parse(raw); } catch { return []; }
+  return fields.flatMap((f) => {
+    const v = parsed[f];
+    return v?.value?.trim() && quoteFound(v.quote, site.text) ? [{ field: f, current: null, proposed: v.value.trim().slice(0, f === "notes" ? 600 : 120), empty: true, source: "web", quote: v.quote.trim().slice(0, 300) }] : [];
+  });
+}
+
+/** «Completar datos de una cuenta»: Apollo, then Clay, then the company website as last source; first one wins per field. */
 export async function completeAccount(c: ToolCtx, accountId: string, trigger: Trigger = "manual"): Promise<CompleteResult> {
   const plan = await planNeed(c, "enrich_account", trigger);
   const steps = plan.steps.filter((s) => s.service === "apollo" || s.service === "clay");
-  if (!steps.length) return { changes: [], found: false, used: [], sources: "", tried: [], blocked: plan.blocked ?? "Ningún servicio conectado puede completar cuentas ahora." };
+  const webStep = plan.steps.find((s) => s.service === "firecrawl");
+  if (!steps.length && !webStep) return { changes: [], found: false, used: [], sources: "", tried: [], blocked: plan.blocked ?? "Ningún servicio conectado puede completar cuentas ahora." };
   const used: Used[] = [];
   const tried: string[] = [];
-  const byField = new Map<string, EnrichChange>();
+  const byField = new Map<string, SourcedChange>();
   let found = false;
   let lastError: string | null = null;
   for (const s of steps) {
@@ -60,7 +88,7 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
       used.push({ service: s.service, cost: s.cost });
       tried.push(s.service);
       if (r.found) found = true;
-      for (const ch of r.changes) if (!byField.has(ch.field)) byField.set(ch.field, ch);
+      for (const ch of r.changes) if (!byField.has(ch.field)) byField.set(ch.field, { ...ch, source: s.service });
       // Stop once every empty field has a value; otherwise the next service may fill the gaps.
       if (found && [...byField.values()].filter((x) => x.empty).length >= 3) break;
     } catch (e) {
@@ -69,9 +97,35 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
       if (/dominio/i.test(lastError)) break; // same precondition for every service
     }
   }
+  if (webStep && !(lastError && /dominio/i.test(lastError))) {
+    const { data: acc } = await c.db.from("accounts").select("industry,size,country,notes").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
+    const left = (["industry", "size", "country", "notes"] as EnrichField[]).filter((f) => !(acc as Record<string, string | null> | null)?.[f]?.trim() && !byField.has(f));
+    if (left.length) {
+      try {
+        const web = await webFallback(c, accountId, left);
+        used.push({ service: "firecrawl", cost: webStep.cost });
+        tried.push("firecrawl");
+        if (web.length) found = true;
+        for (const ch of web) byField.set(ch.field, ch);
+      } catch (e) { lastError = e instanceof Error ? e.message : String(e); tried.push("firecrawl"); }
+    }
+  }
   await logUsage(c, "enrich_account", used, trigger);
   if (!used.length && lastError) throw new Error(lastError);
   return { changes: [...byField.values()], found, used, sources: sourcesLine(used), tried, blocked: null };
+}
+
+/** Writes the empty fields an automatic run found, stamped «Automático · fuente · fecha». Returns the field names written. */
+export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<string[]> {
+  const fill = changes.filter((ch) => ch.empty && ch.proposed);
+  if (!fill.length) return [];
+  const { stampSources } = await import("@/lib/provenance");
+  const { data: acc } = await c.db.from("accounts").select("field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
+  const patch: Record<string, unknown> = Object.fromEntries(fill.map((ch) => [ch.field, ch.proposed]));
+  patch.field_sources = stampSources(acc?.field_sources, fill.map((ch) => ({ field: ch.field, source: ch.source, quote: ch.quote })), at);
+  const { error } = await c.db.from("accounts").update(patch as never).eq("org_id", c.orgId).eq("id", accountId);
+  if (error) throw new Error(error.message);
+  return fill.map((ch) => ch.field);
 }
 
 /** Wraps a core that already combines web sources (research, signals) so its spend is logged and labelled. */
