@@ -123,3 +123,33 @@ En cada fase saco capturas de antes y después en escritorio y en móvil, y mant
 - Usar la app solo con teclado, de principio a fin, y el contraste exacto en modo oscuro.
 - Fichas de cuenta, lead y deal por dentro, Debates, Ciclo GTM, Theory U y ABM: revisé las listas, no cada ficha.
 - La analítica cuenta visitas y páginas, no qué hace cada persona: no se pueden ver abandonos dentro de una pantalla.
+
+---
+
+# Nuevo aspecto visual: moderno, business casual, startupero
+
+Sustituye «Nokko Edición» (papel, tinta y un solo rojo, esquinas rectas, sin sombras) por un estilo más cercano y con energía, en la línea de Clay y Attio. Se aplica antes que las fases de la auditoría, así cada pantalla que se rehace ya sale con el estilo nuevo.
+
+## Paleta «Ink + Lima»
+- **Fondo:** blanco cálido (#FAFAF7). **Texto:** casi negro (#0F1115). **Texto secundario:** gris (#5B5F6A).
+- **Acento lima** (#C6F432): botón principal, selección, barras de progreso y estado activo del menú. Siempre con texto oscuro encima, porque el lima no se lee como texto sobre fondo claro.
+- **Azul** (#2B59FF): enlaces y foco del teclado.
+- **Estados con color propio** (siempre acompañados de la palabra): verde para hecho, ámbar para aviso, rojo solo para errores y acciones peligrosas.
+- **Modo oscuro:** fondo tinta, texto claro y el mismo lima de acento.
+
+## Forma y tipografía
+- **Esquinas redondeadas** (8–12 px), tarjetas con borde suave y una sombra ligera. Los botones son píldoras o rectángulos redondeados.
+- **Tipografía:** Space Grotesk para titulares y cifras (con carácter, muy de startup) y DM Sans para el texto y las tablas (legible y compacta). Sustituyen a Jost y a Spline Sans Mono.
+- **Etiquetas de estado** como «chips» de color suave en lugar de palabras en mayúsculas pequeñas.
+- **Menú lateral** claro con el elemento activo resaltado en lima, más aire y grupos plegables (encaja con P0-1).
+
+## Qué no cambia
+- La forma del logo de Nokko se mantiene; solo cambia su color a tinta y lima.
+- Los textos, las funciones y los datos.
+
+## Detalles técnicos
+- Tokens nuevos en `src/styles.css` (claro y oscuro), sustituyendo las reglas globales «radio 0», «tarjeta = línea superior» y «sin sombras». Restyle de los componentes base de `src/components/ui` (botón, tarjeta, pestañas, inputs, badges, diálogos) para que todas las pantallas cambien sin tocarlas una a una.
+- Space Grotesk y DM Sans vía @fontsource; se retiran las fuentes binarias anteriores del sistema de diseño.
+- Revisión de los colores que estén escritos a mano en las pantallas, para pasarlos a los tokens.
+- Se actualizan la memoria del diseño, las reglas del proyecto y los iconos de la app (PWA y favicon) con la nueva paleta.
+- Capturas antes y después de Inicio, Leads, Estrategia y Sugerencias, en escritorio, en móvil y en modo oscuro; contraste comprobado en los dos temas.
