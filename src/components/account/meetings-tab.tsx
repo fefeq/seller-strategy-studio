@@ -52,7 +52,7 @@ export function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deal
     const call_notes = normalizeCallNotes(rest.call_notes);
     const payload: Record<string, any> = { title, scheduled_at, deal_id: deal_id || null, listening_level: rest.listening_level ?? null, listening_reflection: rest.listening_reflection ?? "", notes: rest.notes ?? null, call_notes, next_steps: call_notes.siguiente ?? rest.next_steps ?? null };
     for (const [k] of MEETING_FIELDS) payload[k] = rest[k];
-    const { error } = await supabase.from("meetings").update(payload as any).eq("id", id);
+    const { error } = await supabase.from("meetings").update(payload).eq("id", id);
     if (error) { toast.error(errorText(error)); return false; }
     // The call log (Llamadas tab, call prep, score) gets the five lines and the free notes.
     const log = callLogEntry({ notes: rest.notes, next_steps: rest.next_steps, call_notes });

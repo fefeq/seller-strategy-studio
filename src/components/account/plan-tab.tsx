@@ -30,7 +30,7 @@ export function PlanTab({ accountId, accountName, hasDomain, plan, onSaved }: { 
   useEffect(() => { setForm(Object.fromEntries(PLAN_FIELDS.map(([k]) => [k, plan?.[k] ?? ""]))); }, [plan]);
   async function save(next = form) {
     const { error } = plan
-      ? await supabase.from("account_plans").update(next as any).eq("id", plan.id)
+      ? await supabase.from("account_plans").update(next).eq("id", plan.id)
       : await supabase.from("account_plans").insert({ account_id: accountId, ...next });
     if (error) return toast.error(errorText(error));
     toast.success("Plan de cuenta guardado.");

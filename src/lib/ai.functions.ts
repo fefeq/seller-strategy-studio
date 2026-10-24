@@ -4,6 +4,7 @@ import { ask } from "@/lib/ai-gateway";
 import { accountContext, callTeardownCore, meetingBriefCore, listeningCoachingCore, proposalCore, researchStakeholderCore, U_SYSTEM } from "@/lib/ai-core";
 import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
+import type { Json } from "@/integrations/supabase/types";
 
 export const generateMeetingBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -127,11 +128,11 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
     ]);
     const snapshot = buildSnapshot({
       stages: (stages.data ?? []) as Stage[],
-      deals: (deals.data ?? []) as any,
-      segments: (segments.data ?? []) as any,
+      deals: (deals.data ?? []),
+      segments: (segments.data ?? []),
       history: history.data ?? [],
-      quotas: (quotas.data ?? []) as any,
-      currency: (member as any).organizations?.currency ?? "EUR",
+      quotas: (quotas.data ?? []),
+      currency: (member).organizations?.currency ?? "EUR",
     });
 
     const raw = await ask(
@@ -146,7 +147,7 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
     }
     if (!Array.isArray(result?.recommendations) || result.recommendations.length === 0) throw new Error("La IA no devolvió recomendaciones. Inténtalo de nuevo.");
 
-    const { data: row, error } = await supabase.from("gtm_advisories").insert({ goal: data.goal, horizon: data.horizon, result: result as any }).select("id, created_at").single();
+    const { data: row, error } = await supabase.from("gtm_advisories").insert({ goal: data.goal, horizon: data.horizon, result: result as unknown as Json }).select("id, created_at").single();
     if (error) console.error("Advisor: save failed", error.message);
     return { id: row?.id ?? null, created_at: row?.created_at ?? new Date().toISOString(), result };
   });

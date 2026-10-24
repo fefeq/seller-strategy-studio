@@ -81,8 +81,8 @@ export function SuggestionBoard() {
     const open = s.status === "pending";
     return (
       <div className="flex gap-1">
-        {s.link && (() => { const t = linkTarget(s.link)!; return <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={t.to as any} search={t.search as any}><span aria-hidden>→</span></Link></Button>; })()}
-        {open && <Button size="icon" variant="ghost" aria-label={(s.action as any)?.tool ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
+        {s.link && (() => { const t = linkTarget(s.link)!; return <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={t.to} search={t.search}><span aria-hidden>→</span></Link></Button>; })()}
+        {open && <Button size="icon" variant="ghost" aria-label={(s.action)?.tool ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Posponer 3 días" onClick={() => act(s.id, "snooze")}><span aria-hidden className="text-xs">+3 d</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Descartar" onClick={() => act(s.id, "dismiss")}><span aria-hidden>×</span></Button>}
       </div>

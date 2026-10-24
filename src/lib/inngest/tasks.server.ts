@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { cleanDomain } from "@/lib/leads";
 import { JOB_LABEL, type JobKind } from "@/lib/inngest/events";
+import type { Json } from "@/integrations/supabase/types";
 
 type Admin = SupabaseClient<Database>;
 const HOURS = 3_600_000;
@@ -73,7 +74,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
   const emailDomain = corporateDomain(lead.email);
   const actor = opts.userId ?? lead.owner_id ?? (await db.from("org_members").select("user_id").eq("org_id", orgId).eq("role", "owner").limit(1).maybeSingle()).data?.user_id ?? null;
   const { data: org } = await db.from("organizations").select("currency").eq("id", orgId).maybeSingle();
-  const ctx = { db: db as any, orgId, userId: actor as string, roles: ["owner"], currency: (org as { currency?: string } | null)?.currency ?? "EUR" };
+  const ctx = { db, orgId, userId: actor as string, roles: ["owner"], currency: (org as { currency?: string } | null)?.currency ?? "EUR" };
 
   // 1 · Account: by corporate domain, else by exact name, else created from the lead.
   let accountId = lead.account_id;
@@ -150,7 +151,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
       db.from("segments").select("id,name").eq("org_id", orgId),
     ]);
     const { scoreAccount } = await import("@/lib/scoring");
-    fit = scoreAccount({ ...acc, lastActivityAt: null, openDeals: 0 }, (icps ?? []) as any, now, new Map((segs ?? []).map((s) => [s.id, s.name]))).fit.score;
+    fit = scoreAccount({ ...acc, lastActivityAt: null, openDeals: 0 }, (icps ?? []), now, new Map((segs ?? []).map((s) => [s.id, s.name]))).fit.score;
     lines.unshift(fit === null ? "Sin datos para medir el encaje con el ICP: completa sector y tamaño." : `Encaje con el ICP: ${fit} sobre 100.`);
   }
 
@@ -170,7 +171,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
   const row = {
     org_id: orgId, detector: "lead_enriched", dedupe_key: `lead_enriched:${leadId}`, priority: (fit !== null && fit >= 70) || action?.args.stage === "sql" ? 2 : 3,
     title: `Lead nuevo: ${lead.company}${lead.contact_name ? ` (${lead.contact_name})` : ""}${proposal ? ` · ${proposal.label} (${proposal.total})` : fit !== null ? ` · encaje ${fit}` : ""}`.slice(0, 200),
-    body: [...flowLines(flow), ...lines].join("\n"), link: `/leads?lead=${leadId}`, action: action as any, user_id: lead.owner_id,
+    body: [...flowLines(flow), ...lines].join("\n"), link: `/leads?lead=${leadId}`, action: action as unknown as Json, user_id: lead.owner_id,
   };
   // A repeat refreshes the pending proposal; the first run never revives a dismissed one.
   if (opts.force) {
@@ -178,7 +179,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
     if (prev) await db.from("suggestions").update({ title: row.title, body: row.body, action: row.action, priority: row.priority, status: "pending" }).eq("id", prev.id);
     else await db.from("suggestions").insert(row);
   } else await db.from("suggestions").upsert(row, { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
-  await db.from("leads").update({ enriched_at: now.toISOString(), flow: flow as any }).eq("org_id", orgId).eq("id", leadId);
+  await db.from("leads").update({ enriched_at: now.toISOString(), flow: flow as unknown as Json }).eq("org_id", orgId).eq("id", leadId);
   return { accountId, fit, steps: flow.steps };
 }
 
@@ -192,7 +193,7 @@ export async function followupStep(db: Admin, orgId: string, leadId: string, now
   const lead = (snap.leads ?? []).find((l) => l.id === leadId);
   if (!lead || lead.stage !== "contacted") return { stop: true as const };
   const found = followupSequence({ ...snap, leads: [lead] });
-  if (found.length) await db.from("suggestions").upsert(found.map((f) => ({ ...f, org_id: orgId, action: f.action as any })), { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
+  if (found.length) await db.from("suggestions").upsert(found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })), { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
   return { stop: false as const, created: found.length };
 }
 
@@ -209,7 +210,7 @@ async function jobCtx(db: Admin, job: Job) {
     db.from("org_members").select("role").eq("org_id", job.org_id).eq("user_id", job.user_id),
   ]);
   if (!roles?.length) throw new Error("Ya no perteneces a esta empresa.");
-  return { db: db as any, orgId: job.org_id, userId: job.user_id, roles: roles.map((r) => r.role as string), currency: org?.currency ?? "EUR", orgName: org?.company_name?.trim() || org?.name || "tu empresa" };
+  return { db, orgId: job.org_id, userId: job.user_id, roles: roles.map((r) => r.role as string), currency: org?.currency ?? "EUR", orgName: org?.company_name?.trim() || org?.name || "tu empresa" };
 }
 
 /**
@@ -233,7 +234,7 @@ export async function runBackgroundJob(db: Admin, jobId: string, opts: { final?:
   try {
     const result = await runKind(db, job, input, scope, step, now);
     await step("Terminando");
-    await db.from("background_jobs").update({ status: "done", result: result as any, step: null, finished_at: new Date().toISOString(), error: null }).eq("id", jobId);
+    await db.from("background_jobs").update({ status: "done", result: result as unknown as Json, step: null, finished_at: new Date().toISOString(), error: null }).eq("id", jobId);
     const { deliverJobNotice } = await import("@/lib/notices.server");
     await deliverJobNotice(db, jobId);
     return { ok: true };
@@ -282,7 +283,7 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
     case "drive_import": {
       const { importToKnowledge } = await import("@/lib/drive-core");
       await step("Importando");
-      const r = await importToKnowledge({ db: db as any, orgId: job.org_id, userId: job.user_id }, String(input.file), String(input.section));
+      const r = await importToKnowledge({ db, orgId: job.org_id, userId: job.user_id }, String(input.file), String(input.section));
       return { title: `«${r.title}» importado al hub`, link: `/hub?doc=${r.docId}` };
     }
     case "complete_account": {
@@ -296,7 +297,7 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
       const out = await completeAccount(c, accountId, "manual");
       await step("Guardando");
       const written = out.blocked ? [] : await applyAutoChanges(c, accountId, out.changes, now.toISOString());
-      return { ...completeNotice(acc, out, written as any), review: out.changes.filter((ch) => !ch.empty && ch.proposed) };
+      return { ...completeNotice(acc, out, written), review: out.changes.filter((ch) => !ch.empty && ch.proposed) };
     }
     case "key_people": {
       const accountId = String(input.accountId);
@@ -343,7 +344,7 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
         try {
           const q = await qualifyLeadCore(db, job.org_id, id, now);
           out.done += 1;
-          if (qual.qualificationView(q, settings, (stageOf.get(id) ?? "new") as any).move) out.moves += 1;
+          if (qual.qualificationView(q, settings, (stageOf.get(id) ?? "new")).move) out.moves += 1;
         } catch (e) {
           out.failed += 1;
           out.error = e instanceof JevError ? e.message : errorText(e);
@@ -370,7 +371,7 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
     case "weekly_report": {
       const { saveWeeklyReportNow } = await import("@/lib/weekly-report.server");
       await step("Preparando el informe");
-      const r = await saveWeeklyReportNow(db as any, job.org_id, now);
+      const r = await saveWeeklyReportNow(db, job.org_id, now);
       return { title: r.title, link: "/inbox" };
     }
     case "posthog_sync": {
@@ -415,13 +416,13 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
       const { researchAccountCore } = await import("@/lib/web-research-core");
       const { trackedRun } = await import("@/lib/orchestrator/runner");
       await step("Leyendo la web y las noticias");
-      const r = await trackedRun(c, "research_account", "manual", () => researchAccountCore(db as any, accountId, scope));
+      const r = await trackedRun(c, "research_account", "manual", () => researchAccountCore(db, accountId, scope));
       return { title: `${acc.name}: investigación lista. Elige qué pasar al plan de cuenta.`, body: r.via || null, link: `/accounts/${accountId}?tab=plan&research=1`, needs_decision: true, research: r };
     }
     case "drive_summaries": {
       const { summarizeDoc } = await import("@/lib/drive-core");
       const docs = (Array.isArray(input.docs) ? input.docs : []).slice(0, 30) as { fileId: string; accountId: string | null }[];
-      const s = { db: db as any, orgId: job.org_id, userId: job.user_id };
+      const s = { db, orgId: job.org_id, userId: job.user_id };
       let done = 0; let failed = 0;
       for (const [i, d] of docs.entries()) {
         await step(`Documento ${i + 1} de ${docs.length}`);

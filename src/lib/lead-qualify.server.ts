@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { buildQualificationRequest, parseQualification, type Qualification } from "@/lib/lead-qualification";
 import { askJev } from "@/lib/jev.server";
+import type { Json } from "@/integrations/supabase/types";
 
 type Db = SupabaseClient<Database>;
 
@@ -20,7 +21,7 @@ export async function qualifyLeadCore(db: Db, orgId: string, leadId: string, now
   const segments = segs.data ?? [];
   const req = buildQualificationRequest({ lead, account: acc.data ?? null, icps: icps.data ?? [], segments, positioning: pos.data ?? null });
   const q = parseQualification(req, await askJev(req), segments, now);
-  const { error: saveError } = await db.from("leads").update({ qualification: q as any, qualified_at: now.toISOString() }).eq("org_id", orgId).eq("id", leadId);
+  const { error: saveError } = await db.from("leads").update({ qualification: q as unknown as Json, qualified_at: now.toISOString() }).eq("org_id", orgId).eq("id", leadId);
   if (saveError) throw saveError;
   return q;
 }

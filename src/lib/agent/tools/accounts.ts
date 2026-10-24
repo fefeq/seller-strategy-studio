@@ -59,7 +59,7 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
       if (rows.error) throw new Error(rows.error.message);
       const now = new Date();
       const today = now.toISOString();
-      const scored = ((rows.data ?? []) as any[]).map((x) => {
+      const scored = ((rows.data ?? [])).map((x) => {
         const deals = (x.deals ?? []) as { amount: number | null; stage: string; updated_at: string }[];
         const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
         // Same activity rule as the Cuentas screen: touches, past meetings, calls and deal updates.
@@ -69,7 +69,7 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
           ...(x.calls ?? []).map((k: { occurred_at: string | null }) => k.occurred_at),
           ...deals.map((d) => d.updated_at),
         );
-        return { x, open, lastActivityAt, score: scoreAccount({ ...x, lastActivityAt, openDeals: open.length }, (icp.data ?? []) as any, now, names) };
+        return { x, open, lastActivityAt, score: scoreAccount({ ...x, lastActivityAt, openDeals: open.length }, (icp.data ?? []), now, names) };
       });
       return scored.sort(byScore((r) => r.score)).slice(0, a.limit ?? 30).map(({ x, open, lastActivityAt, score }) => ({
         id: x.id, nombre: x.name, dominio: x.domain, segmento: x.segment_id ? names.get(x.segment_id) ?? null : null, sector: x.industry, tamano: x.size,

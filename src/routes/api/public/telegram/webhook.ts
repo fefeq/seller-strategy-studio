@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
         const a = Buffer.from(actual), b = Buffer.from(expected);
         if (a.length !== b.length || !timingSafeEqual(a, b)) return new Response("Unauthorized", { status: 401 });
 
-        const update = (await request.json().catch(() => null)) as any;
+        const update = (await request.json().catch(() => null));
         if (!update || typeof update.update_id !== "number") return Response.json({ ok: true, ignored: true });
 
         const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -47,7 +47,7 @@ async function handle(db: Admin, update: any, t: Tg) {
     await t.tg("answerCallbackQuery", { callback_query_id: cq.id }).catch(() => {});
     const { data: link } = await db.from("channel_links").select("user_id").eq("channel", "telegram").eq("chat_id", chatId).maybeSingle();
     if (!link) return;
-    const ctx = await channelCtx(db as any, link.user_id);
+    const ctx = await channelCtx(db, link.user_id);
     if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en Nokko.");
     const [kind, id, decision] = String(cq.data ?? "").split(":");
     const { decidePending, decideSuggestionCore } = await import("@/lib/agent.functions");
@@ -57,7 +57,7 @@ async function handle(db: Admin, update: any, t: Tg) {
         return t.sendText(chatId, r.status === "confirmed" ? r.result || "Hecho." : r.status === "cancelled" ? "Cancelado." : `No se ha podido hacer. ${r.result || "Vuelve a intentarlo desde Sugerencias, en la app."}`);
       }
       if (kind === "s") {
-        const r = await decideSuggestionCore(ctx, id, decision as any);
+        const r = await decideSuggestionCore(ctx, id, decision);
         return t.sendText(chatId, r.message);
       }
     } catch (e) { return t.sendText(chatId, `No se ha podido hacer. ${errorText(e)}`); }
@@ -83,7 +83,7 @@ async function handle(db: Admin, update: any, t: Tg) {
   const { data: link } = await db.from("channel_links").select("user_id").eq("channel", "telegram").eq("chat_id", chatId).maybeSingle();
   if (!link) return t.sendText(chatId, "Hola, soy Nokko. Para usarme, abre la app → Equipo → «Conectar Telegram» y envíame el código: /vincular CÓDIGO");
   if (text === "/start") return t.sendText(chatId, "Ya estás vinculado. ¿En qué te ayudo?");
-  const ctx = await channelCtx(db as any, link.user_id);
+  const ctx = await channelCtx(db, link.user_id);
   if (!ctx) return t.sendText(chatId, "No tienes una empresa activa en Nokko. Elige una en la app.");
 
   if (text === "/nueva") {

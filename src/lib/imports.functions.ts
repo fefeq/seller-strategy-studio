@@ -63,11 +63,11 @@ export const approveImport = createServerFn({ method: "POST" })
       const { sortStages } = await import("@/lib/stages");
       const { data: stageRows } = await c.supabase.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId);
       const { data: src } = batch.lead_source_id ? await c.supabase.from("lead_sources").select("default_stage").eq("id", batch.lead_source_id).maybeSingle() : { data: null };
-      const ctx = { orgId, sourceId: batch.lead_source_id, segments: segments ?? [], stages: sortStages((stageRows ?? []) as any) };
+      const ctx = { orgId, sourceId: batch.lead_source_id, segments: segments ?? [], stages: sortStages((stageRows ?? [])) };
       const stage = src && isIntakeStage(src.default_stage, ctx.stages) ? src.default_stage : "new";
       for (const r of pending) {
         if (r.action === "skip") { await c.supabase.from("import_rows").update({ status: "discarded" }).eq("id", r.id); out.skipped++; continue; }
-        const n = normalizeLead(r.raw, { defaultStage: stage as any });
+        const n = normalizeLead(r.raw, { defaultStage: stage });
         if ("error" in n) { await c.supabase.from("import_rows").update({ status: "error", error: n.error }).eq("id", r.id); out.errors++; continue; }
         try {
           const res = await ingestLead(c.supabase, ctx, n.lead);

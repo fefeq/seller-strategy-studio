@@ -103,7 +103,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
     }));
-    setFiles(read.filter(Boolean) as any);
+    setFiles(read.filter(Boolean));
   }
 
   const [expanded, setExpanded] = useState(false);
@@ -209,7 +209,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
 
   const setArg = (key: string, path: string[], value: string) => { touched.current = true; setItems((list) => list.map((i) => {
     if (i.key !== key) return i;
-    const args = structuredClone(i.args) as any;
+    const args = structuredClone(i.args);
     let o = args; for (const p of path.slice(0, -1)) o = o[p];
     const last = path[path.length - 1];
     o[last] = typeof o[last] === "number" ? (value === "" ? undefined : Number(value)) : value;

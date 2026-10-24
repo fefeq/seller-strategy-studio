@@ -86,7 +86,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
   const phase = U_PHASES[phaseIndex(view)] ?? U_PHASES[0];
 
   async function save(patch: Record<string, unknown> = {}) {
-    const { error } = await supabase.from("u_journeys").update({ title, intention, answers, ...patch } as any).eq("id", journey.id);
+    const { error } = await supabase.from("u_journeys").update({ title, intention, answers, ...patch }).eq("id", journey.id);
     if (error) { toast.error(errorText(error)); return false; }
     qc.invalidateQueries({ queryKey: ["u_journeys"] });
     return true;

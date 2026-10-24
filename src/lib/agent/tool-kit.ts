@@ -40,7 +40,7 @@ type OrgTable = "accounts" | "deals" | "leads" | "meetings" | "people" | "stakeh
 
 /** The row with this id in the caller's company (selected columns), or a clear error naming what was missing. */
 export async function mustFind<T = Record<string, unknown>>(c: ToolCtx, table: OrgTable, id: string, what: string, cols = "id"): Promise<T> {
-  const { data, error } = await (c.db.from(table) as any).select(cols).eq("org_id", c.orgId).eq("id", id).maybeSingle();
+  const { data, error } = await (c.db.from(table)).select(cols).eq("org_id", c.orgId).eq("id", id).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) throw new Error(`No encuentro ${what} en esta empresa. Búscalo primero con search o con la herramienta de listado.`);
   return data as T;

@@ -84,7 +84,7 @@ export function Motions() {
   const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(null);
   async function upd(id: string, patch: Record<string, unknown>) {
     try {
-      await confirmed(supabase.from("segments").update(patch as any).eq("id", id).select("id"));
+      await confirmed(supabase.from("segments").update(patch).eq("id", id).select("id"));
       return true;
     } catch (e) {
       toast.error(errorText(e));
@@ -97,11 +97,11 @@ export function Motions() {
   /** Validates a typed benchmark, saves it and puts the saved value back in the cell if it was refused. */
   async function updNumber(s: (typeof segs)[number], k: SegmentNumericField, input: HTMLInputElement) {
     const cell = `${s.id}:${k}`;
-    const previous = (s as any)[k];
+    const previous = (s)[k];
     const check = checkSegmentField(k, input.value, s.name);
     const next = check.ok ? check.value : null;
     const rangeError = check.ok
-      ? checkAcvRange(k === "acv_min" ? next : (s as any).acv_min, k === "acv_max" ? next : (s as any).acv_max, s.name)
+      ? checkAcvRange(k === "acv_min" ? next : (s).acv_min, k === "acv_max" ? next : (s).acv_max, s.name)
       : null;
     const error = !check.ok ? check.error : rangeError;
     if (error) {
@@ -138,7 +138,7 @@ export function Motions() {
     const error = invalid[`${s.id}:${k}`];
     return <>
       {/* Text with a decimal keyboard, not type=number: a number field hands back "" for «97,5» in some browsers, which read as «empty» and wiped the value. */}
-      <Input type="text" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s as any)[k] ?? ""} onFocus={(e) => e.currentTarget.select()} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
+      <Input type="text" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s)[k] ?? ""} onFocus={(e) => e.currentTarget.select()} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
       {error && <p className="mt-1 text-[11px] text-destructive md:hidden">{error}</p>}
     </>;
   };
@@ -307,7 +307,7 @@ export function DeleteSegment({ target, onClose, onDeleted }: { target: { id: st
     queryKey: ["segment-impact", target?.id],
     enabled: !!target,
     queryFn: async () => {
-      const count = async (table: string) => (await supabase.from(table as any).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
+      const count = async (table: string) => (await supabase.from(table).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
       const [kept, gone] = await Promise.all([
         Promise.all(KEPT_WITHOUT_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
         Promise.all(DELETED_WITH_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),

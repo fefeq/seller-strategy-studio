@@ -20,7 +20,7 @@ export const MEETING_TOOLS: AgentTool[] = [
       if (a.account_id) q = q.eq("account_id", a.account_id);
       if (a.deal_id) q = q.eq("deal_id", a.deal_id);
       q = when === "upcoming" ? q.gte("scheduled_at", now.toISOString()).order("scheduled_at") : q.lt("scheduled_at", now.toISOString()).order("scheduled_at", { ascending: false });
-      const rows = ok(await q.limit(when === "no_notes" ? 200 : a.limit ?? 20)) as any[];
+      const rows = ok(await q.limit(when === "no_notes" ? 200 : a.limit ?? 20));
       const list = (when === "no_notes" ? rows.filter((m) => needsCallNotes(m, now)) : rows).slice(0, a.limit ?? 20);
       const names = await accountNames(c, list.map((m) => m.account_id));
       return list.map((m) => ({
@@ -34,7 +34,7 @@ export const MEETING_TOOLS: AgentTool[] = [
     description: "Detalle de una reunión: objetivo, asistentes, agenda, preguntas, objeciones, materiales, resultado deseado, notas en 5 líneas, notas libres, preparación de llamada, revisión de la llamada y coaching de escucha.",
     input: z.object({ meeting_id: z.string().uuid() }),
     run: async (c, a) => {
-      const m = ok(await c.db.from("meetings").select("*").eq("org_id", c.orgId).eq("id", a.meeting_id).maybeSingle()) as any;
+      const m = ok(await c.db.from("meetings").select("*").eq("org_id", c.orgId).eq("id", a.meeting_id).maybeSingle());
       if (!m) return { error: "Reunión no encontrada en esta empresa" };
       const names = await accountNames(c, [m.account_id]);
       return {

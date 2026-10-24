@@ -6,6 +6,7 @@ import { MANDATORY_RULE } from "@/lib/bmad/sources";
 import { getPersona } from "@/lib/bmad/personas";
 import { DEBATE_LEVELS, resolveParticipants, withRebuttal, type DebateLevel } from "@/lib/bmad/teams";
 import type { ToolCtx } from "@/lib/agent/tool-kit";
+import type { Json } from "@/integrations/supabase/types";
 
 type Ctx = ToolCtx & { orgName: string };
 
@@ -82,7 +83,7 @@ export async function runDebateCore(ctx: Ctx, data: DebateInput, step: (s: strin
   );
   let synthesis: { summary?: string; actions?: unknown[] };
   try { synthesis = JSON.parse(raw); } catch { throw new Error("La IA no devolvió la síntesis. Inténtalo de nuevo."); }
-  const { data: row, error } = await ctx.db.from("debates").insert({ org_id: ctx.orgId, level: data.level, topic: data.topic, subject_type: data.subjectType, subject_id: data.subjectId, participants: ids, turns: turns as any, synthesis: synthesis as any }).select("id").single();
+  const { data: row, error } = await ctx.db.from("debates").insert({ org_id: ctx.orgId, level: data.level, topic: data.topic, subject_type: data.subjectType, subject_id: data.subjectId, participants: ids, turns: turns as unknown as Json, synthesis: synthesis as unknown as Json }).select("id").single();
   if (error) throw new Error(error.message);
   return { id: row.id as string, actions: synthesis.actions?.length ?? 0 };
 }

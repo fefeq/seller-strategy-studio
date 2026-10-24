@@ -87,7 +87,7 @@ export function SuggestionCard({ s }: { s: S }) {
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
-  const hasAction = !!(s.action as any)?.tool;
+  const hasAction = !!(s.action)?.tool;
   const target = linkTarget(s.link);
   // «Resolver»: go to the exact record and open the agent beside it with the problem already set out.
   function resolve() {
@@ -96,7 +96,7 @@ export function SuggestionCard({ s }: { s: S }) {
     if (orgId) markResolving(orgId, s.id);
     open({ prompt: plan.prompt, fresh: true, docked: true, side: plan.side, mode: "chat", personaId: null, workflowId: null, onClose: recheck });
     const to = linkTarget(plan.to);
-    if (to) navigate({ to: to.to as any, search: to.search as any });
+    if (to) navigate({ to: to.to, search: to.search });
   }
   return (
     <div className="rounded-lg border bg-card p-4">
@@ -106,7 +106,7 @@ export function SuggestionCard({ s }: { s: S }) {
           <p className="mt-0.5 break-words font-medium">{s.title}</p>
           <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">{s.body}</p>
         </div>
-        {target && <Link to={target.to as any} search={target.search as any} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
+        {target && <Link to={target.to} search={target.search} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {hasAction

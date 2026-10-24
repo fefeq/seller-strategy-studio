@@ -107,7 +107,7 @@ export function BudgetPanel() {
     const v = (limit ?? "").trim().replace(",", ".");
     const n = v === "" ? null : Number(v);
     if (n !== null && (!Number.isFinite(n) || n < 0)) return toast.error("Escribe un importe en euros, por ejemplo 50.");
-    const { error } = await supabase.from("org_budgets").upsert({ monthly_limit: n, updated_at: new Date().toISOString() } as any, { onConflict: "org_id" });
+    const { error } = await supabase.from("org_budgets").upsert({ monthly_limit: n, updated_at: new Date().toISOString() }, { onConflict: "org_id" });
     if (error) return toast.error(errorText(error));
     toast.success(n === null ? "Sin límite mensual." : `Límite mensual: ${eur(n)}.`);
     setLimit(null);

@@ -58,7 +58,7 @@ function People() {
   });
 
   async function update(id: string, patch: Record<string, string>) {
-    const { error } = await supabase.from("people").update(patch as any).eq("id", id);
+    const { error } = await supabase.from("people").update(patch).eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["people"] });
   }

@@ -24,7 +24,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
   const trigger = opts.trigger ?? "automatic";
   const actor = opts.userId ?? (await db.from("org_members").select("user_id").eq("org_id", orgId).eq("role", "owner").limit(1).maybeSingle()).data?.user_id ?? null;
   const { data: org } = await db.from("organizations").select("currency,name,company_name").eq("id", orgId).maybeSingle();
-  const ctx = { db: db as any, orgId, userId: actor as string, roles: ["owner"], currency: org?.currency ?? "EUR" };
+  const ctx = { db, orgId, userId: actor as string, roles: ["owner"], currency: org?.currency ?? "EUR" };
   const { data: seenRows } = await db.from("discoveries").select("dedupe_key").eq("org_id", orgId).limit(5000);
   const seen = new Set((seenRows ?? []).map((r) => r.dedupe_key));
   const rows: Row[] = [];
