@@ -31,9 +31,9 @@ export const startBackgroundJob = createServerFn({ method: "POST" })
     // The ids the task will touch must belong to this company (the job then runs with the admin client).
     if (data.kind === "stakeholder_research") { const { data: s } = await ctx.db.from("stakeholders").select("id").eq("org_id", ctx.orgId).eq("id", data.input.stakeholderId).maybeSingle(); if (!s) throw new Error("No encuentro esa persona en esta empresa."); }
     if (data.kind === "account_signals" || data.kind === "complete_account") { const { data: a } = await ctx.db.from("accounts").select("id").eq("org_id", ctx.orgId).eq("id", data.input.accountId).maybeSingle(); if (!a) throw new Error("No encuentro esa cuenta en esta empresa."); }
-    const target = "accountId" in data.input ? { target_type: "account", target_id: data.input.accountId } : "stakeholderId" in data.input ? { target_type: "stakeholder", target_id: data.input.stakeholderId } : {};
+    const target: { target_type?: string; target_id?: string } = "accountId" in data.input ? { target_type: "account", target_id: data.input.accountId } : "stakeholderId" in data.input ? { target_type: "stakeholder", target_id: data.input.stakeholderId } : {};
     // A second click on the same task for the same record follows the one already running.
-    if ("target_id" in target) {
+    if (target.target_id) {
       const { data: running } = await ctx.db.from("background_jobs").select("id,kind,target_id,status").eq("org_id", ctx.orgId).eq("kind", data.kind).eq("target_id", target.target_id).in("status", ["queued", "running"]).limit(1);
       if (running?.[0]) return { jobId: running[0].id, reused: true };
     }
