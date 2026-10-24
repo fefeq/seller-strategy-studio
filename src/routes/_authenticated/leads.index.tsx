@@ -5,7 +5,6 @@ import { useLeadTouched } from "@/components/background";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowDownToLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useLeads, type Lead } from "@/hooks/use-leads";
@@ -93,7 +92,7 @@ function LeadsPage() {
 
   return (
     <Page eyebrow="Leads" title={view ? leadsHeadline({ open: view.open.length, late: view.late.length }) : "Leads"} actions={<>
-      <Button variant="outline" asChild><Link to="/leads/entrada"><ArrowDownToLine className="mr-1 size-4" />Entrada de leads</Link></Button>
+      <Button variant="outline" asChild><Link to="/leads/entrada">Entrada de leads</Link></Button>
       {view && <QualifyPending pending={view.pending} />}
       {data && <QualSettingsDialog settings={data.qualSettings} canEdit={canSettings} orgId={orgId!} />}
       {orgId && <AutoEnrichSwitch canEdit={roles.some((r) => r === "owner" || r === "sales_leader")} orgId={orgId} />}
@@ -200,7 +199,7 @@ function LeadsPage() {
                                 {st.id !== "opportunity" && st.id !== "disqualified" && <span className="font-mono">{Math.floor(d.daysInStage)} d</span>}
                               </span>
                               {st.id !== "opportunity" && st.id !== "disqualified" && view.quals.get(l.id)?.move && <span className="mt-1.5 block"><QualTag view={view.quals.get(l.id)!} /></span>}
-                              {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal"><AlertTriangle className="mt-0.5 size-3 shrink-0" />{delayText(d)}</span>}
+                              {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal">{delayText(d)}</span>}
                               {!d.late && l.next_step_at && st.id !== "opportunity" && st.id !== "disqualified" && <span className="mt-1 block text-[11px] text-muted-foreground">Seguimiento {l.next_step_at}</span>}
                             </button>
                             <span className="absolute bottom-2 right-3"><LeadQuickActions lead={l} onMove={move} /></span>

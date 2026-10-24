@@ -78,8 +78,9 @@ function Shell() {
             onClick={() => setCollapsed(true)}
             aria-label="Cerrar menú"
             title="Cerrar menú"
-            className="flex size-8 shrink-0 items-center justify-center text-ink-mid hover:text-ink"
+            className="shrink-0 text-xs text-ink-mid hover:text-ink"
           >
+            ‹ Plegar
           </button>
         </div>
       )}
@@ -156,8 +157,9 @@ function Shell() {
             onClick={() => setCollapsed(false)}
             aria-label="Abrir menú"
             title="Abrir menú"
-            className="flex size-9 items-center justify-center text-ink-mid hover:text-ink"
+            className="flex size-9 items-center justify-center text-lg text-ink-mid hover:text-ink"
           >
+            ›
           </button>
           <ThemeToggle compact className="mt-auto" />
         </aside>

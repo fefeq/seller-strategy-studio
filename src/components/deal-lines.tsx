@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Pick } from "@/components/fields";
@@ -109,7 +108,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
               <div key={`${l.id}-${l.quantity}-${l.unit_price}-${l.discount_pct}-${l.unit_cost}`} className="rounded-md border p-3 text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <span className="min-w-0 break-words font-medium">{l.name} <span className="text-xs font-normal text-muted-foreground">· {BILLING_LABELS[l.billing as Billing]}</span></span>
-                  <Button size="icon" variant="ghost" aria-label={`Quitar ${l.name}`} disabled={busy} onClick={() => run(() => confirmed(supabase.from("deal_lines").delete().eq("id", l.id).select("id")))}><Trash2 className="size-4" /></Button>
+                  <Button size="icon" variant="ghost" aria-label={`Quitar ${l.name}`} disabled={busy} onClick={() => run(() => confirmed(supabase.from("deal_lines").delete().eq("id", l.id).select("id")))}><span aria-hidden>×</span></Button>
                 </div>
                 <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {FIELDS.map(([field, label]) => (

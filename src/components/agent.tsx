@@ -3,7 +3,6 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -228,7 +227,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                           {a.status === "pending" ? (
                             <span className="flex shrink-0 gap-1.5">
                               <Button size="sm" onClick={() => onDecide(m.id, a, "confirm")}>Confirmar</Button>
-                              <Button size="sm" variant="ghost" onClick={() => onDecide(m.id, a, "cancel")}><X className="size-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => onDecide(m.id, a, "cancel")}>Descartar</Button>
                             </span>
                           ) : <span className={`shrink-0 text-xs ${a.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{a.status === "confirmed" ? "Hecho" : a.status === "cancelled" ? "Cancelado" : a.result || "Error"}</span>}
                         </div>
@@ -242,7 +241,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           <form className="flex items-end gap-2 border-t p-4" onSubmit={(e) => { e.preventDefault(); submit(text, mode, convId); }}>
             <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={mode === "interview" ? "Responde o di «sí» para aceptar la propuesta…" : "Pregunta o pide una acción…"} className="min-h-[44px] resize-none"
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(text, mode, convId); } }} />
-            <Button type="submit" size="icon" disabled={busy || !text.trim()} aria-label="Enviar"><Send className="size-4" /></Button>
+            <Button type="submit" size="icon" disabled={busy || !text.trim()} aria-label="Enviar">→</Button>
           </form>
         </SheetContent>
       </Sheet>

@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Page, Empty } from "@/components/page";
@@ -141,7 +140,7 @@ function NewSource({ isLeader }: { isLeader: boolean }) {
           <div className="space-y-3">
             <p className="text-sm">Cópialo ahora: por seguridad <strong>no se volverá a mostrar</strong>. Si lo pierdes, crea otra conexión y borra esta.</p>
             <div className="flex gap-2"><Input readOnly value={url} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
-              <Button size="icon" variant="outline" aria-label="Copiar enlace" onClick={() => { navigator.clipboard.writeText(url); toast.success("Enlace copiado."); }}><Copy className="size-4" /></Button>
+              <Button size="sm" variant="outline" aria-label="Copiar enlace" onClick={() => { navigator.clipboard.writeText(url); toast.success("Enlace copiado."); }}>Copiar</Button>
             </div>
             <p className="text-xs text-muted-foreground">Pégalo como destino «Webhook» (método POST, JSON). Para probar sin guardar nada, añade <code>&test=1</code> al final.</p>
             <Button className="w-full" onClick={() => close(false)}>Hecho</Button>

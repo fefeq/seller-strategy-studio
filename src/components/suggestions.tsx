@@ -3,7 +3,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
@@ -107,7 +106,7 @@ export function SuggestionCard({ s }: { s: S }) {
           <p className="mt-0.5 break-words font-medium">{s.title}</p>
           <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">{s.body}</p>
         </div>
-        {target && <Link to={target.to as any} search={target.search as any} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><ArrowUpRight className="size-4" /></Link>}
+        {target && <Link to={target.to as any} search={target.search as any} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {hasAction

@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CheckCircle2, FileText, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -89,7 +88,7 @@ function CyclePage() {
           return (
             <div key={ph.id} className={`rounded-lg border bg-card p-4 ${i === phaseIdx ? "ring-2 ring-signal" : ""}`}>
               <p className="eyebrow">{i + 1}. {ph.bmad}</p>
-              <h3 className="mt-1 flex items-center gap-2 text-2xl">{ph.label} {i < phaseIdx && <CheckCircle2 className="size-4 text-success" />}</h3>
+              <h3 className="mt-1 flex items-center gap-2 text-2xl">{ph.label} {i < phaseIdx && <span className="smallcaps text-success">Hecha</span>}</h3>
               <p className="mt-1 text-xs text-muted-foreground">{ph.description}</p>
               {ph.id === "execution" && (
                 <div className="mt-3 space-y-1.5 text-xs">
@@ -105,7 +104,7 @@ function CyclePage() {
                     <div className="mt-1.5 space-y-1">
                       {list.slice(0, k === "winloss" ? 5 : 3).map((a) => (
                         <button key={a.id} onClick={() => setSelected(a.id)} className="flex min-h-10 w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-xs hover:bg-accent md:min-h-0">
-                          <span className="truncate"><FileText className="mr-1 inline size-3" />{k === "winloss" ? a.title.replace("Win/Loss: ", "") : `v${a.version}`}</span>
+                          <span className="truncate">{k === "winloss" ? a.title.replace("Win/Loss: ", "") : `v${a.version}`}</span>
                           <span className={`shrink-0 ${a.status === "approved" ? "text-success" : "text-muted-foreground"}`}>{STATUS[a.status]}</span>
                         </button>
                       ))}
@@ -235,7 +234,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? : <Wand2 className="size-4" />} Revisión profunda</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? "Revisando…" : "Revisión profunda"}</Button>
           </span>
           <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}

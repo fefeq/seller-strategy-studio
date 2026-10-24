@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
@@ -53,7 +52,7 @@ export function OrgSwitcher({ memberships, current, userId }: { memberships: Mem
         {memberships.map((m) => (
           <button key={m.org_id} onClick={() => switchTo(m.org_id)} className="flex w-full items-center justify-between gap-2 rounded px-2 py-2.5 text-left text-sm hover:bg-muted md:py-1.5">
             <span className="min-w-0"><span className="block truncate">{m.name}</span><span className="block text-[11px] text-muted-foreground">{ROLES[m.role as Role]?.label}</span></span>
-            {m.org_id === current?.org_id && <Check className="size-4 shrink-0 text-signal" />}
+            {m.org_id === current?.org_id && <span className="shrink-0 text-signal" aria-label="actual">✓</span>}
           </button>
         ))}
         <div className="mt-1 border-t p-1">
