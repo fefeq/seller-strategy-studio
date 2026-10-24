@@ -12,6 +12,7 @@ import { CompanyLogo } from "@/components/company-logo";
 import { errorText } from "@/lib/errors";
 import { formatSpanishDate } from "@/lib/dates";
 import { driveAccountsOverview, summarizeDriveDoc } from "@/lib/drive.functions";
+import { JobProgress, useJob } from "@/components/background";
 
 const KEY = ["drive-accounts-overview"];
 
@@ -21,8 +22,8 @@ export function DriveAccountsPanel() {
   const summarize = useServerFn(summarizeDriveDoc);
   const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState<Set<string>>(new Set());
-  const [bulk, setBulk] = useState<{ done: number; total: number } | null>(null);
   const { data, error, isLoading, isFetching, refetch } = useQuery({ queryKey: KEY, queryFn: () => load(), retry: false, staleTime: 60_000 });
+  const bulk = useJob("drive_summaries", { onDone: (j) => { void qc.invalidateQueries({ queryKey: KEY }); const failed = Number((j.result as { failed?: number } | null)?.failed ?? 0); if (failed) toast.error(`${failed} ${failed === 1 ? "documento no se pudo resumir" : "documentos no se pudieron resumir"}. Prueba uno a uno para ver el motivo.`); } });
 
   const mark = (id: string, on: boolean) => setBusy((s) => { const n = new Set(s); if (on) n.add(id); else n.delete(id); return n; });
   async function one(fileId: string, accountId: string) {
@@ -31,24 +32,10 @@ export function DriveAccountsPanel() {
     catch (e) { toast.error(errorText(e)); }
     finally { mark(fileId, false); }
   }
-  async function all() {
-    const todo = data?.pending ?? [];
-    if (!todo.length) return;
-    setBulk({ done: 0, total: todo.length });
-    let failed = 0;
-    // Three at a time: each one reads the document and asks the AI.
-    for (let i = 0; i < todo.length; i += 3) {
-      const batch = todo.slice(i, i + 3);
-      batch.forEach((t) => mark(t.fileId, true));
-      const res = await Promise.allSettled(batch.map((t) => summarize({ data: t })));
-      failed += res.filter((r) => r.status === "rejected").length;
-      batch.forEach((t) => mark(t.fileId, false));
-      setBulk({ done: Math.min(i + 3, todo.length), total: todo.length });
-    }
-    setBulk(null);
-    await qc.invalidateQueries({ queryKey: KEY });
-    if (failed) toast.error(`${failed} ${failed === 1 ? "documento no se pudo resumir" : "documentos no se pudieron resumir"}. Prueba uno a uno para ver el motivo.`);
-    else toast.success("Resúmenes listos.");
+  /** All the missing ones (up to 30 per run) in the background: Nokko reads each document and asks the AI. */
+  function all() {
+    const todo = (data?.pending ?? []).slice(0, 30);
+    if (todo.length) void bulk.start({ docs: todo.map((t) => ({ fileId: t.fileId, accountId: t.accountId ?? null })) }, `Resumir ${todo.length} ${todo.length === 1 ? "documento" : "documentos"} de Drive`);
   }
 
   if (isLoading) return <p className="text-sm text-muted-foreground">Abriendo las carpetas de las cuentas en Google Drive…</p>;
@@ -74,9 +61,9 @@ export function DriveAccountsPanel() {
         <div className="flex flex-wrap items-center gap-2">
           <Input className="max-w-xs" placeholder="Filtrar por cuenta, documento o resumen" value={filter} onChange={(e) => setFilter(e.target.value)} />
           {data.totals.pending > 0 && (
-            <Button variant="outline" disabled={!!bulk} onClick={all}>
-              {bulk ? `Resumiendo ${bulk.done} de ${bulk.total}…` : `Resumir los que faltan (${data.totals.pending})`}
-            </Button>
+            bulk.running ? <JobProgress job={bulk.job} onCancel={bulk.cancel} /> : (
+              <Button variant="outline" onClick={all}>{`Resumir los que faltan (${data.totals.pending > 30 ? "30 de " : ""}${data.totals.pending})`}</Button>
+            )
           )}
           <Button variant="ghost" size="sm" disabled={isFetching} onClick={() => refetch()}>{isFetching ? "Actualizando…" : "Actualizar"}</Button>
         </div>
