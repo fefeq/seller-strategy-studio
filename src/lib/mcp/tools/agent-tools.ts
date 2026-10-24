@@ -28,6 +28,8 @@ export const TITLES: Record<string, string> = {
   assign_deal: "Asignar deal",
   apollo_enrich_account: "Completar cuenta con Apollo",
   complete_account: "Completar datos de una cuenta",
+  find_key_people: "Buscar personas clave",
+  find_icp_companies: "Buscar empresas por ICP",
   integration_budget: "Gasto en integraciones del mes",
   apollo_find_companies: "Buscar empresas en Apollo",
   apollo_find_people: "Buscar personas de una cuenta en Apollo",
