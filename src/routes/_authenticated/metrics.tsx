@@ -122,7 +122,7 @@ function Metrics() {
       </select>
     }>
       <nav aria-label="Secciones de Métricas" className="sticky top-0 z-20 -mx-4 mb-6 flex gap-1 overflow-x-auto border-b bg-background/95 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0">
-        {SECTIONS.map((x) => (
+        {SECTIONS.filter((x) => x.id !== "finanzas" || canEdit).map((x) => (
           <Link key={x.id} to="/metrics" search={x.id === "resumen" ? {} : { seccion: x.id }} className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime text-lime-foreground" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}>{x.label}</Link>
         ))}
       </nav>
