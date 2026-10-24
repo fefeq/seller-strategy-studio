@@ -7,7 +7,7 @@
 - [x] Cancelar y reintentar; preferencias de avisos por persona (Equipo → Avisos)
 - [x] Telegram: envío según preferencia y silencio nocturno (código listo)
 - [ ] Telegram: conectar el bot y vincular cada persona (bloqueado: falta conectar Telegram)
-- [ ] Email diario 8:00 (bloqueado: falta dominio de envío)
+- [x] Email diario 8:00 (Resend, avisos@nokko.ai, a cada miembro a su hora; requiere publicar para que salga solo)
 - [x] Publicar para que el segundo plano de nokko.ai use el código nuevo
 
 ## Orden del código (plan aprobado 2026-10-24)
