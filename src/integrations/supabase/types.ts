@@ -527,6 +527,9 @@ export type Database = {
           org_id: string
           result: Json | null
           status: string
+          step: string | null
+          target_id: string | null
+          target_type: string | null
           user_id: string
         }
         Insert: {
@@ -540,6 +543,9 @@ export type Database = {
           org_id?: string
           result?: Json | null
           status?: string
+          step?: string | null
+          target_id?: string | null
+          target_type?: string | null
           user_id?: string
         }
         Update: {
@@ -553,6 +559,9 @@ export type Database = {
           org_id?: string
           result?: Json | null
           status?: string
+          step?: string | null
+          target_id?: string | null
+          target_type?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2694,6 +2703,60 @@ export type Database = {
           },
           {
             foreignKeyName: "mutual_action_items_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          job_id: string | null
+          kind: string
+          link: string | null
+          org_id: string
+          read_at: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind: string
+          link?: string | null
+          org_id?: string
+          read_at?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind?: string
+          link?: string | null
+          org_id?: string
+          read_at?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "background_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
