@@ -14,6 +14,7 @@ import { Empty } from "@/components/page";
 import { SaveToDriveButton } from "@/components/drive";
 import { errorText } from "@/lib/errors";
 import { countryName } from "@/lib/assignment";
+import { cleanDomain } from "@/lib/leads";
 import { ageText } from "@/lib/web-research";
 import { REPORT_FIELDS, enrichPatch, reportMarkdown, type EnrichRow, type ListEntity, type Report } from "@/lib/parallel";
 import { checkRunFn, enrichTableFn, startIcpListFn, startReportFn } from "@/lib/parallel.functions";
@@ -103,17 +104,19 @@ export function IcpListButton() {
   const { data } = useQuery({
     queryKey: key, enabled: open,
     queryFn: async () => {
-      const [runs, icps] = await Promise.all([
+      const [runs, icps, accs] = await Promise.all([
         supabase.from("research_runs").select("id,kind,label,status,result,error,created_at,finished_at,account_id").eq("kind", "icp_list").order("created_at", { ascending: false }).limit(5),
         supabase.from("icp_profiles").select("id,industries,company_size,geography"),
+        supabase.from("accounts").select("domain").not("domain", "is", null).limit(10000),
       ]);
-      return { runs: (runs.data ?? []) as Run[], icps: icps.data ?? [] };
+      return { runs: (runs.data ?? []) as Run[], icps: icps.data ?? [], domains: new Set((accs.data ?? []).map((a) => cleanDomain(a.domain)).filter(Boolean) as string[]) };
     },
   });
   usePollRuns(data?.runs ?? [], key);
   const [viewId, setViewId] = useState<string | null>(null);
   const view = data?.runs.find((r) => r.id === viewId) ?? data?.runs.find((r) => r.status === "done");
-  const entities = (view?.status === "done" ? (view.result?.entities ?? []) : []) as ListEntity[];
+  // «Ya en Nokko» is rechecked against today's accounts (imports since the search count).
+  const entities = ((view?.status === "done" ? (view.result?.entities ?? []) : []) as ListEntity[]).map((e) => ({ ...e, existingId: e.existingId ?? (e.domain && data?.domains.has(e.domain) ? "yes" : null) }));
   const fresh = entities.filter((e) => !e.existingId);
 
   async function go() {
