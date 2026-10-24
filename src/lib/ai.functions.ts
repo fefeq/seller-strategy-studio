@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ask } from "@/lib/ai-gateway";
-import { accountContext, callTeardownCore, listeningCoachingCore, proposalCore, researchStakeholderCore, U_SYSTEM } from "@/lib/ai-core";
+import { accountContext, callTeardownCore, meetingBriefCore, listeningCoachingCore, proposalCore, researchStakeholderCore, U_SYSTEM } from "@/lib/ai-core";
 import { ADVISOR_SCHEMA, buildSnapshot, canUseAdvisor, HORIZONS, type AdvisorResult } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
 
@@ -9,15 +9,7 @@ export const generateMeetingBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { meetingId: string }) => d)
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
-    const { data: m, error } = await supabase.from("meetings").select("*").eq("id", data.meetingId).single();
-    if (error || !m) throw new Error("Reunión no encontrada");
-    const ctx = m.account_id ? await accountContext(supabase, m.account_id) : "{}";
-    const brief = await ask(
-      "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Si en conocimiento_empresa hay playbooks de discovery, objeciones, demo o negociación, síguelos: toma de ahí las preguntas y las respuestas y adáptalas a esta cuenta en vez de inventar otras. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
-      `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
-    );
-    await supabase.from("meetings").update({ ai_brief: brief }).eq("id", m.id);
+    const { brief } = await meetingBriefCore(context.supabase, data.meetingId);
     return { brief };
   });
 

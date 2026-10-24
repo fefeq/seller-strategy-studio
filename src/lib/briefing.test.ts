@@ -40,3 +40,17 @@ describe("briefing", () => {
     expect(todayItems({ ...base, leader: true }).some((i) => i.text.includes("Acme"))).toBe(true);
   });
 });
+
+describe("briefing autopilot lines", () => {
+  it("tells what the autopilot did and does not count it as new issues", () => {
+    const t = "2026-10-24T09:00:00Z";
+    const items = autoWork({ since, usage: [], leads: [], memories: [], signals: [], jobs: [], suggestions: [
+      { created_at: t, detector: "meeting_prepped" }, { created_at: t, detector: "account_researched" }, { created_at: t, detector: "account_cooling" }, { created_at: t, detector: "account_cooling" },
+    ] }, money).map((i) => i.text);
+    expect(items).toEqual([
+      "Preparé 1 reunión de las próximas horas.",
+      "Investigué 1 cuenta nueva y rellené su plan de cuenta.",
+      "Repasé 2 cuentas que se enfrían y te propongo cómo retomarlas.",
+    ]);
+  });
+});
