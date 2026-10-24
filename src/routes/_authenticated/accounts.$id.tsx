@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CompanyLogo } from "@/components/company-logo";
-import { BackgroundButton } from "@/components/background";
+import { JobProgress, useJob } from "@/components/background";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -19,7 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { firstOpenStage, stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
-import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching, researchStakeholder } from "@/lib/ai.functions";
+import { callTeardown, generateMeetingBrief, generateProposal, listeningCoaching } from "@/lib/ai.functions";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type CallNotes } from "@/lib/call-notes";
 import { useAgent } from "@/components/agent";
 import { AiText } from "@/components/ai-text";
@@ -238,9 +238,16 @@ function PlanTab({ accountId, accountName, hasDomain, plan, onSaved }: { account
 
 function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: string; hasDomain: boolean; list: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
-  const [busy, setBusy] = useState(false);
   const detailRef = useRevealOnMobile(sel?.id);
-  const research = useServerFn(researchStakeholder);
+  const stakeJob = useJob("stakeholder_research", {
+    targetId: sel?.id ?? null,
+    onDone: async (j) => {
+      const id = j.input?.stakeholderId as string | undefined;
+      const { data } = id ? await supabase.from("stakeholders").select("research").eq("id", id).maybeSingle() : { data: null };
+      if (data) setSel((cur: any) => (cur?.id === id ? { ...cur, research: data.research } : cur));
+      onChange();
+    },
+  });
   async function add() {
     const { data, error } = await supabase.from("stakeholders").insert({ account_id: accountId, name: "Nueva persona" }).select().single();
     if (error) return toast.error(errorText(error));
@@ -251,11 +258,6 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
     const { error } = await supabase.from("stakeholders").update({ name, title, email, phone: phone || null, linkedin_url, buying_role, support, priorities, reports_to: reports_to || null }).eq("id", id);
     if (error) return toast.error(errorText(error));
     toast.success("Guardado."); onChange();
-  }
-  async function runResearch() {
-    setBusy(true);
-    try { const r = await research({ data: { stakeholderId: sel.id } }); setSel({ ...sel, research: r.text }); onChange(); }
-    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   const roots = list.filter((s) => !s.reports_to || !list.find((x) => x.id === s.reports_to));
   const children = (pid: string) => list.filter((s) => s.reports_to === pid);
@@ -291,7 +293,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
           </div>
           <ApolloReveal stakeholderId={sel.id} onChange={async () => { const { data: fresh } = await supabase.from("stakeholders").select("email,phone,linkedin_url,title").eq("id", sel.id).single(); if (fresh) setSel((cur: any) => (cur?.id === sel.id ? { ...cur, ...Object.fromEntries(Object.entries(fresh).filter(([k]) => !cur[k])) } : cur)); onChange(); }} />
           <Field label="Prioridades y notas"><Textarea rows={3} value={sel.priorities ?? ""} onChange={(e) => setSel({ ...sel, priorities: e.target.value })} /></Field>
-          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button><Button variant="outline" onClick={runResearch} disabled={busy}><Sparkles className="size-4" /> {busy ? "Investigando…" : "Research con IA"}</Button><BackgroundButton size="default" disabled={busy} job={() => ({ kind: "stakeholder_research", input: { stakeholderId: sel.id }, label: `Research de ${sel.name}` })} /></div>
+          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button>{stakeJob.running ? <JobProgress job={stakeJob.job} onCancel={stakeJob.cancel} /> : <Button variant="outline" onClick={() => stakeJob.start({ stakeholderId: sel.id }, `Research de ${sel.name}`)}><Sparkles className="size-4" /> Research con IA</Button>}</div>
           {sel.research && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
         </div>
       ) : <Empty>Selecciona una persona del mapa.</Empty>}
