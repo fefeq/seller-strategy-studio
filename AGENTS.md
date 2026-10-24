@@ -25,5 +25,5 @@
 - No `as any`: use the generated types (Tables/TablesUpdate), `as unknown as Json` for jsonb writes, and jsonObject/actionTool (src/lib/json.ts, tested) to read jsonb; a casting gap is a narrow typed cast with a reason.
 - Confirmations and one-line text prompts use askConfirm/askText (src/components/confirm-dialog.tsx, host mounted in __root), never window.confirm/prompt, so they follow the design system.
 - Main screens (Inicio, Cuentas, Pipeline, Leads) read queryOptions from src/hooks/screen-queries.ts (plus meQuery/leadsQuery); their route loaders prepare that cache and the router preloads on intent, so screens open filled.
-- GTM diagnosis (archetype + stage filter) is a pure rule in src/lib/gtm-diagnosis.ts (tested); onboarding stores it per user in onboarding_sessions and reuses setup/ai-fill for extraction.
+- GTM diagnosis (archetype + stage filter) is a pure rule in src/lib/gtm-diagnosis.ts (tested); onboarding stores it per user in onboarding_sessions.
 - Onboarding (/onboarding): the reading runs as the `onboarding_read` background job (src/lib/onboarding.server.ts) writing findings/proposal to onboarding_sessions; block rules are pure in src/lib/onboarding.ts (tested) and approval reuses applySetupItems/undoSetupItems, so the wizard and Configuración save the same way. The AI setup prompt lives once in src/lib/setup-extract.server.ts.
