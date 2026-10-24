@@ -1,10 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { ask } from "@/lib/ai-gateway";
 import { executeTool, type ToolCtx } from "@/lib/agent/tools";
 import { loadSnapshot, syncSuggestions, type Db } from "@/lib/org-data";
 import { detect } from "@/lib/proactive";
-import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
 import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
