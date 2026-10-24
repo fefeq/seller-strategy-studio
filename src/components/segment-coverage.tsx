@@ -10,10 +10,10 @@ import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
 import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
+import { pct } from "@/lib/money";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", deals: "margen de los deals ganados", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
-const pct = (n: number) => `${Math.round(n * 100)}%`;
 const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos", rango: "punto medio del rango" };
 
 /**

@@ -208,7 +208,7 @@ export function parseAmount(raw: unknown): number | null {
 export function cleanDomain(raw: unknown): string | null {
   if (raw == null) return null;
   const s = String(raw).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split(/[/?#\s]/)[0];
-  return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(s) ? s : null;
+  return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(s) ? s : null;
 }
 
 export function domainFromEmail(email: string | null) {

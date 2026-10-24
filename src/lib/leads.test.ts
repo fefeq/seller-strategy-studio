@@ -135,3 +135,15 @@ describe("CSV mapping keeps the importer's rescue rules", () => {
     expect(Object.values(out[0])).toContain("ana@acme.com");
   });
 });
+
+describe("cleanDomain (one rule for leads and accounts)", async () => {
+  const { cleanDomain } = await import("./leads");
+  const { cleanDomain: fromImport } = await import("./account-import");
+  it("same answer from both entry paths", () => {
+    for (const d of ["https://www.Acme.com/x", "acme.co.uk", "1.2.3.4", "localhost", "sub-x.acme.io"]) expect(fromImport(d)).toBe(cleanDomain(d));
+  });
+  it("needs a letter TLD", () => {
+    expect(cleanDomain("1.2.3.4")).toBeNull();
+    expect(cleanDomain("WWW.acme.co.uk/path")).toBe("acme.co.uk");
+  });
+});
