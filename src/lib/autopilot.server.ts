@@ -19,6 +19,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
   // 1 · New accounts: complete empty fields and research the web into the empty parts of the account plan.
   try {
     const { data: accs } = await db.from("accounts").select("id,name,domain,created_at,auto_researched_at,owner_id").eq("org_id", orgId).is("auto_researched_at", null).gte("created_at", new Date(now.getTime() - 14 * DAY).toISOString()).limit(50);
+    const autoEnrich = (await db.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data?.auto_enrich !== false;
     const { completeAccount, applyAutoChanges, trackedRun } = await import("@/lib/orchestrator/runner");
     const { researchAccountCore } = await import("@/lib/web-research-core");
     for (const a of accountsToResearch(accs ?? [], now)) {
@@ -26,7 +27,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       await db.from("accounts").update({ auto_researched_at: now.toISOString() }).eq("org_id", orgId).eq("id", a.id);
       const acc = (accs ?? []).find((x) => x.id === a.id)!;
       const lines: string[] = [];
-      try {
+      if (autoEnrich) try {
         const c2 = { ...ctx, userId: acc.owner_id ?? actor };
         const r = await completeAccount(c2, a.id, "automatic");
         const written = await applyAutoChanges(c2, a.id, r.changes, now.toISOString());
