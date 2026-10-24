@@ -45,9 +45,12 @@ type AccountTab = (typeof ACCOUNT_TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
   // tab + meeting: deep link from a suggestion straight to one meeting («Apunta las notas…»).
-  validateSearch: (s: Record<string, unknown>): { tab?: AccountTab; meeting?: string } => ({
+  // people / research: deep links from a notice that reopen the results of a background search.
+  validateSearch: (s: Record<string, unknown>): { tab?: AccountTab; meeting?: string; people?: string; research?: string } => ({
     ...(ACCOUNT_TABS.includes(s.tab as AccountTab) ? { tab: s.tab as AccountTab } : {}),
     ...(typeof s.meeting === "string" ? { meeting: s.meeting } : {}),
+    ...(s.people ? { people: String(s.people) } : {}),
+    ...(s.research ? { research: String(s.research) } : {}),
   }),
   head: () => ({ meta: [{ title: "Cuenta — Nokko" }, { name: "description", content: "Plan de cuenta, stakeholders y reuniones." }, { property: "og:title", content: "Cuenta — Nokko" }, { property: "og:description", content: "Plan de cuenta, stakeholders y reuniones." }] }),
   component: AccountPage,
