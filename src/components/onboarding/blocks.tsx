@@ -87,6 +87,7 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
 
+  if (!setup || !segsQ.data || !me) return <p className="text-ink-mid">Preparando tu propuesta…</p>;
   return (
     <div className="space-y-10">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
