@@ -53,6 +53,28 @@ export function qualifyNotice(out: { done: number; failed: number; error: string
   return { title: `${plural(out.done, "lead calificado", "leads calificados")} con IA.${moves}`, body: rest.trim() || null, link, needs_decision: out.moves > 0 };
 }
 
+/** Where a job's notice leads when the job itself left no link (a failure): the record or the screen it came from. */
+export function jobLink(kind: string, input: Record<string, unknown> | null | undefined): string {
+  const i = input ?? {};
+  const acc = typeof i.accountId === "string" ? `/accounts/${i.accountId}` : null;
+  switch (kind) {
+    case "key_people": return acc ? `${acc}?tab=stakeholders` : "/accounts";
+    case "stakeholder_research": return "/accounts";
+    case "account_signals": return acc ? `${acc}?tab=signals` : "/accounts";
+    case "complete_account": case "account_research": return acc ?? "/accounts";
+    case "icp_companies": return "/accounts";
+    case "qualify_leads": return "/leads";
+    case "discover": return "/discoveries";
+    case "autopilot_now": return "/home";
+    case "weekly_report": return "/inbox";
+    case "posthog_sync": return "/integrations";
+    case "debate": return "/debates";
+    case "draft_artifact": return "/cycle";
+    case "deep_review": return typeof i.artifactId === "string" ? `/cycle?artifact=${i.artifactId}` : "/cycle";
+    default: return "/hub";
+  }
+}
+
 /** «Traer más» appends the next page to the previous results, without repeating a row. */
 export function appendRows<R>(prev: R[], next: R[], key: (r: R) => string): R[] {
   const seen = new Set(prev.map(key));

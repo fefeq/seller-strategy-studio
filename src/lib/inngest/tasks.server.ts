@@ -245,7 +245,8 @@ export async function runBackgroundJob(db: Admin, jobId: string, opts: { final?:
     const { errorText } = await import("@/lib/errors");
     console.error("background job failed", job.kind, (e as Error)?.message ?? e);
     if (!final) { await db.from("background_jobs").update({ step: "Reintentando…" }).eq("id", jobId); throw e; }
-    await db.from("background_jobs").update({ status: "failed", step: null, error: errorText(e), finished_at: new Date().toISOString() }).eq("id", jobId);
+    const { jobLink } = await import("@/lib/jobs");
+    await db.from("background_jobs").update({ status: "failed", step: null, error: errorText(e), result: { link: jobLink(job.kind, input) }, finished_at: new Date().toISOString() }).eq("id", jobId);
     const { deliverJobNotice } = await import("@/lib/notices.server");
     await deliverJobNotice(db, jobId);
     throw e;

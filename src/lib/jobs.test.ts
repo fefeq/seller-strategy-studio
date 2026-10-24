@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { activeJobFor, appendRows, companiesNotice, completeNotice, DEFAULT_PREFS, freshResult, isQuiet, localHour, peopleNotice, qualifyNotice, telegramDecision, telegramText, telegramWorthy, unreadCount } from "./jobs";
+import { activeJobFor, appendRows, jobLink, companiesNotice, completeNotice, DEFAULT_PREFS, freshResult, isQuiet, localHour, peopleNotice, qualifyNotice, telegramDecision, telegramText, telegramWorthy, unreadCount } from "./jobs";
 
 const acc = { id: "a1", name: "Typeform" };
 
@@ -102,4 +102,10 @@ describe("Telegram", () => {
   it("the message carries an absolute link to Nokko", () => {
     expect(telegramText({ title: "Hecho", body: null, link: "/leads" }, "https://nokko.ai")).toBe("Hecho\n\nhttps://nokko.ai/leads");
   });
+});
+
+it("a failed job's notice still leads to its record or screen", () => {
+  expect(jobLink("key_people", { accountId: "a1" })).toBe("/accounts/a1?tab=stakeholders");
+  expect(jobLink("qualify_leads", {})).toBe("/leads");
+  expect(jobLink("deep_review", { artifactId: "d1" })).toBe("/cycle?artifact=d1");
 });
