@@ -47,6 +47,7 @@
 ## Integrar RevOps + Finance + Postin CRM (plan aprobado 2026-10-24)
 - [x] Fase 1 RevOps en Métricas (embudo conciliado, perdidos, cohortes, tendencias) + Métricas por secciones
 - [ ] Fase 1b herramientas de agente/MCP RevOps
-- [ ] Fase 2 Finanzas (tablas, motores con tests, pantalla) — espera decisiones 1 y 2
+- [x] Fase 2a Finanzas en Métricas: presupuesto, gasto real, margen y ROI (datos metidos en Nokko)
+- [ ] Fase 2b Finanzas completa: previsión de caja, cierres mensuales, agente/MCP
 - [ ] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
 - [ ] Fase 4 importar datos reales — espera CSV del usuario
