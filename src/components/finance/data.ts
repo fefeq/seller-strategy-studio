@@ -36,10 +36,10 @@ export function useFinance() {
         supabase.from("stripe_snapshots").select("mrr,active_customers,taken_at").order("taken_at", { ascending: false }).limit(1).maybeSingle(),
       ]);
       const s = settings.data;
-      const raw = jsonObject(s?.plan_assumptions);
+      const raw = jsonObject(s?.plan_assumptions) ?? {};
       const assumptions: Record<string, PlanAssumption> = {};
       for (const [k, v] of Object.entries(raw)) {
-        const o = jsonObject(v);
+        const o = jsonObject(v) ?? {};
         assumptions[k] = { customers: Number(o.customers) || 0, adds: Number(o.adds) || 0, churn_pct: Number(o.churn_pct) || 0, annual_share_pct: Number(o.annual_share_pct) || 0 };
       }
       return {
