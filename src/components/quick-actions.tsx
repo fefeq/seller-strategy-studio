@@ -130,3 +130,44 @@ export function LeadQuickActions({ lead, onMove }: { lead: QuickLead; onMove: (i
     </DropdownMenu>
   );
 }
+
+export type QuickPerson = { id: string; full_name: string | null; email: string | null; linkedin_url: string | null; account_id: string | null; tier: string | null };
+
+export function PersonQuickActions({ person }: { person: QuickPerson }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const { data: me } = useMe();
+  const name = person.full_name || person.email || "Persona";
+
+  async function update(patch: { tier?: string; sequence_stage?: string }, ok: string) {
+    const { error } = await supabase.from("people").update(patch).eq("id", person.id);
+    if (error) return toast.error(errorText(error));
+    toast.success(ok);
+    qc.invalidateQueries({ queryKey: ["people"] });
+  }
+  async function addTask() {
+    const title = window.prompt(`Nueva tarea sobre ${name}`)?.trim();
+    if (!title) return;
+    const { error } = await supabase.from("tasks").insert({ title, account_id: person.account_id, owner_id: me?.user.id ?? null, due_date: isoInDays(1) });
+    if (error) return toast.error(errorText(error));
+    toast.success("Tarea creada para mañana.");
+  }
+
+  return (
+    <DropdownMenu>
+      <Trigger label={`Acciones de ${name}`} />
+      <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuLabel>{name}</DropdownMenuLabel>
+        {person.email && <DropdownMenuItem onSelect={() => { window.location.href = `mailto:${person.email}`; }}>Escribir email</DropdownMenuItem>}
+        {person.linkedin_url && <DropdownMenuItem onSelect={() => window.open(person.linkedin_url!, "_blank", "noopener")}>Abrir LinkedIn</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={addTask}>Nueva tarea…</DropdownMenuItem>
+        {person.account_id && <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: person.account_id! } })}>Abrir cuenta</DropdownMenuItem>}
+        {person.account_id && <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: person.account_id! }, search: { tab: "meetings" } })}>Planificar reunión</DropdownMenuItem>}
+        <DropdownMenuSeparator />
+        {person.tier !== "A" && <DropdownMenuItem onSelect={() => update({ tier: "A" }, "Marcada como Tier A.")}>Marcar Tier A</DropdownMenuItem>}
+        <DropdownMenuItem onSelect={() => update({ sequence_stage: "active" }, "Puesta en secuencia.")}>Poner en secuencia</DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => update({ sequence_stage: "paused" }, "Secuencia pausada.")}>Pausar secuencia</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
