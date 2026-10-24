@@ -1,15 +1,12 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
-@import "@fontsource/schibsted-grotesk/400.css";
-@import "@fontsource/schibsted-grotesk/500.css";
-@import "@fontsource/schibsted-grotesk/600.css";
-
-/* Jost (titulares y cifras grandes) y Spline Sans Mono (voz de máquina): binarios del design system «Nokko — Edición». */
-@font-face { font-family: "Jost"; src: url("./fonts/Jost-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Jost"; src: url("./fonts/Jost-500.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Jost"; src: url("./fonts/Jost-600.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Spline Sans Mono"; src: url("./fonts/SplineSansMono-400.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@import "@fontsource/dm-sans/400.css";
+@import "@fontsource/dm-sans/500.css";
+@import "@fontsource/dm-sans/600.css";
+@import "@fontsource/space-grotesk/500.css";
+@import "@fontsource/space-grotesk/600.css";
+@import "@fontsource/space-grotesk/700.css";
 
 @custom-variant dark (&:is(.dark *));
 
