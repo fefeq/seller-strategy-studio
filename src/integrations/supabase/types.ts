@@ -2028,6 +2028,7 @@ export type Database = {
           email: string | null
           enriched_at: string | null
           external_id: string | null
+          flow: Json | null
           id: string
           lead_source_id: string | null
           mql_at: string | null
@@ -2063,6 +2064,7 @@ export type Database = {
           email?: string | null
           enriched_at?: string | null
           external_id?: string | null
+          flow?: Json | null
           id?: string
           lead_source_id?: string | null
           mql_at?: string | null
@@ -2098,6 +2100,7 @@ export type Database = {
           email?: string | null
           enriched_at?: string | null
           external_id?: string | null
+          flow?: Json | null
           id?: string
           lead_source_id?: string | null
           mql_at?: string | null

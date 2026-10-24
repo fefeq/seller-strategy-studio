@@ -1,0 +1,2 @@
+ALTER TABLE public.leads ADD COLUMN IF NOT EXISTS flow jsonb;
+COMMENT ON COLUMN public.leads.flow IS 'Automatic intake flow per lead: {steps:{account,complete,people,proposal:{status,note}}, at, people:[...]}; written by server code only.';
