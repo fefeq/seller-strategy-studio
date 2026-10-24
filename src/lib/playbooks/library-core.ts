@@ -16,7 +16,7 @@ export async function createLibraryCore(ctx: ToolCtx & { orgName: string }, step
   const hasContext = !!cc.setup.positioning || cc.setup.pillars.length > 0 || cc.setup.icps.length > 0;
   const created: { title: string; adapted: boolean }[] = [];
   for (const [i, play] of plays.entries()) {
-    await step(`Playbook ${i + 1} de ${plays.length}: ${play.title}`);
+    await step(`Jugada ${i + 1} de ${plays.length}: ${play.title}`);
     let body = play.body;
     let adapted = false;
     if (hasContext) {

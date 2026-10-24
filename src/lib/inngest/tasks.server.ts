@@ -383,9 +383,9 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
     case "playbook_library": {
       const { createLibraryCore } = await import("@/lib/playbooks/library-core");
       const r = await createLibraryCore(await jobCtx(db, job), step);
-      if (r.skipped) return { title: "Ya tenías todos los playbooks de Nokko", link: "/hub", ...r };
+      if (r.skipped) return { title: "Ya tenías todas las jugadas de la biblioteca", link: "/hub", ...r };
       const adapted = r.created.filter((x) => x.adapted).length;
-      return { title: `${r.created.length} playbooks añadidos al hub`, body: r.hasContext ? `${adapted} adaptados a tu empresa.` : "Sin contexto aprobado: van con el texto base. Completa el posicionamiento y vuelve a lanzarlo para adaptarlos.", link: "/hub", ...r };
+      return { title: `${r.created.length} jugadas añadidas al hub`, body: r.hasContext ? `${adapted} adaptados a tu empresa.` : "Sin contexto aprobado: van con el texto base. Completa el posicionamiento y vuelve a lanzarlo para adaptarlos.", link: "/hub", ...r };
     }
     case "debate": {
       const { runDebateCore } = await import("@/lib/bmad/debate-core");
