@@ -42,8 +42,8 @@ describe("never overwrites what the person wrote", () => {
     const items = proposalItems(proposal, [], null);
     const { items: out, kept } = protectManual(items, { ...empty, positioning: { category: "Mi categoría", one_liner: "" } });
     const pos = out.find((i) => i.tool === "update_positioning")!;
-    expect(pos.args.category).toBeUndefined();
-    expect(pos.args.one_liner).toBe("Nuevo");
+    expect((pos.args.fields as Record<string, unknown>).category).toBeUndefined();
+    expect((pos.args.fields as Record<string, unknown>).one_liner).toBe("Nuevo");
     expect(kept).toContain("Posicionamiento: category");
   });
   it("keeps the segment figures already set and the quarter's quota", () => {

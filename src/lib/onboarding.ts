@@ -54,9 +54,9 @@ export function protectManual(items: ProposalItem[], existing: Pick<SetupData, "
   const out: ProposalItem[] = [];
   for (const it of items) {
     if (it.tool === "update_positioning") {
-      const args = { ...it.args };
-      for (const k of Object.keys(args)) if (filled(existing.positioning?.[k])) { delete args[k]; kept.push(`Posicionamiento: ${k}`); }
-      if (Object.values(args).some(filled)) out.push({ ...it, args });
+      const fields = { ...((it.args.fields as Record<string, unknown>) ?? {}) };
+      for (const k of Object.keys(fields)) if (filled(existing.positioning?.[k])) { delete fields[k]; kept.push(`Posicionamiento: ${k}`); }
+      if (Object.values(fields).some(filled)) out.push({ ...it, args: { ...it.args, fields } });
       continue;
     }
     if (it.tool === "upsert_segment") {
