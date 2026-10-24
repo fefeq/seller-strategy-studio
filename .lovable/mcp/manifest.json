@@ -3789,7 +3789,7 @@
       {
         "name": "find_icp_companies",
         "title": "Buscar empresas por ICP",
-        "description": "Busca empresas nuevas que encajen con el ICP (palabras clave, países ISO, empleados) eligiendo la fuente más rápida y barata y cambiando si no encuentra. Úsala en vez de apollo_find_companies o clay_find_companies salvo que pidan un servicio concreto. Para listas largas usa parallel_icp_list. Para guardarlas usa create_account.",
+        "description": "Busca empresas nuevas que encajen con el ICP (palabras clave, países ISO, empleados) eligiendo la fuente más rápida y barata y cambiando si no encuentra. Úsala en vez de apollo_find_companies o clay_find_companies salvo que pidan un servicio concreto. Para listas largas usa start_icp_account_list. Para guardarlas usa create_account.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

@@ -31,7 +31,7 @@ export const NEED_TOOLS: AgentTool[] = [
   }),
   def({
     name: "find_icp_companies", kind: "read",
-    description: "Busca empresas nuevas que encajen con el ICP (palabras clave, países ISO, empleados) eligiendo la fuente más rápida y barata y cambiando si no encuentra. Úsala en vez de apollo_find_companies o clay_find_companies salvo que pidan un servicio concreto. Para listas largas usa parallel_icp_list. Para guardarlas usa create_account.",
+    description: "Busca empresas nuevas que encajen con el ICP (palabras clave, países ISO, empleados) eligiendo la fuente más rápida y barata y cambiando si no encuentra. Úsala en vez de apollo_find_companies o clay_find_companies salvo que pidan un servicio concreto. Para listas largas usa start_icp_account_list. Para guardarlas usa create_account.",
     input: z.object({ keywords: z.array(z.string().min(1).max(120)).max(15).optional(), countries: z.array(z.string().min(2).max(3)).max(15).optional(), min_employees: z.number().int().min(1).optional(), max_employees: z.number().int().min(1).optional() }),
     run: async (c, a) => {
       const r = await findIcpCompanies(c, { query: { keywords: a.keywords, countries: a.countries, minEmployees: a.min_employees, maxEmployees: a.max_employees } }, "manual");
