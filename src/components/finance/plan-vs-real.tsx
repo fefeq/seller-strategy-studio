@@ -9,6 +9,7 @@ import { errorText } from "@/lib/errors";
 import { cacRowsFor, costToServeFor, planVsActual, quarterOfMonth, monthOf } from "@/lib/finance";
 import { useFinanceRefresh, type FinanceData } from "./data";
 import { Card, Muted } from "./ui";
+import { VarianceWaterfall, buildSteps } from "./charts/waterfall";
 
 export function FinancePlanVsReal({ d }: { d: FinanceData }) {
   const { money } = useCurrency();
@@ -17,6 +18,7 @@ export function FinancePlanVsReal({ d }: { d: FinanceData }) {
   const thisQ = quarterOfMonth(monthOf(new Date()));
   const quarters = useMemo(() => { const [y, k] = thisQ.split("-Q").map(Number); return Array.from({ length: 6 }, (_, i) => { const t = y * 4 + (k - 1) - 4 + i; return `${Math.floor(t / 4)}-Q${(t % 4) + 1}`; }); }, [thisQ]);
   const [q, setQ] = useState(thisQ);
+  const [sel, setSel] = useState<string | null>(null);
   const lines = d.lines.map((l) => ({ ...l, amount: Number(l.amount) }));
   const invoices = d.invoices.map((i) => ({ ...i, amount: Number(i.amount) }));
   const r = planVsActual(q, d.budgets, invoices, d.months, lines);
@@ -46,7 +48,9 @@ export function FinancePlanVsReal({ d }: { d: FinanceData }) {
       </div>
       <Card title={`Plan vs real · ${q}`} sub="El plan sale de los presupuestos por segmento (Métricas → CAC y presupuesto). Lo real, de las facturas o del cierre del mes y de tus líneas de coste.">
         {!r.hasPlan && <div className="mb-4"><Muted>Aún no hay presupuesto para {q}. <Link to="/metrics" search={{ seccion: "economia" }} className="underline underline-offset-2">Fíjalo en Métricas</Link> para ver los desvíos.</Muted></div>}
-        <div className="overflow-x-auto">
+        <VarianceWaterfall steps={buildSteps(r.rows)} money={money} selected={sel} onSelect={setSel} />
+        {sel && (() => { const x = r.rows.find((y) => y.key === sel); return x ? <p className="mt-2 text-sm">{x.label}: plan {money(x.plan)}, real {money(x.actual)} · <span className={x.good ? "text-success" : "text-destructive"}>{x.good ? "mejor que el plan" : "peor que el plan"}</span>.</p> : null; })()}
+        <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[520px] text-sm tabular-nums">
             <thead><tr className="text-left text-ink-mid"><th className="py-2 font-normal" /><th className="font-normal">Plan</th><th className="font-normal">Real</th><th className="font-normal">Desvío</th></tr></thead>
             <tbody>

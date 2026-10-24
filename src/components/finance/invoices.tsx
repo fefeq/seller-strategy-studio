@@ -9,9 +9,10 @@ import { DateField } from "@/components/date-field";
 import { EntityCombobox } from "@/components/entity-combobox";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
-import { AGING_LABEL, arAging, type AgingBucket } from "@/lib/finance";
+import { arAging } from "@/lib/finance";
 import { useFinanceRefresh, type FinanceData } from "./data";
 import { Card, Muted, NumberInput } from "./ui";
+import { ArAgingTable, type AgingRow } from "./charts/aging-table";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const plus30 = () => new Date(Date.now() + 30 * 86_400_000).toISOString().slice(0, 10);
@@ -26,6 +27,11 @@ export function FinanceInvoices({ d }: { d: FinanceData }) {
   const invoices = d.invoices.map((i) => ({ ...i, amount: Number(i.amount) }));
   const aging = arAging(invoices, today());
   const accName = (id: string | null) => d.accounts.find((a) => a.id === id)?.name ?? "Sin cuenta";
+  const agingRows: AgingRow[] = invoices.filter((i) => !i.paid_on).map((i) => {
+    const due = i.due_on ?? new Date(new Date(i.issued_on).getTime() + 30 * 86_400_000).toISOString().slice(0, 10);
+    const days = Math.floor((Date.parse(today()) - Date.parse(due)) / 86_400_000);
+    return { id: i.id, customer: accName(i.account_id), number: i.number, amount: i.amount, daysPastDue: Math.max(0, days), bucket: days <= 0 ? "current" : days <= 30 ? "d30" : days <= 60 ? "d60" : days <= 90 ? "d90" : "over90" };
+  });
   const invoicedDeals = new Set(invoices.map((i) => i.deal_id).filter(Boolean));
   const toInvoice = d.deals.filter((x) => x.stage === "won" && !invoicedDeals.has(x.id));
   const dealsOf = d.deals.filter((x) => x.stage === "won" && (!f.account_id || x.account_id === f.account_id));
@@ -57,15 +63,7 @@ export function FinanceInvoices({ d }: { d: FinanceData }) {
   return (
     <div className="space-y-6">
       <Card title={`Pendiente de cobro: ${money(aging.open)}`} sub="Por días de retraso (sin fecha de vencimiento cuenta a 30 días de la emisión).">
-        <div className="grid gap-2 sm:grid-cols-5">
-          {(Object.keys(AGING_LABEL) as AgingBucket[]).map((k) => (
-            <div key={k} className={`rounded-lg border p-3 ${k !== "current" && aging.buckets[k].amount ? "border-signal/50" : ""}`}>
-              <p className="eyebrow">{AGING_LABEL[k]}</p>
-              <p className="mt-1 font-display text-xl tabular-nums">{money(aging.buckets[k].amount)}</p>
-              <p className="text-xs text-muted-foreground">{aging.buckets[k].count} facturas</p>
-            </div>
-          ))}
-        </div>
+        <ArAgingTable rows={agingRows} buckets={aging.buckets} total={aging.open} money={money} onPaid={(id) => paid(id, today())} />
       </Card>
 
       {toInvoice.length > 0 && (
