@@ -1,7 +1,8 @@
 // «Tu ICP» on Descubiertos: each current ICP, what Nokko searches with it each week, what it is missing,
 // and how many companies and contacts it brought that are waiting for a decision. Clicking one filters the list.
 import { Link } from "@tanstack/react-router";
-import { employeesText, icpReadiness, LEVEL_LABEL, type Icp, type Level } from "@/lib/icp";
+import { employeesText, icpReadiness, LEVEL_LABEL, type Icp } from "@/lib/icp";
+import type { Level } from "@/lib/orchestrator/search";
 import { PER_ICP } from "@/lib/discoveries";
 
 export type IcpRow = Icp & { id: string; name: string };
