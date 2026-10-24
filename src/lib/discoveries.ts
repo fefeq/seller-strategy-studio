@@ -75,3 +75,30 @@ export function dismissMemory(kind: DiscoveryKind, name: string, reason: string 
   const what = KIND_LABEL[kind].one.toLowerCase();
   return { content: `Descartado en Descubiertos (${what}): ${name}${reason ? `. Motivo: ${reason}` : ""}.`.slice(0, 600), scope: "company", kind: "outcome", account_id: null, replaces: null };
 }
+
+/** JSON schema for the AI judging which ICP-search candidates really fit. */
+export const FIT_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["judgments"],
+  properties: { judgments: { type: "array", items: { type: "object", additionalProperties: false, required: ["index", "fit", "reason"], properties: { index: { type: "integer" }, fit: { type: "integer" }, reason: { type: "string" } } } } },
+} as const;
+
+/** Keeps candidates the AI rated at least `min` (0–100), with its reason; unknown indexes and bad JSON are ignored. */
+export function parseFitJudgments(raw: string, count: number, min = 60): Map<number, { fit: number; reason: string }> {
+  const out = new Map<number, { fit: number; reason: string }>();
+  let list: unknown;
+  try { list = (JSON.parse(raw) as { judgments?: unknown }).judgments; } catch { return out; }
+  if (!Array.isArray(list)) return out;
+  for (const j of list as { index?: unknown; fit?: unknown; reason?: unknown }[]) {
+    const i = Number(j?.index), fit = Number(j?.fit);
+    if (!Number.isInteger(i) || i < 0 || i >= count || !Number.isFinite(fit) || fit < min || out.has(i)) continue;
+    out.set(i, { fit: Math.round(Math.min(100, fit)), reason: String(j.reason ?? "").trim().slice(0, 300) });
+  }
+  return out;
+}
+
+/** «10001+» or «51-200 empleados» → one readable size label. */
+export function sizeLabel(size: string | null | undefined): string | null {
+  const s = (size ?? "").trim();
+  if (!s) return null;
+  return /emplead/i.test(s) ? s : `${s} empleados`;
+}

@@ -31,3 +31,19 @@ describe("Descubiertos", () => {
     expect(dismissMemory("company", "Acme", "No encaja con el ICP").content).toBe("Descartado en Descubiertos (empresa): Acme. Motivo: No encaja con el ICP.");
   });
 });
+
+import { parseFitJudgments, sizeLabel } from "./discoveries";
+describe("Descubiertos fit", () => {
+  it("keeps only the companies the AI rates as a real fit", () => {
+    const raw = JSON.stringify({ judgments: [{ index: 0, fit: 85, reason: "Agencia de marca personal" }, { index: 1, fit: 20, reason: "Telco" }, { index: 9, fit: 90, reason: "fuera" }] });
+    const m = parseFitJudgments(raw, 3);
+    expect([...m.keys()]).toEqual([0]);
+    expect(m.get(0)?.reason).toBe("Agencia de marca personal");
+    expect(parseFitJudgments("{", 3).size).toBe(0);
+  });
+  it("writes the size once", () => {
+    expect(sizeLabel("11-50 empleados")).toBe("11-50 empleados");
+    expect(sizeLabel("11-50")).toBe("11-50 empleados");
+    expect(sizeLabel(null)).toBeNull();
+  });
+});
