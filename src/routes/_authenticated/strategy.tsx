@@ -15,6 +15,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
 import type { SegLike } from "@/lib/segment-coverage";
 import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-budget";
+import { IcpEditor } from "@/components/icp-editor";
 import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { errorText } from "@/lib/errors";
@@ -54,7 +55,7 @@ function Strategy() {
         <TabsContent value="motions"><Motions /></TabsContent>
         <TabsContent value="payback"><PaybackQuarters /></TabsContent>
         <TabsContent value="budget"><BudgetQuarters /></TabsContent>
-        <TabsContent value="icp"><Icp /></TabsContent>
+        <TabsContent value="icp"><IcpEditor /></TabsContent>
         <TabsContent value="positioning"><Positioning /></TabsContent>
         <TabsContent value="pillars"><Pillars /></TabsContent>
       </Tabs>
@@ -403,70 +404,6 @@ function DeleteSegment({ target, onClose, onDeleted }: { target: { id: string; n
   );
 }
 
-const ICP_FIELDS = [
-  ["industries", "Industrias", "Firmográfico"], ["company_size", "Tamaño (empleados, facturación)", "Firmográfico"],
-  ["geography", "Geografía", "Firmográfico"], ["tech_stack", "Stack tecnológico", "Firmográfico"],
-  ["growth_stage", "Etapa de crecimiento", "Señal"], ["hiring_signals", "Señales de contratación", "Señal"],
-  ["funding_signals", "Rondas / eventos de financiación", "Señal"], ["adoption", "Adopción tecnológica (early / late)", "Señal"],
-  ["why_fit", "Por qué encajan (cierran rápido, usan más, renuevan)", "Fit"], ["anti_icp", "Anti-ICP: a quién no venderle", "Fit"],
-] as const;
-
-function Icp() {
-  const qc = useQueryClient();
-  const [sel, setSel] = useState<any | null>(null);
-  const detailRef = useRef<HTMLDivElement>(null);
-  const selId = sel?.id;
-  // Below lg the editor sits under the list: bring it into view when an ICP is picked.
-  useEffect(() => {
-    if (selId && typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [selId]);
-  const { data } = useQuery({
-    queryKey: ["icp"],
-    queryFn: async () => {
-      const [i, s] = await Promise.all([supabase.from("icp_profiles").select("*").order("created_at"), supabase.from("segments").select("id,name")]);
-      return { icps: i.data ?? [], segs: s.data ?? [] };
-    },
-  });
-  async function add() {
-    const { data: r } = await supabase.from("icp_profiles").insert({ name: "Nuevo ICP" }).select().single();
-    setSel(r); qc.invalidateQueries({ queryKey: ["icp"] });
-  }
-  async function save() {
-    const { id, created_at, updated_at, created_by, updated_by, ...rest } = sel;
-    try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
-    catch (e) { return toast.error(errorText(e)); }
-    toast.success("ICP guardado."); qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] });
-  }
-  return (
-    <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-      <div className="space-y-2">
-        <Button size="sm" className="w-full" onClick={add}>+ ICP</Button>
-        {data?.icps.map((i) => (
-          <button key={i.id} onClick={() => setSel(i)} className={`block w-full break-words rounded-md border bg-card p-3 text-left text-sm ${sel?.id === i.id ? "border-signal" : ""}`}>{i.name}</button>
-        ))}
-      </div>
-      {sel ? (
-        <div ref={detailRef} className="min-w-0 scroll-mt-20 space-y-4 rounded-lg border bg-card p-5">
-          <div className="grid gap-3 md:grid-cols-2">
-            <Field label="Nombre"><Input value={sel.name} onChange={(e) => setSel({ ...sel, name: e.target.value })} /></Field>
-            <Field label="Segmento"><Pick value={sel.segment_id ?? ""} options={Object.fromEntries([["", "—"], ...(data?.segs ?? []).map((s) => [s.id, s.name])])} onChange={(v) => setSel({ ...sel, segment_id: v })} /></Field>
-          </div>
-          {["Firmográfico", "Señal", "Fit"].map((g) => (
-            <div key={g}>
-              <p className="eyebrow mb-2">{g === "Señal" ? "Señales de comportamiento" : g === "Fit" ? "Encaje" : "Criterios firmográficos"}</p>
-              <div className="grid gap-3 md:grid-cols-2">
-                {ICP_FIELDS.filter((f) => f[2] === g).map(([k, label]) => (
-                  <Field key={k} label={label}><Textarea rows={2} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
-                ))}
-              </div>
-            </div>
-          ))}
-          <Button onClick={save}>Guardar ICP</Button>
-        </div>
-      ) : <Empty>Define tu ICP analizando a tus mejores clientes: quién cierra más rápido, usa más el producto y renueva.</Empty>}
-    </div>
-  );
-}
 
 const DUNFORD = [
   ["best_customers", "1. Tus mejores clientes", "¿Quién ama el producto y por qué?"],

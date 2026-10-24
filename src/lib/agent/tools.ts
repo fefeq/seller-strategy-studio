@@ -210,7 +210,7 @@ const CORE_TOOLS: AgentTool[] = [
       const d = await loadSetupData(c.db, c.orgId);
       const [segs, icps, pils] = await Promise.all([
         c.db.from("segments").select("id,name,acv_min,acv_max,motion,win_rate_target,ae_quota").eq("org_id", c.orgId),
-        c.db.from("icp_profiles").select("id,name,industries,company_size,why_fit,anti_icp").eq("org_id", c.orgId),
+        c.db.from("icp_profiles").select("id,name,industries,company_size,min_employees,max_employees,countries,search_keywords,target_titles,seniorities,pains,why_fit,anti_icp").eq("org_id", c.orgId),
         c.db.from("messaging_pillars").select("id,title,pain,message,proof").eq("org_id", c.orgId),
       ]);
       return { estado: setupStatus(d), moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
@@ -472,7 +472,7 @@ const CORE_TOOLS: AgentTool[] = [
   def({
     name: "create_icp", kind: "write", roles: ["owner", "sales_leader", "marketing"],
     description: "Crea un perfil ICP.",
-    input: z.object({ name: z.string().min(1), industries: z.string().optional(), company_size: z.string().optional(), geography: z.string().optional(), why_fit: z.string().optional(), anti_icp: z.string().optional(), hiring_signals: z.string().optional(), tech_stack: z.string().optional() }),
+    input: z.object({ name: z.string().min(1), industries: z.string().optional(), company_size: z.string().optional(), geography: z.string().optional(), why_fit: z.string().optional(), anti_icp: z.string().optional(), hiring_signals: z.string().optional(), tech_stack: z.string().optional(), pains: z.string().optional(), min_employees: z.number().int().positive().optional(), max_employees: z.number().int().positive().optional(), countries: z.array(z.string().length(2)).optional().describe("ISO de 2 letras"), search_keywords: z.array(z.string()).optional().describe("palabras clave en inglés para bases de empresas"), target_titles: z.array(z.string()).optional().describe("cargos a contactar, en inglés"), seniorities: z.array(z.enum(["founder", "c_suite", "vp", "head", "director", "manager"])).optional() }),
     summarize: (a) => `Crear el ICP «${a.name}»`,
     run: async (c, a) => ok(await c.db.from("icp_profiles").insert({ ...a, org_id: c.orgId }).select("id").single()),
   }),
