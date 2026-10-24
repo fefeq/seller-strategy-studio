@@ -5,25 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-none text-sm font-medium cursor-pointer transition-colors disabled:pointer-events-none disabled:cursor-not-allowed disabled:text-ink-faint [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-semibold cursor-pointer transition-all active:scale-[0.98] disabled:pointer-events-none disabled:cursor-not-allowed disabled:text-ink-faint [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        // solid: la acción que la pantalla defiende. Tinta, no rojo.
-        default: "bg-ink text-ink-reverse hover:bg-ink/85 disabled:bg-paper-sunk",
-        // alarm: solo destructivas con confirmación.
-        destructive: "bg-red text-ink-reverse hover:bg-red/90 disabled:bg-paper-sunk",
-        outline: "border border-hairline-firm bg-transparent text-ink hover:bg-paper-sunk disabled:border-hairline",
-        secondary: "border border-hairline-firm bg-transparent text-ink hover:bg-paper-sunk disabled:border-hairline",
+        // La acción principal de la pantalla: lima con texto tinta.
+        default: "bg-lime text-lime-foreground shadow-xs hover:brightness-95 disabled:bg-paper-sunk disabled:shadow-none",
+        // Solo destructivas con confirmación.
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:bg-paper-sunk",
+        outline: "border border-hairline bg-card text-ink shadow-xs hover:bg-paper-sunk disabled:border-hairline",
+        // Secundaria fuerte: tinta.
+        secondary: "bg-ink text-ink-reverse hover:bg-ink/85 disabled:bg-paper-sunk",
         ghost: "text-ink hover:bg-paper-sunk",
-        // text: lo interactivo es tinta subrayada.
-        link: "h-auto px-0 text-ink underline decoration-hairline-firm underline-offset-4 hover:decoration-ink",
+        link: "h-auto px-0 text-blue underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 md:h-8",
-        sm: "h-8 px-2.5 text-xs md:h-6",
-        lg: "h-10 px-6",
-        icon: "h-10 w-10 md:h-8 md:w-8",
+        default: "h-10 px-4 md:h-9",
+        sm: "h-9 rounded-md px-3 text-xs md:h-7",
+        lg: "h-11 px-6",
+        icon: "h-10 w-10 md:h-9 md:w-9",
       },
     },
     defaultVariants: {

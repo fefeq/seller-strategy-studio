@@ -14,7 +14,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           onFocus?.(e);
         }}
         className={cn(
-          "flex h-8 w-full rounded-none border-0 border-b border-hairline-firm bg-paper-sunk px-2 py-1 text-base tabular-nums transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-ink-faint aria-[invalid=true]:border-b-2 aria-[invalid=true]:border-red disabled:cursor-not-allowed disabled:text-ink-faint md:text-sm",
+          "flex h-10 w-full md:h-9 rounded-lg border border-hairline-firm bg-card shadow-xs focus-visible:border-blue px-2 py-1 text-base tabular-nums transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-ink-faint aria-[invalid=true]:border-state-alarm disabled:cursor-not-allowed disabled:text-ink-faint md:text-sm",
           className,
         )}
         ref={ref}
