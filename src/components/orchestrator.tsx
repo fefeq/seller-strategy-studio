@@ -1,4 +1,6 @@
 // Need-based actions: the user asks «Completar datos», Nokko picks the services and says which it used and the cost.
+import { useAccountOptions } from "@/components/entity-combobox";
+import { duplicateOf } from "@/lib/match";
 import { useEffect, useRef, useState } from "react";
 import { startBackgroundJob } from "@/lib/background.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -310,7 +312,9 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
   const [target, setTarget] = useState(false);
   const [busy, setBusy] = useState(false);
   const { data: icps = [] } = useQuery({ queryKey: ["clay-icps"], queryFn: async () => (await supabase.from("icp_profiles").select("*").order("name")).data ?? [] });
-  const res = done?.result?.search ? { ...done.result.search, rows: done.result.search.rows.map((r) => (r.domain && imported.has(r.domain) ? { ...r, existingId: imported.get(r.domain)! } : r)) } : null;
+  const { data: known = [] } = useAccountOptions(!!done?.result?.search);
+  // Also flag results that are already accounts under a similar name (no domain in Nokko, «S.L.», accents…).
+  const res = done?.result?.search ? { ...done.result.search, rows: done.result.search.rows.map((r) => (r.domain && imported.has(r.domain) ? { ...r, existingId: imported.get(r.domain)! } : !r.existingId ? { ...r, existingId: duplicateOf({ name: r.name, domain: r.domain }, known)?.item.id ?? r.existingId } : r)) } : null;
   const loaded = useRef<string | null>(null);
   useEffect(() => {
     if (!done || loaded.current === done.id) return;
