@@ -240,6 +240,10 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
       }
       return { title: `${done} ${done === 1 ? "documento resumido" : "documentos resumidos"} de Drive`, body: failed ? `${failed} no se pudieron leer.` : null, link: "/hub?tab=drive", done, failed };
     }
+    case "onboarding_read": {
+      const { runOnboardingRead } = await import("@/lib/onboarding.server");
+      return runOnboardingRead(await jobCtx(db, job), input, step);
+    }
     default: throw new Error(`Tarea desconocida: ${JOB_LABEL[job.kind as JobKind] ?? job.kind}`);
   }
 }

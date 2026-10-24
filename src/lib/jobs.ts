@@ -70,6 +70,7 @@ export function jobLink(kind: string, input: Record<string, unknown> | null | un
     case "posthog_sync": return "/integrations";
     case "debate": return "/debates";
     case "draft_artifact": return "/cycle";
+    case "onboarding_read": return "/onboarding";
     case "deep_review": return typeof i.artifactId === "string" ? `/cycle?artifact=${i.artifactId}` : "/cycle";
     default: return "/hub";
   }
