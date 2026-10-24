@@ -14,7 +14,7 @@ import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { CompanyLogo } from "@/components/company-logo";
 import { IcpListButton } from "@/components/parallel";
-import { orchestrateCompleteAccount, orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
+import { orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
 import { DEFAULT_LEVELS, LEVELS, LEVEL_LABEL, type Level } from "@/lib/orchestrator/search";
 import { MAX_REVEAL } from "@/lib/apollo";
 import { icpCompanyQuery } from "@/lib/icp";
