@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
+import { NotificationCenter } from "@/components/notification-center";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Brain, Home, Inbox, KanbanSquare, Menu, PanelLeftClose, PanelLeftOpen, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -108,6 +109,7 @@ function Shell() {
         <button onClick={signOut} className="-my-2 mt-1 py-2 text-xs text-ink underline decoration-hairline-firm underline-offset-4 hover:decoration-ink">
           Cerrar sesión
         </button>
+        {!mobile && <NotificationCenter userId={me?.user.id} className="mt-3 block" />}
         <ThemeToggle className="mt-3 border-t border-hairline pt-3 md:pt-2" />
       </div>
     </>
@@ -122,6 +124,7 @@ function Shell() {
         <div className="flex h-14 items-center justify-between gap-3 px-4">
           <Link to="/home" className="shrink-0" aria-label="Inicio"><Lockup /></Link>
           {current && <span className="min-w-0 truncate text-sm text-ink-mid">{current}</span>}
+          <NotificationCenter userId={me?.user.id} className="ml-auto shrink-0" />
           <button
             onClick={() => setNavOpen((o) => !o)}
             aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
