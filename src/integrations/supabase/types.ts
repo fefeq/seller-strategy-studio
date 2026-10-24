@@ -2725,6 +2725,8 @@ export type Database = {
       }
       notification_prefs: {
         Row: {
+          daily_email: boolean
+          daily_email_hour: number
           quiet_from: number
           quiet_to: number
           telegram: string
@@ -2733,6 +2735,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          daily_email?: boolean
+          daily_email_hour?: number
           quiet_from?: number
           quiet_to?: number
           telegram?: string
@@ -2741,6 +2745,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          daily_email?: boolean
+          daily_email_hour?: number
           quiet_from?: number
           quiet_to?: number
           telegram?: string
