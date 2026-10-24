@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { applySetupItems } from "@/lib/agent.functions";
 import { errorText } from "@/lib/errors";
+import { EntityCombobox } from "@/components/entity-combobox";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { useProducts } from "@/components/deal-lines";
@@ -34,6 +35,7 @@ export function NewDealButton() {
   const { data: products = [] } = useProducts();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
   const [f, setF] = useState({
     name: "",
     account: "",
