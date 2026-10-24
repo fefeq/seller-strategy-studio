@@ -38,13 +38,13 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
       const like = `%${term.replace(/[%_]/g, "")}%`;
       const [a, l, p, d] = await Promise.all([
         supabase.from("accounts").select("id,name,domain").ilike("name", like).limit(5),
-        supabase.from("leads").select("id,company,full_name").or(`company.ilike.${like},full_name.ilike.${like}`).limit(5),
+        supabase.from("leads").select("id,company,contact_name").or(`company.ilike.${like},contact_name.ilike.${like}`).limit(5),
         supabase.from("people").select("id,full_name,title").ilike("full_name", like).limit(5),
         supabase.from("deals").select("id,name").ilike("name", like).limit(5),
       ]);
       return [
         ...(a.data ?? []).map((r) => ({ kind: "Cuenta" as const, id: r.id, name: r.name, sub: r.domain })),
-        ...(l.data ?? []).map((r) => ({ kind: "Lead" as const, id: r.id, name: r.company || r.full_name || "Lead", sub: r.company ? r.full_name : null })),
+        ...(l.data ?? []).map((r) => ({ kind: "Lead" as const, id: r.id, name: r.company || r.contact_name || "Lead", sub: r.company ? r.contact_name : null })),
         ...(p.data ?? []).map((r) => ({ kind: "Persona" as const, id: r.id, name: r.full_name ?? "Persona", sub: r.title })),
         ...(d.data ?? []).map((r) => ({ kind: "Deal" as const, id: r.id, name: r.name, sub: null })),
       ];
