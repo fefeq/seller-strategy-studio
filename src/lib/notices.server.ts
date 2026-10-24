@@ -61,7 +61,7 @@ export async function notifyAutopilot(db: Admin, orgId: string, out: { researche
   const { data: leaders } = await db.from("org_members").select("user_id").eq("org_id", orgId).in("role", ["owner", "sales_leader"]);
   const users = [...new Set((leaders ?? []).map((l) => l.user_id))];
   if (!users.length) return 0;
-  const title = `Lo hice solo: ${parts.join(", ")}.`.replace(/^Lo hice solo: (\w)/, (_, c: string) => `Lo hice solo: ${c}`);
+  const title = `Lo hice solo: ${parts.join(", ")}.`;
   const { data, error } = await db.from("notifications").insert(users.map((u) => ({ org_id: orgId, user_id: u, kind: "autopilot", title, body: "Lo tienes en Inicio y en Sugerencias.", link: "/home" }))).select(COLS);
   if (error) { console.error("notifyAutopilot", error.message); return 0; }
   return deliver(db, (data ?? []) as Notice[], now);
