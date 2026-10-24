@@ -48,7 +48,14 @@ export const decideDiscovery = createServerFn({ method: "POST" })
       resultId = acc.id;
       message = `${d.name} ya está en Cuentas.`;
     } else if (d.kind === "contact") {
-      const accountId = det["account_id"];
+      // A contact found in a company that was new: if that company has since been added to Cuentas, link it there.
+      let accountId = det["account_id"] || null;
+      if (!accountId && det["domain"]) {
+        const { cleanDomain } = await import("@/lib/leads");
+        const dom = cleanDomain(det["domain"]);
+        const { data: acc } = dom ? await db.from("accounts").select("id").eq("org_id", ctx.orgId).ilike("domain", `%${dom}%`).limit(1).maybeSingle() : { data: null };
+        accountId = acc?.id ?? null;
+      }
       if (accountId) {
         const { error: e } = await db.from("stakeholders").insert({ account_id: accountId, name: d.name, title: det["title"] ?? null, linkedin_url: det["linkedin"] ?? null });
         if (e) console.error("discovery stakeholder", e.message);
@@ -56,7 +63,7 @@ export const decideDiscovery = createServerFn({ method: "POST" })
       const { data: lead, error: e } = await db.from("leads").insert({ company: det["account_name"] || d.name, contact_name: d.name, title: det["title"] ?? null, account_id: accountId ?? null, source: "Descubiertos", stage: "new", owner_id: ctx.userId }).select("id").single();
       if (e) throw e;
       resultId = lead.id;
-      message = `${d.name} está en Leads y en el mapa de poder de ${det["account_name"] ?? "su cuenta"}.`;
+      message = accountId ? `${d.name} está en Leads y en el mapa de poder de ${det["account_name"] ?? "su cuenta"}.` : `${d.name} está en Leads. Añade ${det["account_name"] ?? "su empresa"} a Cuentas para tener su mapa de poder.`;
     } else {
       const { data: pos } = await db.from("positioning").select("id,competitive_alternative").eq("org_id", ctx.orgId).limit(1).maybeSingle();
       if (!pos) throw new Error("Primero rellena el posicionamiento de tu empresa.");
