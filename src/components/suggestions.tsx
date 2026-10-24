@@ -72,7 +72,7 @@ export function useSuggestions() {
 
 type S = NonNullable<ReturnType<typeof useSuggestions>["data"]>[number];
 
-export function SuggestionCard({ s }: { s: S }) {
+export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean }) {
   const decide = useServerFn(decideSuggestion);
   const qc = useQueryClient();
   const { data: me } = useMe();
@@ -105,7 +105,7 @@ export function SuggestionCard({ s }: { s: S }) {
         <div className="min-w-0">
           <p className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>{PRIO[s.priority]}</p>
           <p className="mt-0.5 break-words font-medium">{s.title}</p>
-          <p className="mt-1 whitespace-pre-line break-words text-sm text-muted-foreground">{s.body}</p>
+          <p className={`mt-1 whitespace-pre-line break-words text-sm text-muted-foreground ${compact ? "line-clamp-3" : ""}`}>{s.body}</p>
         </div>
         {target && <Link to={target.to} search={target.search} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>

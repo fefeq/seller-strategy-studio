@@ -127,7 +127,7 @@ function Shell() {
       <header className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}>
         <div className="flex h-14 items-center justify-between gap-3 px-4">
           <Link to="/home" className="shrink-0" aria-label="Inicio"><Lockup /></Link>
-          {current && <span className="min-w-0 truncate text-sm text-ink-mid">{current}</span>}
+          {current && <span className="hidden min-w-0 truncate text-sm text-ink-mid min-[420px]:inline">{current}</span>}
           <button onClick={() => setPaletteOpen(true)} aria-label="Buscar" className="ml-auto flex size-11 shrink-0 items-center justify-center text-ink-mid">Buscar</button>
           <NotificationCenter userId={me?.user.id} className="shrink-0" />
           <button
