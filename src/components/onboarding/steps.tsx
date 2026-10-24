@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useCurrency } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
 import { diagnose, type DiagnosisInput, type Diagnosis, type Friction, type Model, type Stage } from "@/lib/gtm-diagnosis";
 
@@ -73,8 +73,11 @@ export function DiagnosisStep({ initial, onDone }: { initial: DiagnosisInput; on
 
 export function RoadmapStep({ diagnosis }: { diagnosis: Diagnosis | null }) {
   const { data: st } = useSetup();
+  const { data: me } = useMe();
+  const leader = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const mine: [string, string, string][] = [
     ["Completar lo que falta de la estrategia", "/setup", `${st?.status.pct ?? 0} % hecho`],
+    ...(leader ? [["Finanzas: tu caja, costes y planes para la previsión", "/finance", "Solo Owner y Sales Leader"] as [string, string, string]] : []),
     ["Importar leads o cuentas", "/leads/entrada", ""],
     ["Conectar herramientas", "/integrations", ""],
     ["Conectar asistentes de IA y Telegram", "/connect", ""],
