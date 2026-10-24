@@ -1683,6 +1683,7 @@ export type Database = {
           adoption: string | null
           anti_icp: string | null
           company_size: string | null
+          countries: string[]
           created_at: string
           created_by: string | null
           funding_signals: string | null
@@ -1691,9 +1692,15 @@ export type Database = {
           hiring_signals: string | null
           id: string
           industries: string | null
+          max_employees: number | null
+          min_employees: number | null
           name: string
           org_id: string | null
+          pains: string | null
+          search_keywords: string[]
           segment_id: string | null
+          seniorities: string[]
+          target_titles: string[]
           tech_stack: string | null
           updated_at: string
           updated_by: string | null
@@ -1703,6 +1710,7 @@ export type Database = {
           adoption?: string | null
           anti_icp?: string | null
           company_size?: string | null
+          countries?: string[]
           created_at?: string
           created_by?: string | null
           funding_signals?: string | null
@@ -1711,9 +1719,15 @@ export type Database = {
           hiring_signals?: string | null
           id?: string
           industries?: string | null
+          max_employees?: number | null
+          min_employees?: number | null
           name: string
           org_id?: string | null
+          pains?: string | null
+          search_keywords?: string[]
           segment_id?: string | null
+          seniorities?: string[]
+          target_titles?: string[]
           tech_stack?: string | null
           updated_at?: string
           updated_by?: string | null
@@ -1723,6 +1737,7 @@ export type Database = {
           adoption?: string | null
           anti_icp?: string | null
           company_size?: string | null
+          countries?: string[]
           created_at?: string
           created_by?: string | null
           funding_signals?: string | null
@@ -1731,9 +1746,15 @@ export type Database = {
           hiring_signals?: string | null
           id?: string
           industries?: string | null
+          max_employees?: number | null
+          min_employees?: number | null
           name?: string
           org_id?: string | null
+          pains?: string | null
+          search_keywords?: string[]
           segment_id?: string | null
+          seniorities?: string[]
+          target_titles?: string[]
           tech_stack?: string | null
           updated_at?: string
           updated_by?: string | null
