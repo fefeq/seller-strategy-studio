@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
 import { NotificationCenter } from "@/components/notification-center";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Brain, Home, Inbox, KanbanSquare, Menu, PanelLeftClose, PanelLeftOpen, Users, X } from "lucide-react";
+import { Brain, Home, Inbox, KanbanSquare, Menu, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -81,7 +81,6 @@ function Shell() {
             title="Cerrar menú"
             className="flex size-8 shrink-0 items-center justify-center text-ink-mid hover:text-ink"
           >
-            <PanelLeftClose className="size-4" />
           </button>
         </div>
       )}
@@ -132,7 +131,7 @@ function Shell() {
             aria-controls="mobile-nav"
             className="-mr-2 flex size-11 shrink-0 items-center justify-center text-ink"
           >
-            {navOpen ? <X className="size-6" /> : <Menu className="size-6" />}
+            {navOpen ? : <Menu className="size-6" />}
           </button>
         </div>
       </header>
@@ -160,7 +159,6 @@ function Shell() {
             title="Abrir menú"
             className="flex size-9 items-center justify-center text-ink-mid hover:text-ink"
           >
-            <PanelLeftOpen className="size-4" />
           </button>
           <ThemeToggle compact className="mt-auto" />
         </aside>

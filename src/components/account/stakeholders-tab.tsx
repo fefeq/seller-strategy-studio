@@ -4,7 +4,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { JobProgress, useJob } from "@/components/background";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -73,7 +72,7 @@ export function StakeholdersTab({ accountId, hasDomain, list, onChange }: { acco
           </div>
           <ApolloReveal stakeholderId={sel.id} onChange={async () => { const { data: fresh } = await supabase.from("stakeholders").select("email,phone,linkedin_url,title").eq("id", sel.id).single(); if (fresh) setSel((cur: any) => (cur?.id === sel.id ? { ...cur, ...Object.fromEntries(Object.entries(fresh).filter(([k]) => !cur[k])) } : cur)); onChange(); }} />
           <Field label="Prioridades y notas"><Textarea rows={3} value={sel.priorities ?? ""} onChange={(e) => setSel({ ...sel, priorities: e.target.value })} /></Field>
-          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button>{stakeJob.running ? <JobProgress job={stakeJob.job} onCancel={stakeJob.cancel} /> : <Button variant="outline" onClick={() => stakeJob.start({ stakeholderId: sel.id }, `Research de ${sel.name}`)}><Sparkles className="size-4" /> Research con IA</Button>}</div>
+          <div className="flex flex-wrap gap-2"><Button onClick={save}>Guardar</Button>{stakeJob.running ? <JobProgress job={stakeJob.job} onCancel={stakeJob.cancel} /> : <Button variant="outline" onClick={() => stakeJob.start({ stakeholderId: sel.id }, `Research de ${sel.name}`)}>Research con IA</Button>}</div>
           {sel.research && <pre className="whitespace-pre-wrap break-words rounded-md bg-muted p-4 font-sans text-sm">{sel.research}</pre>}
         </div>
       ) : <Empty>Selecciona una persona del mapa.</Empty>}

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Clock, Check, X, ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
@@ -111,13 +111,13 @@ export function SuggestionCard({ s }: { s: S }) {
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {hasAction
-          ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> Aprobar y hacer</Button>
+          ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}>Aprobar y hacer</Button>
           : <>
-              <Button size="sm" disabled={!!busy} onClick={resolve}><Sparkles className="size-3.5" /> Resolver</Button>
-              <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("approve")}><Check className="size-3.5" /> Hecho</Button>
+              <Button size="sm" disabled={!!busy} onClick={resolve}>Resolver</Button>
+              <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("approve")}>Hecho</Button>
             </>}
-        <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}><Clock className="size-3.5" /> En 3 días</Button>
-        <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}><X className="size-3.5" /> Descartar</Button>
+        <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>En 3 días</Button>
+        <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}>Descartar</Button>
       </div>
     </div>
   );

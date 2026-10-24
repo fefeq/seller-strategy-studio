@@ -1,7 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles, Wand2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -124,7 +123,7 @@ export function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deal
               <Field key={k} label={label}><Textarea rows={3} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}><Sparkles className="size-4" /> {busy ? "Preparando…" : "Preparar llamada con IA"}</Button></div>
+          <div className="flex flex-wrap gap-2"><Button onClick={() => save()}>Guardar</Button><Button variant="outline" onClick={genBrief} disabled={busy}>{busy ? "Preparando…" : "Preparar llamada con IA"}</Button></div>
           {sel.ai_brief && <div><p className="eyebrow mb-2">Brief generado</p><AiText>{sel.ai_brief}</AiText></div>}
           <div className="space-y-3 border-t pt-4">
             <div>
@@ -141,8 +140,8 @@ export function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deal
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => save()}>Guardar notas</Button>
-              <Button variant="outline" onClick={genTeardown} disabled={reviewBusy || (filledCount(lines) === 0 && !String(sel.notes ?? "").trim())}><Wand2 className="size-4" /> {reviewBusy ? "Desmontando…" : sel.call_review ? "Volver a desmontar con IA" : "Desmontar la llamada con IA"}</Button>
-              {sel.call_review && sel.deal_id && <Button variant="outline" onClick={updateDealWithAgent}><Sparkles className="size-4" /> Actualizar el deal con el agente</Button>}
+              <Button variant="outline" onClick={genTeardown} disabled={reviewBusy || (filledCount(lines) === 0 && !String(sel.notes ?? "").trim())}>{reviewBusy ? "Desmontando…" : sel.call_review ? "Volver a desmontar con IA" : "Desmontar la llamada con IA"}</Button>
+              {sel.call_review && sel.deal_id && <Button variant="outline" onClick={updateDealWithAgent}>Actualizar el deal con el agente</Button>}
             </div>
             {sel.call_review && <div><p className="eyebrow mb-2">Desmontaje de la llamada</p><AiText>{sel.call_review}</AiText></div>}
           </div>
@@ -153,7 +152,7 @@ export function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deal
             </div>
             <LevelPicker value={sel.listening_level} onChange={(l) => setSel({ ...sel, listening_level: l })} />
             <Textarea rows={2} placeholder="¿En qué momento escuchaste de verdad? ¿Cuándo estabas pensando en tu pitch?" value={sel.listening_reflection ?? ""} onChange={(e) => setSel({ ...sel, listening_reflection: e.target.value })} />
-            <Button variant="outline" size="sm" onClick={genCoaching} disabled={coachBusy}><Sparkles className="size-4" /> {coachBusy ? "Analizando…" : "Coaching de escucha con IA"}</Button>
+            <Button variant="outline" size="sm" onClick={genCoaching} disabled={coachBusy}>{coachBusy ? "Analizando…" : "Coaching de escucha con IA"}</Button>
             {sel.listening_coaching && <AiText>{sel.listening_coaching}</AiText>}
           </div>
         </div>

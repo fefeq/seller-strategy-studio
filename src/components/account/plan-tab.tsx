@@ -1,7 +1,6 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -61,7 +60,7 @@ export function PlanTab({ accountId, accountName, hasDomain, plan, onSaved }: { 
       <div className="flex flex-wrap gap-2">
         <Button onClick={() => save()}>Guardar plan</Button>
         <SaveToDriveButton title={`Plan de cuenta · ${accountName}`} accountId={accountId} markdown={() => planMarkdown(accountName, PLAN_FIELDS.map(([k, label]) => [label, form[k]]))} label="Guardar plan en Drive" />
-        <Button variant="outline" onClick={genProposal} disabled={busy}><Sparkles className="size-4" /> {busy ? "Generando…" : "Borrador de propuesta con IA"}</Button>
+        <Button variant="outline" onClick={genProposal} disabled={busy}>{busy ? "Generando…" : "Borrador de propuesta con IA"}</Button>
       </div>
       <AccountResearch accountId={accountId} hasDomain={hasDomain} onApply={applyResearch} />
       {proposal && <>

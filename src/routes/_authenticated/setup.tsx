@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Circle, FileText, Loader2, MessageSquare, Sparkles, ListChecks } from "lucide-react";
+import { Check, Circle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
@@ -51,9 +51,9 @@ function SetupPage() {
           <p className="mt-3 max-w-3xl text-xs text-muted-foreground">Al combinarlas no se borra nada sin que lo veas: la IA actualiza los campos que tú aceptas (segmentos con el mismo nombre se actualizan; ICP, pilares y cuentas se añaden), y en Paso a paso partes de lo que ya está guardado.</p>
           <Tabs value={tab} onValueChange={setTab} className="mt-6">
             <TabsList>
-              <TabsTrigger value="ai"><Sparkles className="mr-1.5 size-4" /> Lo rellena la IA</TabsTrigger>
-              <TabsTrigger value="interview"><MessageSquare className="mr-1.5 size-4" /> Entrevista</TabsTrigger>
-              <TabsTrigger value="wizard"><ListChecks className="mr-1.5 size-4" /> Paso a paso</TabsTrigger>
+              <TabsTrigger value="ai">Lo rellena la IA</TabsTrigger>
+              <TabsTrigger value="interview">Entrevista</TabsTrigger>
+              <TabsTrigger value="wizard">Paso a paso</TabsTrigger>
             </TabsList>
             <TabsContent value="ai" className="mt-6"><AiFill proposal={proposal} setProposal={setProposal} onWizard={() => setTab("wizard")} /></TabsContent>
             <TabsContent value="interview" className="mt-6"><Interview /></TabsContent>
@@ -67,7 +67,7 @@ function SetupPage() {
           <ul className="mt-4 space-y-2.5 text-sm">
             {st?.items.map((i) => (
               <li key={i.id} className="flex gap-2">
-                {i.done ? <Check className="mt-0.5 size-4 shrink-0 text-success" /> : <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />}
+                {i.done ? : <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />}
                 <div><p className={i.done ? "text-muted-foreground line-through" : ""}>{i.label}</p>{!i.done && <p className="text-xs text-muted-foreground">Desbloquea: {i.unlocks}</p>}</div>
               </li>
             ))}
@@ -135,7 +135,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
       <div>
         <label className="text-sm font-medium">Documentos (PDF, deck exportado, notas)</label>
         <Input className="mt-1" type="file" multiple accept=".pdf,.txt,.md,.csv" onChange={(e) => onFiles(e.target.files)} />
-        {files.length > 0 && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground"><FileText className="size-3" /> {files.map((f) => f.filename).join(", ")}</p>}
+        {files.length > 0 && <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">{files.map((f) => f.filename).join(", ")}</p>}
         <div className="mt-2"><DriveSetupButton onText={(name, body) => setText((t) => `${t}\n\n--- ${name} (Google Drive) ---\n${body}`.slice(0, TEXT_LIMIT))} /></div>
       </div>
       <div>
@@ -150,7 +150,7 @@ function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal |
         <AiProgress typicalSeconds={60} stages={[url.trim() ? "Leyendo tu web" : "Leyendo lo que has pegado", files.length ? "Leyendo los documentos" : "Extrayendo producto y clientes", "Proponiendo posicionamiento e ICP", "Proponiendo segmentos y mensajes"]} />
       ) : (
         <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-8" onClick={run} disabled={!url.trim() && !text.trim() && !files.length}>
-          <Sparkles className="size-4" /> Proponer mi estrategia
+          Proponer mi estrategia
         </Button>
       )}
       <p className="text-xs text-muted-foreground">La IA propone y tú revisas cada punto antes de guardarlo.</p>
@@ -267,7 +267,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
         </section>
       ))}
       <div className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
-        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length || !!saved}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {saved ? "Guardado" : `Guardar ${chosen.length} elementos`}</Button>
+        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length || !!saved}>{busy ? : <Check className="size-4" />} {saved ? "Guardado" : `Guardar ${chosen.length} elementos`}</Button>
         <Button variant="outline" onClick={onWizard}><span className="sm:hidden">Seguir paso a paso</span><span className="hidden sm:inline">Completar el resto paso a paso</span></Button>
         <Button variant="ghost" onClick={onReset}>Empezar de nuevo</Button>
       </div>
@@ -296,7 +296,7 @@ function Interview() {
     <div className="rounded-lg border bg-card p-6">
       <h3 className="text-2xl">Entrevista con el agente</h3>
       <p className="mt-2 max-w-xl text-muted-foreground">El agente mira qué te falta y te hace una pregunta cada vez, con una propuesta que puedes aceptar con un «sí». Cada respuesta queda como acción para confirmar con un clic.</p>
-      <Button className="mt-4" onClick={() => open({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}><MessageSquare className="size-4" /> Empezar entrevista</Button>
+      <Button className="mt-4" onClick={() => open({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Empezar entrevista</Button>
     </div>
   );
 }

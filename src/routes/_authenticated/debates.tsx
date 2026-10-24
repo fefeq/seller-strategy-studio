@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Loader2, MessagesSquare, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -92,7 +91,7 @@ function DebatesPage() {
   }
 
   return (
-    <Page eyebrow="Debate multiagente" title="Debates" actions={<Button onClick={() => { setCreating(true); setSelected(null); revealOnMobile(mainRef.current); }}><Plus className="size-4" /> Nuevo debate</Button>}>
+    <Page eyebrow="Debate multiagente" title="Debates" actions={<Button onClick={() => { setCreating(true); setSelected(null); revealOnMobile(mainRef.current); }}>Nuevo debate</Button>}>
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="order-2 space-y-1.5 lg:order-1">
           <p className="eyebrow mb-2">Historial</p>
@@ -142,7 +141,7 @@ function DebatesPage() {
                   {subjects?.artifacts.length ? <optgroup label="Documentos">{subjects.artifacts.map((d) => <option key={d.id} value={`artifact:${d.id}`}>{d.title} v{d.version}</option>)}</optgroup> : null}
                 </select>
               </div>
-              <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={start} disabled={busy || participants.length < 2}>{busy ? <><Loader2 className="size-4 animate-spin" /> Debatiendo en segundo plano · {debateJob.job?.step ?? "en cola"}</> : <><MessagesSquare className="size-4" /> Empezar debate</>}</Button>
+              <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={start} disabled={busy || participants.length < 2}>{busy ? <>Debatiendo en segundo plano · {debateJob.job?.step ?? "en cola"}</> : <>Empezar debate</>}</Button>
               {busy && <p className="text-xs text-muted-foreground">Puedes salir de aquí: te aviso cuando termine. <button type="button" className="underline" onClick={debateJob.cancel}>Cancelar</button></p>}
             </div>
           )}

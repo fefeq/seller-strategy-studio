@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Lightbulb, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Page, Empty } from "@/components/page";
@@ -90,7 +89,7 @@ function Advisor() {
             </div>
             <Field label="Horizonte"><Pick value={horizon} options={HORIZONS} onChange={setHorizon} /></Field>
             <Button className="h-auto min-h-10 w-full whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={analyze} disabled={busy || goal.trim().length < 10}>
-              <Sparkles className="size-4" /> {busy ? "Analizando pipeline, métricas y segmentos…" : "Generar recomendaciones"}
+              {busy ? "Analizando pipeline, métricas y segmentos…" : "Generar recomendaciones"}
             </Button>
             <p className="text-xs text-muted-foreground">Se analizan tus deals, la conversión por etapa, la cobertura del trimestre, el win rate por fuente y por segmento, los benchmarks de cada segmento, el posicionamiento y el ICP. Puede tardar hasta un minuto.</p>
           </div>
@@ -183,7 +182,7 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
         <span className="min-w-0 break-words text-muted-foreground">
           <b className="text-foreground">{ROLES[rec.owner_role as Role]?.label ?? rec.owner_role}</b> · KPI: {rec.kpi} · Objetivo: {rec.target}
         </span>
-        <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}><Lightbulb className="size-3.5" /> {saved ? "En Prototipos" : "Convertir en prototipo"}</Button>
+        <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}>{saved ? "En Prototipos" : "Convertir en prototipo"}</Button>
       </div>
     </div>
   );

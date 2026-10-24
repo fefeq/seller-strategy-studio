@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ArrowDown, ArrowUp, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowUp, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useTeam, type TeamMember } from "@/hooks/use-team";
@@ -199,7 +199,7 @@ function Assignment() {
         <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
           <h3 className="text-2xl">Reglas</h3>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={aiRules} disabled={!!busy || !eligible.length}><Sparkles className="size-4" /> {busy === "rules" ? "Pensando reglas…" : "Proponer reglas con IA"}</Button>
+            <Button variant="outline" onClick={aiRules} disabled={!!busy || !eligible.length}>{busy === "rules" ? "Pensando reglas…" : "Proponer reglas con IA"}</Button>
             <Button variant="outline" onClick={() => setRules([...draft, { id: null, key: newKey(), segment_id: null, region: null, country: null, members: [] }])}>+ Añadir regla</Button>
             <Button onClick={saveRules} disabled={!dirtyRules || !!busy}>{busy === "save" ? "Guardando…" : "Guardar reglas"}</Button>
           </div>

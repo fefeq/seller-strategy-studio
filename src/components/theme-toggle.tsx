@@ -54,7 +54,7 @@ export function ThemeToggle({ compact = false, className }: { compact?: boolean;
   if (compact) {
     return (
       <button onClick={toggle} aria-label={label} title={label} className={cn("flex size-9 items-center justify-center text-ink-mid hover:text-ink", className)}>
-        {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+        {dark ? : <Moon className="size-4" />}
       </button>
     );
   }
@@ -67,7 +67,7 @@ export function ThemeToggle({ compact = false, className }: { compact?: boolean;
       className={cn("group flex w-full items-center justify-between gap-3 py-2 text-xs text-ink-mid hover:text-ink md:py-1", className)}
     >
       <span className="flex items-center gap-2">
-        {dark ? <Moon className="size-3.5" /> : <Sun className="size-3.5" />}
+        {dark ? : <Sun className="size-3.5" />}
         {dark ? "Modo oscuro" : "Modo claro"}
       </span>
       {/* The switch: a hairline track with a square knob, no radius (design system). */}

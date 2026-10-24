@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Compass } from "lucide-react";
 import { useCycle } from "@/hooks/use-cycle";
 import { useAgent } from "@/components/agent";
 import { getPersona } from "@/lib/bmad/personas";
@@ -17,7 +16,7 @@ export function NextSteps() {
     <div className="rounded-lg border bg-card p-5">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="eyebrow flex items-center gap-1.5"><Compass className="size-3.5" /> ¿Qué hago ahora?</p>
+          <p className="eyebrow flex items-center gap-1.5">¿Qué hago ahora?</p>
           <h3 className="mt-1 text-2xl">Fase actual: {phase.label}</h3>
         </div>
         <Link to="/cycle" className="py-2 text-xs text-signal md:py-0">Ver Ciclo GTM →</Link>
@@ -43,8 +42,8 @@ export function NextSteps() {
                 <p className="text-xs text-muted-foreground">{s.why} · con {p?.name} ({p?.title})</p>
               </div>
               {artifact && s.id.startsWith("approve_")
-                ? <Link to="/cycle" className="-my-2 flex shrink-0 items-center gap-1 px-2 py-2 text-xs text-signal md:my-0 md:px-0 md:py-0">Revisar <ArrowRight className="size-3" /></Link>
-                : <button onClick={() => open({ personaId: s.persona, workflowId: s.workflow, prompt: `${w?.label ?? s.title}: empecemos.` })} className="-my-2 flex shrink-0 items-center gap-1 px-2 py-2 text-xs text-signal md:my-0 md:px-0 md:py-0">Empezar <ArrowRight className="size-3" /></button>}
+                ? <Link to="/cycle" className="-my-2 flex shrink-0 items-center gap-1 px-2 py-2 text-xs text-signal md:my-0 md:px-0 md:py-0">Revisar</Link>
+                : <button onClick={() => open({ personaId: s.persona, workflowId: s.workflow, prompt: `${w?.label ?? s.title}: empecemos.` })} className="-my-2 flex shrink-0 items-center gap-1 px-2 py-2 text-xs text-signal md:my-0 md:px-0 md:py-0">Empezar</button>}
             </div>
           );
         })}

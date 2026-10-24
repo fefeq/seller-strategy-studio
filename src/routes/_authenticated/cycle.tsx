@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CheckCircle2, FileText, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { CheckCircle2, FileText, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -113,7 +113,7 @@ function CyclePage() {
                     </div>
                     {(k === "retro" || k === "winloss") && closedCount === 0
                       ? <p className="mt-1 text-xs text-muted-foreground">Necesita al menos un deal ganado o perdido. Sin cierres, el borrador sería inventado.</p>
-                      : <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}><Sparkles className="size-3" /> Borrador con IA</Button>}
+                      : <Button size="sm" variant="ghost" className="mt-1 h-10 w-full text-xs md:h-7" onClick={() => setNewKind(k)}>Borrador con IA</Button>}
                   </div>
                 );
               })}
@@ -225,7 +225,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
           {art.status === "draft" && (edit === null
             ? <Button size="sm" variant="outline" onClick={() => setEdit(art.content)}>Editar</Button>
             : <><Button size="sm" onClick={save}>Guardar</Button><Button size="sm" variant="ghost" onClick={() => setEdit(null)}>Cancelar</Button></>)}
-          {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}><CheckCircle2 className="size-4" /> Aprobar</Button>}
+          {art.status === "draft" && leader && edit === null && <Button size="sm" onClick={approve}>Aprobar</Button>}
           {art.status === "draft" && !leader && <span className="self-center text-xs text-muted-foreground">Solo Owner o Sales Leader pueden aprobar.</span>}
           {art.status === "approved" && leader && <>
             <Button size="sm" variant="outline" onClick={newVersion}>Crear v{nextVersion} para editar</Button>
@@ -235,7 +235,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
             </select>
-            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Wand2 className="size-4" />} Revisión profunda</Button>
+            <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? : <Wand2 className="size-4" />} Revisión profunda</Button>
           </span>
           <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}

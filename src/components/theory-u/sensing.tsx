@@ -2,7 +2,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
@@ -74,7 +73,7 @@ export function Sensing() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-full sm:w-56"><Pick value={filter} options={{ ...journeyOpts, "": "Todos los recorridos" }} onChange={setFilter} /></div>
-          <Button variant="outline" onClick={runPatterns} disabled={busy || notes.length === 0}><Sparkles className="size-4" /> {busy ? "Analizando…" : "Detectar patrones con IA"}</Button>
+          <Button variant="outline" onClick={runPatterns} disabled={busy || notes.length === 0}>{busy ? "Analizando…" : "Detectar patrones con IA"}</Button>
           <span className="font-mono text-xs text-muted-foreground">{notes.length} notas</span>
         </div>
         {patterns && <div className="rounded-lg border bg-card p-5"><p className="eyebrow mb-2">Patrones emergentes</p><pre className="whitespace-pre-wrap font-sans text-sm">{patterns}</pre></div>}
