@@ -22,6 +22,8 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
 
         try {
           if (body.kind === "digest") return Response.json(await sendDigests(db));
+          // Telegram notices held by someone's night silence go out once it ends.
+          { const { flushHeldNotices } = await import("@/lib/notices.server"); await flushHeldNotices(db, now); }
           const { data: orgs } = await db.from("organizations").select("id").order("created_at").limit(BATCH);
           // Inngest answers a ping each hour; while its heartbeat is fresh, each company runs as its own
           // background job with retries (one failing company never blocks the rest). Otherwise, inline as before.
@@ -58,7 +60,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Autopilot: research new accounts, prepare tomorrow's meetings, review cooling accounts (bounded per company).
           const { autopilotForOrg } = await import("@/lib/autopilot.server");
           for (const o of orgs ?? []) {
-            try { await autopilotForOrg(db, o.id, now); } catch (e) { console.error("autopilot failed", o.id, e); }
+            try { const r = await autopilotForOrg(db, o.id, now); const { notifyAutopilot } = await import("@/lib/notices.server"); await notifyAutopilot(db, o.id, r, now); } catch (e) { console.error("autopilot failed", o.id, e); }
           }
           // «Descubiertos»: each company's weekly search (self-guarded, at most one company per run inline).
           const { discoverForOrg } = await import("@/lib/discoveries.server");
