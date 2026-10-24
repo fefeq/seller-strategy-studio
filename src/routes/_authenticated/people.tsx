@@ -14,6 +14,7 @@ import { dedupePeople, parseCsv } from "@/lib/dedupe";
 import { CAMPAIGN_RESULTS, SOURCES } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
 import { ApolloPhones } from "@/components/apollo";
+import { PersonQuickActions } from "@/components/quick-actions";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -87,7 +88,7 @@ function People() {
         <ul className="border-t md:hidden">
           {list.map((p) => (
             <li key={p.id} className="space-y-3 border-b py-4 text-sm">
-              <div><p className="break-words font-medium">{p.full_name || "—"}</p><p className="break-all text-xs text-muted-foreground">{p.email}{p.company ? ` · ${p.company}` : ""}</p></div>
+              <div><p className="break-words font-medium">{p.full_name || "—"}</p><p className="break-all text-xs text-muted-foreground">{p.email}{p.company ? ` · ${p.company}` : ""}</p><span className="mt-1 inline-block"><PersonQuickActions person={p} /></span></div>
               <div className="grid grid-cols-2 gap-x-3 gap-y-2">
                 {editors(p).map((e) => <Field key={e.label} label={e.label}>{e.node}</Field>)}
               </div>
@@ -98,7 +99,7 @@ function People() {
         </ul>
         <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Fuente", "Tier", "Secuencia", "Etapa CRM", "Campañas", "Registrar resultado"].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr>{["Persona", "Fuente", "Tier", "Secuencia", "Etapa CRM", "Campañas", "Registrar resultado", ""].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
             <tbody>
               {list.map((p) => (
                 <tr key={p.id} className="border-b last:border-0">
@@ -106,6 +107,7 @@ function People() {
                   {editors(p).map((e) => <td key={e.label} className={`px-3 py-2 ${e.w}`}>{e.node}</td>)}
                   <td className="px-3 py-2 text-xs">{results(p.id)}</td>
                   <td className="px-3 py-2"><ResultLogger campaigns={data?.campaigns ?? []} onLog={(c, r) => logResult(p.id, c, r)} /></td>
+                  <td className="px-3 py-2 text-right"><PersonQuickActions person={p} /></td>
                 </tr>
               ))}
             </tbody>
@@ -144,7 +146,7 @@ function AddPerson({ existing }: { existing: { email: string | null; linkedin_ur
     if (same && !window.confirm(`Ya tienes a ${f.full_name}${f.company ? ` en ${f.company}` : ""}. ¿Añadirla igualmente?`)) return;
     const { fresh } = dedupePeople([f], existing);
     if (!fresh.length) return toast.error("Esta persona ya existe (mismo email o LinkedIn) o falta email/LinkedIn.");
-    const { error } = await supabase.from("people").insert({ ...fresh[0], full_name: f.full_name, company: f.company, title: f.title });
+    const { error } = await supabase.from("people").insert({ ...fresh[0], full_name: f.full_name, company: f.company, title: f.title, account_id: accountId });
     if (error) return toast.error(error.code === "23505" ? "Duplicado: ya existe." : errorText(error));
     setOpen(false); setF({ full_name: "", email: "", linkedin_url: "", company: "", title: "" });
     qc.invalidateQueries({ queryKey: ["people"] });
