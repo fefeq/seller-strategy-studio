@@ -19,6 +19,7 @@ import { applyColumnMapping, columnMapping, CSV_FIELD_LABELS, dealsWithoutCloseD
 import { useStages } from "@/components/stage-settings";
 import { importLeads } from "@/lib/leads.functions";
 import { errorText } from "@/lib/errors";
+import { ImportReview } from "@/components/import-review";
 
 export const Route = createFileRoute("/_authenticated/leads/entrada")({
   head: () => ({ meta: [
@@ -194,6 +195,18 @@ function HowTo() {
       <AccordionItem value="zap">
         <AccordionTrigger className="font-sans text-sm tracking-normal">Zapier o Make</AccordionTrigger>
         <AccordionContent className="text-sm text-muted-foreground">Añade el paso <strong>Webhooks → POST</strong> (en Make, «HTTP → Make a request»), pega el enlace, elige JSON y mapea los campos: empresa, email, etapa, fecha, importe e id. Así conectas cualquier herramienta: Google Sheets, LinkedIn Lead Gen, Calendly…</AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="salesnav">
+        <AccordionTrigger className="font-sans text-sm tracking-normal">Sales Navigator (con Make, n8n, Evaboot o Phantombuster)</AccordionTrigger>
+        <AccordionContent className="space-y-2 text-sm text-muted-foreground">
+          <p>Crea una conexión de <strong>Cuentas</strong> para listas de empresas o de <strong>Leads</strong> para listas de personas, en modo «Revisar antes de entrar».</p>
+          <p>En Make o n8n: el disparador es tu extractor (Evaboot, Phantombuster o una hoja de Google con la exportación) y el paso final es «HTTP → POST» con JSON a tu enlace. Para cuentas envía <code>{"{ \"accounts\": [ { \"empresa\": …, \"web\": …, \"sector\": …, \"empleados\": … } ] }"}</code>; para leads, empresa, nombre, cargo, email y LinkedIn.</p>
+          <p>Prueba primero con <code>&test=1</code>: te devuelve qué entraría y qué no, sin guardar nada. Después cada envío aparece en «Pendientes de revisar».</p>
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="hubspot">
+        <AccordionTrigger className="font-sans text-sm tracking-normal">HubSpot</AccordionTrigger>
+        <AccordionContent className="text-sm text-muted-foreground">En HubSpot crea un workflow (Automatización → Workflows) que se dispare al crear un contacto o deal y añade la acción «Enviar un webhook» (POST) a tu enlace. Incluye el id del registro como <code>id</code> para que las actualizaciones caigan en el mismo lead o deal. Empieza en modo «Revisar» y pásalo a «Entrada directa» cuando confíes en los datos.</AccordionContent>
       </AccordionItem>
       <AccordionItem value="crm">
         <AccordionTrigger className="font-sans text-sm tracking-normal">CRM: HubSpot, Pipedrive, Attio, Salesforce</AccordionTrigger>
