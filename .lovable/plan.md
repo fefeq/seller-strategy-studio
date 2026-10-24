@@ -103,7 +103,9 @@ Diagnóstico:
 ## Detalles técnicos
 - `src/lib/next-step.ts` (pura, con test): reúne reuniones, aprobaciones, sugerencias, leads retrasados, deals en riesgo y la configuración en una lista ordenada. Reutiliza `todayItems`/`digest`.
 - `src/components/home/focus-card.tsx` y `src/components/briefing.tsx`, con resúmenes plegables.
-- `SuggestionCard`: añadir `variant="triage"`, el menú «···», el hook de teclado `useTriageKeys` y el aviso de deshacer con sonner (posponer o descartar se revierte cambiando el estado).
+- Mazo: componente genérico `SwipeDeck<T>` (`src/components/swipe-deck.tsx`) con la librería `motion` (drag, umbral por distancia y velocidad, spring, AnimatePresence). Se reutiliza en Sugerencias, Inicio, Descubiertos y cuarentena. Las reglas de umbral y dirección van en `src/lib/swipe.ts` (pura, con test).
+- `SuggestionCard`: variantes `deck` y `row`, menú «···», hook de teclado `useTriageKeys` y aviso de deshacer con sonner (posponer o descartar se revierte cambiando el estado; «hacer» solo se deshace si la acción es reversible, y si no se confirma antes).
+- Deslizar filas en el móvil: componente `SwipeRow`. Arrastrar y soltar en Pipeline con el mismo patrón que ya usa Leads.
 - Animaciones: utilidades CSS en `src/styles.css` (keyframes de entrada y salida, `@media (prefers-reduced-motion)`), sin librería nueva. Si hace falta animar la salida de listas, valorar `motion`.
 - Métricas y Estrategia: añadir `?seccion=` con `validateSearch` y renderizar un panel por vez a partir de los módulos que ya existen en `src/components/<screen>/`.
 - Vistas guardadas: nueva tabla `saved_views` (org_id por defecto `current_org()`, user_id, screen, name, filters jsonb, shared bool) con RLS: propias o compartidas de la empresa; solo el autor o el Owner editan y borran. GRANT a `authenticated`.
