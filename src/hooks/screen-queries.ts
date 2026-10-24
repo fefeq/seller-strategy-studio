@@ -45,13 +45,13 @@ export const dealsQuery = queryOptions({
  * Loader helper: fills the cache before the screen opens. A failure here never blocks navigation;
  * the screen's own query retries and shows its usual state.
  */
-export async function prepare(qc: QueryClient, ...queries: Parameters<QueryClient["ensureQueryData"]>[0][]) {
-  await Promise.all(queries.map((q) => qc.ensureQueryData(q).catch(() => undefined)));
+export async function settle(...loads: Promise<unknown>[]) {
+  await Promise.all(loads.map((p) => p.catch(() => undefined)));
 }
 
 /** Leads need the current company first. */
 export async function prepareLeads(qc: QueryClient) {
   const me = await qc.ensureQueryData(meQuery).catch(() => null);
   const orgId = me?.currentOrg?.org_id;
-  if (orgId) await prepare(qc, leadsQuery(orgId));
+  if (orgId) await settle(qc.ensureQueryData(leadsQuery(orgId)));
 }
