@@ -27,6 +27,7 @@ import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
+import { dealsQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),

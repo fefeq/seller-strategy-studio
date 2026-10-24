@@ -22,6 +22,7 @@ import { byScore, scoreLead, type Score } from "@/lib/scoring";
 import { ScoreBadge } from "@/components/score";
 import { QualSettingsDialog, QualTag, QualifyPending, leadQualView } from "@/components/leads/lead-qualification";
 import { pct } from "@/lib/money";
+import { prepareLeads } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha"; vista?: "lista" } => ({
@@ -38,6 +39,7 @@ export const Route = createFileRoute("/_authenticated/leads/")({
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
+  loader: ({ context }) => prepareLeads(context.queryClient),
   component: LeadsPage,
 });
 

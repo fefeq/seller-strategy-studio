@@ -23,6 +23,7 @@ import { duplicateOf } from "@/lib/match";
 import { EnrichTableButton } from "@/components/parallel";
 import { fetchAll } from "@/lib/fetch-all";
 import { askConfirm } from "@/components/confirm-dialog";
+import { accountsQuery, accountsScoreContextQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),

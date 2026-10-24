@@ -13,6 +13,7 @@ import { ROLES, type Role } from "@/lib/roles";
 import { stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { homeHeadline } from "@/lib/headlines";
+import { homeQuery, settle } from "@/hooks/screen-queries";
 
 export const Route = createFileRoute("/_authenticated/home")({
   head: () => ({ meta: [{ title: "Inicio — Nokko" }, { name: "description", content: "Tu vista según tu rol." }, { property: "og:title", content: "Inicio — Nokko" }, { property: "og:description", content: "Tu vista según tu rol." }] }),
