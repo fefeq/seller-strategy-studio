@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useCurrency } from "@/hooks/use-me";
+import { useCurrency, useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/lib/errors";
 import { actualMonth, addMonths, monthLabel, monthOf, monthStatus } from "@/lib/finance";
@@ -14,16 +14,15 @@ const STATUS = { closed: "Cerrado", open: "Abierto", projected: "Futuro" } as co
 export function FinanceCloses({ d }: { d: FinanceData }) {
   const { money } = useCurrency();
   const refresh = useFinanceRefresh();
+  const { data: me } = useMe();
   const today = monthOf(new Date());
   const months = Array.from({ length: 7 }, (_, i) => addMonths(today, i - 6)).reverse();
   const lines = d.lines.map((l) => ({ ...l, amount: Number(l.amount) }));
   const invoices = d.invoices.map((i) => ({ ...i, amount: Number(i.amount) }));
   const [edit, setEdit] = useState<Record<string, { revenue: number | null; costs: number | null; cash_end: number | null }>>({});
 
-  async function close(m: string) {
-    const live = actualMonth(m, invoices, [], lines);
-    const e = edit[m] ?? { revenue: live.revenue, costs: live.costs, cash_end: null };
-    const { error } = await supabase.from("finance_months").upsert({ org_id: d.settings?.org_id ?? undefined, month: m, revenue: e.revenue, costs: e.costs, cash_end: e.cash_end, closed_at: new Date().toISOString() }, { onConflict: "org_id,month" });
+  async function close(m: string, e: { revenue: number | null; costs: number | null; cash_end: number | null }) {
+    const { error } = await supabase.from("finance_months").upsert({ org_id: me!.currentOrg!.org_id, month: m, revenue: e.revenue, costs: e.costs, cash_end: e.cash_end, closed_at: new Date().toISOString() }, { onConflict: "org_id,month" });
     if (error) return toast.error(errorText(error));
     toast.success(`${monthLabel(m)} cerrado.`); refresh();
   }
@@ -54,7 +53,7 @@ export function FinanceCloses({ d }: { d: FinanceData }) {
                   <label className="text-xs text-ink-mid">Caja final<NumberInput ariaLabel={`Caja final de ${monthLabel(m)}`} value={e.cash_end} onChange={set("cash_end")} /></label>
                 </div>
               )}
-              {st === "closed" ? <Button size="sm" variant="ghost" onClick={() => reopen(m)}>Reabrir</Button> : <Button size="sm" variant="outline" onClick={() => close(m)}>Cerrar mes</Button>}
+              {st === "closed" ? <Button size="sm" variant="ghost" onClick={() => reopen(m)}>Reabrir</Button> : <Button size="sm" variant="outline" onClick={() => close(m, e)}>Cerrar mes</Button>}
             </li>
           );
         })}
