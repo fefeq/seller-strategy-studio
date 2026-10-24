@@ -8,7 +8,7 @@ import { mergeBlock, type BlockId } from "@/lib/onboarding";
 import type { SetupProposal } from "@/lib/setup-extraction";
 import type { Json } from "@/integrations/supabase/types";
 
-const BLOCK = z.enum(["company", "icp", "segments", "positioning", "messages", "goals"]);
+const BLOCK = z.enum(["company", "plans", "icp", "segments", "positioning", "messages", "goals"]);
 
 export const redoOnboardingBlock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

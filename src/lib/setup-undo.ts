@@ -8,6 +8,7 @@ export const UNDO_TABLES = [
   "accounts",
   "segments",
   "deals",
+  "products",
 ] as const;
 export type UndoTable = (typeof UNDO_TABLES)[number];
 export type UndoRef = { table: UndoTable; id: string };
@@ -31,6 +32,7 @@ export function undoRefFor(
       : null;
   if (!id) return null;
   if (tool === "upsert_segment") return args.segment_id ? null : { table: "segments", id };
+  if (tool === "upsert_product") return (result as { created?: boolean }).created ? { table: "products", id } : null;
   const table = CREATES[tool];
   return table ? { table, id } : null;
 }

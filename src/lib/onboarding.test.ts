@@ -22,7 +22,7 @@ describe("block order follows the archetype", () => {
     expect(blockOrder("A").indexOf("positioning")).toBeLessThan(blockOrder("A").indexOf("icp"));
   });
   it("always six blocks, company first", () => {
-    for (const a of ["A", "B", "C", "D", "E", null] as const) { expect(blockOrder(a)).toHaveLength(6); expect(blockOrder(a)[0]).toBe("company"); }
+    for (const a of ["A", "B", "C", "D", "E", null] as const) { expect(blockOrder(a)).toHaveLength(7); expect(blockOrder(a)[0]).toBe("company"); }
   });
 });
 

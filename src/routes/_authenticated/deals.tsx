@@ -28,6 +28,11 @@ import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
+import { Timeline } from "@/components/crm/timeline";
+import { DealOffers } from "@/components/crm/offers";
+import { DealCoach } from "@/components/crm/deal-coach";
+import { useSalesTeams } from "@/components/crm/teams";
+import { teamOwners } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -44,10 +49,14 @@ function Deals() {
   // With the agent docked beside it («Resolver»), the deal panel must not block the agent.
   const { docked: agentDocked } = useAgent();
   const qc = useQueryClient();
-  const { data: deals = [] } = useQuery(dealsQuery);
-  const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
-  const selected = deals.find((d) => d.id === search.deal);
+  const { data: allDeals = [] } = useQuery(dealsQuery);
   const { data: me } = useMe();
+  const { data: sales } = useSalesTeams();
+  const [team, setTeam] = useState("");
+  const owners = me ? teamOwners(team, sales?.teams ?? [], sales?.members ?? [], me.user.id) : null;
+  const deals = owners ? allDeals.filter((d) => d.owner_id && owners.has(d.owner_id)) : allDeals;
+  const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
+  const selected = allDeals.find((d) => d.id === search.deal);
   const { data: staleCfg } = useStaleSettings();
   const now = new Date();
   const cold = new Map(staleDeals(deals, staleCfg?.segments ?? [], staleCfg?.staleDays ?? null, now).map((r) => [r.deal.id, r]));
@@ -85,6 +94,15 @@ function Deals() {
         <Kpi label="Forecast ponderado" v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0) * (d.probability ?? 0) / 100, 0))} />
         <Kpi label="Ganado" v={eur(deals.filter((d) => d.stage === "won").reduce((s, d) => s + Number(d.amount ?? 0), 0))} />
       </div>
+      {(sales?.teams.length ?? 0) > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <select aria-label="Equipo" className="h-10 rounded-md border bg-card px-3 text-sm md:h-9" value={team} onChange={(e) => setTeam(e.target.value)}>
+            <option value="">Todo el pipeline</option><option value="mine">Mi equipo</option>
+            {sales!.teams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+          {owners && <span className="text-xs text-muted-foreground">{deals.length} de {allDeals.length} deals</span>}
+        </div>
+      )}
       <p className="mb-4 text-xs text-muted-foreground">Un deal se da por enfriado a los {companyThreshold.days} días sin actividad ({companyThreshold.source === "empresa" ? "fijado por la empresa" : companyThreshold.source === "ciclo" ? `un cuarto del ciclo real de ${companyThreshold.cycleDays} días` : "por defecto, aún sin ciclo real"}); cada segmento usa su propio ciclo cuando lo tiene.</p>
       <p className="mb-2 text-xs text-muted-foreground md:hidden">Desliza para ver todas las etapas. Abre un deal para cambiar su etapa.</p>
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
@@ -191,6 +209,8 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         <Field label="Partner"><Pick value={d.partner_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.partners.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, partner_id: v })} /></Field>
       </div>
       <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
+      <DealOffers dealId={deal.id} dealName={deal.name} />
+      <DealCoach dealId={deal.id} />
       {d.slip_count > 0 && <p className="text-xs text-signal">La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.</p>}
 
       <div>
@@ -232,6 +252,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
           <Button disabled={!newItem} onClick={addItem}>+</Button>
         </div>
       </div>
+      <Timeline dealId={deal.id} dealName={deal.name} />
     </div>
   );
 }

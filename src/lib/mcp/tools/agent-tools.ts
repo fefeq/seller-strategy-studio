@@ -11,6 +11,11 @@ const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competi
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  finance_summary: "Resumen de Finanzas",
+  upsert_product: "Crear o actualizar un producto",
+  revops_funnel: "Embudo RevOps conciliado",
+  lost_analysis: "Análisis de deals perdidos",
+  log_activity: "Registrar actividad",
   enrich_accounts_table: "Completar cuentas en tabla (Parallel)",
   get_icp_account_list: "Empresas encontradas por ICP",
   start_icp_account_list: "Buscar empresas por ICP (Parallel)",

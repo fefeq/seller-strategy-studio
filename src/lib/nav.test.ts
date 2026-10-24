@@ -11,6 +11,10 @@ describe("Menú", () => {
     expect(visibleItems(g("more"), false).some((i) => i.to === "/advisor")).toBe(false);
     expect(visibleItems(g("more"), true).some((i) => i.to === "/advisor")).toBe(true);
   });
+  it("shows Finanzas only to the Owner and the Sales Leader", () => {
+    expect(visibleItems(g("daily"), false).some((i) => i.to === "/finance")).toBe(false);
+    expect(visibleItems(g("daily"), true).some((i) => i.to === "/finance")).toBe(true);
+  });
   it("opens a collapsed group when you are on one of its pages", () => {
     expect(groupOpen(g("more"), "/debates", false)).toBe(true);
     expect(groupOpen(g("settings"), "/home", false)).toBe(false);

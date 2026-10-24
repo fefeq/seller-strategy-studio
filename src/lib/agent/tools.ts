@@ -18,12 +18,13 @@ import { CORE_READ_TOOLS } from "./tools/core-read";
 import { CORE_WRITE_TOOLS } from "./tools/core-write";
 import { STRATEGY_TOOLS } from "./tools/strategy";
 import { CYCLE_TOOLS } from "./tools/cycle";
+import { FINANCE_TOOLS } from "./tools/finance";
 
 export type { AgentTool, ToolCtx } from "./tool-kit";
 
 const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...CYCLE_TOOLS];
 
-export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS, ...PARALLEL_TOOLS, ...NEED_TOOLS];
+export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS, ...PARALLEL_TOOLS, ...NEED_TOOLS, ...FINANCE_TOOLS];
 
 export function getTool(name: string) {
   return TOOLS.find((t) => t.name === name);

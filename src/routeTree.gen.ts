@@ -18,12 +18,14 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
 import { Route as AuthenticatedConnectRouteImport } from './routes/_authenticated/connect'
 import { Route as AuthenticatedCycleRouteImport } from './routes/_authenticated/cycle'
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDebatesRouteImport } from './routes/_authenticated/debates'
 import { Route as AuthenticatedDiscoveriesRouteImport } from './routes/_authenticated/discoveries'
+import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
@@ -95,6 +97,11 @@ const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   path: '/approvals',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCompanyRoute = AuthenticatedCompanyRouteImport.update({
   id: '/company',
   path: '/company',
@@ -126,6 +133,11 @@ const AuthenticatedDiscoveriesRoute =
     path: '/discoveries',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -267,12 +279,14 @@ export interface FileRoutesByFullPath {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/company': typeof AuthenticatedCompanyRoute
   '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
   '/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -308,12 +322,14 @@ export interface FileRoutesByTo {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/company': typeof AuthenticatedCompanyRoute
   '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
   '/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -351,12 +367,14 @@ export interface FileRoutesById {
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/company': typeof AuthenticatedCompanyRoute
   '/_authenticated/connect': typeof AuthenticatedConnectRoute
   '/_authenticated/cycle': typeof AuthenticatedCycleRoute
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/debates': typeof AuthenticatedDebatesRoute
   '/_authenticated/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
@@ -394,12 +412,14 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/calendar'
     | '/company'
     | '/connect'
     | '/cycle'
     | '/deals'
     | '/debates'
     | '/discoveries'
+    | '/finance'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -435,12 +455,14 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/calendar'
     | '/company'
     | '/connect'
     | '/cycle'
     | '/deals'
     | '/debates'
     | '/discoveries'
+    | '/finance'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -477,12 +499,14 @@ export interface FileRouteTypes {
     | '/_authenticated/abm'
     | '/_authenticated/advisor'
     | '/_authenticated/approvals'
+    | '/_authenticated/calendar'
     | '/_authenticated/company'
     | '/_authenticated/connect'
     | '/_authenticated/cycle'
     | '/_authenticated/deals'
     | '/_authenticated/debates'
     | '/_authenticated/discoveries'
+    | '/_authenticated/finance'
     | '/_authenticated/home'
     | '/_authenticated/hub'
     | '/_authenticated/inbox'
@@ -591,6 +615,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/company': {
       id: '/_authenticated/company'
       path: '/company'
@@ -631,6 +662,13 @@ declare module '@tanstack/react-router' {
       path: '/discoveries'
       fullPath: '/discoveries'
       preLoaderRoute: typeof AuthenticatedDiscoveriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance': {
+      id: '/_authenticated/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof AuthenticatedFinanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -815,12 +853,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAbmRoute: typeof AuthenticatedAbmRoute
   AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRoute
   AuthenticatedConnectRoute: typeof AuthenticatedConnectRoute
   AuthenticatedCycleRoute: typeof AuthenticatedCycleRoute
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedDebatesRoute: typeof AuthenticatedDebatesRoute
   AuthenticatedDiscoveriesRoute: typeof AuthenticatedDiscoveriesRoute
+  AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
@@ -845,12 +885,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAbmRoute: AuthenticatedAbmRoute,
   AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCompanyRoute: AuthenticatedCompanyRoute,
   AuthenticatedConnectRoute: AuthenticatedConnectRoute,
   AuthenticatedCycleRoute: AuthenticatedCycleRoute,
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedDebatesRoute: AuthenticatedDebatesRoute,
   AuthenticatedDiscoveriesRoute: AuthenticatedDiscoveriesRoute,
+  AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,

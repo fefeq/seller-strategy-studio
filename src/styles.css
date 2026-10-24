@@ -417,3 +417,53 @@ button.text-signal:hover {
     overscroll-behavior-y: none;
   }
 }
+
+/* Finance and RevOps charts keep the palette of their original dashboards (Finance Dashboard, RevOps Dashboard):
+   indigo signal, ember costs, mint gains, banded forecast. Scoped so the rest of Nokko keeps Ink + Lima. */
+.fin-chart {
+  --surface: var(--card);
+  --surface-raised: var(--paper-sunk);
+  --ink-dim: oklch(0.44 0.012 266);
+  --signal: oklch(0.475 0.158 266);
+  --signal-soft: oklch(0.575 0.14 266);
+  --signal-deep: oklch(0.365 0.135 268);
+  --ember: oklch(0.515 0.135 42);
+  --ember-soft: oklch(0.63 0.11 44);
+  --mint: oklch(0.475 0.105 168);
+  --grid-line: oklch(0.855 0.006 266);
+  --axis-line: oklch(0.74 0.008 266);
+  --connector: oklch(0.7 0.01 266);
+  --cost-origin: oklch(0.45 0.01 266);
+  --band-outer: color-mix(in oklab, var(--signal) 9%, var(--surface));
+  --band-inner: color-mix(in oklab, var(--signal) 20%, var(--surface));
+  --band-stroke: color-mix(in oklab, var(--signal) 42%, transparent);
+  --ribbon-rest: 0.42;
+  --ribbon-lit: 0.8;
+  --ribbon-dim: 0.09;
+}
+.dark .fin-chart {
+  --ink-dim: oklch(0.68 0.013 262);
+  --signal: oklch(0.68 0.185 264);
+  --signal-soft: oklch(0.63 0.175 266);
+  --signal-deep: oklch(0.42 0.13 268);
+  --ember: oklch(0.72 0.175 48);
+  --ember-soft: oklch(0.62 0.155 36);
+  --mint: oklch(0.8 0.165 168);
+  --grid-line: oklch(0.32 0.016 266);
+  --axis-line: oklch(0.4 0.016 266);
+  --connector: oklch(0.42 0.016 266);
+  --cost-origin: oklch(0.56 0.09 52);
+  --band-outer: color-mix(in oklab, var(--signal) 12%, var(--surface));
+  --band-inner: color-mix(in oklab, var(--signal) 24%, var(--surface));
+  --band-stroke: color-mix(in oklab, var(--signal) 45%, transparent);
+  --ribbon-lit: 0.88;
+  --ribbon-dim: 0.07;
+}
+@keyframes flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -58;
+  }
+}
