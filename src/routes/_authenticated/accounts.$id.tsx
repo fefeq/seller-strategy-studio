@@ -28,10 +28,9 @@ import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
-import { ClayPeopleButton } from "@/components/clay";
-import { CompleteAccount } from "@/components/orchestrator";
+import { CompleteAccount, KeyPeopleButton } from "@/components/orchestrator";
 import { AccountResearch, SignalsTab } from "@/components/web-research";
-import { ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
+import { ApolloReveal } from "@/components/apollo";
 import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
 import { linkedinCompanyUrl } from "@/lib/apify";
@@ -268,7 +267,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><ClayPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><ApolloPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><KeyPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
         {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
