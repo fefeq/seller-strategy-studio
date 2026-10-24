@@ -73,7 +73,7 @@ export function CashFanChart({ months, money, burn, cashNow, sourceNote }: {
                 <path d={mid} fill="none" stroke="var(--signal)" strokeWidth={1.75} strokeLinecap="round" />
               </g>
               {data.map((d, i) => (i % every === 0 || i === n - 1) && (
-                <text key={d.month} x={x(i)} y={innerH + 16} textAnchor="middle" fontSize={9} fill={hover === i ? "var(--foreground)" : "var(--ink-faint)"}>{monthLabel(d.month)}</text>
+                <text key={d.month} x={x(i)} y={innerH + 16} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"} fontSize={9} fill={hover === i ? "var(--foreground)" : "var(--ink-faint)"}>{monthLabel(d.month)}</text>
               ))}
               {hovered && hover !== null && (
                 <g>

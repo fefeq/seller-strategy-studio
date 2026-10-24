@@ -265,7 +265,7 @@ export function SankeyFlow({ flow, money, stateKey, active, height = 540 }: Prop
   return (
     <div
       ref={ref}
-      className={`relative select-none rounded-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${scrollable ? "overflow-x-auto overflow-y-hidden" : ""}`}
+      className={`fin-chart relative select-none rounded-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ring)] ${scrollable ? "overflow-x-auto overflow-y-hidden" : ""}`}
       style={{ height }}
       onPointerMove={(e) => {
         const r = e.currentTarget.getBoundingClientRect();
