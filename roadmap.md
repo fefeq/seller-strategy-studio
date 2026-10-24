@@ -91,4 +91,4 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Calificación de leads con IA (Jev): encaje, intención, cargo, propuesta de etapa y segmento; pesos editables
 - [x] Chat del agente sin respuesta: Gemini cambió el formato de las llamadas a herramientas; corregido
 - [x] Logos de empresa en color (variante oscura en modo Tinta)
-- [ ] Conocimiento: pestaña «Drive por cuenta» con todos los documentos guardados en Drive, resumen y fecha
+- [x] Conocimiento: pestaña «Drive por cuenta» con todos los documentos guardados en Drive, resumen y fecha
