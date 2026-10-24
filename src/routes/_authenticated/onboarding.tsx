@@ -61,7 +61,7 @@ function Onboarding() {
       </ol>
       {step === "depth" && <DepthStep value={(session?.depth as Depth) ?? null} onPick={(d) => save({ depth: d, step: "sources" })} />}
       {step === "sources" && (
-        <SourcesStep depth={depth} onStarted={(jobId, src) => save({ step: "reading", read_job_id: jobId, sources: asJson(src), findings: asJson([]), proposal: null, opinions: null, block_status: asJson({}) })} />
+        <SourcesStep depth={depth} onStarted={(jobId, src) => save({ step: "reading", read_job_id: jobId, sources: asJson(src) })} />
       )}
       {step === "reading" && <ReadingStep jobId={session?.read_job_id ?? null} findings={findings} sources={sources} onNext={() => save({ step: "diagnosis" })} onBack={() => save({ step: "sources" })} />}
       {step === "diagnosis" && (

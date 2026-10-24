@@ -24,6 +24,8 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
   const b = await monthBudget(c);
   if (b.paused) throw new Error("Has llegado al límite mensual de gasto en fuentes. Súbelo en Conexiones o espera al mes que viene.");
 
+  // A new reading starts clean: the previous proposal and block decisions belong to the previous sources.
+  await c.db.from("onboarding_sessions").update({ findings: [] as unknown as Json, proposal: null, opinions: null, block_status: {} as unknown as Json }).eq("org_id", c.orgId).eq("user_id", c.userId);
   const findings: Finding[] = [];
   const note = async (t: string, source: string | null) => {
     findings.push({ at: new Date().toISOString(), text: t.slice(0, 300), source });
