@@ -21,6 +21,7 @@ import { AccountImport } from "@/components/account-import";
 import { IcpCompaniesButton } from "@/components/orchestrator";
 import { duplicateOf } from "@/lib/match";
 import { EnrichTableButton } from "@/components/parallel";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -38,7 +39,7 @@ function Accounts() {
   const [byName, setByName] = useState(false);
   const { data = [] } = useQuery({
     queryKey: ["accounts"],
-    queryFn: async () => (await supabase.from("accounts").select("*, deals(amount,stage,updated_at), stakeholders(id), account_touches(occurred_at), meetings(scheduled_at), calls(occurred_at)").order("name")).data ?? [],
+    queryFn: async () => (await fetchAll((a, b) => supabase.from("accounts").select("*, deals(amount,stage,updated_at), stakeholders(id), account_touches(occurred_at), meetings(scheduled_at), calls(occurred_at)").order("name").order("id").range(a, b))).rows,
   });
   const { data: ctx } = useQuery({
     queryKey: ["accounts-score-context"],

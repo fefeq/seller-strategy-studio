@@ -26,6 +26,7 @@ import { NewDealButton } from "@/components/new-deal";
 import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -43,7 +44,7 @@ function Deals() {
   const qc = useQueryClient();
   const { data: deals = [] } = useQuery({
     queryKey: ["deals"],
-    queryFn: async () => (await supabase.from("deals").select("*, accounts(name,domain)").order("created_at")).data ?? [],
+    queryFn: async () => (await fetchAll((a, b) => supabase.from("deals").select("*, accounts(name,domain)").order("created_at").order("id").range(a, b))).rows,
   });
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const selected = deals.find((d) => d.id === search.deal);

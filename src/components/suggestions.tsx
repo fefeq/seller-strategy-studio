@@ -38,7 +38,7 @@ export function useRecheckSuggestions() {
     const touched = readResolving(orgId);
     refresh({ data: { touched } })
       .then(() => { clearResolving(orgId); qc.invalidateQueries({ queryKey: ["suggestions"] }); })
-      .catch(() => {});
+      .catch((e) => toast.error(`No pude revisar las sugerencias: ${errorText(e)}`));
   };
 }
 
@@ -58,7 +58,7 @@ export function useSuggestions() {
     sessionStorage.setItem(k, String(Date.now()));
     refresh({ data: { touched } })
       .then(() => { if (touched.length) clearResolving(orgId); qc.invalidateQueries({ queryKey: ["suggestions"] }); })
-      .catch(() => {});
+      .catch((e) => console.warn("[suggestions] background recheck failed", e));
   }, [orgId, refresh, qc]);
   return useQuery({
     queryKey: ["suggestions", orgId],

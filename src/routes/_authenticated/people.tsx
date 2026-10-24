@@ -15,6 +15,7 @@ import { CAMPAIGN_RESULTS, SOURCES } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
 import { ApolloPhones } from "@/components/apollo";
 import { PersonQuickActions } from "@/components/quick-actions";
+import { fetchAll } from "@/lib/fetch-all";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -32,7 +33,7 @@ function People() {
     queryKey: ["people"],
     queryFn: async () => {
       const [p, c, r] = await Promise.all([
-        supabase.from("people").select("*").order("created_at", { ascending: false }),
+        fetchAll((a, b) => supabase.from("people").select("*").order("created_at", { ascending: false }).order("id").range(a, b)).then((r) => ({ data: r.rows })),
         supabase.from("campaigns").select("*").order("created_at", { ascending: false }),
         supabase.from("campaign_results").select("*"),
       ]);
