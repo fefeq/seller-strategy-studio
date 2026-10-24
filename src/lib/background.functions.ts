@@ -1,6 +1,7 @@
 // Background work through Inngest, from the screens: start a long task and get a notice when it ends, and
 // tell Inngest when a lead was created or moved (enrichment and the follow-up sequence with waits).
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
@@ -97,6 +98,10 @@ function targetOf(data: JobArgs): { target_type?: string; target_id?: string } {
   return {};
 }
 
+function onPublishedSite() {
+  try { return /(^|\.)nokko\.ai$|^seller-strategy-studio\.lovable\.app$/.test(new URL(getRequest().url).hostname); } catch { return false; }
+}
+
 /** Creates the job and hands it to Inngest; without Inngest it runs in this request (the screen does not wait). */
 async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = null) {
   await authorize(ctx, data);
@@ -115,7 +120,8 @@ async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = null) {
     }
   }
   const { inngestReady, sendEvents } = await import("@/lib/inngest/send.server");
-  const ready = await inngestReady(supabaseAdmin);
+  // Inngest calls the published site, so only the published site hands work to it; the preview runs its own code.
+  const ready = onPublishedSite() && (await inngestReady(supabaseAdmin));
   const { data: job, error } = await ctx.db.from("background_jobs").insert({ kind: data.kind, input: data.input as never, ...target, label: (data.label ?? JOB_LABEL[data.kind]).slice(0, 300), org_id: ctx.orgId, user_id: ctx.userId, retry_of: retryOf }).select("id").single();
   if (error) throw new Error(error.message);
   const sent = ready ? await sendEvents([{ name: EV.jobRequested, data: { job_id: job.id } }]).then(() => true).catch(() => false) : false;
