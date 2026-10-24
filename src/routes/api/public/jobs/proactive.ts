@@ -37,7 +37,8 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               await notifyUrgent(db);
               const { runWeeklyReports } = await import("@/lib/weekly-report.server");
               const weekly = await runWeeklyReports(db, now).catch((e) => { console.error("weekly reports failed", e); return null; });
-              return Response.json({ orgs: orgs?.length ?? 0, mode: "background", weekly });
+              const daily = await runDaily(db, now);
+              return Response.json({ orgs: orgs?.length ?? 0, mode: "background", weekly, daily });
             }
           }
           const { loadSnapshot, syncSuggestions } = await import("@/lib/org-data");
@@ -81,7 +82,8 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Each company's PostHog (product usage and sign-ups), at most every few hours.
           const { runPosthogSyncs } = await import("@/lib/posthog-sync.server");
           const posthog = await runPosthogSyncs(db, now).catch((e) => { console.error("posthog syncs failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, mode: "inline", detected: total, leadFlows, weekly, stripe, signals, posthog });
+          const daily = await runDaily(db, now);
+          return Response.json({ orgs: orgs?.length ?? 0, mode: "inline", detected: total, leadFlows, weekly, stripe, signals, posthog, daily });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }
@@ -91,6 +93,12 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
 });
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
+
+/** Each person's daily briefing email at their hour (8:00 local by default), once per day. */
+async function runDaily(db: Admin, now: Date) {
+  const { runDailyEmails } = await import("@/lib/daily-email.server");
+  return runDailyEmails(db, now).catch((e) => { console.error("daily emails failed", e); return null; });
+}
 
 /** Pushes new priority-1 suggestions to linked Telegram users (once per suggestion). */
 async function notifyUrgent(db: Admin) {
