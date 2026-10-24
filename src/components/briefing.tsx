@@ -6,6 +6,12 @@ import { useStages } from "@/components/stage-settings";
 import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { toast } from "sonner";
+import { runAutopilotNow } from "@/lib/autopilot.functions";
+import { errorText } from "@/lib/errors";
 
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
@@ -61,7 +67,10 @@ export function Briefing() {
 
   return (
     <section className="mb-10 grid gap-8 border-t-2 border-foreground pt-5 lg:grid-cols-3">
-      <Block title="Lo que hice solo" sub="desde ayer" empty="Nada nuevo desde ayer. Sigo vigilando tus leads, cuentas y datos." items={data ? did : null} />
+      <div className="min-w-0">
+        <Block title="Lo que hice solo" sub="desde ayer" empty="Nada nuevo desde ayer. Sigo vigilando tus leads, cuentas y datos." items={data ? did : null} />
+        {leader && <RunNow />}
+      </div>
       <div className="min-w-0">
         <p className="eyebrow">Necesita tu decisión</p>
         <h3 className="mt-1 text-2xl">{suggestions.length ? `${suggestions.length} ${suggestions.length === 1 ? "asunto" : "asuntos"}` : "Nada pendiente"}</h3>
@@ -96,4 +105,23 @@ function ItemLine({ item }: { item: BriefItem }) {
   if (!item.link) return <span className="block border-b pb-2">{item.text}</span>;
   if (typeof item.link === "object") return <Link to="/accounts/$id" params={{ id: item.link.account }} className={cls}>{item.text}</Link>;
   return <Link to={item.link} className={cls}>{item.text}</Link>;
+}
+
+/** Owner / Sales Leader: run now what Nokko does every hour (research new accounts, prep meetings, review cooling accounts). */
+function RunNow() {
+  const run = useServerFn(runAutopilotNow);
+  const qc = useQueryClient();
+  const [busy, setBusy] = useState(false);
+  async function go() {
+    setBusy(true);
+    try {
+      const r = await run();
+      const total = r.researched + r.prepped + r.cooling;
+      toast.success(total ? `Hecho: ${r.researched} cuentas investigadas, ${r.prepped} reuniones preparadas, ${r.cooling} cuentas frías repasadas.` : "Nada pendiente: no hay cuentas nuevas, reuniones sin preparar ni cuentas frías esta semana.");
+      qc.invalidateQueries({ queryKey: ["briefing"] });
+      qc.invalidateQueries({ queryKey: ["suggestions"] });
+    } catch (e) { toast.error(errorText(e)); }
+    finally { setBusy(false); }
+  }
+  return <button type="button" disabled={busy} onClick={go} className="mt-3 text-xs text-signal disabled:opacity-50">{busy ? "Trabajando… (hasta 2 min)" : "Hazlo ahora, sin esperar a la próxima hora"}</button>;
 }
