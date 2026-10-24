@@ -91,3 +91,16 @@ async function deliver(db: Db, orgId: string, orgName: string, title: string, te
   }
   return out;
 }
+
+/** «Generar ahora» (Owner / Sales Leader): this week's report replaces the pending one. No Telegram or email: that is Monday's job. */
+export async function saveWeeklyReportNow(db: Db, orgId: string, now = new Date()) {
+  const key = weeklyKey(orgId, weekStart(now));
+  const { report, text } = await buildOrgReport(db, orgId, now);
+  const title = `Informe del lunes: ${report.headline}`;
+  const { error } = await db.from("suggestions").upsert(
+    { org_id: orgId, detector: WEEKLY_DETECTOR, dedupe_key: key, priority: 2, title, body: text, link: "/deals", action: null, user_id: null, status: "pending", updated_at: now.toISOString() },
+    { onConflict: "org_id,dedupe_key" },
+  );
+  if (error) throw new Error(error.message);
+  return { title };
+}
