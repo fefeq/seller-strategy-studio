@@ -217,12 +217,6 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
       const high = r.findings.filter((f) => f.severity === "alta").length;
       return { title: `Revisión a fondo lista: ${r.findings.length} hallazgos${high ? `, ${high} de severidad alta` : ""}`, body: r.summary.slice(0, 400), link: `/cycle?artifact=${input.artifactId}`, needs_decision: true, review: r };
     }
-    case "deal_coach": {
-      await jobCtx(db, job);
-      const { dealCoachCore } = await import("@/lib/deal-coach.server");
-      const { deal, result } = await dealCoachCore(db, job.org_id, job.user_id, String(input.dealId), step);
-      return { title: `Deal Coach · ${deal.name}: ${result.steps.length} siguientes pasos en Sugerencias`, body: result.summary.slice(0, 400), link: `/deals?deal=${deal.id}`, needs_decision: result.steps.length > 0 };
-    }
     case "account_research": {
       const accountId = String(input.accountId);
       const { data: acc } = await db.from("accounts").select("id,name").eq("org_id", job.org_id).eq("id", accountId).maybeSingle();

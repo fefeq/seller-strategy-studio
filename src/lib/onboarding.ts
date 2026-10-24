@@ -7,7 +7,7 @@ import type { ProposalItem, SetupProposal } from "@/lib/setup-extraction";
 import type { SetupData } from "@/lib/setup-schema";
 
 export type Depth = "express" | "standard" | "deep";
-export type BlockId = "company" | "plans" | "icp" | "segments" | "positioning" | "messages" | "goals";
+export type BlockId = "company" | "icp" | "segments" | "positioning" | "messages" | "goals";
 export type Level = "confirmed" | "inferred" | "assumed";
 export type BlockState = { status: "approved" | "skipped"; at: string; undo?: { table: string; id: string }[] };
 export type Finding = { at: string; text: string; source: string | null };
@@ -15,7 +15,6 @@ export type Opinion = { block: BlockId; persona: string; text: string };
 
 export const BLOCKS: { id: BlockId; label: string; groups: string[] }[] = [
   { id: "company", label: "Empresa y moneda", groups: ["Empresa"] },
-  { id: "plans", label: "Planes y precios", groups: ["Planes y precios"] },
   { id: "icp", label: "ICP y cuentas objetivo", groups: ["ICP", "Cuentas objetivo"] },
   { id: "segments", label: "Segmentos y benchmarks", groups: ["Segmentos"] },
   { id: "positioning", label: "Posicionamiento", groups: ["Posicionamiento"] },
@@ -27,9 +26,9 @@ export const LEVEL_LABEL: Record<Level, string> = { confirmed: "Confirmado", inf
 
 /** The archetype decides what is approved first: PLG and consumer start from the message, enterprise from the accounts. */
 export function blockOrder(archetype: Archetype | null | undefined): BlockId[] {
-  if (archetype === "A" || archetype === "D" || archetype === "E") return ["company", "plans", "positioning", "messages", "icp", "segments", "goals"];
-  if (archetype === "C") return ["company", "icp", "segments", "goals", "plans", "positioning", "messages"];
-  return ["company", "plans", "icp", "segments", "positioning", "messages", "goals"];
+  if (archetype === "A" || archetype === "D" || archetype === "E") return ["company", "positioning", "messages", "icp", "segments", "goals"];
+  if (archetype === "C") return ["company", "icp", "segments", "goals", "positioning", "messages"];
+  return ["company", "icp", "segments", "positioning", "messages", "goals"];
 }
 
 export function blockOf(item: Pick<ProposalItem, "group">): BlockId {
@@ -50,7 +49,7 @@ const SEGMENT_FIELDS = ["acv_min", "acv_max", "win_rate_target", "ae_quota"] as 
  * Drops from the proposal whatever the company already has written: positioning fields with a value, segment
  * figures already set (matched by name), this quarter's quota and the same currency. Returns what was kept.
  */
-export function protectManual(items: ProposalItem[], existing: Pick<SetupData, "positioning" | "segments" | "quotas" | "quarter" | "currency" | "products">) {
+export function protectManual(items: ProposalItem[], existing: Pick<SetupData, "positioning" | "segments" | "quotas" | "quarter" | "currency">) {
   const kept: string[] = [];
   const out: ProposalItem[] = [];
   for (const it of items) {
@@ -71,7 +70,6 @@ export function protectManual(items: ProposalItem[], existing: Pick<SetupData, "
     }
     if (it.tool === "set_quota" && existing.quotas.some((q) => q.period === existing.quarter && Number(q.amount) > 0)) { kept.push("Cuota del trimestre"); continue; }
     if (it.tool === "set_currency" && existing.currency && existing.currency === it.args.currency) continue;
-    if (it.tool === "upsert_product" && existing.products?.some((p) => p.name.trim().toLowerCase() === String(it.args.name ?? "").trim().toLowerCase())) { kept.push(`Producto: ${it.args.name}`); continue; }
     out.push(it);
   }
   return { items: out, kept };
@@ -82,7 +80,6 @@ export function mergeBlock(prev: SetupProposal, next: SetupProposal, block: Bloc
   const basis = [...(prev.basis ?? []).filter((b) => b.block !== block), ...(next.basis ?? []).filter((b) => b.block === block)];
   const pick: Record<BlockId, Partial<SetupProposal>> = {
     company: { currency: next.currency },
-    plans: { plans: next.plans },
     icp: { icps: next.icps, target_accounts: next.target_accounts },
     segments: { segments: next.segments },
     positioning: { positioning: next.positioning },
@@ -103,7 +100,6 @@ export function proposalFindings(p: SetupProposal): { text: string; source: stri
   const alt = p.positioning?.competitive_alternative || p.positioning?.alternatives;
   if (alt) out.push({ text: `Competidores y alternativas: ${alt}`, source: src("positioning") });
   if (p.pillars.length) out.push({ text: `Encontrado: ${n(p.pillars.length, "pilar de mensaje", "pilares de mensaje")}`, source: src("messages") });
-  if (p.plans?.length) out.push({ text: `Planes y precios: ${p.plans.map((x) => x.name).join(", ")}`, source: src("plans") });
   if (p.target_accounts.length) out.push({ text: `Cuentas de ejemplo: ${p.target_accounts.map((a) => a.name).join(", ")}`, source: src("icp") });
   if (p.quarter_quota) out.push({ text: `Objetivo del trimestre: ${p.quarter_quota}`, source: src("goals") });
   if (p.questions.length) out.push({ text: `Me faltan ${n(p.questions.length, "dato", "datos")}: te lo pregunto en Sugerencias`, source: null });

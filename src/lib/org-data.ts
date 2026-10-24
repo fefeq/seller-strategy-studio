@@ -15,7 +15,7 @@ import { jsonObject } from "@/lib/json";
 export type Db = SupabaseClient<Database>;
 
 export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
-  const [org, seg, icp, pos, pil, quo, acc, deals, prods] = await Promise.all([
+  const [org, seg, icp, pos, pil, quo, acc, deals] = await Promise.all([
     db.from("organizations").select("currency").eq("id", orgId).maybeSingle(),
     db.from("segments").select("name,acv_min,acv_max,win_rate_target,ae_quota").eq("org_id", orgId),
     db.from("icp_profiles").select("industries,company_size,why_fit,anti_icp").eq("org_id", orgId),
@@ -24,7 +24,6 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     db.from("quotas").select("period,amount").eq("org_id", orgId),
     db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     db.from("deals").select("id", { count: "exact", head: true }).eq("org_id", orgId),
-    db.from("products").select("name").eq("org_id", orgId),
   ]);
   return {
     currency: org.data?.currency ?? null,
@@ -36,7 +35,6 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     accounts: acc.count ?? 0,
     deals: deals.count ?? 0,
     quarter: quarterOf(new Date()),
-    products: prods.data ?? [],
   };
 }
 

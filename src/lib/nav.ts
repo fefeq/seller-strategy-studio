@@ -15,12 +15,10 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/people", label: "Personas", keywords: "contactos" },
       { to: "/strategy", label: "Estrategia GTM", keywords: "icp segmentos posicionamiento" },
       { to: "/metrics", label: "Métricas", keywords: "cac payback funnel" },
-      { to: "/finance", label: "Finanzas", leadersOnly: true, keywords: "caja runway facturas costes previsión" },
     ],
   },
   {
     key: "more", title: "Más herramientas", collapsible: true, items: [
-      { to: "/calendar", label: "Calendario", keywords: "agenda tareas reuniones" },
       { to: "/discoveries", label: "Descubiertos" },
       { to: "/approvals", label: "Aprobaciones" },
       { to: "/advisor", label: "Asesor GTM", leadersOnly: true },

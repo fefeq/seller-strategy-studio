@@ -11,8 +11,6 @@ export type SetupData = {
   accounts: number;
   deals: number;
   quarter: string;
-  /** Products already in the catalogue (the onboarding never proposes one twice). */
-  products?: { name: string }[];
 };
 
 // The five fields of April Dunford's framework come first: the statement and the pitch are built on them,

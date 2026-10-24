@@ -14,11 +14,9 @@ export const SETUP_EXTRACTION_SCHEMA = obj({
   icps: { type: "array", items: obj({ name: { type: "string" }, industries: str, company_size: str, geography: str, why_fit: str, anti_icp: str }) },
   pillars: { type: "array", items: obj({ title: { type: "string" }, pain: str, message: str, proof: str }) },
   target_accounts: { type: "array", items: obj({ name: { type: "string" }, domain: str, why: str }) },
-  // Plans and prices published by the company (they become Products and feed the Finanzas forecast).
-  plans: { type: "array", items: obj({ name: { type: "string" }, price: num, billing: { type: "string", enum: ["monthly", "annual", "one_off"] }, description: str }) },
   questions: { type: "array", items: { type: "string" } },
   // Where each strategy block comes from and how sure the AI is (shown on the onboarding block review).
-  basis: { type: "array", items: obj({ block: { type: "string", enum: ["company", "plans", "icp", "segments", "positioning", "messages", "goals"] }, level: { type: "string", enum: ["confirmed", "inferred", "assumed"] }, source: str }) },
+  basis: { type: "array", items: obj({ block: { type: "string", enum: ["company", "icp", "segments", "positioning", "messages", "goals"] }, level: { type: "string", enum: ["confirmed", "inferred", "assumed"] }, source: str }) },
 });
 
 export type SetupProposal = {
@@ -31,8 +29,6 @@ export type SetupProposal = {
   icps: { name: string; industries: string | null; company_size: string | null; geography: string | null; why_fit: string | null; anti_icp: string | null }[];
   pillars: { title: string; pain: string | null; message: string | null; proof: string | null }[];
   target_accounts: { name: string; domain: string | null; why: string | null }[];
-  /** Optional: older saved proposals have no plans. */
-  plans?: { name: string; price: number | null; billing: "monthly" | "annual" | "one_off"; description: string | null }[];
   questions: string[];
   basis?: { block: string; level: "confirmed" | "inferred" | "assumed"; source: string | null }[];
 };
@@ -45,7 +41,7 @@ export const FIELD_LABELS: Record<string, string> = {
   competitive_alternative: "Alternativa competitiva", differentiator: "Diferenciador", one_liner: "Frase de una línea", short_pitch: "Pitch corto", elevator_pitch: "Elevator pitch",
   tagline: "Tagline", name: "Nombre", acv_min: "ACV mín.", acv_max: "ACV máx.", priority: "Prioridad", notes: "Nota", motion: "Modelo de venta", win_rate_target: "Win rate objetivo %", ae_quota: "Cuota anual AE", gross_margin_pct: "Margen bruto %",
   industries: "Sectores", company_size: "Tamaño", geography: "Geografía", why_fit: "Por qué encaja", anti_icp: "Anti-ICP", title: "Título", pain: "Dolor",
-  message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda", price: "Precio", billing: "Cobro", description: "Descripción",
+  message: "Mensaje", proof: "Prueba", domain: "Dominio", currency: "Moneda",
 };
 
 const clean = (o: Record<string, unknown>) => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== ""));
@@ -71,11 +67,6 @@ export function proposalItems(p: SetupProposal, existingSegments: { id: string; 
   });
   p.icps.forEach((c, i) => { const args = clean(c); items.push({ key: `icp${i}`, group: "ICP", label: c.name, detail: itemDetail("create_icp", args) ?? "", tool: "create_icp", args }); });
   p.pillars.forEach((x, i) => { const args = clean(x); items.push({ key: `pil${i}`, group: "Pilares de mensaje", label: x.title, detail: itemDetail("create_pillar", args) ?? "", tool: "create_pillar", args }); });
-  (p.plans ?? []).forEach((x, i) => {
-    if (!x.name?.trim() || x.price == null) return;
-    const args = clean({ name: x.name.trim(), price: x.price, billing: x.billing, description: x.description });
-    items.push({ key: `plan${i}`, group: "Planes y precios", label: x.name, detail: itemDetail("upsert_product", args) ?? "", tool: "upsert_product", args });
-  });
   p.target_accounts.forEach((a, i) => items.push({ key: `acc${i}`, group: "Cuentas objetivo", label: a.name, detail: a.why ?? a.domain ?? "", tool: "create_account", args: clean({ name: a.name, domain: a.domain, is_target: true }) }));
   return items;
 }
@@ -103,8 +94,6 @@ export function itemDetail(tool: string, a: Record<string, unknown>): string | n
     }
     case "create_icp":
       return [v("industries"), v("company_size"), v("why_fit") && `Encaje: ${v("why_fit")}`, v("anti_icp") && `Anti-ICP: ${v("anti_icp")}`].filter(Boolean).join(" · ");
-    case "upsert_product":
-      return [`${v("price") ?? "?"} ${v("billing") === "annual" ? "al año" : v("billing") === "one_off" ? "pago único" : "al mes"}`, v("description")].filter(Boolean).join(" · ");
     case "create_pillar":
       return [v("pain"), v("message"), v("proof") && `Prueba: ${v("proof")}`].filter(Boolean).join(" · ");
     default:

@@ -32,7 +32,7 @@ export const JOB_KINDS = [
   "battlecard", "stakeholder_research", "account_signals", "drive_import", "complete_account",
   "key_people", "icp_companies", "qualify_leads",
   "discover", "autopilot_now", "weekly_report", "posthog_sync", "playbook_library",
-  "debate", "draft_artifact", "deep_review", "account_research", "drive_summaries", "onboarding_read", "deal_coach",
+  "debate", "draft_artifact", "deep_review", "account_research", "drive_summaries", "onboarding_read",
 ] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 export const JOB_LABEL: Record<JobKind, string> = {
@@ -55,5 +55,4 @@ export const JOB_LABEL: Record<JobKind, string> = {
   account_research: "Investigar la cuenta en la web",
   drive_summaries: "Resumir documentos de Drive",
   onboarding_read: "Nokko lee tus fuentes",
-  deal_coach: "Deal Coach",
 };

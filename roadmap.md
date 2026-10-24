@@ -46,12 +46,8 @@
 
 ## Integrar RevOps + Finance + Postin CRM (plan aprobado 2026-10-24)
 - [x] Fase 1 RevOps en Métricas (embudo conciliado, perdidos, cohortes, tendencias) + Métricas por secciones
-- [x] Fase 1b herramientas de agente/MCP RevOps
-- [x] Fase 2 Finanzas (tablas, motores con tests, pantalla; solo Owner y Sales Leader)
-- [x] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
-- [x] Fase 4 importar datos reales — descartada: todo se genera de cero en Nokko
-- [x] Gráficos originales de Finance Dashboard: abanico de caja con «¿Y si…?», cascada de desvíos, flujo de dinero (Sankey) y antigüedad de cobros
-- [ ] Gráficos y páginas originales de RevOps Dashboard (embudo con alas, postura del trimestre, tendencias semanales, perdidos, orígenes) sobre los datos de Nokko
-- [ ] Mantener lo máximo posible de los originales en todo lo que se trae (gráficos, textos, flujos de Finance, RevOps y Postin CRM)
-- [x] Conectar Finanzas al onboarding (bloque Planes y precios + paso de caja/costes) e Inicio
-- [x] Actualizar manifest MCP, AGENTS.md y probar en pantalla
+- [ ] Fase 1b herramientas de agente/MCP RevOps
+- [x] Fase 2a Finanzas en Métricas: presupuesto, gasto real, margen y ROI (datos metidos en Nokko)
+- [ ] Fase 2b Finanzas completa: previsión de caja, cierres mensuales, agente/MCP
+- [ ] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
+- [ ] Fase 4 importar datos reales — espera CSV del usuario

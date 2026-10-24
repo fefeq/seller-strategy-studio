@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { ROLES, type Role } from "@/lib/roles";
 import { TelegramLink } from "@/components/telegram-link";
 import { NoticePrefsCard } from "@/components/notice-prefs";
-import { TeamsCard } from "@/components/crm/teams";
 import { McpConnect } from "@/components/mcp-connect";
 import { errorText } from "@/lib/errors";
 
@@ -119,7 +118,7 @@ function Team() {
         </div>
       </div>
       <div id="mcp" className="mt-8 scroll-mt-20 grid gap-6 lg:grid-cols-2"><McpConnect /><TelegramLink /></div>
-      <div className="mt-6 grid gap-6 lg:grid-cols-2"><TeamsCard /><NoticePrefsCard /></div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-2"><NoticePrefsCard /></div>
     </Page>
   );
 }

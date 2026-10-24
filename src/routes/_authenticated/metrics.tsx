@@ -14,6 +14,7 @@ import { CacPanel } from "@/components/cac-panel";
 import { BudgetPanel } from "@/components/budget-panel";
 import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
+import { FinancePanel } from "@/components/metrics/finance-panel";
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
@@ -39,6 +40,7 @@ const SECTIONS = [
   { id: "cohortes", label: "Cohortes" },
   { id: "tendencias", label: "Tendencias" },
   { id: "economia", label: "CAC y presupuesto" },
+  { id: "finanzas", label: "Finanzas" },
   { id: "leads", label: "Leads y self-service" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["id"];
@@ -120,7 +122,7 @@ function Metrics() {
       </select>
     }>
       <nav aria-label="Secciones de Métricas" className="sticky top-0 z-20 -mx-4 mb-6 flex gap-1 overflow-x-auto border-b bg-background/95 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0">
-        {SECTIONS.map((x) => (
+        {SECTIONS.filter((x) => x.id !== "finanzas" || canEdit).map((x) => (
           <Link key={x.id} to="/metrics" search={x.id === "resumen" ? {} : { seccion: x.id }} className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime text-lime-foreground" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}>{x.label}</Link>
         ))}
       </nav>
@@ -194,6 +196,7 @@ function Metrics() {
           </div>
           </>}
 
+          {sec === "finanzas" && (canEdit ? <FinancePanel quarter={quarter} /> : <p className="text-sm text-muted-foreground">Las finanzas solo las ven el Owner y el Sales Leader de la empresa.</p>)}
           {sec === "leads" && <>
           <LeadFunnelPanel quarter={quarter} />
           <SelfServiceFunnel quarter={quarter} />
