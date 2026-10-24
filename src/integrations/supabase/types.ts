@@ -2270,6 +2270,79 @@ export type Database = {
           },
         ]
       }
+      memories: {
+        Row: {
+          account_id: string | null
+          active: boolean
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          learned: boolean
+          org_id: string
+          pinned: boolean
+          scope: string
+          source: string
+          supersedes: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          active?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          learned?: boolean
+          org_id?: string
+          pinned?: boolean
+          scope?: string
+          source?: string
+          supersedes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          active?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          learned?: boolean
+          org_id?: string
+          pinned?: boolean
+          scope?: string
+          source?: string
+          supersedes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messaging_pillars: {
         Row: {
           created_at: string
