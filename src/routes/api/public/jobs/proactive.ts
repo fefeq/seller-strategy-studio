@@ -47,6 +47,14 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               total += found.length;
             } catch (e) { console.error("proactive org failed", o.id, e); }
           }
+          // New leads through their flow (account, company data, key people, AI proposal): a few per company and run.
+          const { leadsToEnrich, enrichLead } = await import("@/lib/inngest/tasks.server");
+          let leadFlows = 0;
+          for (const o of orgs ?? []) {
+            for (const id of await leadsToEnrich(db, o.id, now, 3).catch(() => [] as string[])) {
+              try { await enrichLead(db, o.id, id, now); leadFlows++; } catch (e) { console.error("lead flow failed", id, e); }
+            }
+          }
           await notifyUrgent(db);
           // Monday morning: this week's pipeline report for every company (idempotent, once per week).
           const { runWeeklyReports } = await import("@/lib/weekly-report.server");
@@ -60,7 +68,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Each company's PostHog (product usage and sign-ups), at most every few hours.
           const { runPosthogSyncs } = await import("@/lib/posthog-sync.server");
           const posthog = await runPosthogSyncs(db, now).catch((e) => { console.error("posthog syncs failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, mode: "inline", detected: total, weekly, stripe, signals, posthog });
+          return Response.json({ orgs: orgs?.length ?? 0, mode: "inline", detected: total, leadFlows, weekly, stripe, signals, posthog });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }

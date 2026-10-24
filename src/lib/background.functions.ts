@@ -48,6 +48,28 @@ export const leadTouched = createServerFn({ method: "POST" })
     const { data: lead } = await ctx.db.from("leads").select("id,stage,contacted_at,enriched_at,created_at").eq("org_id", ctx.orgId).eq("id", data.leadId).maybeSingle();
     if (!lead) return { queued: false };
     const { leadEvents } = await import("@/lib/inngest/lead-events");
-    const { trySend } = await import("@/lib/inngest/send.server");
-    return { queued: await trySend(leadEvents(ctx.orgId, lead)) };
+    const { inngestReady, trySend } = await import("@/lib/inngest/send.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (await inngestReady(supabaseAdmin)) return { queued: await trySend(leadEvents(ctx.orgId, lead)) };
+    // Without Inngest the new lead goes through its flow right here (the screen does not wait for it).
+    const { shouldRunFlow } = await import("@/lib/lead-flow");
+    if (!shouldRunFlow(lead)) return { queued: false };
+    const { enrichLead } = await import("@/lib/inngest/tasks.server");
+    await enrichLead(supabaseAdmin, ctx.orgId, lead.id, new Date(), { trigger: "automatic" });
+    return { queued: false, ran: true };
+  });
+
+/** «Pasar por el flujo»: a member runs (or repeats) the new-lead flow now and gets the steps back. */
+export const runLeadFlowNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ leadId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = await userCtx(context.supabase as Db, context.userId);
+    // RLS read first: the lead must belong to the caller's company before the admin client touches it.
+    const { data: lead } = await ctx.db.from("leads").select("id,stage").eq("org_id", ctx.orgId).eq("id", data.leadId).maybeSingle();
+    if (!lead) throw new Error("No encuentro ese lead en esta empresa.");
+    if (lead.stage === "opportunity") throw new Error("Ya es una oportunidad: el flujo de lead nuevo no aplica.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { enrichLead } = await import("@/lib/inngest/tasks.server");
+    return enrichLead(supabaseAdmin, ctx.orgId, lead.id, new Date(), { force: true, trigger: "manual", userId: ctx.userId });
   });
