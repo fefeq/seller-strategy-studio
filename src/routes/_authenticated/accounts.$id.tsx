@@ -512,7 +512,7 @@ function useRevealOnMobile(key: string | undefined) {
 }
 
 /** «+ Persona» in the power map: asks for the name first and suggests people already in Personas or in this map. */
-function AddStakeholder({ list, onAdd, onOpen }: { list: any[]; onAdd: (p: { name: string; title?: string | null; email?: string | null; linkedin_url?: string | null }) => Promise<void>; onOpen: (s: any) => void }) {
+function AddStakeholder({ list, onAdd, onOpen }: { list: any[]; onAdd: (p: { name: string; title?: string | null; email?: string | null; linkedin_url?: string | null }) => Promise<unknown>; onOpen: (s: any) => void }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [pickedId, setPickedId] = useState<string | null>(null);
