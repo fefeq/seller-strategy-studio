@@ -24,7 +24,7 @@ export function FinancePlanVsReal({ d }: { d: FinanceData }) {
   const cts = costToServeFor(lines, q);
 
   async function sync() {
-    const ok = await askConfirm({ title: `Enviar los costes de ${q}`, body: `Se guardan ${cac.length} filas de CAC (canal «Finanzas · …») y el coste de servir real de ${cts.length} segmentos. Si ya existían para este trimestre, se sustituyen.`, confirm: "Enviar" });
+    const ok = await askConfirm(`Enviar los costes de ${q}`, { body: `Se guardan ${cac.length} filas de CAC (canal «Finanzas · …») y el coste de servir real de ${cts.length} segmentos. Si ya existían para este trimestre, se sustituyen.`, confirmLabel: "Enviar" });
     if (!ok) return;
     const org = me!.currentOrg!.org_id;
     if (cac.length) {

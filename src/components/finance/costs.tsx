@@ -36,7 +36,7 @@ export function FinanceCosts({ d }: { d: FinanceData }) {
     refresh();
   }
   async function remove(id: string, name: string) {
-    if (!(await askConfirm({ title: `Borrar «${name}»`, body: "Desaparece también de los meses pasados. Si solo ha dejado de pagarse, mejor termínalo.", confirm: "Borrar", destructive: true }))) return;
+    if (!(await askConfirm(`Borrar «${name}»`, { body: "Desaparece también de los meses pasados. Si solo ha dejado de pagarse, mejor termínalo.", confirmLabel: "Borrar" }))) return;
     const { error } = await supabase.from("finance_cost_lines").delete().eq("id", id);
     if (error) return toast.error(errorText(error));
     refresh();
