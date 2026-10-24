@@ -3,6 +3,8 @@
 // says whether it matched, missed or is unknown, so the UI can show why and never invents a
 // number: with nothing known about the fit, the fit is null, not 0.
 
+import { employeesText } from "@/lib/icp";
+
 export const FIT_WEIGHT = 0.7;
 export const ACTIVITY_WEIGHT = 0.3;
 
@@ -13,6 +15,9 @@ export type IcpProfile = {
   company_size: string | null;
   geography?: string | null;
   anti_icp: string | null;
+  min_employees?: number | null;
+  max_employees?: number | null;
+  search_keywords?: string[] | null;
 };
 
 export type AccountFitInput = {
@@ -84,13 +89,14 @@ function fitAgainst(a: AccountFitInput, icp: IcpProfile, segmentNames?: Map<stri
   if (!icp.segment_id || !a.segment_id) criteria.push({ id: "segment", label: "Segmento", status: "unknown", weight: 2, note: !a.segment_id ? "La cuenta no tiene segmento" : "El ICP no tiene segmento" });
   else criteria.push({ id: "segment", label: "Segmento", status: a.segment_id === icp.segment_id ? "match" : "miss", weight: 2, note: a.segment_id === icp.segment_id ? `Está en ${segName(a.segment_id) ?? "el segmento del ICP"}` : `Está en ${segName(a.segment_id) ?? "otro segmento"}, el ICP es ${segName(icp.segment_id) ?? "otro"}` });
 
-  if (!icp.industries || !a.industry) criteria.push({ id: "industry", label: "Sector", status: "unknown", weight: 2, note: !a.industry ? "La cuenta no tiene sector" : "El ICP no fija sector" });
+  const sectors = [icp.industries, ...(icp.search_keywords ?? [])].filter(Boolean).join(", ") || null;
+  if (!sectors || !a.industry) criteria.push({ id: "industry", label: "Sector", status: "unknown", weight: 2, note: !a.industry ? "La cuenta no tiene sector" : "El ICP no fija sector" });
   else {
-    const common = overlap(tokens(a.industry), tokens(icp.industries));
+    const common = overlap(tokens(a.industry), tokens(sectors));
     criteria.push({ id: "industry", label: "Sector", status: common.length ? "match" : "miss", weight: 2, note: common.length ? `Coincide en ${common.join(", ")}` : `${a.industry} no está entre los sectores del ICP` });
   }
 
-  criteria.push({ id: "size", label: "Tamaño", weight: 1, ...sizeCriterion(icp.company_size, a.size) });
+  criteria.push({ id: "size", label: "Tamaño", weight: 1, ...sizeCriterion(employeesText(icp.min_employees, icp.max_employees) ?? icp.company_size, a.size) });
 
   if (!icp.anti_icp) criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "unknown", weight: 2, note: "El ICP no define anti-ICP" });
   else {

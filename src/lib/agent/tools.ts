@@ -157,7 +157,7 @@ const CORE_TOOLS: AgentTool[] = [
         c.db.from("leads").select("id,company,contact_name,email,stage,source,stage_entered_at,updated_at,next_step,next_step_at,created_at,contacted_at,mql_at,sql_at,opportunity_at,deal_id,owner_id,segment_id,account_id").eq("org_id", c.orgId).order("created_at", { ascending: false }).limit(1000),
         c.db.from("deals").select("id,stage,closed_at").eq("org_id", c.orgId),
         c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
-        c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp").eq("org_id", c.orgId),
+        c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords").eq("org_id", c.orgId),
         c.db.from("accounts").select("id,segment_id,industry,size,tier,name").eq("org_id", c.orgId),
         c.db.from("segments").select("id,name").eq("org_id", c.orgId),
       ]);

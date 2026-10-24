@@ -23,8 +23,8 @@ describe("ICP list", () => {
   it("builds the brief from the ICP", () => {
     const t = listInput({ industries: "Fintech", company_size: "50-200", geography: "Madrid", anti_icp: "Bancos" }, "Serie A", 30);
     expect(t).toContain("Encuentra 30 empresas");
-    expect(t).toContain("Sectores: Fintech.");
-    expect(t).toContain("Excluye: Bancos.");
+    expect(t).toContain("Sectores o tipo de empresa: Fintech");
+    expect(t).toContain("No encaja (anti-ICP): Bancos");
     expect(t).toContain("Criterios adicionales: Serie A");
   });
   it("turns entities into accounts, one per domain, marking existing ones", () => {

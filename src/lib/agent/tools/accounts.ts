@@ -55,7 +55,7 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
       if (a.owner === "unowned") q = q.is("owner_id", null);
       if (a.target_only) q = q.eq("is_target", true);
       if (a.missing) q = q.is(a.missing === "segment" ? "segment_id" : a.missing, null);
-      const [rows, icp, names] = await Promise.all([q.limit(1000), c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp").eq("org_id", c.orgId), segmentNames(c)]);
+      const [rows, icp, names] = await Promise.all([q.limit(1000), c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords").eq("org_id", c.orgId), segmentNames(c)]);
       if (rows.error) throw new Error(rows.error.message);
       const now = new Date();
       const today = now.toISOString();

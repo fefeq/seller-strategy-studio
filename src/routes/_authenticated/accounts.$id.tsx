@@ -68,7 +68,7 @@ function AccountPage() {
         supabase.from("calls").select("*").eq("account_id", id).order("occurred_at", { ascending: false }),
         supabase.from("deals").select("*").eq("account_id", id),
         supabase.from("account_touches").select("occurred_at").eq("account_id", id),
-        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
+        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
         supabase.from("segments").select("id,name"),
       ]);
       return { account: a.data, plan: plan.data, stakeholders: sh.data ?? [], meetings: mt.data ?? [], calls: calls.data ?? [], deals: deals.data ?? [], touches: touches.data ?? [], icps: icps.data ?? [], segNames: new Map((segs.data ?? []).map((s) => [s.id, s.name])) };
