@@ -28,9 +28,10 @@ import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
-import { ClayEnrich, ClayPeopleButton } from "@/components/clay";
+import { ClayPeopleButton } from "@/components/clay";
+import { CompleteAccount } from "@/components/orchestrator";
 import { AccountResearch, SignalsTab } from "@/components/web-research";
-import { ApolloEnrich, ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
+import { ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
 import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
 import { linkedinCompanyUrl } from "@/lib/apify";
@@ -163,8 +164,7 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; doma
       <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
       <Field label="LinkedIn de la empresa"><Input value={linkedin} placeholder="linkedin.com/company/…" onChange={(e) => setLinkedin(e.target.value)} onBlur={saveLinkedin} /></Field>
       <div className="space-y-2">
-        <ClayEnrich account={account} onSaved={onSaved} />
-        <ApolloEnrich account={account} onSaved={onSaved} />
+        <CompleteAccount account={account} onSaved={onSaved} />
       </div>
     </div>
   );

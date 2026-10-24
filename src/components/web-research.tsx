@@ -56,6 +56,7 @@ export function AccountResearch({ accountId, hasDomain, onApply }: { accountId: 
           <span className="min-w-0"><span className="font-medium">{RESEARCH_LABEL[k] ?? k}:</span> <span className="whitespace-pre-wrap">{v}</span></span>
         </label>
       ))}
+      {(r as { via?: string }).via && <p className="font-mono text-xs text-muted-foreground">{(r as { via?: string }).via}</p>}
       {r.sources.length > 0 && (
         <p className="text-xs text-muted-foreground">Fuentes: {r.sources.map((s, i) => <span key={s.url}>{i > 0 && " · "}<a href={s.url} target="_blank" rel="noreferrer" className="underline">{s.title}</a></span>)}</p>
       )}
