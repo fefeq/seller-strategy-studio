@@ -4,7 +4,7 @@ import { STAGE_ARG, accountByName, def, mustBeMember, mustFind, ok, one, orgStag
 import { BUYING_ROLES } from "@/lib/roles";
 import { firstOpenStage, stagePath } from "@/lib/stages";
 import { TRACKS, stageGate } from "@/lib/bmad/tracks";
-import { type Product } from "@/lib/deal-lines";
+import { lineFromProduct, type Product } from "@/lib/deal-lines";
 import { leadStageLabel } from "@/lib/lead-funnel";
 import { ask } from "@/lib/ai-gateway";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
