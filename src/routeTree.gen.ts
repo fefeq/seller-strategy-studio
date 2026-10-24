@@ -41,6 +41,7 @@ import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAccountsAssignmentRouteImport } from './routes/_authenticated/accounts.assignment'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
+import { Route as ApiPublicAccountsRouteImport } from './routes/api/public/accounts'
 import { Route as ApiPublicInngestRouteImport } from './routes/api/public/inngest'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
 import { Route as ApiPublicApolloPhoneWebhookRouteImport } from './routes/api/public/apollo/phone-webhook'
@@ -212,6 +213,11 @@ const AuthenticatedLeadsEntradaRoute =
     path: '/leads/entrada',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const ApiPublicAccountsRoute = ApiPublicAccountsRouteImport.update({
+  id: '/api/public/accounts',
+  path: '/api/public/accounts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicInngestRoute = ApiPublicInngestRouteImport.update({
   id: '/api/public/inngest',
   path: '/api/public/inngest',
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/_authenticated/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/_authenticated/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
@@ -388,6 +397,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts/assignment'
     | '/leads/entrada'
+    | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
     | '/accounts/'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts/assignment'
     | '/leads/entrada'
+    | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
     | '/accounts'
@@ -465,6 +476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/$id'
     | '/_authenticated/accounts/assignment'
     | '/_authenticated/leads/entrada'
+    | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
     | '/_authenticated/accounts/'
@@ -482,6 +494,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicAccountsRoute: typeof ApiPublicAccountsRoute
   ApiPublicInngestRoute: typeof ApiPublicInngestRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
   ApiPublicApolloPhoneWebhookRoute: typeof ApiPublicApolloPhoneWebhookRoute
@@ -715,6 +728,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsEntradaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/accounts': {
+      id: '/api/public/accounts'
+      path: '/api/public/accounts'
+      fullPath: '/api/public/accounts'
+      preLoaderRoute: typeof ApiPublicAccountsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/inngest': {
       id: '/api/public/inngest'
       path: '/api/public/inngest'
@@ -821,6 +841,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicAccountsRoute: ApiPublicAccountsRoute,
   ApiPublicInngestRoute: ApiPublicInngestRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
   ApiPublicApolloPhoneWebhookRoute: ApiPublicApolloPhoneWebhookRoute,
