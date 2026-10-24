@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
 import { NotificationCenter } from "@/components/notification-center";
 import { createFileRoute, Link, Outlet, redirect, useNavigate, useRouterState } from "@tanstack/react-router";
-import { Brain, Home, Inbox, KanbanSquare, Menu, Users, X } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -131,7 +130,7 @@ function Shell() {
             aria-controls="mobile-nav"
             className="-mr-2 flex size-11 shrink-0 items-center justify-center text-ink"
           >
-            {navOpen ? : <Menu className="size-6" />}
+            <span aria-hidden className="text-xl leading-none">{navOpen ? "✕" : "☰"}</span>
           </button>
         </div>
       </header>
@@ -205,10 +204,10 @@ function BottomBar() {
   const { open } = useAgent();
   const { data: sugg = [] } = useSuggestions();
   const tabs = [
-    { to: "/home", label: "Inicio", icon: Home },
-    { to: "/inbox", label: "Sugerencias", icon: Inbox, badge: sugg.length },
-    { to: "/leads", label: "Leads", icon: Users },
-    { to: "/deals", label: "Pipeline", icon: KanbanSquare },
+    { to: "/home", label: "Inicio" },
+    { to: "/inbox", label: "Sugerencias", badge: sugg.length },
+    { to: "/leads", label: "Leads" },
+    { to: "/deals", label: "Pipeline" },
   ] as const;
   const item = "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 text-[11px] leading-tight text-ink-mid";
   return (
@@ -222,19 +221,17 @@ function BottomBar() {
           to={t.to}
           className={`${item} border-t-2 border-transparent data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink`}
         >
-          <span className="relative">
-            <t.icon className="size-5" />
+          <span className="relative truncate">
+            {t.label}
             {"badge" in t && t.badge > 0 && (
-              <span className="absolute -right-2.5 -top-1.5 min-w-4 rounded-full bg-red px-1 text-center font-mono text-[10px] leading-4 text-ink-reverse">
+              <span className="ml-1 tabular-nums text-signal" aria-label={`${t.badge} pendientes`}>
                 {t.badge > 9 ? "9+" : t.badge}
               </span>
             )}
           </span>
-          <span className="truncate">{t.label}</span>
         </Link>
       ))}
       <button onClick={() => open()} className={`${item} border-t-2 border-transparent`} aria-label="Abrir agente GTM">
-        <Brain className="size-5" />
         <span>Agente</span>
       </button>
     </nav>
