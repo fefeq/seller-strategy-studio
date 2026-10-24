@@ -6,6 +6,7 @@ import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
 import { mergeBlock, type BlockId } from "@/lib/onboarding";
 import type { SetupProposal } from "@/lib/setup-extraction";
+import type { Json } from "@/integrations/supabase/types";
 
 const BLOCK = z.enum(["company", "icp", "segments", "positioning", "messages", "goals"]);
 
@@ -21,7 +22,7 @@ export const redoOnboardingBlock = createServerFn({ method: "POST" })
     const { redoBlockCore } = await import("@/lib/setup-extract.server");
     const next = await redoBlockCore(ctx, prev, data.block, data.hint);
     const merged = mergeBlock(prev, next, data.block as BlockId);
-    const { error } = await ctx.db.from("onboarding_sessions").update({ proposal: merged as never, updated_at: new Date().toISOString() }).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    const { error } = await ctx.db.from("onboarding_sessions").update({ proposal: merged as unknown as Json, updated_at: new Date().toISOString() }).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
     if (error) throw new Error(error.message);
     return merged;
   });
