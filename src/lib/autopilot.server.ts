@@ -34,7 +34,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       try {
         const res = await trackedRun(ctx, "research_account", "automatic", () => researchAccountCore(db, a.id, scope));
         const { data: plan } = await db.from("account_plans").select("*").eq("org_id", orgId).eq("account_id", a.id).maybeSingle();
-        const empty = Object.fromEntries(Object.entries(res.fields).filter(([f, v]) => v && !((plan as Record<string, unknown> | null)?.[f] as string | null)?.trim()));
+        const empty = Object.fromEntries(Object.entries(res.fields).filter(([f, v]) => v && !((plan as Record<string, unknown> | null)?.[f] as string | null)?.trim())) as Database["public"]["Tables"]["account_plans"]["Update"];
         if (plan && Object.keys(empty).length) await db.from("account_plans").update(empty).eq("org_id", orgId).eq("id", plan.id);
         else if (!plan) await db.from("account_plans").insert({ org_id: orgId, account_id: a.id, ...empty });
         lines.unshift(res.summary);
