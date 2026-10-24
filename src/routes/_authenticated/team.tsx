@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +11,6 @@ import { ROLES, type Role } from "@/lib/roles";
 import { TelegramLink } from "@/components/telegram-link";
 import { NoticePrefsCard } from "@/components/notice-prefs";
 import { McpConnect } from "@/components/mcp-connect";
-import { confirmed } from "@/lib/save";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/team")({
@@ -28,14 +27,6 @@ function Team() {
   const isOwner = me?.roles.includes("owner");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("ae");
-  const [orgName, setOrgName] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string | null>(null);
-  const { data: org } = useQuery({
-    queryKey: ["org-company-name", orgId],
-    enabled: !!orgId,
-    queryFn: async () => (await supabase.from("organizations").select("company_name").eq("id", orgId!).maybeSingle()).data,
-  });
-
   const { data } = useQuery({
     queryKey: ["team", orgId],
     enabled: !!orgId,
@@ -76,43 +67,9 @@ function Team() {
     await supabase.from("org_invites").delete().eq("id", id);
     qc.invalidateQueries({ queryKey: ["team", orgId] });
   }
-  async function rename() {
-    if (!orgName?.trim()) return;
-    const { error } = await supabase.from("organizations").update({ name: orgName.trim() }).eq("id", orgId!);
-    if (error) return toast.error(errorText(error));
-    setOrgName(null);
-    qc.invalidateQueries({ queryKey: ["me"] });
-  }
-
-  async function saveCompanyName() {
-    if (companyName === null) return;
-    try {
-      await confirmed(supabase.from("organizations").update({ company_name: companyName.trim() || null }).eq("id", orgId!).select("id"));
-      toast.success("Guardado. Los agentes usarán este nombre en los documentos nuevos.");
-      setCompanyName(null);
-      qc.invalidateQueries({ queryKey: ["org-company-name", orgId] });
-    } catch (e) {
-      toast.error(errorText(e));
-    }
-  }
-
   return (
     <Page eyebrow={me?.currentOrg?.name ?? ""} title="Equipo">
-      {isOwner && (
-        <div className="mb-6 flex flex-wrap items-end gap-6">
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Input className="w-full sm:w-64" value={orgName ?? me?.currentOrg?.name ?? ""} onChange={(e) => setOrgName(e.target.value)} />
-            <Button variant="outline" disabled={orgName === null} onClick={rename}>Renombrar espacio</Button>
-          </div>
-          <div className="w-full sm:w-auto">
-            <div className="flex flex-wrap gap-2">
-              <Input className="w-full sm:w-64" aria-label="Nombre de la empresa en los documentos" placeholder={me?.currentOrg?.name ?? "Nombre de la empresa"} value={companyName ?? org?.company_name ?? ""} onChange={(e) => setCompanyName(e.target.value)} />
-              <Button variant="outline" disabled={companyName === null} onClick={saveCompanyName}>Guardar nombre</Button>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">Cómo se llama tu empresa en los documentos de los agentes (brief, plan, propuestas). Si lo dejas vacío, usan el nombre del espacio.</p>
-          </div>
-        </div>
-      )}
+      <p className="mb-6 text-sm text-muted-foreground">El nombre, la web y la moneda de la empresa están en <Link to="/company" className="text-signal">Empresa</Link>.</p>
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
