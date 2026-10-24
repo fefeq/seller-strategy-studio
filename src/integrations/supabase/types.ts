@@ -1756,6 +1756,138 @@ export type Database = {
           },
         ]
       }
+      import_batches: {
+        Row: {
+          created_at: string
+          created_count: number
+          decided_at: string | null
+          decided_by: string | null
+          error_count: number
+          id: string
+          kind: string
+          lead_source_id: string | null
+          org_id: string
+          row_count: number
+          status: string
+          undone_at: string | null
+          undone_by: string | null
+          updated_at: string
+          updated_count: number
+        }
+        Insert: {
+          created_at?: string
+          created_count?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          error_count?: number
+          id?: string
+          kind: string
+          lead_source_id?: string | null
+          org_id?: string
+          row_count?: number
+          status?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          updated_at?: string
+          updated_count?: number
+        }
+        Update: {
+          created_at?: string
+          created_count?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          error_count?: number
+          id?: string
+          kind?: string
+          lead_source_id?: string | null
+          org_id?: string
+          row_count?: number
+          status?: string
+          undone_at?: string | null
+          undone_by?: string | null
+          updated_at?: string
+          updated_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_batches_lead_source_id_fkey"
+            columns: ["lead_source_id"]
+            isOneToOne: false
+            referencedRelation: "lead_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_batches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_rows: {
+        Row: {
+          action: string
+          applied_at: string | null
+          batch_id: string
+          created_at: string
+          error: string | null
+          id: string
+          line: number
+          org_id: string
+          raw: Json
+          reason: string | null
+          result: Json | null
+          status: string
+          summary: string
+        }
+        Insert: {
+          action?: string
+          applied_at?: string | null
+          batch_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          line: number
+          org_id?: string
+          raw?: Json
+          reason?: string | null
+          result?: Json | null
+          status?: string
+          summary?: string
+        }
+        Update: {
+          action?: string
+          applied_at?: string | null
+          batch_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          line?: number
+          org_id?: string
+          raw?: Json
+          reason?: string | null
+          result?: Json | null
+          status?: string
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_rows_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_usage: {
         Row: {
           cost: number
@@ -2033,11 +2165,18 @@ export type Database = {
           active: boolean
           created_at: string
           created_by: string | null
+          daily_limit: number
+          day_count: number
+          day_date: string | null
           default_stage: string
           id: string
+          kind: string
           last_received_at: string | null
+          max_per_request: number
+          mode: string
           name: string
           org_id: string | null
+          paused_reason: string | null
           received_count: number
           token_hash: string
           token_hint: string
@@ -2048,11 +2187,18 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          daily_limit?: number
+          day_count?: number
+          day_date?: string | null
           default_stage?: string
           id?: string
+          kind?: string
           last_received_at?: string | null
+          max_per_request?: number
+          mode?: string
           name: string
           org_id?: string | null
+          paused_reason?: string | null
           received_count?: number
           token_hash: string
           token_hint?: string
@@ -2063,11 +2209,18 @@ export type Database = {
           active?: boolean
           created_at?: string
           created_by?: string | null
+          daily_limit?: number
+          day_count?: number
+          day_date?: string | null
           default_stage?: string
           id?: string
+          kind?: string
           last_received_at?: string | null
+          max_per_request?: number
+          mode?: string
           name?: string
           org_id?: string | null
+          paused_reason?: string | null
           received_count?: number
           token_hash?: string
           token_hint?: string
