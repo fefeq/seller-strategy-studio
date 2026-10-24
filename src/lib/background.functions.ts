@@ -19,6 +19,7 @@ const JobIn = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("battlecard"), input: z.object({ competitor: z.string().trim().min(2).max(200), max: z.number().int().min(5).max(40) }), label: z.string().max(200).optional() }),
   z.object({ kind: z.literal("stakeholder_research"), input: z.object({ stakeholderId: z.string().uuid() }), label: z.string().max(200).optional() }),
   z.object({ kind: z.literal("account_signals"), input: z.object({ accountId: z.string().uuid() }), label: z.string().max(200).optional() }),
+  z.object({ kind: z.literal("complete_account"), input: z.object({ accountId: z.string().uuid() }), label: z.string().max(200).optional() }),
   z.object({ kind: z.literal("drive_import"), input: z.object({ file: z.string().trim().min(5).max(500), section: z.enum(["company", "objections", "playbooks", "methodology", "campaigns", "skills", "rules"]) }), label: z.string().max(200).optional() }),
 ]);
 
@@ -29,14 +30,26 @@ export const startBackgroundJob = createServerFn({ method: "POST" })
     const ctx = await userCtx(context.supabase as Db, context.userId);
     // The ids the task will touch must belong to this company (the job then runs with the admin client).
     if (data.kind === "stakeholder_research") { const { data: s } = await ctx.db.from("stakeholders").select("id").eq("org_id", ctx.orgId).eq("id", data.input.stakeholderId).maybeSingle(); if (!s) throw new Error("No encuentro esa persona en esta empresa."); }
-    if (data.kind === "account_signals") { const { data: a } = await ctx.db.from("accounts").select("id").eq("org_id", ctx.orgId).eq("id", data.input.accountId).maybeSingle(); if (!a) throw new Error("No encuentro esa cuenta en esta empresa."); }
+    if (data.kind === "account_signals" || data.kind === "complete_account") { const { data: a } = await ctx.db.from("accounts").select("id").eq("org_id", ctx.orgId).eq("id", data.input.accountId).maybeSingle(); if (!a) throw new Error("No encuentro esa cuenta en esta empresa."); }
+    const target: { target_type?: string; target_id?: string } = "accountId" in data.input ? { target_type: "account", target_id: data.input.accountId } : "stakeholderId" in data.input ? { target_type: "stakeholder", target_id: data.input.stakeholderId } : {};
+    // A second click on the same task for the same record follows the one already running.
+    if (target.target_id) {
+      const { data: running } = await ctx.db.from("background_jobs").select("id,kind,target_id,status").eq("org_id", ctx.orgId).eq("kind", data.kind).eq("target_id", target.target_id).in("status", ["queued", "running"]).limit(1);
+      if (running?.[0]) return { jobId: running[0].id, reused: true };
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { inngestReady, sendEvents } = await import("@/lib/inngest/send.server");
-    if (!(await inngestReady(supabaseAdmin))) throw new Error("El segundo plano no está disponible ahora mismo. Hazlo de la forma normal.");
-    const { data: job, error } = await ctx.db.from("background_jobs").insert({ kind: data.kind, input: data.input, label: (data.label ?? JOB_LABEL[data.kind]).slice(0, 300), org_id: ctx.orgId, user_id: ctx.userId }).select("id").single();
+    const ready = await inngestReady(supabaseAdmin);
+    if (!ready && data.kind !== "complete_account") throw new Error("El segundo plano no está disponible ahora mismo. Hazlo de la forma normal.");
+    const { data: job, error } = await ctx.db.from("background_jobs").insert({ kind: data.kind, input: data.input, ...target, label: (data.label ?? JOB_LABEL[data.kind]).slice(0, 300), org_id: ctx.orgId, user_id: ctx.userId }).select("id").single();
     if (error) throw new Error(error.message);
-    await sendEvents([{ name: EV.jobRequested, data: { job_id: job.id } }]);
-    return { jobId: job.id };
+    if (ready) await sendEvents([{ name: EV.jobRequested, data: { job_id: job.id } }]);
+    else {
+      // Without Inngest the task runs in this request; the screen does not wait for it and the notice still arrives.
+      const { runBackgroundJob } = await import("@/lib/inngest/tasks.server");
+      await runBackgroundJob(supabaseAdmin, job.id).catch(() => undefined);
+    }
+    return { jobId: job.id, reused: false };
   });
 
 /** After a lead is created or saved: enrichment for new ones, and start/stop the follow-up sequence. */

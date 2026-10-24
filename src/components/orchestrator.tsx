@@ -1,5 +1,6 @@
 // Need-based actions: the user asks «Completar datos», Nokko picks the services and says which it used and the cost.
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { startBackgroundJob } from "@/lib/background.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -13,7 +14,7 @@ import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { CompanyLogo } from "@/components/company-logo";
 import { IcpListButton } from "@/components/parallel";
-import { orchestrateCompleteAccount, orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
+import { orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
 import { DEFAULT_LEVELS, LEVELS, LEVEL_LABEL, type Level } from "@/lib/orchestrator/search";
 import { MAX_REVEAL } from "@/lib/apollo";
 import { icpCompanyQuery } from "@/lib/icp";
@@ -22,55 +23,66 @@ import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
 import { useMe } from "@/hooks/use-me";
 
-type Result = { changes: EnrichChange[]; found: boolean; sources: string; blocked: string | null };
+type Job = { id: string; status: string; step: string | null; finished_at: string | null; result: { review?: EnrichChange[]; sources?: string; body?: string | null } | null };
 
+/** «Completar datos» runs in the background: empty fields are written, values that differ wait here for a person. */
 export function CompleteAccount({ account, onSaved }: { account: { id: string; domain: string | null }; onSaved: () => void }) {
-  const run = useServerFn(orchestrateCompleteAccount);
+  const start = useServerFn(startBackgroundJob);
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
-  const [r, setR] = useState<Result | null>(null);
+  const [dismissed, setDismissed] = useState<string | null>(null);
   const [picked, setPicked] = useState<EnrichField[]>([]);
-
-  async function go() {
-    setBusy(true);
-    try {
-      const out = await run({ data: { accountId: account.id } });
-      setR(out);
-      setPicked(out.changes.filter((c) => c.empty).map((c) => c.field));
+  const key = ["account-job", "complete_account", account.id];
+  const { data: job } = useQuery({
+    queryKey: key,
+    queryFn: async () => (await supabase.from("background_jobs").select("id,status,step,finished_at,result").eq("kind", "complete_account").eq("target_id", account.id).order("created_at", { ascending: false }).limit(1).maybeSingle()).data as Job | null,
+    refetchInterval: (q) => (q.state.data && ["queued", "running"].includes((q.state.data as Job).status) ? 2500 : false),
+  });
+  const running = busy || (!!job && ["queued", "running"].includes(job.status));
+  const prev = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (prev.current && ["queued", "running"].includes(prev.current) && job?.status === "done") {
+      onSaved();
       qc.invalidateQueries({ queryKey: ["orchestrator-status"] });
-    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
-  }
-  async function apply() {
-    if (!r) return;
-    const patch = enrichPatch(r.changes, picked);
-    if (!Object.keys(patch).length) return;
+      setPicked((job.result?.review ?? []).map((c) => c.field));
+    }
+    prev.current = job?.status;
+  }, [job?.status]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function go() {
     setBusy(true);
+    toast.success("En marcha. Te aviso cuando termine; puedes seguir trabajando.");
+    start({ data: { kind: "complete_account", input: { accountId: account.id } } })
+      .catch((e) => toast.error(errorText(e)))
+      .finally(() => { setBusy(false); qc.invalidateQueries({ queryKey: key }); });
+    setTimeout(() => qc.invalidateQueries({ queryKey: key }), 900);
+  }
+  async function apply(review: EnrichChange[]) {
+    const patch = enrichPatch(review, picked);
+    if (!Object.keys(patch).length) return;
     const { error } = await supabase.from("accounts").update(patch).eq("id", account.id);
-    setBusy(false);
     if (error) return toast.error(errorText(error));
-    toast.success("Cuenta completada.");
-    setR(null);
+    toast.success("Cuenta actualizada.");
+    setDismissed(job?.id ?? null);
     onSaved();
   }
   const show = (c: EnrichChange, v: string | null) => (v && c.field === "country" ? countryName(v) : v);
-  const close = <button className="underline" onClick={() => setR(null)}>Cerrar</button>;
 
   if (!account.domain) return <p className="text-xs text-muted-foreground">Añade el dominio de la cuenta para que Nokko pueda completarla.</p>;
-  if (!r) return <Button variant="outline" size="sm" onClick={go} disabled={busy}>{busy ? "Buscando datos…" : "Completar datos"}</Button>;
-  if (r.blocked) return <p className="text-sm text-muted-foreground">{r.blocked} {close}</p>;
-  if (!r.found) return <p className="text-sm text-muted-foreground">No hay datos públicos de {account.domain}. {r.sources && <span className="font-mono text-xs">{r.sources}.</span>} {close}</p>;
-  if (!r.changes.length) return <p className="text-sm text-muted-foreground">Nada nuevo: los datos ya coinciden. {close}</p>;
+  if (running) return <p className="text-sm text-muted-foreground">Trabajando · {job?.step ?? "en cola"}…</p>;
+  const review = job?.status === "done" && job.id !== dismissed && job.finished_at && Date.now() - new Date(job.finished_at).getTime() < 24 * 3_600_000 ? job.result?.review ?? [] : [];
+  if (!review.length) return <Button variant="outline" size="sm" onClick={go}>Completar datos</Button>;
   return (
     <div className="space-y-2 border-t pt-3">
-      <p className="eyebrow">Datos encontrados</p>
-      {r.changes.map((c) => (
+      <p className="eyebrow">Datos distintos a los tuyos</p>
+      {review.map((c) => (
         <label key={c.field} className="flex items-start gap-2 text-sm">
           <Checkbox className="mt-0.5" checked={picked.includes(c.field)} onCheckedChange={(v) => setPicked((p) => (v ? [...p, c.field] : p.filter((x) => x !== c.field)))} />
           <span className="min-w-0"><span className="font-medium">{ENRICH_LABEL[c.field]}:</span> {show(c, c.proposed)}{c.current && <span className="block text-xs text-muted-foreground">Ahora: {show(c, c.current)}</span>}</span>
         </label>
       ))}
-      <p className="font-mono text-xs text-muted-foreground">{r.sources}</p>
-      <div className="flex gap-2"><Button size="sm" onClick={apply} disabled={busy || !picked.length}>Aplicar</Button><Button size="sm" variant="ghost" onClick={() => setR(null)}>Cancelar</Button></div>
+      {job?.result?.body && <p className="font-mono text-xs text-muted-foreground">{job.result.body}</p>}
+      <div className="flex gap-2"><Button size="sm" onClick={() => apply(review)} disabled={!picked.length}>Aplicar</Button><Button size="sm" variant="ghost" onClick={() => setDismissed(job!.id)}>Mantener los míos</Button></div>
     </div>
   );
 }

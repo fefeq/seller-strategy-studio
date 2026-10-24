@@ -235,12 +235,29 @@ export async function runBackgroundJob(db: Admin, jobId: string, now = new Date(
         result = { title: `«${r.title}» importado al hub`, link: `/hub?doc=${r.docId}` };
         break;
       }
+      case "complete_account": {
+        const accountId = String(input.accountId);
+        const { data: acc } = await db.from("accounts").select("id,name").eq("org_id", job.org_id).eq("id", accountId).maybeSingle();
+        if (!acc) throw new Error("No encuentro esa cuenta en esta empresa.");
+        const { data: org } = await db.from("organizations").select("currency").eq("id", job.org_id).maybeSingle();
+        const { data: roles } = await db.from("org_members").select("role").eq("org_id", job.org_id).eq("user_id", job.user_id);
+        const c = { db: db as any, orgId: job.org_id, userId: job.user_id, roles: (roles ?? []).map((r) => r.role as string), currency: org?.currency ?? "EUR" };
+        const { completeAccount, applyAutoChanges } = await import("@/lib/orchestrator/runner");
+        const { completeNotice } = await import("@/lib/jobs");
+        await db.from("background_jobs").update({ step: "Buscando datos" }).eq("id", jobId);
+        const out = await completeAccount(c, accountId, "manual");
+        const written = out.blocked ? [] : await applyAutoChanges(c, accountId, out.changes, now.toISOString());
+        const n = completeNotice(acc, out, written as any);
+        result = { ...n, review: out.changes.filter((ch) => !ch.empty && ch.proposed) } as any;
+        break;
+      }
       default: throw new Error(`Tarea desconocida: ${JOB_LABEL[job.kind as JobKind] ?? job.kind}`);
     }
     await db.from("background_jobs").update({ status: "done", result, finished_at: now.toISOString(), error: null }).eq("id", jobId);
     return { ok: true };
   } catch (e) {
     const { errorText } = await import("@/lib/errors");
+    console.error("background job failed", job.kind, (e as Error)?.message ?? e);
     await db.from("background_jobs").update({ status: "failed", error: errorText(e), finished_at: new Date().toISOString() }).eq("id", jobId);
     throw e; // let Inngest retry; the last failure stays written on the job
   }
