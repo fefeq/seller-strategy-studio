@@ -2,7 +2,8 @@ import { learnFrom, memoryBlock } from "@/lib/memory.server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
-import { aiProvider, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
+import { aiProviders, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, OPENROUTER_BASE, openrouterModel, sanitizeSchema, shouldFallBack, withThoughtSignatures, type AiProvider } from "@/lib/gemini";
+import { openrouterErrorMessage } from "@/lib/ai-gateway";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
@@ -46,9 +47,8 @@ MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de
 
 /** Runs one agent turn. Write tools create pending actions instead of executing. */
 export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal; personaId?: string | null; workflowId?: string | null }) {
-  const gemini = aiProvider(process.env) === "gemini";
-  const apiKey = gemini ? process.env["GEMINI_API_KEY"] : process.env["LOVABLE_API_KEY"];
-  if (!apiKey) throw new Error("La IA no está configurada");
+  const chain = aiProviders(process.env);
+  if (chain.length === 1 && chain[0] === "lovable" && !process.env["LOVABLE_API_KEY"]) throw new Error("La IA no está configurada");
 
   const { data: hist } = await ctx.db.from("agent_messages").select("role,content").eq("conversation_id", opts.conversationId).order("created_at", { ascending: false }).limit(30);
   const history: ModelMessage[] = (hist ?? []).reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
@@ -56,6 +56,46 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
 
   const memory = await memoryBlock(ctx);
   const pending: PendingAction[] = [];
+  const system = systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId, memory);
+  const messages: ModelMessage[] = [...history, { role: "user", content: opts.text }];
+
+  // Own keys first; when one runs out of quota or fails before doing anything, the next provider answers.
+  let text = "";
+  for (let i = 0; i < chain.length; i++) {
+    const kind = chain[i]!;
+    try {
+      text = await runWith(kind, ctx, opts, system, messages, pending);
+      break;
+    } catch (e) {
+      const status = Number((e as any)?.statusCode ?? 0);
+      const body = String((e as any)?.responseBody ?? "");
+      const canFallBack = kind !== "lovable" && i < chain.length - 1 && pending.length === 0 && !opts.signal?.aborted && shouldFallBack(status, body);
+      if (canFallBack) { console.warn(`Agent provider ${kind} failed (${status}); trying ${chain[i + 1]}`); continue; }
+      console.error("Agent error", e);
+      throw new Error(agentErrorMessage(kind, status, body));
+    }
+  }
+  if (!text) text = pending.length ? "He preparado estas acciones. Confírmalas para ejecutarlas." : "No he podido generar respuesta.";
+
+  await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "assistant", content: text });
+  await ctx.db.from("agent_conversations").update({ updated_at: new Date().toISOString() }).eq("id", opts.conversationId);
+  // Learn from what the user said (the reply gives context); never blocks the answer on failure.
+  if (opts.text.trim().length >= 40) await learnFrom(ctx, { source: "chat", text: `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}` });
+  return { text, pending };
+}
+
+function agentErrorMessage(kind: AiProvider, status: number, body: string) {
+  if (kind === "gemini" && /^(400|401|403|404|429|5\d\d)$/.test(String(status))) return geminiErrorMessage(status, body);
+  if (kind === "openrouter" && status) return openrouterErrorMessage(status);
+  if (status === 402) return "Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.";
+  if (status === 429) return "Demasiadas peticiones, inténtalo en un momento.";
+  if (status === 403) return "El uso de IA está bloqueado para este espacio de trabajo.";
+  return "El agente no pudo responder. Inténtalo de nuevo.";
+}
+
+/** One agent attempt on one provider. Throws the provider's own error (statusCode/responseBody) on failure. */
+async function runWith(kind: AiProvider, ctx: ToolCtx, opts: { conversationId: string; signal?: AbortSignal }, system: string, messages: ModelMessage[], pending: PendingAction[]) {
+  const gemini = kind === "gemini";
   const tools = Object.fromEntries(
     toolsFor(ctx.roles).map((t) => [
       t.name,
@@ -79,50 +119,43 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
     ]),
   );
 
-  const runId = createLovableAiGatewayRunIdFetch();
-  const provider = gemini
-    ? createOpenAI({
-        baseURL: GEMINI_OPENAI_BASE,
-        apiKey,
-        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fixGeminiStream(await fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init))) as typeof fetch,
-      })
-    : createOpenAI({
-        baseURL: "https://ai.gateway.lovable.dev/v1",
-        apiKey,
-        headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-        fetch: runId.fetch,
-      });
+  let model;
+  if (gemini) {
+    const provider = createOpenAI({
+      baseURL: GEMINI_OPENAI_BASE,
+      apiKey: process.env["GEMINI_API_KEY"],
+      fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fixGeminiStream(await fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init))) as typeof fetch,
+    });
+    model = provider.chat(geminiAgentModel(process.env));
+  } else if (kind === "openrouter") {
+    const provider = createOpenAI({ baseURL: OPENROUTER_BASE, apiKey: process.env["OPENROUTER_API_KEY"], headers: { "X-Title": "Nokko" } });
+    model = provider.chat(openrouterModel(process.env));
+  } else {
+    const apiKey = process.env["LOVABLE_API_KEY"];
+    if (!apiKey) throw new Error("La IA no está configurada");
+    const runId = createLovableAiGatewayRunIdFetch();
+    const provider = createOpenAI({ baseURL: "https://ai.gateway.lovable.dev/v1", apiKey, headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" }, fetch: runId.fetch });
+    model = provider.responses(MODEL);
+  }
 
-  let text = "";
   // The stream's own error (provider status and body); "No output generated" alone hides it.
   let streamError: unknown;
   try {
     const result = streamText({
-      model: gemini ? provider.chat(geminiAgentModel(process.env)) : provider.responses(MODEL),
-      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId, memory),
-      messages: [...history, { role: "user", content: opts.text }],
+      model,
+      system,
+      messages,
       tools,
       stopWhen: stepCountIs(12),
       abortSignal: opts.signal,
+      maxRetries: kind === "lovable" ? 2 : 0,
       onError: ({ error }) => { streamError ??= error; console.error("Agent stream error", error); },
-      ...(gemini ? {} : { providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } } }),
+      ...(kind === "lovable" ? { providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } } } : {}),
     });
-    text = (await result.text).trim();
+    return (await result.text).trim();
   } catch (caught) {
     const e = streamError ?? caught;
-    const msg = String((e as any)?.statusCode ?? "");
-    console.error("Agent error", e);
-    if (gemini && /^(400|401|403|404|429|5\d\d)$/.test(msg)) throw new Error(geminiErrorMessage(Number(msg), String((e as any)?.responseBody ?? "")));
-    if (msg === "402") throw new Error("Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.");
-    if (msg === "429") throw new Error("Demasiadas peticiones, inténtalo en un momento.");
-    if (msg === "403") throw new Error("El uso de IA está bloqueado para este espacio de trabajo.");
-    throw new Error("El agente no pudo responder. Inténtalo de nuevo.");
+    // AI_RetryError wraps the real API error.
+    throw (e as any)?.lastError ?? e;
   }
-  if (!text) text = pending.length ? "He preparado estas acciones. Confírmalas para ejecutarlas." : "No he podido generar respuesta.";
-
-  await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "assistant", content: text });
-  await ctx.db.from("agent_conversations").update({ updated_at: new Date().toISOString() }).eq("id", opts.conversationId);
-  // Learn from what the user said (the reply gives context); never blocks the answer on failure.
-  if (opts.text.trim().length >= 40) await learnFrom(ctx, { source: "chat", text: `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}` });
-  return { text, pending };
 }
