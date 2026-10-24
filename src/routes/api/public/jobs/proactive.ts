@@ -55,6 +55,11 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               try { await enrichLead(db, o.id, id, now); leadFlows++; } catch (e) { console.error("lead flow failed", id, e); }
             }
           }
+          // Autopilot: research new accounts, prepare tomorrow's meetings, review cooling accounts (bounded per company).
+          const { autopilotForOrg } = await import("@/lib/autopilot.server");
+          for (const o of orgs ?? []) {
+            try { await autopilotForOrg(db, o.id, now); } catch (e) { console.error("autopilot failed", o.id, e); }
+          }
           // «Descubiertos»: each company's weekly search (self-guarded, at most one company per run inline).
           const { discoverForOrg } = await import("@/lib/discoveries.server");
           for (const o of orgs ?? []) {
