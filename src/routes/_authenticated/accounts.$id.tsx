@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CompanyLogo } from "@/components/company-logo";
 import { BackgroundButton } from "@/components/background";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -82,7 +83,7 @@ function AccountPage() {
   }, data.icps, now, data.segNames);
 
   return (
-    <Page eyebrow="Cuenta" title={a.name} actions={
+    <Page eyebrow="Cuenta" title={a.name} titleAside={a.domain ? <CompanyLogo domain={a.domain} size={40} /> : undefined} actions={
       <div className="flex flex-wrap items-center gap-2">
         <Select value={a.health ?? "green"} onValueChange={async (v) => { await supabase.from("accounts").update({ health: v }).eq("id", id); refresh(); }}>
           <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
