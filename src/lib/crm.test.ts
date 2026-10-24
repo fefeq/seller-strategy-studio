@@ -51,3 +51,12 @@ describe("monthGrid", () => {
     expect(g.flat().filter(Boolean).length).toBe(31);
   });
 });
+
+import { teamOwners } from "./crm";
+describe("teamOwners", () => {
+  const teams = [{ id: "t1", lead_id: "lead" }, { id: "t2", lead_id: null }];
+  const members = [{ team_id: "t1", user_id: "ana" }, { team_id: "t2", user_id: "luis" }];
+  it("shows everyone without a filter", () => expect(teamOwners("", teams, members, "ana")).toBeNull());
+  it("«Mi equipo» shows my teammates, the team lead and me", () => expect([...teamOwners("mine", teams, members, "ana")!].sort()).toEqual(["ana", "lead"]));
+  it("a chosen team shows only its people", () => expect([...teamOwners("t2", teams, members, "ana")!]).toEqual(["luis"]));
+});
