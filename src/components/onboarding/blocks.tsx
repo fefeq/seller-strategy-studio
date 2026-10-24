@@ -76,7 +76,7 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
   async function redoBlock(b: BlockId) {
-    const hint = await askText({ title: `Rehacer «${BLOCK_LABEL[b]}» con IA`, label: "¿Qué quieres que cambie?", placeholder: "Por ejemplo: céntrate en agencias de más de 50 personas" });
+    const hint = await askText(`Rehacer «${BLOCK_LABEL[b]}» con IA`, { body: "¿Qué quieres que cambie?", placeholder: "Por ejemplo: céntrate en agencias de más de 50 personas", confirmLabel: "Rehacer" });
     if (!hint) return;
     setBusy(b);
     try {
