@@ -29,6 +29,22 @@ export const researchStakeholder = createServerFn({ method: "POST" })
   .inputValidator((d: { stakeholderId: string }) => d)
   .handler(async ({ data, context }) => ({ text: (await researchStakeholderCore(context.supabase, data.stakeholderId)).text }));
 
+// ---------- ICP ----------
+
+/** «Afinar con IA»: turns the prose of an ICP into the structured fields every search uses. Proposes; the user saves. */
+export const structureIcp = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { icp: Record<string, unknown>; note?: string }) => ({ icp: d.icp ?? {}, note: String(d.note ?? "").slice(0, 4000) }))
+  .handler(async ({ data }) => {
+    const { icpBrief, ICP_STRUCTURE_SCHEMA, parseIcpStructure } = await import("@/lib/icp");
+    const raw = await ask(
+      "Eres experto en prospección B2B. Conviertes un perfil de cliente ideal (ICP) en criterios para bases de datos de empresas y personas (Apollo, Clay, LinkedIn Sales Navigator). search_keywords: hasta 6 palabras clave cortas en inglés del tipo de empresa o sector, como aparecen en LinkedIn. countries: códigos ISO de 2 letras. min_employees y max_employees: rango de empleados si se deduce, si no null. target_titles: hasta 8 cargos en inglés de quien decide o usa el producto. seniorities: niveles entre founder, c_suite, vp, head, director, manager. pains: los dolores principales que resolvemos, en español, en 1-3 frases. No inventes lo que no se deduce: deja arrays vacíos o null.",
+      `${icpBrief(data.icp as never)}${data.note ? `\n\nNotas del usuario: ${data.note}` : ""}`,
+      { effort: "low", schema: { name: "icp", schema: ICP_STRUCTURE_SCHEMA as never } },
+    );
+    return parseIcpStructure(raw);
+  });
+
 // ---------- Theory U ----------
 
 async function strategyContext(supabase: any) {

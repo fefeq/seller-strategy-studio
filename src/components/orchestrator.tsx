@@ -16,7 +16,8 @@ import { IcpListButton } from "@/components/parallel";
 import { orchestrateCompleteAccount, orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
 import { DEFAULT_LEVELS, LEVELS, LEVEL_LABEL, type Level } from "@/lib/orchestrator/search";
 import { MAX_REVEAL } from "@/lib/apollo";
-import { ENRICH_LABEL, enrichPatch, icpToQuery, type EnrichChange, type EnrichField } from "@/lib/clay";
+import { icpCompanyQuery } from "@/lib/icp";
+import { ENRICH_LABEL, enrichPatch, type EnrichChange, type EnrichField } from "@/lib/clay";
 import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
 import { useMe } from "@/hooks/use-me";
@@ -271,12 +272,12 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [target, setTarget] = useState(false);
   const [busy, setBusy] = useState(false);
-  const { data: icps = [] } = useQuery({ queryKey: ["clay-icps"], queryFn: async () => (await supabase.from("icp_profiles").select("id,name,industries,company_size,geography").order("name")).data ?? [] });
+  const { data: icps = [] } = useQuery({ queryKey: ["clay-icps"], queryFn: async () => (await supabase.from("icp_profiles").select("*").order("name")).data ?? [] });
 
   function useIcp(id: string) {
     const icp = icps.find((i) => i.id === id);
     if (!icp) return;
-    const q = icpToQuery(icp);
+    const q = icpCompanyQuery(icp).query;
     setKeywords((q.keywords ?? []).join(", "));
     setCountries(q.countries ?? []);
     setMinEmp(q.minEmployees ? String(q.minEmployees) : "");

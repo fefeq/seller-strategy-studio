@@ -1,3 +1,4 @@
+import { employeesText } from "@/lib/icp";
 // Lead qualification with Jev (TypeSafe System One): the model only gives typed judgments (ICP fit, buying
 // intent, decision power, flags, segment); the weights, thresholds and the proposed stage are code here, so a
 // company can change its weights without spending AI again. Pure and tested; the call lives in
