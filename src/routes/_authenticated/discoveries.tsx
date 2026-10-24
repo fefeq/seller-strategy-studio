@@ -9,7 +9,7 @@ import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { decideDiscovery, runDiscoveryNow } from "@/lib/discoveries.functions";
+import { decideDiscovery } from "@/lib/discoveries.functions";
 import { DISMISS_REASONS, KIND_LABEL, type DiscoveryKind } from "@/lib/discoveries";
 import { errorText } from "@/lib/errors";
 
