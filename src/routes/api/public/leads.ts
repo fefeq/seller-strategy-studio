@@ -15,7 +15,7 @@ async function sourceFor(request: Request) {
   if (!/^gtm_[A-Za-z0-9]{24,64}$/.test(key)) return null;
   const { hashLeadKey } = await import("@/lib/leads-ingest");
   const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-  const { data } = await db.from("lead_sources").select("id,org_id,active,default_stage,received_count").eq("token_hash", await hashLeadKey(key)).maybeSingle();
+  const { data } = await db.from("lead_sources").select("id,org_id,active,default_stage,received_count,kind,mode,max_per_request,daily_limit,day_count,day_date").eq("token_hash", await hashLeadKey(key)).maybeSingle();
   if (!data || !data.active || !data.org_id) return null;
   return { db, source: data as typeof data & { org_id: string } };
 }
@@ -45,11 +45,26 @@ export const Route = createFileRoute("/api/public/leads")({
         const found = await sourceFor(request);
         if (!found) return json({ ok: false, error: "Clave no válida" }, 401);
         const { db, source } = found;
+        if (source.kind !== "leads") return json({ ok: false, error: "Esta conexión es de cuentas: usa /api/public/accounts" }, 400);
 
         const body = await readBody(request);
         const records = flattenPayload(body);
         if (!records.length) return json({ ok: false, error: "No se encontró ningún lead en el envío" }, 400);
         if (records.length > LEAD_LIMITS.maxLeads) return json({ ok: false, error: `Máximo ${LEAD_LIMITS.maxLeads} leads por envío` }, 413);
+        const { leadQuarantineRows } = await import("@/lib/import-batch");
+        // Test send: shows what would happen and writes nothing.
+        if (new URL(request.url).searchParams.get("test") === "1") {
+          const preview = leadQuarantineRows(records);
+          return json({ ok: true, test: true, received: records.length, rows: preview.map((r) => ({ line: r.line, summary: r.summary, action: r.action, reason: r.reason })) });
+        }
+        const { enforceLimits, quarantine } = await import("@/lib/intake.server");
+        const over = await enforceLimits(db, source, records.length);
+        if (over) return json({ ok: false, error: over.error }, over.status);
+        if (source.mode === "review") {
+          const batchId = await quarantine(db, source, "leads", leadQuarantineRows(records));
+          return json({ ok: true, received: records.length, queued: true, batch_id: batchId, message: "Recibido: queda pendiente de revisar en Nokko" }, 202);
+        }
+
 
         const { ingestLead } = await import("@/lib/leads-ingest");
         const { data: segments } = await db.from("segments").select("id,name").eq("org_id", source.org_id);
