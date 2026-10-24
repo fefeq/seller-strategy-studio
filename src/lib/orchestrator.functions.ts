@@ -1,10 +1,12 @@
 // Orchestrator from the screens: the user asks for a need, Nokko picks the services (src/lib/orchestrator/).
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { MAX_REVEAL, apolloWebhookBase } from "@/lib/apollo";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
-import { completeAccount, connectedServices, monthBudget } from "@/lib/orchestrator/runner";
+import { completeAccount, connectedServices, findIcpCompanies, findKeyPeople, monthBudget, revealKeyPeople } from "@/lib/orchestrator/runner";
 
 export const orchestrateCompleteAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -27,3 +29,32 @@ export const orchestratorStatus = createServerFn({ method: "POST" })
     }
     return { connected: connectedServices(), spent: b.spent, limit: b.limit, warn: b.warn, paused: b.paused, pct: b.pct, automatic, byService };
   });
+
+const Cursor = z.union([
+  z.object({ service: z.literal("apollo"), page: z.number().int().min(1).max(100) }),
+  z.object({ service: z.literal("clay"), searchId: z.string().regex(/^[A-Za-z0-9_-]{4,80}$/) }),
+]).nullable().optional();
+const words = z.array(z.string().trim().min(1).max(120)).max(15).default([]);
+
+export const orchestrateKeyPeople = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ accountId: z.string().uuid(), titles: words, levels: z.array(z.string().max(20)).max(10).default([]), cursor: Cursor }).parse(d))
+  .handler(async ({ data, context }) => findKeyPeople(await userCtx(context.supabase as Db, context.userId), data, "manual"));
+
+export const orchestrateRevealPeople = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ accountId: z.string().uuid(), apolloIds: z.array(z.string().regex(/^[A-Za-z0-9]{6,64}$/)).min(1).max(MAX_REVEAL), phone: z.boolean().default(false) }).parse(d))
+  .handler(async ({ data, context }) => {
+    let host: string | null = null;
+    try { host = new URL(getRequest().url).host; } catch { host = null; }
+    const webhookBase = apolloWebhookBase(host, process.env["__LOVABLE_PROJECT_ID"] ?? "");
+    return revealKeyPeople(await userCtx(context.supabase as Db, context.userId), { ...data, webhookBase });
+  });
+
+export const orchestrateIcpCompanies = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({
+    cursor: Cursor,
+    query: z.object({ keywords: words, countries: words, minEmployees: z.number().int().min(1).nullable().optional(), maxEmployees: z.number().int().min(1).nullable().optional() }),
+  }).parse(d))
+  .handler(async ({ data, context }) => findIcpCompanies(await userCtx(context.supabase as Db, context.userId), data, "manual"));
