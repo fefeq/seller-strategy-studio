@@ -7,7 +7,7 @@ import { stagePath, stageLabel } from "@/lib/stages";
 import { ACTIVITY_KINDS } from "@/lib/crm";
 import { jsonObject } from "@/lib/json";
 import { fetchAll } from "@/lib/fetch-all";
-import { def, mustFind, ok, orgStages, type AgentTool, type ToolCtx } from "../tool-kit";
+import { def, mustFind, ok, one, orgStages, type AgentTool, type ToolCtx } from "../tool-kit";
 
 const LEADERS = ["owner", "sales_leader"] as const;
 
@@ -71,7 +71,7 @@ export const FINANCE_TOOLS: AgentTool[] = [
         ok(await c.db.from("products").update({ price: a.price, billing: a.billing, ...(a.description ? { description: a.description } : {}) }).eq("org_id", c.orgId).eq("id", ex.id));
         return { id: ex.id, created: false, mensaje: `Actualizado «${ex.name}».` };
       }
-      const row = ok(await c.db.from("products").insert({ org_id: c.orgId, name: a.name, price: a.price, billing: a.billing, description: a.description ?? "", created_by: c.userId }).select("id").single());
+      const row = one(await c.db.from("products").insert({ org_id: c.orgId, name: a.name, price: a.price, billing: a.billing, description: a.description ?? "", created_by: c.userId }).select("id").single());
       return { id: row.id, created: true };
     },
   }),
@@ -120,7 +120,7 @@ export const FINANCE_TOOLS: AgentTool[] = [
       let account = a.account_id ?? null;
       if (a.account_id) await mustFind(c, "accounts", a.account_id, "esa cuenta");
       if (a.deal_id) { const d = await mustFind<{ account_id: string | null }>(c, "deals", a.deal_id, "ese deal", "id,account_id"); account ??= d.account_id; }
-      const row = ok(await c.db.from("activities").insert({ org_id: c.orgId, kind: a.kind, subject: a.subject, body: a.body, account_id: account, deal_id: a.deal_id ?? null, occurred_at: a.occurred_at ?? new Date().toISOString(), created_by: c.userId }).select("id").single());
+      const row = one(await c.db.from("activities").insert({ org_id: c.orgId, kind: a.kind, subject: a.subject, body: a.body, account_id: account, deal_id: a.deal_id ?? null, occurred_at: a.occurred_at ?? new Date().toISOString(), created_by: c.userId }).select("id").single());
       return { id: row.id };
     },
   }),
