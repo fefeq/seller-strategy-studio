@@ -27,8 +27,8 @@ export async function dealCoachCore(db: Admin, orgId: string, userId: string, de
   if (!deal) throw new Error("No encuentro ese deal en esta empresa.");
   await step("Leyendo el deal y su historia");
   const [acc, sh, lines, map, acts, calls, meetings, stages] = await Promise.all([
-    deal.account_id ? db.from("accounts").select("name,industry,employees,domain").eq("org_id", orgId).eq("id", deal.account_id).maybeSingle() : Promise.resolve({ data: null }),
-    deal.account_id ? db.from("stakeholders").select("name,title,role,influence,sentiment").eq("org_id", orgId).eq("account_id", deal.account_id).limit(15) : Promise.resolve({ data: [] }),
+    deal.account_id ? db.from("accounts").select("name,industry,size,domain,notes").eq("org_id", orgId).eq("id", deal.account_id).maybeSingle() : Promise.resolve({ data: null }),
+    deal.account_id ? db.from("stakeholders").select("name,title,buying_role,support,priorities").eq("org_id", orgId).eq("account_id", deal.account_id).limit(15) : Promise.resolve({ data: [] }),
     db.from("deal_lines").select("name,quantity,unit_price,billing,discount_pct").eq("org_id", orgId).eq("deal_id", dealId),
     db.from("mutual_action_items").select("title,due_date,done,owner_side").eq("org_id", orgId).eq("deal_id", dealId),
     db.from("activities").select("id,kind,subject,body,occurred_at").eq("org_id", orgId).eq("deal_id", dealId).order("occurred_at", { ascending: false }).limit(15),

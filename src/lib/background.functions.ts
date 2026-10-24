@@ -43,6 +43,7 @@ const JobIn = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("draft_artifact"), input: z.object({ kind: z.string().max(60), notes: z.string().max(6000).default(""), dealId: uuid.nullable().optional() }), label }),
   z.object({ kind: z.literal("deep_review"), input: z.object({ artifactId: uuid, method: z.string().max(40) }), label }),
   z.object({ kind: z.literal("account_research"), input: z.object({ accountId: uuid }), label }),
+  z.object({ kind: z.literal("deal_coach"), input: z.object({ dealId: uuid }), label }),
   z.object({ kind: z.literal("onboarding_read"), input: z.object({
     depth: z.enum(["express", "standard", "deep"]),
     url: z.string().trim().max(500).default(""),
@@ -101,6 +102,7 @@ function targetOf(data: JobArgs): { target_type?: string; target_id?: string } {
   if (typeof i.accountId === "string") return { target_type: "account", target_id: i.accountId };
   if (typeof i.stakeholderId === "string") return { target_type: "stakeholder", target_id: i.stakeholderId };
   if (typeof i.artifactId === "string") return { target_type: "artifact", target_id: i.artifactId };
+  if (typeof i.dealId === "string" && data.kind === "deal_coach") return { target_type: "deal", target_id: i.dealId };
   return {};
 }
 
