@@ -30,3 +30,12 @@ describe("match", () => {
     expect(searchList("santander", accounts)[0]?.id).toBe("2");
   });
 });
+
+describe("markKnown", () => {
+  it("flags a result whose name is an existing account even without domain, leaves new ones alone", async () => {
+    const { markKnown } = await import("./match");
+    const out = markKnown([{ name: "ACME Logistics", domain: null }, { name: "Nueva Co", domain: "nueva.io" }], accounts);
+    expect(out[0]?.existingId).toBe("1");
+    expect(out[1]?.existingId).toBeUndefined();
+  });
+});

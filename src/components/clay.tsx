@@ -1,5 +1,7 @@
 // Clay on the screens: prospecting on Cuentas, stakeholders on the account map and «Completar con Clay»
 // on the account's fit data. Searches run on the server; saving uses the browser client (RLS).
+import { useAccountOptions } from "@/components/entity-combobox";
+import { markKnown } from "@/lib/match";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +54,8 @@ function ClayProspect() {
   const [maxEmp, setMaxEmp] = useState("");
   const [revFrom, setRevFrom] = useState("");
   const [rows, setRows] = useState<CompanyRow[]>([]);
+  const { data: known = [] } = useAccountOptions(rows.length > 0);
+  const view = markKnown(rows, known);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [searchId, setSearchId] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
@@ -85,7 +89,7 @@ function ClayProspect() {
   }
 
   async function importPicked() {
-    const chosen = rows.filter((r) => r.domain && picked.has(r.domain) && !r.existingId);
+    const chosen = view.filter((r) => r.domain && picked.has(r.domain) && !r.existingId);
     if (!chosen.length) return;
     setBusy(true);
     try {
@@ -100,7 +104,7 @@ function ClayProspect() {
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
-  const selectable = rows.filter((r) => r.domain && !r.existingId);
+  const selectable = view.filter((r) => r.domain && !r.existingId);
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">Busca empresas que encajen con tu ICP y añádelas como cuentas. Cada resultado gasta cupo de tu cuenta de Clay, por eso se traen de {PAGE} en {PAGE}.</p>
@@ -132,7 +136,7 @@ function ClayProspect() {
             <table className="w-full text-sm">
               <thead className="text-left"><tr>{["", "Empresa", "Sector", "Tamaño", "País", ""].map((h, i) => <th key={i} className="eyebrow px-2 py-2">{h}</th>)}</tr></thead>
               <tbody>
-                {rows.map((r, i) => (
+                {view.map((r, i) => (
                   <tr key={`${r.domain ?? r.name}-${i}`} className="border-t align-top">
                     <td className="px-2 py-2">{r.domain && !r.existingId && <Checkbox aria-label={`Elegir ${r.name}`} checked={picked.has(r.domain)} onCheckedChange={(v) => { const n = new Set(picked); v ? n.add(r.domain!) : n.delete(r.domain!); setPicked(n); }} />}</td>
                     <td className="px-2 py-2"><span className="font-medium">{r.name}</span><span className="block break-all text-xs text-muted-foreground">{r.domain ?? "sin dominio"}{r.location ? ` · ${r.location}` : ""}</span>{r.description && <span className="mt-1 line-clamp-2 block text-xs text-muted-foreground">{r.description}</span>}</td>

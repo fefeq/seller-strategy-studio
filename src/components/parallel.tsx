@@ -120,7 +120,9 @@ export function IcpListButton(props: { open?: boolean; onOpenChange?: (v: boolea
   const view = data?.runs.find((r) => r.id === viewId) ?? data?.runs.find((r) => r.status === "done");
   // «Ya en Nokko» is rechecked against today's accounts (imports since the search count).
   const entities = ((view?.status === "done" ? (view.result?.entities ?? []) : []) as ListEntity[]).map((e) => ({ ...e, existingId: e.existingId ?? (e.domain && data?.domains.has(e.domain) ? "yes" : null) }));
-  const fresh = entities.filter((e) => !e.existingId);
+  const { data: known = [] } = useAccountOptions(entities.length > 0);
+  const marked = markKnown(entities, known);
+  const fresh = marked.filter((e) => !e.existingId);
 
   async function go() {
     setBusy(true);
