@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
-import { TodayDigest } from "@/components/suggestions";
+import { Briefing } from "@/components/briefing";
 import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
@@ -74,7 +74,7 @@ function HomePage() {
           </div>
         </div>
       )}
-      <div className="mb-8 grid gap-6 lg:grid-cols-2"><NextSteps /><TodayDigest /></div>
+      <Briefing />
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
         <Stat label="Forecast ponderado" value={fmt(weighted)} />
@@ -82,6 +82,7 @@ function HomePage() {
         <Stat label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
       </div>
       <div className="mt-8"><PaybackCard /></div>
+      <div className="mt-8"><NextSteps /></div>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
         <Panel title="Próximas reuniones" link={{ to: "/accounts", label: "Ver cuentas" }}>
           {(data?.meetings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin reuniones planificadas. Planifica una desde una cuenta.</p>}
