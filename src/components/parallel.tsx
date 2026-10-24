@@ -34,7 +34,7 @@ function usePollRuns(runs: Run[], queryKey: unknown[]) {
     let stop = false;
     const tick = async () => {
       for (const id of running.split(",")) {
-        const r = await check({ data: { id } }).catch(() => null);
+        const r = await check({ data: { id } }).catch((e) => { if (!stop) toast.error(`No pude comprobar el informe: ${errorText(e)}`); stop = true; return null; });
         if (r && r.status !== "running") qc.invalidateQueries({ queryKey });
       }
     };

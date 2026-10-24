@@ -22,6 +22,7 @@ import { leadsHeadline } from "@/lib/headlines";
 import { byScore, scoreLead, type Score } from "@/lib/scoring";
 import { ScoreBadge } from "@/components/score";
 import { QualSettingsDialog, QualTag, QualifyPending, leadQualView } from "@/components/leads/lead-qualification";
+import { pct } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha"; vista?: "lista" } => ({
@@ -41,7 +42,6 @@ export const Route = createFileRoute("/_authenticated/leads/")({
   component: LeadsPage,
 });
 
-const pct = (n: number) => `${Math.round(n * 100)}%`;
 const COLUMNS = [...LEAD_STAGES, DISQUALIFIED];
 
 function LeadsPage() {

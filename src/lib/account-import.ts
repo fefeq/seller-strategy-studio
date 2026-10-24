@@ -71,16 +71,9 @@ export function accountColumnMapping(headers: string[]): Record<string, AccountF
   return out;
 }
 
-export function cleanDomain(raw: string | null | undefined): string | null {
-  if (!raw) return null;
-  const d = raw
-    .trim()
-    .toLowerCase()
-    .replace(/^https?:\/\//, "")
-    .replace(/^www\./, "")
-    .split(/[/?#\s]/)[0];
-  return /^[a-z0-9.-]+\.[a-z]{2,}$/.test(d) ? d : null;
-}
+// One domain rule for the whole app (leads, accounts, duplicates): see leads.ts.
+export { cleanDomain } from "./leads";
+import { cleanDomain } from "./leads";
 
 export type AccountRow = {
   name: string;

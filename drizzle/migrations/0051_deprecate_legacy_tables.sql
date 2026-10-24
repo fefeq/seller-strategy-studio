@@ -1,0 +1,2 @@
+COMMENT ON TABLE public.segment_budgets IS 'DEPRECATED: replaced by segment_budget_quarters; the app no longer reads it.';
+COMMENT ON TABLE public.user_roles IS 'DEPRECATED: roles live per organization in org_members; the app no longer reads it.';

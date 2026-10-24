@@ -21,13 +21,14 @@ import { formatRatio, quarterCoverage } from "@/lib/coverage";
 import { openStages, stageLabel, stagePath } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { StripeMetricsPanel } from "@/components/stripe-panel";
+import { fetchAll } from "@/lib/fetch-all";
+import { pct } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
   component: Metrics,
 });
 
-const pct = (n: number) => `${Math.round(n * 100)}%`;
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
 function Metrics() {
@@ -42,7 +43,7 @@ function Metrics() {
     enabled: !!orgId,
     queryFn: async () => {
       const [d, h, q, p] = await Promise.all([
-        supabase.from("deals").select("*"),
+        fetchAll((a, b) => supabase.from("deals").select("*").order("id").range(a, b)).then((r) => ({ data: r.rows })),
         supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
         supabase.from("quotas").select("*"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),

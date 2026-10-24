@@ -4,6 +4,7 @@ import type { Tables } from "@/integrations/supabase/types";
 import { readSla, type DealOutcome, type LeadSla } from "@/lib/lead-funnel";
 import type { AccountFitInput, IcpProfile } from "@/lib/scoring";
 import { readQualSettings, type QualSettings } from "@/lib/lead-qualification";
+import { fetchAll } from "@/lib/fetch-all";
 
 export type Lead = Tables<"leads">;
 export type LeadsData = {
@@ -26,15 +27,14 @@ export function useLeads(orgId: string | null | undefined) {
     enabled: !!orgId,
     queryFn: async (): Promise<LeadsData> => {
       const [l, d, s, seg, m, icp, acc] = await Promise.all([
-        supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(2000),
-        supabase.from("deals").select("id,stage,closed_at"),
+        fetchAll((a, b) => supabase.from("leads").select("*").order("created_at", { ascending: false }).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null, truncated: r.truncated })),
+        fetchAll((a, b) => supabase.from("deals").select("id,stage,closed_at").order("id").range(a, b)).then((r) => ({ data: r.rows })),
         supabase.from("lead_settings").select("sla,qualification").maybeSingle(),
         supabase.from("segments").select("id,name").order("acv_min"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
         supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
-        supabase.from("accounts").select("id,segment_id,industry,size,tier,name"),
+        fetchAll((a, b) => supabase.from("accounts").select("id,segment_id,industry,size,tier,name").order("id").range(a, b)).then((r) => ({ data: r.rows })),
       ]);
-      if (l.error) throw new Error(l.error.message);
       const ids = (m.data ?? []).map((x) => x.user_id);
       const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
       return {

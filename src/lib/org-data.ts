@@ -8,6 +8,7 @@ import type { Snapshot } from "@/lib/proactive/types";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
+import { fetchAll } from "@/lib/fetch-all";
 
 export type Db = SupabaseClient<Database>;
 
@@ -38,14 +39,14 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
   const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage] = await Promise.all([
     loadSetupData(db, orgId),
-    db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId),
+    fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
-    db.from("accounts").select("id,name,is_target,owner_id,created_at").eq("org_id", orgId),
+    fetchAll((a, b) => db.from("accounts").select("id,name,is_target,owner_id,created_at").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
     db.from("stakeholders").select("account_id,buying_role").eq("org_id", orgId),
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
     db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
     db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", orgId),
-    db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).limit(1000),
+    fetchAll((a, b) => db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
     db.from("org_members").select("user_id,role").eq("org_id", orgId),
