@@ -3576,6 +3576,139 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "start_account_report",
+        "title": "Investigar a fondo una cuenta (Parallel)",
+        "description": "Lanza el informe profundo de una cuenta con Parallel (negocio, finanzas, dirección, prioridades, tecnología, cómo compran, competencia, riesgos y oportunidades, con fuentes y confianza). Tarda de 2 a 5 minutos; consúltalo después con get_account_report. Gasta créditos. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_account_report",
+        "title": "Informe profundo de una cuenta",
+        "description": "El último informe profundo (Parallel) de una cuenta, por secciones con fuentes y confianza, o su estado si sigue en marcha.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "start_icp_account_list",
+        "title": "Buscar empresas por ICP (Parallel)",
+        "description": "Lanza con Parallel una búsqueda de empresas reales que encajan con un ICP de la empresa y/o criterios libres (hasta 100). Tarda de 5 a 50 minutos; consulta el resultado con get_icp_account_list e impórtalas con create_account. Gasta créditos. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "icp_id": {
+              "description": "ICP de la empresa (search o get_setup_status)",
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "criteria": {
+              "type": "string",
+              "maxLength": 1000
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 5,
+              "maximum": 100
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_icp_account_list",
+        "title": "Empresas encontradas por ICP",
+        "description": "La última lista de empresas encontradas por ICP (Parallel): nombre, web y si ya está en Nokko; o su estado si sigue en marcha.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "enrich_accounts_table",
+        "title": "Completar cuentas en tabla (Parallel)",
+        "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account. Gasta créditos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_ids": {
+              "minItems": 1,
+              "maxItems": 25,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "format": "uuid",
+                "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+              }
+            }
+          },
+          "required": [
+            "account_ids"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
