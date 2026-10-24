@@ -257,6 +257,7 @@ export async function runBackgroundJob(db: Admin, jobId: string, now = new Date(
     return { ok: true };
   } catch (e) {
     const { errorText } = await import("@/lib/errors");
+    console.error("background job failed", job.kind, (e as Error)?.message ?? e);
     await db.from("background_jobs").update({ status: "failed", error: errorText(e), finished_at: new Date().toISOString() }).eq("id", jobId);
     throw e; // let Inngest retry; the last failure stays written on the job
   }
