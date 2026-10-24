@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -31,10 +31,14 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
   const redo = useServerFn(redoOnboardingBlock);
   const segsQ = useQuery({ queryKey: ["segments-min", me?.currentOrg?.org_id], queryFn: async () => (await supabase.from("segments").select("id,name")).data ?? [] });
   const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
+  // What the company had written when this review opened: approving a block must not hide its own items.
+  const baseline = useRef<typeof setup>(undefined);
+  if (setup && !baseline.current) baseline.current = setup;
+  const base = baseline.current;
   const { items, kept } = useMemo(() => {
     const all = proposalItems(proposal, segs, me?.currentOrg?.currency ?? null);
-    return setup ? protectManual(all, setup.data) : { items: all, kept: [] as string[] };
-  }, [proposal, segs, me, setup]);
+    return base ? protectManual(all, base.data) : { items: all, kept: [] as string[] };
+  }, [proposal, segs, me, base]);
   const [edits, setEdits] = useState<Record<string, Record<string, unknown>>>({});
   const [off, setOff] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
@@ -42,7 +46,7 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
 
   const order = blockOrder(archetype);
   const byBlock = (b: BlockId) => items.filter((i) => blockOf(i) === b).map((i) => ({ ...i, args: edits[i.key] ?? i.args }));
-  const present = new Set(order.filter((b) => byBlock(b).length));
+  const present = new Set(order.filter((b) => byBlock(b).length || status[b]));
   const pct = setup?.status.pct ?? 0;
 
   const setArg = (it: ProposalItem, path: string[], value: string) => setEdits((e) => {
@@ -139,6 +143,7 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
               {st?.status === "approved" && (isOwner || !st.undo?.length
                 ? <Button size="sm" variant="ghost" disabled={busy === b} onClick={() => undoBlock(b)}>Deshacer</Button>
                 : <span className="text-xs text-ink-mid">Deshacer lo puede hacer el Owner.</span>)}
+              {st?.status === "approved" && <span className="self-center text-xs text-ink-mid">Deshacer borra lo que este bloque creó; lo que actualizó en su sitio se edita en Estrategia.</span>}
             </div>
           </section>
         );
