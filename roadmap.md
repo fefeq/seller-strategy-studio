@@ -35,3 +35,11 @@
 - [x] P1 ⌘K, Leads lista primero, tablas Estrategia, agente en barra, Sugerencias móvil
 - [ ] P1 acciones masivas y vistas guardadas (espera decisión: ¿ahora o después?)
 - [ ] P2 accesibilidad, cargas, ayudas
+
+## Navegación simple y foco (plan aprobado 2026-10-24)
+- [x] P0-2 Sugerencias tipo Tinder (mazo, gestos, deshacer)
+- [x] P0-1 «Tu siguiente paso» en Inicio (mazo con sugerencias; falta sumar reuniones y deals en riesgo al orden)
+- [ ] P0-2b Arrastrar en Pipeline, deslizar filas móvil, CSV arrastrable
+- [ ] P0-3 Un botón principal por pantalla
+- [ ] P1 Texto bajo demanda, Métricas/Estrategia en secciones, acciones en grupo + vistas guardadas, panel lateral
+- [ ] P2 Transiciones, foco guiado, primeros pasos

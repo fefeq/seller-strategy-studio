@@ -4,20 +4,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useStages } from "@/components/stage-settings";
-import { SuggestionCard, useSuggestions } from "@/components/suggestions";
-import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
 
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Inicio briefing: what Nokko did on its own since yesterday · what needs your decision · what comes today. */
-export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
+export function Briefing() {
   const { data: me } = useMe();
   const { currency } = useCurrency();
   // Automatic spend is often cents: show them instead of rounding to 0.
   const money = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 2, minimumFractionDigits: n < 1 ? 2 : 0 }).format(n);
   const { stages } = useStages();
-  const { data: suggestions = [] } = useSuggestions();
   const since = briefingSince();
   const today = localDay();
   const { data } = useQuery({
@@ -54,28 +51,16 @@ export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
     today, userId: me.user.id, leader, meetings: data.meetings, tasks: data.tasks, leads: data.followups,
     deals: data.deals.map((d) => ({ ...d, closed: closedKeys.has(d.stage) || d.stage === "won" || d.stage === "lost" })),
   }) : [];
-  // The strategy card already shows what is missing; don't repeat it here.
-  const shown = hideSetup ? suggestions.filter((x) => !x.dedupe_key?.startsWith("setup_incomplete:")) : suggestions;
-  const top = digest(shown, 3);
   const others = [
     ...(leader && data?.approvals ? [{ text: `${data.approvals} ${data.approvals === 1 ? "aprobación pendiente" : "aprobaciones pendientes"}`, link: "/approvals" as const }] : []),
     ...(data?.pending ? [{ text: `${data.pending} ${data.pending === 1 ? "acción del agente por confirmar" : "acciones del agente por confirmar"}`, link: "/inbox" as const }] : []),
   ];
 
   return (
-    <section className="mb-8 grid items-start gap-5 lg:grid-cols-3">
+    <section className="mb-8 grid items-start gap-5 lg:grid-cols-2">
       <div className="min-w-0 rounded-xl border bg-card p-5 shadow-xs">
         <Block title="Hoy" sub={new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} empty="Sin reuniones, tareas ni seguimientos para hoy." items={data ? now : null} />
-      </div>
-      <div className="min-w-0 rounded-xl border bg-card p-5 shadow-xs">
-        <p className="eyebrow">Necesita tu decisión</p>
-        <h3 className="mt-1 text-2xl">{shown.length ? `${shown.length} ${shown.length === 1 ? "asunto" : "asuntos"}` : "Nada pendiente"}</h3>
-        <div className="mt-3 space-y-3">
-          {top.length === 0 && others.length === 0 && <p className="text-sm text-muted-foreground">Todo decidido. Te avisaré cuando detecte algo.</p>}
-          {top.map((s) => <SuggestionCard key={s.id} s={s} compact />)}
-          {others.map((o) => <ItemLine key={o.text} item={o} />)}
-          {shown.length > top.length && <Link to="/inbox" className="block text-xs text-signal">Ver las {shown.length} sugerencias</Link>}
-        </div>
+        {others.length > 0 && <div className="mt-3 space-y-2 text-sm">{others.map((o) => <ItemLine key={o.text} item={o} />)}</div>}
       </div>
       <details className="group min-w-0 rounded-xl border bg-card p-5 shadow-xs lg:open:row-span-1" open={false}>
         <summary className="cursor-pointer list-none">
