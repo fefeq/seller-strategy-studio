@@ -63,7 +63,7 @@ export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
   ];
 
   return (
-    <section className="mb-8 grid gap-5 lg:grid-cols-3">
+    <section className="mb-8 grid items-start gap-5 lg:grid-cols-3">
       <div className="min-w-0 rounded-xl border bg-card p-5 shadow-xs">
         <Block title="Hoy" sub={new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} empty="Sin reuniones, tareas ni seguimientos para hoy." items={data ? now : null} />
       </div>
@@ -72,7 +72,7 @@ export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
         <h3 className="mt-1 text-2xl">{shown.length ? `${shown.length} ${shown.length === 1 ? "asunto" : "asuntos"}` : "Nada pendiente"}</h3>
         <div className="mt-3 space-y-3">
           {top.length === 0 && others.length === 0 && <p className="text-sm text-muted-foreground">Todo decidido. Te avisaré cuando detecte algo.</p>}
-          {top.map((s) => <SuggestionCard key={s.id} s={s} />)}
+          {top.map((s) => <SuggestionCard key={s.id} s={s} compact />)}
           {others.map((o) => <ItemLine key={o.text} item={o} />)}
           {shown.length > top.length && <Link to="/inbox" className="block text-xs text-signal">Ver las {shown.length} sugerencias</Link>}
         </div>
