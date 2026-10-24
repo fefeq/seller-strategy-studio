@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useStages } from "@/components/stage-settings";
@@ -7,7 +7,6 @@ import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { runAutopilotNow } from "@/lib/autopilot.functions";
