@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { CompanyLogo } from "@/components/company-logo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
@@ -42,7 +43,7 @@ function Deals() {
   const qc = useQueryClient();
   const { data: deals = [] } = useQuery({
     queryKey: ["deals"],
-    queryFn: async () => (await supabase.from("deals").select("*, accounts(name)").order("created_at")).data ?? [],
+    queryFn: async () => (await supabase.from("deals").select("*, accounts(name,domain)").order("created_at")).data ?? [],
   });
   const open = deals.filter((d) => d.stage !== "won" && d.stage !== "lost");
   const selected = deals.find((d) => d.id === search.deal);
@@ -99,7 +100,7 @@ function Deals() {
                   <button key={d.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", d.id)}
                     onClick={() => navigate({ search: { deal: d.id } })}
                     className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${cold.get(d.id)?.stale ? "border-signal/60" : ""}`}>
-                    <span className="break-words font-medium">{d.name}</span>
+                    <span className="break-words font-medium"><CompanyLogo domain={d.accounts?.domain} size={16} className="mr-1.5 -mt-0.5" />{d.name}</span>
                     {d.accounts?.name && d.accounts.name.trim().toLowerCase() !== d.name.trim().toLowerCase() && <span className="block text-xs text-muted-foreground">{d.accounts.name}</span>}
                     {cold.get(d.id)?.stale && <span className="mt-1 block text-[11px] text-signal">Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral {cold.get(d.id)!.threshold.days})</span>}
                     <span className="mt-2 flex items-center justify-between"><span className="font-mono text-xs">{eur(Number(d.amount ?? 0))}</span><HealthDot value={d.health} /></span>

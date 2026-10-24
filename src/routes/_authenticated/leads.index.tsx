@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { CompanyLogo } from "@/components/company-logo";
 import { useLeadTouched } from "@/components/background";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -146,7 +147,7 @@ function LeadsPage() {
                             <button key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
                               onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
                               className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
-                              <span className="flex items-start justify-between gap-2"><span className="break-words font-medium">{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
+                              <span className="flex items-start justify-between gap-2"><span className="break-words font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                                 {l.source && <span className="rounded bg-muted px-1.5 py-0.5">{l.source}</span>}

@@ -87,3 +87,4 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Inngest: procesos por empresa con reintentos, enriquecimiento de leads nuevos, tareas largas en segundo plano, secuencia de seguimiento con esperas
 - [ ] Inngest: tras publicar, sincronizar la app en Inngest con https://nokko.ai/api/public/inngest (lo hace el usuario en el panel de Inngest)
 - [x] Parallel: informe profundo de cuenta, listas de cuentas por ICP, completar cuentas en tabla, tercera fuente de búsqueda; agente y MCP
+- [x] Logo.dev: logos de empresa en Cuentas, ficha, Leads, Pipeline y listas por ICP

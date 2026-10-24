@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { CompanyLogo } from "@/components/company-logo";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -109,7 +110,7 @@ function Accounts() {
             <tbody>
               {list.map((a) => (
                 <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-3 py-3 sm:px-4"><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link><span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">{a.domain}</span></td>
+                  <td className="px-3 py-3 sm:px-4"><CompanyLogo domain={a.domain} size={18} className="mr-2" /><Link to="/accounts/$id" params={{ id: a.id }} className="font-medium hover:text-signal">{a.name}</Link><span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">{a.domain}</span></td>
                   <td className="px-3 py-3 sm:px-4"><ScoreBadge score={scores.get(a.id)!} /></td>
                   <td className="hidden px-4 py-3 sm:table-cell">{ownerName(a.owner_id) ?? <span className="text-signal">Sin responsable</span>}</td>
                   <td className="hidden px-4 py-3 font-mono sm:table-cell">{a.tier}</td>
