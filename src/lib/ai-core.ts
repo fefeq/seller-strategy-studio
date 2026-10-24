@@ -34,6 +34,19 @@ export async function accountContext(db: Db, accountId: string, scope: AiScope =
   return JSON.stringify({ cuenta: acc.data, account_plan: plan.data, stakeholders: sh.data, llamadas: calls.data, deals: deals.data, conocimiento_empresa: conocimiento, posicionamiento: pos.data, pilares_de_mensaje: pillars.data, icp: icp.data });
 }
 
+/** Call prep for a meeting (shared by the screen and the day-before autopilot). Saves it on the meeting. */
+export async function meetingBriefCore(db: Db, meetingId: string, scope: AiScope = null): Promise<{ brief: string; title: string; accountId: string | null }> {
+  const { data: m } = await inOrg(db.from("meetings").select("*").eq("id", meetingId), scope).maybeSingle();
+  if (!m) throw new Error("Reunión no encontrada");
+  const ctx = m.account_id ? await accountContext(db, m.account_id, scope) : "{}";
+  const brief = await ask(
+    "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Si en conocimiento_empresa hay playbooks de discovery, objeciones, demo o negociación, síguelos: toma de ahí las preguntas y las respuestas y adáptalas a esta cuenta en vez de inventar otras. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
+    `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
+  );
+  await inOrg(db.from("meetings").update({ ai_brief: brief }).eq("id", m.id), scope);
+  return { brief, title: m.title, accountId: m.account_id };
+}
+
 /**
  * AI teardown of a call: compares the five-line notes (and free notes) with the meeting's goal, the brief
  * and the deal's MEDDPICC, and says what worked, what is missing and what to update. Saved on the meeting.
