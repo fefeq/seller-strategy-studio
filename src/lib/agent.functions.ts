@@ -84,24 +84,6 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
 
 // ---------------- Onboarding ----------------
 
-const PRIVATE_HOST = /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1)/i;
-
-async function fetchSite(raw: string) {
-  let url: URL;
-  try { url = new URL(/^https?:\/\//i.test(raw) ? raw : `https://${raw}`); } catch { throw new Error("La web no es válida"); }
-  if (!/^https?:$/.test(url.protocol) || PRIVATE_HOST.test(url.hostname)) throw new Error("La web no es válida");
-  const res = await fetch(url, { headers: { "User-Agent": "NokkoBot/1.0", Accept: "text/html" }, redirect: "follow" }).catch(() => null);
-  if (!res || !res.ok) throw new Error("No he podido leer esa web. Prueba a pegar el texto.");
-  const html = (await res.text()).slice(0, 400_000);
-  return html
-    .replace(/<(script|style|noscript|svg)[\s\S]*?<\/\1>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 15_000);
-}
-
 export const extractSetup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { url?: string; text?: string; files?: { filename: string; dataUrl: string }[] }) => {
@@ -114,22 +96,9 @@ export const extractSetup = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    // Firecrawl reads the home page plus pricing/customers/product/about (also JavaScript sites); the plain fetch is the fallback.
-    let site = "";
-    if (data.url) {
-      const { readCompanySite } = await import("@/lib/web-research-core");
-      site = await readCompanySite(data.url).then((r) => r.text).catch((e) => { console.error("Firecrawl site read failed", (e as Error).message); return fetchSite(data.url); });
-    }
-    const raw = await ask(
-      "Eres un estratega GTM B2B senior. A partir de la web, textos y documentos de una empresa, propones su configuración go-to-market: posicionamiento (marco de April Dunford), segmentos con rango de ACV y motion (plg <5K, inside 5K–50K, field 50K–250K, strategic >250K), ICPs con anti-ICP, 3 pilares de mensaje y hasta 5 cuentas objetivo de ejemplo si se mencionan clientes o el tipo de cliente es claro. Español neutro (tú), sin signos de exclamación ni emoji. Sé concreto y basado en las fuentes; usa null cuando no haya base razonable (no inventes cifras de win rate o cuota si no aparecen: déjalas null). En segmentos, name es solo el nombre (sin prioridad, notas ni cifras): la prioridad va en priority (1 = el primero) y cualquier aclaración en notes; acv_min no puede ser mayor que acv_max: deriva la horquilla del pricing (plan más barato × 12 hasta el más caro × 12 por el número de perfiles o usuarios típico) y explícalo en notes; si el segmento tiene un único precio y no hay base para una horquilla, pon ese precio anual en acv_min y en acv_max y dilo en notes (nunca los dejes null teniendo un precio). Los pagos únicos (puesta en marcha, formación) no cuentan en el ACV. gross_margin_pct de cada segmento solo si las fuentes dan un margen (si dan uno general, ponlo en los segmentos que propones); si no, null. quarter_quota: el ACV nuevo a cerrar en el trimestre actual si las fuentes dan un objetivo trimestral (si dan uno anual, divídelo entre 4 y dilo en summary); si no, null. En positioning rellena también los cinco campos de Dunford (best_customers, alternatives, differentiation, value, trend). target_customer, need, category, key_benefit, competitive_alternative y differentiator son trozos de la frase «Para [target_customer] que [need], [product_name] es [category] que [key_benefit]. A diferencia de [competitive_alternative], nosotros [differentiator].»: escríbelos en minúscula, sin punto final y sin repetir las palabras de la plantilla. Rellena los cuatro textos de la jerarquía: tagline, one_liner, short_pitch (problema, solución y prueba en 2-3 frases) y elevator_pitch. En questions pon 2-4 preguntas clave que faltan para afinar.",
-      JSON.stringify({ empresa: ctx.orgName, moneda_actual: ctx.currency, web: data.url ? { url: data.url, texto: site } : null, notas: data.text || null }),
-      // "low": the proposal is reviewed point by point anyway, and a long call gets cut by mobile browsers (~60 s).
-      { effort: "low", schema: { name: "gtm_setup", schema: SETUP_EXTRACTION_SCHEMA }, files: data.files },
-    );
-    try { return JSON.parse(raw) as SetupProposal; } catch {
-      console.error("extractSetup invalid JSON", raw.slice(0, 300));
-      throw new Error("La IA no devolvió una propuesta válida. Inténtalo de nuevo.");
-    }
+    const { readSite, extractSetupCore } = await import("@/lib/setup-extract.server");
+    const site = data.url ? await readSite(data.url) : "";
+    return extractSetupCore(ctx, { url: data.url, site, text: data.text, files: data.files });
   });
 
 /** Applies a batch of accepted proposals through the same tool registry the agent uses. */
