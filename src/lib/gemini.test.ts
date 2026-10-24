@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aiProvider, buildGenerateRequest, dataUrlToPart, extractText, geminiAgentModel, geminiErrorMessage, geminiModel, jevAnswerSchema, jevPrompt, normalizeJevAnswers, sanitizeSchema, SKIP_SIGNATURE, withThoughtSignatures } from "./gemini";
+import { aiProvider, buildGenerateRequest, dataUrlToPart, extractText, geminiAgentModel, geminiErrorMessage, geminiModel, jevAnswerSchema, jevPrompt, normalizeJevAnswers, sanitizeSchema, SKIP_SIGNATURE, withoutThinking, withThoughtSignatures } from "./gemini";
 
 describe("provider", () => {
   it("uses Gemini only when a key exists and not forced off", () => {
@@ -104,5 +104,14 @@ describe("withThoughtSignatures", () => {
   it("leaves non-chat or invalid bodies alone", () => {
     expect(withThoughtSignatures("not json")).toBe("not json");
     expect(withThoughtSignatures('{"a":1}')).toBe('{"a":1}');
+  });
+});
+
+describe("withoutThinking", () => {
+  it("removes only thinkingConfig", () => {
+    const r = buildGenerateRequest("s", "u", { schema: { name: "x", schema: { type: "object" } } });
+    const out = withoutThinking(r);
+    expect(out.generationConfig).toEqual({ responseMimeType: "application/json", responseJsonSchema: { type: "object" } });
+    expect(r.generationConfig.thinkingConfig).toBeDefined();
   });
 });

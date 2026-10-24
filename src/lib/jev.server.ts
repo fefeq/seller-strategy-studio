@@ -1,7 +1,7 @@
 // Jev (TypeSafe System One) through the Lovable AI Gateway: typed judgments, buffered JSON, no generated text.
 // Server-only (reads LOVABLE_API_KEY inside the call). Errors come back in Spanish with what to do.
 
-import { aiProvider, buildGenerateRequest, extractText, geminiErrorMessage, geminiModel, GEMINI_BASE, jevAnswerSchema, jevPrompt, JEV_SYSTEM, normalizeJevAnswers } from "@/lib/gemini";
+import { aiProvider, buildGenerateRequest, extractText, geminiErrorMessage, jevAnswerSchema, jevPrompt, JEV_SYSTEM, normalizeJevAnswers } from "@/lib/gemini";
 
 export class JevError extends Error {
   constructor(message: string, readonly status: number) { super(message); }
@@ -31,11 +31,8 @@ export async function askJev(request: { model: string; state: unknown; questions
 /** Same typed judgments through Gemini structured output (own key); returns the `{answers}` shape Jev returns. */
 async function askGeminiJudgments(request: { state: unknown; questions: Record<string, unknown> }): Promise<unknown> {
   const body = buildGenerateRequest(JEV_SYSTEM, jevPrompt(request), { effort: "low", schema: { name: "qualification", schema: jevAnswerSchema(request.questions) } });
-  const res = await fetch(`${GEMINI_BASE}/models/${geminiModel(process.env)}:generateContent`, {
-    method: "POST",
-    headers: { "x-goog-api-key": process.env["GEMINI_API_KEY"] ?? "", "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const { geminiGenerate } = await import("@/lib/gemini.server");
+  const res = await geminiGenerate(body);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     console.error(`Gemini judgments failed [${res.status}]: ${text.slice(0, 500)}`);
