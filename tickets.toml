@@ -1,0 +1,56 @@
+# Ordered SDD tickets / tasks / units for initiative: auditoria técnica
+
+[[tickets]]
+id = "1"
+slug = "auditoria técnica"
+title = "Enforce RLS policies on all tables"
+status = "planned"
+capability_ref = "CAP-1"
+summary = "Review all tables in `drizzle/migrations/` to ensure RLS is enabled and policies use `public.current_org()`. Fix any missing policies."
+assignee = "fedecosentino"
+updated_by = "fedecosentino"
+updated_at = "2026-10-24 15:54"
+
+[[tickets]]
+id = "2"
+slug = "auditoria técnica"
+title = "Refactor client queries to rely on RLS"
+status = "planned"
+capability_ref = "CAP-1"
+summary = "Audit `src/hooks/` (e.g., `use-leads.ts`) and `src/components/` for Supabase queries that manually filter by `org_id`. Remove these filters to rely entirely on RLS."
+assignee = "fedecosentino"
+updated_by = "fedecosentino"
+updated_at = "2026-10-24 15:54"
+
+[[tickets]]
+id = "3"
+slug = "auditoria técnica"
+title = "Migrate useEffect data fetching to React Query"
+status = "planned"
+capability_ref = "CAP-2"
+summary = "Search `src/components/` for `useEffect` blocks performing data fetching. Migrate them to `@tanstack/react-query` hooks to ensure consistent server state management."
+assignee = "fedecosentino"
+updated_by = "fedecosentino"
+updated_at = "2026-10-24 15:54"
+
+[[tickets]]
+id = "4"
+slug = "auditoria técnica"
+title = "Verify server-side AI execution"
+status = "planned"
+capability_ref = "CAP-3"
+summary = "Audit `src/components/agent.tsx` and related files to ensure no AI SDK logic or tool execution happens on the client. Verify all calls route through `src/lib/agent/agent.server.ts`."
+assignee = "fedecosentino"
+updated_by = "fedecosentino"
+updated_at = "2026-10-24 15:54"
+
+[[tickets]]
+id = "5"
+slug = "auditoria técnica"
+title = "Enforce utility-first styling"
+status = "planned"
+capability_ref = "CAP-4"
+summary = "Search for custom `.css` files or inline styles in `src/components/` that violate the utility-first approach. Refactor them to use Tailwind classes and shadcn primitives."
+assignee = "fedecosentino"
+updated_by = "fedecosentino"
+updated_at = "2026-10-24 15:54"
