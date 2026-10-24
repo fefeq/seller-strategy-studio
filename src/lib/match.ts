@@ -72,3 +72,13 @@ export function searchList<C extends Candidate>(text: string, list: C[], limit =
   const similar = findMatches({ name: text, domain: text }, list, limit).map((m) => m.item).filter((c) => !seen.has(c.id));
   return [...contains, ...similar].slice(0, limit);
 }
+
+/** Search results (Apollo, Clay, ICP, Parallel) flagged «Ya está en Nokko» when an account is the same by domain or name. */
+export function markKnown<R extends { name: string; domain?: string | null; existingId?: string | null }>(rows: R[], known: Candidate[]): R[] {
+  if (!known.length) return rows;
+  return rows.map((r) => {
+    if (r.existingId) return r;
+    const d = duplicateOf({ name: r.name, domain: r.domain }, known);
+    return d?.kind === "same" ? { ...r, existingId: d.item.id } : r;
+  });
+}

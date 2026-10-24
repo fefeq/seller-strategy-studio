@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { AccountQuickActions } from "@/components/quick-actions";
 import { CompanyLogo } from "@/components/company-logo";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -107,7 +108,7 @@ function Accounts() {
       {list.length === 0 ? <Empty>Aún no hay cuentas. Crea la primera para empezar su plan de cuenta.</Empty> : (
         <div className="overflow-x-auto rounded-lg border bg-card">
           <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Puntuación", "Responsable", "Tier", "Salud", "Stakeholders", "Pipeline"].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" || h === "Responsable" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>
+            <thead className="border-b bg-muted/50 text-left"><tr>{["Cuenta", "Puntuación", "Responsable", "Tier", "Salud", "Stakeholders", "Pipeline", ""].map((h) => <th key={h} className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" || h === "Responsable" ? "hidden sm:table-cell" : ""}`}>{h}</th>)}</tr></thead>
             <tbody>
               {list.map((a) => (
                 <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
@@ -118,6 +119,7 @@ function Accounts() {
                   <td className="whitespace-nowrap px-3 py-3 sm:px-4"><HealthDot value={a.health} /></td>
                   <td className="hidden px-4 py-3 sm:table-cell">{a.stakeholders?.length ?? 0}</td>
                   <td className="whitespace-nowrap px-3 py-3 font-mono sm:px-4">{eur((a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0))}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-right sm:px-4"><AccountQuickActions account={a} /></td>
                 </tr>
               ))}
             </tbody>

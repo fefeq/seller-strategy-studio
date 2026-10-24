@@ -1,5 +1,7 @@
 // Parallel on the screens: the deep report of an account (cited, with confidence), lists of companies that match
 // the ICP to import as accounts, and the enrichment table. Long runs are polled here while the screen is open
+import { useAccountOptions } from "@/components/entity-combobox";
+import { markKnown } from "@/lib/match";
 import { CompanyLogo } from "@/components/company-logo";
 // (and by Inngest when it is answering, so they also finish with nobody watching).
 import { useEffect, useMemo, useState } from "react";
@@ -120,7 +122,9 @@ export function IcpListButton(props: { open?: boolean; onOpenChange?: (v: boolea
   const view = data?.runs.find((r) => r.id === viewId) ?? data?.runs.find((r) => r.status === "done");
   // «Ya en Nokko» is rechecked against today's accounts (imports since the search count).
   const entities = ((view?.status === "done" ? (view.result?.entities ?? []) : []) as ListEntity[]).map((e) => ({ ...e, existingId: e.existingId ?? (e.domain && data?.domains.has(e.domain) ? "yes" : null) }));
-  const fresh = entities.filter((e) => !e.existingId);
+  const { data: known = [] } = useAccountOptions(entities.length > 0);
+  const marked = markKnown(entities, known);
+  const fresh = marked.filter((e) => !e.existingId);
 
   async function go() {
     setBusy(true);
@@ -176,7 +180,7 @@ export function IcpListButton(props: { open?: boolean; onOpenChange?: (v: boolea
                 </span>
               </div>
               <ul className="divide-y border-t">
-                {entities.map((e) => (
+                {marked.map((e) => (
                   <li key={e.url || e.name} className="flex items-center gap-2 py-2 text-sm">
                     <Checkbox disabled={!!e.existingId} checked={!!picked[e.url || e.name]} onCheckedChange={(c) => setPicked({ ...picked, [e.url || e.name]: !!c })} />
                     <span className="min-w-0 flex-1 break-words"><CompanyLogo domain={e.domain} size={16} className="mr-1.5" />{e.name} {e.url && <a href={e.url} target="_blank" rel="noreferrer" className="ml-1 font-mono text-xs text-muted-foreground underline">{e.domain ?? e.url}</a>}</span>
