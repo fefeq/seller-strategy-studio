@@ -12,7 +12,9 @@ const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() +
 /** Inicio briefing: what Nokko did on its own since yesterday · what needs your decision · what comes today. */
 export function Briefing() {
   const { data: me } = useMe();
-  const { money } = useCurrency();
+  const { currency } = useCurrency();
+  // Automatic spend is often cents: show them instead of rounding to 0.
+  const money = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 2, minimumFractionDigits: n < 1 ? 2 : 0 }).format(n);
   const { stages } = useStages();
   const { data: suggestions = [] } = useSuggestions();
   const since = briefingSince();
@@ -27,7 +29,7 @@ export function Briefing() {
         supabase.from("leads").select("enriched_at").gte("enriched_at", since).limit(500),
         supabase.from("memories").select("learned,created_at").gte("created_at", since).limit(500),
         supabase.from("account_signals").select("found_at").gte("found_at", since).limit(500),
-        supabase.from("suggestions").select("created_at,detector").gte("created_at", since).limit(500),
+        supabase.from("suggestions").select("created_at,detector").eq("status", "pending").gte("created_at", since).limit(500),
         supabase.from("background_jobs").select("status,finished_at").gte("finished_at", since).limit(200),
         supabase.from("meetings").select("id,title,scheduled_at,account_id").gte("scheduled_at", startOfDay.toISOString()).lte("scheduled_at", endOfDay.toISOString()).order("scheduled_at").limit(20),
         supabase.from("tasks").select("title,due_date,done,owner_id").eq("done", false).lte("due_date", today).limit(200),
