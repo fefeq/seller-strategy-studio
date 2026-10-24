@@ -111,8 +111,9 @@ export type IcpCheck = { id: string; label: string; ready: boolean; missing: str
 
 /** What each flow can do with this ICP and what it is missing. */
 export function icpReadiness(icp: Icp): IcpCheck[] {
-  const q = icpCompanyQuery(icp).query;
-  const hasSize = q.minEmployees != null || q.maxEmployees != null;
+  // Only the structured fields count: the prose fallback is a guess (it can read «2.000 EUR» as employees).
+  const q = { keywords: clean(icp.search_keywords), countries: clean(icp.countries) };
+  const hasSize = sane(icp.min_employees) != null || sane(icp.max_employees) != null;
   const people = icpPeopleQuery(icp);
   return [
     { id: "search", label: "Búsqueda de empresas (Apollo, Clay, Descubiertos)", ready: !!q.keywords?.length && hasSize && !!q.countries?.length,
