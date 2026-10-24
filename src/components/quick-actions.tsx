@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
 
-type JobData = Parameters<ReturnType<typeof useServerFn<typeof startBackgroundJob>>>[0]["data"];
+type JobData = Parameters<typeof startBackgroundJob>[0] extends { data: infer D } ? D : never;
 
 function useStart() {
   const start = useServerFn(startBackgroundJob);
