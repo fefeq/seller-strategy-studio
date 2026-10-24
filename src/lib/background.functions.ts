@@ -44,7 +44,7 @@ const JobIn = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("account_research"), input: z.object({ accountId: uuid }), label }),
   z.object({ kind: z.literal("drive_summaries"), input: z.object({ docs: z.array(z.object({ fileId: z.string().regex(/^[A-Za-z0-9_-]{5,200}$/), accountId: uuid.nullable() })).min(1).max(30) }), label }),
 ]);
-type JobArgs = z.infer<typeof JobIn>;
+export type JobArgs = z.infer<typeof JobIn>;
 
 /** Company-wide tasks: one at a time per company, and only leadership may launch them. */
 const ORG_WIDE = new Set(["discover", "autopilot_now", "weekly_report", "posthog_sync", "playbook_library"]);
