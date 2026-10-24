@@ -3,12 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { readSla, type DealOutcome, type LeadSla } from "@/lib/lead-funnel";
 import type { AccountFitInput, IcpProfile } from "@/lib/scoring";
+import { readQualSettings, type QualSettings } from "@/lib/lead-qualification";
 
 export type Lead = Tables<"leads">;
 export type LeadsData = {
   leads: Lead[];
   deals: DealOutcome[];
   sla: LeadSla;
+  /** Weights and thresholds that turn the stored AI judgments into a proposed stage. */
+  qualSettings: QualSettings;
   segments: { id: string; name: string }[];
   members: { id: string; full_name: string }[];
   /** For the score: the ICPs and the accounts' segment, sector, size and tier. */
@@ -25,7 +28,7 @@ export function useLeads(orgId: string | null | undefined) {
       const [l, d, s, seg, m, icp, acc] = await Promise.all([
         supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(2000),
         supabase.from("deals").select("id,stage,closed_at"),
-        supabase.from("lead_settings").select("sla").maybeSingle(),
+        supabase.from("lead_settings").select("sla,qualification").maybeSingle(),
         supabase.from("segments").select("id,name").order("acv_min"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
         supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
@@ -38,6 +41,7 @@ export function useLeads(orgId: string | null | undefined) {
         leads: l.data ?? [],
         deals: d.data ?? [],
         sla: readSla(s.data?.sla),
+        qualSettings: readQualSettings(s.data?.qualification),
         segments: seg.data ?? [],
         members: (profiles ?? []).map((p) => ({ id: p.id, full_name: p.full_name ?? "Sin nombre" })),
         icps: icp.data ?? [],

@@ -17,6 +17,7 @@ import { ScoreDetail } from "@/components/score";
 import type { Score } from "@/lib/scoring";
 import { FOLLOWUP_STEPS, followupStatus } from "@/lib/followup";
 import { DateField } from "@/components/date-field";
+import { QualificationPanel } from "@/components/leads/lead-qualification";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -78,6 +79,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
         <p className="rounded-md bg-muted p-3 text-sm">Ya es una oportunidad. <Link to="/deals" search={{ deal: lead.deal_id }} className="font-medium underline">Abrir en Pipeline →</Link></p>
       )}
 
+      {!converted && <QualificationPanel lead={lead} data={data} />}
       {score && <ScoreDetail score={score} />}
       <FollowupLine lead={lead} />
 

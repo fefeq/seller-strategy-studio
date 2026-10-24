@@ -20,6 +20,7 @@ import { errorText } from "@/lib/errors";
 import { leadsHeadline } from "@/lib/headlines";
 import { byScore, scoreLead, type Score } from "@/lib/scoring";
 import { ScoreBadge } from "@/components/score";
+import { QualSettingsDialog, QualTag, QualifyPending, leadQualView } from "@/components/leads/lead-qualification";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha" } => ({
@@ -66,7 +67,9 @@ function LeadsPage() {
     const cohort = leadCohort(data.leads, start, end);
     const funnel = leadFunnel(cohort, data.deals);
     const bySource = funnelBy(cohort, data.deals, (l) => l.source || "Sin origen");
-    return { delays, scores, open, late, quarter, funnel, bySource };
+    const quals = new Map(data.leads.map((l) => [l.id, leadQualView(l, data.qualSettings)]));
+    const pending = open.filter((l) => !l.qualified_at).length;
+    return { delays, scores, quals, pending, open, late, quarter, funnel, bySource };
   }, [data]);
 
   async function move(id: string, stage: string) {
@@ -89,6 +92,8 @@ function LeadsPage() {
   return (
     <Page eyebrow="Leads" title={view ? leadsHeadline({ open: view.open.length, late: view.late.length }) : "Leads"} actions={<>
       <Button variant="outline" asChild><Link to="/leads/entrada"><ArrowDownToLine className="mr-1 size-4" />Entrada de leads</Link></Button>
+      {view && <QualifyPending pending={view.pending} />}
+      {data && <QualSettingsDialog settings={data.qualSettings} canEdit={canSettings} orgId={orgId!} />}
       {data && <SlaSettings sla={data.sla} canEdit={canSettings} orgId={orgId!} />}
       {data && <NewLead segments={data.segments} />}
     </>}>
@@ -154,6 +159,7 @@ function LeadsPage() {
                                 {segName(l.segment_id) && <span className="rounded bg-muted px-1.5 py-0.5">{segName(l.segment_id)}</span>}
                                 {st.id !== "opportunity" && st.id !== "disqualified" && <span className="font-mono">{Math.floor(d.daysInStage)} d</span>}
                               </span>
+                              {st.id !== "opportunity" && st.id !== "disqualified" && view.quals.get(l.id)?.move && <span className="mt-1.5 block"><QualTag view={view.quals.get(l.id)!} /></span>}
                               {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal"><AlertTriangle className="mt-0.5 size-3 shrink-0" />{delayText(d)}</span>}
                               {!d.late && l.next_step_at && st.id !== "opportunity" && st.id !== "disqualified" && <span className="mt-1 block text-[11px] text-muted-foreground">Seguimiento {l.next_step_at}</span>}
                             </button>
@@ -166,7 +172,7 @@ function LeadsPage() {
                 })}
               </div>
             )}
-            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
+            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué y la calificación con IA (encaje, intención y cargo) con la etapa que propone. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
           </section>
 
           <div className="grid gap-6 lg:grid-cols-2">
