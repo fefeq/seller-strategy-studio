@@ -28,3 +28,4 @@
 - GTM diagnosis (archetype + stage filter) is a pure rule in src/lib/gtm-diagnosis.ts (tested); onboarding stores it per user in onboarding_sessions.
 - Onboarding (/onboarding): the reading runs as the `onboarding_read` background job (src/lib/onboarding.server.ts) writing findings/proposal to onboarding_sessions; block rules are pure in src/lib/onboarding.ts (tested) and approval reuses applySetupItems/undoSetupItems, so the wizard and Configuración save the same way. The AI setup prompt lives once in src/lib/setup-extract.server.ts.
 - Card decks (Sugerencias, Inicio) use SwipeDeck (src/components/swipe-deck.tsx, motion) with gesture rules in src/lib/swipe.ts (tested); decisions commit only after the undo window, so a swipe is always reversible.
+- RevOps analysis (reconciled funnel, lost, cohorts, weekly trend) is pure in src/lib/revops.ts (tested, ported from the RevOps Dashboard engine) and shown as sections of /metrics selected by ?seccion=.

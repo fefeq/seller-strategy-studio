@@ -43,3 +43,10 @@
 - [ ] P0-3 Un botón principal por pantalla
 - [ ] P1 Texto bajo demanda, Métricas/Estrategia en secciones, acciones en grupo + vistas guardadas, panel lateral
 - [ ] P2 Transiciones, foco guiado, primeros pasos
+
+## Integrar RevOps + Finance + Postin CRM (plan aprobado 2026-10-24)
+- [x] Fase 1 RevOps en Métricas (embudo conciliado, perdidos, cohortes, tendencias) + Métricas por secciones
+- [ ] Fase 1b herramientas de agente/MCP RevOps
+- [ ] Fase 2 Finanzas (tablas, motores con tests, pantalla) — espera decisiones 1 y 2
+- [ ] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
+- [ ] Fase 4 importar datos reales — espera CSV del usuario
