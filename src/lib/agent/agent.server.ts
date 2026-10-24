@@ -1,5 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
-import { stepCountIs, streamText, tool, type ModelMessage } from "ai";
+import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
+import { z } from "zod";
+import { aiProvider, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
@@ -43,7 +45,8 @@ MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de
 
 /** Runs one agent turn. Write tools create pending actions instead of executing. */
 export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; text: string; channel: AgentChannel; mode: AgentMode; orgName: string; signal?: AbortSignal; personaId?: string | null; workflowId?: string | null }) {
-  const apiKey = process.env["LOVABLE_API_KEY"];
+  const gemini = aiProvider(process.env) === "gemini";
+  const apiKey = gemini ? process.env["GEMINI_API_KEY"] : process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("La IA no está configurada");
 
   const { data: hist } = await ctx.db.from("agent_messages").select("role,content").eq("conversation_id", opts.conversationId).order("created_at", { ascending: false }).limit(30);
@@ -56,7 +59,10 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
       t.name,
       tool({
         description: t.description + (t.kind === "write" ? " (Requiere confirmación del usuario.)" : ""),
-        inputSchema: t.input,
+        // Gemini rejects some JSON-Schema keywords (format, pattern…): hand it a sanitized schema, still validated with zod.
+        inputSchema: gemini
+          ? jsonSchema<unknown>(sanitizeSchema(z.toJSONSchema(t.input, { io: "input", unrepresentable: "any" })) as never, { validate: (v) => { const r = t.input.safeParse(v); return r.success ? { success: true as const, value: r.data } : { success: false as const, error: r.error }; } })
+          : t.input,
         execute: async (args: unknown) => {
           if (t.kind === "read") {
             try { return await t.run(ctx, args as never); } catch (e) { return { error: (e as Error).message }; }
@@ -72,28 +78,35 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   );
 
   const runId = createLovableAiGatewayRunIdFetch();
-  const provider = createOpenAI({
-    baseURL: "https://ai.gateway.lovable.dev/v1",
-    apiKey,
-    headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
-    fetch: runId.fetch,
-  });
+  const provider = gemini
+    ? createOpenAI({
+        baseURL: GEMINI_OPENAI_BASE,
+        apiKey,
+        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init)) as typeof fetch,
+      })
+    : createOpenAI({
+        baseURL: "https://ai.gateway.lovable.dev/v1",
+        apiKey,
+        headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+        fetch: runId.fetch,
+      });
 
   let text = "";
   try {
     const result = streamText({
-      model: provider.responses(MODEL),
+      model: gemini ? provider.chat(geminiAgentModel(process.env)) : provider.responses(MODEL),
       system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId),
       messages: [...history, { role: "user", content: opts.text }],
       tools,
       stopWhen: stepCountIs(12),
       abortSignal: opts.signal,
-      providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } },
+      ...(gemini ? {} : { providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } } }),
     });
     text = (await result.text).trim();
   } catch (e) {
     const msg = String((e as any)?.statusCode ?? "");
     console.error("Agent error", e);
+    if (gemini && /^(400|401|403|404|429|5\d\d)$/.test(msg)) throw new Error(geminiErrorMessage(Number(msg), String((e as any)?.responseBody ?? "")));
     if (msg === "402") throw new Error("Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.");
     if (msg === "429") throw new Error("Demasiadas peticiones, inténtalo en un momento.");
     if (msg === "403") throw new Error("El uso de IA está bloqueado para este espacio de trabajo.");

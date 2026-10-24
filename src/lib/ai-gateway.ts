@@ -1,6 +1,26 @@
-// Raw-HTTP Responses helper shared by server functions and the agent. Server-only usage (reads LOVABLE_API_KEY inside the call).
+// Raw-HTTP text helper shared by server functions and the agent. Server-only (reads secrets inside the call).
+// GEMINI_API_KEY set → Google Gemini directly (own key, billed by Google); otherwise the Lovable AI Gateway.
+import { aiProvider, buildGenerateRequest, extractText, geminiErrorMessage, geminiModel, GEMINI_BASE, type AskOpts } from "@/lib/gemini";
 
-export async function ask(system: string, user: string, opts: { effort?: "low" | "medium"; schema?: { name: string; schema: unknown }; files?: { filename: string; dataUrl: string }[] } = {}) {
+export async function ask(system: string, user: string, opts: AskOpts = {}) {
+  return aiProvider(process.env) === "gemini" ? askGemini(system, user, opts) : askLovable(system, user, opts);
+}
+
+async function askGemini(system: string, user: string, opts: AskOpts) {
+  const res = await fetch(`${GEMINI_BASE}/models/${geminiModel(process.env)}:generateContent`, {
+    method: "POST",
+    headers: { "x-goog-api-key": process.env["GEMINI_API_KEY"] ?? "", "Content-Type": "application/json" },
+    body: JSON.stringify(buildGenerateRequest(system, user, opts)),
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    console.error("Gemini error", res.status, body.slice(0, 500));
+    throw new Error(geminiErrorMessage(res.status, body));
+  }
+  return extractText(await res.json());
+}
+
+async function askLovable(system: string, user: string, opts: AskOpts) {
   const res = await fetch("https://ai.gateway.lovable.dev/v1/responses", {
     method: "POST",
     headers: {
