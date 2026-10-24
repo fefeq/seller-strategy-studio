@@ -1,7 +1,7 @@
+// Money-flow layout of the Finance Dashboard (src/lib/sankey-layout.ts), ported as is; only the graph is built
+// from Nokko's data: revenue by plan → total → cost to serve and gross margin → costs by type → result.
 import { sankey } from "d3-sankey";
 import type { SankeyGraph, SankeyNode, SankeyLink } from "d3-sankey";
-import { DEFAULT_LINE_LABELS, type Aggregate, type LineLabels } from "@/data/finance-data";
-import type { PlanRevenueMix } from "@/lib/revenue-forecast";
 
 export type Tone = "revenue" | "gross" | "cost" | "profit" | "loss";
 
@@ -25,103 +25,46 @@ export interface LDef {
 export type LayoutNode = SankeyNode<NDef, LDef>;
 export type LayoutLink = SankeyLink<NDef, LDef>;
 
-/** Money-flow graph: revenue merges into one trunk, then splits into costs and profit. */
-export function buildFlowGraph(
-  a: Aggregate,
-  labels: LineLabels = DEFAULT_LINE_LABELS,
-  planRevenue?: PlanRevenueMix,
-): { nodes: NDef[]; links: LDef[] } {
-  const profitPositive = a.operatingIncome >= 0;
-  const revenueNodes = planRevenue
-    ? [
-        { id: "free", label: "Free", tone: "revenue" as const, order: 0, display: 0 },
-        { id: "pro", label: "Pro", tone: "revenue" as const, order: 1, display: planRevenue.pro },
-        { id: "agency", label: "Agencia", tone: "revenue" as const, order: 2, display: planRevenue.agency },
-      ]
-    : [
-        { id: "platform", label: labels.platform, tone: "revenue" as const, order: 0, display: a.revenueByLine.platform },
-        { id: "usage", label: labels.usage, tone: "revenue" as const, order: 1, display: a.revenueByLine.usage },
-        { id: "services", label: labels.services, tone: "revenue" as const, order: 2, display: a.revenueByLine.services },
-        { id: "marketplace", label: labels.marketplace, tone: "revenue" as const, order: 3, display: a.revenueByLine.marketplace },
-      ];
+export type FlowPart = { id: string; label: string; value: number };
+export type FlowInput = { revenue: FlowPart[]; costToServe: FlowPart[]; opex: FlowPart[] };
 
+export function flowTotals(f: FlowInput) {
+  const sum = (xs: FlowPart[]) => xs.reduce((s, x) => s + Math.max(0, x.value), 0);
+  const totalRevenue = sum(f.revenue);
+  const totalCogs = sum(f.costToServe);
+  const totalOpex = sum(f.opex);
+  return { totalRevenue, totalCogs, grossProfit: totalRevenue - totalCogs, totalOpex, operatingIncome: totalRevenue - totalCogs - totalOpex };
+}
+
+/** Money-flow graph: revenue merges into one trunk, then splits into costs and the result. */
+export function buildFlowGraph(f: FlowInput): { nodes: NDef[]; links: LDef[] } {
+  const a = flowTotals(f);
+  const min = 1; // keep every ribbon renderable
+  const revenueNodes: NDef[] = (f.revenue.length ? f.revenue : [{ id: "rev-none", label: "Sin ingresos", value: 0 }]).map((r, i) => ({ id: `rev-${r.id}`, label: r.label, tone: "revenue", order: i, display: r.value }));
+  const cogsNodes: NDef[] = f.costToServe.map((c, i) => ({ id: `cogs-${c.id}`, label: c.label, tone: "cost", order: 20 + i, display: c.value }));
+  const opexNodes: NDef[] = f.opex.map((c, i) => ({ id: `opex-${c.id}`, label: c.label, tone: "cost", order: 40 + i, display: c.value }));
   const nodes: NDef[] = [
     ...revenueNodes,
-
-    { id: "revenue", label: "Total Revenue", tone: "gross", order: 5, display: a.totalRevenue },
-
-    { id: "cogs", label: "Cost of Revenue", tone: "cost", order: 6, display: a.totalCogs },
-    { id: "gross", label: "Gross Profit", tone: "gross", order: 7, display: a.grossProfit },
-
-    { id: "hosting", label: labels.hosting, tone: "cost", order: 8, display: a.cogs.hosting },
-    { id: "support", label: labels.support, tone: "cost", order: 9, display: a.cogs.support },
-    { id: "delivery", label: labels.delivery, tone: "cost", order: 10, display: a.cogs.delivery },
-    { id: "rd", label: labels.rd, tone: "cost", order: 11, display: a.opex.rd },
-    { id: "sm", label: labels.sm, tone: "cost", order: 12, display: a.opex.sm },
-    { id: "ga", label: labels.ga, tone: "cost", order: 13, display: a.opex.ga },
+    { id: "revenue", label: "Ingresos", tone: "gross", order: 10, display: a.totalRevenue },
+    { id: "cogs", label: "Coste de servir", tone: "cost", order: 11, display: a.totalCogs },
+    { id: "gross", label: "Margen bruto", tone: "gross", order: 12, display: a.grossProfit },
+    ...cogsNodes, ...opexNodes,
   ];
-
-  if (profitPositive) {
-    // Surplus leaves the system as operating income.
-    nodes.push({
-      id: "income",
-      label: "Operating Income",
-      tone: "profit",
-      order: 14,
-      display: a.operatingIncome,
-    });
-  } else {
-    // A loss has to be funded from somewhere — show it entering from reserves,
-    // which is also what keeps the diagram in balance.
-    nodes.push({
-      id: "drawdown",
-      label: "Funded from Cash Reserves",
-      tone: "loss",
-      order: 4,
-      display: Math.abs(a.operatingIncome),
-    });
-  }
-
-  const min = 1; // keep every ribbon renderable
-  const revenueLinks: LDef[] = revenueNodes.map((node) => ({
-    source: node.id,
-    target: "revenue",
-    value: Math.max(min, node.display),
-    tone: "revenue",
-    order: node.order,
-  }));
   const links: LDef[] = [
-    ...revenueLinks,
-    { source: "revenue", target: "cogs", value: Math.max(min, a.totalCogs), tone: "cost", order: 4 },
-    { source: "revenue", target: "gross", value: Math.max(min, a.grossProfit), tone: "gross", order: 5 },
-
-    { source: "cogs", target: "hosting", value: Math.max(min, a.cogs.hosting), tone: "cost", order: 6 },
-    { source: "cogs", target: "support", value: Math.max(min, a.cogs.support), tone: "cost", order: 7 },
-    { source: "cogs", target: "delivery", value: Math.max(min, a.cogs.delivery), tone: "cost", order: 8 },
-
-    { source: "gross", target: "rd", value: Math.max(min, a.opex.rd), tone: "cost", order: 9 },
-    { source: "gross", target: "sm", value: Math.max(min, a.opex.sm), tone: "cost", order: 10 },
-    { source: "gross", target: "ga", value: Math.max(min, a.opex.ga), tone: "cost", order: 11 },
+    ...revenueNodes.map((n) => ({ source: n.id, target: "revenue", value: Math.max(min, n.display), tone: "revenue" as const, order: n.order })),
+    { source: "revenue", target: "cogs", value: Math.max(min, a.totalCogs), tone: "cost", order: 10 },
+    { source: "revenue", target: "gross", value: Math.max(min, a.grossProfit), tone: "gross", order: 11 },
+    ...cogsNodes.map((n) => ({ source: "cogs", target: n.id, value: Math.max(min, n.display), tone: "cost" as const, order: n.order })),
+    ...opexNodes.map((n) => ({ source: "gross", target: n.id, value: Math.max(min, n.display), tone: "cost" as const, order: n.order })),
   ];
-
-  if (profitPositive) {
-    links.push({
-      source: "gross",
-      target: "income",
-      value: Math.max(min, a.operatingIncome),
-      tone: "profit",
-      order: 13,
-    });
+  if (a.operatingIncome >= 0) {
+    nodes.push({ id: "income", label: "Resultado", tone: "profit", order: 60, display: a.operatingIncome });
+    links.push({ source: "gross", target: "income", value: Math.max(min, a.operatingIncome), tone: "profit", order: 60 });
   } else {
-    links.push({
-      source: "drawdown",
-      target: "gross",
-      value: Math.max(min, Math.abs(a.operatingIncome)),
-      tone: "loss",
-      order: 3.5,
-    });
+    // A loss has to be funded from somewhere: it enters from cash, which also keeps the diagram in balance.
+    nodes.push({ id: "drawdown", label: "Pagado con caja", tone: "loss", order: 5, display: Math.abs(a.operatingIncome) });
+    links.push({ source: "drawdown", target: "gross", value: Math.max(min, Math.abs(a.operatingIncome)), tone: "loss", order: 9.5 });
   }
-
   return { nodes, links };
 }
 

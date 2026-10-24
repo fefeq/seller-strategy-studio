@@ -11,16 +11,15 @@ import {
   type LinkSnap,
   type Snapshot,
   type Tone,
-} from "@/lib/sankey-layout";
-import {
-  fmtPctOr,
-  formatCurrency,
-  safeDiv,
-  type Aggregate,
-  type LineLabels,
-} from "@/data/finance-data";
-import type { PlanRevenueMix } from "@/lib/revenue-forecast";
-import { useMeasure } from "@/lib/motion";
+  flowTotals,
+  type FlowInput,
+} from "@/lib/finance-sankey";
+import { useMeasure } from "./motion";
+
+// Ported from the Finance Dashboard (components/cfo/SankeyFlow.tsx): same layout, motion, tracing and keyboard
+// model; fed with Nokko's revenue by plan and cost lines, labels in Spanish.
+const safeDiv = (a: number, b: number) => (b ? a / b : null);
+const fmtPctOr = (r: number | null, digits = 1) => (r == null || !Number.isFinite(r) ? "—" : `${(r * 100).toFixed(digits).replace(".", ",")} %`);
 
 const easeInOut = (t: number) =>
   t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -42,17 +41,18 @@ const TONE_STROKE: Record<Tone, string> = {
 };
 
 interface Props {
-  agg: Aggregate;
+  flow: FlowInput;
+  money: (n: number, compact?: boolean) => string;
   /** Changing this key re-runs the ribbon resize animation. */
   stateKey: string;
   /** Gate the first reveal on the page-load sequence. */
   active: boolean;
   height?: number;
-  labels: LineLabels;
-  planRevenue?: PlanRevenueMix;
 }
 
-export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height = 540 }: Props) {
+export function SankeyFlow({ flow, money, stateKey, active, height = 540 }: Props) {
+  const agg = useMemo(() => flowTotals(flow), [flow]);
+  const formatCurrency = (n: number, o?: { compact?: boolean }) => money(n, o?.compact);
   const { ref, width } = useMeasure<HTMLDivElement>();
   const [frame, setFrame] = useState<Snapshot | null>(null);
   const frameRef = useRef<Snapshot | null>(null);
@@ -86,7 +86,7 @@ export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height 
   const innerW = Math.max(220, svgW - padL - padR);
   const innerH = height - 24;
 
-  const graph = useMemo(() => buildFlowGraph(agg, labels, planRevenue), [agg, labels, planRevenue]);
+  const graph = useMemo(() => buildFlowGraph(flow), [flow]);
 
   useEffect(() => {
     if (!active || svgW <= 0) return;
@@ -151,15 +151,15 @@ export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height 
   const ariaSummary = useMemo(() => {
     const income = agg.operatingIncome;
     return [
-      `Money flow for the period.`,
-      `Total revenue in ${formatCurrency(agg.totalRevenue)}.`,
-      `Cost of revenue out ${formatCurrency(agg.totalCogs)}, leaving gross profit ${formatCurrency(agg.grossProfit)}.`,
-      `Operating expense out ${formatCurrency(agg.totalOpex)}.`,
+      `Flujo de dinero del periodo.`,
+      `Entran ${formatCurrency(agg.totalRevenue)} de ingresos.`,
+      `Salen ${formatCurrency(agg.totalCogs)} de coste de servir y queda un margen bruto de ${formatCurrency(agg.grossProfit)}.`,
+      `Salen ${formatCurrency(agg.totalOpex)} de gastos.`,
       income >= 0
-        ? `Operating income ${formatCurrency(income)}.`
-        : `Operating loss ${formatCurrency(Math.abs(income))}, funded from cash reserves.`,
+        ? `Resultado: ${formatCurrency(income)}.`
+        : `Pérdida de ${formatCurrency(Math.abs(income))}, pagada con caja.`,
     ].join(" ");
-  }, [agg]);
+  }, [agg]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearFocus = () => {
     setFocusKind(null);
@@ -392,7 +392,7 @@ export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height 
                       }: ${formatCurrency(Math.round(l.value))}, ${fmtPctOr(
                         safeDiv(l.value, agg.totalRevenue),
                         1,
-                      )} of total revenue`}
+                      )} de los ingresos`}
                       style={{
                         outline: "none",
                         stroke:
@@ -425,7 +425,7 @@ export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height 
                     id={`sk-node-${id}`}
                     role="img"
                     aria-label={`${n.label}: ${formatCurrency(n.display)}${
-                      n.depth > 0 ? `, ${fmtPctOr(share, 0)} of total revenue` : ""
+                      n.depth > 0 ? `, ${fmtPctOr(share, 0)} de los ingresos` : ""
                     }`}
                     onPointerEnter={() => {
                       setHoverNode(id);
@@ -530,7 +530,7 @@ export function SankeyFlow({ agg, stateKey, active, labels, planRevenue, height 
             {formatCurrency(Math.round(focusLink.value))}
           </div>
           <div className="num mt-1 text-[10px] text-ink-faint">
-            {fmtPctOr(safeDiv(focusLink.value, agg.totalRevenue), 1)} of total revenue
+            {fmtPctOr(safeDiv(focusLink.value, agg.totalRevenue), 1)} de los ingresos
           </div>
         </div>
       )}
