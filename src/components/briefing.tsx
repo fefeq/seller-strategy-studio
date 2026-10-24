@@ -7,10 +7,6 @@ import { useStages } from "@/components/stage-settings";
 import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
-import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
-import { errorText } from "@/lib/errors";
 
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 

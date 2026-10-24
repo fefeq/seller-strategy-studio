@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CheckCircle2, FileText, Loader2, Sparkles, Wand2 } from "lucide-react";
@@ -25,7 +24,6 @@ import { JobProgress, useJob, type BgJob } from "@/components/background";
 import { freshResult } from "@/lib/jobs";
 import type { DeepReview } from "@/lib/bmad/debate-core";
 import { errorText } from "@/lib/errors";
-import { AiProgress } from "@/components/ai-progress";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   // artifact: link from a notice («Borrador listo…», «Revisión a fondo lista…») straight to the document.

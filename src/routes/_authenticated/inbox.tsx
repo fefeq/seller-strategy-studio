@@ -6,13 +6,9 @@ import { AssistantActions } from "@/components/assistant-actions";
 import { SuggestionBoard } from "@/components/suggestion-board";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestionsHeadline } from "@/lib/headlines";
-import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useMe } from "@/hooks/use-me";
-import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/inbox")({
   head: () => ({ meta: [{ title: "Sugerencias — Nokko" }, { name: "description", content: "Riesgos y próximos pasos que el motor proactivo ha detectado, listos para aprobar." }, { property: "og:title", content: "Sugerencias — Nokko" }, { property: "og:description", content: "Riesgos y próximos pasos detectados, listos para aprobar." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
