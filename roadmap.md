@@ -29,4 +29,4 @@
 - [x] Modo A fondo (mercado y competidores + opinión C-Levels por bloque), tarjeta en Inicio, versión corta para invitados
 - [x] Umbrales de ticket: referencia de mercado 5K/50K (decidido)
 - [x] Publicar nokko.ai, resincronizar el segundo plano y probar «Completar datos» en una cuenta real
-- [ ] Habilidad experto UX/UI B2B SaaS (auditoría → SDD → construir), con patrones de Clay, Maze, Notion, Linear, Attio, Stripe
+- [x] Habilidad experto UX/UI B2B SaaS (auditoría → SDD → construir), con patrones de Clay, Maze, Notion, Linear, Attio, Stripe
