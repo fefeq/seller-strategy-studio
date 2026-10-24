@@ -12,7 +12,7 @@ import { NOTES_UNTIL_MS } from "@/lib/call-notes";
 export type Db = SupabaseClient<Database>;
 
 export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
-  const [org, seg, icp, pos, pil, quo, acc, deals] = await Promise.all([
+  const [org, seg, icp, pos, pil, quo, acc, fit, deals] = await Promise.all([
     db.from("organizations").select("currency").eq("id", orgId).maybeSingle(),
     db.from("segments").select("name,acv_min,acv_max,win_rate_target,ae_quota").eq("org_id", orgId),
     db.from("icp_profiles").select("industries,company_size,why_fit,anti_icp").eq("org_id", orgId),
@@ -20,6 +20,8 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     db.from("messaging_pillars").select("title,message").eq("org_id", orgId),
     db.from("quotas").select("period,amount").eq("org_id", orgId),
     db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId),
+    // Same three fields the account sheet saves as null when emptied, so an empty string never counts.
+    db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId).not("segment_id", "is", null).not("industry", "is", null).neq("industry", "").not("size", "is", null).neq("size", ""),
     db.from("deals").select("id", { count: "exact", head: true }).eq("org_id", orgId),
   ]);
   return {
@@ -30,6 +32,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,
+    accountsWithFit: fit.count ?? 0,
     deals: deals.count ?? 0,
     quarter: quarterOf(new Date()),
   };

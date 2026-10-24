@@ -253,6 +253,32 @@ const CORE_TOOLS: AgentTool[] = [
     run: async (c, a) => ok(await c.db.from("accounts").insert({ ...a, org_id: c.orgId, owner_id: c.userId }).select("id,name").single()),
   }),
   def({
+    name: "update_account", kind: "write",
+    description: "Actualiza una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras), segmento, tier (A, B, C), tier ABM, salud (green/yellow/red), si es objetivo, notas y responsable. Segmento, sector y tamaño son lo que mide el encaje con el ICP. Solo cambia los campos que se pasan.",
+    input: z.object({
+      account_id: z.string().uuid(),
+      name: z.string().min(1).optional(), domain: z.string().nullable().optional(), industry: z.string().nullable().optional(), size: z.string().nullable().optional(),
+      country: z.string().length(2).nullable().optional(), segment_id: z.string().uuid().nullable().optional(), tier: z.enum(["A", "B", "C"]).nullable().optional(), abm_tier: z.string().nullable().optional(),
+      health: z.enum(["green", "yellow", "red"]).nullable().optional(), is_target: z.boolean().optional(), notes: z.string().nullable().optional(), owner_id: z.string().uuid().nullable().optional(),
+    }),
+    summarize: (a) => {
+      const labels: Record<string, string> = { name: "nombre", domain: "dominio", industry: "sector", size: "tamaño", country: "país", segment_id: "segmento", tier: "tier", abm_tier: "tier ABM", health: "salud", is_target: "objetivo", notes: "notas", owner_id: "responsable" };
+      const changed = Object.entries(a).filter(([k, x]) => k !== "account_id" && x !== undefined).map(([k, x]) => `${labels[k] ?? k} → ${x === null || x === "" ? "vacío" : String(x)}`);
+      return `Actualizar la cuenta: ${changed.join(", ") || "sin cambios"}`;
+    },
+    run: async (c, a) => {
+      const { account_id, ...rest } = a;
+      // Empty text means «sin dato» (null), the same the account sheet saves, so the fit step and the score agree.
+      const patch = Object.fromEntries(Object.entries(rest).filter(([, x]) => x !== undefined).map(([k, x]) => [k, typeof x === "string" && !x.trim() && k !== "name" ? null : x])) as Partial<typeof rest>;
+      if (!Object.keys(patch).length) throw new Error("No hay nada que cambiar en la cuenta.");
+      if (patch.segment_id) {
+        const seg = await c.db.from("segments").select("id").eq("org_id", c.orgId).eq("id", patch.segment_id).maybeSingle();
+        if (!seg.data) throw new Error("Ese segmento no existe en esta empresa.");
+      }
+      return ok(await c.db.from("accounts").update(patch).eq("org_id", c.orgId).eq("id", account_id).select("id,name,segment_id,industry,size").single());
+    },
+  }),
+  def({
     name: "create_deal", kind: "write",
     description: "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads.",
     input: z.object({ name: z.string().min(1), account_id: z.string().uuid().optional(), account_name: z.string().optional(), segment_id: z.string().uuid().optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional().describe("AAAA-MM-DD"), stage: STAGE_ARG.optional(), product_id: z.string().uuid().optional().describe("Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas"), quantity: z.number().positive().optional() }),

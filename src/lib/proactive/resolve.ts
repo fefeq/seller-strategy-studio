@@ -24,6 +24,7 @@ export const SETUP_STEP_LINK: Record<string, string> = {
   pillars: "/strategy?tab=pillars",
   quota: "/metrics",
   accounts: "/accounts",
+  account_fit: "/setup?step=account_fit",
   deals: "/deals",
 };
 export const setupStepLink = (id: string) => SETUP_STEP_LINK[id] ?? SETUP_ITEMS.find((i) => i.id === id)?.link ?? "/setup";
