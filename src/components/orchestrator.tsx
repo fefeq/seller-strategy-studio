@@ -8,13 +8,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { JobProgress, useJob } from "@/components/background";
+import { freshResult } from "@/lib/jobs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { CompanyLogo } from "@/components/company-logo";
 import { IcpListButton } from "@/components/parallel";
-import { orchestrateIcpCompanies, orchestrateKeyPeople, orchestrateRevealPeople, orchestratorStatus } from "@/lib/orchestrator.functions";
+import { orchestrateRevealPeople, orchestratorStatus, type orchestrateIcpCompanies, type orchestrateKeyPeople } from "@/lib/orchestrator.functions";
 import { DEFAULT_LEVELS, LEVELS, LEVEL_LABEL, type Level } from "@/lib/orchestrator/search";
 import { MAX_REVEAL } from "@/lib/apollo";
 import { icpCompanyQuery } from "@/lib/icp";
@@ -146,10 +148,15 @@ export function BudgetPanel() {
 // ---------------- «Buscar personas clave» (account map) ----------------
 
 type PeopleRes = Awaited<ReturnType<typeof orchestrateKeyPeople>>;
+type PeopleJob = { search?: PeopleRes; criteria?: { titles: string[]; levels: Level[] } };
 const splitList = (s: string) => s.split(",").map((x) => x.trim()).filter(Boolean);
 
 export function KeyPeopleButton({ accountId, hasDomain, onAdded }: { accountId: string; hasDomain: boolean; onAdded: () => void }) {
+  const search = useSearch({ strict: false }) as { people?: string };
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  // From the notice («Encontré 4 personas clave…»): the link opens the results straight away.
+  useEffect(() => { if (search.people) { setOpen(true); void navigate({ to: ".", search: (s: Record<string, unknown>) => ({ ...s, people: undefined }), replace: true }); } }, [search.people]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button size="sm" variant="outline" disabled={!hasDomain} title={hasDomain ? undefined : "Añade el dominio de la cuenta para buscar personas"}>Buscar personas clave</Button></DialogTrigger>
@@ -162,26 +169,30 @@ export function KeyPeopleButton({ accountId, hasDomain, onAdded }: { accountId: 
 }
 
 function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => void }) {
-  const search = useServerFn(orchestrateKeyPeople);
   const reveal = useServerFn(orchestrateRevealPeople);
   const qc = useQueryClient();
+  const { job, running, start, cancel } = useJob<"key_people", PeopleJob>("key_people", { targetId: accountId, onDone: () => { setPicked(new Set()); qc.invalidateQueries({ queryKey: ["orchestrator-status"] }); } });
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const done = freshResult(job, dismissed);
+  const res = done?.result?.search ?? null;
   const [titles, setTitles] = useState("");
   const [levels, setLevels] = useState<Level[]>(DEFAULT_LEVELS);
-  const [res, setRes] = useState<PeopleRes | null>(null);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [added, setAdded] = useState<Map<string, string>>(new Map());
   const [phone, setPhone] = useState(false);
   const [busy, setBusy] = useState(false);
+  // The last search's criteria come back with its results.
+  const loaded = useRef<string | null>(null);
+  useEffect(() => {
+    if (!done || loaded.current === done.id) return;
+    loaded.current = done.id;
+    const c = done.result?.criteria;
+    if (c) { setTitles(c.titles.join(", ")); if (c.levels.length) setLevels(c.levels); }
+  }, [done?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function run(more: boolean) {
-    setBusy(true);
-    try {
-      const r = await search({ data: { accountId, titles: splitList(titles), levels, cursor: more ? res?.cursor ?? null : null } });
-      setRes(more && res ? { ...r, rows: [...res.rows, ...r.rows] } : r);
-      if (!more) setPicked(new Set());
-      if (!r.rows.length && !more && !r.blocked) toast.message("No hay personas con esos criterios en esta empresa. Prueba con otros cargos.");
-      qc.invalidateQueries({ queryKey: ["orchestrator-status"] });
-    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+  function run(more: boolean) {
+    if (more && (!res?.cursor || !job)) return;
+    void start({ accountId, titles: splitList(titles), levels, cursor: more ? res!.cursor : null, ...(more ? { prevJobId: job!.id } : {}) });
   }
 
   async function add() {
@@ -211,7 +222,7 @@ function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => v
   const max = res?.masked ? MAX_REVEAL : 50;
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Dime qué cargos buscas y Nokko elige la fuente: primero la gratuita y, si no encuentra a nadie, otra. Al final verás qué fuente usó y cuánto costó.</p>
+      <p className="text-sm text-muted-foreground">Dime qué cargos buscas y Nokko elige la fuente: primero la gratuita y, si no encuentra a nadie, otra. Trabaja en segundo plano: puedes cerrar esta ventana y te aviso al terminar.</p>
       <Field label="Cargos"><Input value={titles} placeholder="Head of Sales, CFO, Operations" onChange={(e) => setTitles(e.target.value)} /></Field>
       <div>
         <p className="eyebrow mb-2">Nivel</p>
@@ -219,8 +230,15 @@ function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => v
           {LEVELS.map((s) => <label key={s} className="flex items-center gap-2 text-sm"><Checkbox checked={levels.includes(s)} onCheckedChange={(v) => setLevels(v ? [...levels, s] : levels.filter((x) => x !== s))} />{LEVEL_LABEL[s]}</label>)}
         </div>
       </div>
-      <Button onClick={() => run(false)} disabled={busy}>{busy ? "Buscando…" : "Buscar personas"}</Button>
+      {running ? <JobProgress job={job} onCancel={cancel} /> : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => run(false)}>{res ? "Buscar de nuevo" : "Buscar personas"}</Button>
+          {res && <button type="button" className="text-sm underline underline-offset-4" onClick={() => setDismissed(done!.id)}>Limpiar resultados</button>}
+        </div>
+      )}
+      {!running && job?.status === "failed" && <p className="text-sm text-muted-foreground">La última búsqueda falló: {job.error}</p>}
       {res?.blocked && <p className="text-sm text-muted-foreground">{res.blocked}</p>}
+      {res && !res.blocked && res.rows.length === 0 && <p className="text-sm text-muted-foreground">No hay personas con esos criterios en esta empresa. Prueba con otros cargos.</p>}
       {res && res.rows.length > 0 && (
         <div className="space-y-3">
           {res.masked && <p className="text-xs text-muted-foreground">Esta fuente oculta el apellido y el contacto hasta añadir a la persona; añadirla cuesta unos 0,02 € por persona (máximo {MAX_REVEAL} a la vez).</p>}
@@ -242,7 +260,7 @@ function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => v
           </ul>
           <p className="font-mono text-xs text-muted-foreground">{res.sources}</p>
           <div className="flex flex-wrap items-center gap-3">
-            {res.cursor && <Button variant="outline" size="sm" disabled={busy} onClick={() => run(true)}>Traer más</Button>}
+            {res.cursor && <Button variant="outline" size="sm" disabled={busy || running} onClick={() => run(true)}>Traer más</Button>}
             {res.masked && <label className="flex items-center gap-2 text-sm"><Checkbox checked={phone} onCheckedChange={(v) => setPhone(!!v)} />Pedir también el móvil (cuesta más)</label>}
             <Button disabled={busy || !picked.size} onClick={add}>Añadir {picked.size || ""} al mapa</Button>
           </div>
@@ -256,9 +274,14 @@ function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => v
 
 type CompaniesRes = Awaited<ReturnType<typeof orchestrateIcpCompanies>>;
 
+type CompaniesJob = { search?: CompaniesRes; query?: { keywords?: string[]; countries?: string[]; minEmployees?: number | null; maxEmployees?: number | null } };
+
 export function IcpCompaniesButton() {
+  const search = useSearch({ strict: false }) as { icp?: string | number };
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [deepOpen, setDeepOpen] = useState(false);
+  useEffect(() => { if (search.icp) { setOpen(true); void navigate({ to: ".", search: (s: Record<string, unknown>) => ({ ...s, icp: undefined }), replace: true }); } }, [search.icp]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -275,16 +298,26 @@ export function IcpCompaniesButton() {
 
 function IcpCompanies({ onDeep }: { onDeep: () => void }) {
   const qc = useQueryClient();
-  const search = useServerFn(orchestrateIcpCompanies);
+  const { job, running, start, cancel } = useJob<"icp_companies", CompaniesJob>("icp_companies", { onDone: () => { setPicked(new Set()); qc.invalidateQueries({ queryKey: ["orchestrator-status"] }); } });
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const done = freshResult(job, dismissed);
   const [keywords, setKeywords] = useState("");
   const [countries, setCountries] = useState<string[]>([]);
   const [minEmp, setMinEmp] = useState("");
   const [maxEmp, setMaxEmp] = useState("");
-  const [res, setRes] = useState<CompaniesRes | null>(null);
+  const [imported, setImported] = useState<Map<string, string>>(new Map());
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [target, setTarget] = useState(false);
   const [busy, setBusy] = useState(false);
   const { data: icps = [] } = useQuery({ queryKey: ["clay-icps"], queryFn: async () => (await supabase.from("icp_profiles").select("*").order("name")).data ?? [] });
+  const res = done?.result?.search ? { ...done.result.search, rows: done.result.search.rows.map((r) => (r.domain && imported.has(r.domain) ? { ...r, existingId: imported.get(r.domain)! } : r)) } : null;
+  const loaded = useRef<string | null>(null);
+  useEffect(() => {
+    if (!done || loaded.current === done.id) return;
+    loaded.current = done.id;
+    const q = done.result?.query;
+    if (q) { setKeywords((q.keywords ?? []).join(", ")); setCountries(q.countries ?? []); setMinEmp(q.minEmployees ? String(q.minEmployees) : ""); setMaxEmp(q.maxEmployees ? String(q.maxEmployees) : ""); }
+  }, [done?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function useIcp(id: string) {
     const icp = icps.find((i) => i.id === id);
@@ -297,15 +330,9 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
     toast.success(`Criterios cargados desde «${icp.name}». Revísalos antes de buscar.`);
   }
 
-  async function run(more: boolean) {
-    setBusy(true);
-    try {
-      const r = await search({ data: { cursor: more ? res?.cursor ?? null : null, query: { keywords: splitList(keywords), countries, minEmployees: Number(minEmp) || null, maxEmployees: Number(maxEmp) || null } } });
-      setRes(more && res ? { ...r, rows: [...res.rows, ...r.rows] } : r);
-      if (!more) setPicked(new Set());
-      if (!r.rows.length && !more && !r.blocked) toast.message("No hay empresas con esos criterios. Prueba a quitar alguno o busca a fondo.");
-      qc.invalidateQueries({ queryKey: ["orchestrator-status"] });
-    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+  function run(more: boolean) {
+    if (more && (!res?.cursor || !job)) return;
+    void start({ cursor: more ? res!.cursor : null, query: { keywords: splitList(keywords), countries, minEmployees: Number(minEmp) || null, maxEmployees: Number(maxEmp) || null }, ...(more ? { prevJobId: job!.id } : {}) });
   }
 
   async function importPicked() {
@@ -317,8 +344,7 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
       const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => ({ name: r.name, domain: r.domain, industry: r.industry, size: r.size, country: r.country, notes: r.description, is_target: target }))).select("id,domain");
       if (error) throw error;
       await supabase.from("account_plans").insert((data ?? []).map((a) => ({ account_id: a.id })));
-      const ids = new Map((data ?? []).map((a) => [a.domain, a.id]));
-      setRes({ ...res, rows: res.rows.map((r) => (r.domain && ids.has(r.domain) ? { ...r, existingId: ids.get(r.domain)! } : r)) });
+      setImported(new Map([...imported, ...(data ?? []).filter((a) => a.domain).map((a) => [a.domain!, a.id] as [string, string])]));
       setPicked(new Set());
       qc.invalidateQueries({ queryKey: ["accounts"] });
       toast.success(`${data?.length ?? 0} cuentas añadidas.`);
@@ -329,7 +355,7 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
   const selectable = rows.filter((r) => r.domain && !r.existingId);
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">Describe a tu cliente ideal y Nokko busca empresas en la fuente más rápida y barata que tengas conectada; si no encuentra, prueba otra. Elige cuáles añadir como cuentas.</p>
+      <p className="text-sm text-muted-foreground">Describe a tu cliente ideal y Nokko busca empresas en la fuente más rápida y barata que tengas conectada; si no encuentra, prueba otra. Trabaja en segundo plano: puedes cerrar esta ventana y te aviso al terminar.</p>
       {icps.length > 0 && <Field label="Partir de un ICP"><Pick aria-label="Partir de un ICP" value="" options={{ "": "Elige un ICP…", ...Object.fromEntries(icps.map((i) => [i.id, i.name])) }} onChange={useIcp} /></Field>}
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Palabras clave (sector o producto, mejor en inglés)"><Input value={keywords} placeholder="payments, logistics, B2B SaaS" onChange={(e) => setKeywords(e.target.value)} /></Field>
@@ -340,11 +366,16 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
         <Field label="Empleados mín."><Input inputMode="numeric" value={minEmp} onChange={(e) => setMinEmp(e.target.value.replace(/\D/g, ""))} /></Field>
         <Field label="Empleados máx."><Input inputMode="numeric" value={maxEmp} onChange={(e) => setMaxEmp(e.target.value.replace(/\D/g, ""))} /></Field>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button onClick={() => run(false)} disabled={busy}>{busy ? "Buscando…" : "Buscar empresas"}</Button>
-        <button type="button" className="text-sm underline" onClick={onDeep}>Buscar a fondo (25–100 empresas, tarda minutos)</button>
-      </div>
+      {running ? <JobProgress job={job} onCancel={cancel} /> : (
+        <div className="flex flex-wrap items-center gap-3">
+          <Button onClick={() => run(false)}>{res ? "Buscar de nuevo" : "Buscar empresas"}</Button>
+          {res && <button type="button" className="text-sm underline underline-offset-4" onClick={() => setDismissed(done!.id)}>Limpiar resultados</button>}
+          <button type="button" className="text-sm underline" onClick={onDeep}>Buscar a fondo (25–100 empresas, tarda minutos)</button>
+        </div>
+      )}
+      {!running && job?.status === "failed" && <p className="text-sm text-muted-foreground">La última búsqueda falló: {job.error}</p>}
       {res?.blocked && <p className="text-sm text-muted-foreground">{res.blocked}</p>}
+      {res && !res.blocked && rows.length === 0 && <p className="text-sm text-muted-foreground">No hay empresas con esos criterios. Prueba a quitar alguno o busca a fondo.</p>}
       {rows.length > 0 && (
         <div className="space-y-3">
           <div className="overflow-x-auto border-t">
@@ -367,7 +398,7 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
           <p className="font-mono text-xs text-muted-foreground">{res?.sources}</p>
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="outline" size="sm" disabled={!selectable.length} onClick={() => setPicked(picked.size === selectable.length ? new Set() : new Set(selectable.map((r) => r.domain!)))}>{picked.size === selectable.length && selectable.length ? "Quitar selección" : "Elegir todas"}</Button>
-            {res?.cursor && <Button variant="outline" size="sm" disabled={busy} onClick={() => run(true)}>Traer más</Button>}
+            {res?.cursor && <Button variant="outline" size="sm" disabled={busy || running} onClick={() => run(true)}>Traer más</Button>}
             <label className="flex items-center gap-2 text-sm"><Checkbox checked={target} onCheckedChange={(v) => setTarget(!!v)} />Marcar como objetivo ABM</label>
             <Button disabled={busy || !picked.size} onClick={importPicked}>Añadir {picked.size || ""} {picked.size === 1 ? "cuenta" : "cuentas"}</Button>
           </div>
