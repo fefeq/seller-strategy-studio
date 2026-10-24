@@ -89,3 +89,6 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Parallel: informe profundo de cuenta, listas de cuentas por ICP, completar cuentas en tabla, tercera fuente de búsqueda; agente y MCP
 - [x] Logo.dev: logos de empresa en Cuentas, ficha, Leads, Pipeline y listas por ICP
 - [x] Calificación de leads con IA (Jev): encaje, intención, cargo, propuesta de etapa y segmento; pesos editables
+- [x] Chat del agente sin respuesta: Gemini cambió el formato de las llamadas a herramientas; corregido
+- [x] Logos de empresa en color (variante oscura en modo Tinta)
+- [x] Conocimiento: pestaña «Drive por cuenta» con todos los documentos guardados en Drive, resumen y fecha

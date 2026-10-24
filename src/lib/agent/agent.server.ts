@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
-import { aiProvider, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
+import { aiProvider, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
@@ -82,7 +82,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
     ? createOpenAI({
         baseURL: GEMINI_OPENAI_BASE,
         apiKey,
-        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init)) as typeof fetch,
+        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fixGeminiStream(await fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init))) as typeof fetch,
       })
     : createOpenAI({
         baseURL: "https://ai.gateway.lovable.dev/v1",
@@ -92,6 +92,8 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
       });
 
   let text = "";
+  // The stream's own error (provider status and body); "No output generated" alone hides it.
+  let streamError: unknown;
   try {
     const result = streamText({
       model: gemini ? provider.chat(geminiAgentModel(process.env)) : provider.responses(MODEL),
@@ -100,10 +102,12 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
       tools,
       stopWhen: stepCountIs(12),
       abortSignal: opts.signal,
+      onError: ({ error }) => { streamError ??= error; console.error("Agent stream error", error); },
       ...(gemini ? {} : { providerOptions: { openai: { store: false, forceReasoning: true, reasoningEffort: "low", reasoningSummary: "auto", include: ["reasoning.encrypted_content"] } } }),
     });
     text = (await result.text).trim();
-  } catch (e) {
+  } catch (caught) {
+    const e = streamError ?? caught;
     const msg = String((e as any)?.statusCode ?? "");
     console.error("Agent error", e);
     if (gemini && /^(400|401|403|404|429|5\d\d)$/.test(msg)) throw new Error(geminiErrorMessage(Number(msg), String((e as any)?.responseBody ?? "")));

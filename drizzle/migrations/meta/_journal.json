@@ -281,6 +281,13 @@
       "when": 1792801641943,
       "tag": "0039_lead_qualification",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1792850670049,
+      "tag": "0040_drive_doc_summaries",
+      "breakpoints": true
     }
   ]
 }

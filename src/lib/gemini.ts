@@ -189,3 +189,45 @@ export function withThoughtSignatures(bodyText: string): string {
   }
   return JSON.stringify(b);
 }
+
+/**
+ * Gemini's OpenAI-compatible stream sends tool_calls without the `index` field (and finish_reason "stop" instead of
+ * "tool_calls"). The AI SDK rejects such chunks, so every agent turn that used a tool ended with "No output generated".
+ * Fixes one SSE line: numbers the tool calls by position and marks the finish as tool_calls when the chunk carries any.
+ */
+export function fixGeminiSseLine(line: string): string {
+  if (!line.startsWith("data:")) return line;
+  const raw = line.slice(5).trim();
+  if (!raw || raw === "[DONE]") return line;
+  let chunk: { choices?: { delta?: { tool_calls?: { index?: number }[] }; finish_reason?: string | null }[] };
+  try { chunk = JSON.parse(raw); } catch { return line; }
+  let changed = false;
+  for (const choice of chunk.choices ?? []) {
+    const calls = choice.delta?.tool_calls;
+    if (!Array.isArray(calls) || !calls.length) continue;
+    calls.forEach((tc, i) => { if (typeof tc.index !== "number") { tc.index = i; changed = true; } });
+    if (choice.finish_reason === "stop") { choice.finish_reason = "tool_calls"; changed = true; }
+  }
+  return changed ? `data: ${JSON.stringify(chunk)}` : line;
+}
+
+/** Wraps a Gemini streaming response so each SSE line goes through fixGeminiSseLine. Non-stream responses pass untouched. */
+export function fixGeminiStream(res: Response): Response {
+  if (!res.ok || !res.body || !(res.headers.get("content-type") ?? "").includes("text/event-stream")) return res;
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+  const body = res.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(bytes, controller) {
+      buffer += decoder.decode(bytes, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      if (lines.length) controller.enqueue(encoder.encode(lines.map(fixGeminiSseLine).join("\n") + "\n"));
+    },
+    flush(controller) {
+      buffer += decoder.decode();
+      if (buffer) controller.enqueue(encoder.encode(fixGeminiSseLine(buffer)));
+    },
+  }));
+  return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+}
