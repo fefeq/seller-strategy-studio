@@ -96,8 +96,8 @@ export function buildQualificationRequest(ctx: QualContext) {
     },
     not_buyer: {
       type: "noul",
-      instructions: "¿El lead claramente NO es un posible comprador? Fíjate en `lead.empresa`, `lead.contacto`, `lead.dominio_email` y `lead.mensaje_y_notas`.",
-      criteria: { true: "Spam, datos de prueba o inventados, estudiante, candidato que busca empleo, proveedor que quiere vendernos algo o competidor.", false: "Puede ser un comprador real, aunque falte información o el interés sea bajo." },
+      instructions: "¿El contacto de `lead` no representa a ninguna empresa que pueda comprar? Fíjate en `lead.empresa`, `lead.contacto`, `lead.dominio_email` y `lead.mensaje_y_notas`. Encajar o no con el ICP no importa aquí.",
+      criteria: { true: "Spam, datos de prueba o inventados, estudiante, candidato que busca empleo, proveedor que quiere vendernos algo o competidor.", false: "Una empresa real o alguien que trabaja en una, aunque quede fuera del ICP, falte información o el interés sea bajo." },
     },
     intent: { type: "score", instructions: "¿Cuánta intención de compra muestra el lead según `lead.origen` y `lead.mensaje_y_notas`?", criteria: INTENT_LEVELS },
   };
@@ -107,7 +107,7 @@ export function buildQualificationRequest(ctx: QualContext) {
     instructions: "¿La empresa del lead (`lead`, `empresa_del_lead`) coincide con alguna exclusión escrita en `icp[].anti_icp`?",
     criteria: { true: "Cumple claramente una de las exclusiones del anti-ICP.", false: "No cumple ninguna exclusión, o no hay datos para saberlo." },
   };
-  if (lead.title?.trim()) questions.authority = { type: "score", instructions: "¿Cuánto poder de decisión sobre la compra de `nuestro_producto` tiene alguien con el cargo `lead.cargo`?", criteria: AUTHORITY_LEVELS };
+  if (lead.title?.trim()) questions.authority = { type: "score", instructions: "¿Cuánto poder de decisión sobre las compras de software de su empresa tiene alguien con el cargo `lead.cargo`?", criteria: AUTHORITY_LEVELS };
   if (!lead.segment_id && segments.length) {
     const criteria: Record<string, string> = {};
     segments.slice(0, 12).forEach((s, i) => {
