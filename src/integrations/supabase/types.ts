@@ -332,6 +332,83 @@ export type Database = {
           },
         ]
       }
+      activities: {
+        Row: {
+          account_id: string | null
+          body: string
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          id: string
+          kind: string
+          occurred_at: string
+          org_id: string | null
+          person_id: string | null
+          subject: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          id?: string
+          kind?: string
+          occurred_at?: string
+          org_id?: string | null
+          person_id?: string | null
+          subject?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          id?: string
+          kind?: string
+          occurred_at?: string
+          org_id?: string | null
+          person_id?: string | null
+          subject?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_conversations: {
         Row: {
           channel: string
@@ -1006,6 +1083,75 @@ export type Database = {
           },
         ]
       }
+      deal_offers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          deal_id: string
+          id: string
+          lines: Json
+          notes: string
+          one_off_total: number
+          org_id: string | null
+          recurring_total: number
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          valid_until: string | null
+          version: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          deal_id: string
+          id?: string
+          lines?: Json
+          notes?: string
+          one_off_total?: number
+          org_id?: string | null
+          recurring_total?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_until?: string | null
+          version?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string
+          id?: string
+          lines?: Json
+          notes?: string
+          one_off_total?: number
+          org_id?: string | null
+          recurring_total?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          valid_until?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_offers_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deal_offers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_registrations: {
         Row: {
           account_id: string | null
@@ -1509,6 +1655,339 @@ export type Database = {
           },
           {
             foreignKeyName: "drive_folders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      email_templates: {
+        Row: {
+          body: string
+          created_at: string
+          created_by: string | null
+          id: string
+          name: string
+          org_id: string | null
+          stage: string | null
+          subject: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name: string
+          org_id?: string | null
+          stage?: string | null
+          subject?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          name?: string
+          org_id?: string | null
+          stage?: string | null
+          subject?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_cost_lines: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          ends_on: string | null
+          id: string
+          name: string
+          notes: string
+          org_id: string | null
+          segment_id: string | null
+          starts_on: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          name: string
+          notes?: string
+          org_id?: string | null
+          segment_id?: string | null
+          starts_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          ends_on?: string | null
+          id?: string
+          name?: string
+          notes?: string
+          org_id?: string | null
+          segment_id?: string | null
+          starts_on?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_cost_lines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_cost_lines_segment_id_fkey"
+            columns: ["segment_id"]
+            isOneToOne: false
+            referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_invoices: {
+        Row: {
+          account_id: string | null
+          amount: number
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          due_on: string | null
+          id: string
+          issued_on: string
+          notes: string
+          number: string
+          org_id: string | null
+          paid_on: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          due_on?: string | null
+          id?: string
+          issued_on?: string
+          notes?: string
+          number?: string
+          org_id?: string | null
+          paid_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          due_on?: string | null
+          id?: string
+          issued_on?: string
+          notes?: string
+          number?: string
+          org_id?: string | null
+          paid_on?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_invoices_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_invoices_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_invoices_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_months: {
+        Row: {
+          cash_end: number | null
+          closed_at: string | null
+          costs: number | null
+          created_at: string
+          created_by: string | null
+          id: string
+          month: string
+          notes: string
+          org_id: string | null
+          revenue: number | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          cash_end?: number | null
+          closed_at?: string | null
+          costs?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month: string
+          notes?: string
+          org_id?: string | null
+          revenue?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          cash_end?: number | null
+          closed_at?: string | null
+          costs?: number | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month?: string
+          notes?: string
+          org_id?: string | null
+          revenue?: number | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_months_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      finance_settings: {
+        Row: {
+          annual_discount_pct: number
+          cash_as_of: string | null
+          created_at: string
+          created_by: string | null
+          horizon_months: number
+          include_pipeline: boolean
+          opening_cash: number
+          org_id: string
+          plan_assumptions: Json
+          scenario_spread_pct: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          annual_discount_pct?: number
+          cash_as_of?: string | null
+          created_at?: string
+          created_by?: string | null
+          horizon_months?: number
+          include_pipeline?: boolean
+          opening_cash?: number
+          org_id?: string
+          plan_assumptions?: Json
+          scenario_spread_pct?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          annual_discount_pct?: number
+          cash_as_of?: string | null
+          created_at?: string
+          created_by?: string | null
+          horizon_months?: number
+          include_pipeline?: boolean
+          opening_cash?: number
+          org_id?: string
+          plan_assumptions?: Json
+          scenario_spread_pct?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast_snapshots: {
+        Row: {
+          assumptions: Json
+          created_at: string
+          created_by: string | null
+          id: string
+          month: string
+          org_id: string | null
+          summary: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          assumptions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month: string
+          org_id?: string | null
+          summary?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          assumptions?: Json
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          month?: string
+          org_id?: string | null
+          summary?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_snapshots_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -4267,6 +4746,95 @@ export type Database = {
           },
         ]
       }
+      team_members: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          org_id: string | null
+          team_id: string
+          updated_at: string
+          updated_by: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          team_id: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          org_id?: string | null
+          team_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          lead_id: string | null
+          name: string
+          org_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          name: string
+          org_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          lead_id?: string | null
+          name?: string
+          org_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       telegram_updates: {
         Row: {
           error: string | null
@@ -4471,6 +5039,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_finance_member: { Args: { _org: string }; Returns: boolean }
       is_org_member: { Args: { _org: string }; Returns: boolean }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
