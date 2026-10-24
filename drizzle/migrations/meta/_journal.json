@@ -316,6 +316,13 @@
       "when": 1792854810423,
       "tag": "0044_discoveries",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1792855390584,
+      "tag": "0045_autopilot_marks",
+      "breakpoints": true
     }
   ]
 }

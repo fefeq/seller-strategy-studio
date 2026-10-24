@@ -245,6 +245,7 @@ export type Database = {
       accounts: {
         Row: {
           abm_tier: string | null
+          auto_researched_at: string | null
           country: string | null
           created_at: string
           created_by: string | null
@@ -267,6 +268,7 @@ export type Database = {
         }
         Insert: {
           abm_tier?: string | null
+          auto_researched_at?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -289,6 +291,7 @@ export type Database = {
         }
         Update: {
           abm_tier?: string | null
+          auto_researched_at?: string | null
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -2235,6 +2238,7 @@ export type Database = {
           agenda: string | null
           ai_brief: string | null
           attendees: string | null
+          auto_prepped_at: string | null
           call_notes: Json
           call_review: string
           created_at: string
@@ -2262,6 +2266,7 @@ export type Database = {
           agenda?: string | null
           ai_brief?: string | null
           attendees?: string | null
+          auto_prepped_at?: string | null
           call_notes?: Json
           call_review?: string
           created_at?: string
@@ -2289,6 +2294,7 @@ export type Database = {
           agenda?: string | null
           ai_brief?: string | null
           attendees?: string | null
+          auto_prepped_at?: string | null
           call_notes?: Json
           call_review?: string
           created_at?: string
