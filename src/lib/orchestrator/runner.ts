@@ -2,10 +2,11 @@
 // failure, logs the estimated spend and returns one result plus a «Fuentes» line. Shared by screens and agent.
 // Only imported from server code (functions handlers and agent tools): gateways read secrets at call time.
 import type { ToolCtx } from "@/lib/agent/tool-kit";
-import { enrichAccount as apolloEnrich } from "@/lib/apollo-gateway";
-import { enrichAccount as clayEnrich } from "@/lib/clay-gateway";
-import type { EnrichChange } from "@/lib/clay";
+import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
+import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
+import type { AccountDraft, CompanyQuery, EnrichChange } from "@/lib/clay";
 import { budgetState, planFor, sourcesLine, CAPABILITIES, type Need, type Service } from "./planner";
+import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
 
 const ENV: Partial<Record<Service, string[]>> = {
   apollo: ["APOLLO_API_KEY"], clay: ["CLAY_API_KEY"], parallel: ["PARALLEL_API_KEY"], firecrawl: ["FIRECRAWL_API_KEY"],
@@ -84,3 +85,94 @@ export async function trackedRun<T>(c: ToolCtx, need: Need, trigger: Trigger, ru
 }
 
 export const NEED_LABEL = Object.fromEntries(Object.entries(CAPABILITIES).map(([k, v]) => [k, v.label])) as Record<Need, string>;
+
+// ---------------- Key people (find_stakeholders) ----------------
+
+export type KeyPerson = {
+  key: string; name: string; title: string | null; linkedin: string | null; location: string | null;
+  /** Apollo hides surname and contact until revealed (costs credits); Clay rows can be added as they are. */
+  apolloId: string | null; hasEmail: boolean; hasPhone: boolean; existingId: string | null;
+};
+export type PeopleResult = { service: "apollo" | "clay" | null; rows: KeyPerson[]; cursor: Cursor | null; sources: string; blocked: string | null; masked: boolean };
+
+/** «Buscar personas clave»: Apollo's free search first; if it fails or finds nobody, Clay. «Traer más» keeps the same service. */
+export async function findKeyPeople(c: ToolCtx, a: { accountId: string; titles?: string[]; levels?: string[]; cursor?: Cursor | null }, trigger: Trigger = "manual"): Promise<PeopleResult> {
+  const plan = await planNeed(c, "find_stakeholders", trigger);
+  const costOf = (s: Service) => plan.steps.find((x) => x.service === s)?.cost ?? 0;
+  const order = (a.cursor ? [a.cursor.service] : plan.steps.map((s) => s.service)).filter((s): s is "apollo" | "clay" => s === "apollo" || s === "clay");
+  if (!order.length) return { service: null, rows: [], cursor: null, sources: "", blocked: plan.blocked ?? "Ningún servicio conectado puede buscar personas ahora.", masked: false };
+  const levels = a.levels ?? DEFAULT_LEVELS;
+  let lastError: string | null = null;
+  const used: Used[] = [];
+  for (const s of order) {
+    try {
+      if (s === "apollo") {
+        const page = a.cursor?.service === "apollo" ? a.cursor.page : 1;
+        const r = await apolloPeople(c, { accountId: a.accountId, page, query: { titles: a.titles, seniorities: levelsFor("apollo", levels) } });
+        used.push({ service: s, cost: costOf(s) });
+        if (!r.rows.length && !a.cursor && order.length > 1) continue;
+        await logUsage(c, "find_stakeholders", used, trigger);
+        return { service: s, masked: true, cursor: nextCursor(s, r.hasMore, page, null), sources: sourcesLine(used), blocked: null,
+          rows: r.rows.map((p) => ({ key: p.apolloId, name: p.name, title: p.title, linkedin: null, location: null, apolloId: p.apolloId, hasEmail: p.hasEmail, hasPhone: p.hasPhone, existingId: null })) };
+      }
+      const searchId = a.cursor?.service === "clay" ? a.cursor.searchId : undefined;
+      const r = await clayPeople(c, { accountId: a.accountId, searchId, limit: 10, query: searchId ? undefined : { titles: a.titles, seniority: levelsFor("clay", levels) } });
+      used.push({ service: s, cost: costOf(s) });
+      await logUsage(c, "find_stakeholders", used, trigger);
+      return { service: s, masked: false, cursor: nextCursor(s, r.hasMore, 1, r.searchId), sources: sourcesLine(used), blocked: null,
+        rows: r.rows.map((p, i) => ({ key: p.linkedin_url ?? `${p.name}-${i}`, name: p.name, title: p.title, linkedin: p.linkedin_url, location: p.location, apolloId: null, hasEmail: false, hasPhone: false, existingId: p.existingId })) };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+      if (/dominio/i.test(lastError)) break;
+    }
+  }
+  await logUsage(c, "find_stakeholders", used, trigger);
+  if (used.length) return { service: null, rows: [], cursor: null, sources: sourcesLine(used), blocked: null, masked: false };
+  throw new Error(lastError ?? "No se ha podido buscar personas.");
+}
+
+/** Adds Apollo results to the map: reveals name, email and LinkedIn (and the mobile if asked), logging the spend. */
+export async function revealKeyPeople(c: ToolCtx, a: { accountId: string; apolloIds: string[]; phone?: boolean; webhookBase?: string }) {
+  const r = await revealToAccount(c, a);
+  const cost = revealCost(r.length, !!a.phone);
+  await logUsage(c, a.phone ? "find_phone" : "find_email", [{ service: "apollo", cost }], "manual");
+  return { people: r, sources: sourcesLine([{ service: "apollo", cost }]) };
+}
+
+// ---------------- ICP companies (icp_companies) ----------------
+
+export type IcpCompany = AccountDraft & { existingId: string | null };
+export type CompaniesResult = { service: "apollo" | "clay" | null; rows: IcpCompany[]; cursor: Cursor | null; sources: string; blocked: string | null; deep: boolean };
+
+/** «Buscar empresas por ICP»: quick search in Apollo, then Clay. Parallel (deep, minutes) is offered separately. */
+export async function findIcpCompanies(c: ToolCtx, a: { query: CompanyQuery; cursor?: Cursor | null }, trigger: Trigger = "manual"): Promise<CompaniesResult> {
+  const plan = await planNeed(c, "icp_companies", trigger);
+  const deep = plan.steps.some((s) => s.service === "parallel");
+  const costOf = (s: Service) => plan.steps.find((x) => x.service === s)?.cost ?? 0;
+  const order = (a.cursor ? [a.cursor.service] : plan.steps.map((s) => s.service)).filter((s): s is "apollo" | "clay" => s === "apollo" || s === "clay");
+  if (!order.length) return { service: null, rows: [], cursor: null, sources: "", deep, blocked: plan.blocked ?? (deep ? null : "Ningún servicio conectado puede buscar empresas ahora.") };
+  let lastError: string | null = null;
+  const used: Used[] = [];
+  for (const s of order) {
+    try {
+      if (s === "apollo") {
+        const page = a.cursor?.service === "apollo" ? a.cursor.page : 1;
+        const r = await apolloCompanies(c, { page, query: { keywords: a.query.keywords, countries: a.query.countries, minEmployees: a.query.minEmployees, maxEmployees: a.query.maxEmployees } });
+        used.push({ service: s, cost: costOf(s) });
+        if (!r.rows.length && !a.cursor && order.length > 1) continue;
+        await logUsage(c, "icp_companies", used, trigger);
+        return { service: s, rows: r.rows, cursor: nextCursor(s, r.hasMore, page, null), sources: sourcesLine(used), blocked: null, deep };
+      }
+      const searchId = a.cursor?.service === "clay" ? a.cursor.searchId : undefined;
+      const r = await clayCompanies(c, { searchId, limit: 10, query: searchId ? undefined : a.query });
+      used.push({ service: s, cost: costOf(s) });
+      await logUsage(c, "icp_companies", used, trigger);
+      return { service: s, rows: r.rows, cursor: nextCursor(s, r.hasMore, 1, r.searchId), sources: sourcesLine(used), blocked: null, deep };
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : String(e);
+    }
+  }
+  await logUsage(c, "icp_companies", used, trigger);
+  if (used.length) return { service: null, rows: [], cursor: null, sources: sourcesLine(used), blocked: null, deep };
+  throw new Error(lastError ?? "No se ha podido buscar empresas.");
+}
