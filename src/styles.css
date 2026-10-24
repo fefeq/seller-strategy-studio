@@ -219,6 +219,9 @@
 }
 
 @layer base {
+  /* Grid and flex children may shrink below their content, so long text never widens the page. */
+  .grid > * { min-width: 0; }
+  .break-words { overflow-wrap: anywhere; }
   * {
     border-color: var(--color-border);
   }
