@@ -24,6 +24,7 @@ import { Route as AuthenticatedCycleRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedDealsRouteImport } from './routes/_authenticated/deals'
 import { Route as AuthenticatedDebatesRouteImport } from './routes/_authenticated/debates'
 import { Route as AuthenticatedDiscoveriesRouteImport } from './routes/_authenticated/discoveries'
+import { Route as AuthenticatedFinanceRouteImport } from './routes/_authenticated/finance'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
@@ -126,6 +127,11 @@ const AuthenticatedDiscoveriesRoute =
     path: '/discoveries',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedFinanceRoute = AuthenticatedFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
   '/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/deals': typeof AuthenticatedDealsRoute
   '/debates': typeof AuthenticatedDebatesRoute
   '/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/finance': typeof AuthenticatedFinanceRoute
   '/home': typeof AuthenticatedHomeRoute
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/_authenticated/deals': typeof AuthenticatedDealsRoute
   '/_authenticated/debates': typeof AuthenticatedDebatesRoute
   '/_authenticated/discoveries': typeof AuthenticatedDiscoveriesRoute
+  '/_authenticated/finance': typeof AuthenticatedFinanceRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
@@ -400,6 +409,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/debates'
     | '/discoveries'
+    | '/finance'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -441,6 +451,7 @@ export interface FileRouteTypes {
     | '/deals'
     | '/debates'
     | '/discoveries'
+    | '/finance'
     | '/home'
     | '/hub'
     | '/inbox'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/deals'
     | '/_authenticated/debates'
     | '/_authenticated/discoveries'
+    | '/_authenticated/finance'
     | '/_authenticated/home'
     | '/_authenticated/hub'
     | '/_authenticated/inbox'
@@ -631,6 +643,13 @@ declare module '@tanstack/react-router' {
       path: '/discoveries'
       fullPath: '/discoveries'
       preLoaderRoute: typeof AuthenticatedDiscoveriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/finance': {
+      id: '/_authenticated/finance'
+      path: '/finance'
+      fullPath: '/finance'
+      preLoaderRoute: typeof AuthenticatedFinanceRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/home': {
@@ -821,6 +840,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDealsRoute: typeof AuthenticatedDealsRoute
   AuthenticatedDebatesRoute: typeof AuthenticatedDebatesRoute
   AuthenticatedDiscoveriesRoute: typeof AuthenticatedDiscoveriesRoute
+  AuthenticatedFinanceRoute: typeof AuthenticatedFinanceRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
@@ -851,6 +871,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDealsRoute: AuthenticatedDealsRoute,
   AuthenticatedDebatesRoute: AuthenticatedDebatesRoute,
   AuthenticatedDiscoveriesRoute: AuthenticatedDiscoveriesRoute,
+  AuthenticatedFinanceRoute: AuthenticatedFinanceRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
