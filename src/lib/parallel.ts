@@ -2,6 +2,7 @@
 // its cited fields are read, the ICP list run (processor by size, entities → accounts), the enrichment
 // table in chunks of 5, and search results as news items.
 import { cleanDomain } from "@/lib/leads";
+import { isoFromCountry } from "@/lib/clay";
 
 // ---------------- Deep account report (Task run) ----------------
 
@@ -125,7 +126,7 @@ export function readEntities(output: unknown, existing: { id: string; domain: st
 // ---------------- Enrichment table (Responses, 5 rows per call) ----------------
 
 export const ENRICH_FIELDS = ["industry", "size", "country", "funding", "technology"] as const;
-export type EnrichRow = { account_id: string; industry: string | null; size: string | null; country: string | null; funding: string | null; technology: string | null; source_url: string | null };
+export type EnrichRow = { account_id: string; industry: string | null; size: string | null; /** ISO code, as accounts store it */ country: string | null; funding: string | null; technology: string | null; source_url: string | null };
 
 export const chunk = <T,>(list: T[], n = 5): T[][] => Array.from({ length: Math.ceil(list.length / n) }, (_, i) => list.slice(i * n, i * n + n));
 
@@ -170,7 +171,7 @@ export function readEnrichRows(json: unknown, lookup: Map<string, string>): Enri
     if (id) seen.add(id);
     if (!id) return [];
     const src = clean(r.source_url);
-    return [{ account_id: id, industry: clean(r.industry), size: clean(r.size), country: clean(r.country), funding: clean(r.funding), technology: clean(r.technology), source_url: src && /^https?:\/\//.test(src) ? src : null }];
+    return [{ account_id: id, industry: clean(r.industry), size: clean(r.size), country: isoFromCountry(clean(r.country)), funding: clean(r.funding), technology: clean(r.technology), source_url: src && /^https?:\/\//.test(src) ? src : null }];
   });
 }
 

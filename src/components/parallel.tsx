@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Empty } from "@/components/page";
 import { SaveToDriveButton } from "@/components/drive";
 import { errorText } from "@/lib/errors";
+import { countryName } from "@/lib/assignment";
 import { ageText } from "@/lib/web-research";
 import { REPORT_FIELDS, enrichPatch, reportMarkdown, type EnrichRow, type ListEntity, type Report } from "@/lib/parallel";
 import { checkRunFn, enrichTableFn, startIcpListFn, startReportFn } from "@/lib/parallel.functions";
@@ -245,7 +246,7 @@ export function EnrichTableButton() {
                 <thead><tr className="border-b"><th className="py-1 pr-2">Cuenta</th><th className="pr-2">Sector</th><th className="pr-2">Tamaño</th><th className="pr-2">País</th><th className="pr-2">Financiación</th><th className="pr-2">Herramientas</th><th>Fuente</th></tr></thead>
                 <tbody>{rows.map((r) => (
                   <tr key={r.account_id} className="border-b align-top">
-                    <td className="py-1 pr-2 font-medium">{r.name}</td><td className="pr-2">{r.industry ?? "—"}</td><td className="pr-2">{r.size ?? "—"}</td><td className="pr-2">{r.country ?? "—"}</td><td className="pr-2">{r.funding ?? "—"}</td><td className="pr-2">{r.technology ?? "—"}</td>
+                    <td className="py-1 pr-2 font-medium">{r.name}</td><td className="pr-2">{r.industry ?? "—"}</td><td className="pr-2">{r.size ?? "—"}</td><td className="pr-2">{r.country ? countryName(r.country) : "—"}</td><td className="pr-2">{r.funding ?? "—"}</td><td className="pr-2">{r.technology ?? "—"}</td>
                     <td>{r.source_url ? <a className="underline" href={r.source_url} target="_blank" rel="noreferrer">ver</a> : "—"}</td>
                   </tr>
                 ))}</tbody>
