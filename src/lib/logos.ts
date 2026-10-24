@@ -9,6 +9,8 @@ import { companyDomain } from "@/lib/product-usage";
 export function logoUrl(raw: string | null | undefined, opts: { token: string | undefined; size?: number; dark?: boolean }): string | null {
   const domain = raw?.includes("@") ? companyDomain(raw) : cleanDomain(raw ?? "");
   if (!opts.token || !domain || !domain.includes(".")) return null;
-  const px = Math.min(256, Math.max(16, Math.round((opts.size ?? 20) * 2)));
-  return `https://img.logo.dev/${encodeURIComponent(domain)}?token=${encodeURIComponent(opts.token)}&size=${px}&format=png&greyscale=true&fallback=404${opts.dark ? "&theme=dark" : ""}`;
+  // Two fixed sizes scaled down by the browser: Logo.dev's small sizes (under ~48 px) sometimes come back as
+  // the light-on-dark variant whatever the theme, which is invisible on paper. The theme is always explicit.
+  const px = (opts.size ?? 20) <= 32 ? 64 : 128;
+  return `https://img.logo.dev/${encodeURIComponent(domain)}?token=${encodeURIComponent(opts.token)}&size=${px}&format=png&greyscale=true&fallback=404&theme=${opts.dark ? "dark" : "light"}`;
 }
