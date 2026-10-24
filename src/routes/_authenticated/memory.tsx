@@ -43,7 +43,7 @@ function MemoryPage() {
   const learned = rows.filter((r) => r.learned).length;
 
   return (
-    <Page eyebrow="Conocimiento" title={rows.length ? `${rows.length} cosas que Nokko recuerda` : "Memoria"}>
+    <Page eyebrow="Conocimiento" title={rows.length ? `${rows.length} ${rows.length === 1 ? "cosa" : "cosas"} que Nokko recuerda` : "Memoria"}>
       <p className="mb-6 max-w-2xl text-sm text-muted-foreground">Nokko aprende solo de tus chats con el agente, de las notas de cada reunión y de las sugerencias que apruebas o descartas, y lo usa antes de responder o proponer algo. {learned > 0 && `${learned} ${learned === 1 ? "lo aprendió" : "las aprendió"} solo. `}Si algo está mal, corrígelo; si sobra, olvídalo.</p>
       <Input className="mb-6 max-w-md" placeholder="Buscar en la memoria…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar en la memoria" />
       <Tabs defaultValue="company">
