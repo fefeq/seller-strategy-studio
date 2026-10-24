@@ -1,7 +1,8 @@
 // Inicio briefing (pure, tested): what Nokko did on its own since yesterday and what comes today.
 // «Necesita tu decisión» reuses the suggestions digest; this module only counts and words the other two blocks.
 
-export type BriefItem = { text: string; link: string | null };
+export type BriefLink = "/leads" | "/accounts" | "/integrations" | "/inbox" | "/memory" | "/deals" | "/approvals" | { account: string };
+export type BriefItem = { text: string; link: BriefLink | null };
 
 export type AutoWorkInput = {
   since: string; // ISO; rows older than this are ignored
@@ -54,7 +55,7 @@ export function todayItems(i: TodayInput): BriefItem[] {
   const mine = (owner: string | null) => i.leader || owner === i.userId || owner === null;
   const out: BriefItem[] = [];
   for (const m of i.meetings.filter((m) => m.scheduled_at?.slice(0, 10) === i.today).sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? "")))
-    out.push({ text: `${time(m.scheduled_at!)} · ${m.title}`, link: m.account_id ? `/accounts/${m.account_id}` : null });
+    out.push({ text: `${time(m.scheduled_at!)} · ${m.title}`, link: m.account_id ? { account: m.account_id } : null });
   const tasks = i.tasks.filter((t) => !t.done && t.due_date && t.due_date <= i.today && (t.owner_id === i.userId || (i.leader && !t.owner_id) || t.owner_id === null));
   const late = tasks.filter((t) => t.due_date! < i.today).length;
   if (tasks.length) out.push({ text: `${plural(tasks.length, "tarea", "tareas")} para hoy${late ? `, ${late} con retraso` : ""}: ${tasks.slice(0, 2).map((t) => t.title).join(" · ")}${tasks.length > 2 ? "…" : ""}`, link: null });

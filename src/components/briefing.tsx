@@ -53,8 +53,8 @@ export function Briefing() {
   }) : [];
   const top = digest(suggestions, 3);
   const others = [
-    ...(leader && data?.approvals ? [{ text: `${data.approvals} ${data.approvals === 1 ? "aprobación pendiente" : "aprobaciones pendientes"}`, link: "/approvals" }] : []),
-    ...(data?.pending ? [{ text: `${data.pending} ${data.pending === 1 ? "acción del agente por confirmar" : "acciones del agente por confirmar"}`, link: "/inbox" }] : []),
+    ...(leader && data?.approvals ? [{ text: `${data.approvals} ${data.approvals === 1 ? "aprobación pendiente" : "aprobaciones pendientes"}`, link: "/approvals" as const }] : []),
+    ...(data?.pending ? [{ text: `${data.pending} ${data.pending === 1 ? "acción del agente por confirmar" : "acciones del agente por confirmar"}`, link: "/inbox" as const }] : []),
   ];
 
   return (
@@ -90,6 +90,8 @@ function Block({ title, sub, empty, items }: { title: string; sub: string; empty
 }
 
 function ItemLine({ item }: { item: BriefItem }) {
-  if (!item.link) return <span className="block border-b pb-2 last:border-0">{item.text}</span>;
-  return <a href={item.link} className="block border-b pb-2 hover:text-signal">{item.text}</a>;
+  const cls = "block border-b pb-2 hover:text-signal";
+  if (!item.link) return <span className="block border-b pb-2">{item.text}</span>;
+  if (typeof item.link === "object") return <Link to="/accounts/$id" params={{ id: item.link.account }} className={cls}>{item.text}</Link>;
+  return <Link to={item.link} className={cls}>{item.text}</Link>;
 }
