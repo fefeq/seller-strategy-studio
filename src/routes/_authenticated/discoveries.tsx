@@ -4,11 +4,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { JobProgress, useJob } from "@/components/background";
 import { useMe } from "@/hooks/use-me";
 import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { decideDiscovery, runDiscoveryNow } from "@/lib/discoveries.functions";
+import { decideDiscovery } from "@/lib/discoveries.functions";
 import { DISMISS_REASONS, KIND_LABEL, type DiscoveryKind } from "@/lib/discoveries";
 import { errorText } from "@/lib/errors";
 
@@ -28,9 +29,8 @@ const fmt = (iso: string) => new Date(iso).toLocaleDateString("es-ES", { day: "n
 function DiscoveriesPage() {
   const { data: me } = useMe();
   const leader = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
-  const run = useServerFn(runDiscoveryNow);
   const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
+  const discover = useJob("discover", { onDone: () => qc.invalidateQueries({ queryKey: ["discoveries"] }) });
   const [history, setHistory] = useState(false);
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ["discoveries"],
@@ -39,24 +39,13 @@ function DiscoveriesPage() {
   const pending = rows.filter((r) => r.status === "pending");
   const decided = rows.filter((r) => r.status !== "pending");
 
-  async function searchNow() {
-    setBusy(true);
-    try {
-      const r = await run();
-      const total = r.added.company + r.added.contact + r.added.competitor;
-      if (total) toast.success(`Encontrado: ${r.added.company} empresas, ${r.added.contact} contactos y ${r.added.competitor} competidores.`);
-      else toast.info(r.notes[0] ? `Nada nuevo. ${r.notes[0]}` : "Nada nuevo esta vez: todo lo encontrado ya estaba en tus cuentas o descartado.");
-      qc.invalidateQueries({ queryKey: ["discoveries"] });
-    } catch (e) { toast.error(errorText(e)); }
-    finally { setBusy(false); }
-  }
 
   const title = pending.length ? `${pending.length} ${pending.length === 1 ? "novedad" : "novedades"} por decidir` : "Descubiertos";
   return (
     <Page eyebrow="Descubiertos" title={title}>
       <p className="-mt-4 mb-6 max-w-3xl text-muted-foreground">Cada semana Nokko busca empresas que encajan con tu ICP, personas clave en tus cuentas objetivo y competidores nuevos. Acepta lo que te sirva y descarta lo demás: lo descartado no vuelve y Nokko recuerda el motivo.</p>
       <div className="mb-6 flex flex-wrap items-center gap-3">
-        {leader && <Button onClick={searchNow} disabled={busy}>{busy ? "Buscando… (1–2 min)" : "Buscar ahora"}</Button>}
+        {leader && (discover.running ? <JobProgress job={discover.job} onCancel={discover.cancel} /> : <Button onClick={() => discover.start({})}>Buscar ahora</Button>)}
         <button type="button" className="text-sm text-signal" onClick={() => setHistory((h) => !h)}>{history ? "Ver pendientes" : `Ver lo decidido (${decided.length})`}</button>
       </div>
       {isLoading ? <p className="text-sm text-muted-foreground">Cargando…</p> : (

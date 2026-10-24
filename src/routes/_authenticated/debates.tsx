@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Loader2, MessagesSquare, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { DEBATE_LEVELS, canConvene, withRebuttal, type DebateLevel } from "@/lib/bmad/teams";
 import { PERSONAS, getPersona } from "@/lib/bmad/personas";
-import { runDebate } from "@/lib/bmad.functions";
+import { useJob } from "@/components/background";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/debates")({
+  // debate: link from the notice «Debate listo…» straight to it.
+  validateSearch: (s: Record<string, unknown>): { debate?: string } => (typeof s.debate === "string" ? { debate: s.debate } : {}),
   head: () => ({ meta: [
     { title: "Debates — Nokko" },
     { name: "description", content: "Mesas de debate entre agentes: C-Levels, Sales, Marketing, Partners o todos a la vez, con acuerdos y acciones." },
@@ -40,14 +41,22 @@ function DebatesPage() {
   const { data: me } = useMe();
   const roles = me?.roles ?? [];
   const qc = useQueryClient();
-  const run = useServerFn(runDebate);
+  const search = Route.useSearch();
   const [level, setLevel] = useState<DebateLevel>(canConvene("c_level", roles) ? "c_level" : "sales");
   const [participants, setParticipants] = useState<string[]>(DEBATE_LEVELS[level].participants);
   const [topic, setTopic] = useState("");
   const [subject, setSubject] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [creating, setCreating] = useState(true);
+  const [selected, setSelected] = useState<string | null>(search.debate ?? null);
+  const [creating, setCreating] = useState(!search.debate);
+  useEffect(() => { if (search.debate) { setSelected(search.debate); setCreating(false); } }, [search.debate]);
+  const debateJob = useJob("debate", {
+    onDone: async (j) => {
+      await qc.invalidateQueries({ queryKey: ["debates"] });
+      const id = (j.result as { debateId?: string } | null)?.debateId;
+      if (id) { setSelected(id); setCreating(false); revealOnMobile(mainRef.current); }
+    },
+  });
+  const busy = debateJob.running;
   const mainRef = useRef<HTMLElement>(null);
   useEffect(() => setParticipants(DEBATE_LEVELS[level].participants), [level]);
 
@@ -71,13 +80,8 @@ function DebatesPage() {
   async function start() {
     if (!topic.trim()) return toast.error("Escribe el tema del debate.");
     const [subjectType, subjectId] = subject ? subject.split(":") : [null, null];
-    setBusy(true);
-    try {
-      const r = await run({ data: { level, topic, subjectType, subjectId, participants } });
-      await qc.invalidateQueries({ queryKey: ["debates"] });
-      setSelected(r.id); setCreating(false); setTopic("");
-      revealOnMobile(mainRef.current);
-    } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+    void debateJob.start({ level, topic: topic.trim(), subjectType: (subjectType as "deal" | "account" | "artifact" | null) ?? null, subjectId: subjectId ?? null, participants }, `Debate: ${topic.trim().slice(0, 80)}`);
+    setTopic("");
   }
 
   async function toTask(a: Synth["actions"][number]) {
@@ -138,7 +142,8 @@ function DebatesPage() {
                   {subjects?.artifacts.length ? <optgroup label="Documentos">{subjects.artifacts.map((d) => <option key={d.id} value={`artifact:${d.id}`}>{d.title} v{d.version}</option>)}</optgroup> : null}
                 </select>
               </div>
-              <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={start} disabled={busy || participants.length < 2}>{busy ? <><Loader2 className="size-4 animate-spin" /> Debatiendo… (puede tardar un minuto)</> : <><MessagesSquare className="size-4" /> Empezar debate</>}</Button>
+              <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={start} disabled={busy || participants.length < 2}>{busy ? <><Loader2 className="size-4 animate-spin" /> Debatiendo en segundo plano · {debateJob.job?.step ?? "en cola"}</> : <><MessagesSquare className="size-4" /> Empezar debate</>}</Button>
+              {busy && <p className="text-xs text-muted-foreground">Puedes salir de aquí: te aviso cuando termine. <button type="button" className="underline" onClick={debateJob.cancel}>Cancelar</button></p>}
             </div>
           )}
           {!creating && !current && <Empty>Elige un debate del historial o crea uno nuevo.</Empty>}

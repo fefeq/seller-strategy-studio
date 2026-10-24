@@ -1,5 +1,6 @@
 // The company's own PostHog: connect it (Owner), choose which events mean sign-up, activation and payment,
 // and see product usage per account. Data reads run on the server (posthog.functions.ts).
+import { JobProgress, useJob } from "@/components/background";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -11,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
 import { ageText } from "@/lib/web-research";
 import { TREND_LABEL, usageTrend } from "@/lib/product-usage";
-import { configurePosthogFn, connectPosthogFn, disconnectPosthogFn, posthogEventsFn, syncPosthogFn } from "@/lib/posthog.functions";
+import { configurePosthogFn, connectPosthogFn, disconnectPosthogFn, posthogEventsFn } from "@/lib/posthog.functions";
 
 export function usePosthog() {
   return useQuery({
@@ -38,7 +39,7 @@ export function PosthogConnect() {
   const connect = useServerFn(connectPosthogFn);
   const listEvents = useServerFn(posthogEventsFn);
   const configure = useServerFn(configurePosthogFn);
-  const sync = useServerFn(syncPosthogFn);
+  const sync = useJob("posthog_sync", { onDone: () => qc.invalidateQueries() });
   const disconnect = useServerFn(disconnectPosthogFn);
   const [form, setForm] = useState({ region: "eu", host: "", projectId: "", key: "" });
   const [events, setEvents] = useState<string[] | null>(null);
@@ -72,7 +73,7 @@ export function PosthogConnect() {
           <p>Funnel: {c.signup_event ? <>alta = «{c.signup_event}»{c.activation_event ? <>, activación = «{c.activation_event}»</> : null}{c.paid_event ? <>, pago = «{c.paid_event}»</> : null}</> : "elige el evento de alta para llenar el funnel"} · empresa por {c.domain_property ? `la propiedad «${c.domain_property}»` : "el dominio del email"}.</p>
           {c.status === "error" && c.last_error && <p className="text-destructive">{c.last_error}</p>}
           <div className="flex flex-wrap gap-2 pt-2">
-            {canSync && <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => sync(), (r) => (r.ok ? toast.success(syncText(r)) : toast.error(r.error ?? "PostHog no ha respondido.")))}>Leer ahora</Button>}
+            {canSync && (sync.running ? <JobProgress job={sync.job} onCancel={sync.cancel} /> : <Button size="sm" variant="outline" disabled={busy} onClick={() => sync.start({})}>Leer ahora</Button>)}
             {isOwner && <Button size="sm" variant="outline" disabled={busy} onClick={() => run(() => listEvents(), openConfig)}>Elegir eventos</Button>}
             {isOwner && !confirmOff && <Button size="sm" variant="ghost" disabled={busy} onClick={() => setConfirmOff(true)}>Desconectar</Button>}
             {isOwner && confirmOff && <>

@@ -1,3 +1,4 @@
+import { JobProgress, useJob } from "@/components/background";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,11 +7,6 @@ import { useStages } from "@/components/stage-settings";
 import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
-import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
-import { runAutopilotNow } from "@/lib/autopilot.functions";
-import { errorText } from "@/lib/errors";
 
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
@@ -108,20 +104,8 @@ function ItemLine({ item }: { item: BriefItem }) {
 
 /** Owner / Sales Leader: run now what Nokko does every hour (research new accounts, prep meetings, review cooling accounts). */
 function RunNow() {
-  const run = useServerFn(runAutopilotNow);
   const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
-  async function go() {
-    setBusy(true);
-    try {
-      const r = await run();
-      const total = r.researched + r.prepped + r.cooling;
-      const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
-      toast.success(total ? `Hecho: ${n(r.researched, "cuenta investigada", "cuentas investigadas")}, ${n(r.prepped, "reunión preparada", "reuniones preparadas")}, ${n(r.cooling, "cuenta fría repasada", "cuentas frías repasadas")}.` : "Nada pendiente: no hay cuentas nuevas, reuniones sin preparar ni cuentas frías esta semana.");
-      qc.invalidateQueries({ queryKey: ["briefing"] });
-      qc.invalidateQueries({ queryKey: ["suggestions"] });
-    } catch (e) { toast.error(errorText(e)); }
-    finally { setBusy(false); }
-  }
-  return <button type="button" disabled={busy} onClick={go} className="mt-3 text-xs text-signal disabled:opacity-50">{busy ? "Trabajando… (hasta 2 min)" : "Hazlo ahora, sin esperar a la próxima hora"}</button>;
+  const { job, running, start, cancel } = useJob("autopilot_now", { onDone: () => { qc.invalidateQueries({ queryKey: ["briefing"] }); qc.invalidateQueries({ queryKey: ["suggestions"] }); } });
+  if (running) return <JobProgress job={job} onCancel={cancel} className="mt-3 text-xs" />;
+  return <button type="button" onClick={() => start({})} className="mt-3 text-xs text-signal">Hazlo ahora, sin esperar a la próxima hora</button>;
 }

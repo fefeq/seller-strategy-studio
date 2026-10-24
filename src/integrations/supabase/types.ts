@@ -517,6 +517,7 @@ export type Database = {
       }
       background_jobs: {
         Row: {
+          cancel_requested: boolean
           created_at: string
           error: string | null
           finished_at: string | null
@@ -526,6 +527,7 @@ export type Database = {
           label: string
           org_id: string
           result: Json | null
+          retry_of: string | null
           status: string
           step: string | null
           target_id: string | null
@@ -533,6 +535,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cancel_requested?: boolean
           created_at?: string
           error?: string | null
           finished_at?: string | null
@@ -542,6 +545,7 @@ export type Database = {
           label?: string
           org_id?: string
           result?: Json | null
+          retry_of?: string | null
           status?: string
           step?: string | null
           target_id?: string | null
@@ -549,6 +553,7 @@ export type Database = {
           user_id?: string
         }
         Update: {
+          cancel_requested?: boolean
           created_at?: string
           error?: string | null
           finished_at?: string | null
@@ -558,6 +563,7 @@ export type Database = {
           label?: string
           org_id?: string
           result?: Json | null
+          retry_of?: string | null
           status?: string
           step?: string | null
           target_id?: string | null
@@ -570,6 +576,13 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "background_jobs_retry_of_fkey"
+            columns: ["retry_of"]
+            isOneToOne: false
+            referencedRelation: "background_jobs"
             referencedColumns: ["id"]
           },
         ]
@@ -2710,6 +2723,33 @@ export type Database = {
           },
         ]
       }
+      notification_prefs: {
+        Row: {
+          quiet_from: number
+          quiet_to: number
+          telegram: string
+          timezone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          quiet_from?: number
+          quiet_to?: number
+          telegram?: string
+          timezone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          quiet_from?: number
+          quiet_to?: number
+          telegram?: string
+          timezone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -2720,6 +2760,7 @@ export type Database = {
           link: string | null
           org_id: string
           read_at: string | null
+          telegram_sent_at: string | null
           title: string
           user_id: string
         }
@@ -2732,6 +2773,7 @@ export type Database = {
           link?: string | null
           org_id?: string
           read_at?: string | null
+          telegram_sent_at?: string | null
           title: string
           user_id: string
         }
@@ -2744,6 +2786,7 @@ export type Database = {
           link?: string | null
           org_id?: string
           read_at?: string | null
+          telegram_sent_at?: string | null
           title?: string
           user_id?: string
         }

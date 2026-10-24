@@ -28,7 +28,12 @@ export const isHeartbeatFresh = (lastRunAt: string | null | undefined, now = new
 export const hourKey = (d: Date) => d.toISOString().slice(0, 13);
 
 /** Background job kinds and how they read in the app. */
-export const JOB_KINDS = ["battlecard", "stakeholder_research", "account_signals", "drive_import", "complete_account"] as const;
+export const JOB_KINDS = [
+  "battlecard", "stakeholder_research", "account_signals", "drive_import", "complete_account",
+  "key_people", "icp_companies", "qualify_leads",
+  "discover", "autopilot_now", "weekly_report", "posthog_sync", "playbook_library",
+  "debate", "draft_artifact", "deep_review", "account_research", "drive_summaries",
+] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 export const JOB_LABEL: Record<JobKind, string> = {
   battlecard: "Battlecard desde reseñas de G2",
@@ -36,4 +41,17 @@ export const JOB_LABEL: Record<JobKind, string> = {
   account_signals: "Novedades de la cuenta",
   drive_import: "Importación desde Google Drive",
   complete_account: "Completar datos de la cuenta",
+  key_people: "Buscar personas clave",
+  icp_companies: "Buscar empresas por ICP",
+  qualify_leads: "Calificar leads con IA",
+  discover: "Búsqueda de Descubiertos",
+  autopilot_now: "Piloto automático",
+  weekly_report: "Informe semanal",
+  posthog_sync: "Leer PostHog",
+  playbook_library: "Biblioteca de playbooks",
+  debate: "Debate multiagente",
+  draft_artifact: "Redactar documento",
+  deep_review: "Revisión a fondo",
+  account_research: "Investigar la cuenta en la web",
+  drive_summaries: "Resumir documentos de Drive",
 };

@@ -351,6 +351,13 @@
       "when": 1792858829611,
       "tag": "0049_notifications_center",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1792860261723,
+      "tag": "0050_background_jobs_all_actions",
+      "breakpoints": true
     }
   ]
 }

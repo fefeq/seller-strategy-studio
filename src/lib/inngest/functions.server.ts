@@ -25,7 +25,7 @@ function build() {
       const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
       const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
       const discoveries = await step.run("discoveries", async () => { const { discoverForOrg } = await import("@/lib/discoveries.server"); return discoverForOrg(await admin(), orgId); });
-      const autopilot = await step.run("autopilot", async () => { const { autopilotForOrg } = await import("@/lib/autopilot.server"); return autopilotForOrg(await admin(), orgId); });
+      const autopilot = await step.run("autopilot", async () => { const { autopilotForOrg } = await import("@/lib/autopilot.server"); const db = await admin(); const r = await autopilotForOrg(db, orgId); const { notifyAutopilot } = await import("@/lib/notices.server"); await notifyAutopilot(db, orgId, r); return r; });
       const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
       if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
       return { suggestions, stripe, posthog, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };
@@ -59,7 +59,8 @@ function build() {
 
   const backgroundJob = inngest.createFunction(
     { id: "background-job", triggers: [{ event: EV.jobRequested }], retries: 2, concurrency: { limit: 4 }, idempotency: "event.data.job_id" },
-    async ({ event, step }) => step.run("run", async () => { const { runBackgroundJob } = await import("@/lib/inngest/tasks.server"); return runBackgroundJob(await admin(), event.data.job_id as string); }),
+    // Only the last attempt (retries: 2 → attempts 0, 1, 2) writes «failed», so a retried job leaves a single notice.
+    async ({ event, step, attempt }) => step.run("run", async () => { const { runBackgroundJob } = await import("@/lib/inngest/tasks.server"); return runBackgroundJob(await admin(), event.data.job_id as string, { final: attempt >= 2 }); }),
   );
 
   // Parallel research runs take minutes: checked every 30 s until done, so results land with nobody watching.
