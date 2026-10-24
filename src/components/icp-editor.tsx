@@ -55,7 +55,7 @@ export function IcpEditor() {
 
   // Lists are edited as comma text and saved as arrays.
   const pick = (row: Draft): Draft => ({ ...row, ...Object.fromEntries(LIST_FIELDS.map((k) => [k, (row[k] ?? []).join(", ")])) });
-  const asIcp = (d: Draft) => ({ ...d, ...Object.fromEntries(LIST_FIELDS.map((k) => [k, splitList(d[k] ?? "")])), min_employees: Number(d.min_employees) || null, max_employees: Number(d.max_employees) || null });
+  const asIcp = (d: Draft): Draft => ({ ...d, ...Object.fromEntries(LIST_FIELDS.map((k) => [k, splitList(d[k] ?? "")])), min_employees: Number(d.min_employees) || null, max_employees: Number(d.max_employees) || null });
   const set = (k: string, v: unknown) => setSel((s) => (s ? { ...s, [k]: v } : s));
 
   async function add() {
