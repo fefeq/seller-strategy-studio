@@ -1,7 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
-import { aiProvider, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
+import { aiProvider, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, sanitizeSchema, withThoughtSignatures } from "@/lib/gemini";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
@@ -82,7 +82,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
     ? createOpenAI({
         baseURL: GEMINI_OPENAI_BASE,
         apiKey,
-        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init)) as typeof fetch,
+        fetch: (async (url: RequestInfo | URL, init?: RequestInit) => fixGeminiStream(await fetch(url, typeof init?.body === "string" ? { ...init, body: withThoughtSignatures(init.body) } : init))) as typeof fetch,
       })
     : createOpenAI({
         baseURL: "https://ai.gateway.lovable.dev/v1",
