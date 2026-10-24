@@ -74,6 +74,7 @@ export const TITLES: Record<string, string> = {
   get_stripe_metrics: "Ingresos en Stripe",
   get_weekly_report: "Informe semanal",
   list_accounts: "Listar cuentas",
+  list_pending_imports: "Ver importaciones pendientes",
   list_approvals: "Listar aprobaciones",
   list_deals: "Listar deals",
   list_leads: "Listar leads",

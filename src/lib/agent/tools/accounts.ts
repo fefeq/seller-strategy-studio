@@ -21,6 +21,24 @@ async function segmentNames(c: ToolCtx) {
 
 export const ACCOUNT_TOOLS: AgentTool[] = [
   def({
+    name: "list_pending_imports", kind: "read",
+    description: "Lista los lotes de leads o cuentas que han enviado herramientas externas (Sales Navigator, HubSpot, Make…) y esperan revisión en Leads → Entrada, con sus filas y qué pasaría con cada una. Solo lectura: aprobar o descartar lo hace una persona en esa pantalla.",
+    input: z.object({ limit: z.number().int().min(1).max(20).optional() }),
+    run: async (c, a) => {
+      const { data, error } = await c.db.from("import_batches").select("id,kind,status,row_count,created_at,lead_source_id").eq("org_id", c.orgId).in("status", ["pending", "partial"]).order("created_at", { ascending: false }).limit(a.limit ?? 10);
+      if (error) throw new Error(error.message);
+      const ids = (data ?? []).map((b) => b.id);
+      const { data: rows } = ids.length ? await c.db.from("import_rows").select("batch_id,line,summary,action,reason,status").eq("org_id", c.orgId).in("batch_id", ids).order("line").limit(300) : { data: [] };
+      return {
+        lotes: (data ?? []).map((b) => ({
+          id: b.id, tipo: b.kind === "accounts" ? "cuentas" : "leads", estado: b.status, filas: b.row_count, recibido: b.created_at,
+          muestra: (rows ?? []).filter((r) => r.batch_id === b.id).slice(0, 15).map((r) => ({ fila: r.line, registro: r.summary, entra: r.action !== "skip", motivo: r.reason, estado: r.status })),
+        })),
+        donde_aprobar: "/leads/entrada",
+      };
+    },
+  }),
+  def({
     name: "list_accounts", kind: "read",
     description: "Lista cuentas ordenadas por puntuación (encaje con el ICP 70 % + actividad 30 %, como la pantalla Cuentas). Filtros: texto, segmento, tier (A/B/C), solo mías o sin propietario, solo objetivo ABM y cuentas a las que les falta un dato (segmento, sector, tamaño o país).",
     input: z.object({
