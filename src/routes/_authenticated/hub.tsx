@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -74,17 +75,7 @@ function Hub() {
   const isOwner = canDelete(me?.roles ?? []);
   const canLibrary = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const missing = missingPlays(docs);
-  const createLibrary = useServerFn(createPlaybookLibrary);
-  const library = useMutation({
-    mutationFn: async () => createLibrary(),
-    onSuccess: (r) => {
-      qc.invalidateQueries({ queryKey: ["docs"] });
-      if (r.skipped) return toast.info("Ya tienes todas las jugadas de la biblioteca.");
-      const adapted = r.created.filter((c) => c.adapted).length;
-      toast.success(`${r.created.length} ${r.created.length === 1 ? "jugada añadida" : "jugadas añadidas"}${r.hasContext ? `, ${adapted} adaptadas a tu empresa` : ", en versión base: completa el posicionamiento y el ICP en Estrategia para adaptarlas"}.`);
-    },
-    onError: (e: Error) => toast.error(errorText(e)),
-  });
+  const library = useJob("playbook_library", { onDone: () => qc.invalidateQueries({ queryKey: ["docs"] }) });
 
   // «+ Nuevo» opens an unsaved draft; nothing reaches the database until the person saves a title and a body.
   const draft = (): Doc => ({ id: "", section, title: "", body: "", scope: section === "skills" ? "personal" : "team", mandatory: false, created_by: null, updated_at: "" });
@@ -114,7 +105,7 @@ function Hub() {
 
   return (
     <Page eyebrow="Una sola fuente de verdad" title="Conocimiento" actions={canLibrary && missing.length > 0 ? (
-      <Button variant="outline" disabled={library.isPending} onClick={() => library.mutate()}>{library.isPending ? "Adaptando la biblioteca…" : `Biblioteca de jugadas de Nokko (${missing.length})`}</Button>
+      <Button variant="outline" disabled={library.running} onClick={() => library.start({})}>{library.running ? `Adaptando en segundo plano · ${library.job?.step ?? "en cola"}` : `Biblioteca de jugadas de Nokko (${missing.length})`}</Button>
     ) : undefined}>
       <div className="grid gap-6 lg:grid-cols-[220px_280px_1fr]">
         {/* Phones: sections as a horizontal chip row; a column from lg. */}
