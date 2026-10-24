@@ -58,6 +58,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       try {
         await meetingBriefCore(db, m.id, { orgId, userId: meta.created_by ?? actor });
         await db.from("meetings").update({ auto_prepped_at: now.toISOString() }).eq("org_id", orgId).eq("id", m.id);
+        // The «sin preparación» reminder is answered: close it now instead of at the next sync.
+        await db.from("suggestions").update({ status: "resolved", updated_at: now.toISOString() }).eq("org_id", orgId).eq("dedupe_key", `meeting_no_prep:${m.id}`).in("status", ["pending", "snoozed"]);
         const when = new Date(meta.scheduled_at!).toLocaleString("es-ES", { weekday: "long", hour: "2-digit", minute: "2-digit", timeZone: "Europe/Madrid" });
         await db.from("suggestions").upsert({
           org_id: orgId, detector: "meeting_prepped", dedupe_key: `meeting_prepped:${m.id}`, priority: 2,
