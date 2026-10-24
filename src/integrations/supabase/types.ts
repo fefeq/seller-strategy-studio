@@ -1330,6 +1330,68 @@ export type Database = {
           },
         ]
       }
+      discoveries: {
+        Row: {
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          dedupe_key: string
+          detail: Json
+          dismiss_reason: string | null
+          id: string
+          kind: string
+          name: string
+          org_id: string
+          reason: string
+          result_id: string | null
+          source: string
+          status: string
+          week: string
+        }
+        Insert: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          dedupe_key: string
+          detail?: Json
+          dismiss_reason?: string | null
+          id?: string
+          kind: string
+          name: string
+          org_id?: string
+          reason?: string
+          result_id?: string | null
+          source?: string
+          status?: string
+          week?: string
+        }
+        Update: {
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          dedupe_key?: string
+          detail?: Json
+          dismiss_reason?: string | null
+          id?: string
+          kind?: string
+          name?: string
+          org_id?: string
+          reason?: string
+          result_id?: string | null
+          source?: string
+          status?: string
+          week?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discoveries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drive_doc_summaries: {
         Row: {
           account_id: string | null
