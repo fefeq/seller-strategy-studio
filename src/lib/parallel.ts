@@ -86,13 +86,9 @@ export const LIST_SCHEMA = {
 };
 
 /** The list brief from the ICP (industries, size, geography, anti-ICP) plus free criteria. */
-export function listInput(icp: { industries?: string | null; company_size?: string | null; geography?: string | null; anti_icp?: string | null; why_fit?: string | null } | null, criteria: string, count: number): string {
+export function listInput(icp: Icp | null, criteria: string, count: number): string {
   const lines = [`Encuentra ${clampCount(count)} empresas reales que encajen con este perfil de cliente ideal. Para cada una, su nombre y la URL de su web oficial (no LinkedIn ni directorios).`];
-  if (icp?.industries) lines.push(`Sectores: ${icp.industries}.`);
-  if (icp?.company_size) lines.push(`Tamaño: ${icp.company_size}.`);
-  if (icp?.geography) lines.push(`Geografía: ${icp.geography}.`);
-  if (icp?.why_fit) lines.push(`Por qué encajan: ${icp.why_fit}.`);
-  if (icp?.anti_icp) lines.push(`Excluye: ${icp.anti_icp}.`);
+  if (icp) { const b = icpBrief(icp); if (b) lines.push(b); }
   if (criteria.trim()) lines.push(`Criterios adicionales: ${criteria.trim()}`);
   lines.push("Solo empresas activas hoy. Sin duplicados.");
   return lines.join("\n");

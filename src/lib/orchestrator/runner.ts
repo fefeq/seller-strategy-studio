@@ -155,6 +155,16 @@ export async function findKeyPeople(c: ToolCtx, a: { accountId: string; titles?:
   const costOf = (s: Service) => plan.steps.find((x) => x.service === s)?.cost ?? 0;
   const order = (a.cursor ? [a.cursor.service] : plan.steps.map((s) => s.service)).filter((s): s is "apollo" | "clay" => s === "apollo" || s === "clay");
   if (!order.length) return { service: null, rows: [], cursor: null, sources: "", blocked: plan.blocked ?? "Ningún servicio conectado puede buscar personas ahora.", masked: false };
+  // Without explicit titles/levels, the ICP of the account's segment says who to look for.
+  if (!a.cursor && !a.titles?.length && !a.levels?.length) {
+    const { icpForSegment, icpPeopleQuery } = await import("@/lib/icp");
+    const [{ data: acc }, { data: icps }] = await Promise.all([
+      c.db.from("accounts").select("segment_id").eq("org_id", c.orgId).eq("id", a.accountId).maybeSingle(),
+      c.db.from("icp_profiles").select("segment_id,target_titles,seniorities").eq("org_id", c.orgId).order("created_at"),
+    ]);
+    const p = icpPeopleQuery(icpForSegment(icps ?? [], acc?.segment_id));
+    a = { ...a, titles: p.titles, levels: p.levels };
+  }
   const levels = a.levels ?? DEFAULT_LEVELS;
   let lastError: string | null = null;
   const used: Used[] = [];

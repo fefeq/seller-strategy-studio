@@ -35,16 +35,18 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
   // 1 · Companies that fit the ICPs (not already accounts). The search matches loosely by keywords, so the AI
   // judges each candidate against the ICP and only real fits (≥ 60) enter, with its reason.
   try {
-    const { data: icps } = await db.from("icp_profiles").select("id,name,industries,company_size,geography,anti_icp,why_fit").eq("org_id", orgId).limit(3);
+    const { data: icps } = await db.from("icp_profiles").select("*").eq("org_id", orgId).order("created_at").limit(3);
     const { data: pos0 } = await db.from("positioning").select("product_name,target_customer,best_customers").eq("org_id", orgId).limit(1).maybeSingle();
+    const { icpBrief, icpCompanyQuery } = await import("@/lib/icp");
     for (const icp of icps ?? []) {
       if (added.company >= MAX.company) break;
-      // ICPs are written in Spanish prose; company databases search English industry words.
       const { ask } = await import("@/lib/ai-gateway");
-      const plain = icpToQuery(icp);
-      const query = await ask(
+      // Structured ICPs go straight to the databases; prose-only ones are translated to English terms first.
+      const built = icpCompanyQuery(icp);
+      const plain = built.query.keywords?.length ? built.query : icpToQuery(icp);
+      const query = built.structured ? built.query : await ask(
         "Conviertes un perfil de cliente ideal (ICP) en términos de búsqueda para una base de datos de empresas en inglés (como LinkedIn): hasta 6 palabras clave cortas del tipo de empresa o sector en inglés, países como código ISO de 2 letras y el rango de empleados si se deduce.",
-        `ICP «${icp.name}»\nSector o tipo: ${icp.industries ?? ""}\nTamaño: ${icp.company_size ?? ""}\nGeografía: ${icp.geography ?? ""}\nPor qué encaja: ${icp.why_fit ?? ""}`,
+        icpBrief(icp),
         { effort: "low", schema: { name: "query", schema: QUERY_SCHEMA as never } },
       ).then((raw) => parseIcpQuery(raw, plain)).catch(() => plain);
       const r = await findIcpCompanies(ctx, { query }, trigger);
@@ -53,7 +55,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
       if (!cands.length) continue;
       const raw = await ask(
         "Eres analista de ventas B2B. Puntúa de 0 a 100 cuánto encaja cada empresa candidata con el ICP descrito (tipo de empresa, sector, tamaño, país y exclusiones). Sé estricto: una empresa grande de otro sector es 0–20 aunque comparta una palabra. La razón, en español, en una frase concreta que diga por qué encaja o no.",
-        `ICP «${icp.name}»\nSector o tipo: ${icp.industries ?? ""}\nTamaño: ${icp.company_size ?? ""}\nGeografía: ${icp.geography ?? ""}\nNo encaja (anti-ICP): ${icp.anti_icp ?? ""}\nPor qué encaja: ${icp.why_fit ?? ""}\nNuestro producto: ${pos0?.product_name ?? ""} para ${pos0?.target_customer ?? ""}\n\nCandidatas:\n${cands.map((c, i) => `${i}. ${c.name} — ${[c.industry, sizeLabel(c.size), c.country, c.domain].filter(Boolean).join(" · ")}${c.description ? ` — ${c.description.slice(0, 200)}` : ""}`).join("\n")}`,
+        `${icpBrief(icp)}\nNuestro producto: ${pos0?.product_name ?? ""} para ${pos0?.target_customer ?? ""}\n\nCandidatas:\n${cands.map((c, i) => `${i}. ${c.name} — ${[c.industry, sizeLabel(c.size), c.country, c.domain].filter(Boolean).join(" · ")}${c.description ? ` — ${c.description.slice(0, 200)}` : ""}`).join("\n")}`,
         { effort: "low", schema: { name: "fit", schema: FIT_SCHEMA as never } },
       );
       const fits = parseFitJudgments(raw, cands.length);
