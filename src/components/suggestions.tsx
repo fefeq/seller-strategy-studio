@@ -11,6 +11,7 @@ import { decideSuggestion, refreshSuggestions } from "@/lib/agent.functions";
 import { digest } from "@/lib/proactive";
 import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
+import { actionTool } from "@/lib/json";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 
@@ -87,7 +88,7 @@ export function SuggestionCard({ s }: { s: S }) {
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
-  const hasAction = !!(s.action)?.tool;
+  const hasAction = !!actionTool(s.action);
   const target = linkTarget(s.link);
   // «Resolver»: go to the exact record and open the agent beside it with the problem already set out.
   function resolve() {

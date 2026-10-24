@@ -116,7 +116,7 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
 }
 
 /** Writes the empty fields an automatic run found, stamped «Automático · fuente · fecha». Returns the field names written. */
-export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<string[]> {
+export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<EnrichField[]> {
   const fill = changes.filter((ch) => ch.empty && ch.proposed);
   if (!fill.length) return [];
   const { stampSources } = await import("@/lib/provenance");

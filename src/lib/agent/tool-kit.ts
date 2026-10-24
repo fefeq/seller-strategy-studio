@@ -25,6 +25,12 @@ export const DATE_ARG = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha en format
 export const HEALTH = z.enum(["green", "yellow", "red"]);
 
 export const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
+/** Like ok(), for a query that must return one row: a missing row is a clear error instead of a crash. */
+export const one = <T>(r: { data: T | null; error: { message: string } | null }, what = "el registro"): T => {
+  const d = ok(r);
+  if (d == null) throw new Error(`No encuentro ${what} en esta empresa.`);
+  return d;
+};
 export const like = (q: string) => `%${q.replace(/[%_,()]/g, " ").trim()}%`;
 export const isLeader = (roles: string[]) => roles.some((r) => r === "owner" || r === "sales_leader");
 /** Who may set prices, costs and discounts on deal lines (the deal_lines_scope trigger, which privileged clients skip). */

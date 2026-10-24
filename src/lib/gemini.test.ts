@@ -73,7 +73,7 @@ const Q = {
 
 describe("Jev replacement", () => {
   it("builds a schema with one entry per question", () => {
-    const s = jevAnswerSchema(Q);
+    const s = jevAnswerSchema(Q) as unknown as { properties: { answers: { required: string[]; properties: Record<string, { properties: Record<string, unknown> }> } } };
     expect(s.properties.answers.required).toEqual(["intent", "not_buyer", "segment"]);
     expect(s.properties.answers.properties.intent.properties.score).toMatchObject({ type: "integer", minimum: 0, maximum: 2 });
     expect(s.properties.answers.properties.segment.properties.choice.enum).toEqual(["segmento_1", "ninguno"]);

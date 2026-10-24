@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { engagementScore, registrationConflict, TOUCH_WEIGHTS } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
 import { askConfirm, askText } from "@/components/confirm-dialog";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/abm")({
   head: () => ({ meta: [{ title: "ABM y partners — Nokko" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — Nokko" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
@@ -145,7 +146,7 @@ function Partners() {
     await supabase.from("partners").insert({ name });
     qc.invalidateQueries({ queryKey: ["partners"] });
   }
-  async function upd(id: string, patch: Record<string, unknown>) {
+  async function upd(id: string, patch: TablesUpdate<"partners">) {
     await supabase.from("partners").update(patch).eq("id", id);
     qc.invalidateQueries({ queryKey: ["partners"] });
   }
@@ -198,7 +199,7 @@ function Registrations() {
     const { error } = await supabase.from("deal_registrations").insert({ partner_id: partner, account_name: account, notes, expires_at: expires });
     if (error) return toast.error(errorText(error));
     if (conflict) {
-      await supabase.from("approvals").insert({ kind: "other", title: `Conflicto de canal: ${account}`, evidence: `Ya registrado por ${(conflict).partners?.name ?? "otro partner"} (${REG_STATUS[conflict.status]}).` });
+      await supabase.from("approvals").insert({ kind: "other", title: `Conflicto de canal: ${account}`, evidence: `Ya registrado por ${conflict.partners?.name ?? "otro partner"} (${REG_STATUS[conflict.status]}).` });
       toast.warning("Registrado con conflicto: enviado a Aprobaciones.");
     } else toast.success("Registro enviado.");
     setAccount(""); setNotes(""); qc.invalidateQueries({ queryKey: ["regs"] });
@@ -214,7 +215,7 @@ function Registrations() {
         <Field label="Partner"><Pick value={partner} options={Object.fromEntries([["", "Elige…"], ...(data?.partners ?? []).map((p) => [p.id, p.name])])} onChange={setPartner} /></Field>
         <Field label="Cuenta"><EntityCombobox items={accounts} value={account} selectedId={accounts.find((a) => a.name === account)?.id ?? null} onChange={(t) => setAccount(t)} placeholder="Busca entre tus cuentas" noun="cuenta nueva" logos ariaLabel="Cuenta" /></Field>
         <Field label="Notas"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-        {conflict && <p className="rounded bg-signal/10 p-2 text-xs text-signal">Esta cuenta ya está registrada por {(conflict).partners?.name ?? "otro partner"}. Si continúas, se enviará a Aprobaciones.</p>}
+        {conflict && <p className="rounded bg-signal/10 p-2 text-xs text-signal">Esta cuenta ya está registrada por {conflict.partners?.name ?? "otro partner"}. Si continúas, se enviará a Aprobaciones.</p>}
         <Button disabled={!partner || !account} onClick={submit}>Registrar (válido 90 días)</Button>
       </div>
       <div className="space-y-2">

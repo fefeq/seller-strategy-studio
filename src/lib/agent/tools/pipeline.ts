@@ -106,7 +106,7 @@ export const PIPELINE_TOOLS: AgentTool[] = [
       const names = await accountNames(c, [d.account_id]);
       const t = dealTotals((lines.data ?? []) as DealLine[]);
       return {
-        id: d.id, nombre: d.name, cuenta: names.get(d.account_id) ?? null, cuenta_id: d.account_id, etapa: stageLabel(d.stage, stages), probabilidad: d.probability,
+        id: d.id, nombre: d.name, cuenta: (d.account_id && names.get(d.account_id)) ?? null, cuenta_id: d.account_id, etapa: stageLabel(d.stage, stages), probabilidad: d.probability,
         importe: d.amount, cierre: d.close_date, salud: d.health, forecast: d.forecast_category, propietario_id: d.owner_id, origen: d.source, meddpicc: d.meddpicc,
         lineas: lines.data, totales: (lines.data ?? []).length ? { importe: t.amount, pagos_unicos: t.oneOff, margen: t.margin, margen_pct: t.marginPct == null ? null : Math.round(t.marginPct) } : null,
         historial: (hist.data ?? []).map((h) => ({ de: h.from_stage ? stageLabel(h.from_stage, stages) : null, a: stageLabel(h.to_stage, stages), fecha: h.changed_at })),

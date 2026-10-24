@@ -10,6 +10,7 @@ import { errorText } from "@/lib/errors";
 import { AccountResearch } from "@/components/web-research";
 import { SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const PLAN_FIELDS = [
   ["objectives", "Objetivos de la cuenta", "Qué quiere conseguir el cliente este año"],
@@ -30,7 +31,7 @@ export function PlanTab({ accountId, accountName, hasDomain, plan, onSaved }: { 
   useEffect(() => { setForm(Object.fromEntries(PLAN_FIELDS.map(([k]) => [k, plan?.[k] ?? ""]))); }, [plan]);
   async function save(next = form) {
     const { error } = plan
-      ? await supabase.from("account_plans").update(next).eq("id", plan.id)
+      ? await supabase.from("account_plans").update(next as TablesUpdate<"account_plans">).eq("id", plan.id)
       : await supabase.from("account_plans").insert({ account_id: accountId, ...next });
     if (error) return toast.error(errorText(error));
     toast.success("Plan de cuenta guardado.");

@@ -20,11 +20,11 @@ export const MEETING_TOOLS: AgentTool[] = [
       if (a.account_id) q = q.eq("account_id", a.account_id);
       if (a.deal_id) q = q.eq("deal_id", a.deal_id);
       q = when === "upcoming" ? q.gte("scheduled_at", now.toISOString()).order("scheduled_at") : q.lt("scheduled_at", now.toISOString()).order("scheduled_at", { ascending: false });
-      const rows = ok(await q.limit(when === "no_notes" ? 200 : a.limit ?? 20));
+      const rows = ok(await q.limit(when === "no_notes" ? 200 : a.limit ?? 20)) ?? [];
       const list = (when === "no_notes" ? rows.filter((m) => needsCallNotes(m, now)) : rows).slice(0, a.limit ?? 20);
       const names = await accountNames(c, list.map((m) => m.account_id));
       return list.map((m) => ({
-        id: m.id, titulo: m.title, fecha: m.scheduled_at, cuenta: names.get(m.account_id) ?? null, cuenta_id: m.account_id, deal_id: m.deal_id, objetivo: m.objective,
+        id: m.id, titulo: m.title, fecha: m.scheduled_at, cuenta: (m.account_id && names.get(m.account_id)) ?? null, cuenta_id: m.account_id, deal_id: m.deal_id, objetivo: m.objective,
         tiene_preparacion: !!m.ai_brief, lineas_de_notas: filledCount(normalizeCallNotes(m.call_notes)), notas_libres: !!(m.notes ?? "").trim(),
       }));
     },
@@ -38,7 +38,7 @@ export const MEETING_TOOLS: AgentTool[] = [
       if (!m) return { error: "Reunión no encontrada en esta empresa" };
       const names = await accountNames(c, [m.account_id]);
       return {
-        id: m.id, titulo: m.title, fecha: m.scheduled_at, cuenta: names.get(m.account_id) ?? null, cuenta_id: m.account_id, deal_id: m.deal_id,
+        id: m.id, titulo: m.title, fecha: m.scheduled_at, cuenta: (m.account_id && names.get(m.account_id)) ?? null, cuenta_id: m.account_id, deal_id: m.deal_id,
         ...Object.fromEntries(FORM_FIELDS.map((f) => [f, m[f]])),
         notas_en_5_lineas: normalizeCallNotes(m.call_notes), notas_libres: m.notes, proximos_pasos: m.next_steps,
         preparacion: clip(m.ai_brief), revision_de_la_llamada: clip(m.call_review), coaching_de_escucha: clip(m.listening_coaching), nivel_de_escucha: m.listening_level,

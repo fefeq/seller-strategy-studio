@@ -12,6 +12,7 @@ import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { mergeServerEdits } from "@/lib/merge-edits";
 import { keepApprovals, positioningStatement, STATEMENT_SLOTS, type CopyStatus } from "@/lib/positioning";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const DUNFORD = [
   ["best_customers", "1. Tus mejores clientes", "¿Quién ama el producto y por qué?"],
@@ -39,10 +40,10 @@ export function Positioning() {
   const prevRow = useRef<Record<string, any> | null>(null);
   useEffect(() => {
     if (!row) return;
-    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, row) : (row)));
+    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, row) : row));
     prevRow.current = row;
   }, [row]);
-  const copyStatus = ((row)?.copy_status ?? {}) as CopyStatus;
+  const copyStatus = (row?.copy_status ?? {}) as CopyStatus;
   async function save() {
     const { id, created_at, updated_at, created_by, updated_by, copy_status: _cs, ...rest } = f;
     // A public piece whose text changed goes back to internal draft.
@@ -54,7 +55,7 @@ export function Positioning() {
   }
   async function setApproval(k: string, approve: boolean) {
     if (!row) return;
-    if (approve && (f[k] ?? "") !== ((row)[k] ?? "")) return toast.error("Guarda el texto antes de aprobarlo.");
+    if (approve && (f[k] ?? "") !== ((row as Record<string, unknown>)[k] ?? "")) return toast.error("Guarda el texto antes de aprobarlo.");
     const next: CopyStatus = { ...copyStatus };
     if (approve) next[k] = { status: "approved", by: me?.user.id ?? null, at: new Date().toISOString() };
     else delete next[k];
@@ -119,7 +120,7 @@ export function Pillars() {
     qc.invalidateQueries({ queryKey: ["pillars"] });
   }
   async function upd(id: string, patch: Record<string, string>) {
-    try { await confirmed(supabase.from("messaging_pillars").update(patch).eq("id", id).select("id")); }
+    try { await confirmed(supabase.from("messaging_pillars").update(patch as TablesUpdate<"messaging_pillars">).eq("id", id).select("id")); }
     catch (e) { toast.error(errorText(e)); }
     qc.invalidateQueries({ queryKey: ["pillars"] }); qc.invalidateQueries({ queryKey: ["setup"] });
   }

@@ -221,7 +221,7 @@ const CORE_TOOLS: AgentTool[] = [
     description: "Redacta con IA el seguimiento del día 3, 7 o 14 para un lead contactado sin respuesta, con el posicionamiento y los pilares de la empresa. Solo devuelve el borrador: no envía nada ni cambia el lead. Si no se indica el paso, usa el que toca.",
     input: z.object({ lead_id: z.string().uuid(), step: z.enum(["nudge", "value", "breakup"]).optional().describe("nudge = día 3, value = día 7, breakup = día 14"), tone: z.string().optional().describe("p. ej. más directo, más cercano, más corto") }),
     run: async (c, a) => {
-      const l = ok(await c.db.from("leads").select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source").eq("org_id", c.orgId).eq("id", a.lead_id).single());
+      const l = one(await c.db.from("leads").select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source").eq("org_id", c.orgId).eq("id", a.lead_id).single(), "el lead");
       const st = followupStatus(l, new Date());
       const step = a.step ? FOLLOWUP_STEPS.find((x) => x.id === a.step)! : st.due ?? st.next?.step ?? FOLLOWUP_STEPS[0];
       const setup = await loadSetupData(c.db, c.orgId);
@@ -374,7 +374,7 @@ const CORE_TOOLS: AgentTool[] = [
     input: z.object({ meeting_id: z.string().uuid() }),
     summarize: () => "Generar y guardar la preparación de llamada de la reunión",
     run: async (c, a) => {
-      const m = ok(await c.db.from("meetings").select("*").eq("org_id", c.orgId).eq("id", a.meeting_id).single());
+      const m = one(await c.db.from("meetings").select("*").eq("org_id", c.orgId).eq("id", a.meeting_id).single(), "la reunión");
       const acc = m.account_id ? await TOOLS.find((t) => t.name === "get_account")!.run(c, { account_id: m.account_id }) : {};
       const [pos, pillars] = await Promise.all([
         c.db.from("positioning").select("one_liner,key_benefit,differentiator,competitive_alternative").eq("org_id", c.orgId).maybeSingle(),
@@ -398,7 +398,7 @@ const CORE_TOOLS: AgentTool[] = [
     summarize: (a) => `Guardar las notas de la reunión (${filledCount(mergeCallNotes({}, a))} de 5 líneas)`,
     run: async (c, a) => {
       const { meeting_id, ...lines } = a;
-      const m = ok(await c.db.from("meetings").select("id,title,account_id,deal_id,scheduled_at,notes,next_steps,call_notes").eq("org_id", c.orgId).eq("id", meeting_id).single());
+      const m = one(await c.db.from("meetings").select("id,title,account_id,deal_id,scheduled_at,notes,next_steps,call_notes").eq("org_id", c.orgId).eq("id", meeting_id).single(), "la reunión");
       const call_notes = mergeCallNotes(m.call_notes, lines);
       const log = callLogEntry({ ...m, call_notes });
       ok(await c.db.from("meetings").update({ call_notes, ...(call_notes.siguiente ? { next_steps: call_notes.siguiente } : {}) }).eq("org_id", c.orgId).eq("id", meeting_id).select("id").single());

@@ -16,6 +16,7 @@ import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const MOTION_OPTS = Object.fromEntries(Object.entries(MOTIONS).map(([k, v]) => [k, v.label]));
 export const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
@@ -82,7 +83,7 @@ export function Motions() {
   // Cells whose last value was refused, so the person sees which one to fix.
   const [invalid, setInvalid] = useState<Record<string, string>>({});
   const [toDelete, setToDelete] = useState<{ id: string; name: string } | null>(null);
-  async function upd(id: string, patch: Record<string, unknown>) {
+  async function upd(id: string, patch: TablesUpdate<"segments">) {
     try {
       await confirmed(supabase.from("segments").update(patch).eq("id", id).select("id"));
       return true;
@@ -307,7 +308,7 @@ export function DeleteSegment({ target, onClose, onDeleted }: { target: { id: st
     queryKey: ["segment-impact", target?.id],
     enabled: !!target,
     queryFn: async () => {
-      const count = async (table: string) => (await supabase.from(table).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
+      const count = async (table: (typeof KEPT_WITHOUT_SEGMENT)[number][0] | (typeof DELETED_WITH_SEGMENT)[number][0]) => (await supabase.from(table).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
       const [kept, gone] = await Promise.all([
         Promise.all(KEPT_WITHOUT_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
         Promise.all(DELETED_WITH_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),

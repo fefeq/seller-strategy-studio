@@ -17,6 +17,7 @@ import { ApolloPhones } from "@/components/apollo";
 import { PersonQuickActions } from "@/components/quick-actions";
 import { fetchAll } from "@/lib/fetch-all";
 import { askConfirm } from "@/components/confirm-dialog";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -57,7 +58,7 @@ function People() {
     return true;
   });
 
-  async function update(id: string, patch: Record<string, string>) {
+  async function update(id: string, patch: TablesUpdate<"people">) {
     const { error } = await supabase.from("people").update(patch).eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["people"] });

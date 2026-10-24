@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
+import { actionTool } from "@/lib/json";
 
 const BATCH = 100;
 
@@ -104,7 +105,7 @@ async function notifyUrgent(db: Admin) {
     const { data: assigned } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("detector", "account_assigned").eq("user_id", l.user_id).is("notified_at", null).limit(3);
     for (const s of [...(urgent ?? []), ...(assigned ?? [])]) {
       try {
-        await sendText(l.chat_id!, `${s.title}\n${s.body}`, [[{ text: (s.action)?.tool ? "Aprobar y hacer" : "Hecho", data: `s:${s.id}:approve` }, { text: "En 3 días", data: `s:${s.id}:snooze` }, { text: "Descartar", data: `s:${s.id}:dismiss` }]]);
+        await sendText(l.chat_id!, `${s.title}\n${s.body}`, [[{ text: actionTool(s.action) ? "Aprobar y hacer" : "Hecho", data: `s:${s.id}:approve` }, { text: "En 3 días", data: `s:${s.id}:snooze` }, { text: "Descartar", data: `s:${s.id}:dismiss` }]]);
         await db.from("suggestions").update({ notified_at: new Date().toISOString() }).eq("id", s.id);
       } catch (e) { console.error("notify failed", e); }
     }

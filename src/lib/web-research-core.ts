@@ -139,7 +139,7 @@ export async function runSignalRefresh(db: Db, now: Date, maxPerRun = 12, perOrg
   const { data } = await db.from("accounts").select("id,org_id,domain,is_target,signals_checked_at").eq("is_target", true).not("domain", "is", null).limit(2000);
   const byOrg = new Map<string, typeof data>();
   for (const a of data ?? []) byOrg.set(a.org_id, [...(byOrg.get(a.org_id) ?? []), a]);
-  const queue = [...byOrg.values()].flatMap((list) => accountsToRefresh(list ?? [], now, perOrg).map((a) => ({ ...a, org_id: (a).org_id as string }))).slice(0, maxPerRun);
+  const queue = [...byOrg.entries()].flatMap(([orgId, list]) => accountsToRefresh(list ?? [], now, perOrg).map((a) => ({ ...a, org_id: orgId }))).slice(0, maxPerRun);
   let added = 0, failed = 0;
   for (const a of queue) {
     try { added += (await refreshSignalsCore(db, a.id, { orgId: a.org_id, userId: "" })).added.length; }

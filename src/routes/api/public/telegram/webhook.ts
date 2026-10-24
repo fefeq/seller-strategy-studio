@@ -56,7 +56,7 @@ async function handle(db: Admin, update: any, t: Tg) {
         const r = await decidePending(ctx, id, decision === "c" ? "confirm" : "cancel");
         return t.sendText(chatId, r.status === "confirmed" ? r.result || "Hecho." : r.status === "cancelled" ? "Cancelado." : `No se ha podido hacer. ${r.result || "Vuelve a intentarlo desde Sugerencias, en la app."}`);
       }
-      if (kind === "s") {
+      if (kind === "s" && (decision === "approve" || decision === "dismiss" || decision === "snooze")) {
         const r = await decideSuggestionCore(ctx, id, decision);
         return t.sendText(chatId, r.message);
       }

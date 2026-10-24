@@ -10,6 +10,7 @@ import { decideSuggestion } from "@/lib/agent.functions";
 import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue } from "@/lib/suggestion-board";
 import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
+import { actionTool } from "@/lib/json";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
@@ -82,7 +83,7 @@ export function SuggestionBoard() {
     return (
       <div className="flex gap-1">
         {s.link && (() => { const t = linkTarget(s.link)!; return <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={t.to} search={t.search}><span aria-hidden>→</span></Link></Button>; })()}
-        {open && <Button size="icon" variant="ghost" aria-label={(s.action)?.tool ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
+        {open && <Button size="icon" variant="ghost" aria-label={actionTool(s.action) ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Posponer 3 días" onClick={() => act(s.id, "snooze")}><span aria-hidden className="text-xs">+3 d</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Descartar" onClick={() => act(s.id, "dismiss")}><span aria-hidden>×</span></Button>}
       </div>
