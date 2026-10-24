@@ -74,6 +74,10 @@ export const PIPELINE_TOOLS: AgentTool[] = [
       const { data: segments } = await c.db.from("segments").select("id,name").eq("org_id", c.orgId);
       const { ingestLead } = await import("@/lib/leads-ingest");
       const r = await ingestLead(c.db, { orgId: c.orgId, segments: segments ?? [] }, norm.lead);
+      if (r.accountId) {
+        const { enrichAccounts } = await import("@/lib/enrichment.server");
+        await enrichAccounts(c.orgId, [r.accountId], { budgetMs: 10_000 });
+      }
       if (r.leadId && a.notes) {
         // An existing lead keeps its notes: the new one is added below them, never written over them.
         let notes = a.notes;

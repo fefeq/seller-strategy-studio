@@ -47,6 +47,63 @@ export type Database = {
         }
         Relationships: []
       }
+      account_enrichments: {
+        Row: {
+          account_id: string
+          cost_usd: number | null
+          created_at: string
+          error: string | null
+          fields: Json
+          finished_at: string | null
+          id: string
+          org_id: string
+          source: string | null
+          status: string
+          usage: Json
+        }
+        Insert: {
+          account_id: string
+          cost_usd?: number | null
+          created_at?: string
+          error?: string | null
+          fields?: Json
+          finished_at?: string | null
+          id?: string
+          org_id?: string
+          source?: string | null
+          status?: string
+          usage?: Json
+        }
+        Update: {
+          account_id?: string
+          cost_usd?: number | null
+          created_at?: string
+          error?: string | null
+          fields?: Json
+          finished_at?: string | null
+          id?: string
+          org_id?: string
+          source?: string | null
+          status?: string
+          usage?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_enrichments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_enrichments_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       account_plans: {
         Row: {
           account_id: string
@@ -173,6 +230,7 @@ export type Database = {
       accounts: {
         Row: {
           abm_tier: string | null
+          auto_filled: Json
           country: string | null
           created_at: string
           created_by: string | null
@@ -193,6 +251,7 @@ export type Database = {
         }
         Insert: {
           abm_tier?: string | null
+          auto_filled?: Json
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -213,6 +272,7 @@ export type Database = {
         }
         Update: {
           abm_tier?: string | null
+          auto_filled?: Json
           country?: string | null
           created_at?: string
           created_by?: string | null
@@ -3369,6 +3429,10 @@ export type Database = {
     Functions: {
       accept_invites: { Args: never; Returns: number }
       apply_account_assignment: { Args: { _rows: Json }; Returns: Json }
+      apply_account_enrichment: {
+        Args: { _account: string; _at: string; _org: string; _patch: Json; _source: string }
+        Returns: Json
+      }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string

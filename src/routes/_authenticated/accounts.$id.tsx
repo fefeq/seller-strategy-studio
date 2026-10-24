@@ -22,6 +22,7 @@ import { CALL_NOTE_FIELDS, callLogEntry, filledCount, normalizeCallNotes, type C
 import { useAgent } from "@/components/agent";
 import { AiText } from "@/components/ai-text";
 import { CountryPick } from "@/components/country-pick";
+import { autoFillText, readAutoFilled } from "@/lib/enrichment";
 import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
@@ -107,7 +108,7 @@ function AccountPage() {
 }
 
 /** Segment, sector and size: what the ICP fit is measured against. Saved on blur. */
-function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null; country?: string | null }; segNames: Map<string, string>; onSaved: () => void }) {
+function FitFields({ account, segNames, onSaved }: { account: { id: string; segment_id: string | null; industry: string | null; size: string | null; country?: string | null; auto_filled?: unknown }; segNames: Map<string, string>; onSaved: () => void }) {
   const [f, setF] = useState({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" });
   useEffect(() => setF({ segment_id: account.segment_id ?? "", industry: account.industry ?? "", size: account.size ?? "" }), [account.segment_id, account.industry, account.size]);
   // Country decides the region for the account assignment rules (Cuentas → Reparto).
@@ -124,13 +125,19 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; segm
     if (error) return toast.error(errorText(error));
     onSaved();
   }
+  // «Automático»: Nokko filled it from the company's site; it disappears when a person edits the value.
+  const auto = readAutoFilled(account.auto_filled);
+  const autoBadge = (field: "industry" | "size" | "country") => {
+    const text = autoFillText(auto[field]);
+    return text ? <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground" title={`Rellenado por Nokko: ${text}`}>Automático · {text}</span> : null;
+  };
   return (
     <div className="space-y-3 rounded-lg border bg-card p-4">
       <p className="eyebrow">Datos para el encaje</p>
       <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segNames) }} onChange={(v) => save({ segment_id: v })} /></Field>
-      <Field label="Sector"><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
-      <Field label="Tamaño"><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
-      <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
+      <Field label={<>Sector{autoBadge("industry")}</>}><Input value={f.industry} placeholder="Fintech, logística…" onChange={(e) => setF({ ...f, industry: e.target.value })} onBlur={() => save({})} /></Field>
+      <Field label={<>Tamaño{autoBadge("size")}</>}><Input value={f.size} placeholder="Empleados: 200" onChange={(e) => setF({ ...f, size: e.target.value })} onBlur={() => save({})} /></Field>
+      <Field label={<>País{autoBadge("country")}</>}><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
     </div>
   );
 }

@@ -57,6 +57,7 @@ export const Route = createFileRoute("/api/public/leads")({
         const { data: stageRows } = await db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", source.org_id);
         const ctx = { orgId: source.org_id, sourceId: source.id, segments: segments ?? [], stages: sortStages((stageRows ?? []) as import("@/lib/stages").Stage[]) };
         const results: { status: string; error?: string }[] = [];
+        const accountIds: string[] = [];
         for (const rec of records) {
           const n = normalizeLead(rec, { defaultStage: isIntakeStage(source.default_stage, ctx.stages) ? source.default_stage : "new" });
           if ("error" in n) {
@@ -66,6 +67,7 @@ export const Route = createFileRoute("/api/public/leads")({
           }
           try {
             const r = await ingestLead(db, ctx, n.lead);
+            if (r.accountId) accountIds.push(r.accountId);
             const warn = n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto";
             results.push({ status: r.status, ...(warn ? { error: warn } : {}) });
             await db.from("lead_events").insert({ org_id: source.org_id, lead_source_id: source.id, channel: "link", status: r.status, summary: r.summary, error: warn, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId });
@@ -77,6 +79,9 @@ export const Route = createFileRoute("/api/public/leads")({
           }
         }
         await db.from("lead_sources").update({ received_count: source.received_count + records.length, last_received_at: new Date().toISOString() }).eq("id", source.id);
+        // Fill sector, size and country from the company's own site. Best effort within a few seconds: whatever is left is finished by the cron, and a failure never affects the lead.
+        const { enrichAccounts } = await import("@/lib/enrichment.server");
+        await enrichAccounts(source.org_id, accountIds, { budgetMs: 8000 });
         const ok = results.filter((r) => r.status !== "error").length;
         return json({ ok: ok > 0, received: records.length, saved: ok, results }, ok > 0 ? 200 : 422);
       },

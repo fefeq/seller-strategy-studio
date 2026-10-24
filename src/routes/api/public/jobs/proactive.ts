@@ -40,7 +40,10 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           // Stripe: every connected company, at most every few hours.
           const { runStripeSyncs } = await import("@/lib/stripe/sync.server");
           const stripe = await runStripeSyncs(db, now).catch((e) => { console.error("stripe syncs failed", e); return null; });
-          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe });
+          // Lead enrichment attempts that did not finish in the request (or were interrupted).
+          const { processPendingEnrichments } = await import("@/lib/enrichment.server");
+          const enrichment = await processPendingEnrichments(db);
+          return Response.json({ orgs: orgs?.length ?? 0, detected: total, weekly, stripe, enrichment });
         } finally {
           await db.from("job_locks").update({ locked_until: null, last_run_at: new Date().toISOString() }).eq("name", lockName);
         }

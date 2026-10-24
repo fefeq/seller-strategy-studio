@@ -27,17 +27,22 @@ export const importLeads = createServerFn({ method: "POST" })
     const ctx = { orgId, segments: segments ?? [], stages: sortStages((stages ?? []) as Stage[]) };
     if (!isIntakeStage(data.defaultStage, ctx.stages)) data.defaultStage = "new";
     const out = { created: 0, updated: 0, errors: [] as { row: number; error: string }[] };
+    const accountIds: string[] = [];
     for (const [i, rec] of data.rows.entries()) {
       const n = normalizeLead(rec, { defaultStage: data.defaultStage as IntakeStage, source: "CSV" });
       if ("error" in n) { out.errors.push({ row: i, error: n.error }); continue; }
       try {
         const r = await ingestLead(supabase, ctx, n.lead);
+        if (r.accountId) accountIds.push(r.accountId);
         out[r.status] += 1;
         await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: r.status, summary: r.summary, account_id: r.accountId, deal_id: r.dealId, lead_id: r.leadId, error: n.lead.stageRecognized ? null : "Etapa no reconocida: se usó la etapa por defecto" });
       } catch (e) {
         out.errors.push({ row: i, error: errorText(e).slice(0, 200) });
       }
     }
+    // Enrichment of the accounts of this file: best effort; what does not fit in the time stays queued for the cron.
+    const { enrichAccounts } = await import("@/lib/enrichment.server");
+    await enrichAccounts(orgId, accountIds, { budgetMs: 15_000 });
     if (out.errors.length) await supabase.from("lead_events").insert({ org_id: orgId, channel: "csv", status: "error", summary: `${out.errors.length} filas sin importar`, error: out.errors.slice(0, 5).map((e) => `Fila ${e.row + 2}: ${e.error}`).join(" · ") });
     return out;
   });

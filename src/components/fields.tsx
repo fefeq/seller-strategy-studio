@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
 
-export function Field({ label, children }: { label: string; children: ReactNode }) {
+export function Field({ label, children }: { label: ReactNode; children: ReactNode }) {
   return <div className="space-y-1"><Label className="eyebrow">{label}</Label>{children}</div>;
 }
 

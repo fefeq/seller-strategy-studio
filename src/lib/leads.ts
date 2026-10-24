@@ -42,7 +42,7 @@ export type NormalizedLead = {
 
 export const STAGE_PROBABILITY: Record<DealStage, number> = { discovery: 10, qualified: 25, demo: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
 
-const FREEMAIL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com", "outlook.es", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "msn.com"]);
+export const FREEMAIL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com", "outlook.es", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "msn.com"]);
 
 /** "¿Nombre de tu Empresa?" → "nombre_de_tu_empresa" */
 export function normKey(k: string) {
