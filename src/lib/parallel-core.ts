@@ -34,7 +34,7 @@ export async function startAccountReport(db: Db, s: Scope, accountId: string) {
 export async function startIcpList(db: Db, s: Scope, opts: { icpId?: string | null; criteria: string; count: number }) {
   let icp = null;
   if (opts.icpId) {
-    const { data } = await db.from("icp_profiles").select("industries,company_size,geography,anti_icp,why_fit").eq("org_id", s.orgId).eq("id", opts.icpId).maybeSingle();
+    const { data } = await db.from("icp_profiles").select("*").eq("org_id", s.orgId).eq("id", opts.icpId).maybeSingle();
     if (!data) throw new Error("No encuentro ese ICP en esta empresa.");
     icp = data;
   }

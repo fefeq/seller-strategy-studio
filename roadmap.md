@@ -24,6 +24,7 @@
 - [x] Apollo.io: completar cuentas, buscar personas y empresas, revelar emails y móviles (estos tres requieren plan de pago de Apollo); también desde el agente y MCP
 - [x] Firecrawl: configuración desde la web, investigar cuentas, señales y noticias, research de stakeholders con fuentes; agente y MCP
 - [x] Perplexity (conexión de Lovable, solo búsqueda): segunda fuente para señales (noticias, nombramientos, casos de éxito), investigación de cuentas y research de stakeholders
+- [x] ICP estructurado para todos los flujos (búsquedas, personas clave, puntuación, cualificación, investigación) con «Afinar con IA» y vista de qué usa cada flujo
 - [ ] Perplexity: informe profundo de cuenta e informes financieros (SEC). Bloqueado: necesita conectar la clave propia de Perplexity (pplx-)
 
 ## Pendiente

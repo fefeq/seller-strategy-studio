@@ -40,7 +40,7 @@ export const PIPELINE_TOOLS: AgentTool[] = [
       if (!l) return { error: "Lead no encontrado en esta empresa" };
       const [s, icp, acc, seg, events] = await Promise.all([
         c.db.from("lead_settings").select("sla").eq("org_id", c.orgId).maybeSingle(),
-        c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp").eq("org_id", c.orgId),
+        c.db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords").eq("org_id", c.orgId),
         l.account_id ? c.db.from("accounts").select("id,segment_id,industry,size,tier,name").eq("org_id", c.orgId).eq("id", l.account_id) : Promise.resolve({ data: [] as any[] }),
         c.db.from("segments").select("id,name").eq("org_id", c.orgId),
         c.db.from("lead_events").select("received_at,channel,status,summary").eq("org_id", c.orgId).eq("lead_id", a.lead_id).order("received_at", { ascending: false }).limit(5),

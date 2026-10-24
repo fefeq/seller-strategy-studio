@@ -42,7 +42,7 @@ function Accounts() {
     queryKey: ["accounts-score-context"],
     queryFn: async () => {
       const [icp, seg] = await Promise.all([
-        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
+        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
         supabase.from("segments").select("id,name"),
       ]);
       return { icps: icp.data ?? [], segNames: new Map((seg.data ?? []).map((s) => [s.id, s.name])) };

@@ -31,7 +31,7 @@ export function useLeads(orgId: string | null | undefined) {
         supabase.from("lead_settings").select("sla,qualification").maybeSingle(),
         supabase.from("segments").select("id,name").order("acv_min"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
-        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp"),
+        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
         supabase.from("accounts").select("id,segment_id,industry,size,tier,name"),
       ]);
       if (l.error) throw new Error(l.error.message);

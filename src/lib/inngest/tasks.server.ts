@@ -146,7 +146,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
 
   if (acc) {
     const [{ data: icps }, { data: segs }] = await Promise.all([
-      db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp").eq("org_id", orgId),
+      db.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords").eq("org_id", orgId),
       db.from("segments").select("id,name").eq("org_id", orgId),
     ]);
     const { scoreAccount } = await import("@/lib/scoring");
