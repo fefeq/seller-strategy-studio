@@ -33,11 +33,26 @@ Diagnóstico:
 - Debajo quedan tres resúmenes compactos que se abren al pulsar: Hoy · Decisiones · Lo que hice solo.
 - **Orden de prioridad:** reuniones en las próximas 2 h, después aprobaciones, sugerencias urgentes, leads retrasados, deals en riesgo, el siguiente bloque de la estrategia y, por último, el resto.
 
-**P0-2 Sugerencias en modo triaje.**
-- Cada tarjeta muestra el título, una línea de motivo y «Ver detalle» para leer el texto completo.
-- Lleva 1 botón principal («Aprobar y hacer» o «Resolver») y un menú «···» con Hecho, En 3 días y Descartar.
-- Atajos de teclado: J/K para moverse, Enter para hacer, E para marcar hecho, S para posponer, D para descartar. Los atajos aparecen en un pie discreto.
-- Al hacer o descartar, la tarjeta sale con una animación y aparece un aviso con «Deshacer». Así se sustituye la confirmación por un deshacer.
+**P0-2 Sugerencias tipo Tinder (modo «Decidir»).**
+- Las sugerencias se muestran como un mazo de tarjetas apiladas, una cada vez, con el contador «3 de 12» y una barra de progreso.
+- **Gestos, con el dedo o arrastrando con el ratón:**
+  - Derecha: hacer o aprobar. La tarjeta se tiñe de lima con la palabra «Hacer».
+  - Izquierda: descartar. Se tiñe de rojo suave con «Descartar».
+  - Arriba: posponer 3 días, con «Más tarde».
+  - Tocar la tarjeta: se gira y muestra el detalle completo.
+- La tarjeta sigue al dedo, se inclina y, al soltar, sale volando o vuelve con un rebote si el gesto no fue suficiente. La de debajo sube a primer plano.
+- Debajo hay tres botones grandes (✕ · Más tarde · ✓) para quien no quiera arrastrar. En el teclado funcionan las flechas ← ↑ →, y Z deshace.
+- **Deshacer siempre:** después de cada gesto aparece «Deshacer» durante 6 s y la tarjeta vuelve al mazo.
+- **Seguridad:** las acciones que gastan créditos o escriben datos piden confirmar el coste en la propia tarjeta antes de salir. Descartar en grupo sigue reservado al Owner.
+- **Final del mazo:** aparece «Todo decidido», con cuántas has hecho, pospuesto y descartado, y un enlace a la vista de lista.
+- La vista de lista actual sigue disponible con un cambio «Mazo / Lista». En ella, cada fila tiene un botón principal y un menú «···». En el móvil se pueden deslizar las filas para hacer o descartar, como en el correo.
+- El mismo mazo se usa para «Tu siguiente paso» en Inicio, para Descubiertos (aceptar o descartar empresas y contactos) y para revisar los leads importados en cuarentena.
+
+**P0-2b Acciones cotidianas en el resto de la app.**
+- Arrastrar y soltar para cambiar de etapa, en Leads (ya existe) y en Pipeline, con la columna de destino resaltada y la tarjeta animada al llegar.
+- Deslizar filas en el móvil para las acciones rápidas, en Leads, Cuentas y Personas.
+- Tirar hacia abajo para actualizar en el móvil.
+- Arrastrar un archivo CSV sobre Cuentas o Leads para importarlo.
 
 **P0-3 Un solo botón principal por pantalla.**
 - Revisión de todas las pantallas: la acción principal en lima y el resto como botones secundarios o dentro de «Más».
@@ -88,7 +103,9 @@ Diagnóstico:
 ## Detalles técnicos
 - `src/lib/next-step.ts` (pura, con test): reúne reuniones, aprobaciones, sugerencias, leads retrasados, deals en riesgo y la configuración en una lista ordenada. Reutiliza `todayItems`/`digest`.
 - `src/components/home/focus-card.tsx` y `src/components/briefing.tsx`, con resúmenes plegables.
-- `SuggestionCard`: añadir `variant="triage"`, el menú «···», el hook de teclado `useTriageKeys` y el aviso de deshacer con sonner (posponer o descartar se revierte cambiando el estado).
+- Mazo: componente genérico `SwipeDeck<T>` (`src/components/swipe-deck.tsx`) con la librería `motion` (drag, umbral por distancia y velocidad, spring, AnimatePresence). Se reutiliza en Sugerencias, Inicio, Descubiertos y cuarentena. Las reglas de umbral y dirección van en `src/lib/swipe.ts` (pura, con test).
+- `SuggestionCard`: variantes `deck` y `row`, menú «···», hook de teclado `useTriageKeys` y aviso de deshacer con sonner (posponer o descartar se revierte cambiando el estado; «hacer» solo se deshace si la acción es reversible, y si no se confirma antes).
+- Deslizar filas en el móvil: componente `SwipeRow`. Arrastrar y soltar en Pipeline con el mismo patrón que ya usa Leads.
 - Animaciones: utilidades CSS en `src/styles.css` (keyframes de entrada y salida, `@media (prefers-reduced-motion)`), sin librería nueva. Si hace falta animar la salida de listas, valorar `motion`.
 - Métricas y Estrategia: añadir `?seccion=` con `validateSearch` y renderizar un panel por vez a partir de los módulos que ya existen en `src/components/<screen>/`.
 - Vistas guardadas: nueva tabla `saved_views` (org_id por defecto `current_org()`, user_id, screen, name, filters jsonb, shared bool) con RLS: propias o compartidas de la empresa; solo el autor o el Owner editan y borran. GRANT a `authenticated`.
