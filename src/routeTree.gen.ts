@@ -29,6 +29,7 @@ import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
 import { Route as AuthenticatedMemoryRouteImport } from './routes/_authenticated/memory'
 import { Route as AuthenticatedMetricsRouteImport } from './routes/_authenticated/metrics'
+import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authenticated/onboarding'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
@@ -150,6 +151,11 @@ const AuthenticatedMetricsRoute = AuthenticatedMetricsRouteImport.update({
   path: '/metrics',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedOnboardingRoute = AuthenticatedOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPeopleRoute = AuthenticatedPeopleRouteImport.update({
   id: '/people',
   path: '/people',
@@ -266,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/memory': typeof AuthenticatedMemoryRoute
   '/metrics': typeof AuthenticatedMetricsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/products': typeof AuthenticatedProductsRoute
   '/setup': typeof AuthenticatedSetupRoute
@@ -305,6 +312,7 @@ export interface FileRoutesByTo {
   '/integrations': typeof AuthenticatedIntegrationsRoute
   '/memory': typeof AuthenticatedMemoryRoute
   '/metrics': typeof AuthenticatedMetricsRoute
+  '/onboarding': typeof AuthenticatedOnboardingRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/products': typeof AuthenticatedProductsRoute
   '/setup': typeof AuthenticatedSetupRoute
@@ -346,6 +354,7 @@ export interface FileRoutesById {
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
   '/_authenticated/memory': typeof AuthenticatedMemoryRoute
   '/_authenticated/metrics': typeof AuthenticatedMetricsRoute
+  '/_authenticated/onboarding': typeof AuthenticatedOnboardingRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
@@ -387,6 +396,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/memory'
     | '/metrics'
+    | '/onboarding'
     | '/people'
     | '/products'
     | '/setup'
@@ -426,6 +436,7 @@ export interface FileRouteTypes {
     | '/integrations'
     | '/memory'
     | '/metrics'
+    | '/onboarding'
     | '/people'
     | '/products'
     | '/setup'
@@ -466,6 +477,7 @@ export interface FileRouteTypes {
     | '/_authenticated/integrations'
     | '/_authenticated/memory'
     | '/_authenticated/metrics'
+    | '/_authenticated/onboarding'
     | '/_authenticated/people'
     | '/_authenticated/products'
     | '/_authenticated/setup'
@@ -644,6 +656,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMetricsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding': {
+      id: '/_authenticated/onboarding'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof AuthenticatedOnboardingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/people': {
       id: '/_authenticated/people'
       path: '/people'
@@ -788,6 +807,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
   AuthenticatedMemoryRoute: typeof AuthenticatedMemoryRoute
   AuthenticatedMetricsRoute: typeof AuthenticatedMetricsRoute
+  AuthenticatedOnboardingRoute: typeof AuthenticatedOnboardingRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
@@ -816,6 +836,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
   AuthenticatedMemoryRoute: AuthenticatedMemoryRoute,
   AuthenticatedMetricsRoute: AuthenticatedMetricsRoute,
+  AuthenticatedOnboardingRoute: AuthenticatedOnboardingRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
