@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { RevopsCohorts, RevopsFunnel, RevopsLost, RevopsTrends } from "@/components/metrics/revops-panels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { guideKey } from "@/lib/guide";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
@@ -52,6 +53,8 @@ function Metrics() {
   const qc = useQueryClient();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
+  // Marks the «Mira tus Métricas» step of the Inicio guide as done for this company.
+  useEffect(() => { if (orgId) localStorage.setItem(guideKey(orgId, "metrics"), "1"); }, [orgId]);
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [quarter, setQuarter] = useState(quarterOf(new Date()));
   const sec: Section = Route.useSearch().seccion ?? "resumen";

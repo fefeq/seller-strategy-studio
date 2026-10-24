@@ -42,7 +42,8 @@
 - [ ] P0-2b Arrastrar en Pipeline, deslizar filas móvil, CSV arrastrable
 - [ ] P0-3 Un botón principal por pantalla
 - [ ] P1 Texto bajo demanda, Métricas/Estrategia en secciones, acciones en grupo + vistas guardadas, panel lateral
-- [ ] P2 Transiciones, foco guiado, primeros pasos
+- [x] Guía «Primeros pasos» en Inicio (empresa, onboarding, búsqueda, Métricas)
+- [ ] P2 Transiciones, foco guiado
 
 ## Integrar RevOps + Finance + Postin CRM (plan aprobado 2026-10-24)
 - [x] Fase 1 RevOps en Métricas (embudo conciliado, perdidos, cohortes, tendencias) + Métricas por secciones

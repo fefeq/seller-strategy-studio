@@ -8,6 +8,7 @@ import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
+import { GuideCard } from "@/components/home/guide-card";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSuggestions } from "@/components/suggestions";
 import { SuggestionDeck } from "@/components/suggestion-deck";
@@ -61,6 +62,7 @@ function HomePage() {
   return (
     <Page eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label} title={data ? headline : `Hola, ${firstName}`}>
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
+      <GuideCard />
       <section className="mb-8">
         <p className="eyebrow mb-3">Tu siguiente paso</p>
         <SuggestionDeck items={nextSteps} keyboard={false} />
