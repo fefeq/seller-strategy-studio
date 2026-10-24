@@ -407,6 +407,13 @@
       "when": 1792876584274,
       "tag": "0057_finance_and_crm",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1792877078462,
+      "tag": "0058_deal_coach_job_kind",
+      "breakpoints": true
     }
   ]
 }
