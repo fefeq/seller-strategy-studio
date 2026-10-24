@@ -55,8 +55,8 @@ export function FinanceSummary({ d }: { d: FinanceData }) {
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Kpi label="Caja hoy" value={money(v.cashNow)} hint={d.settings?.cash_as_of ? `Desde ${d.settings.cash_as_of} con lo previsto` : "Indica tu caja en Previsión"} />
-        <Kpi label="Gasto neto del mes" value={money(Math.max(0, v.burn))} hint={v.burn <= 0 ? `Generas ${money(-v.burn)}` : `Costes ${money(v.now?.costs ?? 0)} · ingresos ${money(v.now?.revenue ?? 0)}`} tone={v.burn <= 0 ? "good" : undefined} />
-        <Kpi label="Meses de caja" value={v.runway == null ? "—" : String(v.runway)} hint={v.runway == null ? "No consumes caja" : v.runway < 6 ? "Menos de 6 meses: actúa ya" : "Al ritmo actual"} tone={v.runway != null && v.runway < 6 ? "bad" : undefined} />
+        <Kpi label="Gasto neto del mes" value={money(Math.max(0, v.burn))} hint={!v.configured ? "Añade tus costes" : v.burn < 0 ? `Generas ${money(-v.burn)}` : `Costes ${money(v.now?.costs ?? 0)} · ingresos ${money(v.now?.revenue ?? 0)}`} tone={v.configured && v.burn < 0 ? "good" : undefined} />
+        <Kpi label="Meses de caja" value={v.runway == null ? "—" : String(v.runway)} hint={!v.configured ? "Con caja y costes" : v.runway == null ? "No consumes caja" : v.runway < 6 ? "Menos de 6 meses: actúa ya" : "Al ritmo actual"} tone={v.runway != null && v.runway < 6 ? "bad" : undefined} />
         <Kpi label="Cobros pendientes" value={money(v.aging.open)} hint={v.aging.overdue ? `${money(v.aging.overdue)} vencidos` : "Nada vencido"} tone={v.aging.overdue ? "bad" : undefined} />
       </div>
       <Card title="Caja prevista" sub={`Banda: escenario prudente a optimista (altas, bajas y pipeline ±${Number(d.settings?.scenario_spread_pct ?? 25)} %).${v.f.undated ? ` ${v.f.undated} deals sin fecha de cierre no cuentan.` : ""}`}>
