@@ -32,7 +32,7 @@ export function autoWork(i: AutoWorkInput, money: (n: number) => string): BriefI
   if (completed) out.push({ text: `Completé los datos de ${plural(completed, "cuenta", "cuentas")}${spent > 0 ? ` (gasto automático: ${money(spent)})` : ""}.`, link: "/accounts" });
   else if (spent > 0) out.push({ text: `Gasto automático en servicios: ${money(spent)}.`, link: "/integrations" });
   if (signals) out.push({ text: `Encontré ${plural(signals, "novedad", "novedades")} en tus cuentas.`, link: "/accounts" });
-  if (detected) out.push({ text: `Detecté ${plural(detected, "asunto nuevo", "asuntos nuevos")} que merecen tu atención.`, link: "/inbox" });
+  if (detected) out.push({ text: `Detecté ${plural(detected, "asunto nuevo que merece", "asuntos nuevos que merecen")} tu atención.`, link: "/inbox" });
   if (learned) out.push({ text: `Aprendí ${plural(learned, "cosa nueva", "cosas nuevas")} sobre el negocio y el equipo.`, link: "/memory" });
   if (jobs) out.push({ text: `Terminé ${plural(jobs, "tarea larga", "tareas largas")} en segundo plano.`, link: null });
   return out;
