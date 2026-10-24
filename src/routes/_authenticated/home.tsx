@@ -7,6 +7,7 @@ import { Briefing } from "@/components/briefing";
 import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
+import { FinanceHomeCard } from "@/components/finance/home-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSuggestions } from "@/components/suggestions";
@@ -73,6 +74,7 @@ function HomePage() {
         <Stat label="Deals en riesgo" value={String(risk.length)} tone={risk.length ? "signal" : undefined} />
         <Stat label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
       </div>
+      <div className="mt-8"><FinanceHomeCard /></div>
       <div className="mt-8"><PaybackCard /></div>
       <div className="mt-8"><NextSteps /></div>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
