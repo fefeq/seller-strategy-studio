@@ -103,7 +103,7 @@ function Item({ d }: { d: D }) {
     finally { setBusy(false); setDismissing(false); }
   }
 
-  const facts = d.kind === "company" ? [det["domain"], det["industry"], det["size"] ? `${det["size"]} empleados` : null, det["country"]]
+  const facts = d.kind === "company" ? [det["domain"], det["industry"], det["size"], det["country"]]
     : d.kind === "contact" ? [det["title"], det["account_name"]] : [det["url"]];
   return (
     <li className="grid gap-3 border-t py-4 md:grid-cols-[1fr_auto]">
