@@ -189,3 +189,11 @@ export function withThoughtSignatures(bodyText: string): string {
   }
   return JSON.stringify(b);
 }
+
+/** Same request without generationConfig.thinkingConfig, for models that do not accept `thinkingLevel` (e.g. 2.5 family). */
+export function withoutThinking<T>(body: T): T {
+  const b = body as { generationConfig?: Record<string, unknown> };
+  if (!b?.generationConfig || !("thinkingConfig" in b.generationConfig)) return body;
+  const { thinkingConfig: _t, ...rest } = b.generationConfig;
+  return { ...b, generationConfig: rest } as T;
+}
