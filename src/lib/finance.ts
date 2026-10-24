@@ -99,7 +99,9 @@ export function pipelineMrr(deals: OpenDeal[], start: MonthId, horizon: number, 
   for (const d of deals) {
     if (d.stage === "won" || d.stage === "lost") continue;
     if (!d.close_date || !d.amount) { if (d.amount) undated++; continue; }
-    const from = Math.max(0, months.indexOf(monthOf(d.close_date)) === -1 ? (monthOf(d.close_date) < start ? 0 : horizon) : months.indexOf(monthOf(d.close_date)));
+    const cm = monthOf(d.close_date);
+    const from = cm < start ? 0 : months.indexOf(cm);
+    if (from === -1) continue; // closes after the horizon
     const v = (Number(d.amount) / 12) * ((d.probability ?? 0) / 100) * factor;
     for (let i = from; i < horizon; i++) mrr[i] += v;
   }
