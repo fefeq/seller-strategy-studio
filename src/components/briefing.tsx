@@ -11,7 +11,7 @@ import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/brief
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Inicio briefing: what Nokko did on its own since yesterday · what needs your decision · what comes today. */
-export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
+export function Briefing() {
   const { data: me } = useMe();
   const { currency } = useCurrency();
   // Automatic spend is often cents: show them instead of rounding to 0.
@@ -54,8 +54,6 @@ export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
     today, userId: me.user.id, leader, meetings: data.meetings, tasks: data.tasks, leads: data.followups,
     deals: data.deals.map((d) => ({ ...d, closed: closedKeys.has(d.stage) || d.stage === "won" || d.stage === "lost" })),
   }) : [];
-  // The strategy card already shows what is missing; don't repeat it here.
-  const shown = hideSetup ? suggestions.filter((x) => !x.dedupe_key?.startsWith("setup_incomplete:")) : suggestions;
   const others = [
     ...(leader && data?.approvals ? [{ text: `${data.approvals} ${data.approvals === 1 ? "aprobación pendiente" : "aprobaciones pendientes"}`, link: "/approvals" as const }] : []),
     ...(data?.pending ? [{ text: `${data.pending} ${data.pending === 1 ? "acción del agente por confirmar" : "acciones del agente por confirmar"}`, link: "/inbox" as const }] : []),

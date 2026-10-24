@@ -9,6 +9,8 @@ import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { useSuggestions } from "@/components/suggestions";
+import { SuggestionDeck } from "@/components/suggestion-deck";
 import { showRoadmapCard } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
@@ -31,6 +33,10 @@ function HomePage() {
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
   const { data: onboarding } = useOnboarding();
+  const { data: suggestions = [] } = useSuggestions();
+  // The strategy card already shows what is missing; don't repeat it in the deck.
+  const hideSetup = leader && !!setup && showRoadmapCard(onboarding, setup.status.pct);
+  const nextSteps = (hideSetup ? suggestions.filter((x) => !x.dedupe_key?.startsWith("setup_incomplete:")) : suggestions).slice(0, 5);
   const { open: openAgent } = useAgent();
   const { data } = useQuery(homeQuery);
   const role = (me?.roles[0] ?? "ae") as Role;
@@ -55,7 +61,11 @@ function HomePage() {
   return (
     <Page eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label} title={data ? headline : `Hola, ${firstName}`}>
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
-      <Briefing hideSetup={leader && !!setup && showRoadmapCard(onboarding, setup.status.pct)} />
+      <section className="mb-8">
+        <p className="eyebrow mb-3">Tu siguiente paso</p>
+        <SuggestionDeck items={nextSteps} />
+      </section>
+      <Briefing />
       {leader && <RoadmapCard />}
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
