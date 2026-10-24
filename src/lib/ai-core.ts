@@ -27,7 +27,7 @@ export async function accountContext(db: Db, accountId: string, scope: AiScope =
     docs.order("section").limit(30),
     inOrg(db.from("positioning").select("target_customer,need,product_name,category,key_benefit,competitive_alternative,differentiator,tagline,one_liner,short_pitch,elevator_pitch,alternatives,differentiation,value,trend"), scope).limit(1).maybeSingle(),
     inOrg(db.from("messaging_pillars").select("title,pain,message,proof"), scope).order("position"),
-    inOrg(db.from("icp_profiles").select("name,industries,company_size,tech_stack,growth_stage,hiring_signals,funding_signals,why_fit,anti_icp"), scope).limit(5),
+    inOrg(db.from("icp_profiles").select("name,industries,company_size,min_employees,max_employees,geography,countries,tech_stack,growth_stage,hiring_signals,funding_signals,pains,target_titles,seniorities,why_fit,anti_icp"), scope).limit(5),
   ]);
   // Playbooks (discovery, objections, demo, negotiation) are what the call prep must follow; cap each so the prompt stays bounded.
   const conocimiento = (kd.data ?? []).map((d: { section: string; title: string; body: string }) => ({ ...d, body: d.body.slice(0, 5000) }));

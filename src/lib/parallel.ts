@@ -1,4 +1,5 @@
 // Parallel rules that need no network (tested in parallel.test.ts): the deep account report schema and how
+import { icpBrief, type Icp } from "@/lib/icp";
 // its cited fields are read, the ICP list run (processor by size, entities → accounts), the enrichment
 // table in chunks of 5, and search results as news items.
 import { cleanDomain } from "@/lib/leads";

@@ -13,7 +13,7 @@ export async function qualifyLeadCore(db: Db, orgId: string, leadId: string, now
   if (!lead) throw new Error("No encuentro ese lead en esta empresa.");
   const [acc, icps, segs, pos] = await Promise.all([
     lead.account_id ? db.from("accounts").select("industry,size,country,notes,domain").eq("org_id", orgId).eq("id", lead.account_id).maybeSingle() : Promise.resolve({ data: null }),
-    db.from("icp_profiles").select("name,segment_id,industries,company_size,geography,growth_stage,hiring_signals,funding_signals,anti_icp,why_fit").eq("org_id", orgId).limit(8),
+    db.from("icp_profiles").select("name,segment_id,industries,company_size,min_employees,max_employees,geography,countries,growth_stage,hiring_signals,funding_signals,pains,target_titles,anti_icp,why_fit").eq("org_id", orgId).limit(8),
     db.from("segments").select("id,name,acv_min,acv_max,notes").eq("org_id", orgId).order("acv_min").limit(12),
     db.from("positioning").select("product_name,category,target_customer,need,key_benefit,best_customers").eq("org_id", orgId).limit(1).maybeSingle(),
   ]);
