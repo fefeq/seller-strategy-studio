@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { JobProgress, useJob } from "@/components/background";
+import { JobProgress, useJob, type BgJob } from "@/components/background";
 import { freshResult } from "@/lib/jobs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Pick } from "@/components/fields";
@@ -156,7 +156,7 @@ export function KeyPeopleButton({ accountId, hasDomain, onAdded }: { accountId: 
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   // From the notice («Encontré 4 personas clave…»): the link opens the results straight away.
-  useEffect(() => { if (search.people) { setOpen(true); void navigate({ to: ".", search: (s: Record<string, unknown>) => ({ ...s, people: undefined }), replace: true }); } }, [search.people]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (search.people) { setOpen(true); void navigate({ to: ".", search: ((s: Record<string, unknown>) => ({ ...s, people: undefined })) as never, replace: true }); } }, [search.people]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild><Button size="sm" variant="outline" disabled={!hasDomain} title={hasDomain ? undefined : "Añade el dominio de la cuenta para buscar personas"}>Buscar personas clave</Button></DialogTrigger>
@@ -173,7 +173,7 @@ function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: () => v
   const qc = useQueryClient();
   const { job, running, start, cancel } = useJob<"key_people", PeopleJob>("key_people", { targetId: accountId, onDone: () => { setPicked(new Set()); qc.invalidateQueries({ queryKey: ["orchestrator-status"] }); } });
   const [dismissed, setDismissed] = useState<string | null>(null);
-  const done = freshResult(job, dismissed);
+  const done = freshResult<BgJob<PeopleJob>>(job, dismissed);
   const res = done?.result?.search ?? null;
   const [titles, setTitles] = useState("");
   const [levels, setLevels] = useState<Level[]>(DEFAULT_LEVELS);
@@ -281,7 +281,7 @@ export function IcpCompaniesButton() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [deepOpen, setDeepOpen] = useState(false);
-  useEffect(() => { if (search.icp) { setOpen(true); void navigate({ to: ".", search: (s: Record<string, unknown>) => ({ ...s, icp: undefined }), replace: true }); } }, [search.icp]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { if (search.icp) { setOpen(true); void navigate({ to: ".", search: ((s: Record<string, unknown>) => ({ ...s, icp: undefined })) as never, replace: true }); } }, [search.icp]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
@@ -300,7 +300,7 @@ function IcpCompanies({ onDeep }: { onDeep: () => void }) {
   const qc = useQueryClient();
   const { job, running, start, cancel } = useJob<"icp_companies", CompaniesJob>("icp_companies", { onDone: () => { setPicked(new Set()); qc.invalidateQueries({ queryKey: ["orchestrator-status"] }); } });
   const [dismissed, setDismissed] = useState<string | null>(null);
-  const done = freshResult(job, dismissed);
+  const done = freshResult<BgJob<CompaniesJob>>(job, dismissed);
   const [keywords, setKeywords] = useState("");
   const [countries, setCountries] = useState<string[]>([]);
   const [minEmp, setMinEmp] = useState("");
