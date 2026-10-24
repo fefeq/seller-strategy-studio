@@ -14,6 +14,7 @@ import { CacPanel } from "@/components/cac-panel";
 import { BudgetPanel } from "@/components/budget-panel";
 import { WonDealsPanel } from "@/components/won-deals-panel";
 import { LeadFunnelPanel } from "@/components/leads/lead-funnel-panel";
+import { FinancePanel } from "@/components/metrics/finance-panel";
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
@@ -39,6 +40,7 @@ const SECTIONS = [
   { id: "cohortes", label: "Cohortes" },
   { id: "tendencias", label: "Tendencias" },
   { id: "economia", label: "CAC y presupuesto" },
+  { id: "finanzas", label: "Finanzas" },
   { id: "leads", label: "Leads y self-service" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["id"];
@@ -194,6 +196,7 @@ function Metrics() {
           </div>
           </>}
 
+          {sec === "finanzas" && (canEdit ? <FinancePanel quarter={quarter} /> : <p className="text-sm text-muted-foreground">Las finanzas solo las ven el Owner y el Sales Leader de la empresa.</p>)}
           {sec === "leads" && <>
           <LeadFunnelPanel quarter={quarter} />
           <SelfServiceFunnel quarter={quarter} />
