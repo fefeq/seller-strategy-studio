@@ -8,22 +8,38 @@ export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 export const GEMINI_OPENAI_BASE = `${GEMINI_BASE}/openai/`;
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
 export const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
-/** OpenRouter's auto-router; with require_parameters it only picks models that support tools / JSON schema. */
-export const DEFAULT_OPENROUTER_MODEL = "openrouter/auto";
-export const openrouterModel = (env: AiEnv) => env["OPENROUTER_MODEL"]?.trim() || DEFAULT_OPENROUTER_MODEL;
+/**
+ * OpenRouter with the company's own provider keys (BYOK, added in openrouter.ai → Settings → Integrations): the
+ * default tries Gemini, then Claude, then GPT, so each provider's key is used in that order. OPENROUTER_MODEL
+ * overrides it with one id or a comma-separated list (first = main model, rest = fallbacks, max 3 in total).
+ */
+export const DEFAULT_OPENROUTER_MODELS = ["google/gemini-3.8-flash", "anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol"];
+export function openrouterModels(env: AiEnv): string[] {
+  const list = (env["OPENROUTER_MODEL"] ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+  return (list.length ? list : DEFAULT_OPENROUTER_MODELS).slice(0, 3);
+}
+export const openrouterModel = (env: AiEnv) => openrouterModels(env)[0]!;
+/** Routing fields for every OpenRouter request: fallback models and only endpoints that honour tools / JSON schema. */
+export function openrouterRouting(env: AiEnv): { models?: string[]; provider: { require_parameters: true } } {
+  const models = openrouterModels(env);
+  return { ...(models.length > 1 ? { models } : {}), provider: { require_parameters: true } };
+}
 
 /**
- * Order in which AI calls are tried. Own keys first: GEMINI_API_KEY, then OPENROUTER_API_KEY.
- * The Lovable AI Gateway goes last as safety net, unless AI_LOVABLE_FALLBACK=off (own keys only).
- * AI_PROVIDER=lovable forces the gateway alone.
+ * Order in which AI calls are tried. Own keys first: OPENROUTER_API_KEY (Gemini, Claude and GPT with the
+ * company's own keys), then GEMINI_API_KEY directly. With OpenRouter configured the Lovable AI Gateway is not used
+ * (AI_LOVABLE_FALLBACK=on brings it back as last resort); with only Gemini it stays as safety net unless
+ * AI_LOVABLE_FALLBACK=off. AI_PROVIDER=lovable forces the gateway alone.
  */
 export function aiProviders(env: AiEnv): AiProvider[] {
   const forced = env["AI_PROVIDER"]?.trim().toLowerCase();
   if (forced === "lovable") return ["lovable"];
   const out: AiProvider[] = [];
-  if (env["GEMINI_API_KEY"]?.trim()) out.push("gemini");
   if (env["OPENROUTER_API_KEY"]?.trim()) out.push("openrouter");
-  if (!out.length || env["AI_LOVABLE_FALLBACK"]?.trim().toLowerCase() !== "off") out.push("lovable");
+  if (env["GEMINI_API_KEY"]?.trim()) out.push("gemini");
+  const fallback = env["AI_LOVABLE_FALLBACK"]?.trim().toLowerCase();
+  const lovable = !out.length || (out.includes("openrouter") ? fallback === "on" : fallback !== "off");
+  if (lovable) out.push("lovable");
   return out;
 }
 

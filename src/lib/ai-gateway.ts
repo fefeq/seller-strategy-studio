@@ -1,7 +1,7 @@
 // Raw-HTTP text helper shared by server functions and the agent. Server-only (reads secrets inside the call).
-// Walks aiProviders(): own keys first (Gemini, then OpenRouter); if one runs out of quota or fails, the next one
-// answers; the Lovable AI Gateway is the last resort (its errors are terminal, never retried here).
-import { aiProviders, buildGenerateRequest, extractText, geminiErrorMessage, geminiModel, GEMINI_BASE, OPENROUTER_BASE, openrouterModel, shouldFallBack, type AiProvider, type AskOpts } from "@/lib/gemini";
+// Walks aiProviders(): OpenRouter (the company's own Gemini, Claude and GPT keys), then Gemini directly; the Lovable
+// AI Gateway only when no OpenRouter key is set (its errors are terminal, never retried here).
+import { aiProviders, buildGenerateRequest, extractText, geminiErrorMessage, geminiModel, GEMINI_BASE, OPENROUTER_BASE, openrouterModel, openrouterRouting, shouldFallBack, type AiProvider, type AskOpts } from "@/lib/gemini";
 
 /** Error from an own-key provider, with the HTTP status so the caller can decide to fall back. */
 export class ProviderError extends Error {
@@ -63,7 +63,7 @@ async function askOpenRouter(system: string, user: string, opts: AskOpts) {
         model: openrouterModel(process.env),
         messages: [{ role: "system", content: system }, { role: "user", content }],
         ...(opts.schema ? { response_format: { type: "json_schema", json_schema: { name: opts.schema.name, strict: true, schema: opts.schema.schema } } } : {}),
-        provider: { require_parameters: true },
+        ...openrouterRouting(process.env),
       }),
     });
   } catch { throw new ProviderError("OpenRouter no respondió; vuelve a intentarlo en un momento.", 0, "", "openrouter"); }
@@ -86,7 +86,7 @@ export function openrouterErrorMessage(status: number) {
   if (status === 402) return "Sin saldo en OpenRouter. Recarga créditos en openrouter.ai.";
   if (status === 401 || status === 403) return "La clave de OpenRouter no es válida. Revisa el secreto OPENROUTER_API_KEY.";
   if (status === 429) return "OpenRouter tiene demasiadas peticiones; inténtalo en un momento.";
-  if (status === 404) return "El modelo de OpenRouter configurado no existe. Revisa el secreto OPENROUTER_MODEL.";
+  if (status === 404) return "Ningún modelo de OpenRouter está disponible (revisa OPENROUTER_MODEL y que tus claves estén añadidas en OpenRouter).";
   return status >= 500 ? "OpenRouter no respondió; vuelve a intentarlo en un momento." : "OpenRouter rechazó la petición.";
 }
 

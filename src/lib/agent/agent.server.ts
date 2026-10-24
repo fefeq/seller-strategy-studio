@@ -2,7 +2,7 @@ import { learnFrom, memoryBlock } from "@/lib/memory.server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
-import { aiProviders, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, OPENROUTER_BASE, openrouterModel, sanitizeSchema, shouldFallBack, withThoughtSignatures, type AiProvider } from "@/lib/gemini";
+import { aiProviders, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, OPENROUTER_BASE, openrouterModel, openrouterRouting, sanitizeSchema, shouldFallBack, withThoughtSignatures, type AiProvider } from "@/lib/gemini";
 import { openrouterErrorMessage } from "@/lib/ai-gateway";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
@@ -128,7 +128,15 @@ async function runWith(kind: AiProvider, ctx: ToolCtx, opts: { conversationId: s
     });
     model = provider.chat(geminiAgentModel(process.env));
   } else if (kind === "openrouter") {
-    const provider = createOpenAI({ baseURL: OPENROUTER_BASE, apiKey: process.env["OPENROUTER_API_KEY"], headers: { "X-Title": "Nokko" } });
+    // Fallback models and parameter-aware routing go into each request body (the SDK has no field for them).
+    const routing = openrouterRouting(process.env);
+    const provider = createOpenAI({
+      baseURL: OPENROUTER_BASE, apiKey: process.env["OPENROUTER_API_KEY"], headers: { "X-Title": "Nokko" },
+      fetch: (async (url: RequestInfo | URL, init?: RequestInit) => {
+        if (typeof init?.body !== "string") return fetch(url, init);
+        try { return fetch(url, { ...init, body: JSON.stringify({ ...JSON.parse(init.body), ...routing }) }); } catch { return fetch(url, init); }
+      }) as typeof fetch,
+    });
     model = provider.chat(openrouterModel(process.env));
   } else {
     const apiKey = process.env["LOVABLE_API_KEY"];
