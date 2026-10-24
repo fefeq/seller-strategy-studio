@@ -33,11 +33,12 @@ export function mergeFacts(existing: Pick<Memory, "id" | "content" | "scope" | "
   const seen: string[] = [];
   for (const f of facts) {
     const content = f.content.trim().replace(/\s+/g, " ").slice(0, 600);
-    if (content.length < 3 || seen.some((s) => sameFact(s, content))) continue;
-    seen.push(content);
+    if (content.length < 3) continue;
     const fact = { ...f, content };
     const old = f.replaces != null ? existing[f.replaces - 1] : undefined;
-    if (old) { supersede.push({ oldId: old.id, fact }); continue; }
+    if (old) { if (!supersede.some((x) => x.oldId === old.id)) supersede.push({ oldId: old.id, fact }); seen.push(content); continue; }
+    if (seen.some((s) => sameFact(s, content))) continue;
+    seen.push(content);
     if (existing.some((e) => sameFact(e.content, content) && (e.account_id ?? null) === (fact.account_id ?? null))) continue;
     insert.push(fact);
   }
