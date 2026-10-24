@@ -18,7 +18,7 @@ export type QualLead = {
   segment_id: string | null;
 };
 export type QualAccount = { industry: string | null; size: string | null; country: string | null; notes: string | null; domain: string | null } | null;
-export type QualIcp = { name: string; segment_id: string | null; industries: string | null; company_size: string | null; geography: string | null; growth_stage?: string | null; hiring_signals?: string | null; funding_signals?: string | null; anti_icp: string | null; why_fit: string | null };
+export type QualIcp = { name: string; segment_id: string | null; industries: string | null; company_size: string | null; geography: string | null; growth_stage?: string | null; hiring_signals?: string | null; funding_signals?: string | null; anti_icp: string | null; why_fit: string | null; min_employees?: number | null; max_employees?: number | null; countries?: string[] | null; pains?: string | null; target_titles?: string[] | null };
 export type QualSegment = { id: string; name: string; acv_min: number | null; acv_max: number | null; notes: string | null };
 export type QualPositioning = { product_name: string | null; category: string | null; target_customer: string | null; need: string | null; key_benefit: string | null; best_customers: string | null } | null;
 
@@ -82,7 +82,8 @@ export function buildQualificationRequest(ctx: QualContext) {
     icp: icps.slice(0, 8).map((i) => compact({
       perfil: clip(i.name, 120),
       segmento: segments.find((s) => s.id === i.segment_id)?.name ?? null,
-      sectores: clip(i.industries, 400), tamaño: clip(i.company_size, 200), geografía: clip(i.geography, 200),
+      sectores: clip(i.industries, 400), tamaño: clip(employeesText(i.min_employees, i.max_employees) ?? i.company_size, 200), geografía: clip([i.geography, (i.countries ?? []).join(", ")].filter(Boolean).join(" · ") || null, 200),
+      dolores: clip(i.pains ?? null, 400), cargos_objetivo: clip((i.target_titles ?? []).join(", ") || null, 300),
       etapa: clip(i.growth_stage, 200), señales: clip([i.hiring_signals, i.funding_signals].filter(Boolean).join(" · "), 400),
       anti_icp: clip(i.anti_icp, 400), por_qué_encaja: clip(i.why_fit, 400),
     })),
