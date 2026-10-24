@@ -16,10 +16,11 @@ import { missingPlays } from "@/lib/playbooks/adapt";
 import { DriveImportButton, SaveToDriveButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 import { DriveAccountsPanel } from "@/components/drive-overview";
+import { EmailTemplates } from "@/components/crm/templates";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   // doc: opened from a notice (an import or a battlecard made in the background).
-  validateSearch: (s: Record<string, unknown>): { doc?: string } => (typeof s.doc === "string" ? { doc: s.doc } : {}),
+  validateSearch: (s: Record<string, unknown>): { doc?: string; tab?: "templates" } => ({ ...(typeof s.doc === "string" ? { doc: s.doc } : {}), ...(s.tab === "templates" ? { tab: "templates" as const } : {}) }),
   head: () => ({ meta: [{ title: "Conocimiento — Nokko" }, { name: "description", content: "El cerebro compartido del equipo comercial." }, { property: "og:title", content: "Conocimiento — Nokko" }, { property: "og:description", content: "El cerebro compartido del equipo comercial." }] }),
   component: Hub,
 });
@@ -36,6 +37,8 @@ const SECTIONS = [
 
 /** Not a knowledge section: the documents saved in each account's Google Drive folder. */
 const DRIVE_TAB = "drive";
+/** Email templates used when logging an activity (CRM). */
+const TEMPLATES_TAB = "templates";
 
 // Below lg the editor sits under the list; bring it into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -49,7 +52,7 @@ type Doc = { id: string; section: string; title: string; body: string; scope: st
 function Hub() {
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const [section, setSection] = useState<string>("company");
+  const [section, setSection] = useState<string>(Route.useSearch().tab === "templates" ? TEMPLATES_TAB : "company");
   const [selected, setSelected] = useState<Doc | null>(null);
   // Each «+ Nuevo» is a fresh editor, even when another unsaved draft was open.
   const [draftSeq, setDraftSeq] = useState(0);
@@ -116,8 +119,11 @@ function Hub() {
           <button onClick={() => { setSection(DRIVE_TAB); setSelected(null); }} className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
             Drive por cuenta
           </button>
+          <button onClick={() => { setSection(TEMPLATES_TAB); setSelected(null); }} className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:block lg:w-full lg:whitespace-normal lg:border-0 ${section === TEMPLATES_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+            Plantillas de email
+          </button>
         </nav>
-        {section === DRIVE_TAB ? <div className="min-w-0 lg:col-span-2"><DriveAccountsPanel /></div> : <>
+        {section === DRIVE_TAB ? <div className="min-w-0 lg:col-span-2"><DriveAccountsPanel /></div> : section === TEMPLATES_TAB ? <div className="min-w-0 lg:col-span-2"><EmailTemplates /></div> : <>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{SECTIONS.find((s) => s[0] === section)?.[2]}</p>
           <Button size="sm" variant="outline" className="w-full" onClick={() => { setDraftSeq((n) => n + 1); setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
