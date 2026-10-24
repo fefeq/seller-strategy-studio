@@ -5,7 +5,7 @@ const path = ["discovery", "proposal", "negotiation"];
 const d = (id: string, stage: string, amount = 100, extra: Partial<RDeal> = {}): RDeal =>
   ({ id, stage, amount, created_at: "2026-01-05T12:00:00Z", closed_at: null, source: "inbound", segment_id: "s1", ...extra });
 const deals = [
-  d("a", "won", 1000, { closed_at: "2026-01-25T12:00:00Z" }),
+  d("a", "won", 1000, { closed_at: "2026-01-26T12:00:00Z" }),
   d("b", "lost", 500, { closed_at: "2026-01-20T12:00:00Z", source: "outbound" }),
   d("c", "proposal"),
   d("e", "discovery", 100, { updated_at: "2026-01-05T12:00:00Z" }),
@@ -40,7 +40,7 @@ describe("cohorts", () => {
   it("win rate only over closed deals", () => {
     const c = cohorts(deals, (x) => x.source ?? "—");
     const inbound = c.find((x) => x.key === "inbound")!;
-    expect(inbound).toMatchObject({ created: 3, won: 1, lost: 0, winRate: 1, medianDaysToWin: 20 });
+    expect(inbound).toMatchObject({ created: 3, won: 1, lost: 0, winRate: 1, medianDaysToWin: 21 });
   });
 });
 
