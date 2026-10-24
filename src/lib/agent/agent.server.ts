@@ -1,3 +1,4 @@
+import { learnFrom, memoryBlock } from "@/lib/memory.server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
@@ -23,7 +24,7 @@ function personaPrompt(personaId?: string | null, workflowId?: string | null) {
   return s;
 }
 
-function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null) {
+function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null, memory = "") {
   const role = ctx.roles.map((r) => ROLES[r as Role]?.label ?? r).join(", ");
   const today = new Date().toISOString().slice(0, 10);
   const base = `Eres Nokko, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve; empiezas por la conclusión, sin signos de exclamación ni emoji. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.${personaPrompt(personaId, workflowId)}
@@ -33,7 +34,7 @@ Reglas:
 - Para cambiar datos usa las herramientas de escritura: NO se ejecutan al momento, quedan como propuesta que el usuario confirma. Di claramente qué has propuesto y que debe confirmarlo.
 - Si necesitas un id, búscalo primero con "search" o "list_deals".
 - Sé proactivo: al final, si ves un riesgo o un siguiente paso evidente, propónlo en una línea.
-${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas; usa listas simples." : "- Puedes usar markdown (listas, negritas, tablas pequeñas)."}`;
+${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas; usa listas simples." : "- Puedes usar markdown (listas, negritas, tablas pequeñas)."}${memory ? `\n${memory}` : ""}`;
   if (mode !== "interview") return base;
   return `${base}
 MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de la empresa con la mínima fricción.
@@ -53,6 +54,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   const history: ModelMessage[] = (hist ?? []).reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
   await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "user", content: opts.text });
 
+  const memory = await memoryBlock(ctx);
   const pending: PendingAction[] = [];
   const tools = Object.fromEntries(
     toolsFor(ctx.roles).map((t) => [
@@ -97,7 +99,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   try {
     const result = streamText({
       model: gemini ? provider.chat(geminiAgentModel(process.env)) : provider.responses(MODEL),
-      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId),
+      system: systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId, memory),
       messages: [...history, { role: "user", content: opts.text }],
       tools,
       stopWhen: stepCountIs(12),
@@ -120,5 +122,7 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
 
   await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "assistant", content: text });
   await ctx.db.from("agent_conversations").update({ updated_at: new Date().toISOString() }).eq("id", opts.conversationId);
+  // Learn from what the user said (the reply gives context); never blocks the answer on failure.
+  if (opts.text.trim().length >= 40) await learnFrom(ctx, { source: "chat", text: `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}` });
   return { text, pending };
 }
