@@ -37,8 +37,8 @@
 - [ ] P2 accesibilidad, cargas, ayudas
 
 ## Navegación simple y foco (plan aprobado 2026-10-24)
-- [ ] P0-2 Sugerencias tipo Tinder (mazo, gestos, deshacer)
-- [ ] P0-1 «Tu siguiente paso» en Inicio
+- [x] P0-2 Sugerencias tipo Tinder (mazo, gestos, deshacer)
+- [x] P0-1 «Tu siguiente paso» en Inicio (mazo con sugerencias; falta sumar reuniones y deals en riesgo al orden)
 - [ ] P0-2b Arrastrar en Pipeline, deslizar filas móvil, CSV arrastrable
 - [ ] P0-3 Un botón principal por pantalla
 - [ ] P1 Texto bajo demanda, Métricas/Estrategia en secciones, acciones en grupo + vistas guardadas, panel lateral
