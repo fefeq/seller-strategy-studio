@@ -16,12 +16,13 @@ const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando
 const DECISION = { right: "approve", left: "dismiss", up: "snooze" } as const;
 
 /** Sugerencias as a swipe deck: → hacer, ← descartar, ↑ en 3 días. */
-export function SuggestionDeck({ items }: { items: S[] }) {
+export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboard?: boolean }) {
   const decide = useServerFn(decideSuggestion);
   const qc = useQueryClient();
   return (
     <SwipeDeck
       items={items}
+      keyboard={keyboard}
       labels={{ right: "Hacer", left: "Descartar", up: "Más tarde" }}
       render={(s) => <DeckFace s={s} />}
       onCommit={async (s, dir) => {

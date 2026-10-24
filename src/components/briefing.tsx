@@ -4,8 +4,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useStages } from "@/components/stage-settings";
-import { SuggestionCard, useSuggestions } from "@/components/suggestions";
-import { digest } from "@/lib/proactive";
 import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/briefing";
 
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -17,7 +15,6 @@ export function Briefing() {
   // Automatic spend is often cents: show them instead of rounding to 0.
   const money = (n: number) => new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 2, minimumFractionDigits: n < 1 ? 2 : 0 }).format(n);
   const { stages } = useStages();
-  const { data: suggestions = [] } = useSuggestions();
   const since = briefingSince();
   const today = localDay();
   const { data } = useQuery({

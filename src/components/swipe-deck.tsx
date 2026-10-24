@@ -10,13 +10,15 @@ export type DeckLabels = Record<SwipeDir, string>;
  * Tinder-style deck: drag right / left / up (or ← → ↑, or the buttons) to decide.
  * Decisions commit after a short undo window (Z or «Deshacer»), so nothing happens by accident.
  */
-export function SwipeDeck<T extends { id: string }>({ items, labels, render, onCommit, done, undoMs = 5000 }: {
+export function SwipeDeck<T extends { id: string }>({ items, labels, render, onCommit, done, undoMs = 5000, keyboard = true }: {
   items: T[];
   labels: DeckLabels;
   render: (item: T) => ReactNode;
   onCommit: (item: T, dir: SwipeDir) => Promise<void> | void;
   done?: ReactNode;
   undoMs?: number;
+  /** Arrow keys and Z; off where the page needs arrows to scroll (Inicio). */
+  keyboard?: boolean;
 }) {
   const [gone, setGone] = useState<Map<string, SwipeDir>>(new Map());
   const [exit, setExit] = useState<SwipeDir>("right");
@@ -51,6 +53,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
   }
 
   useEffect(() => {
+    if (!keyboard) return;
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
@@ -67,7 +70,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
     <div className="mx-auto w-full max-w-xl">
       <div className="mb-3 flex items-center justify-between text-xs text-ink-mid">
         <span>{current ? `${decided + 1} de ${total.current}` : "Todo decidido"}</span>
-        <span className="hidden sm:inline">← descartar · ↑ más tarde · → hacer · Z deshacer</span>
+        {keyboard && <span className="hidden sm:inline">← descartar · ↑ más tarde · → hacer · Z deshacer</span>}
       </div>
       <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-paper-sunk">
         <motion.div className="h-full rounded-full bg-lime" animate={{ width: `${total.current ? (decided / total.current) * 100 : 100}%` }} transition={{ duration: 0.25 }} />

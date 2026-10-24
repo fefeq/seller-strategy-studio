@@ -63,7 +63,7 @@ function HomePage() {
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
       <section className="mb-8">
         <p className="eyebrow mb-3">Tu siguiente paso</p>
-        <SuggestionDeck items={nextSteps} />
+        <SuggestionDeck items={nextSteps} keyboard={false} />
       </section>
       <Briefing />
       {leader && <RoadmapCard />}
