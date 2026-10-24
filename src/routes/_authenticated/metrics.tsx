@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { RevopsCohorts, RevopsFunnel, RevopsLost, RevopsTrends } from "@/components/metrics/revops-panels";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -26,8 +27,21 @@ import { pct } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({ meta: [{ title: "Métricas RevOps — Nokko" }, { name: "description", content: "Cobertura, conversión, velocidad, win rate y forecast." }, { property: "og:title", content: "Métricas RevOps — Nokko" }, { property: "og:description", content: "Cobertura, conversión, velocidad, win rate y forecast." }] }),
+  validateSearch: (s: Record<string, unknown>): { seccion?: Section } => ({ seccion: SECTIONS.some((x) => x.id === s.seccion) ? (s.seccion as Section) : undefined }),
   component: Metrics,
 });
+
+const SECTIONS = [
+  { id: "resumen", label: "Resumen" },
+  { id: "embudo", label: "Embudo" },
+  { id: "rendimiento", label: "Rendimiento" },
+  { id: "perdidos", label: "Perdidos" },
+  { id: "cohortes", label: "Cohortes" },
+  { id: "tendencias", label: "Tendencias" },
+  { id: "economia", label: "CAC y presupuesto" },
+  { id: "leads", label: "Leads y self-service" },
+] as const;
+type Section = (typeof SECTIONS)[number]["id"];
 
 const SOURCE_LABEL: Record<string, string> = { outbound: "Outbound", inbound: "Inbound", partner: "Partner", plg: "Producto (PLG)", event: "Evento", referral: "Referido" };
 
@@ -38,13 +52,14 @@ function Metrics() {
   const orgId = me?.currentOrg?.org_id;
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [quarter, setQuarter] = useState(quarterOf(new Date()));
+  const sec: Section = Route.useSearch().seccion ?? "resumen";
   const { data } = useQuery({
     queryKey: ["metrics", orgId],
     enabled: !!orgId,
     queryFn: async () => {
       const [d, h, q, p] = await Promise.all([
         fetchAll((a, b) => supabase.from("deals").select("*").order("id").range(a, b)).then((r) => ({ data: r.rows })),
-        supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at"),
+        fetchAll((a, b) => supabase.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at").order("id").range(a, b)).then((r) => ({ data: r.rows })),
         supabase.from("quotas").select("*"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
       ]);
@@ -104,8 +119,18 @@ function Metrics() {
         {quarters.map((q) => <option key={q} value={q}>{q}</option>)}
       </select>
     }>
-      {m && (
+      <nav aria-label="Secciones de Métricas" className="sticky top-0 z-20 -mx-4 mb-6 flex gap-1 overflow-x-auto border-b bg-background/95 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0">
+        {SECTIONS.map((x) => (
+          <Link key={x.id} to="/metrics" search={x.id === "resumen" ? {} : { seccion: x.id }} className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime text-lime-foreground" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}>{x.label}</Link>
+        ))}
+      </nav>
+      {m && data && (
         <div className="space-y-8">
+          {sec === "embudo" && <RevopsFunnel deals={data.deals} history={data.history} path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")} label={lab} />}
+          {sec === "perdidos" && <RevopsLost deals={data.deals} history={data.history} path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")} label={lab} />}
+          {sec === "cohortes" && <RevopsCohorts deals={data.deals} />}
+          {sec === "tendencias" && <RevopsTrends deals={data.deals} />}
+          {sec === "resumen" && <>
           <div className="grid gap-4 md:grid-cols-4">
             <Kpi label="Cobertura de pipeline" v={m.quota ? formatRatio(m.cov.ratio) : "—"} hint={m.quota ? `${m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${m.cov.undated.count ? ` · ${m.cov.undated.count} ${m.cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${eur(m.cov.undated.amount)}) no cuentan` : ""}` : "Define cuotas abajo"} tone={m.cov.status === "low" && m.quota ? "bad" : undefined} />
             <Kpi label="Pipeline que cierra este trimestre" v={eur(m.openPipe)} hint={`Cuota total ${eur(m.quota)}`} />
@@ -115,13 +140,16 @@ function Metrics() {
 
           <StripeMetricsPanel />
           <QuarterKpisPanel quarter={quarter} />
-          <PipelineBoardPanel quarter={quarter} />
           <SegmentCoverage quarter={quarter} />
+          </>}
+          {sec === "economia" && <>
           <CacPanel quarter={quarter} />
           <WonDealsPanel key={quarter} quarter={quarter} />
           <BudgetPanel year={Number(quarter.slice(0, 4))} />
+          </>}
 
-
+          {sec === "rendimiento" && <>
+          <PipelineBoardPanel quarter={quarter} />
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title="Conversión por etapa">
               {m.conv.map((c) => (
@@ -164,10 +192,12 @@ function Metrics() {
               <Muted>{canEdit ? `Importe en ${currency} de deals ganados (ACV nuevo) que cada persona debe cerrar en ${quarter}. La cobertura compara el pipeline con cierre en el trimestre con esta suma.` : "Solo el Owner y el Sales Leader fijan las cuotas."}</Muted>
             </Panel>
           </div>
+          </>}
 
+          {sec === "leads" && <>
           <LeadFunnelPanel quarter={quarter} />
-
           <SelfServiceFunnel quarter={quarter} />
+          </>}
         </div>
       )}
     </Page>
