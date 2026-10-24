@@ -27,6 +27,8 @@ export const TITLES: Record<string, string> = {
   add_mutual_action_item: "Añadir hito al plan de acción mutuo",
   assign_deal: "Asignar deal",
   apollo_enrich_account: "Completar cuenta con Apollo",
+  complete_account: "Completar datos de una cuenta",
+  integration_budget: "Gasto en integraciones del mes",
   apollo_find_companies: "Buscar empresas en Apollo",
   apollo_find_people: "Buscar personas de una cuenta en Apollo",
   apollo_reveal_contacts: "Revelar contactos con Apollo",
