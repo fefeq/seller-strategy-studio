@@ -74,13 +74,13 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
 }
 
 /** Wraps a core that already combines web sources (research, signals) so its spend is logged and labelled. */
-export async function trackedRun<T>(c: ToolCtx, need: Need, trigger: Trigger, run: () => Promise<T>): Promise<T & { sources: string }> {
+export async function trackedRun<T>(c: ToolCtx, need: Need, trigger: Trigger, run: () => Promise<T>): Promise<T & { via: string }> {
   const plan = await planNeed(c, need, trigger);
   if (plan.blocked && trigger === "automatic") throw new Error(plan.blocked);
   const out = await run();
   const used = plan.steps.filter((s) => s.service === "firecrawl" || s.service === "perplexity").map((s) => ({ service: s.service, cost: s.cost }));
   await logUsage(c, need, used, trigger);
-  return { ...out, sources: sourcesLine(used) };
+  return { ...out, via: sourcesLine(used) };
 }
 
 export const NEED_LABEL = Object.fromEntries(Object.entries(CAPABILITIES).map(([k, v]) => [k, v.label])) as Record<Need, string>;
