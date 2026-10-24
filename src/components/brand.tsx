@@ -13,7 +13,7 @@ export function Brace({ className, title = "Nokko" }: { className?: string; titl
   return (
     <svg viewBox="0 7 64 50" className={cn("h-8 w-auto", className)} role="img" aria-label={title} fill="none">
       <g stroke="currentColor" strokeWidth="2.6">{LINES.map((d) => <path key={d} d={d} />)}</g>
-      <path d={CURVE} stroke="var(--color-red)" strokeWidth="3.6" />
+      <path d={CURVE} stroke="var(--color-series-3)" strokeWidth="3.6" />
     </svg>
   );
 }
@@ -23,7 +23,7 @@ export function Lockup({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 229 64" className={cn("h-[41px] w-auto text-ink", className)} role="img" aria-label="Nokko" fill="none">
       <g stroke="currentColor" strokeWidth="2.6">{LINES.map((d) => <path key={d} d={d} />)}</g>
-      <path d={CURVE} stroke="var(--color-red)" strokeWidth="3.6" />
+      <path d={CURVE} stroke="var(--color-series-3)" strokeWidth="3.6" />
       <g transform="translate(86,50.28) scale(0.4908)"><path d={WORDMARK} fill="currentColor" /></g>
     </svg>
   );
@@ -35,7 +35,7 @@ export function Lockup({ className }: { className?: string }) {
  */
 export function Isotipo({ className, title = "Nokko" }: { className?: string; title?: string }) {
   return (
-    <svg viewBox="0 0 64 64" className={cn("size-8 text-[#ff3b1f] dark:text-[#c4200a]", className)} role="img" aria-label={title}>
+    <svg viewBox="0 0 64 64" className={cn("size-8 text-lime", className)} role="img" aria-label={title}>
       <rect width="64" height="64" fill="var(--color-ink)" />
       <g fill="var(--color-paper)"><rect x="11" y="14.5" width="19" height="6" /><rect x="11" y="29" width="19" height="6" /><rect x="11" y="43.5" width="19" height="6" /></g>
       <path d="M35 11 C 45 11, 41.5 28, 53 32 C 41.5 36, 45 53, 35 53" fill="none" stroke="currentColor" strokeWidth="6" />
