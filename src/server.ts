@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
 import { robotsTagFor } from "./lib/seo";
+import { requestCtx } from "./lib/after-response.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -62,7 +63,10 @@ export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
-      const response = await handler.fetch(request, env, ctx);
+      // The Worker runtime adds waitUntil to the request; keep it so afterResponse() work survives the reply.
+      const w = (request as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil
+        ?? (ctx as { waitUntil?: (p: Promise<unknown>) => void } | null)?.waitUntil?.bind(ctx);
+      const response = await requestCtx.run({ waitUntil: w }, () => handler.fetch(request, env, ctx));
       return withRobotsTag(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);

@@ -1,4 +1,5 @@
 import { learnFrom, memoryBlock } from "@/lib/memory.server";
+import { afterResponse } from "@/lib/after-response.server";
 import { createOpenAI } from "@ai-sdk/openai";
 import { jsonSchema, stepCountIs, streamText, tool, type ModelMessage } from "ai";
 import { z } from "zod";
@@ -80,8 +81,11 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
 
   await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "assistant", content: text });
   await ctx.db.from("agent_conversations").update({ updated_at: new Date().toISOString() }).eq("id", opts.conversationId);
-  // Learn from what the user said (the reply gives context); never blocks the answer on failure.
-  if (opts.text.trim().length >= 40) await learnFrom(ctx, { source: "chat", text: `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}` });
+  // Learn from what the user said (the reply gives context) after the answer is returned: never adds latency.
+  if (opts.text.trim().length >= 40) {
+    const learnText = `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}`;
+    afterResponse("chat memory", () => learnFrom(ctx, { source: "chat", text: learnText }));
+  }
   return { text, pending };
 }
 
