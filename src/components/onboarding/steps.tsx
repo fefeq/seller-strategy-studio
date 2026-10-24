@@ -73,7 +73,7 @@ export function DiagnosisStep({ initial, onDone }: { initial: DiagnosisInput; on
 export function RoadmapStep({ diagnosis }: { diagnosis: Diagnosis | null }) {
   const { data: st } = useSetup();
   const mine: [string, string, string][] = [
-    ["Completar lo que falta de la estrategia", "/setup", `${st?.pct ?? 0} % hecho`],
+    ["Completar lo que falta de la estrategia", "/setup", `${st?.status.pct ?? 0} % hecho`],
     ["Importar leads o cuentas", "/leads/entrada", ""],
     ["Conectar herramientas", "/integrations", ""],
     ["Conectar asistentes de IA y Telegram", "/connect", ""],
