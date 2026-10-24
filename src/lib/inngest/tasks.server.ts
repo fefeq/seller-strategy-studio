@@ -60,7 +60,7 @@ export async function leadsToEnrich(db: Admin, orgId: string, now = new Date(), 
 
 /** Links the lead to its account, completes the company, looks for news, measures the ICP fit and tells the owner. Runs once per lead. */
 export async function enrichLead(db: Admin, orgId: string, leadId: string, now = new Date()) {
-  const { data: lead } = await db.from("leads").select("id,company,email,account_id,owner_id,enriched_at,contact_name").eq("org_id", orgId).eq("id", leadId).maybeSingle();
+  const { data: lead } = await db.from("leads").select("id,company,email,account_id,owner_id,enriched_at,contact_name,stage").eq("org_id", orgId).eq("id", leadId).maybeSingle();
   if (!lead || lead.enriched_at) return { skipped: true };
   const emailDomain = companyDomain(lead.email);
   let accountId = lead.account_id;
@@ -106,10 +106,23 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
     }
   } else lines.push(emailDomain ? `Aún no hay cuenta para ${emailDomain}: se creará al pasar a Oportunidad.` : "Sin dominio de empresa (email personal o vacío): no se ha podido completar.");
 
+  // Jev qualification after the account is completed; the stage move is only proposed (approve in Sugerencias).
+  let proposal: { label: string; total: number } | null = null;
+  let action: { tool: string; args: Record<string, unknown> } | null = null;
+  try {
+    const [{ qualifyLeadCore }, qual] = await Promise.all([import("@/lib/lead-qualify.server"), import("@/lib/lead-qualification")]);
+    const q = await qualifyLeadCore(db, orgId, leadId, now);
+    const { data: st } = await db.from("lead_settings").select("qualification").eq("org_id", orgId).maybeSingle();
+    const v = qual.qualificationView(q, qual.readQualSettings(st?.qualification), lead.stage);
+    proposal = { label: qual.PROPOSAL_LABEL[v.proposal], total: v.total };
+    lines.push(`Calificación con IA: ${v.total} sobre 100 → ${qual.PROPOSAL_LABEL[v.proposal]}. ${v.reason}${v.review ? " Revísalo: la IA no lo tiene claro." : ""}`);
+    if (v.move) action = { tool: "update_lead", args: { lead_id: leadId, stage: v.move, ...(v.move === "disqualified" ? { disqualified_reason: v.reason } : {}) } };
+  } catch (e) { console.error("lead qualify", (e as Error).message); }
+
   await db.from("suggestions").upsert({
-    org_id: orgId, detector: "lead_enriched", dedupe_key: `lead_enriched:${leadId}`, priority: fit !== null && fit >= 70 ? 2 : 3,
-    title: `Lead nuevo: ${lead.company}${lead.contact_name ? ` (${lead.contact_name})` : ""}${fit !== null ? ` · encaje ${fit}` : ""}`.slice(0, 200),
-    body: lines.join("\n"), link: `/leads?lead=${leadId}`, action: null, user_id: lead.owner_id,
+    org_id: orgId, detector: "lead_enriched", dedupe_key: `lead_enriched:${leadId}`, priority: (fit !== null && fit >= 70) || action?.args.stage === "sql" ? 2 : 3,
+    title: `Lead nuevo: ${lead.company}${lead.contact_name ? ` (${lead.contact_name})` : ""}${proposal ? ` · ${proposal.label} (${proposal.total})` : fit !== null ? ` · encaje ${fit}` : ""}`.slice(0, 200),
+    body: lines.join("\n"), link: `/leads?lead=${leadId}`, action: action as any, user_id: lead.owner_id,
   }, { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
   await db.from("leads").update({ enriched_at: now.toISOString() }).eq("org_id", orgId).eq("id", leadId);
   return { accountId, fit, notes: lines.length };
