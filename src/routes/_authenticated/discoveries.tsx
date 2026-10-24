@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -10,7 +10,8 @@ import { Page } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { decideDiscovery } from "@/lib/discoveries.functions";
-import { DISMISS_REASONS, KIND_LABEL, type DiscoveryKind } from "@/lib/discoveries";
+import { DISMISS_REASONS, KIND_LABEL, tallyByIcp, type DiscoveryKind } from "@/lib/discoveries";
+import { IcpPanel, type IcpRow } from "@/components/discoveries/icp-panel";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/_authenticated/discoveries")({
@@ -36,18 +37,26 @@ function DiscoveriesPage() {
     queryKey: ["discoveries"],
     queryFn: async () => ((await supabase.from("discoveries").select("id,kind,name,detail,reason,source,status,dismiss_reason,created_at,decided_at").order("created_at", { ascending: false }).limit(300)).data ?? []) as D[],
   });
-  const pending = rows.filter((r) => r.status === "pending");
-  const decided = rows.filter((r) => r.status !== "pending");
+  const { data: icps = [] } = useQuery({
+    queryKey: ["icp_profiles", "discoveries"],
+    queryFn: async () => ((await supabase.from("icp_profiles").select("*").order("created_at").limit(3)).data ?? []) as IcpRow[],
+  });
+  const [icpFilter, setIcpFilter] = useState<string | null>(null);
+  const tally = useMemo(() => tallyByIcp(rows), [rows]);
+  const byIcp = (r: D) => !icpFilter || r.kind === "competitor" || r.detail?.["icp_id"] === icpFilter;
+  const pending = rows.filter((r) => r.status === "pending" && byIcp(r));
+  const decided = rows.filter((r) => r.status !== "pending" && byIcp(r));
 
 
   const title = pending.length ? `${pending.length} ${pending.length === 1 ? "novedad" : "novedades"} por decidir` : "Descubiertos";
   return (
     <Page eyebrow="Descubiertos" title={title}>
-      <p className="-mt-4 mb-6 max-w-3xl text-muted-foreground">Cada semana Nokko busca empresas que encajan con tu ICP, personas clave en tus cuentas objetivo y competidores nuevos. Acepta lo que te sirva y descarta lo demás: lo descartado no vuelve y Nokko recuerda el motivo.</p>
+      <p className="-mt-4 mb-6 max-w-3xl text-muted-foreground">Cada semana Nokko busca, por cada uno de tus ICP, empresas que encajan y las personas a contactar en ellas y en tus cuentas objetivo, además de competidores nuevos. Acepta lo que te sirva y descarta lo demás: lo descartado no vuelve y Nokko recuerda el motivo.</p>
       <div className="mb-6 flex flex-wrap items-center gap-3">
         {leader && (discover.running ? <JobProgress job={discover.job} onCancel={discover.cancel} /> : <Button onClick={() => discover.start({})}>Buscar ahora</Button>)}
         <button type="button" className="text-sm text-signal" onClick={() => setHistory((h) => !h)}>{history ? "Ver pendientes" : `Ver lo decidido (${decided.length})`}</button>
       </div>
+      <IcpPanel icps={icps} tally={tally} selected={icpFilter} onSelect={setIcpFilter} />
       {isLoading ? <p className="text-sm text-muted-foreground">Cargando…</p> : (
         <Tabs defaultValue="company">
           <TabsList>
@@ -94,6 +103,7 @@ function Item({ d }: { d: D }) {
 
   const facts = d.kind === "company" ? [det["domain"], det["industry"], det["size"], det["country"]]
     : d.kind === "contact" ? [det["title"], det["account_name"]] : [det["url"]];
+  if (det["icp_name"]) facts.push(`ICP: ${det["icp_name"]}`);
   return (
     <li className="grid gap-3 border-t py-4 md:grid-cols-[1fr_auto]">
       <div className="min-w-0">
