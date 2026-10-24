@@ -2892,6 +2892,72 @@ export type Database = {
           },
         ]
       }
+      research_runs: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json
+          kind: string
+          label: string
+          org_id: string
+          processor: string
+          result: Json | null
+          run_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          kind: string
+          label?: string
+          org_id?: string
+          processor?: string
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          kind?: string
+          label?: string
+          org_id?: string
+          processor?: string
+          result?: Json | null
+          run_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "research_runs_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "research_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       segment_budget_quarters: {
         Row: {
           actual_cost_to_serve: number | null

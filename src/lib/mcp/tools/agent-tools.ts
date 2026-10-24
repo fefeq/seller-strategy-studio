@@ -7,10 +7,15 @@ import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
 const APP_URL = "https://nokko.ai/inbox";
-const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competitor_reviews$|create_battlecard_from_reviews$|sync_product_data$|research_account$|refresh_account_signals$|research_stakeholder$)/;
+const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competitor_reviews$|create_battlecard_from_reviews$|sync_product_data$|start_account_report$|start_icp_account_list$|enrich_accounts_table$|research_account$|refresh_account_signals$|research_stakeholder$)/;
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  enrich_accounts_table: "Completar cuentas en tabla (Parallel)",
+  get_icp_account_list: "Empresas encontradas por ICP",
+  start_icp_account_list: "Buscar empresas por ICP (Parallel)",
+  get_account_report: "Informe profundo de una cuenta",
+  start_account_report: "Investigar a fondo una cuenta (Parallel)",
   get_product_usage: "Uso del producto por cuenta (PostHog)",
   sync_product_data: "Leer ahora los datos de PostHog",
   create_battlecard_from_reviews: "Battlecard desde reseñas de G2",
