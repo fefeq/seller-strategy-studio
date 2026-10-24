@@ -54,11 +54,11 @@ export function reconciledFunnel(deals: RDeal[], history: RHistory[], path: stri
   return path.map((stage, i) => {
     let entered = 0, advanced = 0, dropped = 0, pending = 0, stale = 0, enteredAmount = 0;
     for (const d of deals) {
-      const { reached, lostFrom } = journey(d, h.get(d.id) ?? [], path);
+      const { reached } = journey(d, h.get(d.id) ?? [], path);
       if (reached < i) continue;
       entered++; enteredAmount += Number(d.amount ?? 0);
       if (reached > i) advanced++;
-      else if (d.stage === LOST || lostFrom === stage && d.stage === LOST) dropped++;
+      else if (d.stage === LOST) dropped++;
       else {
         pending++;
         if (now.getTime() - lastMove(d) > staleDays * DAY) stale++;
