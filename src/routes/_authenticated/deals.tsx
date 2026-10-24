@@ -28,6 +28,9 @@ import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
+import { Timeline } from "@/components/crm/timeline";
+import { DealOffers } from "@/components/crm/offers";
+import { DealCoach } from "@/components/crm/deal-coach";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -191,6 +194,8 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         <Field label="Partner"><Pick value={d.partner_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.partners.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, partner_id: v })} /></Field>
       </div>
       <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
+      <DealOffers dealId={deal.id} dealName={deal.name} />
+      <DealCoach dealId={deal.id} />
       {d.slip_count > 0 && <p className="text-xs text-signal">La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.</p>}
 
       <div>
@@ -232,6 +237,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
           <Button disabled={!newItem} onClick={addItem}>+</Button>
         </div>
       </div>
+      <Timeline dealId={deal.id} dealName={deal.name} />
     </div>
   );
 }

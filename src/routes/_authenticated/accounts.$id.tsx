@@ -17,8 +17,9 @@ import { PlanTab } from "@/components/account/plan-tab";
 import { StakeholdersTab } from "@/components/account/stakeholders-tab";
 import { MeetingsTab } from "@/components/account/meetings-tab";
 import { CallsTab, DealsTab } from "@/components/account/calls-deals-tabs";
+import { Timeline } from "@/components/crm/timeline";
 
-const ACCOUNT_TABS = ["plan", "report", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
+const ACCOUNT_TABS = ["plan", "history", "report", "signals", "stakeholders", "meetings", "calls", "deals", "drive"] as const;
 type AccountTab = (typeof ACCOUNT_TABS)[number];
 
 export const Route = createFileRoute("/_authenticated/accounts/$id")({
@@ -85,6 +86,7 @@ function AccountPage() {
       <Tabs key={`${id}-${search.tab ?? "plan"}-${search.meeting ?? ""}`} defaultValue={search.tab ?? "plan"}>
         <TabsList className="mb-6">
           <TabsTrigger value="plan">Plan de cuenta</TabsTrigger>
+          <TabsTrigger value="history">Historia</TabsTrigger>
           <TabsTrigger value="report">Informe</TabsTrigger>
           <TabsTrigger value="signals">Señales</TabsTrigger>
           <TabsTrigger value="stakeholders">Stakeholders ({data.stakeholders.length})</TabsTrigger>
@@ -94,6 +96,7 @@ function AccountPage() {
           <TabsTrigger value="drive">Drive</TabsTrigger>
         </TabsList>
         <TabsContent value="plan"><PlanTab accountId={id} accountName={a.name} hasDomain={!!a.domain} plan={data.plan} onSaved={refresh} /></TabsContent>
+        <TabsContent value="history"><Timeline accountId={id} accountName={a.name} /></TabsContent>
         <TabsContent value="report"><AccountReportTab accountId={id} accountName={a.name} /></TabsContent>
         <TabsContent value="signals"><SignalsTab accountId={id} hasDomain={!!a.domain} /><div className="mt-6"><AccountJobs accountId={id} /></div></TabsContent>
         <TabsContent value="stakeholders"><StakeholdersTab accountId={id} hasDomain={!!a.domain} list={data.stakeholders} onChange={refresh} /></TabsContent>
