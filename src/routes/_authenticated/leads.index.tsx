@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { LeadQuickActions } from "@/components/quick-actions";
 import { CompanyLogo } from "@/components/company-logo";
 import { useLeadTouched } from "@/components/background";
 import { useQueryClient } from "@tanstack/react-query";
@@ -150,9 +151,10 @@ function LeadsPage() {
                         {capped.map((l) => {
                           const d = view.delays.get(l.id)!;
                           return (
-                            <button key={l.id} draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
+                            <div key={l.id} className="relative">
+                            <button draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
                               onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
-                              className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
+                              className={`block w-full rounded-md border bg-card p-3 pb-7 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
                               <span className="flex items-start justify-between gap-2"><span className="break-words font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
@@ -164,6 +166,8 @@ function LeadsPage() {
                               {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal"><AlertTriangle className="mt-0.5 size-3 shrink-0" />{delayText(d)}</span>}
                               {!d.late && l.next_step_at && st.id !== "opportunity" && st.id !== "disqualified" && <span className="mt-1 block text-[11px] text-muted-foreground">Seguimiento {l.next_step_at}</span>}
                             </button>
+                            <span className="absolute bottom-2 right-3"><LeadQuickActions lead={l} onMove={move} /></span>
+                            </div>
                           );
                         })}
                         {capped.length < col.length && <p className="px-2 text-xs text-muted-foreground">+{col.length - capped.length} más</p>}
