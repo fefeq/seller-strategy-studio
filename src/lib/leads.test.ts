@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { flattenPayload, mapStage, normalizeLead, parseAmount, parseDate } from "./leads";
 import { actuals } from "./pipeline-real";
+import { cleanDomain } from "./leads";
+import { cleanDomain as fromImport } from "./account-import";
 
 const lead = (rec: Record<string, unknown>) => {
   const r = normalizeLead(rec);
@@ -136,9 +138,7 @@ describe("CSV mapping keeps the importer's rescue rules", () => {
   });
 });
 
-describe("cleanDomain (one rule for leads and accounts)", async () => {
-  const { cleanDomain } = await import("./leads");
-  const { cleanDomain: fromImport } = await import("./account-import");
+describe("cleanDomain (one rule for leads and accounts)", () => {
   it("same answer from both entry paths", () => {
     for (const d of ["https://www.Acme.com/x", "acme.co.uk", "1.2.3.4", "localhost", "sub-x.acme.io"]) expect(fromImport(d)).toBe(cleanDomain(d));
   });
