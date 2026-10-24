@@ -116,7 +116,8 @@ function RunNow() {
     try {
       const r = await run();
       const total = r.researched + r.prepped + r.cooling;
-      toast.success(total ? `Hecho: ${r.researched} cuentas investigadas, ${r.prepped} reuniones preparadas, ${r.cooling} cuentas frías repasadas.` : "Nada pendiente: no hay cuentas nuevas, reuniones sin preparar ni cuentas frías esta semana.");
+      const n = (k: number, one: string, many: string) => `${k} ${k === 1 ? one : many}`;
+      toast.success(total ? `Hecho: ${n(r.researched, "cuenta investigada", "cuentas investigadas")}, ${n(r.prepped, "reunión preparada", "reuniones preparadas")}, ${n(r.cooling, "cuenta fría repasada", "cuentas frías repasadas")}.` : "Nada pendiente: no hay cuentas nuevas, reuniones sin preparar ni cuentas frías esta semana.");
       qc.invalidateQueries({ queryKey: ["briefing"] });
       qc.invalidateQueries({ queryKey: ["suggestions"] });
     } catch (e) { toast.error(errorText(e)); }
