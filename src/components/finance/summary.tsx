@@ -65,7 +65,7 @@ export function FinanceSummary({ d }: { d: FinanceData }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--hairline)" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} stroke="var(--ink-faint)" />
                 <YAxis tickFormatter={(n) => money(n, true)} tick={{ fontSize: 12 }} width={70} stroke="var(--ink-faint)" />
-                <Tooltip formatter={(val: number | number[]) => (Array.isArray(val) ? `${money(val[0])} – ${money(val[1])}` : money(val))} />
+                <Tooltip formatter={(val) => (Array.isArray(val) ? `${money(Number(val[0]))} – ${money(Number(val[1]))}` : money(Number(val)))} />
                 <Area dataKey="band" name="Rango" stroke="none" fill="var(--lime)" fillOpacity={0.35} />
                 <Line dataKey="base" name="Previsión" stroke="var(--ink)" strokeWidth={2} dot={false} />
               </ComposedChart>
