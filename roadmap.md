@@ -8,7 +8,7 @@
 - [x] Telegram: envío según preferencia y silencio nocturno (código listo)
 - [ ] Telegram: conectar el bot y vincular cada persona (bloqueado: falta conectar Telegram)
 - [ ] Email diario 8:00 (bloqueado: falta dominio de envío)
-- [ ] Publicar para que el segundo plano de nokko.ai use el código nuevo
+- [x] Publicar para que el segundo plano de nokko.ai use el código nuevo
 
 ## Orden del código (plan aprobado 2026-10-24)
 - [x] 1. Listas completas (fetchAll en Leads, Cuentas, Pipeline, Personas, Métricas, avisos)
@@ -28,4 +28,4 @@
 - [x] Aprobación por bloques con origen y nivel
 - [x] Modo A fondo (mercado y competidores + opinión C-Levels por bloque), tarjeta en Inicio, versión corta para invitados
 - [x] Umbrales de ticket: referencia de mercado 5K/50K (decidido)
-- [ ] Publicar nokko.ai, resincronizar el segundo plano y probar «Completar datos» desde el aviso en una cuenta real
+- [x] Publicar nokko.ai, resincronizar el segundo plano y probar «Completar datos» en una cuenta real
