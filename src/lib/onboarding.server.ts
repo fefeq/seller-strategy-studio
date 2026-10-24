@@ -51,9 +51,11 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
   if (depth === "deep") {
     await step("Mercado y competidores");
     const { searchBoth } = await import("@/lib/web-search");
+    // The brand on the web beats the company name typed in Nokko (often a placeholder) for a market search.
+    const brand = (() => { try { return new URL(/^https?:/i.test(url) ? url : `https://${url}`).hostname.replace(/^www\./, "").split(".")[0]; } catch { return ""; } })() || c.orgName;
     const items = await searchBoth(
-      { query: `${c.orgName} competidores alternativas mercado`, limit: 8, sources: ["web"] },
-      { queries: [`${c.orgName} competitors`, `${c.orgName} market alternatives`], maxResults: 5 },
+      { query: `${brand} competidores alternativas`, limit: 8, sources: ["web"] },
+      { queries: [`${brand} competitors`, `${brand} alternatives market`], maxResults: 5 },
       10,
     ).catch(async (e) => { await note(`No he podido buscar mercado y competidores: ${(e as Error).message}`, null); return []; });
     for (const it of items.slice(0, 6)) await note(`Fuente de mercado: ${it.title}`, it.url ?? null);
