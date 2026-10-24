@@ -55,6 +55,11 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               try { await enrichLead(db, o.id, id, now); leadFlows++; } catch (e) { console.error("lead flow failed", id, e); }
             }
           }
+          // «Descubiertos»: each company's weekly search (self-guarded, at most one company per run inline).
+          const { discoverForOrg } = await import("@/lib/discoveries.server");
+          for (const o of orgs ?? []) {
+            try { const r = await discoverForOrg(db, o.id, now); if (!r.skipped) break; } catch (e) { console.error("discoveries failed", o.id, e); }
+          }
           await notifyUrgent(db);
           // Monday morning: this week's pipeline report for every company (idempotent, once per week).
           const { runWeeklyReports } = await import("@/lib/weekly-report.server");
