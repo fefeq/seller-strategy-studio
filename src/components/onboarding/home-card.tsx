@@ -14,7 +14,7 @@ export function RoadmapCard() {
   const diag = jsonObject(session?.diagnosis ?? null) as { result?: { archetype?: string; name?: string; nextStep?: string } } | null;
   const missing = st?.status.missing.slice(0, 3) ?? [];
   return (
-    <section className="mt-8 border-t-2 border-hairline-firm pt-4">
+    <section className="my-8 border-t-2 border-hairline-firm pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <p className="smallcaps">Tu roadmap · estrategia al {pct} %</p>
         <button className="text-xs text-ink-mid underline underline-offset-2" onClick={() => save({ completed_at: new Date().toISOString() })}>Ocultar</button>
