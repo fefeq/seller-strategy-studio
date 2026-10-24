@@ -1,5 +1,11 @@
+// Lead flow run by Inngest: enrichment (account, key people, qualification) and the follow-up sequence. Admin client, always filtered by company.
 import { cleanDomain } from "@/lib/leads";
 import type { Json } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
+
+type Admin = SupabaseClient<Database>;
+const HOURS = 3_600_000;
 
 export async function leadsToEnrich(db: Admin, orgId: string, now = new Date(), max = 10) {
   const { data } = await db.from("leads").select("id").eq("org_id", orgId).is("enriched_at", null).gte("created_at", new Date(now.getTime() - 48 * HOURS).toISOString()).order("created_at", { ascending: false }).limit(max);

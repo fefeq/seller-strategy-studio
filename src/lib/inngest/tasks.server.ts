@@ -1,3 +1,7 @@
+// The work Inngest runs, as plain functions (each one is a retried step in functions.server.ts). They use the
+// admin client and always filter by the company; who may start them is checked where the event is sent.
+// Lead enrichment/follow-ups live in lead-tasks.server.ts and the background-job runner in job-runner.server.ts;
+// they are re-exported here so callers keep one entry point.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -46,3 +50,6 @@ export async function maintainSignals(db: Admin, orgId: string, now = new Date()
 }
 
 /** New leads of the last two days not enriched yet (the hourly sweep behind the instant events). */
+
+export { leadsToEnrich, enrichLead, followupStep } from "@/lib/inngest/lead-tasks.server";
+export { runBackgroundJob } from "@/lib/inngest/job-runner.server";

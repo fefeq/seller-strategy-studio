@@ -1,6 +1,10 @@
+// Runs one background_jobs row: picks the work by kind, reports steps, stores the result and notifies. Admin client, always filtered by company.
 import type { Database } from "@/integrations/supabase/types";
 import { JOB_LABEL, type JobKind } from "@/lib/inngest/events";
 import type { Json } from "@/integrations/supabase/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+type Admin = SupabaseClient<Database>;
 
 // ---------------- Background jobs ----------------
 
