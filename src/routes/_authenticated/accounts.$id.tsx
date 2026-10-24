@@ -1,4 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { EntityCombobox, usePeopleOptions } from "@/components/entity-combobox";
+import { duplicateOf } from "@/lib/match";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CompanyLogo } from "@/components/company-logo";
 import { JobProgress, useJob } from "@/components/background";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -248,8 +251,8 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
       onChange();
     },
   });
-  async function add() {
-    const { data, error } = await supabase.from("stakeholders").insert({ account_id: accountId, name: "Nueva persona" }).select().single();
+  async function add(person: { name: string; title?: string | null; email?: string | null; linkedin_url?: string | null }) {
+    const { data, error } = await supabase.from("stakeholders").insert({ account_id: accountId, name: person.name, title: person.title ?? null, email: person.email ?? null, linkedin_url: person.linkedin_url ?? null }).select().single();
     if (error) return toast.error(errorText(error));
     setSel(data); onChange();
   }
@@ -276,7 +279,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><KeyPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><KeyPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><AddStakeholder list={list} onAdd={add} onOpen={setSel} /></div></div>
         {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
@@ -506,4 +509,34 @@ function useRevealOnMobile(key: string | undefined) {
     ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [key]);
   return ref;
+}
+
+/** «+ Persona» in the power map: asks for the name first and suggests people already in Personas or in this map. */
+function AddStakeholder({ list, onAdd, onOpen }: { list: any[]; onAdd: (p: { name: string; title?: string | null; email?: string | null; linkedin_url?: string | null }) => Promise<unknown>; onOpen: (s: any) => void }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [pickedId, setPickedId] = useState<string | null>(null);
+  const { data: people = [] } = usePeopleOptions(open);
+  const inMap = list.map((s) => ({ id: `s:${s.id}`, name: s.name, sub: `Ya en este mapa${s.title ? ` · ${s.title}` : ""}`, email: s.email }));
+  const items = [...inMap, ...people.map((p) => ({ ...p, id: `p:${p.id}` }))];
+  async function save() {
+    const n = name.trim();
+    if (!n) return;
+    if (pickedId?.startsWith("s:")) { onOpen(list.find((s) => `s:${s.id}` === pickedId)); setOpen(false); return; }
+    const sameInMap = duplicateOf({ name: n }, inMap);
+    if (!pickedId && sameInMap?.kind === "same" && !window.confirm(`«${sameInMap.item.name}» ya está en este mapa. ¿Añadirla otra vez?`)) return;
+    const person = pickedId ? people.find((p) => `p:${p.id}` === pickedId) : null;
+    await onAdd(person ? { name: person.name, title: person.title, email: person.email, linkedin_url: person.linkedin_url } : { name: n });
+    setName(""); setPickedId(null); setOpen(false);
+  }
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild><Button size="sm">+ Persona</Button></DialogTrigger>
+      <DialogContent>
+        <DialogHeader><DialogTitle>Añadir persona al mapa</DialogTitle></DialogHeader>
+        <EntityCombobox items={items} value={name} selectedId={pickedId} onChange={(t, p) => { setName(t); setPickedId(p?.id ?? null); }} placeholder="Nombre (busca en Personas)" noun="persona nueva" autoFocus ariaLabel="Nombre" />
+        <Button disabled={!name.trim()} onClick={save}>{pickedId?.startsWith("s:") ? "Abrir la existente" : "Añadir"}</Button>
+      </DialogContent>
+    </Dialog>
+  );
 }

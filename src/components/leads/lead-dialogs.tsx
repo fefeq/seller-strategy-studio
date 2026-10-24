@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { LEAD_STAGES, OPEN_LEAD_STAGES, leadStageLabel, type LeadSla } from "@/lib/lead-funnel";
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
+import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
 
 const NEW_STAGES = Object.fromEntries(LEAD_STAGES.filter((s) => s.id !== "opportunity").map((s) => [s.id, s.label]));
 const escapeLike = (s: string) => s.replace(/[\\%_]/g, (c) => `\\${c}`);
@@ -20,14 +21,16 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
   const [open, setOpen] = useState(false);
   const empty = { company: "", contact_name: "", email: "", source: "", segment_id: "", stage: "new", next_step_at: "" };
   const [f, setF] = useState(empty);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const { data: accounts = [] } = useAccountOptions(open);
   const touchLead = useLeadTouched();
   const set = (k: keyof typeof empty) => (v: string) => setF((p) => ({ ...p, [k]: v }));
 
   async function save() {
     const company = f.company.trim();
     if (!company) return toast.error("Escribe la empresa.");
-    // Reuse the account if it already exists; otherwise it is created when the lead becomes an opportunity.
-    const { data: acc } = await supabase.from("accounts").select("id").ilike("name", escapeLike(company)).limit(1).maybeSingle();
+    // The account picked in «Buscar o crear», else an existing one with the same name; otherwise the lead flow creates it.
+    const acc = accountId ? { id: accountId } : (await supabase.from("accounts").select("id").ilike("name", escapeLike(company)).limit(1).maybeSingle()).data;
     const { data: created, error } = await supabase.from("leads").insert({
       company,
       contact_name: f.contact_name.trim() || null,
@@ -42,6 +45,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
     touchLead(created?.id);
     toast.success(`Lead ${company} creado.`);
     setF(empty);
+    setAccountId(null);
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["leads"] });
   }
@@ -52,7 +56,7 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
       <DialogContent>
         <DialogHeader><DialogTitle>Nuevo lead</DialogTitle></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="sm:col-span-2"><Field label="Empresa"><Input value={f.company} onChange={(e) => set("company")(e.target.value)} placeholder="Acme Logistics" autoFocus /></Field></div>
+          <div className="sm:col-span-2"><Field label="Empresa"><EntityCombobox items={accounts} value={f.company} selectedId={accountId} onChange={(t, a) => { set("company")(t); setAccountId(a?.id ?? null); }} placeholder="Busca entre tus cuentas o escribe una nueva" noun="cuenta nueva" logos autoFocus ariaLabel="Empresa" /></Field></div>
           <Field label="Contacto"><Input value={f.contact_name} onChange={(e) => set("contact_name")(e.target.value)} /></Field>
           <Field label="Email"><Input type="email" value={f.email} onChange={(e) => set("email")(e.target.value)} /></Field>
           <Field label="Origen"><Input value={f.source} onChange={(e) => set("source")(e.target.value)} placeholder="Webinar, LinkedIn, Referido…" /></Field>

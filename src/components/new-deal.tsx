@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { applySetupItems } from "@/lib/agent.functions";
 import { errorText } from "@/lib/errors";
+import { EntityCombobox } from "@/components/entity-combobox";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { useProducts } from "@/components/deal-lines";
@@ -34,6 +35,7 @@ export function NewDealButton() {
   const { data: products = [] } = useProducts();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
   const [f, setF] = useState({
     name: "",
     account: "",
@@ -50,7 +52,7 @@ export function NewDealButton() {
     enabled: open,
     queryFn: async () => {
       const [a, s] = await Promise.all([
-        supabase.from("accounts").select("id,name").order("name").limit(1000),
+        supabase.from("accounts").select("id,name,domain").order("name").limit(2000),
         supabase.from("segments").select("id,name").order("name"),
       ]);
       return { accounts: a.data ?? [], segments: s.data ?? [] };
@@ -59,7 +61,7 @@ export function NewDealButton() {
   async function create() {
     setBusy(true);
     try {
-      const existing = data?.accounts.find(
+      const existing = (accountId ? data?.accounts.find((a) => a.id === accountId) : null) ?? data?.accounts.find(
         (a) => a.name.trim().toLowerCase() === f.account.trim().toLowerCase(),
       );
       const args = Object.fromEntries(
@@ -79,6 +81,7 @@ export function NewDealButton() {
       toast.success(
         `Deal «${f.name.trim()}» creado${f.close ? "" : ". Ponle fecha de cierre para que cuente en la cobertura"}.`,
       );
+      setAccountId(null);
       setF({ name: "", account: "", segment: "", stage: "", amount: "", close: null, product: "" });
       setOpen(false);
       qc.invalidateQueries();
@@ -104,17 +107,7 @@ export function NewDealButton() {
             </Field>
           </div>
           <Field label="Cuenta">
-            <Input
-              list="new-deal-accounts"
-              placeholder="Existente o nueva"
-              value={f.account}
-              onChange={(e) => setF({ ...f, account: e.target.value })}
-            />
-            <datalist id="new-deal-accounts">
-              {data?.accounts.map((a) => (
-                <option key={a.id} value={a.name} />
-              ))}
-            </datalist>
+            <EntityCombobox items={data?.accounts ?? []} value={f.account} selectedId={accountId} onChange={(t, a) => { setF({ ...f, account: t }); setAccountId(a?.id ?? null); }} placeholder="Busca entre tus cuentas o escribe una nueva" noun="cuenta nueva" logos ariaLabel="Cuenta" />
           </Field>
           <Field label="Segmento">
             <Pick

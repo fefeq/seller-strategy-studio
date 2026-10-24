@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { duplicateOf } from "@/lib/match";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -49,6 +50,8 @@ function Products() {
 
   async function create() {
     if (!f.name.trim()) return toast.error("El producto necesita un nombre.");
+    const dup = duplicateOf({ name: f.name }, products.map((p) => ({ id: p.id, name: p.name })));
+    if (dup && !window.confirm(`Ya existe «${dup.item.name}» en el catálogo. ¿Añadir otro igualmente?`)) return;
     const price = checkLineField("price", f.price);
     const cost = checkLineField("cost", f.cost);
     if (!price.ok) return toast.error(price.error);

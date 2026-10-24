@@ -17,6 +17,7 @@ import { ScoreDetail } from "@/components/score";
 import type { Score } from "@/lib/scoring";
 import { FOLLOWUP_STEPS, followupStatus } from "@/lib/followup";
 import { DateField } from "@/components/date-field";
+import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
 import { QualificationPanel } from "@/components/leads/lead-qualification";
 import { LeadFlowPanel } from "@/components/leads/lead-flow";
 
@@ -30,12 +31,14 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
   const touchLead = useLeadTouched();
   useEffect(() => setF(lead), [lead]);
   const set = <K extends keyof Lead>(k: K, v: Lead[K]) => setF((p) => ({ ...p, [k]: v }));
+  const { data: accounts = [] } = useAccountOptions();
   const delay = leadDelay(lead, data.sla);
   const converted = lead.stage === "opportunity";
 
   async function save() {
     const { data: saved, error } = await supabase.from("leads").update({
       company: f.company.trim() || lead.company,
+      account_id: f.account_id ?? null,
       contact_name: f.contact_name || null,
       email: f.email || null,
       title: f.title || null,
@@ -94,7 +97,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Etapa">{converted ? <p className="text-sm">Oportunidad</p> : <Pick value={f.stage} options={STAGE_OPTS} onChange={(v) => set("stage", v)} />}</Field>
         <Field label="Responsable"><Pick value={f.owner_id ?? ""} options={{ "": "Sin asignar", ...Object.fromEntries(data.members.map((m) => [m.id, m.full_name])) }} onChange={(v) => set("owner_id", v || null)} /></Field>
-        <Field label="Empresa"><Input value={f.company} onChange={(e) => set("company", e.target.value)} /></Field>
+        <Field label="Empresa"><EntityCombobox items={accounts} value={f.company} selectedId={f.account_id ?? null} onChange={(t, a) => setF((p) => ({ ...p, company: t, account_id: a?.id ?? null }))} noun="cuenta nueva" logos ariaLabel="Empresa" /></Field>
         <Field label="Contacto"><Input value={f.contact_name ?? ""} onChange={(e) => set("contact_name", e.target.value)} /></Field>
         <Field label="Email"><Input value={f.email ?? ""} onChange={(e) => set("email", e.target.value)} /></Field>
         <Field label="Cargo"><Input value={f.title ?? ""} onChange={(e) => set("title", e.target.value)} /></Field>

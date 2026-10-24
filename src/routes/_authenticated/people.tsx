@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
+import { normName } from "@/lib/match";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -131,11 +133,15 @@ function ResultLogger({ campaigns, onLog }: { campaigns: { id: string; name: str
   );
 }
 
-function AddPerson({ existing }: { existing: { email: string | null; linkedin_url: string | null }[] }) {
+function AddPerson({ existing }: { existing: { email: string | null; linkedin_url: string | null; full_name?: string | null; company?: string | null }[] }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [f, setF] = useState({ full_name: "", email: "", linkedin_url: "", company: "", title: "" });
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const { data: accounts = [] } = useAccountOptions(open);
   async function save() {
+    const same = existing.find((p: any) => normName(p.full_name) === normName(f.full_name) && normName(p.company) === normName(f.company));
+    if (same && !window.confirm(`Ya tienes a ${f.full_name}${f.company ? ` en ${f.company}` : ""}. ¿Añadirla igualmente?`)) return;
     const { fresh } = dedupePeople([f], existing);
     if (!fresh.length) return toast.error("Esta persona ya existe (mismo email o LinkedIn) o falta email/LinkedIn.");
     const { error } = await supabase.from("people").insert({ ...fresh[0], full_name: f.full_name, company: f.company, title: f.title });
@@ -148,9 +154,11 @@ function AddPerson({ existing }: { existing: { email: string | null; linkedin_ur
       <DialogTrigger asChild><Button variant="outline">+ Persona</Button></DialogTrigger>
       <DialogContent>
         <DialogHeader><DialogTitle>Añadir persona</DialogTitle></DialogHeader>
-        {(["full_name", "email", "linkedin_url", "company", "title"] as const).map((k) => (
+        {(["full_name", "email", "linkedin_url"] as const).map((k) => (
           <Input key={k} placeholder={{ full_name: "Nombre", email: "Email", linkedin_url: "URL de LinkedIn", company: "Empresa", title: "Cargo" }[k]} value={f[k]} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
         ))}
+        <EntityCombobox items={accounts} value={f.company} selectedId={accountId} onChange={(t, a) => { setF({ ...f, company: t }); setAccountId(a?.id ?? null); }} placeholder="Empresa (busca entre tus cuentas)" noun="empresa nueva" logos ariaLabel="Empresa" />
+        <Input placeholder="Cargo" value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
         <Button onClick={save}>Guardar</Button>
       </DialogContent>
     </Dialog>
