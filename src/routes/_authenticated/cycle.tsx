@@ -21,11 +21,15 @@ import { ARTIFACTS, type ArtifactKind } from "@/lib/bmad/workflows";
 import { getPersona } from "@/lib/bmad/personas";
 import { TRACKS } from "@/lib/bmad/tracks";
 import { canUseAdvisor } from "@/lib/advisor";
-import { deepReview, draftArtifact } from "@/lib/bmad.functions";
+import { JobProgress, useJob, type BgJob } from "@/components/background";
+import { freshResult } from "@/lib/jobs";
+import type { DeepReview } from "@/lib/bmad/debate-core";
 import { errorText } from "@/lib/errors";
 import { AiProgress } from "@/components/ai-progress";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
+  // artifact: link from a notice («Borrador listo…», «Revisión a fondo lista…») straight to the document.
+  validateSearch: (s: Record<string, unknown>): { artifact?: string } => (typeof s.artifact === "string" ? { artifact: s.artifact } : {}),
   head: () => ({ meta: [
     { title: "Ciclo GTM — Nokko" },
     { name: "description", content: "Fases del go-to-market con documentos aprobados que alimentan cada paso: Brief, Plan, Arquitectura, ejecución y retro." },
@@ -52,9 +56,17 @@ function CyclePage() {
   const { data: cycle } = useCycle();
   const { open: openAgent } = useAgent();
   const qc = useQueryClient();
-  const draft = useServerFn(draftArtifact);
+  const search = Route.useSearch();
   const leader = canUseAdvisor(me?.roles ?? []);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(search.artifact ?? null);
+  useEffect(() => { if (search.artifact) setSelected(search.artifact); }, [search.artifact]);
+  const draftJob = useJob("draft_artifact", {
+    onDone: (j) => {
+      qc.invalidateQueries({ queryKey: ["artifacts"] }); qc.invalidateQueries({ queryKey: ["cycle"] });
+      const id = (j.result as { artifactId?: string } | null)?.artifactId;
+      if (id) setSelected(id);
+    },
+  });
   const [newKind, setNewKind] = useState<ArtifactKind | null>(null);
   const { data: arts = [] } = useQuery({
     queryKey: ["artifacts", me?.currentOrg?.org_id],
@@ -71,6 +83,7 @@ function CyclePage() {
 
   return (
     <Page eyebrow="Como BMAD, pero para vender" title="Ciclo GTM">
+      {draftJob.running && <JobProgress className="-mt-4 mb-6" job={draftJob.job} onCancel={draftJob.cancel} />}
       <p className="-mt-4 mb-8 max-w-3xl text-muted-foreground">Cada fase produce un documento. Al aprobarlo, alimenta la siguiente fase y el contexto que usan todos los agentes. Los planes de cuenta y los deals son la ejecución; las retros cierran el ciclo.</p>
       <div className="grid gap-4 lg:grid-cols-5">
         {PHASES.map((ph, i) => {
@@ -110,16 +123,15 @@ function CyclePage() {
           );
         })}
       </div>
-      <NewDraft kind={newKind} onClose={() => setNewKind(null)} onDone={(id) => { setNewKind(null); qc.invalidateQueries({ queryKey: ["artifacts"] }); qc.invalidateQueries({ queryKey: ["cycle"] }); setSelected(id); }} draft={draft} />
+      <NewDraft kind={newKind} onClose={() => setNewKind(null)} onStart={(input) => { setNewKind(null); void draftJob.start(input, `Borrador: ${ARTIFACTS[input.kind as ArtifactKind]?.label ?? "documento"}`); }} />
       <ArtifactSheet art={arts.find((a) => a.id === selected) ?? null} all={arts} leader={leader} onClose={() => setSelected(null)} onSelect={setSelected} />
     </Page>
   );
 }
 
-function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null; onClose: () => void; onDone: (id: string) => void; draft: ReturnType<typeof useServerFn<typeof draftArtifact>> }) {
+function NewDraft({ kind, onClose, onStart }: { kind: ArtifactKind | null; onClose: () => void; onStart: (input: { kind: string; notes: string; dealId: string | null }) => void }) {
   const [notes, setNotes] = useState("");
   const [dealId, setDealId] = useState("");
-  const [busy, setBusy] = useState(false);
   const { data: closed = [] } = useQuery({
     queryKey: ["closed-deals"], enabled: kind === "winloss",
     queryFn: async () => (await supabase.from("deals").select("id,name,stage").in("stage", ["won", "lost"]).order("updated_at", { ascending: false }).limit(30)).data ?? [],
@@ -128,9 +140,8 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
   const p = getPersona(PERSONA_FOR[kind]);
   async function go() {
     if (kind === "winloss" && !dealId) return toast.error("Elige el deal cerrado.");
-    setBusy(true);
-    try { const r = await draft({ data: { kind: kind!, notes, dealId: dealId || null } }); setNotes(""); setDealId(""); toast.success("Borrador creado."); onDone(r.id); }
-    catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+    onStart({ kind: kind!, notes, dealId: dealId || null });
+    setNotes(""); setDealId("");
   }
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -144,9 +155,8 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
           </select>
         )}
         <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas o foco opcional (p. ej. «priorizamos mid-market en España este trimestre»)" />
-        {busy
-          ? <AiProgress typicalSeconds={70} stages={["Leyendo el contexto de empresa y las reglas", "Leyendo los documentos aprobados", `Redactando con ${p?.name ?? "el agente"}`, "Comprobando las secciones"]} />
-          : <Button onClick={go}>Crear borrador</Button>}
+        <Button onClick={go}>Crear borrador</Button>
+        <p className="text-xs text-muted-foreground">Tarda alrededor de un minuto. Lo redacto en segundo plano y te aviso al terminar.</p>
       </DialogContent>
     </Dialog>
   );
@@ -155,11 +165,14 @@ function NewDraft({ kind, onClose, onDone, draft }: { kind: ArtifactKind | null;
 function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | null; all: Art[]; leader: boolean; onClose: () => void; onSelect: (id: string) => void }) {
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const review = useServerFn(deepReview);
   const [edit, setEdit] = useState<string | null>(null);
   const [method, setMethod] = useState("premortem");
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<Awaited<ReturnType<typeof deepReview>> | null>(null);
+  const reviewJob = useJob<"deep_review", { review?: DeepReview }>("deep_review", { targetId: art?.id ?? null });
+  const [dismissed, setDismissed] = useState<string | null>(null);
+  const busy = reviewJob.running;
+  const reviewDone = freshResult<BgJob<{ review?: DeepReview }>>(reviewJob.job, dismissed);
+  const result = reviewDone?.result?.review ?? null;
+  const setResult = (_: null) => { if (reviewDone) setDismissed(reviewDone.id); };
   const refresh = () => { qc.invalidateQueries({ queryKey: ["artifacts"] }); qc.invalidateQueries({ queryKey: ["cycle"] }); };
   if (!art) return null;
   const kind = art.kind as ArtifactKind;
@@ -177,8 +190,8 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
     refresh(); toast.success("Aprobado: ya alimenta la siguiente fase y a los agentes.");
   }
   async function runReview() {
-    setBusy(true); setResult(null);
-    try { setResult(await review({ data: { artifactId: art!.id, method } })); } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
+    if (reviewDone) setDismissed(reviewDone.id);
+    void reviewJob.start({ artifactId: art!.id, method });
   }
   async function applyRevision() {
     const { data, error } = await supabase.from("gtm_artifacts").insert({ kind, title: art!.title, version: nextVersion, content: result!.revised, persona: art!.persona, meta: art!.meta ?? {} }).select("id").single();
@@ -229,7 +242,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
           <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
           {me?.roles.includes("owner") && <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>Borrar</Button>}
         </div>
-        {busy && <AiProgress className="mt-4" typicalSeconds={120} stages={["Leyendo el documento y el contexto", `Aplicando ${METHODS.find(([v]) => v === method)?.[1] ?? "el método"}`, "Ordenando los hallazgos", "Reescribiendo el documento"]} />}
+        {busy && <JobProgress className="mt-4" job={reviewJob.job} onCancel={reviewJob.cancel} />}
         {result && (
           <div className="mt-4 rounded-lg border bg-accent/40 p-4">
             <p className="text-sm font-medium">{result.summary}</p>
