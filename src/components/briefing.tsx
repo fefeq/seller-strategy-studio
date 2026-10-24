@@ -11,7 +11,7 @@ import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/brief
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Inicio briefing: what Nokko did on its own since yesterday · what needs your decision · what comes today. */
-export function Briefing() {
+export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
   const { data: me } = useMe();
   const { currency } = useCurrency();
   // Automatic spend is often cents: show them instead of rounding to 0.
