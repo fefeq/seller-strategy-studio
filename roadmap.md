@@ -50,7 +50,8 @@
 - [x] Fase 2 Finanzas (tablas, motores con tests, pantalla; solo Owner y Sales Leader)
 - [x] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
 - [x] Fase 4 importar datos reales — descartada: todo se genera de cero en Nokko
-- [ ] Respetar los gráficos originales de Finance Dashboard (abanico de caja, cascada de desvíos, Sankey, antigüedad de cobros) y RevOps Dashboard (embudo, postura del trimestre)
+- [x] Gráficos originales de Finance Dashboard: abanico de caja con «¿Y si…?», cascada de desvíos, flujo de dinero (Sankey) y antigüedad de cobros
+- [ ] Gráficos y páginas originales de RevOps Dashboard (embudo con alas, postura del trimestre, tendencias semanales, perdidos, orígenes) sobre los datos de Nokko
 - [ ] Mantener lo máximo posible de los originales en todo lo que se trae (gráficos, textos, flujos de Finance, RevOps y Postin CRM)
-- [ ] Conectar Finanzas al onboarding (planes y precios + pasos de caja/costes) e Inicio
-- [ ] Actualizar manifest MCP, AGENTS.md y probar en pantalla
+- [x] Conectar Finanzas al onboarding (bloque Planes y precios + paso de caja/costes) e Inicio
+- [x] Actualizar manifest MCP, AGENTS.md y probar en pantalla
