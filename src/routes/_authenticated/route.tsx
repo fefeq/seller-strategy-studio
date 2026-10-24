@@ -7,6 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
 import { canUseAdvisor } from "@/lib/advisor";
+import { NAV, NAV_GROUPS, groupOpen, isActive, visibleItems } from "@/lib/nav";
+import { CommandPalette, useCommandPalette } from "@/components/command-palette";
 import { OrgSwitcher } from "@/components/org-switcher";
 import { OrgOnboarding } from "@/components/org-onboarding";
 import { AgentProvider, useAgent } from "@/components/agent";
@@ -26,17 +28,6 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
-// Menu by kind of work (product decision 24 oct 2026): Hoy, Vender, Estrategia, Conocimiento, Ajustes.
-type NavItem = { to: string; label: string; leadersOnly?: boolean };
-const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
-  { title: "Hoy", items: [{ to: "/home", label: "Inicio" }, { to: "/inbox", label: "Sugerencias" }, { to: "/discoveries", label: "Descubiertos" }] },
-  { title: "Vender", items: [{ to: "/accounts", label: "Cuentas" }, { to: "/leads", label: "Leads" }, { to: "/deals", label: "Pipeline" }, { to: "/people", label: "Personas" }, { to: "/approvals", label: "Aprobaciones" }] },
-  { title: "Estrategia", items: [{ to: "/strategy", label: "Estrategia GTM" }, { to: "/metrics", label: "Métricas" }, { to: "/advisor", label: "Asesor GTM", leadersOnly: true }, { to: "/cycle", label: "Ciclo GTM" }, { to: "/debates", label: "Debates" }, { to: "/abm", label: "ABM y partners" }, { to: "/theory-u", label: "Theory U" }, { to: "/products", label: "Productos" }] },
-  { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }, { to: "/memory", label: "Memoria" }] },
-  { title: "Ajustes", items: [{ to: "/setup", label: "Configuración" }, { to: "/company", label: "Empresa" }, { to: "/team", label: "Equipo" }, { to: "/integrations", label: "Conexiones" }, { to: "/connect", label: "Conectar asistentes" }] },
-];
-const NAV = NAV_GROUPS.flatMap((g) => g.items);
-
 function Shell() {
   const { data: me } = useMe();
   const qc = useQueryClient();
@@ -53,7 +44,10 @@ function Shell() {
   const [navOpen, setNavOpen] = useState(false);
   const [collapsed, setCollapsed] = useCollapsedSidebar();
   const path = useRouterState({ select: (r) => r.location.pathname });
-  const current = NAV.find((n) => path === n.to || path.startsWith(`${n.to}/`))?.label;
+  const current = NAV.find((n) => isActive(path, n.to))?.label;
+  const [paletteOpen, setPaletteOpen] = useCommandPalette();
+  const [openGroups, setOpenGroups] = useOpenGroups();
+  const leader = canUseAdvisor(me?.roles ?? []);
 
   // Close the mobile menu whenever the route changes (links, back button, redirects).
   useEffect(() => setNavOpen(false), [path]);
@@ -72,7 +66,7 @@ function Shell() {
   const sidebar = (mobile: boolean) => (
     <>
       {!mobile && (
-        <div className="flex items-center justify-between gap-2 border-b-2 border-hairline-firm py-5 pl-5 pr-3 pt-6">
+        <div className="flex items-center justify-between gap-2 py-5 pl-5 pr-3 pt-6">
           <Lockup />
           <button
             onClick={() => setCollapsed(true)}
@@ -85,21 +79,33 @@ function Shell() {
         </div>
       )}
       {me && hasOrg && <OrgSwitcher memberships={me.memberships} archived={me.archived} current={me.currentOrg} userId={me.user.id} />}
-      <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-3" aria-label="Secciones">
-        {hasOrg && NAV_GROUPS.map((g) => (
-          <div key={g.title} className="mb-3">
-            <p className="eyebrow px-3 pb-1 pt-2">{g.title}</p>
-            {g.items.filter((n) => !n.leadersOnly || canUseAdvisor(me?.roles ?? [])).map((n) => (
-              <Link
-                key={n.to}
-                to={n.to as never}
-                className="flex items-center border-l-2 border-transparent px-3 py-2.5 text-base text-ink-mid hover:text-ink data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
-              >
-                {n.label}
-              </Link>
-            ))}
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2" aria-label="Secciones">
+        {hasOrg && NAV_GROUPS.map((g) => {
+          const items = visibleItems(g, leader);
+          const open = groupOpen(g, path, openGroups[g.key]);
+          return (
+            <div key={g.key} className="mb-2">
+              {g.collapsible && (
+                <button
+                  onClick={() => setOpenGroups({ ...openGroups, [g.key]: !open })}
+                  aria-expanded={open}
+                  className="flex w-full items-center justify-between rounded-md px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wide text-ink-faint hover:text-ink"
+                >
+                  {g.title} <span aria-hidden>{open ? "−" : "+"}</span>
+                </button>
+              )}
+              {open && items.map((n) => (
+                <Link
+                  key={n.to}
+                  to={n.to as never}
+                  className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime data-[status=active]:font-semibold data-[status=active]:text-lime-foreground md:py-1.5 md:text-sm"
+                >
+                  {n.label}
+                </Link>
+              ))}
+            </div>
+          );
+        })}
       </nav>
       {hasOrg && <SetupMeter />}
       <div className="border-t border-hairline p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] text-sm md:pb-4">
@@ -108,7 +114,6 @@ function Shell() {
         <button onClick={signOut} className="-my-2 mt-1 py-2 text-xs text-ink underline decoration-hairline-firm underline-offset-4 hover:decoration-ink">
           Cerrar sesión
         </button>
-        {!mobile && <NotificationCenter userId={me?.user.id} className="mt-3 block" />}
         <ThemeToggle className="mt-3 border-t border-hairline pt-3 md:pt-2" />
       </div>
     </>
@@ -123,7 +128,8 @@ function Shell() {
         <div className="flex h-14 items-center justify-between gap-3 px-4">
           <Link to="/home" className="shrink-0" aria-label="Inicio"><Lockup /></Link>
           {current && <span className="min-w-0 truncate text-sm text-ink-mid">{current}</span>}
-          <NotificationCenter userId={me?.user.id} className="ml-auto shrink-0" />
+          <button onClick={() => setPaletteOpen(true)} aria-label="Buscar" className="ml-auto flex size-11 shrink-0 items-center justify-center text-ink-mid">Buscar</button>
+          <NotificationCenter userId={me?.user.id} className="shrink-0" />
           <button
             onClick={() => setNavOpen((o) => !o)}
             aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
@@ -169,12 +175,42 @@ function Shell() {
         </aside>
       )}
       <main className="min-w-0 flex-1">
+        {hasOrg && <TopBar onSearch={() => setPaletteOpen(true)} userId={me?.user.id} />}
         {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} archived={me.archived} />}
       </main>
       {hasOrg && <BottomBar />}
+      {hasOrg && <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />}
     </div>
     </AgentProvider>
   );
+}
+
+/** Desktop top bar: search (⌘K), the agent (⌘J) and notices, out of the way of the content. */
+function TopBar({ onSearch, userId }: { onSearch: () => void; userId: string | undefined }) {
+  const { open } = useAgent();
+  return (
+    <div className="sticky top-0 z-30 hidden h-14 items-center gap-3 border-b border-hairline bg-background/85 px-6 backdrop-blur md:flex lg:px-10">
+      <button onClick={onSearch} className="flex h-9 w-full max-w-md items-center justify-between rounded-lg border border-hairline bg-card px-3 text-sm text-ink-faint shadow-xs hover:border-hairline-firm">
+        Buscar cuentas, leads, pantallas…
+        <kbd className="rounded-md bg-paper-sunk px-1.5 py-0.5 text-[11px] font-medium text-ink-mid">⌘K</kbd>
+      </button>
+      <div className="ml-auto flex items-center gap-4">
+        <NotificationCenter userId={userId} />
+        <button onClick={() => open()} className="flex h-9 items-center gap-2 rounded-lg bg-ink px-3 text-sm font-semibold text-ink-reverse hover:bg-ink/85" aria-label="Abrir agente GTM">
+          Agente <kbd className="rounded bg-ink-reverse/15 px-1.5 text-[11px]">⌘J</kbd>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Which collapsible menu groups are open, remembered in this browser. */
+function useOpenGroups() {
+  const KEY = "nokko-nav-groups";
+  const [v, set] = useState<Record<string, boolean>>({});
+  useEffect(() => { try { set(JSON.parse(localStorage.getItem(KEY) ?? "{}")); } catch { /* ignore */ } }, []);
+  const save = (n: Record<string, boolean>) => { set(n); try { localStorage.setItem(KEY, JSON.stringify(n)); } catch { /* ignore */ } };
+  return [v, save] as const;
 }
 
 /** Sidebar open/closed on desktop, remembered in this browser (best effort: storage can be blocked). */
@@ -221,7 +257,7 @@ function BottomBar() {
         <Link
           key={t.to}
           to={t.to}
-          className={`${item} border-t-2 border-transparent data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink`}
+          className={`${item} border-t-2 border-transparent data-[status=active]:border-ink data-[status=active]:font-semibold data-[status=active]:text-ink`}
         >
           <span className="relative truncate">
             {t.label}
