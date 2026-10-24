@@ -3,13 +3,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useLeadTouched } from "@/components/background";
+import { useJob, useLeadTouched } from "@/components/background";
 import type { Lead, LeadsData } from "@/hooks/use-leads";
 import { Field } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { qualifyLeads } from "@/lib/lead-qualify.functions";
 import { PROPOSAL_LABEL, qualificationView, readQualSettings, readQualification, type QualSettings, type QualView } from "@/lib/lead-qualification";
 import { leadStageLabel } from "@/lib/lead-funnel";
 import { errorText } from "@/lib/errors";
@@ -30,29 +29,19 @@ export function QualTag({ view }: { view: QualView | null }) {
   );
 }
 
+/** Jev qualification runs in the background (up to 25 leads per run); the notice says what it proposes. */
 function useQualify() {
-  const run = useServerFn(qualifyLeads);
   const qc = useQueryClient();
-  const [busy, setBusy] = useState(false);
-  async function go(ids?: string[]) {
-    setBusy(true);
-    try {
-      const r = await run({ data: { ids } });
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      if (r.error) toast.error(r.done ? `${r.done} calificados; el resto no: ${r.error}` : r.error);
-      else if (!ids) toast.success(r.done ? `${r.done} ${r.done === 1 ? "lead calificado" : "leads calificados"} con IA.` : "No hay leads abiertos pendientes de calificar.");
-      return r;
-    } catch (e) { toast.error(errorText(e)); }
-    finally { setBusy(false); }
-  }
-  return { go, busy };
+  const { job, running, start } = useJob("qualify_leads", { onDone: () => qc.invalidateQueries({ queryKey: ["leads"] }) });
+  const go = (ids?: string[]) => start(ids ? { ids } : {});
+  return { go, busy: running, job };
 }
 
-/** Qualifies the open leads that have no qualification yet (up to 25 per click). */
+/** Qualifies the open leads that have no qualification yet (up to 25 per run). */
 export function QualifyPending({ pending }: { pending: number }) {
   const { go, busy } = useQualify();
-  if (!pending) return null;
-  return <Button variant="outline" disabled={busy} onClick={() => go()}>{busy ? "Calificando…" : `Calificar con IA (${pending > 25 ? "25 de " : ""}${pending})`}</Button>;
+  if (!pending && !busy) return null;
+  return <Button variant="outline" disabled={busy} onClick={() => go()}>{busy ? "Calificando en segundo plano…" : `Calificar con IA (${pending > 25 ? "25 de " : ""}${pending})`}</Button>;
 }
 
 export function QualificationPanel({ lead, data }: { lead: Lead; data: LeadsData }) {
