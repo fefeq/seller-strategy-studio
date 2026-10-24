@@ -29,7 +29,7 @@ export const Route = createFileRoute("/_authenticated")({
 // Menu by kind of work (product decision 24 oct 2026): Hoy, Vender, Estrategia, Conocimiento, Ajustes.
 type NavItem = { to: string; label: string; leadersOnly?: boolean };
 const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
-  { title: "Hoy", items: [{ to: "/home", label: "Inicio" }, { to: "/inbox", label: "Sugerencias" }] },
+  { title: "Hoy", items: [{ to: "/home", label: "Inicio" }, { to: "/inbox", label: "Sugerencias" }, { to: "/discoveries", label: "Descubiertos" }] },
   { title: "Vender", items: [{ to: "/accounts", label: "Cuentas" }, { to: "/leads", label: "Leads" }, { to: "/deals", label: "Pipeline" }, { to: "/people", label: "Personas" }, { to: "/approvals", label: "Aprobaciones" }] },
   { title: "Estrategia", items: [{ to: "/strategy", label: "Estrategia GTM" }, { to: "/metrics", label: "Métricas" }, { to: "/advisor", label: "Asesor GTM", leadersOnly: true }, { to: "/cycle", label: "Ciclo GTM" }, { to: "/debates", label: "Debates" }, { to: "/abm", label: "ABM y partners" }, { to: "/theory-u", label: "Theory U" }, { to: "/products", label: "Productos" }] },
   { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }, { to: "/memory", label: "Memoria" }] },

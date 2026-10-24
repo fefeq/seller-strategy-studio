@@ -100,7 +100,7 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Fase 1d: «Buscar personas clave» (mapa de poder) y «Buscar empresas por ICP» (Cuentas, con búsqueda a fondo) por necesidad; agente/MCP find_key_people y find_icp_companies
 - [x] Fase 2: memoria (negocio, usuario, cuenta, resultados, tareas); aprende de chats, notas de reunión y decisiones sobre sugerencias; el agente la lee; pantalla Memoria (Empresa, Mío, Cuentas)
 - [x] Fase 3a: resumen en Inicio (lo que hice solo · necesita tu decisión · hoy)
-- [ ] Fase 3b: Descubiertos semanal
+- [x] Fase 3b: Descubiertos semanal (empresas con filtro de encaje por IA, contactos de cuentas objetivo, competidores; aceptar/descartar con motivo en memoria)
 - [ ] Fase 3c: motor ampliado (investigar cuentas nuevas, preparar reuniones la víspera, cuentas que se enfrían)
 - [ ] Fase 3d: email diario 8:00 (necesita dominio de envío)
 - [x] Flujo completo del lead nuevo: cuenta encontrada o creada → datos de la empresa (Apollo, luego Clay) → personas clave → propuesta de IA en Sugerencias; panel «Flujo de entrada» en la ficha con «Repetir el flujo»; funciona sin Inngest (al crear el lead y cada hora)

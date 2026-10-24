@@ -24,9 +24,10 @@ function build() {
       const stripe = await step.run("stripe", async () => t.maintainStripe(await admin(), orgId));
       const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
       const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
+      const discoveries = await step.run("discoveries", async () => { const { discoverForOrg } = await import("@/lib/discoveries.server"); return discoverForOrg(await admin(), orgId); });
       const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
       if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
-      return { suggestions, stripe, posthog, signals, leads: leads.length };
+      return { suggestions, stripe, posthog, signals, discoveries: discoveries.skipped ?? discoveries.added, leads: leads.length };
     },
   );
 
