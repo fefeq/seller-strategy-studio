@@ -137,7 +137,7 @@ export async function readFile(s: DriveScope, ref: string) {
   }
   const { text, truncated } = cleanText(raw);
   if (!text) throw new Error("El archivo está vacío o no tiene texto que leer.");
-  return { id: file.id, name: file.name, kind: kindLabel(file.mimeType), url: file.webViewLink ?? null, text, truncated };
+  return { id: file.id, name: file.name, kind: kindLabel(file.mimeType), url: file.webViewLink ?? null, modified: file.modifiedTime ?? null, text, truncated };
 }
 
 /** Reads a file and saves it as a knowledge document of the section (team-wide; skills stay personal). */
@@ -195,4 +195,45 @@ export async function saveDocument(s: DriveScope, opts: { title: string; markdow
   }
   const f = await createGoogleDoc(name, html, root.id);
   return { name: f.name, url: f.webViewLink ?? null, folder: root.name, fallback: !!target };
+}
+
+/** «Drive por cuenta»: the documents in every account folder of the company, with their cached summaries. */
+export async function accountsOverview(s: DriveScope) {
+  const { buildOverview } = await import("@/lib/drive-overview");
+  const { data: rows, error } = await s.db.from("drive_folders").select("account_id,folder_id,name,accounts(name,domain)")
+    .eq("org_id", s.orgId).not("account_id", "is", null).limit(80);
+  if (error) throw new Error(error.message);
+  const list = (rows ?? []) as { account_id: string; folder_id: string; name: string; accounts: { name: string; domain: string | null } | null }[];
+  const listings = [];
+  // A few folders at a time: one Drive listing per account.
+  for (let i = 0; i < list.length; i += 6) {
+    listings.push(...await Promise.all(list.slice(i, i + 6).map(async (r) => {
+      const base = { accountId: r.account_id, accountName: r.accounts?.name ?? r.name, domain: r.accounts?.domain ?? null };
+      try {
+        const folder = await alive(r.folder_id);
+        if (!folder) return { ...base, folder: null, files: [], error: "La carpeta ya no existe en Drive o está en la papelera." };
+        return { ...base, folder: toRef(folder), files: (await listChildren(folder.id)).map(toItem), error: null };
+      } catch (e) {
+        return { ...base, folder: null, files: [], error: e instanceof Error ? e.message : "No se pudo abrir la carpeta." };
+      }
+    })));
+  }
+  const { data: summaries } = await s.db.from("drive_doc_summaries").select("file_id,summary,file_modified_at").eq("org_id", s.orgId);
+  return { root: await companyFolder(s, false), ...buildOverview(listings, summaries ?? []) };
+}
+
+/** Reads one document of an account folder and saves a short AI summary of it (cached until the file changes). */
+export async function summarizeDoc(s: DriveScope, fileId: string, accountId: string | null) {
+  if (accountId) await mustAccount(s, accountId);
+  const r = await readFile(s, fileId);
+  const { ask } = await import("@/lib/ai-gateway");
+  const { cleanSummary, SUMMARY_PROMPT } = await import("@/lib/drive-overview");
+  const summary = cleanSummary(String(await ask(SUMMARY_PROMPT, `Documento: ${r.name}\n\n${r.text.slice(0, 12_000)}`, { effort: "low" })));
+  if (!summary) throw new Error("La IA no devolvió un resumen. Inténtalo de nuevo.");
+  const { error } = await s.db.from("drive_doc_summaries").upsert(
+    { org_id: s.orgId, account_id: accountId, file_id: r.id, file_modified_at: r.modified, summary, created_by: s.userId, updated_at: new Date().toISOString() },
+    { onConflict: "org_id,file_id" },
+  );
+  if (error) throw new Error(error.message);
+  return { fileId: r.id, summary };
 }

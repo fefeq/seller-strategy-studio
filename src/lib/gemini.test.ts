@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { aiProvider, buildGenerateRequest, dataUrlToPart, extractText, geminiAgentModel, geminiErrorMessage, geminiModel, jevAnswerSchema, jevPrompt, normalizeJevAnswers, sanitizeSchema, SKIP_SIGNATURE, withoutThinking, withThoughtSignatures } from "./gemini";
+import { aiProvider, buildGenerateRequest, dataUrlToPart, extractText, geminiAgentModel, geminiErrorMessage, geminiModel, jevAnswerSchema, jevPrompt, normalizeJevAnswers, sanitizeSchema, SKIP_SIGNATURE, withThoughtSignatures, fixGeminiSseLine } from "./gemini";
 
 describe("provider", () => {
   it("uses Gemini only when a key exists and not forced off", () => {
@@ -107,11 +107,18 @@ describe("withThoughtSignatures", () => {
   });
 });
 
-describe("withoutThinking", () => {
-  it("removes only thinkingConfig", () => {
-    const r = buildGenerateRequest("s", "u", { schema: { name: "x", schema: { type: "object" } } });
-    const out = withoutThinking(r);
-    expect(out.generationConfig).toEqual({ responseMimeType: "application/json", responseJsonSchema: { type: "object" } });
-    expect(r.generationConfig.thinkingConfig).toBeDefined();
+describe("fixGeminiSseLine", () => {
+  it("numbers streamed tool calls and marks the finish as tool_calls, as the AI SDK requires", () => {
+    const line = 'data: ' + JSON.stringify({ choices: [{ index: 0, finish_reason: "stop", delta: { tool_calls: [{ id: "a", function: { name: "list_deals", arguments: "{}" } }, { id: "b", function: { name: "search", arguments: "{}" } }] } }] });
+    const out = JSON.parse(fixGeminiSseLine(line).slice(5));
+    expect(out.choices[0].delta.tool_calls.map((t: { index: number }) => t.index)).toEqual([0, 1]);
+    expect(out.choices[0].finish_reason).toBe("tool_calls");
+  });
+  it("leaves text chunks, [DONE] and calls that already have an index unchanged", () => {
+    const text = 'data: {"choices":[{"index":0,"finish_reason":"stop","delta":{"content":"hola"}}]}';
+    expect(fixGeminiSseLine(text)).toBe(text);
+    expect(fixGeminiSseLine("data: [DONE]")).toBe("data: [DONE]");
+    const indexed = 'data: {"choices":[{"index":0,"delta":{"tool_calls":[{"index":3,"id":"a"}]}}]}';
+    expect(fixGeminiSseLine(indexed)).toBe(indexed);
   });
 });

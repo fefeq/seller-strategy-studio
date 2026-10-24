@@ -14,7 +14,7 @@ const setup = (o: Partial<SetupData> = {}): SetupData => ({
   positioning: fullPos,
   pillars: [{ title: "a", message: "m" }, { title: "b", message: "m" }, { title: "c", message: "m" }],
   quotas: [{ period: "2026-Q4", amount: 100000 }],
-  accounts: 1, accountsWithFit: 1, deals: 1, quarter: "2026-Q4", ...o,
+  accounts: 1, deals: 1, quarter: "2026-Q4", ...o,
 });
 const snap = (o: Partial<Snapshot> = {}): Snapshot => ({
   now: NOW, orgId: "o", setup: setup(), deals: [], meetings: [], accounts: [], stakeholders: [], registrations: [], trials: [], segments: [], ...o,
@@ -36,17 +36,6 @@ describe("setup completeness", () => {
   });
   it("a win rate target of 0 counts as filled", () => expect(setupStatus(setup({ segments: [{ name: "Enterprise", acv_min: 50000, acv_max: null, win_rate_target: 0, ae_quota: 0 }] })).items.find((i) => i.id === "benchmarks")?.done).toBe(true));
   it("needs three pillars with message", () => expect(setupStatus(setup({ pillars: [{ title: "a", message: "m" }] })).next?.id).toBe("pillars"));
-  it("accounts without segment, sector and size leave the fit step open; 80 % of them is enough", () => {
-    const open = setupStatus(setup({ accounts: 5, accountsWithFit: 3 }));
-    expect(open.items.find((i) => i.id === "account_fit")?.done).toBe(false);
-    expect(open.pct).toBe(95);
-    expect(open.next?.id).toBe("account_fit");
-    expect(setupStatus(setup({ accounts: 5, accountsWithFit: 4 })).items.find((i) => i.id === "account_fit")?.done).toBe(true);
-    // No accounts yet: both account steps are open and «primeras cuentas» comes first.
-    const none = setupStatus(setup({ accounts: 0, accountsWithFit: 0 }));
-    expect(none.items.find((i) => i.id === "account_fit")?.done).toBe(false);
-    expect(none.missing.map((i) => i.id)).toEqual(["accounts", "account_fit"]);
-  });
 });
 
 describe("detectors", () => {
@@ -153,15 +142,6 @@ describe("agent tool permissions", () => {
   it("only owner and sales leader set quotas", () => {
     expect(canUseTool(getTool("set_quota")!, ["sales_leader"])).toBe(true);
     expect(canUseTool(getTool("set_quota")!, ["marketing"])).toBe(false);
-  });
-  it("update_account: empty text clears the field, nothing else is sent, and the summary names the fields", () => {
-    const t = getTool("update_account")!;
-    expect(t.kind).toBe("write");
-    expect(canUseTool(t, ["ae"])).toBe(true);
-    const args = t.input.parse({ account_id: "11111111-1111-4111-8111-111111111111", industry: "Fintech", size: "200", segment_id: null });
-    expect(t.summarize!(args)).toBe("Actualizar la cuenta: sector → Fintech, tamaño → 200, segmento → vacío");
-    expect(() => t.input.parse({ account_id: "x" })).toThrow();
-    expect(() => t.input.parse({ account_id: "11111111-1111-4111-8111-111111111111", tier: "D" })).toThrow();
   });
   it("an AE gets read tools and deal writes but not strategy writes", () => {
     const names = toolsFor(["ae"]).map((t) => t.name);

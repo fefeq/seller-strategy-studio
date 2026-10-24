@@ -26,28 +26,16 @@ export const Route = createFileRoute("/_authenticated")({
   component: Shell,
 });
 
-const NAV = [
-  { to: "/home", label: "Inicio" },
-  { to: "/inbox", label: "Sugerencias" },
-  { to: "/setup", label: "Configuración" },
-  { to: "/cycle", label: "Ciclo GTM" },
-  { to: "/debates", label: "Debates" },
-  { to: "/strategy", label: "Estrategia GTM" },
-  { to: "/theory-u", label: "Theory U" },
-  { to: "/hub", label: "Conocimiento" },
-  { to: "/accounts", label: "Cuentas" },
-  { to: "/leads", label: "Leads" },
-  { to: "/deals", label: "Pipeline" },
-  { to: "/products", label: "Productos" },
-  { to: "/metrics", label: "Métricas" },
-  { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
-  { to: "/abm", label: "ABM y partners" },
-  { to: "/people", label: "Personas" },
-  { to: "/approvals", label: "Aprobaciones" },
-  { to: "/integrations", label: "Conexiones" },
-  { to: "/connect", label: "Conectar asistentes" },
-  { to: "/team", label: "Equipo y conexiones" },
-] as const;
+// Menu by kind of work (product decision 24 oct 2026): Hoy, Vender, Estrategia, Conocimiento, Ajustes.
+type NavItem = { to: string; label: string; leadersOnly?: boolean };
+const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
+  { title: "Hoy", items: [{ to: "/home", label: "Inicio" }, { to: "/inbox", label: "Sugerencias" }] },
+  { title: "Vender", items: [{ to: "/accounts", label: "Cuentas" }, { to: "/leads", label: "Leads" }, { to: "/deals", label: "Pipeline" }, { to: "/people", label: "Personas" }, { to: "/approvals", label: "Aprobaciones" }] },
+  { title: "Estrategia", items: [{ to: "/strategy", label: "Estrategia GTM" }, { to: "/metrics", label: "Métricas" }, { to: "/advisor", label: "Asesor GTM", leadersOnly: true }, { to: "/cycle", label: "Ciclo GTM" }, { to: "/debates", label: "Debates" }, { to: "/abm", label: "ABM y partners" }, { to: "/theory-u", label: "Theory U" }, { to: "/products", label: "Productos" }] },
+  { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }, { to: "/memory", label: "Memoria" }] },
+  { title: "Ajustes", items: [{ to: "/setup", label: "Configuración" }, { to: "/team", label: "Equipo" }, { to: "/integrations", label: "Conexiones" }, { to: "/connect", label: "Conectar asistentes" }] },
+];
+const NAV = NAV_GROUPS.flatMap((g) => g.items);
 
 function Shell() {
   const { data: me } = useMe();
@@ -98,14 +86,19 @@ function Shell() {
       )}
       {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
       <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-3" aria-label="Secciones">
-        {hasOrg && NAV.filter((n) => !("leadersOnly" in n) || canUseAdvisor(me?.roles ?? [])).map((n) => (
-          <Link
-            key={n.to}
-            to={n.to}
-            className="flex items-center border-l-2 border-transparent px-3 py-2.5 text-base text-ink-mid hover:text-ink data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
-          >
-            {n.label}
-          </Link>
+        {hasOrg && NAV_GROUPS.map((g) => (
+          <div key={g.title} className="mb-3">
+            <p className="eyebrow px-3 pb-1 pt-2">{g.title}</p>
+            {g.items.filter((n) => !n.leadersOnly || canUseAdvisor(me?.roles ?? [])).map((n) => (
+              <Link
+                key={n.to}
+                to={n.to as never}
+                className="flex items-center border-l-2 border-transparent px-3 py-2.5 text-base text-ink-mid hover:text-ink data-[status=active]:border-red data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
+              >
+                {n.label}
+              </Link>
+            ))}
+          </div>
         ))}
       </nav>
       {hasOrg && <SetupMeter />}

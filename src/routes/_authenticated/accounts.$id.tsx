@@ -28,9 +28,10 @@ import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { latestOf, scoreAccount } from "@/lib/scoring";
 import { ScoreDetail } from "@/components/score";
-import { ClayEnrich, ClayPeopleButton } from "@/components/clay";
+import { CompleteAccount, KeyPeopleButton } from "@/components/orchestrator";
+import { learnFromMeeting } from "@/lib/memory.functions";
 import { AccountResearch, SignalsTab } from "@/components/web-research";
-import { ApolloEnrich, ApolloPeopleButton, ApolloReveal } from "@/components/apollo";
+import { ApolloReveal } from "@/components/apollo";
 import { AccountDriveTab, SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
 import { linkedinCompanyUrl } from "@/lib/apify";
@@ -163,8 +164,7 @@ function FitFields({ account, segNames, onSaved }: { account: { id: string; doma
       <Field label="País"><CountryPick aria-label="País" value={account.country ?? null} onChange={saveCountry} /></Field>
       <Field label="LinkedIn de la empresa"><Input value={linkedin} placeholder="linkedin.com/company/…" onChange={(e) => setLinkedin(e.target.value)} onBlur={saveLinkedin} /></Field>
       <div className="space-y-2">
-        <ClayEnrich account={account} onSaved={onSaved} />
-        <ApolloEnrich account={account} onSaved={onSaved} />
+        <CompleteAccount account={account} onSaved={onSaved} />
       </div>
     </div>
   );
@@ -268,7 +268,7 @@ function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
       <div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><ClayPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><ApolloPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h3 className="text-2xl">Mapa de poder</h3><div className="flex flex-wrap gap-2"><KeyPeopleButton accountId={accountId} hasDomain={hasDomain} onAdded={onChange} /><Button size="sm" onClick={add}>+ Persona</Button></div></div>
         {list.length === 0 ? <Empty>Añade a las personas involucradas en la compra.</Empty> : <ul className="-ml-2 sm:-ml-4">{roots.map((s) => <Node key={s.id} s={s} />)}</ul>}
       </div>
       {sel ? (
@@ -317,6 +317,7 @@ function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deals, onCh
   const detailRef = useRevealOnMobile(sel?.id);
   const brief = useServerFn(generateMeetingBrief);
   const coach = useServerFn(listeningCoaching);
+  const learnMeeting = useServerFn(learnFromMeeting);
   async function add() {
     const { data, error } = await supabase.from("meetings").insert({ account_id: accountId, title: "Nueva reunión", scheduled_at: new Date(Date.now() + 864e5).toISOString() }).select().single();
     if (error) return toast.error(errorText(error));
@@ -333,6 +334,8 @@ function MeetingsTab({ accountId, openMeetingId, list, stakeholders, deals, onCh
     const log = callLogEntry({ notes: rest.notes, next_steps: rest.next_steps, call_notes });
     if (log.hasContent) {
       await supabase.from("calls").upsert({ id, account_id: accountId, deal_id: deal_id || null, title, occurred_at: scheduled_at, summary: log.summary, next_steps: log.next_steps });
+      // Nokko remembers what matters from the notes (in the background; it never blocks saving).
+      void learnMeeting({ data: { meetingId: id } }).catch(() => undefined);
     }
     toast.success("Reunión guardada."); onChange();
     return true;

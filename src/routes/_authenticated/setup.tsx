@@ -29,17 +29,14 @@ import { AccountImport } from "@/components/account-import";
 import { questionSuggestions } from "@/lib/setup-questions";
 
 export const Route = createFileRoute("/_authenticated/setup")({
-  // «Resolver» on a setup suggestion lands on its step: /setup?step=account_fit opens Paso a paso there.
-  validateSearch: (s: Record<string, unknown>): { step?: string } => (typeof s.step === "string" && SETUP_ITEMS.some((i) => i.id === s.step) ? { step: s.step } : {}),
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SetupPage,
 });
 
 function SetupPage() {
   const { data: setup } = useSetup();
-  const { step } = Route.useSearch();
   const [proposal, setProposal] = useState<SetupProposal | null>(null);
-  const [tab, setTab] = useState(step ? "wizard" : "ai");
+  const [tab, setTab] = useState("ai");
   const st = setup?.status;
   return (
     <Page eyebrow="Onboarding" title="Configura tu estrategia">
@@ -60,7 +57,7 @@ function SetupPage() {
             </TabsList>
             <TabsContent value="ai" className="mt-6"><AiFill proposal={proposal} setProposal={setProposal} onWizard={() => setTab("wizard")} /></TabsContent>
             <TabsContent value="interview" className="mt-6"><Interview /></TabsContent>
-            <TabsContent value="wizard" className="mt-6"><Wizard proposal={proposal} initialStep={step ?? null} /></TabsContent>
+            <TabsContent value="wizard" className="mt-6"><Wizard proposal={proposal} /></TabsContent>
           </Tabs>
         </div>
         <aside className="h-fit rounded-lg border bg-card p-5">
@@ -306,11 +303,11 @@ function Interview() {
 
 // ---------------- Wizard ----------------
 
-function Wizard({ proposal, initialStep }: { proposal: SetupProposal | null; initialStep: string | null }) {
+function Wizard({ proposal }: { proposal: SetupProposal | null }) {
   const { data: setup } = useSetup();
   // Fixed order and numbering: «paso 2» is always the same step. Saving moves to the next pending one
   // after the current, never skipping one that is still missing.
-  const [stepId, setStepId] = useState<string | null>(initialStep);
+  const [stepId, setStepId] = useState<string | null>(null);
   const stepsRef = useRef<HTMLDivElement>(null);
   const isDone = (id: string) => !!setup?.status.items.find((x) => x.id === id)?.done;
   const firstPending = SETUP_ITEMS.find((i) => !isDone(i.id))?.id ?? SETUP_ITEMS[0].id;
@@ -358,17 +355,7 @@ const CREATE_STEPS: Record<string, { what: string; add: string }> = {
 
 function StepPanel({ id, done, link, proposal, onSaved }: { id: string; done: boolean; link: string; proposal: SetupProposal | null; onSaved: () => void }) {
   const [open, setOpen] = useState(false);
-  const { data: setup } = useSetup();
   const create = CREATE_STEPS[id];
-  if (id === "account_fit" && done && !open) {
-    const total = setup?.data.accounts ?? 0, withFit = setup?.data.accountsWithFit ?? 0;
-    return (
-      <div className="space-y-3 text-sm">
-        <p>{withFit === total ? `Tus ${total} cuentas tienen segmento, sector y tamaño.` : `${withFit} de ${total} cuentas tienen segmento, sector y tamaño; es suficiente para puntuar.`} Puedes revisarlo en <Link to="/accounts" className="underline">Cuentas</Link>.</p>
-        {withFit < total && <Button variant="outline" onClick={() => setOpen(true)}>Completar las que faltan</Button>}
-      </div>
-    );
-  }
   if (done && create && !open) {
     return (
       <div className="space-y-3 text-sm">
@@ -390,13 +377,6 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
   const { stages } = useStages();
   const segsQ = useQuery({ queryKey: ["segments-full"], queryFn: async () => (await supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,ae_quota").order("acv_min")).data ?? [] });
   const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
-  // Accounts still without one of the three fit fields, target accounts first (the sheet saves an emptied field as null; "" is treated the same here).
-  const fitQ = useQuery({
-    queryKey: ["accounts-missing-fit"], enabled: id === "account_fit",
-    queryFn: async () => ((await supabase.from("accounts").select("id,name,is_target,segment_id,industry,size").order("is_target", { ascending: false }).order("name").limit(500)).data ?? [])
-      .filter((a) => !a.segment_id || !a.industry?.trim() || !a.size?.trim()).slice(0, 60),
-  });
-  const fitRows = useMemo(() => fitQ.data ?? [], [fitQ.data]);
   const [v, setV] = useState<Record<string, any>>({});
   const [busy, setBusy] = useState(false);
 
@@ -408,9 +388,8 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
     else if (id === "segments" || id === "benchmarks") setV({ rows: segs.map((s) => { const p = proposal?.segments.find((x) => x.name.toLowerCase() === s.name.toLowerCase()); return { ...s, win_rate_target: s.win_rate_target ?? p?.win_rate_target ?? "", ae_quota: s.ae_quota ?? p?.ae_quota ?? "", acv_min: s.acv_min ?? "", acv_max: s.acv_max ?? "" }; }) });
     else if (id === "quota") setV({ amount: "" });
     else if (id === "accounts") setV({ names: (proposal?.target_accounts ?? []).map((a) => a.name).join("\n") });
-    else if (id === "account_fit") setV({ rows: fitRows.map((a) => ({ id: a.id, name: a.name, is_target: a.is_target, segment_id: a.segment_id ?? "", industry: a.industry ?? "", size: a.size ?? "" })) });
     else if (id === "deals") setV({ name: "", account_name: "", segment_id: "", stage: "", amount: "", close_date: "" });
-  }, [id, proposal, setup, segs, fitRows]);
+  }, [id, proposal, setup, segs]);
 
   const num = (x: any) => (x === "" || x == null ? undefined : Number(x));
   function items(): { tool: string; args: Record<string, unknown> }[] {
@@ -421,26 +400,15 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
       case "segments": case "benchmarks": return v.rows.map((r: any) => ({ tool: "upsert_segment", args: Object.fromEntries(Object.entries({ segment_id: r.id, name: r.name, acv_min: num(r.acv_min), acv_max: num(r.acv_max), win_rate_target: num(r.win_rate_target), ae_quota: num(r.ae_quota) }).filter(([, x]) => x !== undefined)) }));
       case "quota": return [{ tool: "set_quota", args: { amount: Number(v.amount), period: quarterOf(new Date()) } }];
       case "accounts": return String(v.names ?? "").split("\n").map((n) => n.trim()).filter(Boolean).map((name) => ({ tool: "create_account", args: { name, is_target: true } }));
-      case "account_fit": return (v.rows ?? []).flatMap((r: any) => {
-        // Only what the person filled in: an untouched empty field is not sent, so nothing is cleared by accident.
-        const orig = fitRows.find((a) => a.id === r.id);
-        const args: Record<string, unknown> = {};
-        if (r.segment_id && r.segment_id !== (orig?.segment_id ?? "")) args.segment_id = r.segment_id;
-        if (r.industry.trim() && r.industry.trim() !== (orig?.industry ?? "").trim()) args.industry = r.industry.trim();
-        if (r.size.trim() && r.size.trim() !== (orig?.size ?? "").trim()) args.size = r.size.trim();
-        return Object.keys(args).length ? [{ tool: "update_account", args: { account_id: r.id, ...args } }] : [];
-      });
       case "deals": return [{ tool: "create_deal", args: Object.fromEntries(Object.entries({ name: v.name, account_name: v.account_name?.trim() || undefined, segment_id: v.segment_id || undefined, stage: v.stage || undefined, amount: num(v.amount), close_date: v.close_date || undefined }).filter(([, x]) => x !== undefined)) }];
     }
     return [];
   }
 
   async function save() {
-    const list = items();
-    if (id === "account_fit" && !list.length) { toast.message("No has rellenado nada todavía."); return; }
     setBusy(true);
     try {
-      const r = await apply({ data: { items: list } });
+      const r = await apply({ data: { items: items() } });
       const bad = r.filter((x) => !x.ok);
       if (bad.length) toast.error(errorText(bad[0].error)); else { toast.success("Guardado."); onSaved(); }
       qc.invalidateQueries();
@@ -493,37 +461,6 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
         <div><p className="mb-2 text-sm font-medium">Desde un CSV</p><AccountImport onDone={(n) => n > 0 && onSaved()} /></div>
         <label className="block text-sm"><span className="font-medium">O escribe una cuenta por línea</span><Textarea className="mt-1" rows={5} value={v.names ?? ""} onChange={(e) => setV({ ...v, names: e.target.value })} /><span className="mt-1 block text-xs text-muted-foreground">Se crean como cuentas objetivo solo con el nombre; completa sector y tamaño en su ficha para que puntúen.</span></label>
       </div>}
-      {id === "account_fit" && (() => {
-        const total = setup?.data.accounts ?? 0, withFit = setup?.data.accountsWithFit ?? 0;
-        const segOpts = { "": "Sin segmento", ...Object.fromEntries(segs.map((x) => [x.id, x.name])) };
-        if (!total) return <p className="text-sm text-muted-foreground">Todavía no hay cuentas. Créalas en el paso anterior o en <Link to="/accounts" className="underline">Cuentas</Link>.</p>;
-        if (fitQ.isLoading) return <p className="text-sm text-muted-foreground">Cargando cuentas…</p>;
-        return (<>
-          <p className="text-sm text-muted-foreground">{withFit} de {total} cuentas tienen los tres datos. Sin ellos, la puntuación dice «sin datos de encaje». Rellena lo que sepas: lo que dejes vacío no se toca.{fitRows.length >= 60 ? " Se muestran las 60 primeras; guarda y vuelve para seguir." : ""}</p>
-          <div className="space-y-3 md:hidden">{v.rows?.map((r: any, i: number) => (
-            <div key={r.id} className="border-t border-hairline pt-2">
-              <p className="text-sm font-medium">{r.name}{r.is_target && <span className="ml-2 text-xs text-muted-foreground">objetivo</span>}</p>
-              <div className="mt-2 grid gap-2">
-                <label className="text-xs text-muted-foreground">Segmento<div className="mt-1"><Pick value={r.segment_id} options={segOpts} onChange={(x) => setRow(i, "segment_id", x)} /></div></label>
-                <label className="text-xs text-muted-foreground">Sector<Input className="mt-1" placeholder="Fintech, logística…" value={r.industry} onChange={(e) => setRow(i, "industry", e.target.value)} /></label>
-                <label className="text-xs text-muted-foreground">Tamaño<Input className="mt-1" placeholder="Empleados: 200" value={r.size} onChange={(e) => setRow(i, "size", e.target.value)} /></label>
-              </div>
-            </div>
-          ))}</div>
-          <div className="hidden overflow-x-auto md:block"><table className="w-full text-sm">
-            <thead><tr className="text-left text-xs text-muted-foreground"><th className="py-1">Cuenta</th><th>Segmento</th><th>Sector</th><th>Tamaño</th></tr></thead>
-            <tbody>{v.rows?.map((r: any, i: number) => (
-              <tr key={r.id}>
-                <td className="py-1 pr-2">{r.name}{r.is_target && <span className="ml-2 text-xs text-muted-foreground">objetivo</span>}</td>
-                <td className="pr-2"><Pick value={r.segment_id} options={segOpts} onChange={(x) => setRow(i, "segment_id", x)} /></td>
-                <td className="pr-2"><Input placeholder="Fintech, logística…" value={r.industry} onChange={(e) => setRow(i, "industry", e.target.value)} /></td>
-                <td className="pr-2"><Input placeholder="Empleados: 200" value={r.size} onChange={(e) => setRow(i, "size", e.target.value)} /></td>
-              </tr>
-            ))}</tbody>
-          </table></div>
-          {!segs.length && <p className="text-xs text-muted-foreground">No hay segmentos todavía: créalos en el paso «Segmentos con rango de ACV» y vuelve.</p>}
-        </>);
-      })()}
       {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("account_name", "Cuenta (se crea si no existe)")}<label className="text-sm">Segmento<div className="mt-1"><Pick value={v.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(segs.map((x) => [x.id, x.name])) }} onChange={(x) => setV({ ...v, segment_id: x })} /></div></label><label className="text-sm">Etapa<div className="mt-1"><Pick value={v.stage || firstOpenStage(stages).key} options={stageOptions(stages)} onChange={(x) => setV({ ...v, stage: x })} /></div></label>{inp("amount", `Importe (ACV, ${symbol})`, { type: "number" })}<label className="text-sm">Fecha de cierre<div className="mt-1"><DateField value={v.close_date || null} onChange={(iso) => setV({ ...v, close_date: iso ?? "" })} /></div></label></div>}
       <Button onClick={save} disabled={busy}>{busy && <Loader2 className="size-4 animate-spin" />} Guardar y seguir</Button>
     </div>

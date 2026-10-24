@@ -9,15 +9,9 @@ export type SetupData = {
   pillars: { title: string; message: string | null }[];
   quotas: { period: string; amount: number }[];
   accounts: number;
-  /** Accounts with segment, sector and size: what the ICP fit (scoring.ts) is measured against. */
-  accountsWithFit: number;
   deals: number;
   quarter: string;
 };
-
-/** Share of accounts that need segment, sector and size for the fit step to count as done (a few imported extras don't block it). */
-export const FIT_SHARE = 0.8;
-export const accountFitDone = (d: Pick<SetupData, "accounts" | "accountsWithFit">) => d.accounts > 0 && d.accountsWithFit >= Math.ceil(d.accounts * FIT_SHARE);
 
 // The five fields of April Dunford's framework come first: the statement and the pitch are built on them,
 // so the milestone is not done while they are empty.
@@ -65,12 +59,8 @@ export const SETUP_ITEMS: SetupItem[] = [
     done: (d) => d.pillars.filter((p) => filled(p.title) && filled(p.message)).length >= 3 },
   { id: "quota", label: "Cuota del trimestre actual", weight: 15, unlocks: "Cobertura de pipeline y forecast", link: "/metrics",
     done: (d) => d.quotas.some((q) => q.period === d.quarter && Number(q.amount) > 0) },
-  { id: "accounts", label: "Primeras cuentas objetivo", weight: 5, unlocks: "Planes de cuenta, ABM y planificador de reuniones", link: "/accounts",
+  { id: "accounts", label: "Primeras cuentas objetivo", weight: 10, unlocks: "Planes de cuenta, ABM y planificador de reuniones", link: "/accounts",
     done: (d) => d.accounts > 0 },
-  // Without these three fields the score shows «sin datos de encaje» (fase A measurement, 21 oct): the step asks for them
-  // right after the accounts exist instead of waiting for someone to open each account sheet.
-  { id: "account_fit", label: "Segmento, sector y tamaño de tus cuentas", weight: 5, unlocks: "Puntuación de encaje con el ICP en Leads y Cuentas", link: "/accounts",
-    done: accountFitDone },
   { id: "deals", label: "Pipeline: al menos un deal", weight: 10, unlocks: "Métricas, Asesor GTM y alertas de riesgo", link: "/deals",
     done: (d) => d.deals > 0 },
 ];

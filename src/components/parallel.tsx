@@ -92,10 +92,12 @@ export function AccountReportTab({ accountId, accountName }: { accountId: string
 }
 
 /** Cuentas: «Buscar cuentas por ICP» → a list run, then review and import the companies. */
-export function IcpListButton() {
+export function IcpListButton(props: { open?: boolean; onOpenChange?: (v: boolean) => void; hideTrigger?: boolean } = {}) {
   const start = useServerFn(startIcpListFn);
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [ownOpen, setOwnOpen] = useState(false);
+  const open = props.open ?? ownOpen;
+  const setOpen = props.onOpenChange ?? setOwnOpen;
   const [icpId, setIcpId] = useState("");
   const [criteria, setCriteria] = useState("");
   const [count, setCount] = useState(25);
@@ -135,11 +137,11 @@ export function IcpListButton() {
   }
   const icpLabel = (i: { industries: string | null; company_size: string | null; geography: string | null }) => [i.industries, i.company_size, i.geography].filter(Boolean).join(" · ") || "ICP sin datos";
   return <>
-    <Button variant="outline" onClick={() => setOpen(true)}>Buscar cuentas por ICP</Button>
+    {!props.hideTrigger && <Button variant="outline" onClick={() => setOpen(true)}>Buscar cuentas por ICP</Button>}
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader className="text-left">
-          <DialogTitle>Buscar cuentas por ICP</DialogTitle>
+          <DialogTitle>Buscar empresas por ICP a fondo</DialogTitle>
           <DialogDescription>Parallel busca empresas reales que encajen con tu perfil de cliente ideal. Revisa la lista y elige cuáles importar como cuentas.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">

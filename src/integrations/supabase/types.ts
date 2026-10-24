@@ -1330,6 +1330,54 @@ export type Database = {
           },
         ]
       }
+      drive_doc_summaries: {
+        Row: {
+          account_id: string | null
+          created_by: string | null
+          file_id: string
+          file_modified_at: string | null
+          id: string
+          org_id: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_by?: string | null
+          file_id: string
+          file_modified_at?: string | null
+          id?: string
+          org_id?: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          created_by?: string | null
+          file_id?: string
+          file_modified_at?: string | null
+          id?: string
+          org_id?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_doc_summaries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drive_doc_summaries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drive_folders: {
         Row: {
           account_id: string | null
@@ -1636,6 +1684,47 @@ export type Database = {
             columns: ["segment_id"]
             isOneToOne: false
             referencedRelation: "segments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_usage: {
+        Row: {
+          cost: number
+          created_at: string
+          id: string
+          need: string | null
+          org_id: string
+          service: string
+          trigger: string
+          user_id: string | null
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          id?: string
+          need?: string | null
+          org_id?: string
+          service: string
+          trigger?: string
+          user_id?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          id?: string
+          need?: string | null
+          org_id?: string
+          service?: string
+          trigger?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_usage_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]
@@ -2181,6 +2270,79 @@ export type Database = {
           },
         ]
       }
+      memories: {
+        Row: {
+          account_id: string | null
+          active: boolean
+          content: string
+          created_at: string
+          id: string
+          kind: string
+          learned: boolean
+          org_id: string
+          pinned: boolean
+          scope: string
+          source: string
+          supersedes: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          account_id?: string | null
+          active?: boolean
+          content: string
+          created_at?: string
+          id?: string
+          kind?: string
+          learned?: boolean
+          org_id?: string
+          pinned?: boolean
+          scope?: string
+          source?: string
+          supersedes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          account_id?: string | null
+          active?: boolean
+          content?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          learned?: boolean
+          org_id?: string
+          pinned?: boolean
+          scope?: string
+          source?: string
+          supersedes?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "memories_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "memories_supersedes_fkey"
+            columns: ["supersedes"]
+            isOneToOne: false
+            referencedRelation: "memories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messaging_pillars: {
         Row: {
           created_at: string
@@ -2283,6 +2445,38 @@ export type Database = {
             foreignKeyName: "mutual_action_items_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_budgets: {
+        Row: {
+          monthly_limit: number | null
+          org_id: string
+          updated_at: string
+          updated_by: string | null
+          warn_pct: number
+        }
+        Insert: {
+          monthly_limit?: number | null
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          warn_pct?: number
+        }
+        Update: {
+          monthly_limit?: number | null
+          org_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          warn_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_budgets_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },

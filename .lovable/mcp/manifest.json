@@ -463,135 +463,6 @@
         "outputSchema": null
       },
       {
-        "name": "update_account",
-        "title": "Actualizar cuenta",
-        "description": "Actualiza una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras), segmento, tier (A, B, C), tier ABM, salud (green/yellow/red), si es objetivo, notas y responsable. Segmento, sector y tamaño son lo que mide el encaje con el ICP. Solo cambia los campos que se pasan. (Queda pendiente: el usuario la confirma en Nokko.)",
-        "annotations": {
-          "readOnlyHint": false,
-          "destructiveHint": false,
-          "openWorldHint": false
-        },
-        "inputSchema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "type": "object",
-          "properties": {
-            "account_id": {
-              "type": "string",
-              "format": "uuid",
-              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-            },
-            "name": {
-              "type": "string",
-              "minLength": 1
-            },
-            "domain": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "industry": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "size": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "country": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "minLength": 2,
-                  "maxLength": 2
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "segment_id": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid",
-                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "tier": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "A",
-                    "B",
-                    "C"
-                  ]
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "abm_tier": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "health": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "enum": [
-                    "green",
-                    "yellow",
-                    "red"
-                  ]
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            },
-            "is_target": {
-              "type": "boolean"
-            },
-            "notes": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
-            "owner_id": {
-              "anyOf": [
-                {
-                  "type": "string",
-                  "format": "uuid",
-                  "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
-                },
-                {
-                  "type": "null"
-                }
-              ]
-            }
-          },
-          "required": [
-            "account_id"
-          ],
-          "additionalProperties": false
-        },
-        "outputSchema": null
-      },
-      {
         "name": "create_deal",
         "title": "Crear deal",
         "description": "Crea un deal (oportunidad). Sin account_id lo asocia a la cuenta con ese nombre (account_name, o el nombre del deal) y la crea si no existe, como la entrada de leads. (Queda pendiente: el usuario la confirma en Nokko.)",
@@ -3835,6 +3706,145 @@
           "required": [
             "account_ids"
           ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "complete_account",
+        "title": "Completar datos de una cuenta",
+        "description": "Completa los datos de una cuenta (sector, tamaño, país, descripción) eligiendo solo los servicios conectados más baratos y cambiando a otro si uno falla. No cambia nada: para aplicarlo usa update_account. Úsala en vez de apollo_enrich_account o clay_enrich_account salvo que el usuario pida un servicio concreto.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_key_people",
+        "title": "Buscar personas clave",
+        "description": "Busca personas clave de una cuenta por cargo y nivel eligiendo la fuente sola (primero la gratuita, luego otra si no encuentra). Úsala en vez de apollo_find_people o clay_find_people salvo que pidan un servicio concreto. Si el resultado viene «oculto», para añadirlas usa apollo_reveal_contacts con sus apollo_id; si no, create_stakeholder.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "titles": {
+              "description": "Cargos, p. ej. «Head of Sales», «CFO»",
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "levels": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "founder",
+                  "c_suite",
+                  "vp",
+                  "head",
+                  "director",
+                  "manager"
+                ]
+              }
+            }
+          },
+          "required": [
+            "account_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "find_icp_companies",
+        "title": "Buscar empresas por ICP",
+        "description": "Busca empresas nuevas que encajen con el ICP (palabras clave, países ISO, empleados) eligiendo la fuente más rápida y barata y cambiando si no encuentra. Úsala en vez de apollo_find_companies o clay_find_companies salvo que pidan un servicio concreto. Para listas largas usa start_icp_account_list. Para guardarlas usa create_account.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "keywords": {
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "countries": {
+              "maxItems": 15,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 3
+              }
+            },
+            "min_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "max_employees": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "integration_budget",
+        "title": "Gasto en integraciones del mes",
+        "description": "Gasto aproximado en integraciones este mes, el límite mensual de la empresa y si lo automático está en pausa.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
           "additionalProperties": false
         },
         "outputSchema": null

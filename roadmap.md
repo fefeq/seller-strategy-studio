@@ -55,7 +55,6 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] 4. Seguimientos día 3/7/14 para leads contactados sin respuesta: aviso en Sugerencias con borrador (posicionamiento y pilares de la empresa); al aprobar se apunta el envío y se programa el siguiente; el agente redacta una versión adaptada (draft_followup); la ficha del lead muestra en qué paso va. Nokko no envía: el comercial copia y manda.
 - [x] 5. Biblioteca de jugadas: cinco playbooks base de Nokko (discovery, objeciones, demo, negociación, propuestas) que un botón en Conocimiento añade adaptados por la IA al contexto aprobado (o en versión base si no hay contexto o la adaptación no respeta la estructura); la Preparación de llamada los sigue.
 - [x] 6. Notas de llamada en 5 líneas (qué les duele, qué les cuesta, quién decide y cómo, qué les frena, próximo paso acordado) en cada reunión, y desmontaje de la llamada por la IA (veredicto, qué funcionó, qué faltó, riesgos, próximo paso, qué actualizar en el deal con la frase que lo apoya); «Actualizar el deal con el agente» prepara MEDDPICC y la tarea del próximo paso como acciones a confirmar. Aviso en Sugerencias si una reunión pasada (2 h–7 días) no tiene notas; «Resolver» hace que el agente pregunte las 5 líneas y las guarde (save_call_notes). Migración 0025.
-- [x] 8. Paso «Segmento, sector y tamaño de tus cuentas» en la configuración (rama feat/setup-account-fit): la foto de partida del 21 oct enseñó que sin esos tres datos la puntuación sale «sin datos de encaje». Nuevo hito del esquema (hecho con el 80 % de las cuentas), tabla en Paso a paso con las cuentas que lo tienen vacío (objetivo primero; lo vacío no se toca), aviso en Sugerencias que lleva a ese paso (/setup?step=account_fit) y herramienta `update_account` para el agente y MCP.
 - [x] 7. Reparto de cuentas (Cuentas → Reparto): reglas segmento y/o país o región → personas (la primera que encaja gana; la IA puede proponerlas), cálculo fijo que equilibra la carga por tier (A 3, B 2, C 1) con máximo opcional por persona, la IA explica cada fila; tabla editable que aprueban Owner o Sales Leader; al aprobar, los deals y leads abiertos van con la cuenta y cada persona recibe «Te han asignado N cuentas» (Sugerencias y Telegram). País en la ficha de la cuenta (la región se deduce), columna Responsable en Cuentas y aviso de cuentas sin responsable. Migración 0029.
 
 ### Feedback de la configuración de Postin V2 (21 oct), una rama por fase
@@ -90,3 +89,14 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Parallel: informe profundo de cuenta, listas de cuentas por ICP, completar cuentas en tabla, tercera fuente de búsqueda; agente y MCP
 - [x] Logo.dev: logos de empresa en Cuentas, ficha, Leads, Pipeline y listas por ICP
 - [x] Calificación de leads con IA (Jev): encaje, intención, cargo, propuesta de etapa y segmento; pesos editables
+- [x] Chat del agente sin respuesta: Gemini cambió el formato de las llamadas a herramientas; corregido
+- [x] Logos de empresa en color (variante oscura en modo Tinta)
+- [x] Conocimiento: pestaña «Drive por cuenta» con todos los documentos guardados en Drive, resumen y fecha
+
+### Nokko decide, recuerda y se adelanta (plan aprobado 24 oct)
+- [x] Fase 1a: menú en 5 bloques (Hoy, Vender, Estrategia, Conocimiento, Ajustes)
+- [x] Fase 1b: reglas del orquestador (catálogo de necesidades, elección de servicios, límite 80/100 %) y tablas de gasto
+- [x] Fase 1c: «Completar datos» por necesidad (Apollo→Clay), gasto registrado en investigación, panel de gasto y límite en Conexiones, herramientas complete_account e integration_budget (agente y MCP)
+- [x] Fase 1d: «Buscar personas clave» (mapa de poder) y «Buscar empresas por ICP» (Cuentas, con búsqueda a fondo) por necesidad; agente/MCP find_key_people y find_icp_companies
+- [x] Fase 2: memoria (negocio, usuario, cuenta, resultados, tareas); aprende de chats, notas de reunión y decisiones sobre sugerencias; el agente la lee; pantalla Memoria (Empresa, Mío, Cuentas)
+- [ ] Fase 3: briefing en Inicio, Descubiertos semanal, motor ampliado, email diario 8:00 (necesita dominio de envío)

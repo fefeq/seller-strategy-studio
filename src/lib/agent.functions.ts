@@ -198,6 +198,8 @@ export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "
   }
   if (decision === "dismiss") {
     await ctx.db.from("suggestions").update({ status: "dismissed", updated_at: now }).eq("id", id);
+    const { rememberDecision } = await import("@/lib/memory.server");
+    await rememberDecision(ctx, s, "dismiss");
     return { status: "dismissed", message: "Descartada; no volverá a aparecer" };
   }
   const { data: claimed } = await ctx.db.from("suggestions").update({ status: "approved", updated_at: now }).eq("id", id).eq("status", "pending").select("id");
@@ -214,6 +216,8 @@ export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "
       throw new Error((e as Error).message);
     }
   }
+  const { rememberDecision } = await import("@/lib/memory.server");
+  await rememberDecision(ctx, s, "approve");
   return { status: "approved", message: action ? (note ? `Hecho. ${note}` : "Hecho") : "Marcada como hecha" };
 }
 

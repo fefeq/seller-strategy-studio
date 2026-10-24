@@ -250,8 +250,8 @@ export function ApolloReveal({ stakeholderId, onChange }: { stakeholderId: strin
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button size="sm" variant="outline" disabled={!!busy} onClick={() => run(false)}>{busy === "email" ? "Revelando…" : "Revelar email con Apollo"}</Button>
-      <Button size="sm" variant="outline" disabled={!!busy || pending?.status === "pending"} onClick={() => run(true)}>{busy === "phone" ? "Pidiendo…" : "Revelar móvil con Apollo"}</Button>
+      <Button size="sm" variant="outline" disabled={!!busy} onClick={() => run(false)}>{busy === "email" ? "Revelando…" : "Conseguir email"}</Button>
+      <Button size="sm" variant="outline" disabled={!!busy || pending?.status === "pending"} onClick={() => run(true)}>{busy === "phone" ? "Pidiendo…" : "Conseguir móvil"}</Button>
       {pending?.status === "pending" && <span className="text-xs text-muted-foreground">Móvil pedido: llegará en unos minutos.</span>}
       {pending?.status === "not_found" && <span className="text-xs text-muted-foreground">Apollo no tenía móvil para esta persona.</span>}
     </div>

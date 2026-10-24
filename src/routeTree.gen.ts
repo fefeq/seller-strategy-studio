@@ -26,6 +26,7 @@ import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/h
 import { Route as AuthenticatedHubRouteImport } from './routes/_authenticated/hub'
 import { Route as AuthenticatedInboxRouteImport } from './routes/_authenticated/inbox'
 import { Route as AuthenticatedIntegrationsRouteImport } from './routes/_authenticated/integrations'
+import { Route as AuthenticatedMemoryRouteImport } from './routes/_authenticated/memory'
 import { Route as AuthenticatedMetricsRouteImport } from './routes/_authenticated/metrics'
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
@@ -131,6 +132,11 @@ const AuthenticatedIntegrationsRoute =
     path: '/integrations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMemoryRoute = AuthenticatedMemoryRouteImport.update({
+  id: '/memory',
+  path: '/memory',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedMetricsRoute = AuthenticatedMetricsRouteImport.update({
   id: '/metrics',
   path: '/metrics',
@@ -244,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/memory': typeof AuthenticatedMemoryRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/hub': typeof AuthenticatedHubRoute
   '/inbox': typeof AuthenticatedInboxRoute
   '/integrations': typeof AuthenticatedIntegrationsRoute
+  '/memory': typeof AuthenticatedMemoryRoute
   '/metrics': typeof AuthenticatedMetricsRoute
   '/people': typeof AuthenticatedPeopleRoute
   '/products': typeof AuthenticatedProductsRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/_authenticated/hub': typeof AuthenticatedHubRoute
   '/_authenticated/inbox': typeof AuthenticatedInboxRoute
   '/_authenticated/integrations': typeof AuthenticatedIntegrationsRoute
+  '/_authenticated/memory': typeof AuthenticatedMemoryRoute
   '/_authenticated/metrics': typeof AuthenticatedMetricsRoute
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
     | '/hub'
     | '/inbox'
     | '/integrations'
+    | '/memory'
     | '/metrics'
     | '/people'
     | '/products'
@@ -392,6 +402,7 @@ export interface FileRouteTypes {
     | '/hub'
     | '/inbox'
     | '/integrations'
+    | '/memory'
     | '/metrics'
     | '/people'
     | '/products'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hub'
     | '/_authenticated/inbox'
     | '/_authenticated/integrations'
+    | '/_authenticated/memory'
     | '/_authenticated/metrics'
     | '/_authenticated/people'
     | '/_authenticated/products'
@@ -585,6 +597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIntegrationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/memory': {
+      id: '/_authenticated/memory'
+      path: '/memory'
+      fullPath: '/memory'
+      preLoaderRoute: typeof AuthenticatedMemoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/metrics': {
       id: '/_authenticated/metrics'
       path: '/metrics'
@@ -726,6 +745,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHubRoute: typeof AuthenticatedHubRoute
   AuthenticatedInboxRoute: typeof AuthenticatedInboxRoute
   AuthenticatedIntegrationsRoute: typeof AuthenticatedIntegrationsRoute
+  AuthenticatedMemoryRoute: typeof AuthenticatedMemoryRoute
   AuthenticatedMetricsRoute: typeof AuthenticatedMetricsRoute
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
@@ -752,6 +772,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHubRoute: AuthenticatedHubRoute,
   AuthenticatedInboxRoute: AuthenticatedInboxRoute,
   AuthenticatedIntegrationsRoute: AuthenticatedIntegrationsRoute,
+  AuthenticatedMemoryRoute: AuthenticatedMemoryRoute,
   AuthenticatedMetricsRoute: AuthenticatedMetricsRoute,
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,

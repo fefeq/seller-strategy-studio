@@ -1,19 +1,45 @@
 // Direct Google Gemini support (own API key, billed by Google) — pure helpers, no I/O, so they are unit-tested.
-// Server code picks the provider with aiProvider(): GEMINI_API_KEY set → Gemini; otherwise the Lovable AI Gateway as before.
+// Server code walks aiProviders(): own keys first (Gemini, then OpenRouter), the Lovable AI Gateway last as fallback.
 
 export type AiEnv = Record<string, string | undefined>;
-export type AiProvider = "gemini" | "lovable";
+export type AiProvider = "gemini" | "openrouter" | "lovable";
 
 export const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta";
 export const GEMINI_OPENAI_BASE = `${GEMINI_BASE}/openai/`;
 export const DEFAULT_GEMINI_MODEL = "gemini-3.8-flash";
+export const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
+/** OpenRouter's auto-router; with require_parameters it only picks models that support tools / JSON schema. */
+export const DEFAULT_OPENROUTER_MODEL = "openrouter/auto";
+export const openrouterModel = (env: AiEnv) => env["OPENROUTER_MODEL"]?.trim() || DEFAULT_OPENROUTER_MODEL;
 
-/** AI_PROVIDER=lovable forces the gateway; otherwise a GEMINI_API_KEY secret switches everything to Gemini. */
-export function aiProvider(env: AiEnv): AiProvider {
+/**
+ * Order in which AI calls are tried. Own keys first: GEMINI_API_KEY, then OPENROUTER_API_KEY.
+ * The Lovable AI Gateway goes last as safety net, unless AI_LOVABLE_FALLBACK=off (own keys only).
+ * AI_PROVIDER=lovable forces the gateway alone.
+ */
+export function aiProviders(env: AiEnv): AiProvider[] {
   const forced = env["AI_PROVIDER"]?.trim().toLowerCase();
-  if (forced === "lovable") return "lovable";
-  if (env["GEMINI_API_KEY"]?.trim()) return "gemini";
-  return "lovable";
+  if (forced === "lovable") return ["lovable"];
+  const out: AiProvider[] = [];
+  if (env["GEMINI_API_KEY"]?.trim()) out.push("gemini");
+  if (env["OPENROUTER_API_KEY"]?.trim()) out.push("openrouter");
+  if (!out.length || env["AI_LOVABLE_FALLBACK"]?.trim().toLowerCase() !== "off") out.push("lovable");
+  return out;
+}
+
+/** First provider of the chain (the one that normally answers). */
+export function aiProvider(env: AiEnv): AiProvider {
+  return aiProviders(env)[0] ?? "lovable";
+}
+
+/**
+ * An own-key provider failed: try the next one? Yes for quota/rate (429), auth/permission (401/403),
+ * missing model (404), server errors and network failures (status 0). A plain 400 is our request's fault
+ * on every provider, except Gemini's "API key not valid" which comes as 400.
+ */
+export function shouldFallBack(status: number, body = ""): boolean {
+  if (status === 0 || status === 401 || status === 403 || status === 404 || status === 408 || status === 429 || status >= 500) return true;
+  return status === 400 && /API key not valid|API_KEY_INVALID/i.test(body);
 }
 
 export const geminiModel = (env: AiEnv) => env["GEMINI_MODEL"]?.trim() || DEFAULT_GEMINI_MODEL;
@@ -196,4 +222,46 @@ export function withoutThinking<T>(body: T): T {
   if (!b?.generationConfig || !("thinkingConfig" in b.generationConfig)) return body;
   const { thinkingConfig: _t, ...rest } = b.generationConfig;
   return { ...b, generationConfig: rest } as T;
+}
+
+/**
+ * Gemini's OpenAI-compatible stream sends tool_calls without the `index` field (and finish_reason "stop" instead of
+ * "tool_calls"). The AI SDK rejects such chunks, so every agent turn that used a tool ended with "No output generated".
+ * Fixes one SSE line: numbers the tool calls by position and marks the finish as tool_calls when the chunk carries any.
+ */
+export function fixGeminiSseLine(line: string): string {
+  if (!line.startsWith("data:")) return line;
+  const raw = line.slice(5).trim();
+  if (!raw || raw === "[DONE]") return line;
+  let chunk: { choices?: { delta?: { tool_calls?: { index?: number }[] }; finish_reason?: string | null }[] };
+  try { chunk = JSON.parse(raw); } catch { return line; }
+  let changed = false;
+  for (const choice of chunk.choices ?? []) {
+    const calls = choice.delta?.tool_calls;
+    if (!Array.isArray(calls) || !calls.length) continue;
+    calls.forEach((tc, i) => { if (typeof tc.index !== "number") { tc.index = i; changed = true; } });
+    if (choice.finish_reason === "stop") { choice.finish_reason = "tool_calls"; changed = true; }
+  }
+  return changed ? `data: ${JSON.stringify(chunk)}` : line;
+}
+
+/** Wraps a Gemini streaming response so each SSE line goes through fixGeminiSseLine. Non-stream responses pass untouched. */
+export function fixGeminiStream(res: Response): Response {
+  if (!res.ok || !res.body || !(res.headers.get("content-type") ?? "").includes("text/event-stream")) return res;
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let buffer = "";
+  const body = res.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
+    transform(bytes, controller) {
+      buffer += decoder.decode(bytes, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop() ?? "";
+      if (lines.length) controller.enqueue(encoder.encode(lines.map(fixGeminiSseLine).join("\n") + "\n"));
+    },
+    flush(controller) {
+      buffer += decoder.decode();
+      if (buffer) controller.enqueue(encoder.encode(fixGeminiSseLine(buffer)));
+    },
+  }));
+  return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
 }

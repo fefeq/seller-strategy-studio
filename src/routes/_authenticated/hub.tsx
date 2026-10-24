@@ -16,6 +16,7 @@ import { createPlaybookLibrary } from "@/lib/playbooks.functions";
 import { missingPlays } from "@/lib/playbooks/adapt";
 import { DriveImportButton, SaveToDriveButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
+import { DriveAccountsPanel } from "@/components/drive-overview";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   // doc: opened from a notice (an import or a battlecard made in the background).
@@ -33,6 +34,9 @@ const SECTIONS = [
   ["skills", "Skills", "Tareas repetibles: de equipo y personales"],
   ["rules", "Reglas", "Lo que los agentes no pueden hacer sin una persona"],
 ] as const;
+
+/** Not a knowledge section: the documents saved in each account's Google Drive folder. */
+const DRIVE_TAB = "drive";
 
 // Below lg the editor sits under the list; bring it into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -120,7 +124,11 @@ function Hub() {
               {label} <span className="ml-1 font-mono text-xs opacity-60 lg:float-right lg:ml-0">{docs.filter((d) => d.section === id).length}</span>
             </button>
           ))}
+          <button onClick={() => { setSection(DRIVE_TAB); setSelected(null); }} className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}>
+            Drive por cuenta
+          </button>
         </nav>
+        {section === DRIVE_TAB ? <div className="min-w-0 lg:col-span-2"><DriveAccountsPanel /></div> : <>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">{SECTIONS.find((s) => s[0] === section)?.[2]}</p>
           <Button size="sm" variant="outline" className="w-full" onClick={() => { setDraftSeq((n) => n + 1); setSelected(draft()); revealOnMobile(editorRef.current); }}>+ Nuevo</Button>
@@ -142,6 +150,7 @@ function Hub() {
             <Empty>Selecciona o crea un documento.</Empty>
           )}
         </div>
+        </>}
       </div>
     </Page>
   );
