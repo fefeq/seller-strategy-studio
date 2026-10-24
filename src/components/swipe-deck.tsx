@@ -128,9 +128,9 @@ function DeckCard({ children, depth, labels, onDecide, exitDir }: { children: Re
     >
       <div className="relative cursor-grab overflow-hidden rounded-2xl border bg-card shadow-md">
         {top && <>
-          <motion.span style={{ opacity: doOpacity }} className="pointer-events-none absolute left-4 top-4 z-10 rounded-md border-2 border-lime bg-lime px-2 py-0.5 text-sm font-semibold text-lime-foreground">{labels.right}</motion.span>
-          <motion.span style={{ opacity: noOpacity }} className="pointer-events-none absolute right-4 top-4 z-10 rounded-md border-2 border-state-alarm px-2 py-0.5 text-sm font-semibold text-state-alarm">{labels.left}</motion.span>
-          <motion.span style={{ opacity: laterOpacity }} className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-md border-2 border-foreground px-2 py-0.5 text-sm font-semibold">{labels.up}</motion.span>
+          <motion.span style={{ opacity: doOpacity }} className="pointer-events-none absolute left-6 top-1/2 z-10 -translate-y-1/2 -rotate-6 rounded-lg border-2 border-lime bg-lime px-3 py-1 text-xl font-semibold text-lime-foreground">{labels.right}</motion.span>
+          <motion.span style={{ opacity: noOpacity }} className="pointer-events-none absolute right-6 top-1/2 z-10 -translate-y-1/2 rotate-6 rounded-lg border-2 border-state-alarm bg-card px-3 py-1 text-xl font-semibold text-state-alarm">{labels.left}</motion.span>
+          <motion.span style={{ opacity: laterOpacity }} className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-lg border-2 border-foreground bg-card px-3 py-1 text-xl font-semibold">{labels.up}</motion.span>
         </>}
         {children}
       </div>

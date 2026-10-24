@@ -31,13 +31,15 @@ function Inbox() {
     <Page eyebrow="Sugerencias" title={isLoading ? "Sugerencias" : suggestionsHeadline({ pending: data.length, urgent: data.filter((s) => s.priority === 1).length })} actions={canReport ? <Button variant="outline" disabled={weekly.running} onClick={() => weekly.start({})}>{weekly.running ? "Preparando en segundo plano…" : "Informe de la semana ahora"}</Button> : undefined}>
       <p className="-mt-4 mb-6 max-w-2xl text-sm text-muted-foreground">Desliza a la derecha para hacer, a la izquierda para descartar y arriba para dejarlo para más tarde. Nada cambia sin tu decisión.</p>
       <Tabs defaultValue="me">
-        <TabsList className="mb-6"><TabsTrigger value="me">Para mí</TabsTrigger><TabsTrigger value="team">Equipo</TabsTrigger></TabsList>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <TabsList><TabsTrigger value="me">Para mí</TabsTrigger><TabsTrigger value="team">Equipo</TabsTrigger></TabsList>
+          <div className="flex gap-1">
+            <Button size="sm" variant={list ? "outline" : "default"} onClick={() => navigate({ search: {} })}>Mazo</Button>
+            <Button size="sm" variant={list ? "default" : "outline"} onClick={() => navigate({ search: { vista: "lista" } })}>Lista</Button>
+          </div>
+        </div>
         <TabsContent value="team"><SuggestionBoard /></TabsContent>
         <TabsContent value="me">
-      <div className="mb-6 flex justify-end gap-1">
-        <Button size="sm" variant={list ? "outline" : "default"} onClick={() => navigate({ search: {} })}>Mazo</Button>
-        <Button size="sm" variant={list ? "default" : "outline"} onClick={() => navigate({ search: { vista: "lista" } })}>Lista</Button>
-      </div>
       <AssistantActions />
       {!isLoading && data.length === 0 && <Empty>No hay sugerencias pendientes.</Empty>}
       {!list && data.length > 0 && <SuggestionDeck items={data} />}
