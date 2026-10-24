@@ -8,6 +8,8 @@ import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
+import { useOnboarding } from "@/hooks/use-onboarding";
+import { showRoadmapCard } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { ROLES, type Role } from "@/lib/roles";
@@ -28,6 +30,7 @@ function HomePage() {
   const { data: me } = useMe();
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
+  const { data: onboarding } = useOnboarding();
   const { open: openAgent } = useAgent();
   const { data } = useQuery(homeQuery);
   const role = (me?.roles[0] ?? "ae") as Role;
@@ -52,7 +55,7 @@ function HomePage() {
   return (
     <Page eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label} title={data ? headline : `Hola, ${firstName}`}>
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
-      <Briefing hideSetup={leader && !!setup && setup.status.pct < 100} />
+      <Briefing hideSetup={leader && !!setup && showRoadmapCard(onboarding, setup.status.pct)} />
       {leader && <RoadmapCard />}
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
