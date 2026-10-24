@@ -75,7 +75,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
       const { trackedRun } = await import("@/lib/orchestrator/runner");
       const { searchBoth } = await import("@/lib/web-search");
       const q = [`alternativas a ${product} ${pos.category}`, `${pos.category} competidores ${new Date().getFullYear()}`];
-      const found = await trackedRun(ctx, "monitor_competitors" as never, trigger, async () => ({ items: await searchBoth({ query: q[0]!, limit: 8 }, { queries: q, maxResults: 6 }, 12) }));
+      const found = await trackedRun(ctx, "competitors", trigger, async () => ({ items: await searchBoth({ query: q[0]!, limit: 8 }, { queries: q, maxResults: 6 }, 12) }));
       if (found.items.length) {
         const { ask } = await import("@/lib/ai-gateway");
         const known = knownCompetitors(pos.competitive_alternative);
