@@ -1839,18 +1839,21 @@ export type Database = {
       lead_settings: {
         Row: {
           org_id: string
+          qualification: Json
           sla: Json
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           org_id?: string
+          qualification?: Json
           sla?: Json
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           org_id?: string
+          qualification?: Json
           sla?: Json
           updated_at?: string
           updated_by?: string | null
@@ -1946,6 +1949,8 @@ export type Database = {
           org_id: string | null
           owner_id: string | null
           person_id: string | null
+          qualification: Json | null
+          qualified_at: string | null
           segment_id: string | null
           source: string | null
           sql_at: string | null
@@ -1979,6 +1984,8 @@ export type Database = {
           org_id?: string | null
           owner_id?: string | null
           person_id?: string | null
+          qualification?: Json | null
+          qualified_at?: string | null
           segment_id?: string | null
           source?: string | null
           sql_at?: string | null
@@ -2012,6 +2019,8 @@ export type Database = {
           org_id?: string | null
           owner_id?: string | null
           person_id?: string | null
+          qualification?: Json | null
+          qualified_at?: string | null
           segment_id?: string | null
           source?: string | null
           sql_at?: string | null
