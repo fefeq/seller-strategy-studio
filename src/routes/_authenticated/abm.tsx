@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { EntityCombobox, useAccountOptions, usePeopleOptions } from "@/components/entity-combobox";
+import { duplicateOf } from "@/lib/match";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -135,7 +137,11 @@ function Partners() {
   const qc = useQueryClient();
   const { data: list = [] } = useQuery({ queryKey: ["partners"], queryFn: async () => (await supabase.from("partners").select("*, deals(amount,stage)").order("name")).data ?? [] });
   async function add() {
-    await supabase.from("partners").insert({ name: "Nuevo partner" });
+    const name = window.prompt("Nombre del partner")?.trim();
+    if (!name) return;
+    const dup = duplicateOf({ name }, list.map((p) => ({ id: p.id, name: p.name })));
+    if (dup && !window.confirm(`Ya existe el partner «${dup.item.name}». ¿Crear otro igualmente?`)) return;
+    await supabase.from("partners").insert({ name });
     qc.invalidateQueries({ queryKey: ["partners"] });
   }
   async function upd(id: string, patch: Record<string, unknown>) {
@@ -161,7 +167,7 @@ function Partners() {
                 <Field label="Margen %"><Input type="number" defaultValue={p.margin_pct ?? 0} onBlur={(e) => upd(p.id, { margin_pct: Number(e.target.value) })} /></Field>
                 <Field label="Estado"><Pick value={p.status} options={{ active: "Activo", onboarding: "Onboarding", paused: "Pausado" }} onChange={(v) => upd(p.id, { status: v })} /></Field>
               </div>
-              <Field label="Contacto"><Input defaultValue={p.contact ?? ""} onBlur={(e) => upd(p.id, { contact: e.target.value })} /></Field>
+              <Field label="Contacto"><PartnerContact value={p.contact ?? ""} onSave={(v) => upd(p.id, { contact: v })} /></Field>
               <p className="font-mono text-xs text-muted-foreground">Pipeline {eur(pipe)} · Ganado {eur(won)}</p>
             </div>
           );
@@ -184,6 +190,7 @@ function Registrations() {
   });
   const [partner, setPartner] = useState(""); const [account, setAccount] = useState(""); const [notes, setNotes] = useState("");
   const regs = data?.regs ?? [];
+  const { data: accounts = [] } = useAccountOptions();
   const conflict = partner && account ? registrationConflict(account, regs, partner) : undefined;
   async function submit() {
     const expires = new Date(Date.now() + 90 * 864e5).toISOString().slice(0, 10);
@@ -204,7 +211,7 @@ function Registrations() {
       <div className="space-y-3 rounded-lg border bg-card p-5">
         <h3 className="text-2xl">Registrar oportunidad de partner</h3>
         <Field label="Partner"><Pick value={partner} options={Object.fromEntries([["", "Elige…"], ...(data?.partners ?? []).map((p) => [p.id, p.name])])} onChange={setPartner} /></Field>
-        <Field label="Cuenta"><Input value={account} onChange={(e) => setAccount(e.target.value)} /></Field>
+        <Field label="Cuenta"><EntityCombobox items={accounts} value={account} selectedId={accounts.find((a) => a.name === account)?.id ?? null} onChange={(t) => setAccount(t)} placeholder="Busca entre tus cuentas" noun="cuenta nueva" logos ariaLabel="Cuenta" /></Field>
         <Field label="Notas"><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
         {conflict && <p className="rounded bg-signal/10 p-2 text-xs text-signal">Esta cuenta ya está registrada por {(conflict as any).partners?.name ?? "otro partner"}. Si continúas, se enviará a Aprobaciones.</p>}
         <Button disabled={!partner || !account} onClick={submit}>Registrar (válido 90 días)</Button>
@@ -230,4 +237,15 @@ function Registrations() {
 
 function ScoreBar({ score }: { score: number }) {
   return <div className="flex shrink-0 items-center gap-2"><div className="h-1.5 w-24 rounded bg-muted"><div className="h-full rounded bg-signal" style={{ width: `${Math.min(100, score * 3)}%` }} /></div><span className="font-mono text-xs">{score}</span></div>;
+}
+
+/** Partner contact: suggests people already in Personas; saved as text when leaving the field. */
+function PartnerContact({ value, onSave }: { value: string; onSave: (v: string) => void }) {
+  const [v, setV] = useState(value);
+  const { data: people = [] } = usePeopleOptions();
+  return (
+    <div onBlur={() => { if (v !== value) onSave(v); }}>
+      <EntityCombobox items={people} value={v} selectedId={people.find((p) => p.name === v)?.id ?? null} onChange={(t) => setV(t)} placeholder="Busca en Personas o escribe" noun="contacto nuevo" ariaLabel="Contacto" />
+    </div>
+  );
 }
