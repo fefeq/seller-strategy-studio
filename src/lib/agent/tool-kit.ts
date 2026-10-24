@@ -26,7 +26,7 @@ export const HEALTH = z.enum(["green", "yellow", "red"]);
 
 export const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
 /** Like ok(), for a query that must return one row: a missing row is a clear error instead of a crash. */
-export const one = <T>(r: { data: T | null; error: { message: string } | null }, what = "el registro"): T => {
+export const one = <T>(r: { data: T; error: { message: string } | null }, what = "el registro"): NonNullable<T> => {
   const d = ok(r);
   if (d == null) throw new Error(`No encuentro ${what} en esta empresa.`);
   return d;
