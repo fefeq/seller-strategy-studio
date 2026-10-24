@@ -2807,6 +2807,45 @@ export type Database = {
           },
         ]
       }
+      onboarding_sessions: {
+        Row: {
+          block_status: Json
+          completed_at: string | null
+          created_at: string
+          depth: string
+          diagnosis: Json | null
+          id: string
+          org_id: string
+          step: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_status?: Json
+          completed_at?: string | null
+          created_at?: string
+          depth?: string
+          diagnosis?: Json | null
+          id?: string
+          org_id?: string
+          step?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          block_status?: Json
+          completed_at?: string | null
+          created_at?: string
+          depth?: string
+          diagnosis?: Json | null
+          id?: string
+          org_id?: string
+          step?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       org_budgets: {
         Row: {
           monthly_limit: number | null

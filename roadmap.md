@@ -19,3 +19,12 @@
 - [x] 6. Quitar `as any`
 - [x] 7. Diseño: iconos, colores a mano, ventanas del navegador
 - [x] 8. Precarga de pantallas
+
+## Onboarding SDD
+- [x] Esqueleto /onboarding con profundidad y reanudar
+- [x] Diagnóstico GTM (5 arquetipos + filtro de etapa, tests)
+- [x] Roadmap final y empresas nuevas entran al onboarding
+- [ ] Lectura en segundo plano con teletipo y coste previo
+- [ ] Aprobación por bloques con origen y nivel (hoy usa la revisión de propuesta de Configuración)
+- [ ] Modo A fondo (Parallel + debate C-Levels), tarjeta en Inicio, versión corta para invitados
+- [ ] Confirmar umbrales de ticket (5K/50K guardados vs 2K/15K del documento)

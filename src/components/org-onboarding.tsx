@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import type { SegmentTemplate } from "@/components/org-switcher";
 
 export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [segments, setSegments] = useState<SegmentTemplate>("empty");
@@ -22,6 +24,7 @@ export function OrgOnboarding({ memberships }: { memberships: Membership[] }) {
     if (error) return toast.error(errorText(error));
     track("org_created", { location: "onboarding" });
     await qc.resetQueries();
+    navigate({ to: "/onboarding" });
   }
   async function pick(orgId: string) {
     const { data: { user } } = await supabase.auth.getUser();
