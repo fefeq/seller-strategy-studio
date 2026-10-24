@@ -1330,6 +1330,54 @@ export type Database = {
           },
         ]
       }
+      drive_doc_summaries: {
+        Row: {
+          account_id: string | null
+          created_by: string | null
+          file_id: string
+          file_modified_at: string | null
+          id: string
+          org_id: string
+          summary: string
+          updated_at: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_by?: string | null
+          file_id: string
+          file_modified_at?: string | null
+          id?: string
+          org_id?: string
+          summary: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string | null
+          created_by?: string | null
+          file_id?: string
+          file_modified_at?: string | null
+          id?: string
+          org_id?: string
+          summary?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_doc_summaries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "drive_doc_summaries_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drive_folders: {
         Row: {
           account_id: string | null
