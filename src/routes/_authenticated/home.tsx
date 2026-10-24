@@ -35,7 +35,7 @@ function HomePage() {
   const { data: onboarding } = useOnboarding();
   const { data: suggestions = [] } = useSuggestions();
   // The strategy card already shows what is missing; don't repeat it in the deck.
-  const hideSetup = leader && !!setup && showRoadmapCard(onboarding, setup.status.pct);
+  const hideSetup = !!me?.roles.some((r) => r === "owner" || r === "sales_leader") && !!setup && showRoadmapCard(onboarding, setup.status.pct);
   const nextSteps = (hideSetup ? suggestions.filter((x) => !x.dedupe_key?.startsWith("setup_incomplete:")) : suggestions).slice(0, 5);
   const { open: openAgent } = useAgent();
   const { data } = useQuery(homeQuery);
