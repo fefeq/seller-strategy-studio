@@ -49,7 +49,7 @@ export const startBackgroundJob = createServerFn({ method: "POST" })
       const { runBackgroundJob } = await import("@/lib/inngest/tasks.server");
       await runBackgroundJob(supabaseAdmin, job.id).catch(() => undefined);
     }
-    return { jobId: job.id };
+    return { jobId: job.id, reused: false };
   });
 
 /** After a lead is created or saved: enrichment for new ones, and start/stop the follow-up sequence. */
