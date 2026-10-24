@@ -35,7 +35,7 @@ export async function buildOrgReport(db: Db, orgId: string, now = new Date()): P
 export async function runWeeklyReports(db: Db, now = new Date()): Promise<{ created: number; telegram: number; email: number; skipped?: string }> {
   if (!isReportTime(now)) return { created: 0, telegram: 0, email: 0, skipped: "not monday morning" };
   const weekOf = weekStart(now);
-  const { data: orgs } = await db.from("organizations").select("id,name").order("created_at").limit(200);
+  const { data: orgs } = await db.from("organizations").select("id,name").is("archived_at", null).order("created_at").limit(200);
   let created = 0, telegram = 0, email = 0;
   for (const o of orgs ?? []) {
     try {

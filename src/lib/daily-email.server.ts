@@ -79,7 +79,7 @@ export async function runDailyEmails(db: Db, now = new Date()): Promise<{ sent: 
     const { due, day } = dailyEmailDue(prefs, now);
     if (!due) continue;
     // Still a member of that company? (current_org_id can point to a company they left.)
-    const { data: m } = await db.from("org_members").select("user_id").eq("org_id", p.current_org_id!).eq("user_id", p.id).limit(1);
+    const { data: m } = await db.from("org_members").select("user_id,organizations!inner(archived_at)").eq("org_id", p.current_org_id!).eq("user_id", p.id).is("organizations.archived_at", null).limit(1);
     if (!m?.length) continue;
     // Claim today's send first; a second run in the same hour finds the row and skips.
     const lock = `daily_email:${p.id}:${day}`;
