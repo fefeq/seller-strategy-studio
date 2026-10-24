@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMe } from "@/hooks/use-me";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,8 @@ const FILE_LIMIT = 4 * 1024 * 1024;
 /** «Dale tus fuentes»: web, documents, pasted text, Drive and a way into the CRM import. Reading runs in the background. */
 export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jobId: string, sources: string[]) => void }) {
   const start = useServerFn(startBackgroundJob);
-  const [url, setUrl] = useState("");
+  const { data: me } = useMe();
+  const [url, setUrl] = useState(me?.currentOrg?.website ?? "");
   const [text, setText] = useState("");
   const [files, setFiles] = useState<{ filename: string; dataUrl: string }[]>([]);
   const [names, setNames] = useState<string[]>([]);

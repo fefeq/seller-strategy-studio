@@ -393,6 +393,13 @@
       "when": 1792870635433,
       "tag": "0055_daily_email_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1792871434166,
+      "tag": "0056_org_lifecycle",
+      "breakpoints": true
     }
   ]
 }

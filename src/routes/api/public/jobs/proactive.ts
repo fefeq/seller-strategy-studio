@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           if (body.kind === "digest") return Response.json(await sendDigests(db));
           // Telegram notices held by someone's night silence go out once it ends.
           { const { flushHeldNotices } = await import("@/lib/notices.server"); await flushHeldNotices(db, now); }
-          const { data: orgs } = await db.from("organizations").select("id").order("created_at").limit(BATCH);
+          const { data: orgs } = await db.from("organizations").select("id").is("archived_at", null).order("created_at").limit(BATCH);
           // Inngest answers a ping each hour; while its heartbeat is fresh, each company runs as its own
           // background job with retries (one failing company never blocks the rest). Otherwise, inline as before.
           const { EV, hourKey } = await import("@/lib/inngest/events");
