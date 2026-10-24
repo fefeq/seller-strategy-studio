@@ -11,6 +11,7 @@ import { useLeads, type Lead } from "@/hooks/use-leads";
 import { Page, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { AutoEnrichSwitch, NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
@@ -94,41 +95,30 @@ function LeadsPage() {
 
   return (
     <Page eyebrow="Leads" title={view ? leadsHeadline({ open: view.open.length, late: view.late.length }) : "Leads"} actions={<>
-      <Button variant="outline" asChild><Link to="/leads/entrada">Entrada de leads</Link></Button>
       {view && <QualifyPending pending={view.pending} />}
-      {data && <QualSettingsDialog settings={data.qualSettings} canEdit={canSettings} orgId={orgId!} />}
-      {orgId && <AutoEnrichSwitch canEdit={roles.some((r) => r === "owner" || r === "sales_leader")} orgId={orgId} />}
-      {data && <SlaSettings sla={data.sla} canEdit={canSettings} orgId={orgId!} />}
+      <Popover>
+        <PopoverTrigger asChild><Button variant="outline">Ajustes de leads</Button></PopoverTrigger>
+        <PopoverContent align="end" className="flex w-72 flex-col items-stretch gap-2 p-3">
+          <Button variant="outline" asChild><Link to="/leads/entrada">Entrada de leads</Link></Button>
+          {data && <QualSettingsDialog settings={data.qualSettings} canEdit={canSettings} orgId={orgId!} />}
+          {data && <SlaSettings sla={data.sla} canEdit={canSettings} orgId={orgId!} />}
+          {orgId && <div className="border-t pt-2"><AutoEnrichSwitch canEdit={roles.some((r) => r === "owner" || r === "sales_leader")} orgId={orgId} /></div>}
+        </PopoverContent>
+      </Popover>
       {data && <NewLead segments={data.segments} />}
     </>}>
       {!view || !data ? <p className="text-sm text-muted-foreground">Cargando leads…</p> : (
-        <div className="space-y-8">
-          <div className="grid gap-4 md:grid-cols-4">
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <Kpi label="Leads abiertos" v={String(view.open.length)} hint="Nuevo, Contactado, MQL y SQL" />
             <Kpi label="Retrasados" v={String(view.late.length)} hint={view.open.length ? `${pct(view.late.length / view.open.length)} de los abiertos` : "Sin leads abiertos"} tone={view.late.length ? "bad" : undefined} />
             <Kpi label={`Lead → Oportunidad ${view.quarter}`} v={view.funnel.total ? pct(view.funnel.steps[4].fromStart) : "—"} hint={view.funnel.medianDays.opportunity != null ? `Mediana ${view.funnel.medianDays.opportunity.toFixed(1)} días hasta oportunidad` : `${view.funnel.total} leads este trimestre`} />
             <Kpi label={`Lead → Ganado ${view.quarter}`} v={view.funnel.total ? pct(view.funnel.steps[5].fromStart) : "—"} hint={`${view.funnel.steps[5].count} ganados de ${view.funnel.total} leads`} />
           </div>
 
-          <section className="rounded-lg border bg-card p-5">
-            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-2xl">Conversión de los leads de {view.quarter}</h2>
-              <Link to="/metrics" className="text-sm underline-offset-2 hover:underline">Ver el embudo completo en Métricas →</Link>
-            </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
-              {view.funnel.steps.map((s, i) => (
-                <div key={s.id} className="rounded-md bg-muted/50 p-3">
-                  <p className="eyebrow">{s.label}</p>
-                  <p className="font-display text-3xl">{s.count}</p>
-                  <p className="text-xs text-muted-foreground">{i === 0 ? "entraron" : [s.fromPrev != null && s.count > s.direct ? `${pct(s.fromPrev)} del paso anterior` : "", s.direct > 0 ? `${s.direct} entrada directa` : ""].filter(Boolean).join(" · ")}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
           <section>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-3xl">Pipeline de leads</h2>
+              <h2 className="text-2xl">Pipeline de leads</h2>
               <div className="flex flex-wrap items-center gap-4">
                 <div className="flex gap-1">
                   <Button size="sm" variant={search.vista === "lista" ? "outline" : "default"} onClick={() => navigate({ search: (p) => ({ ...p, vista: undefined }) })}>Tablero</Button>
@@ -218,6 +208,22 @@ function LeadsPage() {
             <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué y la calificación con IA (encaje, intención y cargo) con la etapa que propone. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
           </section>
 
+          <section className="rounded-lg border bg-card p-5">
+            <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-2xl">Conversión de los leads de {view.quarter}</h2>
+              <Link to="/metrics" className="text-sm underline-offset-2 hover:underline">Ver el embudo completo en Métricas →</Link>
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
+              {view.funnel.steps.map((s, i) => (
+                <div key={s.id} className="rounded-md bg-muted/50 p-3">
+                  <p className="eyebrow">{s.label}</p>
+                  <p className="font-display text-3xl">{s.count}</p>
+                  <p className="text-xs text-muted-foreground">{i === 0 ? "entraron" : [s.fromPrev != null && s.count > s.direct ? `${pct(s.fromPrev)} del paso anterior` : "", s.direct > 0 ? `${s.direct} entrada directa` : ""].filter(Boolean).join(" · ")}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <div className="grid gap-6 lg:grid-cols-2">
             <Panel title={`Retrasos (${view.late.length})`}>
               {view.late.length === 0 ? <Muted>Ningún lead va con retraso. Los plazos actuales son: {LEAD_STAGES.slice(0, 4).map((s) => `${s.label} ${data.sla[s.id as keyof typeof data.sla]} d`).join(" · ")}.</Muted> : view.late.slice(0, 12).map((l) => (
@@ -250,7 +256,7 @@ function LeadsPage() {
 }
 
 function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
-  return <div className="rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 font-display text-4xl">{v}</p><p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>{hint}</p></div>;
+  return <div className="rounded-lg border bg-card px-4 py-3"><p className="eyebrow">{label}</p><p className="mt-1 font-display text-2xl">{v}</p><p className={`text-xs ${tone === "bad" ? "text-state-alarm" : "text-muted-foreground"}`}>{hint}</p></div>;
 }
 function Panel({ title, children }: { title: string; children: React.ReactNode }) {
   return <div className="rounded-lg border bg-card p-5"><h3 className="mb-3 text-2xl">{title}</h3>{children}</div>;

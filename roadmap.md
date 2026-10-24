@@ -30,3 +30,8 @@
 - [x] Umbrales de ticket: referencia de mercado 5K/50K (decidido)
 - [x] Publicar nokko.ai, resincronizar el segundo plano y probar «Completar datos» en una cuenta real
 - [x] Habilidad experto UX/UI B2B SaaS (auditoría → SDD → construir), con patrones de Clay, Maze, Notion, Linear, Attio, Stripe
+- [x] Rediseño visual Ink + Lima (Space Grotesk + DM Sans, esquinas redondeadas)
+- [x] P0-1 Menú corto + Más herramientas · P0-2 Inicio sin repeticiones
+- [x] P1 ⌘K, Leads lista primero, tablas Estrategia, agente en barra, Sugerencias móvil
+- [ ] P1 acciones masivas y vistas guardadas (espera decisión: ¿ahora o después?)
+- [ ] P2 accesibilidad, cargas, ayudas

@@ -1,27 +1,34 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
+import { useAgent } from "@/components/agent";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSetup } from "@/hooks/use-setup";
 import { showRoadmapCard } from "@/lib/onboarding";
 import { jsonObject } from "@/lib/json";
 
-/** «Tu roadmap» in Inicio until the strategy is complete or the person hides it. */
+/** One compact strategy card in Inicio (Owner / Sales Leader) until the strategy is complete or hidden. */
 export function RoadmapCard() {
   const { data: session, save } = useOnboarding();
   const { data: st } = useSetup();
+  const { open: openAgent } = useAgent();
   const pct = st?.status.pct ?? 0;
-  if (!showRoadmapCard(session, pct)) return null;
+  if (!st || !showRoadmapCard(session, pct)) return null;
   const diag = jsonObject(session?.diagnosis ?? null) as { result?: { archetype?: string; name?: string; nextStep?: string } } | null;
-  const missing = st?.status.missing.slice(0, 3) ?? [];
+  const next = st.status.next;
   return (
-    <section className="my-8 border-t-2 border-hairline-firm pt-4">
+    <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="smallcaps">Tu roadmap · estrategia al {pct} %</p>
-        <button className="text-xs text-ink-mid underline underline-offset-2" onClick={() => save({ completed_at: new Date().toISOString() })}>Ocultar</button>
+        <p className="eyebrow">Tu estrategia · {pct} %</p>
+        <button className="text-xs text-ink-mid hover:text-ink" onClick={() => save({ completed_at: new Date().toISOString() })}>Ocultar</button>
       </div>
-      {diag?.result?.name && <p className="mt-1 text-lg">Arquetipo {diag.result.archetype}, {diag.result.name}. Primero: {diag.result.nextStep?.toLowerCase()}.</p>}
-      {missing.length > 0 && <ul className="mt-2 space-y-1 text-sm">{missing.map((i) => <li key={i.id}>Falta: {i.label}</li>)}</ul>}
-      <Button asChild size="sm" variant="outline" className="mt-3"><Link to="/onboarding">Seguir con el onboarding</Link></Button>
+      <div className="mt-2 h-2 max-w-md overflow-hidden rounded-full bg-paper-sunk"><div className="h-full rounded-full bg-lime" style={{ width: `${pct}%` }} /></div>
+      {diag?.result?.name && <p className="mt-3 text-sm text-ink-mid">Arquetipo {diag.result.archetype}, {diag.result.name}. Primero: {diag.result.nextStep?.toLowerCase()}.</p>}
+      {next && <p className="mt-1 text-sm">Siguiente: <strong>{next.label}</strong> · desbloquea {next.unlocks.toLowerCase()}</p>}
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button asChild><Link to="/setup">Completar con IA</Link></Button>
+        <Button variant="outline" onClick={() => openAgent({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
+        <Button variant="ghost" asChild><Link to="/onboarding">Seguir con el onboarding</Link></Button>
+      </div>
     </section>
   );
 }

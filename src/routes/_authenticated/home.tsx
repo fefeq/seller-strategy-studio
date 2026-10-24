@@ -8,6 +8,8 @@ import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
+import { useOnboarding } from "@/hooks/use-onboarding";
+import { showRoadmapCard } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { ROLES, type Role } from "@/lib/roles";
@@ -28,6 +30,7 @@ function HomePage() {
   const { data: me } = useMe();
   const { money: fmt } = useCurrency();
   const { data: setup } = useSetup();
+  const { data: onboarding } = useOnboarding();
   const { open: openAgent } = useAgent();
   const { data } = useQuery(homeQuery);
   const role = (me?.roles[0] ?? "ae") as Role;
@@ -51,22 +54,9 @@ function HomePage() {
 
   return (
     <Page eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label} title={data ? headline : `Hola, ${firstName}`}>
-      <p className="-mt-4 mb-8 text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
-      {setup && setup.status.pct < 100 && (
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-lg border bg-card p-5">
-          <div className="min-w-0 basis-full sm:basis-0 sm:flex-1">
-            <p className="eyebrow">Tu estrategia está al {setup.status.pct}%</p>
-            <div className="mt-2 h-1.5 max-w-md rounded bg-muted"><div className="h-full rounded bg-primary" style={{ width: `${setup.status.pct}%` }} /></div>
-            {setup.status.next && <p className="mt-2 break-words text-sm">Siguiente: <strong>{setup.status.next.label}</strong> · desbloquea {setup.status.next.unlocks.toLowerCase()}</p>}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={() => openAgent({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
-            <Button asChild><Link to="/setup">Completar con IA</Link></Button>
-          </div>
-        </div>
-      )}
-      <RoadmapCard />
-      <Briefing />
+      <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
+      <Briefing hideSetup={leader && !!setup && showRoadmapCard(onboarding, setup.status.pct)} />
+      {leader && <RoadmapCard />}
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
         <Stat label="Forecast ponderado" value={fmt(weighted)} />

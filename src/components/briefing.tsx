@@ -11,7 +11,7 @@ import { autoWork, briefingSince, todayItems, type BriefItem } from "@/lib/brief
 const localDay = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 /** Inicio briefing: what Nokko did on its own since yesterday · what needs your decision · what comes today. */
-export function Briefing() {
+export function Briefing({ hideSetup = false }: { hideSetup?: boolean }) {
   const { data: me } = useMe();
   const { currency } = useCurrency();
   // Automatic spend is often cents: show them instead of rounding to 0.
@@ -54,29 +54,40 @@ export function Briefing() {
     today, userId: me.user.id, leader, meetings: data.meetings, tasks: data.tasks, leads: data.followups,
     deals: data.deals.map((d) => ({ ...d, closed: closedKeys.has(d.stage) || d.stage === "won" || d.stage === "lost" })),
   }) : [];
-  const top = digest(suggestions, 3);
+  // The strategy card already shows what is missing; don't repeat it here.
+  const shown = hideSetup ? suggestions.filter((x) => !x.dedupe_key?.startsWith("setup_incomplete:")) : suggestions;
+  const top = digest(shown, 3);
   const others = [
     ...(leader && data?.approvals ? [{ text: `${data.approvals} ${data.approvals === 1 ? "aprobación pendiente" : "aprobaciones pendientes"}`, link: "/approvals" as const }] : []),
     ...(data?.pending ? [{ text: `${data.pending} ${data.pending === 1 ? "acción del agente por confirmar" : "acciones del agente por confirmar"}`, link: "/inbox" as const }] : []),
   ];
 
   return (
-    <section className="mb-10 grid gap-8 border-t-2 border-foreground pt-5 lg:grid-cols-3">
-      <div className="min-w-0">
-        <Block title="Lo que hice solo" sub="desde ayer" empty="Nada nuevo desde ayer. Sigo vigilando tus leads, cuentas y datos." items={data ? did : null} />
-        {leader && <RunNow />}
+    <section className="mb-8 grid items-start gap-5 lg:grid-cols-3">
+      <div className="min-w-0 rounded-xl border bg-card p-5 shadow-xs">
+        <Block title="Hoy" sub={new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} empty="Sin reuniones, tareas ni seguimientos para hoy." items={data ? now : null} />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 rounded-xl border bg-card p-5 shadow-xs">
         <p className="eyebrow">Necesita tu decisión</p>
-        <h3 className="mt-1 text-2xl">{suggestions.length ? `${suggestions.length} ${suggestions.length === 1 ? "asunto" : "asuntos"}` : "Nada pendiente"}</h3>
+        <h3 className="mt-1 text-2xl">{shown.length ? `${shown.length} ${shown.length === 1 ? "asunto" : "asuntos"}` : "Nada pendiente"}</h3>
         <div className="mt-3 space-y-3">
-          {top.length === 0 && <p className="text-sm text-muted-foreground">Todo decidido. Te avisaré cuando detecte algo.</p>}
-          {top.map((s) => <SuggestionCard key={s.id} s={s} />)}
+          {top.length === 0 && others.length === 0 && <p className="text-sm text-muted-foreground">Todo decidido. Te avisaré cuando detecte algo.</p>}
+          {top.map((s) => <SuggestionCard key={s.id} s={s} compact />)}
           {others.map((o) => <ItemLine key={o.text} item={o} />)}
-          {suggestions.length > top.length && <Link to="/inbox" className="block text-xs text-signal">Ver las {suggestions.length} sugerencias</Link>}
+          {shown.length > top.length && <Link to="/inbox" className="block text-xs text-signal">Ver las {shown.length} sugerencias</Link>}
         </div>
       </div>
-      <Block title="Hoy" sub={new Date().toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} empty="Sin reuniones, tareas ni seguimientos para hoy." items={data ? now : null} />
+      <details className="group min-w-0 rounded-xl border bg-card p-5 shadow-xs lg:open:row-span-1" open={false}>
+        <summary className="cursor-pointer list-none">
+          <p className="eyebrow">Desde ayer</p>
+          <h3 className="mt-1 flex items-center justify-between text-2xl">Lo que hice solo <span className="text-sm font-normal text-ink-faint">{data ? did.length : ""} <span className="group-open:hidden">+</span><span className="hidden group-open:inline">−</span></span></h3>
+        </summary>
+        <ul className="mt-3 space-y-2 text-sm">
+          {data && did.length === 0 && <li className="text-muted-foreground">Nada nuevo desde ayer. Sigo vigilando tus leads, cuentas y datos.</li>}
+          {did.map((i) => <li key={i.text}><ItemLine item={i} /></li>)}
+        </ul>
+        {leader && <RunNow />}
+      </details>
     </section>
   );
 }
