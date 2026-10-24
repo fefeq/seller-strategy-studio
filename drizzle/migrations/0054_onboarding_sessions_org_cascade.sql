@@ -1,0 +1,1 @@
+alter table public.onboarding_sessions add constraint onboarding_sessions_org_fk foreign key (org_id) references public.organizations(id) on delete cascade not valid;

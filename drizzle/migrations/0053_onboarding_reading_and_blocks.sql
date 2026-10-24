@@ -1,0 +1,13 @@
+alter table public.onboarding_sessions add column if not exists sources jsonb not null default '[]'::jsonb;
+alter table public.onboarding_sessions add column if not exists findings jsonb not null default '[]'::jsonb;
+alter table public.onboarding_sessions add column if not exists proposal jsonb;
+alter table public.onboarding_sessions add column if not exists opinions jsonb;
+alter table public.onboarding_sessions add column if not exists read_job_id uuid references public.background_jobs(id) on delete set null;
+
+alter table public.background_jobs drop constraint if exists background_jobs_kind_check;
+alter table public.background_jobs add constraint background_jobs_kind_check check (kind in (
+  'battlecard', 'stakeholder_research', 'account_signals', 'drive_import', 'complete_account',
+  'key_people', 'icp_companies', 'qualify_leads',
+  'discover', 'autopilot_now', 'weekly_report', 'posthog_sync', 'playbook_library',
+  'debate', 'draft_artifact', 'deep_review', 'account_research', 'drive_summaries', 'onboarding_read'
+));

@@ -15,6 +15,8 @@ export const SETUP_EXTRACTION_SCHEMA = obj({
   pillars: { type: "array", items: obj({ title: { type: "string" }, pain: str, message: str, proof: str }) },
   target_accounts: { type: "array", items: obj({ name: { type: "string" }, domain: str, why: str }) },
   questions: { type: "array", items: { type: "string" } },
+  // Where each strategy block comes from and how sure the AI is (shown on the onboarding block review).
+  basis: { type: "array", items: obj({ block: { type: "string", enum: ["company", "icp", "segments", "positioning", "messages", "goals"] }, level: { type: "string", enum: ["confirmed", "inferred", "assumed"] }, source: str }) },
 });
 
 export type SetupProposal = {
@@ -28,6 +30,7 @@ export type SetupProposal = {
   pillars: { title: string; pain: string | null; message: string | null; proof: string | null }[];
   target_accounts: { name: string; domain: string | null; why: string | null }[];
   questions: string[];
+  basis?: { block: string; level: "confirmed" | "inferred" | "assumed"; source: string | null }[];
 };
 
 export type ProposalItem = { key: string; group: string; label: string; detail: string; tool: string; args: Record<string, unknown> };

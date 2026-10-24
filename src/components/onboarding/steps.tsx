@@ -6,7 +6,8 @@ import { useCurrency } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
 import { diagnose, type DiagnosisInput, type Diagnosis, type Friction, type Model, type Stage } from "@/lib/gtm-diagnosis";
 
-export type Depth = "express" | "standard" | "deep";
+import type { Depth } from "@/lib/onboarding";
+export type { Depth };
 export const DEPTHS: { id: Depth; label: string; time: string; what: string }[] = [
   { id: "express", label: "Exprés", time: "5 min", what: "Con la web, una estrategia base con los supuestos marcados." },
   { id: "standard", label: "Estándar", time: "15 min", what: "Web y documentos, y unas cinco preguntas." },

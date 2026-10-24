@@ -24,7 +24,8 @@
 - [x] Esqueleto /onboarding con profundidad y reanudar
 - [x] Diagnóstico GTM (5 arquetipos + filtro de etapa, tests)
 - [x] Roadmap final y empresas nuevas entran al onboarding
-- [ ] Lectura en segundo plano con teletipo y coste previo
-- [ ] Aprobación por bloques con origen y nivel (hoy usa la revisión de propuesta de Configuración)
-- [ ] Modo A fondo (Parallel + debate C-Levels), tarjeta en Inicio, versión corta para invitados
-- [ ] Confirmar umbrales de ticket (5K/50K guardados vs 2K/15K del documento)
+- [x] Lectura en segundo plano con teletipo y coste previo
+- [x] Aprobación por bloques con origen y nivel
+- [x] Modo A fondo (mercado y competidores + opinión C-Levels por bloque), tarjeta en Inicio, versión corta para invitados
+- [x] Umbrales de ticket: referencia de mercado 5K/50K (decidido)
+- [ ] Publicar nokko.ai, resincronizar el segundo plano y probar «Completar datos» desde el aviso en una cuenta real

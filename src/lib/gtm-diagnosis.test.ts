@@ -38,3 +38,14 @@ describe("stage filter", () => {
     expect(d.discarded[0].reason).toContain("300 €");
   });
 });
+
+describe("ticket thresholds (market reference: 5K and 50K)", () => {
+  it("4.999 is PLG and 5.000 is hybrid for self-serve B2B", () => {
+    expect(archetypeOf({ model: "b2b", acv: 4_999, friction: "self_serve", stage: "early" })).toBe("A");
+    expect(archetypeOf({ model: "b2b", acv: 5_000, friction: "self_serve", stage: "early" })).toBe("B");
+  });
+  it("49.999 is hybrid and 50.000 is enterprise", () => {
+    expect(archetypeOf({ model: "b2b", acv: 49_999, friction: "self_serve", stage: "early" })).toBe("B");
+    expect(archetypeOf({ model: "b2b", acv: 50_000, friction: "self_serve", stage: "early" })).toBe("C");
+  });
+});

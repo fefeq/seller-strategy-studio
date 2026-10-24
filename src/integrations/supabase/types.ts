@@ -2814,8 +2814,13 @@ export type Database = {
           created_at: string
           depth: string
           diagnosis: Json | null
+          findings: Json
           id: string
+          opinions: Json | null
           org_id: string
+          proposal: Json | null
+          read_job_id: string | null
+          sources: Json
           step: string
           updated_at: string
           user_id: string
@@ -2826,8 +2831,13 @@ export type Database = {
           created_at?: string
           depth?: string
           diagnosis?: Json | null
+          findings?: Json
           id?: string
+          opinions?: Json | null
           org_id?: string
+          proposal?: Json | null
+          read_job_id?: string | null
+          sources?: Json
           step?: string
           updated_at?: string
           user_id?: string
@@ -2838,13 +2848,33 @@ export type Database = {
           created_at?: string
           depth?: string
           diagnosis?: Json | null
+          findings?: Json
           id?: string
+          opinions?: Json | null
           org_id?: string
+          proposal?: Json | null
+          read_job_id?: string | null
+          sources?: Json
           step?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "onboarding_sessions_org_fk"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_sessions_read_job_id_fkey"
+            columns: ["read_job_id"]
+            isOneToOne: false
+            referencedRelation: "background_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       org_budgets: {
         Row: {

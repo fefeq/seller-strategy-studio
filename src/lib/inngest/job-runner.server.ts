@@ -240,6 +240,13 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
       }
       return { title: `${done} ${done === 1 ? "documento resumido" : "documentos resumidos"} de Drive`, body: failed ? `${failed} no se pudieron leer.` : null, link: "/hub?tab=drive", done, failed };
     }
+    case "onboarding_read": {
+      const { runOnboardingRead } = await import("@/lib/onboarding.server");
+      const r = await runOnboardingRead(await jobCtx(db, job), input, step);
+      // Documents are only needed for the reading: do not keep megabytes of them on the job row.
+      if (Array.isArray(input.files) && input.files.length) await db.from("background_jobs").update({ input: { ...input, files: input.files.map((f: { filename: string }) => ({ filename: f.filename, dataUrl: "" })) } as unknown as Json }).eq("id", job.id);
+      return r;
+    }
     default: throw new Error(`Tarea desconocida: ${JOB_LABEL[job.kind as JobKind] ?? job.kind}`);
   }
 }
