@@ -52,46 +52,56 @@ function Leads() {
         Si vuelve a llegar el mismo lead, se actualiza en lugar de duplicarse. Leads, pipeline, métricas y la calculadora de Estrategia GTM se recalculan solas al momento.
       </p>
       <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">
-        <Sources canManage={canManage} isOwner={!!me?.roles.includes("owner")} />
+        <Sources canManage={canManage} isLeader={!!me?.roles.some((r) => r === "owner" || r === "sales_leader")} isOwner={!!me?.roles.includes("owner")} />
         <CsvImport />
       </div>
+      <ImportReview canManage={canManage} isOwner={!!me?.roles.includes("owner")} />
       <Events />
     </Page>
   );
 }
 
-function Sources({ canManage, isOwner }: { canManage: boolean; isOwner: boolean }) {
+const KIND: Record<string, string> = { leads: "Leads", accounts: "Cuentas" };
+const MODE: Record<string, string> = { review: "Revisar antes de entrar", direct: "Entrada directa" };
+const intakeUrl = (kind: string, key = "TU_CLAVE") => `${publicBase()}/api/public/${kind === "accounts" ? "accounts" : "leads"}?key=${key}`;
+
+function Sources({ canManage, isLeader, isOwner }: { canManage: boolean; isLeader: boolean; isOwner: boolean }) {
   const STAGE_OPTS = intakeStageOptions(useStages().stages);
   const qc = useQueryClient();
   const { data: sources = [] } = useQuery({ queryKey: ["lead-sources"], queryFn: async () => (await supabase.from("lead_sources").select("*").order("created_at")).data ?? [] });
-  async function upd(id: string, patch: { active?: boolean; default_stage?: string }) {
+  async function upd(id: string, patch: { active?: boolean; default_stage?: string; mode?: string; max_per_request?: number; daily_limit?: number; paused_reason?: string | null }) {
     const { error } = await supabase.from("lead_sources").update(patch).eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
   async function remove(id: string) {
-    if (!confirm("¿Borrar este enlace? Las herramientas que lo usan dejarán de enviar leads.")) return;
+    if (!confirm("¿Borrar esta conexión? Las herramientas que la usan dejarán de enviar datos.")) return;
     const { error } = await supabase.from("lead_sources").delete().eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
+  const modeOpts = isLeader ? MODE : { review: MODE.review };
   return (
     <section className="rounded-lg border bg-card p-6">
       <div className="mb-1 flex items-center justify-between gap-3">
-        <h2 className="text-3xl">Enlaces de entrada</h2>
-        {canManage && <NewSource />}
+        <h2 className="text-3xl">Conexiones de entrada</h2>
+        {canManage && <NewSource isLeader={isLeader} />}
       </div>
-      <p className="mb-4 text-sm text-muted-foreground">Un enlace seguro que pegas en tu formulario, en Zapier/Make o en el webhook de tu CRM. Crea uno por origen para saber de dónde viene cada lead.</p>
-      {sources.length === 0 ? <Empty>{canManage ? "Crea tu primer enlace para empezar a recibir leads." : "Pide al Owner, Sales Leader o Marketing que cree un enlace."}</Empty> : (
+      <p className="mb-4 text-sm text-muted-foreground">Un enlace seguro por origen (formulario, Zapier, Make, n8n, tu CRM o una lista de Sales Navigator). En «Revisar antes de entrar» nada toca tus datos hasta que lo apruebes. Si una conexión supera su límite diario, se pausa sola.</p>
+      {sources.length === 0 ? <Empty>{canManage ? "Crea tu primera conexión para empezar a recibir leads o cuentas." : "Pide al Owner, Sales Leader o Marketing que cree una conexión."}</Empty> : (
         <div className="divide-y rounded-md border">
           {sources.map((s) => (
-            <div key={s.id} className="flex flex-wrap items-center gap-3 p-3 text-sm">
+            <div key={s.id} className="flex flex-wrap items-end gap-3 p-3 text-sm">
               <div className="min-w-40 flex-1">
-                <p className="font-medium">{s.name}</p>
-                <p className="text-xs text-muted-foreground">Clave …{s.token_hint} · {s.received_count} recibidos{s.last_received_at ? ` · último ${new Date(s.last_received_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}` : " · aún sin leads"}</p>
+                <p className="font-medium">{s.name} <span className="font-mono text-[10px] uppercase text-muted-foreground">· {KIND[s.kind] ?? s.kind}</span></p>
+                <p className="text-xs text-muted-foreground">Clave …{s.token_hint} · {s.received_count} recibidos{s.last_received_at ? ` · último ${new Date(s.last_received_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}` : " · aún sin envíos"}</p>
+                {!s.active && s.paused_reason && <p className="text-xs text-destructive">Pausada: {s.paused_reason}</p>}
               </div>
-              <div className="w-40"><Field label="Etapa por defecto">{canManage ? <Pick value={s.default_stage} options={STAGE_OPTS} onChange={(v) => upd(s.id, { default_stage: v })} /> : <p>{STAGE_OPTS[s.default_stage]}</p>}</Field></div>
-              <label className="flex items-center gap-2 text-xs"><Switch checked={s.active} disabled={!canManage} onCheckedChange={(v) => upd(s.id, { active: v })} />{s.active ? "Activo" : "Pausado"}</label>
+              <div className="w-48"><Field label="Modo">{canManage && (isLeader || s.mode === "review") ? <Pick value={s.mode} options={modeOpts} onChange={(v) => upd(s.id, { mode: v })} /> : <p>{MODE[s.mode]}</p>}</Field></div>
+              {s.kind === "leads" && <div className="w-40"><Field label="Etapa por defecto">{canManage ? <Pick value={s.default_stage} options={STAGE_OPTS} onChange={(v) => upd(s.id, { default_stage: v })} /> : <p>{STAGE_OPTS[s.default_stage]}</p>}</Field></div>}
+              <div className="w-24"><Field label="Por envío">{canManage ? <Input type="number" min={1} max={500} defaultValue={s.max_per_request} onBlur={(e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 500 && v !== s.max_per_request) upd(s.id, { max_per_request: v }); }} /> : <p>{s.max_per_request}</p>}</Field></div>
+              <div className="w-24"><Field label="Al día">{canManage ? <Input type="number" min={1} max={20000} defaultValue={s.daily_limit} onBlur={(e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 20000 && v !== s.daily_limit) upd(s.id, { daily_limit: v }); }} /> : <p>{s.daily_limit}</p>}</Field></div>
+              <label className="flex items-center gap-2 pb-2 text-xs"><Switch checked={s.active} disabled={!canManage} onCheckedChange={(v) => upd(s.id, { active: v, ...(v ? { paused_reason: null } : {}) })} />{s.active ? "Activo" : "Pausado"}</label>
               {isOwner && <Button variant="ghost" size="sm" onClick={() => remove(s.id)}>Borrar</Button>}
             </div>
           ))}
@@ -102,42 +112,46 @@ function Sources({ canManage, isOwner }: { canManage: boolean; isOwner: boolean 
   );
 }
 
-function NewSource() {
+function NewSource({ isLeader }: { isLeader: boolean }) {
   const STAGE_OPTS = intakeStageOptions(useStages().stages);
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("Formulario web");
+  const [kind, setKind] = useState("leads");
+  const [mode, setMode] = useState("review");
   const [stage, setStage] = useState("new");
   const [url, setUrl] = useState<string | null>(null);
   async function create() {
     const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
     const bytes = crypto.getRandomValues(new Uint8Array(32));
     const key = `gtm_${[...bytes].map((b) => alphabet[b % alphabet.length]).join("")}`;
-    const { error } = await supabase.from("lead_sources").insert({ name: name.trim() || "Entrada de leads", default_stage: stage, token_hash: await hashLeadKey(key), token_hint: key.slice(-4) });
+    const { error } = await supabase.from("lead_sources").insert({ name: name.trim() || "Entrada", kind, mode, default_stage: stage, token_hash: await hashLeadKey(key), token_hint: key.slice(-4) });
     if (error) return toast.error(errorText(error));
-    setUrl(`${publicBase()}/api/public/leads?key=${key}`);
+    setUrl(intakeUrl(kind, key));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
-  function close(v: boolean) { setOpen(v); if (!v) { setUrl(null); setName("Formulario web"); } }
+  function close(v: boolean) { setOpen(v); if (!v) { setUrl(null); setName("Formulario web"); setKind("leads"); setMode("review"); } }
   return (
     <Dialog open={open} onOpenChange={close}>
-      <DialogTrigger asChild><Button size="sm">+ Crear enlace</Button></DialogTrigger>
+      <DialogTrigger asChild><Button size="sm">+ Nueva conexión</Button></DialogTrigger>
       <DialogContent>
-        <DialogHeader><DialogTitle>{url ? "Tu enlace de entrada" : "Nuevo enlace de entrada"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{url ? "Tu enlace de entrada" : "Nueva conexión de entrada"}</DialogTitle></DialogHeader>
         {url ? (
           <div className="space-y-3">
-            <p className="text-sm">Cópialo ahora: por seguridad <strong>no se volverá a mostrar</strong>. Si lo pierdes, crea otro y borra este.</p>
+            <p className="text-sm">Cópialo ahora: por seguridad <strong>no se volverá a mostrar</strong>. Si lo pierdes, crea otra conexión y borra esta.</p>
             <div className="flex gap-2"><Input readOnly value={url} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
               <Button size="icon" variant="outline" aria-label="Copiar enlace" onClick={() => { navigator.clipboard.writeText(url); toast.success("Enlace copiado."); }}><Copy className="size-4" /></Button>
             </div>
-            <p className="text-xs text-muted-foreground">Pégalo como destino «Webhook» (método POST) en tu herramienta. Funciona en tu web publicada.</p>
+            <p className="text-xs text-muted-foreground">Pégalo como destino «Webhook» (método POST, JSON). Para probar sin guardar nada, añade <code>&test=1</code> al final.</p>
             <Button className="w-full" onClick={() => close(false)}>Hecho</Button>
           </div>
         ) : (
           <div className="space-y-4">
-            <Field label="Nombre del origen"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Typeform demo, Zapier HubSpot…" /></Field>
-            <Field label="Etapa si el lead no trae ninguna"><Pick value={stage} options={STAGE_OPTS} onChange={setStage} /></Field>
-            <Button className="w-full" onClick={create}>Crear enlace</Button>
+            <Field label="Nombre del origen"><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Sales Navigator vía Make, HubSpot…" /></Field>
+            <Field label="Qué recibe"><Pick value={kind} options={{ leads: "Leads (personas o empresas interesadas)", accounts: "Cuentas objetivo" }} onChange={setKind} /></Field>
+            <Field label="Modo"><Pick value={mode} options={isLeader ? MODE : { review: MODE.review }} onChange={setMode} /></Field>
+            {kind === "leads" && <Field label="Etapa si el lead no trae ninguna"><Pick value={stage} options={STAGE_OPTS} onChange={setStage} /></Field>}
+            <Button className="w-full" onClick={create}>Crear conexión</Button>
           </div>
         )}
       </DialogContent>
