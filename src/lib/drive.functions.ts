@@ -72,3 +72,19 @@ export const saveToDrive = createServerFn({ method: "POST" })
     const { saveDocument } = await import("@/lib/drive-core");
     return saveDocument(await scope(context), data);
   });
+
+/** Conocimiento → «Drive por cuenta». */
+export const driveAccountsOverview = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { accountsOverview } = await import("@/lib/drive-core");
+    return accountsOverview(await scope(context));
+  });
+
+export const summarizeDriveDoc = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ fileId: Ref, accountId: z.string().uuid().nullish() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { summarizeDoc } = await import("@/lib/drive-core");
+    return summarizeDoc(await scope(context), data.fileId, data.accountId ?? null);
+  });
