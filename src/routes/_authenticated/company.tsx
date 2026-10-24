@@ -42,7 +42,7 @@ function Company() {
   async function save() {
     if (!form || !org) return;
     if (!form.name.trim()) return toast.error("La empresa necesita un nombre.");
-    if (form.currency !== org.currency && !(await askConfirm({ title: `Cambiar la moneda a ${form.currency}`, body: "Las cifras guardadas no se convierten: solo cambia el símbolo con el que se muestran.", confirm: "Cambiar moneda" }))) return;
+    if (form.currency !== org.currency && !(await askConfirm(`Cambiar la moneda a ${form.currency}`, { body: "Las cifras guardadas no se convierten: solo cambia el símbolo con el que se muestran.", confirmLabel: "Cambiar moneda" }))) return;
     const { error } = await supabase.from("organizations").update({ name: form.name.trim(), company_name: form.company_name.trim() || null, website: form.website.trim() || null, currency: form.currency }).eq("id", orgId!).select("id").single();
     if (error) return toast.error(errorText(error));
     toast.success("Empresa guardada.");
@@ -55,7 +55,7 @@ function Company() {
     return `${a} cuentas, ${l} leads y ${d} deals`;
   }
   async function archive() {
-    if (!(await askConfirm({ title: `Archivar «${org?.name}»`, body: "Desaparece del selector y Nokko deja de trabajar en ella (búsquedas, emails, piloto automático). No se borra nada y puedes recuperarla desde el selector, en «Archivadas».", confirm: "Archivar" }))) return;
+    if (!(await askConfirm(`Archivar «${org?.name}»`, { body: "Desaparece del selector y Nokko deja de trabajar en ella (búsquedas, emails, piloto automático). No se borra nada y puedes recuperarla desde el selector, en «Archivadas».", confirmLabel: "Archivar" }))) return;
     const { error } = await supabase.rpc("archive_organization", { _org: orgId!, _archived: true });
     if (error) return toast.error(errorText(error));
     toast.success("Empresa archivada.");
@@ -63,7 +63,7 @@ function Company() {
   }
   async function remove() {
     const what = await counts();
-    const typed = await askText({ title: `Borrar «${org?.name}» para siempre`, body: `Se borran ${what}, la estrategia, el equipo y todo lo demás de esta empresa. No se puede deshacer. Escribe el nombre exacto para confirmar.`, placeholder: org?.name ?? "", confirm: "Borrar para siempre" });
+    const typed = await askText(`Borrar «${org?.name}» para siempre`, { body: `Se borran ${what}, la estrategia, el equipo y todo lo demás de esta empresa. No se puede deshacer. Escribe el nombre exacto para confirmar.`, placeholder: org?.name ?? "", confirmLabel: "Borrar para siempre" });
     if (typed === null) return;
     const { error } = await supabase.rpc("delete_organization", { _org: orgId!, _confirm_name: typed });
     if (error) return toast.error(errorText(error));
