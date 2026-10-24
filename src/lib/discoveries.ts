@@ -121,3 +121,37 @@ export function parseIcpQuery(raw: string, fallback: Query): Query {
   if (min != null && max != null && min > max) [min, max] = [max, min];
   return { ...fallback, keywords: words.length ? words : fallback.keywords, countries: countries.length ? countries : fallback.countries, minEmployees: min ?? fallback.minEmployees ?? null, maxEmployees: max ?? fallback.maxEmployees ?? null };
 }
+
+/** Per ICP and per weekly run: at most this many companies and contacts, from at most `searches` people searches. */
+export const PER_ICP = { company: 4, contact: 4, searches: 2 } as const;
+
+export type PeopleTarget = { accountId: string | null; name: string; domain: string };
+/**
+ * Where to look for this ICP's contacts: first its target accounts with an almost empty power map
+ * (fewer than 2 people), then the best-fitting companies just found for it. At most PER_ICP.searches.
+ */
+export function peopleTargets(
+  accounts: { id: string; name: string; domain: string | null; people: number }[],
+  found: { name: string; domain: string | null; fit: number }[],
+  max: number = PER_ICP.searches,
+): PeopleTarget[] {
+  const out: PeopleTarget[] = [];
+  const seen = new Set<string>();
+  const add = (t: PeopleTarget) => { const k = cleanDomainKey(t.domain); if (!k || seen.has(k) || out.length >= max) return; seen.add(k); out.push(t); };
+  for (const a of accounts.filter((x) => x.people < 2)) add({ accountId: a.id, name: a.name, domain: a.domain ?? "" });
+  for (const f of [...found].sort((x, y) => y.fit - x.fit)) add({ accountId: null, name: f.name, domain: f.domain ?? "" });
+  return out;
+}
+
+/** Pending companies and contacts per ICP for the «Tu ICP» panel; finds without an ICP go under "". */
+export function tallyByIcp(rows: { kind: string; status: string; detail: Record<string, unknown> | null }[]): Map<string, { company: number; contact: number }> {
+  const out = new Map<string, { company: number; contact: number }>();
+  for (const r of rows) {
+    if (r.status !== "pending" || (r.kind !== "company" && r.kind !== "contact")) continue;
+    const id = typeof r.detail?.["icp_id"] === "string" ? (r.detail["icp_id"] as string) : "";
+    const t = out.get(id) ?? { company: 0, contact: 0 };
+    t[r.kind]++;
+    out.set(id, t);
+  }
+  return out;
+}
