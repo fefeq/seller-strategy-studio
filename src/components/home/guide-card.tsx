@@ -73,7 +73,7 @@ export function GuideCard() {
         {steps.map((s, i) => {
           const isCur = cur?.id === s.id;
           return (
-            <li key={s.id} className={`flex min-w-0 items-start gap-3 rounded-lg border p-3 ${isCur ? "border-lime bg-lime/10" : ""}`}>
+            <li key={s.id} className={`flex min-w-0 items-start gap-3 rounded-lg border p-3 ${isCur ? "border-lime bg-lime-soft" : ""}`}>
               <span aria-hidden className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-medium ${s.done ? "bg-lime text-lime-foreground" : isCur ? "border-2 border-lime" : "border text-muted-foreground"}`}>
                 {s.done ? "✓" : i + 1}
               </span>
