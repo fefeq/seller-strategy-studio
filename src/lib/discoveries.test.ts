@@ -47,3 +47,13 @@ describe("Descubiertos fit", () => {
     expect(sizeLabel(null)).toBeNull();
   });
 });
+
+import { parseIcpQuery } from "./discoveries";
+describe("Descubiertos search terms", () => {
+  it("uses the AI terms when valid and keeps the plain ICP query otherwise", () => {
+    const fb = { keywords: ["agencias"], countries: ["ES"], minEmployees: null, maxEmployees: 50 };
+    expect(parseIcpQuery(JSON.stringify({ keywords: ["personal branding agency", "linkedin agency"], countries: ["es", "MEX"], minEmployees: 50, maxEmployees: 2 }), fb))
+      .toEqual({ keywords: ["personal branding agency", "linkedin agency"], countries: ["ES"], minEmployees: 2, maxEmployees: 50 });
+    expect(parseIcpQuery("nope", fb)).toBe(fb);
+  });
+});

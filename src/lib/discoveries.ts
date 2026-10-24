@@ -102,3 +102,22 @@ export function sizeLabel(size: string | null | undefined): string | null {
   if (!s) return null;
   return /emplead/i.test(s) ? s : `${s} empleados`;
 }
+
+/** JSON schema for turning an ICP written in Spanish into company-database search terms (English keywords). */
+export const QUERY_SCHEMA = {
+  type: "object", additionalProperties: false, required: ["keywords", "countries", "minEmployees", "maxEmployees"],
+  properties: { keywords: { type: "array", items: { type: "string" } }, countries: { type: "array", items: { type: "string" } }, minEmployees: { type: ["integer", "null"] }, maxEmployees: { type: ["integer", "null"] } },
+} as const;
+
+type Query = { keywords?: string[]; industries?: string[]; countries?: string[]; minEmployees?: number | null; maxEmployees?: number | null; revenues?: string[] };
+/** AI search terms over the plain ICP query: keywords and countries only when given, sizes only when sane. */
+export function parseIcpQuery(raw: string, fallback: Query): Query {
+  let j: { keywords?: unknown; countries?: unknown; minEmployees?: unknown; maxEmployees?: unknown };
+  try { j = JSON.parse(raw); } catch { return fallback; }
+  const words = Array.isArray(j.keywords) ? j.keywords.map((k) => String(k).trim()).filter((k) => k.length > 1).slice(0, 6) : [];
+  const countries = Array.isArray(j.countries) ? j.countries.map((c) => String(c).trim().toUpperCase()).filter((c) => /^[A-Z]{2}$/.test(c)).slice(0, 10) : [];
+  const n = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 1 ? Math.round(v) : null);
+  let min = n(j.minEmployees), max = n(j.maxEmployees);
+  if (min != null && max != null && min > max) [min, max] = [max, min];
+  return { ...fallback, keywords: words.length ? words : fallback.keywords, countries: countries.length ? countries : fallback.countries, minEmployees: min ?? fallback.minEmployees ?? null, maxEmployees: max ?? fallback.maxEmployees ?? null };
+}
