@@ -33,7 +33,7 @@ const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
   { title: "Vender", items: [{ to: "/accounts", label: "Cuentas" }, { to: "/leads", label: "Leads" }, { to: "/deals", label: "Pipeline" }, { to: "/people", label: "Personas" }, { to: "/approvals", label: "Aprobaciones" }] },
   { title: "Estrategia", items: [{ to: "/strategy", label: "Estrategia GTM" }, { to: "/metrics", label: "Métricas" }, { to: "/advisor", label: "Asesor GTM", leadersOnly: true }, { to: "/cycle", label: "Ciclo GTM" }, { to: "/debates", label: "Debates" }, { to: "/abm", label: "ABM y partners" }, { to: "/theory-u", label: "Theory U" }, { to: "/products", label: "Productos" }] },
   { title: "Conocimiento", items: [{ to: "/hub", label: "Conocimiento" }, { to: "/memory", label: "Memoria" }] },
-  { title: "Ajustes", items: [{ to: "/setup", label: "Configuración" }, { to: "/team", label: "Equipo" }, { to: "/integrations", label: "Conexiones" }, { to: "/connect", label: "Conectar asistentes" }] },
+  { title: "Ajustes", items: [{ to: "/setup", label: "Configuración" }, { to: "/company", label: "Empresa" }, { to: "/team", label: "Equipo" }, { to: "/integrations", label: "Conexiones" }, { to: "/connect", label: "Conectar asistentes" }] },
 ];
 const NAV = NAV_GROUPS.flatMap((g) => g.items);
 
@@ -84,7 +84,7 @@ function Shell() {
           </button>
         </div>
       )}
-      {me && hasOrg && <OrgSwitcher memberships={me.memberships} current={me.currentOrg} userId={me.user.id} />}
+      {me && hasOrg && <OrgSwitcher memberships={me.memberships} archived={me.archived} current={me.currentOrg} userId={me.user.id} />}
       <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-3" aria-label="Secciones">
         {hasOrg && NAV_GROUPS.map((g) => (
           <div key={g.title} className="mb-3">
@@ -169,7 +169,7 @@ function Shell() {
         </aside>
       )}
       <main className="min-w-0 flex-1">
-        {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} />}
+        {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} archived={me.archived} />}
       </main>
       {hasOrg && <BottomBar />}
     </div>
