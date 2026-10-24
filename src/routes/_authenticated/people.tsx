@@ -16,6 +16,7 @@ import { errorText } from "@/lib/errors";
 import { ApolloPhones } from "@/components/apollo";
 import { PersonQuickActions } from "@/components/quick-actions";
 import { fetchAll } from "@/lib/fetch-all";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({ meta: [{ title: "Personas — Nokko" }, { name: "description", content: "Base única de personas sin duplicados." }, { property: "og:title", content: "Personas — Nokko" }, { property: "og:description", content: "Base única de personas sin duplicados." }] }),
@@ -144,7 +145,7 @@ function AddPerson({ existing }: { existing: { email: string | null; linkedin_ur
   const { data: accounts = [] } = useAccountOptions(open);
   async function save() {
     const same = existing.find((p: any) => normName(p.full_name) === normName(f.full_name) && normName(p.company) === normName(f.company));
-    if (same && !window.confirm(`Ya tienes a ${f.full_name}${f.company ? ` en ${f.company}` : ""}. ¿Añadirla igualmente?`)) return;
+    if (same && !(await askConfirm(`Ya tienes a ${f.full_name}${f.company ? ` en ${f.company}` : ""}`, { body: "¿Añadirla igualmente?", confirmLabel: "Añadir igualmente" }))) return;
     const { fresh } = dedupePeople([f], existing);
     if (!fresh.length) return toast.error("Esta persona ya existe (mismo email o LinkedIn) o falta email/LinkedIn.");
     const { error } = await supabase.from("people").insert({ ...fresh[0], full_name: f.full_name, company: f.company, title: f.title, account_id: accountId });

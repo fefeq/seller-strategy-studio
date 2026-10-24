@@ -26,6 +26,7 @@ import { DateField } from "@/components/date-field";
 import { AiProgress } from "@/components/ai-progress";
 import { AccountImport } from "@/components/account-import";
 import { questionSuggestions } from "@/lib/setup-questions";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -176,7 +177,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
   async function undoBatch() {
     const refs = (saved ?? []).flatMap((x) => (x.undo ? [x.undo] : []));
     if (!refs.length) return;
-    if (!window.confirm(`Se borrarán los ${refs.length} elementos que creó este guardado. Lo que se actualizó (posicionamiento, segmentos que ya existían, moneda) se queda como está. ¿Seguir?`)) return;
+    if (!(await askConfirm(`¿Deshacer los ${refs.length} elementos que creó este guardado?`, { body: "Lo que se actualizó (posicionamiento, segmentos que ya existían, moneda) se queda como está.", confirmLabel: "Deshacer" }))) return;
     setBusy(true);
     try {
       const r = await undo({ data: { refs } });

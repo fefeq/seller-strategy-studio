@@ -14,6 +14,7 @@ import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
 import { KeyPeopleButton } from "@/components/orchestrator";
 import { ApolloReveal } from "@/components/apollo";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export function StakeholdersTab({ accountId, hasDomain, list, onChange }: { accountId: string; hasDomain: boolean; list: any[]; onChange: () => void }) {
   const [sel, setSel] = useState<any | null>(null);
@@ -102,7 +103,7 @@ export function AddStakeholder({ list, onAdd, onOpen }: { list: any[]; onAdd: (p
     if (!n) return;
     if (pickedId?.startsWith("s:")) { onOpen(list.find((s) => `s:${s.id}` === pickedId)); setOpen(false); return; }
     const sameInMap = duplicateOf({ name: n }, inMap);
-    if (!pickedId && sameInMap?.kind === "same" && !window.confirm(`«${sameInMap.item.name}» ya está en este mapa. ¿Añadirla otra vez?`)) return;
+    if (!pickedId && sameInMap?.kind === "same" && !(await askConfirm(`«${sameInMap.item.name}» ya está en este mapa`, { body: "¿Añadirla otra vez como stakeholder?", confirmLabel: "Añadir igualmente" }))) return;
     const person = pickedId ? people.find((p) => `p:${p.id}` === pickedId) : null;
     await onAdd(person ? { name: person.name, title: person.title, email: person.email, linkedin_url: person.linkedin_url } : { name: n });
     setName(""); setPickedId(null); setOpen(false);

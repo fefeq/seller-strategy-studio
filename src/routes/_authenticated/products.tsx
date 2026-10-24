@@ -14,6 +14,7 @@ import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { useProducts } from "@/components/deal-lines";
 import { BILLING_LABELS, BILLING_SUFFIX, checkLineField, productMarginPct, type Billing, type Product } from "@/lib/deal-lines";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/products")({
   head: () => ({ meta: [{ title: "Productos — Nokko" }, { name: "description", content: "Catálogo de productos con precio, coste y margen para las líneas de cada deal." }, { property: "og:title", content: "Productos — Nokko" }, { property: "og:description", content: "Catálogo de productos con precio, coste y margen para las líneas de cada deal." }] }),
@@ -51,7 +52,7 @@ function Products() {
   async function create() {
     if (!f.name.trim()) return toast.error("El producto necesita un nombre.");
     const dup = duplicateOf({ name: f.name }, products.map((p) => ({ id: p.id, name: p.name })));
-    if (dup && !window.confirm(`Ya existe «${dup.item.name}» en el catálogo. ¿Añadir otro igualmente?`)) return;
+    if (dup && !(await askConfirm(`Ya existe «${dup.item.name}» en el catálogo`, { body: "¿Añadir otro producto igualmente?", confirmLabel: "Añadir igualmente" }))) return;
     const price = checkLineField("price", f.price);
     const cost = checkLineField("cost", f.cost);
     if (!price.ok) return toast.error(price.error);

@@ -13,6 +13,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
+import { askText } from "@/components/confirm-dialog";
 
 type JobData = JobArgs;
 
@@ -62,7 +63,7 @@ export function AccountQuickActions({ account }: { account: QuickAccount }) {
     refresh();
   }
   async function addTask() {
-    const title = window.prompt(`Nueva tarea para ${account.name}`)?.trim();
+    const title = await askText(`Nueva tarea para ${account.name}`, { placeholder: "Qué hay que hacer", confirmLabel: "Crear tarea" });
     if (!title) return;
     const { error } = await supabase.from("tasks").insert({ title, account_id: account.id, owner_id: me?.user.id ?? null, due_date: isoInDays(1) });
     if (error) return toast.error(errorText(error));
@@ -146,7 +147,7 @@ export function PersonQuickActions({ person }: { person: QuickPerson }) {
     qc.invalidateQueries({ queryKey: ["people"] });
   }
   async function addTask() {
-    const title = window.prompt(`Nueva tarea sobre ${name}`)?.trim();
+    const title = await askText(`Nueva tarea sobre ${name}`, { placeholder: "Qué hay que hacer", confirmLabel: "Crear tarea" });
     if (!title) return;
     const { error } = await supabase.from("tasks").insert({ title, account_id: person.account_id, owner_id: me?.user.id ?? null, due_date: isoInDays(1) });
     if (error) return toast.error(errorText(error));

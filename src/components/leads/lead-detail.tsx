@@ -20,6 +20,7 @@ import { DateField } from "@/components/date-field";
 import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
 import { QualificationPanel } from "@/components/leads/lead-qualification";
 import { LeadFlowPanel } from "@/components/leads/lead-flow";
+import { askConfirm } from "@/components/confirm-dialog";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -60,7 +61,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
   }
 
   async function remove() {
-    if (!confirm(`¿Borrar el lead ${lead.company}? Su oportunidad, si la tiene, se mantiene en Pipeline.`)) return;
+    if (!(await askConfirm(`¿Borrar el lead ${lead.company}?`, { body: "Su oportunidad, si la tiene, se mantiene en Pipeline.", confirmLabel: "Borrar" }))) return;
     const { error } = await supabase.from("leads").delete().eq("id", lead.id);
     if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["leads"] });

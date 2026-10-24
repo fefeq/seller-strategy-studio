@@ -19,6 +19,7 @@ import { useStages } from "@/components/stage-settings";
 import { importLeads } from "@/lib/leads.functions";
 import { errorText } from "@/lib/errors";
 import { ImportReview } from "@/components/import-review";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/leads/entrada")({
   head: () => ({ meta: [
@@ -75,7 +76,7 @@ function Sources({ canManage, isLeader, isOwner }: { canManage: boolean; isLeade
     qc.invalidateQueries({ queryKey: ["lead-sources"] });
   }
   async function remove(id: string) {
-    if (!confirm("¿Borrar esta conexión? Las herramientas que la usan dejarán de enviar datos.")) return;
+    if (!(await askConfirm("¿Borrar esta conexión?", { body: "Las herramientas que la usan dejarán de enviar datos.", confirmLabel: "Borrar" }))) return;
     const { error } = await supabase.from("lead_sources").delete().eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["lead-sources"] });

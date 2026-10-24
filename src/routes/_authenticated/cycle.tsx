@@ -23,6 +23,7 @@ import { JobProgress, useJob, type BgJob } from "@/components/background";
 import { freshResult } from "@/lib/jobs";
 import type { DeepReview } from "@/lib/bmad/debate-core";
 import { errorText } from "@/lib/errors";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/cycle")({
   // artifact: link from a notice («Borrador listo…», «Revisión a fondo lista…») straight to the document.
@@ -202,7 +203,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
     refresh(); onSelect(data.id); toast.success(`Creada la v${nextVersion} en borrador. La v${art!.version} sigue alimentando a los agentes hasta que apruebes la nueva.`);
   }
   async function withdraw() {
-    if (!window.confirm(`Retirar la aprobación de la v${art!.version}: dejará de alimentar a los agentes y la fase volverá a quedar pendiente. ¿Seguir?`)) return;
+    if (!(await askConfirm(`¿Retirar la aprobación de la v${art!.version}?`, { body: "Dejará de alimentar a los agentes y la fase volverá a quedar pendiente.", confirmLabel: "Retirar aprobación" }))) return;
     const { error } = await supabase.from("gtm_artifacts").update({ status: "draft", approved_by: null, approved_at: null }).eq("id", art!.id);
     if (error) return toast.error(errorText(error));
     refresh(); toast.success("Aprobación retirada: el documento vuelve a borrador.");

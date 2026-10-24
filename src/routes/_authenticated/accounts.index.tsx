@@ -22,6 +22,7 @@ import { IcpCompaniesButton } from "@/components/orchestrator";
 import { duplicateOf } from "@/lib/match";
 import { EnrichTableButton } from "@/components/parallel";
 import { fetchAll } from "@/lib/fetch-all";
+import { askConfirm } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
   head: () => ({ meta: [{ title: "Cuentas — Nokko" }, { name: "description", content: "Todas las cuentas con su plan y stakeholders." }, { property: "og:title", content: "Cuentas — Nokko" }, { property: "og:description", content: "Todas las cuentas con su plan y stakeholders." }] }),
@@ -69,7 +70,7 @@ function Accounts() {
   const [domain, setDomain] = useState("");
   const dup = name.trim() || domain.trim() ? duplicateOf({ name, domain }, data.map((a) => ({ id: a.id, name: a.name, domain: a.domain }))) : null;
   async function create() {
-    if (dup?.kind === "same" && !window.confirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}. ¿Crear otra igualmente?`)) return;
+    if (dup?.kind === "same" && !(await askConfirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}`, { body: "¿Crear otra cuenta igualmente?", confirmLabel: "Crear igualmente" }))) return;
     const { data: a, error } = await supabase.from("accounts").insert({ name, domain }).select().single();
     if (error) return toast.error(errorText(error));
     await supabase.from("account_plans").insert({ account_id: a.id });

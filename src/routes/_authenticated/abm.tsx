@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { engagementScore, registrationConflict, TOUCH_WEIGHTS } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
+import { askConfirm, askText } from "@/components/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/abm")({
   head: () => ({ meta: [{ title: "ABM y partners — Nokko" }, { name: "description", content: "Cuentas objetivo, engagement y programa de partners." }, { property: "og:title", content: "ABM y partners — Nokko" }, { property: "og:description", content: "Cuentas objetivo, engagement y programa de partners." }] }),
@@ -137,10 +138,10 @@ function Partners() {
   const qc = useQueryClient();
   const { data: list = [] } = useQuery({ queryKey: ["partners"], queryFn: async () => (await supabase.from("partners").select("*, deals(amount,stage)").order("name")).data ?? [] });
   async function add() {
-    const name = window.prompt("Nombre del partner")?.trim();
+    const name = await askText("Nuevo partner", { placeholder: "Nombre del partner", confirmLabel: "Crear partner" });
     if (!name) return;
     const dup = duplicateOf({ name }, list.map((p) => ({ id: p.id, name: p.name })));
-    if (dup && !window.confirm(`Ya existe el partner «${dup.item.name}». ¿Crear otro igualmente?`)) return;
+    if (dup && !(await askConfirm(`Ya existe el partner «${dup.item.name}»`, { body: "¿Crear otro igualmente?", confirmLabel: "Crear igualmente" }))) return;
     await supabase.from("partners").insert({ name });
     qc.invalidateQueries({ queryKey: ["partners"] });
   }
