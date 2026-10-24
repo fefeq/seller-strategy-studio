@@ -222,6 +222,8 @@
   /* Grid and flex children may shrink below their content, so long text never widens the page. */
   .grid { grid-template-columns: minmax(0, 1fr); }
   .grid > * { min-width: 0; }
+  /* Contain absolutely positioned helpers (e.g. screen-reader labels) inside horizontal scrollers. */
+  .overflow-x-auto { position: relative; }
   * {
     border-color: var(--color-border);
   }
