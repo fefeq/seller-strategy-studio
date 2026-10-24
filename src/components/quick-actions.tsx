@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { startBackgroundJob } from "@/lib/background.functions";
+import { startBackgroundJob, type JobArgs } from "@/lib/background.functions";
 import { errorText } from "@/lib/errors";
 import { useMe } from "@/hooks/use-me";
 import { useLeadTouched } from "@/components/background";
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
 
-type JobData = Parameters<typeof startBackgroundJob>[0] extends { data: infer D } ? D : never;
+type JobData = JobArgs;
 
 function useStart() {
   const start = useServerFn(startBackgroundJob);
