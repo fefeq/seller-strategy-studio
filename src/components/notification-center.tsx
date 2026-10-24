@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { cancelBackgroundJob, retryBackgroundJob } from "@/lib/background.functions";
 import { errorText } from "@/lib/errors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -101,7 +101,7 @@ export function NotificationCenter({ userId, className = "" }: { userId: string 
                 {n.kind === "failed" && n.job_id && <button type="button" className="mx-4 mb-3 text-xs underline underline-offset-4" onClick={() => retry(n)}>Reintentar</button>}
               </div>
             ))}
-            <p className="border-t border-hairline px-4 py-2 text-xs text-muted-foreground">Qué te llega por Telegram: <a href="/team#avisos" className="underline underline-offset-4">Preferencias de avisos</a></p>
+            <p className="border-t border-hairline px-4 py-2 text-xs text-muted-foreground">Qué te llega por Telegram: <Link to="/team" hash="avisos" className="underline underline-offset-4">Preferencias de avisos</Link></p>
           </TabsContent>
         </Tabs>
       </PopoverContent>
