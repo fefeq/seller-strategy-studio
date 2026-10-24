@@ -36,4 +36,3 @@ export const CYCLE_TOOLS: AgentTool[] = [
     },
   }),
 ];
-];
