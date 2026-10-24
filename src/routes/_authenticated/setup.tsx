@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, Circle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
@@ -67,7 +66,7 @@ function SetupPage() {
           <ul className="mt-4 space-y-2.5 text-sm">
             {st?.items.map((i) => (
               <li key={i.id} className="flex gap-2">
-                {i.done ? : <Circle className="mt-0.5 size-4 shrink-0 text-muted-foreground" />}
+                <span aria-hidden className={`w-4 shrink-0 ${i.done ? "text-success" : "text-muted-foreground"}`}>{i.done ? "✓" : "·"}</span>
                 <div><p className={i.done ? "text-muted-foreground line-through" : ""}>{i.label}</p>{!i.done && <p className="text-xs text-muted-foreground">Desbloquea: {i.unlocks}</p>}</div>
               </li>
             ))}
@@ -267,7 +266,7 @@ function ProposalReview({ proposal, onReset, onWizard }: { proposal: SetupPropos
         </section>
       ))}
       <div className="sticky bottom-[calc(3.75rem+env(safe-area-inset-bottom))] z-10 -mx-4 grid grid-cols-2 gap-2 border-t bg-background px-4 py-3 sm:bottom-4 sm:mx-0 sm:flex sm:flex-wrap sm:items-center sm:rounded-lg sm:border sm:bg-card sm:p-3 sm:shadow-sm">
-        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length || !!saved}>{busy ? : <Check className="size-4" />} {saved ? "Guardado" : `Guardar ${chosen.length} elementos`}</Button>
+        <Button className="order-last col-span-2 sm:order-none" onClick={save} disabled={busy || !chosen.length || !!saved}>{busy ? "Guardando…" : saved ? "Guardado" : `Guardar ${chosen.length} elementos`}</Button>
         <Button variant="outline" onClick={onWizard}><span className="sm:hidden">Seguir paso a paso</span><span className="hidden sm:inline">Completar el resto paso a paso</span></Button>
         <Button variant="ghost" onClick={onReset}>Empezar de nuevo</Button>
       </div>
@@ -462,7 +461,7 @@ function StepForm({ id, proposal, onSaved }: { id: string; proposal: SetupPropos
         <label className="block text-sm"><span className="font-medium">O escribe una cuenta por línea</span><Textarea className="mt-1" rows={5} value={v.names ?? ""} onChange={(e) => setV({ ...v, names: e.target.value })} /><span className="mt-1 block text-xs text-muted-foreground">Se crean como cuentas objetivo solo con el nombre; completa sector y tamaño en su ficha para que puntúen.</span></label>
       </div>}
       {id === "deals" && <div className="grid gap-3 sm:grid-cols-3">{inp("name", "Nombre del deal")}{inp("account_name", "Cuenta (se crea si no existe)")}<label className="text-sm">Segmento<div className="mt-1"><Pick value={v.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(segs.map((x) => [x.id, x.name])) }} onChange={(x) => setV({ ...v, segment_id: x })} /></div></label><label className="text-sm">Etapa<div className="mt-1"><Pick value={v.stage || firstOpenStage(stages).key} options={stageOptions(stages)} onChange={(x) => setV({ ...v, stage: x })} /></div></label>{inp("amount", `Importe (ACV, ${symbol})`, { type: "number" })}<label className="text-sm">Fecha de cierre<div className="mt-1"><DateField value={v.close_date || null} onChange={(iso) => setV({ ...v, close_date: iso ?? "" })} /></div></label></div>}
-      <Button onClick={save} disabled={busy}>{busy && <Loader2 className="size-4 animate-spin" />} Guardar y seguir</Button>
+      <Button onClick={save} disabled={busy}>{busy ? "Guardando…" : "Guardar y seguir"}</Button>
     </div>
   );
 }
