@@ -277,8 +277,8 @@ export function SankeyFlow({ flow, money, stateKey, active, height = 540 }: Prop
       }}
       tabIndex={0}
       role="application"
-      aria-roledescription="Money flow diagram"
-      aria-label={`${ariaSummary} Arrow left and right step upstream and downstream along the flow; arrow up and down move between items at the same point in the flow; Escape leaves the diagram.`}
+      aria-roledescription="Diagrama de flujo de dinero"
+      aria-label={`${ariaSummary} Flechas izquierda y derecha recorren el flujo; arriba y abajo cambian entre elementos del mismo punto; Escape sale del diagrama.`}
       aria-activedescendant={activeDescId}
       onFocus={(e) => {
         if (e.target === e.currentTarget && !focusKey) moveCursor("init");
@@ -306,9 +306,7 @@ export function SankeyFlow({ flow, money, stateKey, active, height = 540 }: Prop
       }}
     >
       <p className="sr-only">
-        Interactive money flow diagram. Use the left and right arrow keys to step
-        upstream and downstream along the flow, the up and down arrow keys to move
-        between items at the same point in the flow, and Escape to leave the diagram.
+        Diagrama interactivo del flujo de dinero. Usa las flechas izquierda y derecha para recorrer el flujo, arriba y abajo para cambiar entre elementos del mismo punto y Escape para salir.
       </p>
       {svgW > 0 && frame && (
         <svg
@@ -520,7 +518,7 @@ export function SankeyFlow({ flow, money, stateKey, active, height = 540 }: Prop
             top: Math.min(Math.max(pointer.y - 20, 8), height - 130),
           }}
         >
-          <div className="eyebrow">Flow</div>
+          <div className="eyebrow">Flujo</div>
           <div className="mt-1 text-[13px] leading-snug text-foreground">
             {frame.nodes[focusLink.source]?.label}
             <span className="mx-1.5 text-ink-faint">→</span>
@@ -554,7 +552,9 @@ function shortLabel(label: string): string {
       "Sales & Marketing": "S&M",
       "General & Admin": "G&A",
       "Operating Income": "Op. income",
-      "Funded from Cash Reserves": "From reserves",
+      "Pagado con caja": "Caja",
+      "Coste de servir": "Servir",
+      "Margen bruto": "Margen",
     } as Record<string, string>
   )[label] ?? label;
 }
