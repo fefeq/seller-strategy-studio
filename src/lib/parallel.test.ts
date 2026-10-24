@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { chunk, clampCount, enrichPatch, listInput, listProcessor, readEnrichRows, readEntities, readReport, reportMarkdown, searchAsNews } from "./parallel";
+import { chunk, clampCount, enrichLookup, enrichPatch, listInput, listProcessor, readEnrichRows, readEntities, readReport, reportMarkdown, searchAsNews } from "./parallel";
 
 describe("deep account report", () => {
   it("reads each field with its sources and confidence", () => {
@@ -39,8 +39,10 @@ describe("ICP list", () => {
 describe("enrichment table", () => {
   it("chunks in fives and maps rows back by key", () => {
     expect(chunk([1, 2, 3, 4, 5, 6, 7]).map((c) => c.length)).toEqual([5, 2]);
-    const rows = readEnrichRows({ rows: [{ key: "r1", industry: "SaaS", size: "null", country: "España", funding: null, technology: "HubSpot", source_url: "https://x.com" }, { key: "zz", industry: "x" }] }, new Map([["r1", "acc1"]]));
-    expect(rows).toEqual([{ account_id: "acc1", industry: "SaaS", size: null, country: "España", funding: null, technology: "HubSpot", source_url: "https://x.com" }]);
+    const lookup = enrichLookup([{ key: "r1", name: "Typeform", domain: "typeform.com", id: "acc1" }, { key: "r2", name: "Factorial", domain: "https://factorialhr.com", id: "acc2" }]);
+    const rows = readEnrichRows({ rows: [{ key: "r1", industry: "SaaS", size: "null", country: "España", funding: null, technology: "HubSpot", source_url: "https://x.com" }, { key: "zz", industry: "x" }, { key: "factorialhr.com", industry: "HR" }, { key: "Typeform", industry: "dup" }] }, lookup);
+    expect(rows.map((r) => [r.account_id, r.industry])).toEqual([["acc1", "SaaS"], ["acc2", "HR"]]);
+    expect(rows[0]).toEqual({ account_id: "acc1", industry: "SaaS", size: null, country: "España", funding: null, technology: "HubSpot", source_url: "https://x.com" });
   });
   it("fills only empty fields and adds funding and technology as a note line", () => {
     const p = enrichPatch({ industry: "Fintech", size: null, country: "", notes: "Cliente potente" }, { account_id: "a", industry: "SaaS", size: "200 empleados", country: "España", funding: "Serie A 10 M€ (2026)", technology: null, source_url: null });

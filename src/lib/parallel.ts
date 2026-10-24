@@ -146,17 +146,28 @@ export const enrichSchema = {
 
 export function enrichInput(rows: { key: string; name: string; domain: string | null }[]): string {
   return [
-    "Para cada empresa, busca sector, tamaño en empleados, país de la sede, última financiación y herramientas que usa. Devuelve null en vez de adivinar. Responde en español. Devuelve key tal cual.",
+    "Para cada empresa, busca sector, tamaño en empleados, país de la sede, última financiación y herramientas que usa. Devuelve null en vez de adivinar. Responde en español. Cada línea empieza por su código (r1, r2…): pon ese código exacto en key.",
     ...rows.map((r) => `${r.key} | ${r.name}${r.domain ? ` | ${r.domain}` : ""}`),
   ].join("\n");
 }
 
-/** Model rows back to accounts by key; unknown keys and empty strings dropped. */
-export function readEnrichRows(json: unknown, keys: Map<string, string>): EnrichRow[] {
+/** Lookup for model rows: the row code, and also the company name or domain (the model sometimes echoes those). */
+export function enrichLookup(rows: { key: string; name: string; domain: string | null; id: string }[]): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const r of rows) { m.set(r.key, r.id); m.set(r.name.trim().toLowerCase(), r.id); const d = cleanDomain(r.domain); if (d) m.set(d, r.id); }
+  return m;
+}
+
+/** Model rows back to accounts (by code, name or domain); unknown keys and empty strings dropped. */
+export function readEnrichRows(json: unknown, lookup: Map<string, string>): EnrichRow[] {
+  const keys = { get: (k: string) => lookup.get(k) ?? lookup.get(k.trim().toLowerCase()) ?? lookup.get(cleanDomain(k) ?? "") };
   const rows = ((json ?? {}) as { rows?: unknown[] }).rows ?? [];
   const clean = (v: unknown) => { const s = typeof v === "string" ? v.trim() : ""; return s && !/^(null|n\/a|desconocido|sin datos)$/i.test(s) ? s.slice(0, 300) : null; };
+  const seen = new Set<string>();
   return (rows as Record<string, unknown>[]).flatMap((r) => {
     const id = keys.get(String(r.key ?? ""));
+    if (id && seen.has(id)) return [];
+    if (id) seen.add(id);
     if (!id) return [];
     const src = clean(r.source_url);
     return [{ account_id: id, industry: clean(r.industry), size: clean(r.size), country: clean(r.country), funding: clean(r.funding), technology: clean(r.technology), source_url: src && /^https?:\/\//.test(src) ? src : null }];

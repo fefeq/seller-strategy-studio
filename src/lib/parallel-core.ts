@@ -1,7 +1,7 @@
 // Parallel cores shared by the screens (parallel.functions.ts), the agent/MCP tools (agent/tools/parallel.ts)
 // and the Inngest poller. Runs are written with the admin client after the caller's company was checked.
 import { createTaskRun, pollTaskRun, respond } from "@/lib/parallel-gateway";
-import { LIST_SCHEMA, chunk, clampCount, enrichInput, enrichSchema, listInput, listProcessor, readEnrichRows, readEntities, readReport, reportInput, reportSchema, type EnrichRow } from "@/lib/parallel";
+import { LIST_SCHEMA, chunk, clampCount, enrichInput, enrichLookup, enrichSchema, listInput, listProcessor, readEnrichRows, readEntities, readReport, reportInput, reportSchema, type EnrichRow } from "@/lib/parallel";
 
 type Db = any;
 export type Scope = { orgId: string; userId: string };
@@ -87,7 +87,7 @@ export async function enrichTable(db: Db, s: Scope, accountIds: string[]): Promi
   const list = (accs ?? []) as { id: string; name: string; domain: string | null }[];
   if (!list.length) throw new Error("Elige al menos una cuenta de esta empresa.");
   const keyed = list.map((a, i) => ({ key: `r${i + 1}`, name: a.name, domain: a.domain, id: a.id }));
-  const keys = new Map(keyed.map((k) => [k.key, k.id]));
+  const keys = enrichLookup(keyed);
   const parts = await Promise.allSettled(chunk(keyed).map((c) => respond(enrichInput(c), enrichSchema, "medium").then((j) => readEnrichRows(j, keys))));
   const rows = parts.flatMap((p) => (p.status === "fulfilled" ? p.value : []));
   if (!rows.length) { const err = parts.find((p) => p.status === "rejected") as PromiseRejectedResult | undefined; throw err?.reason ?? new Error("Parallel no ha encontrado datos de esas cuentas."); }
