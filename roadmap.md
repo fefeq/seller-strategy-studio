@@ -92,3 +92,10 @@ Ordenado por quién lo desbloquea y, dentro de cada grupo, por impacto.
 - [x] Chat del agente sin respuesta: Gemini cambió el formato de las llamadas a herramientas; corregido
 - [x] Logos de empresa en color (variante oscura en modo Tinta)
 - [x] Conocimiento: pestaña «Drive por cuenta» con todos los documentos guardados en Drive, resumen y fecha
+
+### Nokko decide, recuerda y se adelanta (plan aprobado 24 oct)
+- [x] Fase 1a: menú en 5 bloques (Hoy, Vender, Estrategia, Conocimiento, Ajustes)
+- [x] Fase 1b: reglas del orquestador (catálogo de necesidades, elección de servicios, límite 80/100 %) y tablas de gasto
+- [ ] Fase 1c: herramientas del agente y MCP por necesidad; botones de pantalla por necesidad; límite mensual en Conexiones
+- [ ] Fase 2: memoria (negocio, usuario, cuenta, resultados, tareas), aprendizaje automático, pantalla Memoria
+- [ ] Fase 3: briefing en Inicio, Descubiertos semanal, motor ampliado, email diario 8:00 (necesita dominio de envío)
