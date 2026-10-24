@@ -18,6 +18,7 @@ import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } fr
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
 import { Route as AuthenticatedAdvisorRouteImport } from './routes/_authenticated/advisor'
 import { Route as AuthenticatedApprovalsRouteImport } from './routes/_authenticated/approvals'
+import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedCompanyRouteImport } from './routes/_authenticated/company'
 import { Route as AuthenticatedConnectRouteImport } from './routes/_authenticated/connect'
 import { Route as AuthenticatedCycleRouteImport } from './routes/_authenticated/cycle'
@@ -94,6 +95,11 @@ const AuthenticatedAdvisorRoute = AuthenticatedAdvisorRouteImport.update({
 const AuthenticatedApprovalsRoute = AuthenticatedApprovalsRouteImport.update({
   id: '/approvals',
   path: '/approvals',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCompanyRoute = AuthenticatedCompanyRouteImport.update({
@@ -273,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/company': typeof AuthenticatedCompanyRoute
   '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
@@ -315,6 +322,7 @@ export interface FileRoutesByTo {
   '/abm': typeof AuthenticatedAbmRoute
   '/advisor': typeof AuthenticatedAdvisorRoute
   '/approvals': typeof AuthenticatedApprovalsRoute
+  '/calendar': typeof AuthenticatedCalendarRoute
   '/company': typeof AuthenticatedCompanyRoute
   '/connect': typeof AuthenticatedConnectRoute
   '/cycle': typeof AuthenticatedCycleRoute
@@ -359,6 +367,7 @@ export interface FileRoutesById {
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
   '/_authenticated/advisor': typeof AuthenticatedAdvisorRoute
   '/_authenticated/approvals': typeof AuthenticatedApprovalsRoute
+  '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/company': typeof AuthenticatedCompanyRoute
   '/_authenticated/connect': typeof AuthenticatedConnectRoute
   '/_authenticated/cycle': typeof AuthenticatedCycleRoute
@@ -403,6 +412,7 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/calendar'
     | '/company'
     | '/connect'
     | '/cycle'
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | '/abm'
     | '/advisor'
     | '/approvals'
+    | '/calendar'
     | '/company'
     | '/connect'
     | '/cycle'
@@ -488,6 +499,7 @@ export interface FileRouteTypes {
     | '/_authenticated/abm'
     | '/_authenticated/advisor'
     | '/_authenticated/approvals'
+    | '/_authenticated/calendar'
     | '/_authenticated/company'
     | '/_authenticated/connect'
     | '/_authenticated/cycle'
@@ -601,6 +613,13 @@ declare module '@tanstack/react-router' {
       path: '/approvals'
       fullPath: '/approvals'
       preLoaderRoute: typeof AuthenticatedApprovalsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/calendar': {
+      id: '/_authenticated/calendar'
+      path: '/calendar'
+      fullPath: '/calendar'
+      preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/company': {
@@ -834,6 +853,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAbmRoute: typeof AuthenticatedAbmRoute
   AuthenticatedAdvisorRoute: typeof AuthenticatedAdvisorRoute
   AuthenticatedApprovalsRoute: typeof AuthenticatedApprovalsRoute
+  AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedCompanyRoute: typeof AuthenticatedCompanyRoute
   AuthenticatedConnectRoute: typeof AuthenticatedConnectRoute
   AuthenticatedCycleRoute: typeof AuthenticatedCycleRoute
@@ -865,6 +885,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAbmRoute: AuthenticatedAbmRoute,
   AuthenticatedAdvisorRoute: AuthenticatedAdvisorRoute,
   AuthenticatedApprovalsRoute: AuthenticatedApprovalsRoute,
+  AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedCompanyRoute: AuthenticatedCompanyRoute,
   AuthenticatedConnectRoute: AuthenticatedConnectRoute,
   AuthenticatedCycleRoute: AuthenticatedCycleRoute,
