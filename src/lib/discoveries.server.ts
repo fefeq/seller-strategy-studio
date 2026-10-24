@@ -4,7 +4,7 @@
 // pauses at 100 %), every find is unique per company, and a dismissed one never returns.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { companyReason, dedupeKey, discoveryDue, knownCompetitors, parseCompetitors, COMPETITOR_SCHEMA, type DiscoveryKind } from "@/lib/discoveries";
+import { companyReason, dedupeKey, discoveryDue, knownCompetitors, parseCompetitors, parseFitJudgments, sizeLabel, COMPETITOR_SCHEMA, FIT_SCHEMA, type DiscoveryKind } from "@/lib/discoveries";
 import { icpToQuery } from "@/lib/clay";
 
 type Admin = SupabaseClient<Database>;
@@ -32,17 +32,30 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
   const push = (r: Row) => { if (seen.has(r.dedupe_key)) return false; seen.add(r.dedupe_key); rows.push(r); return true; };
   const { findIcpCompanies, findKeyPeople } = await import("@/lib/orchestrator/runner");
 
-  // 1 · Companies that fit the ICPs (not already accounts).
+  // 1 · Companies that fit the ICPs (not already accounts). The search matches loosely by keywords, so the AI
+  // judges each candidate against the ICP and only real fits (≥ 60) enter, with its reason.
   try {
-    const { data: icps } = await db.from("icp_profiles").select("id,name,industries,company_size,geography").eq("org_id", orgId).limit(3);
+    const { data: icps } = await db.from("icp_profiles").select("id,name,industries,company_size,geography,anti_icp,why_fit").eq("org_id", orgId).limit(3);
+    const { data: pos0 } = await db.from("positioning").select("product_name,target_customer,best_customers").eq("org_id", orgId).limit(1).maybeSingle();
     for (const icp of icps ?? []) {
       if (added.company >= MAX.company) break;
       const r = await findIcpCompanies(ctx, { query: icpToQuery(icp) }, trigger);
       if (r.blocked) { notes.push(r.blocked); break; }
-      for (const c of r.rows) {
+      const cands = r.rows.filter((c) => !c.existingId && c.name?.trim() && !seen.has(dedupeKey("company", c))).slice(0, 25);
+      if (!cands.length) continue;
+      const { ask } = await import("@/lib/ai-gateway");
+      const raw = await ask(
+        "Eres analista de ventas B2B. Puntúa de 0 a 100 cuánto encaja cada empresa candidata con el ICP descrito (tipo de empresa, sector, tamaño, país y exclusiones). Sé estricto: una empresa grande de otro sector es 0–20 aunque comparta una palabra. La razón, en español, en una frase concreta que diga por qué encaja o no.",
+        `ICP «${icp.name}»\nSector o tipo: ${icp.industries ?? ""}\nTamaño: ${icp.company_size ?? ""}\nGeografía: ${icp.geography ?? ""}\nNo encaja (anti-ICP): ${icp.anti_icp ?? ""}\nPor qué encaja: ${icp.why_fit ?? ""}\nNuestro producto: ${pos0?.product_name ?? ""} para ${pos0?.target_customer ?? ""}\n\nCandidatas:\n${cands.map((c, i) => `${i}. ${c.name} — ${[c.industry, sizeLabel(c.size), c.country, c.domain].filter(Boolean).join(" · ")}${c.description ? ` — ${c.description.slice(0, 200)}` : ""}`).join("\n")}`,
+        { effort: "low", schema: { name: "fit", schema: FIT_SCHEMA as never } },
+      );
+      const fits = parseFitJudgments(raw, cands.length);
+      if (!fits.size) notes.push(`Empresas: ninguna de las ${cands.length} candidatas de «${icp.name}» encaja de verdad.`);
+      const ranked = [...fits.entries()].sort((x, y) => y[1].fit - x[1].fit);
+      for (const [i, f] of ranked) {
         if (added.company >= MAX.company) break;
-        if (c.existingId || !c.name?.trim()) continue;
-        if (push({ kind: "company", name: c.name.trim(), detail: { domain: c.domain, industry: c.industry, size: c.size, country: c.country, linkedin: c.linkedin, description: c.description, icp_id: icp.id }, reason: companyReason(icp.name, c), source: r.sources, dedupe_key: dedupeKey("company", c) })) added.company++;
+        const c = cands[i]!;
+        if (push({ kind: "company", name: c.name.trim(), detail: { domain: c.domain, industry: c.industry, size: sizeLabel(c.size), country: c.country, linkedin: c.linkedin, description: c.description, icp_id: icp.id, fit: f.fit }, reason: `Encaje ${f.fit}/100 con «${icp.name}»: ${f.reason || companyReason(icp.name, c)}`, source: r.sources.replace(/\s*·\s*coste.*$/, ""), dedupe_key: dedupeKey("company", c) })) added.company++;
       }
     }
   } catch (e) { notes.push(`Empresas: ${(e as Error).message}`); }
@@ -62,7 +75,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
       const best = pickKeyPeople(r.rows.filter((p) => !p.existingId).map((p) => ({ name: p.name, title: p.title, linkedin: p.linkedin })), null, 2);
       for (const p of best) {
         const apolloId = r.rows.find((x) => x.name === p.name)?.apolloId ?? null;
-        if (push({ kind: "contact", name: p.name, detail: { title: p.title, linkedin: p.linkedin, account_id: a.id, account_name: a.name, apollo_id: apolloId }, reason: `Persona clave en ${a.name}, cuenta objetivo con el mapa de poder casi vacío.`, source: r.sources, dedupe_key: dedupeKey("contact", { name: p.name, linkedin: p.linkedin, account_id: a.id }) })) added.contact++;
+        if (push({ kind: "contact", name: p.name, detail: { title: p.title, linkedin: p.linkedin, account_id: a.id, account_name: a.name, apollo_id: apolloId }, reason: `Persona clave en ${a.name}, cuenta objetivo con el mapa de poder casi vacío.`, source: r.sources.replace(/\s*·\s*coste.*$/, ""), dedupe_key: dedupeKey("contact", { name: p.name, linkedin: p.linkedin, account_id: a.id }) })) added.contact++;
       }
     }
   } catch (e) { notes.push(`Contactos: ${(e as Error).message}`); }
@@ -85,7 +98,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
           { effort: "low", schema: { name: "competitors", schema: COMPETITOR_SCHEMA as never } },
         );
         for (const c of parseCompetitors(text, known, product, MAX.competitor)) {
-          if (push({ kind: "competitor", name: c.name, detail: { url: c.url }, reason: c.why || "Aparece como alternativa en la web.", source: found.via || "Web", dedupe_key: dedupeKey("competitor", c) })) added.competitor++;
+          if (push({ kind: "competitor", name: c.name, detail: { url: c.url }, reason: c.why || "Aparece como alternativa en la web.", source: (found.via || "Web").replace(/\s*·\s*coste.*$/, ""), dedupe_key: dedupeKey("competitor", c) })) added.competitor++;
         }
       }
     } else notes.push("Competidores: falta la categoría del producto en el posicionamiento.");
