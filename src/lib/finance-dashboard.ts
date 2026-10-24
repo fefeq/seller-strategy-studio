@@ -3,13 +3,15 @@
 import { quarterRange } from "@/lib/metrics";
 import { deviation, type QuarterBudgetLike } from "@/lib/segment-budget";
 
+/** Keys match the database check on finance_cost_lines.category. */
 export const COST_CATEGORIES: Record<string, string> = {
-  team: "Equipo",
+  people: "Equipo",
   tools: "Software y herramientas",
   infra: "Infraestructura",
-  services: "Servicios externos",
-  office: "Oficina",
-  other: "Otros",
+  cogs: "Coste de servir",
+  sales: "Ventas (fijos)",
+  marketing: "Marketing (fijos)",
+  other: "Otros (oficina, servicios…)",
 };
 export const categoryLabel = (c: string) => COST_CATEGORIES[c] ?? c;
 

@@ -127,7 +127,7 @@ function CostLines({ quarter, lines }: { quarter: string; lines: { id: string; n
   const { money } = useCurrency();
   const qc = useQueryClient();
   const isOwner = useIsOwner();
-  const [f, setF] = useState({ name: "", category: "team", amount: "", starts_on: new Date().toISOString().slice(0, 8) + "01", ends_on: "" });
+  const [f, setF] = useState({ name: "", category: "people", amount: "", starts_on: new Date().toISOString().slice(0, 8) + "01", ends_on: "" });
   const [busy, setBusy] = useState(false);
   const refresh = () => qc.invalidateQueries({ queryKey: ["finance-dashboard"] });
 

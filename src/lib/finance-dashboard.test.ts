@@ -20,11 +20,11 @@ describe("monthsActive", () => {
 describe("operatingCost", () => {
   it("multiplies the monthly amount by the active months and groups by category", () => {
     const r = operatingCost([
-      { amount: 1000, category: "team", starts_on: "2026-01-01", ends_on: null },
+      { amount: 1000, category: "people", starts_on: "2026-01-01", ends_on: null },
       { amount: 100, category: "tools", starts_on: "2026-09-01", ends_on: null },
     ], "2026-Q3");
     expect(r.total).toBe(3100);
-    expect(r.byCategory[0]).toEqual({ category: "team", amount: 3000 });
+    expect(r.byCategory[0]).toEqual({ category: "people", amount: 3000 });
   });
 });
 
@@ -33,7 +33,7 @@ describe("quarterFinance", () => {
     const r = quarterFinance({
       ...base,
       cac: [{ period: "2026-Q3", amount: 2000 }, { period: "2026-Q2", amount: 999 }],
-      lines: [{ amount: 1000, category: "team", starts_on: "2026-01-01", ends_on: null }],
+      lines: [{ amount: 1000, category: "people", starts_on: "2026-01-01", ends_on: null }],
       invoices: [{ amount: 10000, issued_on: "2026-08-10", paid_on: null }],
     });
     expect(r.actual.spend).toBe(5000);
