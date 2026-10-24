@@ -68,15 +68,14 @@ export function monthGrid(month: string): (string | null)[][] {
   return Array.from({ length: cells.length / 7 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 }
 
-/** Owners whose deals a team filter shows: "" = everyone (null), "mine" = the teams I belong to or lead, else that team. */
+/** Owners whose deals a team filter shows: "" = everyone (null), "mine" = the teams I belong to or lead (and me), else that team. */
 export function teamOwners(filter: string, teams: { id: string; lead_id: string | null }[], members: { team_id: string; user_id: string }[], me: string): Set<string> | null {
   if (!filter) return null;
   const ids = filter === "mine"
     ? teams.filter((t) => t.lead_id === me || members.some((m) => m.team_id === t.id && m.user_id === me)).map((t) => t.id)
     : [filter];
-  const out = new Set<string>([me]);
+  const out = new Set<string>(filter === "mine" ? [me] : []);
   for (const t of teams) if (ids.includes(t.id) && t.lead_id) out.add(t.lead_id);
   for (const m of members) if (ids.includes(m.team_id)) out.add(m.user_id);
-  if (filter !== "mine") out.delete(me), members.some((m) => m.team_id === filter && m.user_id === me) || teams.some((t) => t.id === filter && t.lead_id === me) ? out.add(me) : null;
   return out;
 }
