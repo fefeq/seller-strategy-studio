@@ -4,7 +4,7 @@
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
 import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
-import type { AccountDraft, CompanyQuery, EnrichChange } from "@/lib/clay";
+import type { AccountDraft, CompanyQuery, EnrichChange, EnrichField } from "@/lib/clay";
 import { budgetState, planFor, sourcesLine, CAPABILITIES, type Need, type Service } from "./planner";
 import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
 
@@ -123,7 +123,7 @@ export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: S
   const { data: acc } = await c.db.from("accounts").select("field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
   const patch: Record<string, unknown> = Object.fromEntries(fill.map((ch) => [ch.field, ch.proposed]));
   patch.field_sources = stampSources(acc?.field_sources, fill.map((ch) => ({ field: ch.field, source: ch.source, quote: ch.quote })), at);
-  const { error } = await c.db.from("accounts").update(patch).eq("org_id", c.orgId).eq("id", accountId);
+  const { error } = await c.db.from("accounts").update(patch as never).eq("org_id", c.orgId).eq("id", accountId);
   if (error) throw new Error(error.message);
   return fill.map((ch) => ch.field);
 }
