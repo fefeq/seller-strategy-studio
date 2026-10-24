@@ -18,6 +18,7 @@ import { ScoreBadge } from "@/components/score";
 import { Switch } from "@/components/ui/switch";
 import { AccountImport } from "@/components/account-import";
 import { IcpCompaniesButton } from "@/components/orchestrator";
+import { duplicateOf } from "@/lib/match";
 import { EnrichTableButton } from "@/components/parallel";
 
 export const Route = createFileRoute("/_authenticated/accounts/")({
@@ -64,7 +65,9 @@ function Accounts() {
   }, [data, ctx]);
   const [name, setName] = useState("");
   const [domain, setDomain] = useState("");
+  const dup = name.trim() || domain.trim() ? duplicateOf({ name, domain }, data.map((a) => ({ id: a.id, name: a.name, domain: a.domain }))) : null;
   async function create() {
+    if (dup?.kind === "same" && !window.confirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}. ¿Crear otra igualmente?`)) return;
     const { data: a, error } = await supabase.from("accounts").insert({ name, domain }).select().single();
     if (error) return toast.error(errorText(error));
     await supabase.from("account_plans").insert({ account_id: a.id });
@@ -92,6 +95,7 @@ function Accounts() {
           <Input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} />
           <Input placeholder="Dominio (acme.com)" value={domain} onChange={(e) => setDomain(e.target.value)} />
           <Button disabled={!name} onClick={create}>Crear</Button>
+          {dup && <p className="w-full text-xs">Ya existe <Link to="/accounts/$id" params={{ id: dup.item.id }} className="underline underline-offset-4">{dup.item.name}</Link>{dup.item.domain ? ` (${dup.item.domain})` : ""}: ábrela en vez de crear otra.</p>}
         </DialogContent>
       </Dialog>
       </div>
