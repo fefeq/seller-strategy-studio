@@ -35,7 +35,6 @@ export function useLeads(orgId: string | null | undefined) {
         supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
         fetchAll((a, b) => supabase.from("accounts").select("id,segment_id,industry,size,tier,name").order("id").range(a, b)).then((r) => ({ data: r.rows })),
       ]);
-      if (l.error) throw new Error(l.error.message);
       const ids = (m.data ?? []).map((x) => x.user_id);
       const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
       return {
