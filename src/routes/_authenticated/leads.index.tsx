@@ -24,10 +24,11 @@ import { ScoreBadge } from "@/components/score";
 import { QualSettingsDialog, QualTag, QualifyPending, leadQualView } from "@/components/leads/lead-qualification";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
-  validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha" } => ({
+  validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha"; vista?: "lista" } => ({
     lead: typeof s.lead === "string" ? s.lead : undefined,
     late: s.late === true || s.late === "true" ? true : undefined,
     orden: s.orden === "fecha" ? "fecha" : undefined,
+    vista: s.vista === "lista" ? "lista" : undefined,
   }),
   head: () => ({ meta: [
     { title: "Leads — Nokko" },
@@ -128,11 +129,47 @@ function LeadsPage() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-3xl">Pipeline de leads</h2>
               <div className="flex flex-wrap items-center gap-4">
+                <div className="flex gap-1">
+                  <Button size="sm" variant={search.vista === "lista" ? "outline" : "default"} onClick={() => navigate({ search: (p) => ({ ...p, vista: undefined }) })}>Tablero</Button>
+                  <Button size="sm" variant={search.vista === "lista" ? "default" : "outline"} onClick={() => navigate({ search: (p) => ({ ...p, vista: "lista" }) })}>Listado</Button>
+                </div>
                 <label className="flex items-center gap-2 text-sm"><Switch checked={!byDate} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, orden: v ? undefined : "fecha" }) })} />Por puntuación</label>
                 <label className="flex items-center gap-2 text-sm"><Switch checked={!!search.late} onCheckedChange={(v) => navigate({ search: (p) => ({ ...p, late: v || undefined }) })} />Solo retrasados</label>
               </div>
             </div>
-            {data.leads.length === 0 ? <Empty>Aún no hay leads. Créalos con «+ Nuevo lead» o conecta tus formularios y tu CRM en <Link to="/leads/entrada" className="underline">Entrada de leads</Link>.</Empty> : (
+            {data.leads.length === 0 ? <Empty>Aún no hay leads. Créalos con «+ Nuevo lead» o conecta tus formularios y tu CRM en <Link to="/leads/entrada" className="underline">Entrada de leads</Link>.</Empty> : search.vista === "lista" ? (() => {
+              const rows = data.leads.filter(shown);
+              const sorted = byDate ? rows : [...rows].sort(byScore((l) => view.scores.get(l.id)!));
+              return (
+                <div className="overflow-x-auto border-t">
+                  <table className="w-full text-sm">
+                    <thead className="border-b text-left"><tr>{["Empresa", "Contacto", "Etapa", "Puntuación", "En etapa", "Seguimiento", ""].map((h) => <th key={h} className="eyebrow px-3 py-3">{h}</th>)}</tr></thead>
+                    <tbody>
+                      {sorted.map((l) => {
+                        const d = view.delays.get(l.id)!;
+                        const closed = l.stage === "opportunity" || l.stage === "disqualified";
+                        return (
+                          <tr key={l.id} className="cursor-pointer border-b hover:bg-muted/40" onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}>
+                            <td className="px-3 py-2"><span className="font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span>{segName(l.segment_id) && <span className="block text-xs text-muted-foreground">{segName(l.segment_id)}</span>}</td>
+                            <td className="px-3 py-2 text-xs">{l.contact_name ?? "—"}{l.email && <span className="block text-muted-foreground">{l.email}</span>}</td>
+                            <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                              <select aria-label="Etapa" className="h-8 rounded border bg-background px-1 text-xs" value={l.stage} onChange={(e) => move(l.id, e.target.value)}>
+                                {COLUMNS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                              </select>
+                            </td>
+                            <td className="px-3 py-2"><ScoreBadge score={view.scores.get(l.id)!} /></td>
+                            <td className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}>{closed ? "—" : `${Math.floor(d.daysInStage)} d${d.late ? " · tarde" : ""}`}</td>
+                            <td className="px-3 py-2 text-xs">{l.next_step_at ?? "—"}</td>
+                            <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}><LeadQuickActions lead={l} onMove={move} /></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  {sorted.length === 0 && <p className="py-4 text-sm text-muted-foreground">No hay leads con este filtro.</p>}
+                </div>
+              );
+            })() : (
               <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
                 {COLUMNS.map((st) => {
                   const all = data.leads.filter((l) => l.stage === st.id);
