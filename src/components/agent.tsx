@@ -178,11 +178,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   return (
     <Ctx.Provider value={{ open, docked: isOpen && docked }}>
       {children}
-      {orgId && (
-        <button onClick={() => setOpen(true)} aria-label="Abrir agente GTM" className="fixed bottom-6 right-6 z-40 hidden items-center gap-2 rounded-none bg-primary px-4 py-3 text-sm text-primary-foreground shadow-lg hover:opacity-90 md:flex">
-          Agente <kbd className="rounded bg-primary-foreground/15 px-1.5 font-mono text-[10px]">⌘J</kbd>
-        </button>
-      )}
+      {/* Opened from the top bar (Agente ⌘J), the mobile bottom bar and ⌘K; no floating button over the content. */}
       <Sheet open={isOpen} onOpenChange={setOpen} modal={!docked}>
         <SheetContent side={side} className="flex w-full flex-col gap-0 p-0 sm:max-w-xl" onInteractOutside={docked ? (e) => e.preventDefault() : undefined}>
           <SheetHeader className="border-b px-5 py-4 text-left">
