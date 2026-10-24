@@ -1256,6 +1256,29 @@
         "outputSchema": null
       },
       {
+        "name": "list_pending_imports",
+        "title": "Ver importaciones pendientes",
+        "description": "Lista los lotes de leads o cuentas que han enviado herramientas externas (Sales Navigator, HubSpot, Make…) y esperan revisión en Leads → Entrada, con sus filas y qué pasaría con cada una. Solo lectura: aprobar o descartar lo hace una persona en esa pantalla.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_accounts",
         "title": "Listar cuentas",
         "description": "Lista cuentas ordenadas por puntuación (encaje con el ICP 70 % + actividad 30 %, como la pantalla Cuentas). Filtros: texto, segmento, tier (A/B/C), solo mías o sin propietario, solo objetivo ABM y cuentas a las que les falta un dato (segmento, sector, tamaño o país).",
