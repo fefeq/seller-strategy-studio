@@ -68,11 +68,12 @@ export async function findCompanies(c: ToolCtx, a: { query?: CompanyQuery; searc
 }
 
 export type PersonHit = StakeholderDraft & { existingId: string | null };
-export async function findPeople(c: ToolCtx, a: { accountId: string; query?: PeopleQuery; searchId?: string; limit?: number }): Promise<Page<PersonHit> & { account: string }> {
-  const acc = await mustFind<{ id: string; name: string; domain: string | null }>(c, "accounts", a.accountId, "esa cuenta", "id,name,domain");
+/** `company` searches a company that is not an account yet (Descubiertos), by its domain. */
+export async function findPeople(c: ToolCtx, a: { accountId: string; company?: { name: string; domain: string }; query?: PeopleQuery; searchId?: string; limit?: number }): Promise<Page<PersonHit> & { account: string }> {
+  const acc = a.company ? { id: null, ...a.company } : await mustFind<{ id: string; name: string; domain: string | null }>(c, "accounts", a.accountId, "esa cuenta", "id,name,domain");
   const filters = a.searchId ? null : peopleFilters(acc.domain, a.query ?? {});
   const page = await search<ClayPerson>("people", filters, a.searchId, a.limit ?? 10);
-  const { data } = await c.db.from("stakeholders").select("id,name,linkedin_url").eq("org_id", c.orgId).eq("account_id", acc.id);
+  const { data } = acc.id ? await c.db.from("stakeholders").select("id,name,linkedin_url").eq("org_id", c.orgId).eq("account_id", acc.id) : { data: [] };
   const has = existingStakeholder(data ?? []);
   return { ...page, account: acc.name, rows: page.rows.map((r) => { const p = personToStakeholder(r); return { ...p, existingId: has(p) }; }) };
 }

@@ -60,8 +60,9 @@ async function requestPhone(c: ToolCtx, p: RevealedContact, stakeholderId: strin
 }
 
 export type PeoplePage = { account: string; page: number; hasMore: boolean; rows: PersonPreview[] };
-export async function findPeople(c: ToolCtx, a: { accountId: string; query?: ApolloPeopleQuery; page?: number }): Promise<PeoplePage> {
-  const acc = await mustFind<{ id: string; name: string; domain: string | null }>(c, "accounts", a.accountId, "esa cuenta", "id,name,domain");
+/** `company` searches a company that is not an account yet (Descubiertos), by its domain. */
+export async function findPeople(c: ToolCtx, a: { accountId: string; company?: { name: string; domain: string }; query?: ApolloPeopleQuery; page?: number }): Promise<PeoplePage> {
+  const acc = a.company ?? await mustFind<{ id: string; name: string; domain: string | null }>(c, "accounts", a.accountId, "esa cuenta", "id,name,domain");
   const page = a.page ?? 1;
   const r = await apollo("/api/v1/mixed_people/api_search", peopleParams(acc.domain, a.query ?? {}, page));
   const rows = ((r.people ?? []) as ApolloSearchPerson[]).map(searchPersonPreview).filter((x): x is PersonPreview => !!x);
