@@ -5,6 +5,7 @@ import { z } from "zod";
 import type { Db } from "@/lib/org-data";
 import type { Role } from "@/lib/roles";
 import { sortStages, stageByLabel, type Stage } from "@/lib/stages";
+import { DISQUALIFIED, LEAD_STAGES } from "@/lib/lead-funnel";
 
 export type ToolCtx = { db: Db; orgId: string; userId: string; roles: string[]; currency: string };
 
@@ -22,6 +23,7 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
 export const def = <S extends z.ZodTypeAny>(t: AgentTool<S>) => t as unknown as AgentTool;
 export const STAGE_ARG = z.string().min(1).describe("Clave o nombre de una etapa de la empresa (list_stages); por defecto: discovery, qualified, demo, proposal, negotiation, won, lost");
 export const DATE_ARG = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Fecha en formato AAAA-MM-DD").describe("AAAA-MM-DD");
+export const LEAD_STAGE_IDS = [...LEAD_STAGES, DISQUALIFIED].map((s) => s.id) as [string, ...string[]];
 export const HEALTH = z.enum(["green", "yellow", "red"]);
 
 export const ok = <T>(r: { data: T; error: { message: string } | null }) => { if (r.error) throw new Error(r.error.message); return r.data; };
