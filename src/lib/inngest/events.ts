@@ -28,11 +28,12 @@ export const isHeartbeatFresh = (lastRunAt: string | null | undefined, now = new
 export const hourKey = (d: Date) => d.toISOString().slice(0, 13);
 
 /** Background job kinds and how they read in the app. */
-export const JOB_KINDS = ["battlecard", "stakeholder_research", "account_signals", "drive_import"] as const;
+export const JOB_KINDS = ["battlecard", "stakeholder_research", "account_signals", "drive_import", "complete_account"] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 export const JOB_LABEL: Record<JobKind, string> = {
   battlecard: "Battlecard desde reseñas de G2",
   stakeholder_research: "Research con IA del stakeholder",
   account_signals: "Novedades de la cuenta",
   drive_import: "Importación desde Google Drive",
+  complete_account: "Completar datos de la cuenta",
 };
