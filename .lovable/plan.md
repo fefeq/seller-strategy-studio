@@ -17,7 +17,8 @@ Un founder con poco tiempo. Entra a crear su estrategia GTM y después usa Nokko
 5. Como founder, cuando a Nokko le falta algo, me hace solo las preguntas imprescindibles, una a una y con opciones.
 6. Como founder, puedo salir a mitad y volver justo donde lo dejé, desde cualquier dispositivo.
 7. Como founder, al terminar veo un **roadmap claro**: qué hará Nokko solo y qué me toca a mí. Desde ahí lanzo los primeros pasos: buscar empresas por ICP, importar leads o cuentas, conectar herramientas, y conectar asistentes de IA y Telegram.
-8. Como miembro invitado, mi onboarding es corto: mi rol, mis preferencias y lo que ya está aprobado.
+8. Como founder, respondo 4 preguntas de diagnóstico (modelo, ticket, fricción y etapa), ya prerrellenadas con lo que Nokko leyó. Recibo «Tu diagnóstico GTM»: mi arquetipo, los marcos que se activan y por qué se descartan otros.
+9. Como miembro invitado, mi onboarding es corto: mi rol, mis preferencias y lo que ya está aprobado.
 
 ### Criterios de aceptación
 - La primera propuesta aparece en menos de 3 minutos en Exprés, contando solo con la web.
@@ -40,7 +41,8 @@ Un founder con poco tiempo. Entra a crear su estrategia GTM y después usa Nokko
 
 ```text
 Crear empresa ─► 1 Profundidad ─► 2 Dale tus fuentes ─► 3 Nokko lee (en directo)
-      ─► 4 Preguntas que faltan ─► 5 Aprobar bloque a bloque ─► 6 Tu roadmap y primeros pasos
+      ─► 3b Tu diagnóstico GTM ─► 4 Preguntas que faltan ─► 5 Aprobar bloque a bloque
+      ─► 6 Tu roadmap y primeros pasos
 ```
 
 **1. Profundidad.** Tres opciones con su tiempo y lo que obtienes:
@@ -58,6 +60,26 @@ Crear empresa ─► 1 Profundidad ─► 2 Dale tus fuentes ─► 3 Nokko lee 
 Cada fuente queda en una lista con su estado: «Leyendo», «Leído» o «Sin acceso». Además, todas se guardan en Conocimiento para que el agente las use después.
 
 **3. Nokko lee.** Corre en segundo plano y te avisa al terminar. Un panel tipo teletipo muestra lo que encuentra: «Encontrado: 3 segmentos en el business plan», «Competidor: X (web)». Puedes salir: el aviso te devuelve aquí.
+
+**3b. Tu diagnóstico GTM.** Cuatro preguntas, ya propuestas a partir de lo leído y fáciles de corregir:
+- Modelo: B2B, B2C o marketplace.
+- Ticket anual.
+- Fricción de adopción: autoservicio o comité.
+- Etapa: idea, primeros clientes o escala.
+
+Con esas respuestas, Nokko asigna uno de 5 arquetipos:
+- A. B2B low-touch / PLG: JTBD, Dunford, Four Fits y growth loops, y AARRR con foco en el tiempo hasta el valor.
+- B. B2B mid-market / híbrido: matriz ICP con señales, propuesta de valor por rol, outbound con señales, founder-led sales y MEDDPICC ligero.
+- C. B2B Enterprise: beachhead, comité de compra, caso de ROI, ABM con 50 cuentas, MEDDPICC completo y pilotos de pago.
+- D. B2C: JTBD emocional, modelo Hooked, Bullseye, retención por cohortes y LTV:CAC.
+- E. Marketplace: red atómica, «lado difícil», propuesta doble y métricas de liquidez.
+
+Encima se aplica un filtro de etapa:
+- Idea: bloquea canales y escala, y obliga a The Mom Test, JTBD y una prueba de humo.
+- Primeros clientes: «cosas que no escalan» y Van Westendorp para el primer precio.
+- Escala: Four Fits, payback y precios por niveles.
+
+La pantalla explica por qué se descarta cada marco, por ejemplo: «Tu ticket es de 25 €/mes: desactivamos los playbooks Enterprise para proteger tu margen». El arquetipo decide qué bloques se proponen y en qué orden, qué preguntas se hacen y qué incluye el roadmap. También queda como contexto para el agente, los debates y el Asesor GTM.
 
 **4. Preguntas que faltan.** Solo las que bloquean un bloque, con opciones y «No lo sé, propónmelo». Reutiliza la entrevista que ya existe.
 
@@ -87,6 +109,7 @@ Cada paso tiene su botón y su estado. El roadmap sigue visible en Inicio hasta 
 - Nuevo tipo de trabajo `onboarding_read`. Lee cada fuente con tolerancia a fallos y escribe los hallazgos con su origen. El progreso se informa por pasos.
 - La extracción amplía `SETUP_EXTRACTION_SCHEMA` con origen y confianza por campo. Los PDF y XLSX se leen con el parser de documentos que ya existe en el servidor, o desde Drive.
 - Cada bloque se aprueba con las herramientas de escritura actuales (`upsert_segment`, `create_icp`, `update_positioning`, etc.), que ya validan rol y empresa. Se graban las marcas de origen.
+- El diagnóstico es una regla pura en `src/lib/gtm-diagnosis.ts`: calcula el arquetipo, aplica el filtro de etapa y lista los marcos activos y los descartados con su motivo, con una prueba por caso. Se guarda en la sesión y en la memoria de empresa. Los umbrales de ticket salen de los segmentos de la empresa y de la referencia de mercado guardada (PLG por debajo de 5K, inside sales de 5K a 50K, field por encima de 50K). Tu documento propone 2K y 15K: confirma cuál usar.
 - Ruta nueva `/onboarding` con un paso por pantalla, piezas en `src/components/onboarding/` y lógica pura en `src/lib/onboarding.ts`. `/setup` sigue para editar después.
 - Las empresas nuevas sin estrategia van directas a `/onboarding` tras `create_organization`. A los invitados se les muestra la versión corta.
 
@@ -97,6 +120,7 @@ Cada paso tiene su botón y su estado. El roadmap sigue visible en Inicio hasta 
 1. **Esqueleto y estado.** Crear la tabla de sesiones, la ruta `/onboarding` con elección de profundidad, y la opción de reanudar. Comprobación: crear empresa, salir y volver al mismo paso.
 2. **Fuentes.** Pantalla de fuentes con web, archivos, texto, Drive y CSV/HubSpot. Cada fuente se guarda en Conocimiento. Comprobación: subir un PDF y una web y verlas listadas.
 3. **Lectura en segundo plano.** Trabajo `onboarding_read` con teletipo, aviso al terminar y coste previo según profundidad. Comprobación: lectura real de una web con hallazgos y fuente.
+3b. **Diagnóstico GTM.** Regla, pruebas y pantalla «Tu diagnóstico GTM» con los motivos. Comprobación: pruebas de los 5 arquetipos y de los 3 filtros de etapa.
 4. **Preguntas que faltan.** Solo las que bloquean bloques, con «propónmelo». Comprobación: una prueba de qué preguntas salen según los datos que faltan.
 5. **Aprobación por bloques.** Seis bloques con origen, nivel y las acciones aprobar, rehacer y saltar, más deshacer. Comprobación: pruebas de que no se sobrescriben datos escritos por la persona y de que el progreso sube; aprobar un bloque en el navegador.
 6. **A fondo.** Informe Parallel de mercado y competidores, y opinión del debate C-Levels por bloque. Comprobación: ejecución real con presupuesto.
