@@ -12,7 +12,7 @@ export function RoadmapCard() {
   const pct = st?.status.pct ?? 0;
   if (!showRoadmapCard(session, pct)) return null;
   const diag = jsonObject(session?.diagnosis ?? null) as { result?: { archetype?: string; name?: string; nextStep?: string } } | null;
-  const missing = st?.status.items.filter((i) => !i.done).slice(0, 3) ?? [];
+  const missing = st?.status.missing.slice(0, 3) ?? [];
   return (
     <section className="mt-8 border-t-2 border-hairline-firm pt-4">
       <div className="flex flex-wrap items-baseline justify-between gap-3">

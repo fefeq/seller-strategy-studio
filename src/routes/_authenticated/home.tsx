@@ -7,6 +7,7 @@ import { Briefing } from "@/components/briefing";
 import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
 import { PaybackCard } from "@/components/payback-card";
+import { RoadmapCard } from "@/components/onboarding/home-card";
 import { Button } from "@/components/ui/button";
 import { Page, HealthDot } from "@/components/page";
 import { ROLES, type Role } from "@/lib/roles";
@@ -64,6 +65,7 @@ function HomePage() {
           </div>
         </div>
       )}
+      <RoadmapCard />
       <Briefing />
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
