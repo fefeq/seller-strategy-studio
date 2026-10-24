@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 import { readSla, type DealOutcome, type LeadSla } from "@/lib/lead-funnel";
@@ -22,9 +22,12 @@ export type LeadsData = {
 
 /** Leads of the current company plus what the screen and the funnel need. Key "leads" is refreshed live. */
 export function useLeads(orgId: string | null | undefined) {
-  return useQuery({
+  return useQuery({ ...leadsQuery(orgId ?? ""), enabled: !!orgId });
+}
+
+/** Same query as useLeads, for the route loader to prepare before the screen opens. */
+export const leadsQuery = (orgId: string) => queryOptions({
     queryKey: ["leads", orgId],
-    enabled: !!orgId,
     queryFn: async (): Promise<LeadsData> => {
       const [l, d, s, seg, m, icp, acc] = await Promise.all([
         fetchAll((a, b) => supabase.from("leads").select("*").order("created_at", { ascending: false }).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null, truncated: r.truncated })),
@@ -48,5 +51,4 @@ export function useLeads(orgId: string | null | undefined) {
         accounts: new Map((acc.data ?? []).map((a) => [a.id, a])),
       };
     },
-  });
-}
+});
