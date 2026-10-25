@@ -14,10 +14,11 @@ Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: 
 | 7 | `SDD-20261025-minimum-fit-data-for-enrichment` | Feature | 1, 2; coordinar con 6 por competidores |
 | 8 | `SDD-20261025-products-in-onboarding-autofill` | Mejora | 1, 2; encaja en onboarding (4) |
 | 9 | `SDD-20261025-theory-u-proactive-decision-support` | Feature | 1, 2 |
+| 10 | `SDD-20261025-connections-bring-your-own-account` | Feature | 1; incluye el SDD 5 como primer caso |
 
 Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
 
-## Principio de uso de LLM (aplica a los nueve)
+## Principio de uso de LLM (aplica a los diez)
 Orden de preferencia: regla determinista → dato derivado/caché → modelo barato (`effort:"low"`) → modelo caro (solo A fondo). Cada SDD declara sus llamadas; los primeros no añaden ninguna salvo reformular textos con caché.
 
 ## Decisiones que necesito de Fede

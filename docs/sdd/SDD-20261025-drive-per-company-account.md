@@ -4,6 +4,8 @@
 **Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
+> Decisión de Fede (2026-10-25): conexión **por empresa**. La entrada vive en Conexiones.
+
 Como usuario quiero conectar **un Google Drive distinto al de mi email de acceso** (p. ej. el de la empresa) y que NOKKO lea documentos desde ahí para el onboarding y el conocimiento.
 
 ## 2. Problema y para quién
@@ -21,8 +23,8 @@ Founder o miembro cuyo email de acceso no es la cuenta Google donde están los d
 - Lecturas de Drive fallidas por falta de acceso (fuente: registro de trabajos de importación). Línea base: sin dato.
 
 ## 5. Alcance
-**Incluye:** conectar, ver, cambiar y desconectar una cuenta de Google para Drive, independiente del email de acceso; elegir carpetas o archivos; mostrar qué cuenta está conectada; permisos de solo lectura.
-**No incluye:** escribir o modificar archivos en Drive del usuario; otros servicios de Google; varias cuentas simultáneas por empresa (pregunta 1); Drive de Postin Core.
+**Incluye:** conectar, ver, cambiar y desconectar una cuenta de Google para Drive, independiente del email de acceso, **desde la sección Conexiones** (SDD de conexiones propias); elegir carpetas o archivos; mostrar qué cuenta está conectada; permisos mínimos necesarios.
+**No incluye:** ampliar lo que NOKKO hace hoy en Drive (hoy crea carpeta por empresa y por cuenta y guarda planes, propuestas y documentos del ciclo: eso se mantiene, ahora sobre la cuenta conectada, **[Por verificar]** qué permiso exige); otros servicios de Google; varias cuentas simultáneas por empresa (pregunta 1); Drive de Postin Core.
 
 ## 6. Cambios de comportamiento (delta)
 **Añadido:** conexión por usuario o empresa a una cuenta elegida; pantalla de cuenta conectada; desconexión que revoca acceso.
@@ -32,7 +34,7 @@ Founder o miembro cuyo email de acceso no es la cuenta Google donde están los d
 ## 7. Historias y criterios de aceptación
 ### H-1: Como founder, quiero conectar otra cuenta de Google Drive.
 - CA-1: CUANDO elijo conectar Drive, el sistema DEBE permitirme escoger la cuenta de Google, aunque sea distinta del email con el que accedo a NOKKO.
-- CA-2: El sistema DEBE pedir únicamente permiso de lectura y explicar qué podrá leer NOKKO antes de continuar.
+- CA-2: El sistema DEBE pedir únicamente los permisos mínimos necesarios y explicar qué podrá leer y qué podrá guardar NOKKO antes de continuar.
 - CA-3: CUANDO la conexión termina, el sistema DEBE mostrar la cuenta conectada (su email) y desde qué fecha.
 
 ### H-2: Como founder, quiero controlar y revocar el acceso.
