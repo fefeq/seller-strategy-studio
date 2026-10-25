@@ -1,0 +1,137 @@
+// Field catalog (SDD universal-field-definitions, U-1): one definition per concept and where each concept
+// lives. Pure data plus lookups, so screens, the agent, imports and Descubiertos read the same meaning.
+// The catalog is code: whoever can change the repo changes a definition, and field-catalog.test.ts fails
+// when a binding points to a column that no longer exists. Values are never converted here; rules that
+// normalize them (U-2) and the origin stamp (U-3) read these definitions.
+import { COUNTRY_CODES, REGIONS } from "@/lib/assignment";
+import { SOURCES as PERSON_SOURCES } from "@/lib/roles";
+
+/** How a field is kept while someone edits it (SDD section 5). */
+export type Persistence = "permanent" | "screen_draft" | "session" | "pending_action" | "memory";
+
+export const PERSISTENCE_LABEL: Record<Persistence, string> = {
+  permanent: "Guardado",
+  screen_draft: "Borrador de pantalla",
+  session: "Sesión",
+  pending_action: "Acción pendiente del Agente",
+  memory: "Memoria",
+};
+
+export type ValueKind = "text" | "text_list" | "int_range" | "number" | "enum" | "origin";
+
+export type ConceptId =
+  | "pais" | "paises" | "region" | "geografia_texto"
+  | "tamano_empleados" | "tamano_descripcion"
+  | "importe"
+  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada";
+
+export type Concept = {
+  id: ConceptId;
+  label: string;
+  meaning: string;
+  kind: ValueKind;
+  /** Canonical format, in words. */
+  format: string;
+  /** Closed values, when the concept has one set for every place. */
+  allowed?: readonly string[];
+  /** Closed values that differ per table (the set belongs to the object, not to the concept). */
+  allowedBy?: Record<string, readonly string[]>;
+  /** How the value is shown. */
+  display: string;
+};
+
+export const CONCEPTS: Concept[] = [
+  { id: "pais", label: "País", meaning: "Dónde está una cuenta o una regla de asignación.", kind: "text", format: "ISO 3166-1 alpha-2 en mayúsculas («ES», «GB»)", allowed: COUNTRY_CODES, display: "Nombre del país en español (countryName)" },
+  { id: "paises", label: "Países", meaning: "Lista de países de un criterio (ICP).", kind: "text_list", format: "Cada elemento con el formato de País, sin repetidos", allowed: COUNTRY_CODES, display: "Nombres en español, uno por etiqueta" },
+  { id: "region", label: "Región", meaning: "Agrupación derivada del país; solo se guarda como criterio de una regla.", kind: "enum", format: "Valor cerrado", allowed: Object.keys(REGIONS), display: "Etiqueta de REGIONS" },
+  { id: "geografia_texto", label: "Geografía en palabras", meaning: "Zona descrita en texto libre; apoyo cuando no hay países.", kind: "text", format: "Texto libre", display: "Tal cual se escribió" },
+  { id: "tamano_empleados", label: "Tamaño (empleados)", meaning: "Número de empleados de una empresa o de la empresa objetivo.", kind: "int_range", format: "Rango de enteros mayores que 0; una cifra exacta tiene mínimo igual a máximo", display: "«51–200 empleados», «más de 500 empleados»" },
+  { id: "tamano_descripcion", label: "Tamaño en palabras", meaning: "Tamaño descrito con facturación, etapa u otras palabras; no es número de empleados.", kind: "text", format: "Texto libre", display: "Tal cual se escribió" },
+  { id: "importe", label: "Importe", meaning: "Cantidad de dinero en la moneda de la empresa; cada lugar declara su naturaleza y su periodicidad.", kind: "number", format: "Número con dos decimales como máximo; cambiar la moneda reetiqueta, no convierte", display: "formatMoney con la moneda de la empresa" },
+  { id: "origen_valor", label: "Origen del valor", meaning: "De dónde viene un valor y si está confirmado.", kind: "origin", format: "Tipo (persona, fuente, ia, supuesto), detalle, confirmado, fecha y cita opcional", allowed: ["persona", "fuente", "ia", "supuesto"], display: "Palabra de estado: Confirmado, Deducido, Supuesto" },
+  {
+    id: "canal_de_entrada", label: "Canal de entrada", meaning: "Por qué canal llegó una persona o un deal.", kind: "enum", format: "Valor cerrado distinto por objeto",
+    allowedBy: { deals: ["outbound", "inbound", "partner", "plg", "event", "referral"], people: Object.keys(PERSON_SOURCES) },
+    display: "Etiqueta en español del valor",
+  },
+  {
+    id: "creado_por", label: "Creado por", meaning: "Quién o qué creó el registro.", kind: "enum", format: "Valor cerrado distinto por objeto",
+    allowedBy: { tasks: ["manual", "agent", "debate"], agent_pending_actions: ["agent", "mcp"], memories: ["chat", "meeting", "decision", "suggestion", "manual"] },
+    display: "Etiqueta en español del valor",
+  },
+  { id: "fuente_citada", label: "Fuente citada", meaning: "Nombre del medio, dirección web o etiqueta de donde sale un hallazgo o un registro.", kind: "text", format: "Texto libre, sin valores cerrados", display: "Tal cual se guardó" },
+];
+
+export type ImporteNature = "acv" | "pago_unico" | "valor_estimado" | "objetivo" | "cuota" | "coste_adquisicion" | "coste_recurrente" | "factura" | "ingreso_plan" | "ingreso_real";
+export type ImporteSpan = "anual" | "trimestral" | "mensual" | "puntual" | "sin_dato";
+
+export type Binding = {
+  table: string;
+  column: string;
+  concept: ConceptId;
+  persistence: Persistence;
+  /** Only for importe: what the amount measures. Amounts of different nature are never added or compared. */
+  nature?: ImporteNature;
+  span?: ImporteSpan;
+  /** What is still to be checked with Dani; required when the span is sin_dato. */
+  verify?: string;
+  note?: string;
+};
+
+const draft = "screen_draft" as const;
+const saved = "permanent" as const;
+
+export const BINDINGS: Binding[] = [
+  // País
+  { table: "accounts", column: "country", concept: "pais", persistence: saved, note: "FitFields saves on blur" },
+  { table: "account_assignment_rules", column: "country", concept: "pais", persistence: saved },
+  { table: "icp_profiles", column: "countries", concept: "paises", persistence: draft, note: "ICP editor, saved with Guardar ICP" },
+  { table: "account_assignment_rules", column: "region", concept: "region", persistence: saved },
+  { table: "icp_profiles", column: "geography", concept: "geografia_texto", persistence: draft },
+  // Tamaño
+  { table: "icp_profiles", column: "min_employees", concept: "tamano_empleados", persistence: draft },
+  { table: "icp_profiles", column: "max_employees", concept: "tamano_empleados", persistence: draft },
+  { table: "accounts", column: "size", concept: "tamano_empleados", persistence: saved, note: "Text today («123 empleados», «51-200 empleados», free text); read as a range, original kept" },
+  { table: "icp_profiles", column: "company_size", concept: "tamano_descripcion", persistence: draft },
+  // Importe
+  { table: "deals", column: "amount", concept: "importe", persistence: saved, nature: "acv", span: "anual", note: "With deal lines the deal_lines_sync trigger computes it" },
+  { table: "deals", column: "one_off_amount", concept: "importe", persistence: saved, nature: "pago_unico", span: "puntual", note: "Outside the ACV" },
+  { table: "leads", column: "amount", concept: "importe", persistence: saved, nature: "valor_estimado", span: "sin_dato", verify: "Si es un ACV anual como el del deal en el que se convierte." },
+  { table: "segment_targets", column: "amount", concept: "importe", persistence: saved, nature: "objetivo", span: "trimestral" },
+  { table: "quotas", column: "amount", concept: "importe", persistence: saved, nature: "cuota", span: "sin_dato", verify: "Formato de quotas.period." },
+  { table: "cac_costs", column: "amount", concept: "importe", persistence: saved, nature: "coste_adquisicion", span: "trimestral" },
+  { table: "finance_cost_lines", column: "amount", concept: "importe", persistence: saved, nature: "coste_recurrente", span: "mensual" },
+  { table: "finance_invoices", column: "amount", concept: "importe", persistence: saved, nature: "factura", span: "puntual", verify: "Si admite importes negativos (abonos)." },
+  { table: "segment_budget_quarters", column: "plan_revenue", concept: "importe", persistence: saved, nature: "ingreso_plan", span: "trimestral" },
+  { table: "segment_budget_quarters", column: "actual_revenue", concept: "importe", persistence: saved, nature: "ingreso_real", span: "trimestral" },
+  // Origen
+  { table: "accounts", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Only the fields of accounts that Nokko fills; legacy shape {source, at, quote}" },
+  { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
+  { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
+  { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
+  { table: "agent_pending_actions", column: "source", concept: "creado_por", persistence: "pending_action" },
+  { table: "memories", column: "source", concept: "creado_por", persistence: "memory" },
+  { table: "account_signals", column: "source", concept: "fuente_citada", persistence: saved },
+  { table: "discoveries", column: "source", concept: "fuente_citada", persistence: saved },
+  { table: "leads", column: "source", concept: "fuente_citada", persistence: saved, note: "Free text up to 100 characters (CSV, Descubiertos, utm values)" },
+  { table: "trials", column: "source", concept: "fuente_citada", persistence: saved },
+];
+
+export function conceptById(id: ConceptId): Concept {
+  const c = CONCEPTS.find((x) => x.id === id);
+  if (!c) throw new Error(`Unknown concept ${id}`);
+  return c;
+}
+
+/** The binding of a column, or null while it is not catalogued. */
+export function bindingOf(table: string, column: string): Binding | null {
+  return BINDINGS.find((b) => b.table === table && b.column === column) ?? null;
+}
+
+/** The closed values a place accepts, or null when its concept has none (free text, numbers, ranges). */
+export function allowedValues(table: string, column: string): readonly string[] | null {
+  const b = bindingOf(table, column);
+  if (!b) return null;
+  const c = conceptById(b.concept);
+  return c.allowedBy?.[table] ?? c.allowed ?? null;
+}

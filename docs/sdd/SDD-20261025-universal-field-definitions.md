@@ -1,7 +1,7 @@
 # SDD-20261025-universal-field-definitions · [Feature] Definiciones universales de campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta (base de los otros cinco SDD)
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 hecha, U-2 a U-4 pendientes) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 Cada concepto de la plataforma (tamaño de empresa, país, importe, periodo, origen del dato, estado…) debe tener **una sola definición** que valga para todas las pantallas, el Agente, las importaciones y Descubiertos. Hoy el mismo concepto existe con nombres y tipos distintos según la tabla o la pantalla. Este SDD fija el catálogo, las reglas de persistencia y el origen/confirmación de cada valor. Es la base de los SDD de acciones sobre campos, onboarding y guía de estrategia.
@@ -102,8 +102,8 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 3. ¿Qué estructuras libres (jsonb) tienen forma estable y cuáles no?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Equivalencia de significado entre columnas agrupadas por nombre.
-- [Por verificar] Si el disparador de procedencia actual cubre todas las tablas o solo cuentas.
+- [Decidido por Fede 2026-10-25, solo para Origen, País, Tamaño e Importe] Equivalencia de significado entre columnas agrupadas por nombre: ver `annex/concept-catalog-proposal-20261025.md`. El resto de clústeres del anexo sigue [Por verificar] con Dani.
+- [Verificado 2026-10-25 en el repo] El disparador de procedencia solo cubre `accounts` y cinco campos: `industry`, `size`, `country`, `notes`, `linkedin_url` (`drizzle/migrations/0046_field_sources_auto_enrich.sql`). `field_sources` solo existe en `accounts`; `people`, `leads`, `icp_profiles` y `positioning` no tienen procedencia. Hay que generalizarlo (U-3).
 - [Por verificar] Volumen de datos reales por columna a migrar (sin dato).
 
 ## 16. Sección de Dani (la completa él)
