@@ -117,9 +117,10 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
 
 /** Writes the empty fields an automatic run found, stamped «Automático · fuente · fecha». Returns the field names written. */
 export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<EnrichField[]> {
-  const fill = changes.filter((ch) => ch.empty && ch.proposed);
+  const { stampSources, autoWriteDecision } = await import("@/lib/provenance");
+  // Only an empty field is written; what a person (or an older process) left there is never replaced.
+  const fill = changes.filter((ch) => ch.empty && autoWriteDecision(ch.current, ch.proposed) === "write");
   if (!fill.length) return [];
-  const { stampSources } = await import("@/lib/provenance");
   const { data: acc } = await c.db.from("accounts").select("field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
   const patch: Record<string, unknown> = Object.fromEntries(fill.map((ch) => [ch.field, ch.proposed]));
   patch.field_sources = stampSources(acc?.field_sources, fill.map((ch) => ({ field: ch.field, source: ch.source, quote: ch.quote })), at);

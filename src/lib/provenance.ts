@@ -1,10 +1,45 @@
-// Field provenance (pure, tested): which account fields Nokko filled, from which source and when.
-// Stored in accounts.field_sources; a DB trigger drops a field's mark when a person edits it.
+// Field provenance (pure, tested): where a value comes from (a person, a source Nokko read, AI, an assumption),
+// when, and whether it is confirmed. Stored in accounts.field_sources; a DB trigger drops a field's mark when
+// an update changes the field without touching field_sources. A value without a mark is «sin dato»: it is never
+// read as written by a person.
 
-export type FieldSource = { source: string; at: string; quote?: string };
+export type OriginKind = "persona" | "fuente" | "ia" | "supuesto";
+export type FieldSource = { source: string; at: string; quote?: string; kind?: OriginKind; confirmed?: boolean };
 export type FieldSources = Record<string, FieldSource>;
 
 export const SOURCE_LABEL: Record<string, string> = { apollo: "Apollo", clay: "Clay", web: "Web de la empresa" };
+
+const KINDS: OriginKind[] = ["persona", "fuente", "ia", "supuesto"];
+
+/** Marks older rows carry only {source, at, quote}: the kind comes from the source, and only a person's edit is confirmed. */
+export function originOf(s: FieldSource | undefined): { kind: OriginKind; confirmed: boolean; detail: string } | null {
+  if (!s) return null;
+  const kind: OriginKind = s.kind && KINDS.includes(s.kind) ? s.kind : (s.source === "persona" ? "persona" : s.source === "ia" || s.source === "supuesto" ? s.source : "fuente");
+  return { kind, confirmed: s.confirmed ?? kind === "persona", detail: s.source };
+}
+
+/** A person wrote these fields: marked as theirs and confirmed, replacing any automatic mark. */
+export function stampPerson(prev: unknown, fields: string[], at: string): FieldSources {
+  const out = { ...readSources(prev) };
+  for (const f of fields) out[f] = { source: "persona", kind: "persona", confirmed: true, at };
+  return out;
+}
+
+/** A person edited fields: a written value is marked as theirs and confirmed, a cleared one loses its mark. */
+export function personEdit(prev: unknown, edits: Record<string, string | null | undefined>, at: string): FieldSources {
+  const out = stampPerson(prev, Object.keys(edits).filter((f) => edits[f]?.trim()), at);
+  for (const f of Object.keys(edits)) if (!edits[f]?.trim()) delete out[f];
+  return out;
+}
+
+/** What an automatic process may do with a value: write it, only offer it, or nothing. Only an empty field is written. */
+export function autoWriteDecision(current: string | null | undefined, proposed: string | null | undefined): "write" | "propose" | "same" | "none" {
+  const next = proposed?.trim();
+  if (!next) return "none";
+  const cur = current?.trim();
+  if (!cur) return "write";
+  return cur.toLowerCase() === next.toLowerCase() ? "same" : "propose";
+}
 
 export function readSources(raw: unknown): FieldSources {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
@@ -24,10 +59,14 @@ export function stampSources(prev: unknown, filled: { field: string; source: str
 
 /** «Automático · Apollo · 24 oct» */
 export function sourceText(s: FieldSource | undefined): string | null {
-  if (!s) return null;
+  const o = originOf(s);
+  if (!s || !o) return null;
   const d = new Date(s.at);
   const day = isNaN(d.getTime()) ? "" : ` · ${d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}`;
-  return `Automático · ${SOURCE_LABEL[s.source] ?? s.source}${day}`;
+  if (o.kind === "persona") return `Escrito por ti · Confirmado${day}`;
+  if (o.kind === "ia") return `Deducido${o.confirmed ? " · Confirmado" : ""}${day}`;
+  if (o.kind === "supuesto") return `Supuesto${day}`;
+  return `Automático · ${SOURCE_LABEL[s.source] ?? s.source}${o.confirmed ? " · Confirmado" : ""}${day}`;
 }
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();

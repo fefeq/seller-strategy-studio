@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
-import { readSources, sourceText } from "@/lib/provenance";
+import { readSources, sourceText, personEdit } from "@/lib/provenance";
+import type { Json } from "@/integrations/supabase/types";
 import { errorText } from "@/lib/errors";
 import { normalizeForSave } from "@/lib/field-normalize";
 import { CompleteAccount } from "@/components/orchestrator";
@@ -29,7 +30,8 @@ export function FitFields({ account, segNames, onSaved }: { account: { id: strin
   }
   // Country decides the region for the account assignment rules (Cuentas → Reparto).
   async function saveCountry(country: string | null) {
-    const { error } = await supabase.from("accounts").update({ country }).eq("id", account.id);
+    const field_sources = personEdit(account.field_sources, { country }, new Date().toISOString());
+    const { error } = await supabase.from("accounts").update({ country, field_sources: field_sources as unknown as Json }).eq("id", account.id);
     if (error) return toast.error(errorText(error));
     onSaved();
   }
@@ -38,7 +40,11 @@ export function FitFields({ account, segNames, onSaved }: { account: { id: strin
     setF(next);
     if (next.segment_id === (account.segment_id ?? "") && next.industry === (account.industry ?? "") && next.size === (account.size ?? "")) return;
     const size = normalizeForSave("accounts", "size", next.size).value as string | null;
-    const { error } = await supabase.from("accounts").update({ segment_id: next.segment_id || null, industry: next.industry || null, size: size || null }).eq("id", account.id);
+    const edits: Record<string, string | null> = {};
+    if (next.industry !== (account.industry ?? "")) edits.industry = next.industry;
+    if ((size ?? "") !== (account.size ?? "")) edits.size = size;
+    const field_sources = personEdit(account.field_sources, edits, new Date().toISOString());
+    const { error } = await supabase.from("accounts").update({ segment_id: next.segment_id || null, industry: next.industry || null, size: size || null, field_sources: field_sources as unknown as Json }).eq("id", account.id);
     if (error) return toast.error(errorText(error));
     onSaved();
   }
