@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Nokko-styled replacements for window.confirm / window.prompt.
@@ -30,6 +31,8 @@ type TextRequest = {
   placeholder?: string;
   initial?: string;
   confirmLabel?: string;
+  multiline?: boolean;
+  maxLength?: number;
   resolve: (v: string | null) => void;
 };
 type Request = ConfirmRequest | TextRequest;
@@ -37,7 +40,8 @@ type Request = ConfirmRequest | TextRequest;
 let push: ((r: Request) => void) | null = null;
 
 export type ConfirmOptions = { body?: string; confirmLabel?: string; cancelLabel?: string };
-export type TextOptions = { body?: string; placeholder?: string; initial?: string; confirmLabel?: string };
+/** multiline: a tall text area for pasted documents; maxLength: shows a counter and blocks sending above it. */
+export type TextOptions = { body?: string; placeholder?: string; initial?: string; confirmLabel?: string; multiline?: boolean; maxLength?: number };
 
 /** Resolves true when the user confirms. Falls back to window.confirm if the host is not mounted. */
 export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<boolean> {
