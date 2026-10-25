@@ -42,7 +42,7 @@ Hallazgos del código:
 - CA-2: SI abandono con hallazgos sin revisar, ENTONCES el sistema DEBE conservarlos como propuestas pendientes sin aplicarlos a la estrategia.
 
 ### H-2: Como founder, quiero que NOKKO me recuerde terminar.
-- CA-3: MIENTRAS el onboarding esté sin terminar y no haya actividad durante N días (N lo fija Fede), el sistema DEBE avisarme en Inicio y en el Agente con el punto de reanudación.
+- CA-3: MIENTRAS el onboarding esté sin terminar y no haya actividad durante 1 día (decidido por Fede), el sistema DEBE avisarme en Inicio y en el Agente con el punto de reanudación.
 - CA-4: CUANDO la lectura de fuentes en segundo plano termina, el sistema DEBE avisarme y llevarme a revisar.
 - CA-5: SI la lectura falla o se pausa por presupuesto, ENTONCES el sistema DEBE decirme qué pasó y cómo continuar.
 
@@ -97,7 +97,6 @@ Se guardan hallazgos con su origen. Los documentos leídos no se muestran fuera 
 ## 15. Pendiente de verificar
 - [Por verificar] Estado de las tareas del plan.
 - [Por verificar] Comportamiento al abandonar.
-- [Por verificar] Valor de N días.
 - [Por verificar] Diferencias entre `production` y `main` (este análisis solo vio `main`).
 
 ## 16. Sección de Dani (la completa él)

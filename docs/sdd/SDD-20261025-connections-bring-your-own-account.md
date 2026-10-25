@@ -49,12 +49,12 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-3: Como Owner, quiero que mis credenciales estén protegidas.
 - CA-9: CUANDO guardo una credencial, el sistema DEBE ocultarla a todos los miembros, incluido el Owner, y solo permitir sustituirla.
 - CA-10: El sistema DEBE registrar quién conectó, cambió o desconectó cada cuenta y cuándo.
-- CA-11: SI mi rol no permite gestionar conexiones, ENTONCES el sistema DEBE mostrarlas en solo lectura y decir quién puede gestionarlas.
+- CA-11: SI mi rol no es Owner, ENTONCES el sistema DEBE mostrar las conexiones en solo lectura y decir quién puede gestionarlas (decidido por Fede: solo el Owner).
 
 ### H-4: Como Owner, quiero controlar el uso y el coste.
 - CA-12: DONDE la conexión sea una cuenta propia, el sistema DEBE mostrar el uso por proveedor del mes en curso.
-- CA-13: SI una cuenta propia se queda sin crédito o límite, ENTONCES el sistema DEBE avisarme y aplicar la regla de respaldo que decida Fede (usar la de NOKKO, pausar o preguntar).
-- CA-14: El sistema DEBE aplicar el presupuesto y las pausas automáticas de la empresa según la regla de coste que Fede decida para las cuentas propias.
+- CA-13: SI una cuenta propia se queda sin crédito o límite, ENTONCES el sistema DEBE avisarme y usar la cuenta proporcionada por NOKKO para no detener el trabajo (decidido por Fede) e indicarlo en el estado de la conexión.
+- CA-14: El sistema DEBE aplicar el presupuesto y las pausas automáticas de la empresa según la regla de coste para cuentas propias y para el respaldo de NOKKO (pendiente de decidir por Fede).
 
 ### H-5: Como founder, quiero llegar a conectar desde donde estoy.
 - CA-15: CUANDO un paso del onboarding o de la guía necesita una conexión que no tengo, el sistema DEBE ofrecer conectarla sin salir del flujo.
@@ -82,7 +82,7 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - U-1: Vista de estado y estructura común de conexión (H-1, H-3).
 - U-2: Conectar, comprobar y desconectar (H-2).
 - U-3: Google Drive como primer proveedor (SDD de Drive).
-- U-4: Proveedores de datos con clave propia, empezando por los más usados (H-2, H-4; orden por decidir).
+- U-4: Proveedores de datos con cuenta propia: Apollo, Clay, Parallel, Perplexity y Firecrawl primero; la estructura debe admitir cualquier proveedor disponible o nuevo sin rediseñar (H-2, H-4).
 - U-5: Uso, respaldo y presupuesto (H-4).
 - U-6: Conectar desde onboarding y guía (H-5).
 
@@ -107,7 +107,7 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - [Por verificar] Proveedores con soporte de clave por empresa.
 - [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales.
 - [Por verificar] Estado en `production` (solo se leyó `main`).
-- [Por verificar] Orden de proveedores (decisión de Fede).
+- [Por verificar] Quién asume el coste cuando se usa la cuenta de NOKKO como respaldo (decisión de Fede).
 
 ## 16. Sección de Dani (la completa él)
 - Diseño técnico:

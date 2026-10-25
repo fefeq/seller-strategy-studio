@@ -44,7 +44,7 @@ Fuente: código del repo (2026-10-25); sin datos de uso (sin dato):
 - CA-5: CUANDO un dato se confirma o edita en cualquier pantalla, el sistema DEBE actualizar el progreso sin recarga manual.
 
 ### H-3: Como founder, quiero que NOKKO me avise si me quedo parado.
-- CA-6: MIENTRAS haya pasos pendientes y pasen más de N días sin actividad (N lo fija Fede), el sistema DEBE avisarme en la próxima sesión, en el Agente y en Inicio, con el siguiente paso.
+- CA-6: MIENTRAS haya pasos pendientes y pase más de 1 día sin actividad (decidido por Fede), el sistema DEBE avisarme en la próxima sesión, en el Agente y en Inicio, con el siguiente paso.
 - CA-7: CUANDO pospongo un paso, el sistema DEBE no volver a avisarme de ese paso hasta la fecha que elija.
 - CA-8: SI mi rol no puede completar el paso, ENTONCES el sistema DEBE indicar quién de la empresa puede.
 
@@ -81,7 +81,6 @@ Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de 
 2. ¿Puede el estado derivarse siempre de datos?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Valor de N días (decisión de Fede).
 - [Por verificar] Si el diagnóstico GTM se puede compartir a nivel empresa sin cambios de permisos.
 - [Por verificar] Línea base de finalización (sin dato).
 

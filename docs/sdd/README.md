@@ -21,13 +21,28 @@ Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema:
 ## Principio de uso de LLM (aplica a los diez)
 Orden de preferencia: regla determinista → dato derivado/caché → modelo barato (`effort:"low"`) → modelo caro (solo A fondo). Cada SDD declara sus llamadas; los primeros no añaden ninguna salvo reformular textos con caché.
 
-## Decisiones que necesito de Fede
-1. Drive: ¿conexión por empresa, por usuario o ambas? ¿Una cuenta o varias por empresa?
-2. ¿Cuántos días sin actividad antes de avisar (guía y onboarding)? Propuesta: 3.
-3. Descubiertos: ¿la búsqueda manual debe dejar intacto el reloj semanal por defecto? (propuesto sí).
-4. Descubiertos: ¿los competidores hallados deben pedir confirmación antes de entrar en el posicionamiento? (propuesto sí).
-5. Campos: ¿empezamos el catálogo por Origen, País, Tamaño e Importe (mayor dispersión)?
-6. Enriquecimiento: ¿validas la tabla de llave mínima (cuenta=dominio+nombre, persona=nombre+cuenta/LinkedIn/email, lead=persona+cuenta, competidor=nombre+dominio)?
+## Decisiones tomadas por Fede (2026-10-25)
+| Tema | Decisión |
+|---|---|
+| Aviso por inactividad (guía y onboarding) | 1 día |
+| Drive | Conexión por empresa, desde la sección Conexiones |
+| Búsqueda manual y reloj semanal | El reloj queda intacto |
+| Competidores hallados por Descubiertos | Piden tu OK |
+| Clave mínima de enriquecimiento | Validada tal cual |
+| SDD de datos mínimos | Dividir en 7a (llave y completado), 7b (competidores), 7c (identidad de persona y resultados de terceros). **Pendiente de ejecutar** |
+| Plazo de deshacer | 24 horas |
+| Alta manual de competidores | Onboarding (Posicionamiento), pantalla de Estrategia y Agente |
+| Cuenta propia sin crédito | Usa la cuenta de NOKKO |
+| Proveedores con cuenta propia | Apollo, Clay, Parallel, Perplexity, Firecrawl; extensible a cualquier proveedor presente o futuro |
+| Quién gestiona conexiones | Solo el Owner |
+| Theory U: aviso de sensing | 8 notas sin sintetizar |
+
+## Decisiones que siguen abiertas
+1. Quién asume el coste cuando se usa la cuenta de NOKKO como respaldo.
+2. Días en la misma fase de Theory U antes de avisar.
+3. Orden y conceptos iniciales del catálogo de campos (propuesta: Origen, País, Tamaño, Importe).
+4. ¿Theory U forma parte del onboarding o queda aparte?
+5. Productos: moneda y productos en varias monedas.
 
 ## Límites del análisis
 - `nokko.ai/discoveries` exige sesión: análisis hecho sobre el código de `main`, no sobre producción.

@@ -52,7 +52,7 @@ Fuente: lectura del código del repo (2026-10-25), sin datos de uso (sin dato):
 
 ### H-2: Como founder, quiero borrar lo que no quiero.
 - CA-4: CUANDO borro un elemento, el sistema DEBE pedir confirmación indicando qué se pierde y dónde se usa.
-- CA-5: CUANDO borro, el sistema DEBE ofrecer deshacer durante un tiempo limitado.
+- CA-5: CUANDO borro o guardo un cambio, el sistema DEBE ofrecer deshacer durante 24 horas (decidido por Fede).
 - CA-6: SI el elemento está en uso por otra parte de la estrategia, ENTONCES el sistema DEBE avisarlo y permitir archivar en lugar de borrar.
 - CA-7: SI mi rol no permite borrar, ENTONCES el sistema DEBE ocultar o desactivar la acción y explicar por qué.
 

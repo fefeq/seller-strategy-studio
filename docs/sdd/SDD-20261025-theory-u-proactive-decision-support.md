@@ -36,7 +36,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 
 ## 7. Historias y criterios de aceptación
 ### H-1: Como founder, quiero que NOKKO me avise cuando Theory U tiene algo que decidir.
-- CA-1: CUANDO hay N notas de sensing sin sintetizar (N lo fija Fede), el sistema DEBE avisarme y ofrecerme sintetizarlas.
+- CA-1: CUANDO hay 8 notas de sensing sin sintetizar (decidido por Fede), el sistema DEBE avisarme y ofrecerme sintetizarlas.
 - CA-2: CUANDO un recorrido lleva más de N días en la misma fase sin actividad, el sistema DEBE avisarme con la pregunta clave de esa fase.
 - CA-3: CUANDO termina un prototipo sin resultado registrado, el sistema DEBE pedirme qué aprendimos.
 - CA-4: El sistema DEBE mostrar como máximo un aviso de Theory U por sesión y permitirme posponer o silenciar un tipo de aviso.
@@ -44,7 +44,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-2: Como founder, quiero un resumen para decidir.
 - CA-5: CUANDO lo pido o acepto un aviso, el sistema DEBE generar un resumen de decisión con: qué hemos oído (con las notas de origen citadas), patrones, opciones, y qué cambiaría en ICP, posicionamiento o mensajes.
 - CA-6: El sistema DEBE citar la nota, clínica o prototipo de origen de cada afirmación del resumen.
-- CA-7: SI hay menos notas que el mínimo N para sintetizar, ENTONCES el sistema DEBE decir qué falta en lugar de generar un resumen.
+- CA-7: SI hay menos de 8 notas para sintetizar, ENTONCES el sistema DEBE decir qué falta en lugar de generar un resumen.
 - CA-8: SI falta una cifra o una cita en las notas, ENTONCES el sistema DEBE decir «sin dato» en lugar de inventarla.
 
 ### H-3: Como founder, quiero que lo aprendido llegue a la estrategia sin perder el control.
