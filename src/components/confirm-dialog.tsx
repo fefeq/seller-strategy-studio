@@ -10,6 +10,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 /**
  * Nokko-styled replacements for window.confirm / window.prompt.
@@ -30,6 +31,8 @@ type TextRequest = {
   placeholder?: string;
   initial?: string;
   confirmLabel?: string;
+  multiline?: boolean;
+  maxLength?: number;
   resolve: (v: string | null) => void;
 };
 type Request = ConfirmRequest | TextRequest;
@@ -37,7 +40,8 @@ type Request = ConfirmRequest | TextRequest;
 let push: ((r: Request) => void) | null = null;
 
 export type ConfirmOptions = { body?: string; confirmLabel?: string; cancelLabel?: string };
-export type TextOptions = { body?: string; placeholder?: string; initial?: string; confirmLabel?: string };
+/** multiline: a tall text area for pasted documents; maxLength: shows a counter and blocks sending above it. */
+export type TextOptions = { body?: string; placeholder?: string; initial?: string; confirmLabel?: string; multiline?: boolean; maxLength?: number };
 
 /** Resolves true when the user confirms. Falls back to window.confirm if the host is not mounted. */
 export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<boolean> {
@@ -58,6 +62,7 @@ export function DialogHost() {
   const [queue, setQueue] = useState<Request[]>([]);
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const areaRef = useRef<HTMLTextAreaElement>(null);
   const current = queue[0];
 
   useEffect(() => {
@@ -70,9 +75,14 @@ export function DialogHost() {
   useEffect(() => {
     if (current?.kind === "text") {
       setText(current.initial ?? "");
-      setTimeout(() => inputRef.current?.focus(), 0);
+      setTimeout(() => (current.multiline ? areaRef.current : inputRef.current)?.focus(), 0);
     }
   }, [current]);
+
+  const max = current?.kind === "text" ? current.maxLength : undefined;
+  const len = text.trim().length;
+  const tooLong = max != null && len > max;
+  const canSend = current?.kind !== "text" || (len > 0 && !tooLong);
 
   const close = (ok: boolean) => {
     if (!current) return;
@@ -84,7 +94,7 @@ export function DialogHost() {
   return (
     <AlertDialog open={!!current} onOpenChange={(open) => !open && close(false)}>
       {current && (
-        <AlertDialogContent>
+        <AlertDialogContent className={current.kind === "text" && current.multiline ? "sm:max-w-2xl" : undefined}>
           <AlertDialogHeader>
             <AlertDialogTitle>{current.title}</AlertDialogTitle>
             {current.body && <AlertDialogDescription>{current.body}</AlertDialogDescription>}
@@ -93,16 +103,40 @@ export function DialogHost() {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (text.trim()) close(true);
+                if (canSend) close(true);
               }}
             >
-              <Input
-                ref={inputRef}
-                value={text}
-                placeholder={current.placeholder}
-                onChange={(e) => setText(e.target.value)}
-                aria-label={current.title}
-              />
+              {current.multiline ? (
+                <Textarea
+                  ref={areaRef}
+                  value={text}
+                  rows={10}
+                  placeholder={current.placeholder}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSend) { e.preventDefault(); close(true); }
+                  }}
+                  aria-label={current.title}
+                  aria-invalid={tooLong || undefined}
+                  className="max-h-[50vh] min-h-[10rem] resize-y"
+                />
+              ) : (
+                <Input
+                  ref={inputRef}
+                  value={text}
+                  placeholder={current.placeholder}
+                  onChange={(e) => setText(e.target.value)}
+                  aria-label={current.title}
+                  aria-invalid={tooLong || undefined}
+                />
+              )}
+              {max != null && (
+                <p className={`mt-1.5 text-xs ${tooLong ? "text-state-alarm" : "text-ink-mid"}`} aria-live="polite">
+                  {tooLong
+                    ? `Te sobran ${(len - max).toLocaleString("es-ES")} caracteres: recórtalo para poder enviarlo.`
+                    : `${len.toLocaleString("es-ES")} / ${max.toLocaleString("es-ES")} caracteres`}
+                </p>
+              )}
             </form>
           )}
           <AlertDialogFooter>
@@ -110,7 +144,7 @@ export function DialogHost() {
               {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : "Cancelar"}
             </AlertDialogCancel>
             <AlertDialogAction
-              disabled={current.kind === "text" && !text.trim()}
+              disabled={!canSend}
               onClick={(e) => {
                 e.preventDefault();
                 close(true);

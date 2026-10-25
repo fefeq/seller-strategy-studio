@@ -11,7 +11,7 @@ import { askText } from "@/components/confirm-dialog";
 import { applySetupItems, undoSetupItems } from "@/lib/agent.functions";
 import { redoOnboardingBlock } from "@/lib/onboarding.functions";
 import { itemDetail, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
-import { BLOCK_LABEL, LEVEL_LABEL, blockBasis, blockOf, blockOrder, blocksDecided, protectManual, type BlockId, type BlockState, type Opinion } from "@/lib/onboarding";
+import { BLOCK_LABEL, LEVEL_LABEL, REDO_HINT_MAX, blockBasis, blockOf, blockOrder, blocksDecided, protectManual, type BlockId, type BlockState, type Opinion } from "@/lib/onboarding";
 import type { Archetype } from "@/lib/gtm-diagnosis";
 import { errorText } from "@/lib/errors";
 
@@ -80,7 +80,11 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
   }
   async function redoBlock(b: BlockId) {
-    const hint = await askText(`Rehacer «${BLOCK_LABEL[b]}» con IA`, { body: "¿Qué quieres que cambie?", placeholder: "Por ejemplo: céntrate en agencias de más de 50 personas", confirmLabel: "Rehacer" });
+    const hint = await askText(`Rehacer «${BLOCK_LABEL[b]}» con IA`, {
+      body: "¿Qué quieres que cambie? Puedes escribir una indicación corta o pegar un documento entero (posicionamiento, notas, una transcripción).",
+      placeholder: "Por ejemplo: céntrate en agencias de más de 50 personas",
+      confirmLabel: "Rehacer", multiline: true, maxLength: REDO_HINT_MAX,
+    });
     if (!hint) return;
     setBusy(b);
     try {

@@ -38,4 +38,10 @@ describe("isNetworkError", () => {
     expect(isNetworkError(new Error("La IA no respondió"))).toBe(false);
     expect(isNetworkError(null)).toBe(false);
   });
+  it("translates raw input-validation errors", () => {
+    const tooLong = JSON.stringify([{ origin: "string", code: "too_big", maximum: 1000, inclusive: true, path: ["hint"], message: "Too big: expected string to have <=1000 characters" }], null, 2);
+    expect(errorText(new Error(tooLong))).toBe("El texto es demasiado largo. Recórtalo y vuelve a intentarlo.");
+    const own = JSON.stringify([{ code: "too_big", origin: "string", path: ["hint"], message: "El texto es demasiado largo: el máximo son 15.000 caracteres." }]);
+    expect(errorText(new Error(own))).toBe("El texto es demasiado largo: el máximo son 15.000 caracteres.");
+  });
 });

@@ -23,6 +23,8 @@ export const BLOCKS: { id: BlockId; label: string; groups: string[] }[] = [
 ];
 export const BLOCK_LABEL = Object.fromEntries(BLOCKS.map((b) => [b.id, b.label])) as Record<BlockId, string>;
 export const LEVEL_LABEL: Record<Level, string> = { confirmed: "Confirmado", inferred: "Deducido", assumed: "Supuesto" };
+/** «Rehacer con IA» accepts a pasted document (positioning, notes, a transcript), not just a one-liner. */
+export const REDO_HINT_MAX = 15000;
 
 /** The archetype decides what is approved first: PLG and consumer start from the message, enterprise from the accounts. */
 export function blockOrder(archetype: Archetype | null | undefined): BlockId[] {
