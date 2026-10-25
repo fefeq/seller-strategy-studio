@@ -6,6 +6,7 @@ import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { readSources, sourceText } from "@/lib/provenance";
 import { errorText } from "@/lib/errors";
+import { normalizeForSave } from "@/lib/field-normalize";
 import { CompleteAccount } from "@/components/orchestrator";
 import { linkedinCompanyUrl } from "@/lib/apify";
 
@@ -36,7 +37,8 @@ export function FitFields({ account, segNames, onSaved }: { account: { id: strin
     const next = { ...f, ...patch };
     setF(next);
     if (next.segment_id === (account.segment_id ?? "") && next.industry === (account.industry ?? "") && next.size === (account.size ?? "")) return;
-    const { error } = await supabase.from("accounts").update({ segment_id: next.segment_id || null, industry: next.industry || null, size: next.size || null }).eq("id", account.id);
+    const size = normalizeForSave("accounts", "size", next.size).value as string | null;
+    const { error } = await supabase.from("accounts").update({ segment_id: next.segment_id || null, industry: next.industry || null, size: size || null }).eq("id", account.id);
     if (error) return toast.error(errorText(error));
     onSaved();
   }
