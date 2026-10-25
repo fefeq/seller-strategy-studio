@@ -1,7 +1,7 @@
 # SDD-20261025-universal-field-definitions · [Feature] Definiciones universales de campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta (base de los otros cinco SDD)
-**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 hecha, U-2 a U-4 pendientes) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 y U-2 hechas, U-3 y U-4 pendientes) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 Cada concepto de la plataforma (tamaño de empresa, país, importe, periodo, origen del dato, estado…) debe tener **una sola definición** que valga para todas las pantallas, el Agente, las importaciones y Descubiertos. Hoy el mismo concepto existe con nombres y tipos distintos según la tabla o la pantalla. Este SDD fija el catálogo, las reglas de persistencia y el origen/confirmación de cada valor. Es la base de los SDD de acciones sobre campos, onboarding y guía de estrategia.
