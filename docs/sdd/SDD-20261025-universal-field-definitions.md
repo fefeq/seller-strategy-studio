@@ -112,5 +112,10 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 - Estimación:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
+## 17. Delta de implementación (agente, 2026-10-25)
+- U-1 y U-2 entregadas como en el SDD, con periodo sin normalizar (no está en los cuatro conceptos decididos).
+- U-3 parcial. Hecho: reglas puras de origen y confirmación, sello de persona en la ficha de cuenta, regla única de escritura automática. Escrita pero **no verificada ni aplicada**: `drizzle/migrations/0058_field_sources_generic.sql` (trigger genérico para `accounts` e `icp_profiles`; lista de comprobaciones en su cabecera). Falta: almacenamiento de propuestas pendientes (CA-9) y decidir qué otras tablas llevan procedencia.
+- U-4 pendiente.
+
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).
