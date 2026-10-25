@@ -51,12 +51,28 @@ function checkFieldText(code: string, msg: string): string | null {
   return col ? `El valor de «${CHECK_FIELDS[col]}» no es válido y no se ha guardado. Corrígelo y vuelve a intentarlo.` : null;
 }
 
+/** A server-side input check (zod) fails with its issue list as JSON; turn the first issue into Spanish. */
+function validationText(msg: string): string | null {
+  if (!/^\s*\[/.test(msg)) return null;
+  let issues: unknown;
+  try { issues = JSON.parse(msg); } catch { return null; }
+  const first = Array.isArray(issues) ? (issues[0] as { code?: unknown; message?: unknown; origin?: unknown; type?: unknown } | undefined) : undefined;
+  if (!first || typeof first !== "object" || !("code" in first)) return null;
+  if (typeof first.message === "string" && looksSpanish(first.message)) return first.message;
+  const isText = first.origin === "string" || first.type === "string";
+  if (first.code === "too_big") return isText ? "El texto es demasiado largo. Recórtalo y vuelve a intentarlo." : "Algún valor es demasiado grande. Revísalo y vuelve a intentarlo.";
+  if (first.code === "too_small") return isText ? "El texto es demasiado corto o está vacío. Complétalo y vuelve a intentarlo." : "Algún valor es demasiado pequeño. Revísalo y vuelve a intentarlo.";
+  return "Algún dato no es válido. Revisa lo que has escrito y vuelve a intentarlo.";
+}
+
 /** Spanish, actionable text for any error value shown to a person. */
 export function errorText(e: unknown, fallback = GENERIC): string {
   const err = e as ErrLike;
   const msg = typeof err === "string" ? err : typeof err?.message === "string" ? err.message : "";
   const code = typeof err === "object" && err && typeof err.code === "string" ? err.code : "";
   const status = typeof err === "object" && err && typeof err.status === "number" ? err.status : 0;
+  const invalid = validationText(msg);
+  if (invalid) return invalid;
   const field = checkFieldText(code, msg);
   if (field) return field;
   for (const [test, text] of RULES) if (test(code, msg, status)) return text;
