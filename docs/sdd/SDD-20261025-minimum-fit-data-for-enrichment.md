@@ -76,6 +76,13 @@ Esta tabla es una propuesta de Fede; los datos que realmente exige cada proveedo
 - CA-15: CUANDO dos proveedores devuelven valores distintos para el mismo campo, el sistema DEBE mostrar ambos con su origen y no elegir en silencio.
 - CA-16: CUANDO un dato ya está guardado y fresco para esa entidad, el sistema NO DEBE volver a pedirlo al tercero ni gastar presupuesto.
 
+### H-6: Como founder, quiero añadir competidores a mano.
+- CA-17: El sistema DEBE permitirme añadir un competidor con nombre y dominio en cada uno de estos puntos: bloque de Posicionamiento del onboarding («Alternativas y competidores»), pantalla de Estrategia, panel de Descubiertos y desde el Agente.
+- CA-18: CUANDO añado un competidor a mano, el sistema DEBE guardarlo como escrito por mí y confirmado.
+- CA-19: SI el competidor ya existe por nombre o dominio, ENTONCES el sistema DEBE avisarme y ofrecer abrir el existente.
+- CA-20: SI no indico dominio, ENTONCES el sistema DEBE aceptar el competidor, marcarlo «Falta dominio» y proponer uno si puede deducirlo de la web.
+- CA-21: MIENTRAS el onboarding no ha terminado, el sistema DEBE permitir saltar este paso sin bloquear el cierre.
+
 ## 8. Casos límite y errores
 - Dominio ya existente en otra cuenta: proponer fusión o confirmar duplicado (CA-1).
 - Dominio de proveedor gratuito de correo en una cuenta: rechazar como dominio de empresa (CA-6).
@@ -99,7 +106,7 @@ Mensaje: «Para investigar a *X* falta el dominio. Lo he deducido de su web: *x.
 ## 11. Unidades de trabajo
 - U-1: Definición y comprobación de llave mínima por entidad (H-1; requiere SDD universal).
 - U-2: Completado asistido de llaves (H-2).
-- U-3: Entidad Competidor y sincronía con posicionamiento (H-3; coordinada con SDD de Descubiertos).
+- U-3: Entidad Competidor, alta manual en los cuatro puntos y sincronía con posicionamiento (H-3, H-6; coordinada con SDD de Descubiertos).
 - U-4: Identidad única de persona (H-4).
 - U-5: Escritura de resultados de terceros con origen y propuestas (H-5; depende de SDD universal CA-7 a CA-9).
 
