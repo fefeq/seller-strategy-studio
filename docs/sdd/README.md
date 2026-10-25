@@ -11,7 +11,9 @@ Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: 
 | 4 | `SDD-20261025-onboarding-flow-end-to-end` | Feature | 1, 2, 3 |
 | 5 | `SDD-20261025-drive-per-company-account` | Feature | independiente |
 | 6 | `SDD-20261025-discoveries-scoped-manual-search` | Mejora | 2 (confirmar competidores) |
-| 7 | `SDD-20261025-minimum-fit-data-for-enrichment` | Feature | 1, 2; coordinar con 6 por competidores |
+| 7a | `SDD-20261025-fit-data-7a-llave-minima-y-completado` | Feature | 1, 2 |
+| 7b | `SDD-20261025-fit-data-7b-competitors-entity` | Feature | 1, 2; coordinar con 6 |
+| 7c | `SDD-20261025-fit-data-7c-person-identity-and-third-party-results` | Feature | 1, 2 |
 | 8 | `SDD-20261025-products-in-onboarding-autofill` | Mejora | 1, 2; encaja en onboarding (4) |
 | 9 | `SDD-20261025-theory-u-proactive-decision-support` | Feature | 1, 2 |
 | 10 | `SDD-20261025-connections-bring-your-own-account` | Feature | 1; incluye el SDD 5 como primer caso |
@@ -29,7 +31,7 @@ Orden de preferencia: regla determinista → dato derivado/caché → modelo bar
 | Búsqueda manual y reloj semanal | El reloj queda intacto |
 | Competidores hallados por Descubiertos | Piden tu OK |
 | Clave mínima de enriquecimiento | Validada tal cual |
-| SDD de datos mínimos | Dividir en 7a (llave y completado), 7b (competidores), 7c (identidad de persona y resultados de terceros). **Pendiente de ejecutar** |
+| SDD de datos mínimos | Dividido en 7a, 7b y 7c (hecho) |
 | Plazo de deshacer | 24 horas |
 | Alta manual de competidores | Onboarding (Posicionamiento), pantalla de Estrategia y Agente |
 | Cuenta propia sin crédito | Usa la cuenta de NOKKO |
@@ -38,11 +40,10 @@ Orden de preferencia: regla determinista → dato derivado/caché → modelo bar
 | Theory U: aviso de sensing | 8 notas sin sintetizar |
 
 ## Decisiones que siguen abiertas
-1. Quién asume el coste cuando se usa la cuenta de NOKKO como respaldo.
-2. Días en la misma fase de Theory U antes de avisar.
-3. Orden y conceptos iniciales del catálogo de campos (propuesta: Origen, País, Tamaño, Importe).
-4. ¿Theory U forma parte del onboarding o queda aparte?
-5. Productos: moneda y productos en varias monedas.
+1. Productos: moneda y productos en varias monedas.
+2. Resto de [Por verificar] que depende de Dani (ver sección 15 de cada SDD).
+
+Decididas en la segunda ronda: coste del respaldo (se descuenta del presupuesto de la empresa), Theory U avisa a los 14 días en la misma fase, queda aparte y la guía lo sugiere, y el catálogo empieza por Origen, País, Tamaño e Importe.
 
 ## Límites del análisis
 - `nokko.ai/discoveries` exige sesión: análisis hecho sobre el código de `main`, no sobre producción.

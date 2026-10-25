@@ -1,4 +1,4 @@
-# SDD-20261025-minimum-fit-data-for-enrichment · [Feature] Datos mínimos de encaje para que apps externas enriquezcan
+# SDD-20261025-fit-data-7a-llave-minima-y-completado · [Feature] Llave mínima y completado asistido (parte a de 3 de «Datos mínimos de encaje»)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
 **Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
@@ -7,6 +7,7 @@
 ## 1. Resumen
 Auditoría de los «Datos para el encaje para investigar» de **Cuentas, Personas, Leads y Competidores**. Objetivo: que NOKKO recoja siempre la **información mínima de identidad** (la llave) de cada entidad, para que apps de terceros (hoy Apollo, Clay, Parallel, Firecrawl, Perplexity, Apify) devuelvan datos más valiosos y fieles, y que lo que devuelvan se guarde con su origen sin pisar lo escrito por la persona.
 
+> Este documento es la parte 7a de la división decidida por Fede del SDD «Datos mínimos de encaje». Los identificadores CA y H conservan la numeración original para trazabilidad. Las otras partes: 7a, 7b y 7c.
 ## 2. Problema y para quién
 - Founder: la investigación falla o es pobre porque falta una llave (p. ej. cuenta sin dominio).
 - Equipo: cada entidad guarda su identidad de forma distinta, y los competidores no tienen entidad propia.
@@ -61,28 +62,6 @@ Esta tabla es una propuesta de Fede; los datos que realmente exige cada proveedo
 - CA-6: SI el email es personal (gmail, outlook u otros), ENTONCES el sistema NO DEBE derivar dominio de empresa y DEBE pedir el nombre de la empresa.
 - CA-7: CUANDO una persona se guarda con nombre completo, el sistema DEBE conservar el nombre completo tal cual y permitir nombre y apellido por separado.
 
-### H-3: Como founder, quiero gestionar competidores con datos útiles.
-- CA-8: El sistema DEBE permitir crear, editar y borrar competidores con nombre y dominio.
-- CA-9: CUANDO Descubiertos encuentra un competidor, el sistema DEBE proponerlo con nombre y dominio y esperar mi confirmación (coherente con el SDD de Descubiertos).
-- CA-10: SI cambio la lista de competidores, ENTONCES el sistema DEBE mantener coherente la frase «Alternativa competitiva» del posicionamiento sin pisar un texto que haya escrito yo.
-
-### H-4: Como founder, quiero una sola identidad por persona.
-- CA-11: El sistema DEBE vincular la persona del CRM y el stakeholder de una cuenta cuando sean la misma (mismo email o mismo LinkedIn).
-- CA-12: SI dos registros parecen la misma persona y no hay coincidencia exacta, ENTONCES el sistema DEBE proponer unirlos y esperar mi confirmación.
-
-### H-5: Como founder, quiero que lo que traen las apps externas sea fiable y no pise mis datos.
-- CA-13: CUANDO un tercero devuelve un dato, el sistema DEBE guardarlo con proveedor y fecha como origen.
-- CA-14: SI el campo tiene un valor escrito o confirmado por una persona, ENTONCES el sistema DEBE guardar lo del tercero como propuesta pendiente sin reemplazar el valor.
-- CA-15: CUANDO dos proveedores devuelven valores distintos para el mismo campo, el sistema DEBE mostrar ambos con su origen y no elegir en silencio.
-- CA-16: CUANDO un dato ya está guardado y fresco para esa entidad, el sistema NO DEBE volver a pedirlo al tercero ni gastar presupuesto.
-
-### H-6: Como founder, quiero añadir competidores a mano.
-- CA-17: El sistema DEBE permitirme añadir un competidor con nombre y dominio en cada uno de estos puntos (decididos por Fede): bloque de Posicionamiento del onboarding («Alternativas y competidores»), pantalla de Estrategia y desde el Agente. El panel de Descubiertos solo muestra y confirma propuestas.
-- CA-18: CUANDO añado un competidor a mano, el sistema DEBE guardarlo como escrito por mí y confirmado.
-- CA-19: SI el competidor ya existe por nombre o dominio, ENTONCES el sistema DEBE avisarme y ofrecer abrir el existente.
-- CA-20: SI no indico dominio, ENTONCES el sistema DEBE aceptar el competidor, marcarlo «Falta dominio» y proponer uno si puede deducirlo de la web.
-- CA-21: MIENTRAS el onboarding no ha terminado, el sistema DEBE permitir saltar este paso sin bloquear el cierre.
-
 ## 8. Casos límite y errores
 - Dominio ya existente en otra cuenta: proponer fusión o confirmar duplicado (CA-1).
 - Dominio de proveedor gratuito de correo en una cuenta: rechazar como dominio de empresa (CA-6).
@@ -106,9 +85,6 @@ Mensaje: «Para investigar a *X* falta el dominio. Lo he deducido de su web: *x.
 ## 11. Unidades de trabajo
 - U-1: Definición y comprobación de llave mínima por entidad (H-1; requiere SDD universal).
 - U-2: Completado asistido de llaves (H-2).
-- U-3: Entidad Competidor, alta manual en tres puntos y sincronía con posicionamiento (H-3, H-6; coordinada con SDD de Descubiertos).
-- U-4: Identidad única de persona (H-4).
-- U-5: Escritura de resultados de terceros con origen y propuestas (H-5; depende de SDD universal CA-7 a CA-9).
 
 ## 12. Notas técnicas [Sugerencia — Dani valida]
 - Archivos: `src/lib/orchestrator/planner.ts` (añadir llaves requeridas por `Need`), `search.ts`, `runner.ts`, `src/lib/apollo.ts`, `src/lib/clay.ts` (`AccountDraft`, `StakeholderDraft`), `src/lib/leads-ingest.ts`, `src/lib/lead-qualification.ts` (`emailDomainOf`), `src/lib/autopilot.server.ts`, `src/components/account/stakeholders-tab.tsx`, `src/lib/discoveries.server.ts` (`knownCompetitors`).

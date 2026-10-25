@@ -54,7 +54,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-4: Como Owner, quiero controlar el uso y el coste.
 - CA-12: DONDE la conexión sea una cuenta propia, el sistema DEBE mostrar el uso por proveedor del mes en curso.
 - CA-13: SI una cuenta propia se queda sin crédito o límite, ENTONCES el sistema DEBE avisarme y usar la cuenta proporcionada por NOKKO para no detener el trabajo (decidido por Fede) e indicarlo en el estado de la conexión.
-- CA-14: El sistema DEBE aplicar el presupuesto y las pausas automáticas de la empresa según la regla de coste para cuentas propias y para el respaldo de NOKKO (pendiente de decidir por Fede).
+- CA-14: El sistema DEBE aplicar el presupuesto y las pausas automáticas de la empresa y descontar de él el uso de la cuenta de NOKKO cuando actúe como respaldo (decidido por Fede).
 
 ### H-5: Como founder, quiero llegar a conectar desde donde estoy.
 - CA-15: CUANDO un paso del onboarding o de la guía necesita una conexión que no tengo, el sistema DEBE ofrecer conectarla sin salir del flujo.
@@ -107,7 +107,6 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - [Por verificar] Proveedores con soporte de clave por empresa.
 - [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales.
 - [Por verificar] Estado en `production` (solo se leyó `main`).
-- [Por verificar] Quién asume el coste cuando se usa la cuenta de NOKKO como respaldo (decisión de Fede).
 
 ## 16. Sección de Dani (la completa él)
 - Diseño técnico:

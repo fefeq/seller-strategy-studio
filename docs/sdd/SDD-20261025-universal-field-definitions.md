@@ -33,7 +33,7 @@ Fuente: inventario determinista generado desde el esquema de datos del repo (`do
 - Reglas únicas de normalización y validación (país, tamaño, importe, periodo).
 - Comprobación automática de coherencia.
 - Regla única de «completo» por objeto (empresa, ICP, posicionamiento); la consumen los SDD de guía y onboarding.
-- Conceptos iniciales propuestos, en orden: Origen, País, Tamaño, Importe (resto tras revisión de Fede).
+- Conceptos iniciales (decidido por Fede), en orden: Origen, País, Tamaño, Importe.
 
 **No incluye:**
 - Renombrar o migrar de golpe las 84 tablas: se hace por conceptos, en orden de impacto.

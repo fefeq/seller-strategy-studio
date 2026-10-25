@@ -17,7 +17,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 - Clínicas de casos y Prototipos no tienen IA.
 - No hay detector proactivo de Theory U entre los detectores del repo (`src/lib/proactive/`): **[Por verificar]**.
 - Los resultados del recorrido no se convierten en cambios de ICP o posicionamiento: la fase «Co-evolucionar» es solo texto.
-- Theory U no aparece en el onboarding ni en «Configura tu estrategia».
+- Theory U no aparece en el onboarding ni en «Configura tu estrategia». Decisión de Fede: queda aparte y la guía de estrategia lo sugiere al terminar.
 **Apuesta declarada:** se medirá tras el lanzamiento con las métricas de la sección 4.
 
 ## 4. Resultado buscado
@@ -37,7 +37,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ## 7. Historias y criterios de aceptación
 ### H-1: Como founder, quiero que NOKKO me avise cuando Theory U tiene algo que decidir.
 - CA-1: CUANDO hay 8 notas de sensing sin sintetizar (decidido por Fede), el sistema DEBE avisarme y ofrecerme sintetizarlas.
-- CA-2: CUANDO un recorrido lleva más de N días en la misma fase sin actividad, el sistema DEBE avisarme con la pregunta clave de esa fase.
+- CA-2: CUANDO un recorrido lleva más de 14 días en la misma fase sin actividad (decidido por Fede), el sistema DEBE avisarme con la pregunta clave de esa fase.
 - CA-3: CUANDO termina un prototipo sin resultado registrado, el sistema DEBE pedirme qué aprendimos.
 - CA-4: El sistema DEBE mostrar como máximo un aviso de Theory U por sesión y permitirme posponer o silenciar un tipo de aviso.
 
@@ -98,7 +98,6 @@ Se leen notas de sensing (entrevistado, lo oído, sorpresas), clínicas, prototi
 
 ## 15. Pendiente de verificar
 - [Por verificar] Detectores proactivos existentes sobre Theory U.
-- [Por verificar] Valor de N (decisión de Fede).
 - [Por verificar] Coste real de una síntesis (sin dato).
 - [Por verificar] Estado en `production`.
 
