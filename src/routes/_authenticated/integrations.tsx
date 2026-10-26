@@ -9,6 +9,7 @@ import { confirmed } from "@/lib/save";
 import { StripeConnect } from "@/components/stripe-panel";
 import { PosthogConnect } from "@/components/posthog-panel";
 import { BudgetPanel } from "@/components/orchestrator";
+import { ConnectionsPanel } from "@/components/connections-panel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({ meta: [{ title: "Conexiones — Nokko" }, { name: "description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }, { property: "og:title", content: "Conexiones — Nokko" }, { property: "og:description", content: "Qué se conecta hoy a Nokko y el plan de herramientas del equipo." }] }),
@@ -52,6 +53,7 @@ function Integrations() {
   return (
     <Page eyebrow="Stack comercial" title="Conexiones">
       <BudgetPanel />
+      <ConnectionsPanel />
       <section className="mb-10">
         <h2 className="text-3xl">Lo que se conecta hoy</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">Estas conexiones están hechas en Nokko y mueven datos de verdad. Las marcadas con un paso pendiente están programadas y se activan cuando el equipo de Nokko lo complete.</p>
