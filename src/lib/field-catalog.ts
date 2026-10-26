@@ -23,7 +23,8 @@ export type ConceptId =
   | "pais" | "paises" | "region" | "geografia_texto"
   | "tamano_empleados" | "tamano_descripcion"
   | "importe"
-  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada";
+  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada"
+  | "metadatos_conexion";
 
 export type Concept = {
   id: ConceptId;
@@ -60,6 +61,7 @@ export const CONCEPTS: Concept[] = [
     display: "Etiqueta en español del valor",
   },
   { id: "fuente_citada", label: "Fuente citada", meaning: "Nombre del medio, dirección web o etiqueta de donde sale un hallazgo o un registro.", kind: "text", format: "Texto libre, sin valores cerrados", display: "Tal cual se guardó" },
+  { id: "metadatos_conexion", label: "Metadatos de conexión", meaning: "Datos de sistema de una conexión propia (proveedor, estado, cuenta visible, quién y cuándo) y su registro de cambios; los escribe el servidor tras comprobar la conexión y nadie los edita a mano. La credencial nunca está aquí.", kind: "text", format: "Los fija el servidor: proveedor en minúsculas, estado y acción de un conjunto cerrado por tabla, cuenta visible sin credenciales", display: "Estado en palabras (STATE_LABEL, connections.ts) y cuenta tal cual" },
 ];
 
 export type ImporteNature = "acv" | "pago_unico" | "valor_estimado" | "objetivo" | "cuota" | "coste_adquisicion" | "coste_recurrente" | "factura" | "ingreso_plan" | "ingreso_real";
@@ -115,6 +117,25 @@ export const BINDINGS: Binding[] = [
   { table: "discoveries", column: "source", concept: "fuente_citada", persistence: saved },
   { table: "leads", column: "source", concept: "fuente_citada", persistence: saved, note: "Free text up to 100 characters (CSV, Descubiertos, utm values)" },
   { table: "trials", column: "source", concept: "fuente_citada", persistence: saved },
+  // Metadatos de conexión (system columns written by server code; U-1 of connections-bring-your-own-account)
+  { table: "org_connections", column: "id", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "org_id", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "provider", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "status", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "account_label", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "account_key", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "connected_by", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "connected_at", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "checked_at", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "last_error", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connections", column: "fallback_active", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "id", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "org_id", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "provider", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "action", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "account_label", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "actor", concept: "metadatos_conexion", persistence: saved },
+  { table: "org_connection_events", column: "at", concept: "metadatos_conexion", persistence: saved },
 ];
 
 export function conceptById(id: ConceptId): Concept {
@@ -149,6 +170,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   canal_de_entrada: ["src/routes/_authenticated/deals.tsx", "src/routes/_authenticated/people.tsx", "src/components/metrics/revops-panels.tsx", "src/routes/_authenticated/metrics.tsx"],
   creado_por: ["src/routes/_authenticated/memory.tsx", "src/routes/_authenticated/debates.tsx"],
   fuente_citada: ["src/components/leads/lead-dialogs.tsx", "src/lib/web-research-core.ts"],
+  metadatos_conexion: ["src/components/connections-panel.tsx", "src/lib/connections.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */

@@ -3431,6 +3431,94 @@ export type Database = {
           },
         ]
       }
+      org_connection_events: {
+        Row: {
+          account_label: string
+          action: string
+          actor: string | null
+          at: string
+          id: string
+          org_id: string
+          provider: string
+        }
+        Insert: {
+          account_label?: string
+          action: string
+          actor?: string | null
+          at?: string
+          id?: string
+          org_id?: string
+          provider: string
+        }
+        Update: {
+          account_label?: string
+          action?: string
+          actor?: string | null
+          at?: string
+          id?: string
+          org_id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_connection_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_connections: {
+        Row: {
+          account_key: string
+          account_label: string
+          checked_at: string | null
+          connected_at: string
+          connected_by: string | null
+          fallback_active: boolean
+          id: string
+          last_error: string | null
+          org_id: string
+          provider: string
+          status: string
+        }
+        Insert: {
+          account_key: string
+          account_label: string
+          checked_at?: string | null
+          connected_at?: string
+          connected_by?: string | null
+          fallback_active?: boolean
+          id?: string
+          last_error?: string | null
+          org_id?: string
+          provider: string
+          status?: string
+        }
+        Update: {
+          account_key?: string
+          account_label?: string
+          checked_at?: string | null
+          connected_at?: string
+          connected_by?: string | null
+          fallback_active?: boolean
+          id?: string
+          last_error?: string | null
+          org_id?: string
+          provider?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       org_members: {
         Row: {
           created_at: string
