@@ -1016,6 +1016,44 @@ export type Database = {
         }
         Relationships: []
       }
+      connection_events: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          detail: string
+          id: string
+          org_id: string
+          provider: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          detail?: string
+          id?: string
+          org_id?: string
+          provider: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          detail?: string
+          id?: string
+          org_id?: string
+          provider?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connection_events_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_lines: {
         Row: {
           billing: string
@@ -1561,6 +1599,47 @@ export type Database = {
             foreignKeyName: "discoveries_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_connections: {
+        Row: {
+          connected_at: string
+          connected_by: string | null
+          google_email: string
+          last_error: string | null
+          org_id: string
+          refresh_token_enc: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          connected_at?: string
+          connected_by?: string | null
+          google_email: string
+          last_error?: string | null
+          org_id?: string
+          refresh_token_enc: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          connected_at?: string
+          connected_by?: string | null
+          google_email?: string
+          last_error?: string | null
+          org_id?: string
+          refresh_token_enc?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },

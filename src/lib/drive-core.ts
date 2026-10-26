@@ -5,7 +5,7 @@
 // after those checks; members read them with RLS.
 import type { Db } from "@/lib/org-data";
 import { cleanText, driveIdFromUrl, FOLDER_MIME, kindLabel, markdownToHtml, MAX_DOWNLOAD, OUTSIDE_FOLDER, readPlan, safeName } from "@/lib/drive";
-import { copyAs, createFolder, createGoogleDoc, deleteFile, downloadBytes, downloadText, DriveError, exportText, findByAppProperty, getFile, listChildren, listFiles, type DriveFile } from "@/lib/google-drive";
+import { DriveError, driveApi, type DriveApi, type DriveFile } from "@/lib/google-drive";
 import { driveQ } from "@/lib/drive";
 
 export type DriveScope = { db: Db; orgId: string; userId: string };
@@ -16,6 +16,19 @@ const toItem = (f: DriveFile): FileItem => ({ id: f.id, name: f.name, kind: kind
 const toRef = (f: DriveFile): FolderRef => ({ id: f.id, name: f.name, url: f.webViewLink ?? null });
 
 async function admin() { return (await import("@/integrations/supabase/client.server")).supabaseAdmin; }
+
+
+const apis = new WeakMap<DriveScope, DriveApi>();
+/** The Drive calls of this company run with: its own Google account when it connected one, NOKKO's otherwise. */
+async function api(s: DriveScope): Promise<DriveApi> {
+  let a = apis.get(s);
+  if (!a) {
+    const { driveAuthFor } = await import("@/lib/drive-connection.server");
+    a = driveApi(await driveAuthFor(await admin(), s.orgId));
+    apis.set(s, a);
+  }
+  return a;
+}
 
 async function folderRow(s: DriveScope, accountId: string | null) {
   let q = s.db.from("drive_folders").select("folder_id,name,created_by_app").eq("org_id", s.orgId);
@@ -35,22 +48,23 @@ async function saveRow(s: DriveScope, accountId: string | null, f: DriveFile, by
 }
 
 /** The folder if it still exists and is not in the bin. */
-async function alive(id: string): Promise<DriveFile | null> {
-  try { const f = await getFile(id); return f.trashed ? null : f; } catch (e) { if (e instanceof DriveError && e.status === 404) return null; throw e; }
+async function alive(s: DriveScope, id: string): Promise<DriveFile | null> {
+  try { const f = await (await api(s)).getFile(id); return f.trashed ? null : f; } catch (e) { if (e instanceof DriveError && e.status === 404) return null; throw e; }
 }
 
 /** The company's folder ("Nokko / <empresa>"), created the first time it is needed. */
 export async function companyFolder(s: DriveScope, create: true): Promise<FolderRef>;
 export async function companyFolder(s: DriveScope, create: boolean): Promise<FolderRef | null>;
 export async function companyFolder(s: DriveScope, create: boolean): Promise<FolderRef | null> {
+  const d = await api(s);
   const row = await folderRow(s, null);
-  if (row) { const f = await alive(row.folder_id); if (f) return toRef(f); }
+  if (row) { const f = await alive(s, row.folder_id); if (f) return toRef(f); }
   if (!create) return null;
-  let f = (await findByAppProperty("nokko_org", s.orgId))[0];
+  let f = (await d.findByAppProperty("nokko_org", s.orgId))[0];
   if (!f) {
-    const top = (await findByAppProperty("nokko", "root"))[0] ?? await createFolder("Nokko", undefined, { nokko: "root" });
+    const top = (await d.findByAppProperty("nokko", "root"))[0] ?? await d.createFolder("Nokko", undefined, { nokko: "root" });
     const { data: org } = await s.db.from("organizations").select("name,company_name").eq("id", s.orgId).single();
-    f = await createFolder(safeName(org?.company_name?.trim() || org?.name || "Empresa"), top.id, { nokko: "org", nokko_org: s.orgId });
+    f = await d.createFolder(safeName(org?.company_name?.trim() || org?.name || "Empresa"), top.id, { nokko: "org", nokko_org: s.orgId });
   }
   await saveRow(s, null, f, true);
   return toRef(f);
@@ -58,8 +72,9 @@ export async function companyFolder(s: DriveScope, create: boolean): Promise<Fol
 
 /** The file plus its folders from the company folder down; throws unless it sits inside the company folder. */
 async function insideCompany(s: DriveScope, fileId: string, cache = new Map<string, DriveFile>()): Promise<{ file: DriveFile; path: FolderRef[] }> {
+  const d = await api(s);
   const root = await companyFolder(s, true);
-  const get = async (id: string) => { let f = cache.get(id); if (!f) { f = await getFile(id); cache.set(id, f); } return f; };
+  const get = async (id: string) => { let f = cache.get(id); if (!f) { f = await d.getFile(id); cache.set(id, f); } return f; };
   const file = await get(fileId);
   if (file.id === root.id) return { file, path: [] };
   const chain: DriveFile[] = [];
@@ -81,10 +96,11 @@ const mustId = (ref: string) => {
 
 /** Files of the company folder (or a subfolder of it), or a search by name/content inside it. */
 export async function browse(s: DriveScope, opts: { folderId?: string; query?: string }) {
+  const d = await api(s);
   const root = await companyFolder(s, true);
   const q = opts.query?.trim();
   if (q) {
-    const found = await listFiles(`(name contains '${driveQ(q)}' or fullText contains '${driveQ(q)}') and trashed=false`, 40);
+    const found = await d.listFiles(`(name contains '${driveQ(q)}' or fullText contains '${driveQ(q)}') and trashed=false`, 40);
     const cache = new Map<string, DriveFile>();
     const inside: DriveFile[] = [];
     for (const f of found) {
@@ -98,9 +114,9 @@ export async function browse(s: DriveScope, opts: { folderId?: string; query?: s
   if (opts.folderId && opts.folderId !== root.id) {
     const { file, path } = await insideCompany(s, mustId(opts.folderId));
     if (file.mimeType !== FOLDER_MIME) throw new Error("Eso no es una carpeta.");
-    return { root, folder: toRef(file), path, files: (await listChildren(file.id)).map(toItem) };
+    return { root, folder: toRef(file), path, files: (await d.listChildren(file.id)).map(toItem) };
   }
-  return { root, folder: root, path: [] as FolderRef[], files: (await listChildren(root.id)).map(toItem) };
+  return { root, folder: root, path: [] as FolderRef[], files: (await d.listChildren(root.id)).map(toItem) };
 }
 
 function base64(bytes: Uint8Array) {
@@ -111,6 +127,7 @@ function base64(bytes: Uint8Array) {
 
 /** A file of the company folder as text (Docs as Markdown, Sheets as CSV, PDFs transcribed by the AI, Office converted). */
 export async function readFile(s: DriveScope, ref: string) {
+  const d = await api(s);
   const { file } = await insideCompany(s, mustId(ref));
   if (file.mimeType === FOLDER_MIME) throw new Error("Eso es una carpeta: elige un archivo de dentro.");
   const plan = readPlan(file.mimeType);
@@ -118,22 +135,22 @@ export async function readFile(s: DriveScope, ref: string) {
   const tooBig = () => { if (Number(file.size ?? 0) > MAX_DOWNLOAD) throw new Error("El archivo es demasiado grande para leerlo (máx. 10 MB)."); };
   let raw = "";
   if (plan.kind === "export") {
-    raw = await exportText(file.id, plan.mime).catch((e) => { if (plan.fallback) return exportText(file.id, plan.fallback); throw e; });
+    raw = await d.exportText(file.id, plan.mime).catch((e) => { if (plan.fallback) return d.exportText(file.id, plan.fallback); throw e; });
   } else if (plan.kind === "text") {
-    tooBig(); raw = await downloadText(file.id);
+    tooBig(); raw = await d.downloadText(file.id);
   } else if (plan.kind === "pdf") {
     tooBig();
     const { ask } = await import("@/lib/ai-gateway");
     raw = await ask(
       "Transcribe el documento a Markdown fiel al original: títulos, listas y tablas. No resumas, no comentes, no añadas nada. Si una página es solo imagen, describe en una línea lo que muestra.",
       `Documento: ${file.name}`,
-      { effort: "low", files: [{ filename: file.name, dataUrl: `data:application/pdf;base64,${base64(await downloadBytes(file.id))}` }] },
+      { effort: "low", files: [{ filename: file.name, dataUrl: `data:application/pdf;base64,${base64(await d.downloadBytes(file.id))}` }] },
     );
   } else {
     tooBig();
     const root = await companyFolder(s, true);
-    const copy = await copyAs(file.id, plan.to, root.id);
-    try { raw = await exportText(copy.id, plan.mime); } finally { await deleteFile(copy.id).catch(() => undefined); }
+    const copy = await d.copyAs(file.id, plan.to, root.id);
+    try { raw = await d.exportText(copy.id, plan.mime); } finally { await d.deleteFile(copy.id).catch(() => undefined); }
   }
   const { text, truncated } = cleanText(raw);
   if (!text) throw new Error("El archivo está vacío o no tiene texto que leer.");
@@ -159,12 +176,13 @@ async function mustAccount(s: DriveScope, accountId: string) {
 
 /** The account's folder: linked or created by Nokko inside the company folder. */
 export async function accountFolder(s: DriveScope, accountId: string, create: boolean): Promise<(FolderRef & { byApp: boolean }) | null> {
+  const d = await api(s);
   const account = await mustAccount(s, accountId);
   const row = await folderRow(s, accountId);
-  if (row) { const f = await alive(row.folder_id); if (f) return { ...toRef(f), byApp: row.created_by_app }; }
+  if (row) { const f = await alive(s, row.folder_id); if (f) return { ...toRef(f), byApp: row.created_by_app }; }
   if (!create) return null;
   const root = await companyFolder(s, true);
-  const f = (await findByAppProperty("nokko_account", accountId))[0] ?? await createFolder(safeName(account.name), root.id, { nokko: "account", nokko_account: accountId });
+  const f = (await d.findByAppProperty("nokko_account", accountId))[0] ?? await d.createFolder(safeName(account.name), root.id, { nokko: "account", nokko_account: accountId });
   await saveRow(s, accountId, f, true);
   return { ...toRef(f), byApp: true };
 }
@@ -179,26 +197,29 @@ export async function linkAccountFolder(s: DriveScope, accountId: string, ref: s
 }
 
 export async function accountFiles(s: DriveScope, accountId: string) {
+  const d = await api(s);
   const folder = await accountFolder(s, accountId, false);
-  return { folder, files: folder ? (await listChildren(folder.id)).map(toItem) : [] };
+  return { folder, files: folder ? (await d.listChildren(folder.id)).map(toItem) : [] };
 }
 
 /** Saves Markdown as a Google Doc in the account folder (or the company folder). A linked folder Nokko may not write into falls back to the company folder. */
 export async function saveDocument(s: DriveScope, opts: { title: string; markdown: string; accountId?: string | null }) {
+  const d = await api(s);
   const name = safeName(opts.title);
   const html = markdownToHtml(opts.markdown);
   const root = await companyFolder(s, true);
   const target = opts.accountId ? await accountFolder(s, opts.accountId, true) : null;
   if (target && target.id !== root.id) {
-    try { const f = await createGoogleDoc(name, html, target.id); return { name: f.name, url: f.webViewLink ?? null, folder: target.name, fallback: false }; }
+    try { const f = await d.createGoogleDoc(name, html, target.id); return { name: f.name, url: f.webViewLink ?? null, folder: target.name, fallback: false }; }
     catch (e) { if (!(e instanceof DriveError) || (e.status !== 403 && e.status !== 404)) throw e; }
   }
-  const f = await createGoogleDoc(name, html, root.id);
+  const f = await d.createGoogleDoc(name, html, root.id);
   return { name: f.name, url: f.webViewLink ?? null, folder: root.name, fallback: !!target };
 }
 
 /** «Drive por cuenta»: the documents in every account folder of the company, with their cached summaries. */
 export async function accountsOverview(s: DriveScope) {
+  const d = await api(s);
   const { buildOverview } = await import("@/lib/drive-overview");
   const { data: rows, error } = await s.db.from("drive_folders").select("account_id,folder_id,name,accounts(name,domain)")
     .eq("org_id", s.orgId).not("account_id", "is", null).limit(80);
@@ -210,9 +231,9 @@ export async function accountsOverview(s: DriveScope) {
     listings.push(...await Promise.all(list.slice(i, i + 6).map(async (r) => {
       const base = { accountId: r.account_id, accountName: r.accounts?.name ?? r.name, domain: r.accounts?.domain ?? null };
       try {
-        const folder = await alive(r.folder_id);
+        const folder = await alive(s, r.folder_id);
         if (!folder) return { ...base, folder: null, files: [], error: "La carpeta ya no existe en Drive o está en la papelera." };
-        return { ...base, folder: toRef(folder), files: (await listChildren(folder.id)).map(toItem), error: null };
+        return { ...base, folder: toRef(folder), files: (await d.listChildren(folder.id)).map(toItem), error: null };
       } catch (e) {
         return { ...base, folder: null, files: [], error: e instanceof Error ? e.message : "No se pudo abrir la carpeta." };
       }
