@@ -98,7 +98,7 @@ export function IcpEditor() {
     try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
     catch (e) { toast.error(errorText(e)); return false; }
     toast.success("ICP guardado. Búsquedas, puntuación e IA ya lo usan.");
-    qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["clay-icps"] });
+    qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["clay-icps"] }); qc.invalidateQueries({ queryKey: ["recent-changes"] });
     return true;
   }
   async function refine() {
