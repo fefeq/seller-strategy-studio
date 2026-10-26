@@ -96,3 +96,17 @@ export function confirmedText(mark: { confirmed?: boolean; confirmedAt?: string 
   const day = d && !isNaN(d.getTime()) ? ` el ${d.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}` : "";
   return `Confirmado${byName ? ` por ${byName}` : ""}${day}`;
 }
+
+/**
+ * The fields whose origin and confirmation are tracked per element (the columns of the track_field_sources triggers in
+ * migrations 0058 and 0061; a test compares them). The screens and the agent confirm only these.
+ */
+export const TRACKED_FIELDS = {
+  account: ["industry", "size", "country", "notes", "linkedin_url"],
+  icp: ["countries", "geography", "min_employees", "max_employees", "company_size"],
+  positioning: ["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "product_name", "category", "key_benefit", "competitive_alternative", "differentiator", "tagline", "one_liner", "short_pitch", "elevator_pitch"],
+  pillar: ["title", "pain", "message", "proof"],
+  segment: ["name", "motion", "acv_min", "acv_max", "win_rate_target", "ae_quota", "cac_target", "cycle_days", "gross_margin_pct", "payback_months", "sdr_per_ae", "ae_per_se", "notes"],
+} as const;
+export type TrackedKind = keyof typeof TRACKED_FIELDS;
+

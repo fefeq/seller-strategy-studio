@@ -287,3 +287,91 @@ describe("fixes from review", () => {
     expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
   });
 });
+
+describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)", () => {
+  const seg = { id: ID(20), name: "Pymes" };
+  const icp = { id: ID(21), name: "Agencias", segment_id: ID(20) };
+  const countOf = (n: number) => (q: Q) => (q.head ? { count: n } : undefined);
+
+  it("CA-13: every write is proposed first (a write tool, with a summary), and the reads change nothing", () => {
+    for (const name of ["update_icp", "update_pillar", "delete_segment", "delete_icp", "delete_pillar", "confirm_fields", "undo_change"]) {
+      expect(getTool(name)!.kind, name).toBe("write");
+      expect(typeof getTool(name)!.summarize, name).toBe("function");
+    }
+    for (const name of ["check_delete", "list_recent_changes"]) expect(getTool(name)!.kind, name).toBe("read");
+  });
+
+  it("CA-14: deleting is the Owner's in code too: another role gets the screen's reason and nothing is deleted", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(0)(q)));
+    await expect(executeTool(ctxWith(db, ["sales_leader"]), "delete_icp", { id: icp.id, name: "Agencias" })).rejects.toThrow("Solo el Owner puede borrar.");
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("CA-6: a segment in use is not deleted and the error says where it is used", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(3)(q)));
+    await expect(executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Pymes" })).rejects.toThrow(/Se usa en: 3 deals/);
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("an unused segment is deleted by the Owner, scoped to the company, saying it can be undone", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q)));
+    const r = (await executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "pymes" })) as { mensaje: string };
+    expect(writes(log, "segments")).toHaveLength(1);
+    expect(writes(log, "segments")[0]!.op).toBe("delete");
+    expect(r.mensaje).toContain("24 horas");
+    expectScoped(log);
+  });
+
+  it("deleting refuses when the name shown to the person is not the element's", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q)));
+    await expect(executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Otro" })).rejects.toThrow(/El nombre no coincide/);
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("an ICP in use is archived (same delete, with the use named) and check_delete says it beforehand", async () => {
+    const { db } = fakeDb((q) => (q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(5)(q)));
+    const plan = (await executeTool(ctxWith(db, ["owner"]), "check_delete", { kind: "icp", id: icp.id })) as { se_puede: boolean; accion: string; texto: string[] };
+    expect(plan).toMatchObject({ se_puede: true, accion: "Archivar" });
+    expect(plan.texto.join(" ")).toContain("5 cuentas, 5 leads");
+  });
+
+  it("any member can edit an ICP; countries are normalized and unknown ones are refused", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "icp_profiles" ? { data: q.op === "select" ? { id: icp.id } : { id: icp.id, name: "Agencias" } } : undefined));
+    await executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: { countries: ["España", "fr"], min_employees: 10 } });
+    expect(writes(log, "icp_profiles")[0]!.payload).toEqual({ countries: ["ES", "FR"], min_employees: 10 });
+    await expect(executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: { countries: ["Atlantis"] } })).rejects.toThrow(/No reconozco estos países/);
+    await expect(executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: {} })).rejects.toThrow(/qué cambiar/);
+    expectScoped(log);
+  });
+
+  it("confirm_fields marks only fields with a value, with who and when, scoped to the company", async () => {
+    const row = { id: ID(30), org_id: ORG, title: "Ahorro", pain: "", message: "Menos coste", proof: null, field_sources: {} };
+    const { db, log } = fakeDb((q) => (q.table === "messaging_pillars" ? { data: row } : undefined));
+    const r = (await executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["title", "pain", "message"] })) as { mensaje: string };
+    const up = writes(log, "messaging_pillars")[0]!;
+    expect(Object.keys(up.payload.field_sources)).toEqual(["title", "message"]);
+    expect(up.payload.field_sources.title).toMatchObject({ confirmed: true, confirmedBy: ME, kind: "sin_dato" });
+    expect(r.mensaje).toContain("Sin valor, no confirmados: pain");
+    expectScoped(log);
+  });
+
+  it("confirm_fields refuses untracked fields and rows without the provenance column", async () => {
+    const { db } = fakeDb((q) => (q.table === "messaging_pillars" ? { data: { id: ID(30), title: "x" } } : undefined));
+    await expect(executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["position"] })).rejects.toThrow(/no se pueden confirmar/);
+    await expect(executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["title"] })).rejects.toThrow(/todavía no está activada/);
+  });
+
+  it("CA-14: undoing a delete is the Owner's, and a failed undo points to the screen", async () => {
+    const entry = { id: ID(40), table_name: "icp_profiles", row_id: ID(21), op: "delete", before: { name: "Agencias" }, changed_at: new Date().toISOString(), undone_at: null };
+    const { db } = fakeDb((q) => (q.table === "field_edit_log" ? { data: entry } : undefined));
+    await expect(executeTool(ctxWith(db, ["ae"]), "undo_change", { change_id: ID(40) })).rejects.toThrow("Solo el Owner puede deshacer un borrado.");
+    const rpcDb = { ...db, rpc: async () => ({ error: { message: "No encuentro ese cambio" } }) } as unknown as ToolCtx["db"];
+    await expect(executeTool(ctxWith(rpcDb, ["owner"]), "undo_change", { change_id: ID(40) })).rejects.toThrow(/Hazlo en Estrategia/);
+  });
+
+  it("undo is refused after the 24 hours", async () => {
+    const old = { id: ID(41), table_name: "messaging_pillars", row_id: ID(30), op: "update", before: { title: "x" }, changed_at: new Date(Date.now() - 25 * 3_600_000).toISOString(), undone_at: null };
+    const { db } = fakeDb((q) => (q.table === "field_edit_log" ? { data: old } : undefined));
+    await expect(executeTool(ctxWith(db, ["owner"]), "undo_change", { change_id: ID(41) })).rejects.toThrow(/pasaron más de 24 horas/);
+  });
+});

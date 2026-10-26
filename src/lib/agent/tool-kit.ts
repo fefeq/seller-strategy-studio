@@ -44,7 +44,7 @@ export const clip = (s: string | null | undefined, n = 4000) => (s && s.length >
 /** Drops undefined keys so a patch only touches what the user asked to change. */
 export const defined = <T extends Record<string, unknown>>(o: T) => Object.fromEntries(Object.entries(o).filter(([, v]) => v !== undefined)) as Partial<T>;
 
-type OrgTable = "accounts" | "deals" | "leads" | "meetings" | "people" | "stakeholders" | "segments" | "tasks" | "products" | "deal_lines" | "mutual_action_items" | "suggestions" | "approvals";
+type OrgTable = "accounts" | "deals" | "leads" | "meetings" | "people" | "stakeholders" | "segments" | "tasks" | "products" | "deal_lines" | "mutual_action_items" | "suggestions" | "approvals" | "icp_profiles" | "messaging_pillars" | "positioning";
 
 /** The row with this id in the caller's company (selected columns), or a clear error naming what was missing. */
 export async function mustFind<T = Record<string, unknown>>(c: ToolCtx, table: OrgTable, id: string, what: string, cols = "id"): Promise<T> {

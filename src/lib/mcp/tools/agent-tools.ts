@@ -11,6 +11,15 @@ const EXTERNAL = /^(clay_|apollo_|drive_|linkedin_|company_job_postings$|competi
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  update_icp: "Editar un ICP",
+  update_pillar: "Editar un pilar de mensaje",
+  check_delete: "Qué se pierde al borrar (segmento, ICP o pilar)",
+  delete_segment: "Borrar un segmento",
+  delete_icp: "Borrar o archivar un ICP",
+  delete_pillar: "Borrar o archivar un pilar de mensaje",
+  confirm_fields: "Confirmar campos",
+  list_recent_changes: "Cambios de las últimas 24 horas",
+  undo_change: "Deshacer un cambio",
   enrich_accounts_table: "Completar cuentas en tabla (Parallel)",
   get_icp_account_list: "Empresas encontradas por ICP",
   start_icp_account_list: "Buscar empresas por ICP (Parallel)",
