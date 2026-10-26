@@ -4479,6 +4479,38 @@ export type Database = {
           },
         ]
       }
+      setup_step_snoozes: {
+        Row: {
+          created_at: string
+          org_id: string
+          snoozed_by: string | null
+          snoozed_until: string
+          step_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id?: string
+          snoozed_by?: string | null
+          snoozed_until: string
+          step_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          snoozed_by?: string | null
+          snoozed_until?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setup_step_snoozes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stakeholders: {
         Row: {
           account_id: string
