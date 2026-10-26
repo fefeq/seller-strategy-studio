@@ -1,7 +1,7 @@
 # SDD-20261025-field-actions-edit-delete-confirm · [Feature] Editar, borrar y confirmar en campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Aprobado (Fede, 2026-10-26) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD-20261025-universal-field-definitions (estado de origen/confirmación)
 
 ## 1. Resumen
@@ -104,9 +104,9 @@ Se guarda registro de quién y cuándo edita/borra/confirma. Solo Owner borra do
 3. ¿El fallo de lista de fuentes que se reemplaza es real?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Vías existentes de edición de ICP/pilares.
-- [Por verificar] Fallo de acumulación de archivos.
-- [Por verificar] Uso real de la función deshacer (sin dato).
+- [Verificado 2026-10-26 en el repo] Vías de edición de ICP/pilares: la **edición existe** (`icp-editor.tsx`, `positioning.tsx`); lo que falta es borrar y archivar. El punto de la sección 3 («solo crear») es incorrecto en la edición. No hay vías ocultas de borrado. Ver `annex/field-actions-matrix-proposal-20261026.md`.
+- [Verificado 2026-10-26 en el repo] Fallo de acumulación: es real. `SourcesStep.onFiles` hace `setFiles(read.filter(...))` y sustituye la lista en cada selección; los textos y nombres sí se acumulan.
+- [Por verificar] Uso real de la función deshacer (sin dato; no se puede medir sin datos de uso). Hoy `undoSetupItems` solo borra lo creado por un guardado, solo para el Owner, sin plazo.
 
 ## 16. Sección de Dani (la completa él)
 - Diseño técnico:
