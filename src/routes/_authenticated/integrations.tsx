@@ -8,6 +8,7 @@ import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { StripeConnect } from "@/components/stripe-panel";
 import { PosthogConnect } from "@/components/posthog-panel";
+import { DriveConnect } from "@/components/drive-connection-panel";
 import { BudgetPanel } from "@/components/orchestrator";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
@@ -27,7 +28,6 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
   { name: "Logo.dev", what: "Logo de cada empresa junto a su nombre en Cuentas, la ficha de cuenta, Leads, Pipeline y las listas por ICP.", to: "/accounts" },
   { name: "Parallel (investigación)", what: "Informe profundo de cuenta con fuentes, listas de empresas por ICP para importar, completar cuentas en tabla y tercera fuente de búsqueda.", to: "/accounts" },
   { name: "Apify (LinkedIn y G2)", what: "Publicaciones y ofertas de empleo de las cuentas en LinkedIn como señales, publicaciones de stakeholders en su research y battlecards desde reseñas de G2.", to: "/hub" },
-  { name: "Google Drive", what: "Carpeta por empresa y por cuenta: importa documentos al hub y a la configuración con IA, y guarda planes, propuestas y documentos del ciclo.", to: "/hub" },
   { name: "Perplexity (búsqueda)", what: "Segunda fuente de búsqueda para noticias, nombramientos, casos de éxito, investigación de cuentas y research de stakeholders.", to: "/accounts" },
   { name: "Apollo.io", what: "Completa cuentas y, con un plan de pago de Apollo, busca personas y empresas y revela emails y móviles.", to: "/accounts" },
   { name: "Clay", what: "Busca empresas y stakeholders y completa cuentas desde Cuentas, el agente o tu asistente.", to: "/accounts" },
@@ -64,7 +64,7 @@ function Integrations() {
             </Link>
           ))}
         </div>
-        <div className="mt-3 grid gap-3 md:grid-cols-2"><StripeConnect /><PosthogConnect /></div>
+        <div className="mt-3 grid gap-3 md:grid-cols-2"><DriveConnect /><StripeConnect /><PosthogConnect /></div>
         <p className="mt-4 text-xs text-muted-foreground">Aún sin conexión nativa: {NOT_YET.join(" · ")}.</p>
       </section>
 

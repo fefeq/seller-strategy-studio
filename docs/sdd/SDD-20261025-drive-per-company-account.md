@@ -1,7 +1,7 @@
 # SDD-20261025-drive-per-company-account · [Feature] Google Drive de una cuenta distinta al email de acceso
 
 **Tipo:** Feature · **Prioridad propuesta:** Media-Alta
-**Estado:** Aprobado (Fede, 2026-10-26) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (aprobado por Fede, 2026-10-26; rama feat/connections-own-account-v2) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 > Decisión de Fede (2026-10-25): conexión **por empresa**. La entrada vive en Conexiones.
