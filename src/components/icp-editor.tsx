@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { Empty } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -85,8 +86,7 @@ export function IcpEditor() {
   async function confirmFields(fields: string[]) {
     if (!savedRow || !me?.user.id) return;
     const field_sources = confirmSources(savedRow.field_sources, fields, me.user.id, new Date().toISOString());
-    // The generated types do not know icp_profiles.field_sources until 0058 is applied and they are regenerated.
-    const { error } = await supabase.from("icp_profiles").update({ field_sources } as never).eq("id", savedRow.id);
+    const { error } = await supabase.from("icp_profiles").update({ field_sources: field_sources as unknown as Json }).eq("id", savedRow.id);
     if (error) return void toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["icp"] });
   }

@@ -4,6 +4,9 @@
 // Free-form jsonb columns never fail: they are listed as pending. Pure; the test reads types.ts.
 import type { Binding, ConceptId } from "@/lib/field-catalog";
 
+/** Tables that hold no user field: the change log records edits of other tables (its own columns are not concepts). */
+export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set(["field_edit_log"]);
+
 export type ColumnType = "json" | "other";
 export type Columns = Map<string, Map<string, ColumnType>>;
 
@@ -48,6 +51,7 @@ export function coverage(columns: Columns, bindings: Pick<Binding, "table" | "co
   const based = new Set(Object.entries(baseline).flatMap(([t, cs]) => cs.map((c) => `${t}.${c}`)));
   const out: Coverage = { uncatalogued: [], staleBaseline: [], missingBindings: [], pendingJson: [] };
   for (const [table, cols] of columns) {
+    if (INFRASTRUCTURE_TABLES.has(table)) continue;
     for (const [column, type] of cols) {
       const key = `${table}.${column}`;
       if (catalogued.has(key)) continue;

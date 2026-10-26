@@ -4,7 +4,8 @@
 // the role checks the screens get from RLS are made here in code. Write tools only run after the person confirms.
 import { z } from "zod";
 import { canDo, TRACKED_FIELDS, type ElementKind, type TrackedKind } from "@/lib/field-actions";
-import { canUndoChange, changeText, deletePlan, type ChangeEntry, type DeleteKind, type UsageLine } from "@/lib/delete-rules";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
+import { canUndoChange, changeText, deletePlan, toChangeEntry, type DeleteKind, type UsageLine } from "@/lib/delete-rules";
 import { normalizeCountries } from "@/lib/field-normalize";
 import { confirmSources } from "@/lib/provenance";
 import { def, defined, mustFind, ok, type AgentTool, type ToolCtx } from "../tool-kit";
@@ -14,8 +15,8 @@ const TRACKED_TABLE = { account: "accounts", icp: "icp_profiles", positioning: "
 const NOUN = { segment: "el segmento", icp: "el ICP", pillar: "el pilar de mensaje" } as const;
 const ELEMENT: Record<TrackedKind, ElementKind> = { account: "company_field", icp: "icp", positioning: "positioning", pillar: "pillar", segment: "segment" };
 
-const KEPT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"]] as const;
-const GONE = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"]] as const;
+const KEPT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"], ["finance_cost_lines", "líneas de coste"]] as const;
+const GONE = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"], ["account_assignment_rules", "reglas de reparto"]] as const;
 
 async function countBySegment(c: ToolCtx, table: (typeof KEPT)[number][0] | (typeof GONE)[number][0], segmentId: string) {
   const { count, error } = await c.db.from(table).select("id", { count: "exact", head: true }).eq("org_id", c.orgId).eq("segment_id", segmentId);
@@ -77,9 +78,6 @@ const ICP_PATCH = z.object({
   seniorities: z.array(z.enum(["founder", "c_suite", "vp", "head", "director", "manager"])).optional(),
 });
 
-type LogClient = { from(t: "field_edit_log"): { select(cols: string): { eq(c: string, v: string): { gte(c: string, v: string): { is(c: string, v: null): { order(c: string, o: { ascending: boolean }): Promise<{ data: ChangeEntry[] | null; error: { message: string } | null }> } }; is(c: string, v: null): unknown } } }; rpc(fn: "undo_field_edit", a: { _log: string }): Promise<{ error: { message: string } | null }> };
-// The change log (migration 0060, not applied anywhere yet) is not in the generated types: one narrow cast, to remove then.
-const logOf = (c: ToolCtx) => c.db as unknown as LogClient;
 const NO_LOG = "El registro de cambios todavía no está activado en esta empresa (falta aplicar su migración).";
 
 export const FIELD_ACTION_TOOLS: AgentTool[] = [
@@ -99,7 +97,7 @@ export const FIELD_ACTION_TOOLS: AgentTool[] = [
         patch["countries"] = n.value;
       }
       if (!Object.keys(patch).length) throw new Error("No has indicado qué cambiar del ICP.");
-      return ok(await c.db.from("icp_profiles").update(patch as never).eq("org_id", c.orgId).eq("id", a.icp_id).select("id,name").single());
+      return ok(await c.db.from("icp_profiles").update(patch as TablesUpdate<"icp_profiles">).eq("org_id", c.orgId).eq("id", a.icp_id).select("id,name").single());
     },
   }),
   def({
@@ -152,7 +150,7 @@ export const FIELD_ACTION_TOOLS: AgentTool[] = [
       const filled = a.fields.filter((f) => { const v = row[f]; return Array.isArray(v) ? v.length > 0 : v != null && String(v).trim() !== ""; });
       if (!filled.length) throw new Error("Esos campos están vacíos: no hay nada que confirmar.");
       const field_sources = confirmSources(row["field_sources"], filled, c.userId, new Date().toISOString());
-      ok(await c.db.from(table).update({ field_sources } as never).eq("org_id", c.orgId).eq("id", String(row["id"])).select("id").single());
+      ok(await c.db.from(table).update({ field_sources: field_sources as unknown as Json }).eq("org_id", c.orgId).eq("id", String(row["id"])).select("id").single());
       return { mensaje: `Confirmado: ${filled.join(", ")}.${filled.length < a.fields.length ? ` Sin valor, no confirmados: ${a.fields.filter((f) => !filled.includes(f)).join(", ")}.` : ""}` };
     },
   }),
@@ -162,10 +160,10 @@ export const FIELD_ACTION_TOOLS: AgentTool[] = [
     input: z.object({}),
     run: async (c) => {
       const since = new Date(Date.now() - 24 * 3_600_000).toISOString();
-      const { data, error } = await (logOf(c).from("field_edit_log").select("id,table_name,row_id,op,before,changed_at,undone_at").eq("org_id", c.orgId).gte("changed_at", since).is("undone_at", null).order("changed_at", { ascending: false }));
+      const { data, error } = await c.db.from("field_edit_log").select("id,table_name,row_id,op,before,changed_at,undone_at").eq("org_id", c.orgId).gte("changed_at", since).is("undone_at", null).order("changed_at", { ascending: false });
       if (error) throw new Error(/field_edit_log|relation/i.test(error.message) ? NO_LOG : error.message);
       const now = new Date();
-      return (data ?? []).map((e) => ({ id: e.id, cambio: changeText(e), cuando: e.changed_at, lo_puedes_deshacer: canUndoChange(e, c.roles, now).allowed }));
+      return (data ?? []).map(toChangeEntry).map((e) => ({ id: e.id, cambio: changeText(e), cuando: e.changed_at, lo_puedes_deshacer: canUndoChange(e, c.roles, now).allowed }));
     },
   }),
   def({
@@ -174,13 +172,13 @@ export const FIELD_ACTION_TOOLS: AgentTool[] = [
     input: z.object({ change_id: z.string().uuid(), description: z.string().optional().describe("Qué cambio es, para mostrar la confirmación") }),
     summarize: (a) => `Deshacer el cambio${a.description ? `: ${a.description}` : ""}`,
     run: async (c, a) => {
-      const { data, error } = await (c.db as unknown as { from(t: "field_edit_log"): { select(cols: string): { eq(c: string, v: string): { eq(c: string, v: string): { maybeSingle(): Promise<{ data: ChangeEntry | null; error: { message: string } | null }> } } } } })
-        .from("field_edit_log").select("id,table_name,row_id,op,before,changed_at,undone_at").eq("org_id", c.orgId).eq("id", a.change_id).maybeSingle();
+      const { data: row, error } = await c.db.from("field_edit_log").select("id,table_name,row_id,op,before,changed_at,undone_at").eq("org_id", c.orgId).eq("id", a.change_id).maybeSingle();
+      const data = row ? toChangeEntry(row) : null;
       if (error) throw new Error(/field_edit_log|relation/i.test(error.message) ? NO_LOG : error.message);
       if (!data) throw new Error("No encuentro ese cambio en esta empresa.");
       const can = canUndoChange(data, c.roles, new Date());
       if (!can.allowed) throw new Error(can.reason ?? "No se puede deshacer.");
-      const { error: e } = await logOf(c).rpc("undo_field_edit", { _log: a.change_id });
+      const { error: e } = await c.db.rpc("undo_field_edit", { _log: a.change_id });
       // Telegram and cron run with the privileged client, which has no signed-in person for the function to check.
       if (e) throw new Error(`No he podido deshacerlo desde aquí: ${e.message}. Hazlo en Estrategia, «Cambios de las últimas 24 horas».`);
       return { mensaje: `Hecho: ${changeText(data).replace(/^Borraste/, "Recuperado:").replace(/^Cambiaste/, "Restaurado:")}.` };

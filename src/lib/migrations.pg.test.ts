@@ -158,7 +158,7 @@ describe("migration 0061: provenance on positioning, messaging_pillars and segme
     await as(db, U.aeA, async () => {
       await db.query("update messaging_pillars set pain = 'Coste' where id = $1", [pil]);
       await db.query("update positioning set tagline = 'Vende más', value = 'ahorro' where id = $1", [pos]);
-      await db.query("update segments set acv_min = 1000, motion = 'inside' where id = $1", [seg]);
+      await db.query("update segments set acv_min = 1000, motion = 'field' where id = $1", [seg]);
     });
     for (const [table, id, fields] of [["messaging_pillars", pil, ["pain"]], ["positioning", pos, ["tagline", "value"]], ["segments", seg, ["acv_min", "motion"]]] as const) {
       const s = await fs(table, id);
@@ -166,7 +166,7 @@ describe("migration 0061: provenance on positioning, messaging_pillars and segme
     }
     await as(db, U.aeA, async () => { await db.query("update positioning set tagline = '' where id = $1", [pos]); });
     expect(await fs("positioning", pos)).not.toHaveProperty("tagline");
-    await as(db, null, async () => { await db.query("update segments set motion = 'field' where id = $1", [seg]); });
+    await as(db, null, async () => { await db.query("update segments set motion = 'plg' where id = $1", [seg]); });
     expect(await fs("segments", seg)).not.toHaveProperty("motion");
     await as(db, U.aeA, async () => { await db.query(`update messaging_pillars set field_sources = field_sources || '{"title":{"source":"persona","kind":"persona","confirmed":true,"at":"a","confirmedBy":"x","confirmedAt":"b"}}'::jsonb where id = $1`, [pil]); });
     expect((await fs("messaging_pillars", pil)).title.confirmedBy).toBe("x");
@@ -178,3 +178,42 @@ describe("migration 0061: provenance on positioning, messaging_pillars and segme
     expect((await rows("select updated_by from segments where id = $1", [seg]))[0]!.updated_by).toBe(U.aeA);
   });
 });
+
+describe("what the real database has that the migrations must live with (catalog read 2026-10-26)", () => {
+  it("positioning_copy_guard still runs next to the provenance trigger: an edit of a public text is stamped and its approval is cleared, and only leaders approve", async () => {
+    await as(db, U.ownerA, async () => { await db.query("update positioning set tagline = 'Una frase' where id = $1", [pos]); });
+    await as(db, U.ownerA, async () => { await db.query(`update positioning set copy_status = '{"tagline":{"status":"approved","by":"x","at":"y"}}'::jsonb where id = $1`, [pos]); });
+    expect((await rows("select copy_status from positioning where id = $1", [pos]))[0]!.copy_status).toHaveProperty("tagline");
+    await as(db, U.aeA, async () => { await db.query("update positioning set tagline = 'Otra frase' where id = $1", [pos]); });
+    expect((await rows("select copy_status from positioning where id = $1", [pos]))[0]!.copy_status).not.toHaveProperty("tagline");
+    expect((await fs("positioning", pos)).tagline).toMatchObject({ kind: "persona", confirmedBy: U.aeA });
+    const t = await as(db, U.aeA, () => throws(() => db.query(`update positioning set copy_status = '{"one_liner":{"status":"approved","by":"x","at":"y"}}'::jsonb where id = $1`, [pos])));
+    expect(t).toMatch(/Solo el Owner o el Sales Leader/);
+  });
+
+  it("deleting an ICP with its NOT NULL array columns and undoing it restores every column", async () => {
+    let id = "";
+    await as(db, U.ownerA, async () => { id = (await rows("insert into icp_profiles (name, countries, search_keywords, segment_id) values ('Con arrays', array['ES','FR'], array['crm','sales'], $1) returning id", [seg]))[0]!.id; });
+    await as(db, U.ownerA, async () => { await db.query("delete from icp_profiles where id = $1", [id]); });
+    const del = (await log()).filter((e) => e.op === "delete" && e.table_name === "icp_profiles").pop()!;
+    await as(db, U.ownerA, async () => { await db.query("select public.undo_field_edit($1)", [del.id]); });
+    const back = (await rows("select name, countries, search_keywords, seniorities, segment_id from icp_profiles where id = $1", [id]))[0]!;
+    expect(back).toMatchObject({ name: "Con arrays", countries: ["ES", "FR"], search_keywords: ["crm", "sales"], seniorities: [], segment_id: seg });
+  });
+
+  it("deleting a segment cascades to its targets and assignment rules and logs only the segment: that is why a segment in use is never deleted", async () => {
+    let s2 = "";
+    await as(db, U.ownerA, async () => {
+      s2 = (await rows("insert into segments (name) values ('Con datos') returning id"))[0]!.id;
+      await db.query("insert into segment_targets (segment_id, period, amount) values ($1,'2026-Q4',1000)", [s2]);
+      await db.query("insert into account_assignment_rules (segment_id) values ($1)", [s2]);
+    });
+    const before = (await log()).length;
+    await as(db, U.ownerA, async () => { await db.query("delete from segments where id = $1", [s2]); });
+    const added = (await log()).slice(before);
+    expect(added.map((e) => e.table_name)).toEqual(["segments"]);
+    expect(await rows("select id from segment_targets where segment_id = $1", [s2])).toHaveLength(0);
+    expect(await rows("select id from account_assignment_rules where segment_id = $1", [s2])).toHaveLength(0);
+  });
+});
+

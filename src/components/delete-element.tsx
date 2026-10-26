@@ -10,8 +10,8 @@ import { latestChangeFor, undoChange } from "@/lib/field-undo";
 import { confirmed } from "@/lib/save";
 
 /** What deleting a segment does to the rest of the data, counted before the person confirms. */
-export const KEPT_WITHOUT_SEGMENT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"]] as const;
-export const DELETED_WITH_SEGMENT = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"]] as const;
+export const KEPT_WITHOUT_SEGMENT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"], ["finance_cost_lines", "líneas de coste"]] as const;
+export const DELETED_WITH_SEGMENT = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"], ["account_assignment_rules", "reglas de reparto"]] as const;
 
 const TABLE: Record<DeleteKind, "segments" | "icp_profiles" | "messaging_pillars"> = { segment: "segments", icp: "icp_profiles", pillar: "messaging_pillars" };
 const NOUN: Record<DeleteKind, string> = { segment: "Segmento", icp: "ICP", pillar: "Pilar" };
@@ -19,7 +19,7 @@ const NOUN: Record<DeleteKind, string> = { segment: "Segmento", icp: "ICP", pill
 type Usage = { kept: UsageLine[]; gone: UsageLine[] };
 
 async function usageOf(kind: DeleteKind, target: { id: string; segment_id?: string | null }): Promise<Usage> {
-  const count = async (table: "deals" | "accounts" | "leads" | "icp_profiles" | "trials" | "segment_targets" | "cac_costs" | "segment_budget_quarters", segmentId: string) =>
+  const count = async (table: (typeof KEPT_WITHOUT_SEGMENT)[number][0] | (typeof DELETED_WITH_SEGMENT)[number][0], segmentId: string) =>
     (await supabase.from(table).select("id", { count: "exact", head: true }).eq("segment_id", segmentId)).count ?? 0;
   if (kind === "segment") {
     const [kept, gone] = await Promise.all([

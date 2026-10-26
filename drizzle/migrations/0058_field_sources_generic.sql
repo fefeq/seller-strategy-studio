@@ -1,6 +1,7 @@
 -- VERIFIED LOCALLY 2026-10-26 on an in-process Postgres (PGlite) with two fictional companies: src/lib/migrations.pg.test.ts runs
--- every check below. NOT yet applied to the real database: the test models the touched tables from the generated types
--- (no other NOT NULL, defaults or triggers the real tables may have), so apply it first on a test copy of the database.
+-- every check below on a replica of the real catalog (tables, NOT NULLs, defaults, set_audit, positioning_copy_guard, the
+-- foreign keys into segments and the policies, read from the real database, schema only). NOT yet applied to the real
+-- database: apply it on a copy first, since the replica is not the database itself.
 -- Checks (all pass in the test):
 --   1. an authenticated edit of accounts.industry / size / country stamps field_sources with kind persona and confirmed true;
 --   2. clearing the value removes the mark instead of stamping it;

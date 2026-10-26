@@ -2,7 +2,9 @@
 // Decided by Fede: only the Owner deletes; a segment that is in use is not deleted (deleting it would take its
 // targets, budgets and costs with it); archiving an ICP or a pillar is deleting it with an undo for 24 hours,
 // recorded in field_edit_log (migration 0060), so no screen has to filter archived rows.
+import type { Json } from "@/integrations/supabase/types";
 import { canDo, canUndo, type ElementKind } from "@/lib/field-actions";
+import { jsonObject } from "@/lib/json";
 
 /** Undo window, decided by Fede. */
 export const UNDO_HOURS = 24;
@@ -60,6 +62,11 @@ export function deletePlan(kind: DeleteKind, name: string, usage: { kept: UsageL
 // ---- Undo (CA-5) ----
 
 export type ChangeEntry = { id: string; table_name: string; row_id: string; op: "update" | "delete"; before: Record<string, unknown>; changed_at: string; undone_at: string | null };
+
+/** A field_edit_log row as the rules read it (the log stores the row as jsonb). */
+export function toChangeEntry(r: { id: string; table_name: string; row_id: string; op: string; before: Json; changed_at: string; undone_at: string | null }): ChangeEntry {
+  return { ...r, op: r.op === "delete" ? "delete" : "update", before: jsonObject(r.before) ?? {} };
+}
 
 const TABLE_NOUN: Record<string, DeleteKind | "positioning"> = { segments: "segment", icp_profiles: "icp", messaging_pillars: "pillar", positioning: "positioning" };
 const NOUN_LABEL: Record<string, string> = { segment: "el segmento", icp: "el ICP", pillar: "el pilar", positioning: "el posicionamiento" };

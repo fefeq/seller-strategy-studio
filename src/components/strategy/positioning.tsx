@@ -18,7 +18,7 @@ import { isDirty } from "@/lib/field-actions";
 import { confirmSources } from "@/lib/provenance";
 import { mergeServerEdits } from "@/lib/merge-edits";
 import { keepApprovals, positioningStatement, STATEMENT_SLOTS, type CopyStatus } from "@/lib/positioning";
-import type { TablesUpdate } from "@/integrations/supabase/types";
+import type { Json, TablesUpdate } from "@/integrations/supabase/types";
 
 export const DUNFORD = [
   ["best_customers", "1. Tus mejores clientes", "¿Quién ama el producto y por qué?"],
@@ -60,8 +60,7 @@ export function Positioning() {
   async function confirmFields(fields: string[]) {
     if (!row || !me?.user.id) return;
     const field_sources = confirmSources(marks, fields, me.user.id, new Date().toISOString());
-    // The generated types do not know positioning.field_sources until 0061 is applied and they are regenerated.
-    const { error } = await supabase.from("positioning").update({ field_sources } as never).eq("id", row.id);
+    const { error } = await supabase.from("positioning").update({ field_sources: field_sources as unknown as Json }).eq("id", row.id);
     if (error) return void toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["positioning"] });
   }
@@ -159,8 +158,7 @@ export function Pillars() {
   async function confirmFields(id: string, marks: unknown, fields: string[]) {
     if (!me?.user.id) return;
     const field_sources = confirmSources(marks, fields, me.user.id, new Date().toISOString());
-    // The generated types do not know messaging_pillars.field_sources until 0061 is applied and they are regenerated.
-    const { error } = await supabase.from("messaging_pillars").update({ field_sources } as never).eq("id", id);
+    const { error } = await supabase.from("messaging_pillars").update({ field_sources: field_sources as unknown as Json }).eq("id", id);
     if (error) return void toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["pillars"] });
   }

@@ -106,6 +106,10 @@ export const BINDINGS: Binding[] = [
   { table: "segment_budget_quarters", column: "actual_revenue", concept: "importe", persistence: saved, nature: "ingreso_real", span: "trimestral" },
   // Origen
   { table: "accounts", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Only the fields of accounts that Nokko fills; legacy shape {source, at, quote}" },
+  { table: "icp_profiles", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0058; tracked columns in TRACKED_FIELDS" },
+  { table: "positioning", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "messaging_pillars", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "segments", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
