@@ -128,6 +128,22 @@ describe("detectors", () => {
     expect(keys(snap({ accounts, stakeholders: [{ account_id: "a1", buying_role: "decision_maker" }] }))).not.toContain("no_decision_maker");
   });
   it("incomplete setup suggests the next item", () => expect(detect(snap({ setup: setup({ quotas: [] }) })).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:quota"));
+  it("setup suggestion follows the fixed order, not the weight (CA-3)", () => {
+    // quota weighs 15, segments 10: segments comes first in the order.
+    const found = detect(snap({ setup: setup({ quotas: [], segments: [] }) })).find((x) => x.detector === "setup_incomplete");
+    expect(found?.dedupe_key).toBe("setup_incomplete:segments");
+    expect(found?.body).toContain("recomendarte el motion");
+  });
+  it("a snoozed setup step gets no suggestion until its date, and the next step takes its place (CA-7)", () => {
+    const s = snap({ setup: setup({ quotas: [], pillars: [] }), setupSnoozes: [{ step_id: "pillars", snoozed_until: "2026-11-05T23:59:59.999Z" }] });
+    expect(detect(s).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:quota");
+    expect(detect({ ...s, now: new Date("2026-11-06T08:00:00Z") }).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:pillars");
+  });
+  it("a company that left the guide for over a day gets the setup suggestion at top priority (CA-6)", () => {
+    const base = snap({ setup: setup({ quotas: [] }) });
+    expect(detect({ ...base, setupActivityAt: "2026-10-18T08:00:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(1);
+    expect(detect({ ...base, setupActivityAt: "2026-10-20T09:30:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(3);
+  });
   it("digest returns top 3 by priority", () => {
     const d = digest([{ priority: 3, created_at: "1" }, { priority: 1, created_at: "1" }, { priority: 2, created_at: "1" }, { priority: 1, created_at: "2" }]);
     expect(d.map((x) => x.priority)).toEqual([1, 1, 2]);

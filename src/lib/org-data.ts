@@ -11,6 +11,7 @@ import { NOTES_UNTIL_MS } from "@/lib/call-notes";
 import { fetchAll } from "@/lib/fetch-all";
 import type { Json } from "@/integrations/supabase/types";
 import { jsonObject } from "@/lib/json";
+import { latestActivity, type Snooze } from "@/lib/setup-guide";
 
 export type Db = SupabaseClient<Database>;
 
@@ -38,8 +39,22 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
   };
 }
 
+/** Snoozed setup steps of the company and the latest change in the data the setup steps read (SDD strategy-setup-guided-next-step). */
+export async function loadSetupGuideExtras(db: Db, orgId: string): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
+  const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars", col: "updated_at" | "created_at") =>
+    db.from(table).select(col).eq("org_id", orgId).order(col, { ascending: false }).limit(1).maybeSingle().then((r) => (r.data as Record<string, string> | null)?.[col] ?? null);
+  const [snoozes, ...stamps] = await Promise.all([
+    db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
+    newest("positioning", "updated_at"), newest("segments", "updated_at"), newest("quotas", "updated_at"), newest("accounts", "updated_at"),
+    newest("deals", "updated_at"), newest("icp_profiles", "updated_at"), newest("messaging_pillars", "updated_at"),
+  ]);
+  const rows = snoozes.data ?? [];
+  // Postponing a step is the person's last act on the guide, so it counts as activity.
+  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt: latestActivity([...stamps, ...rows.map((r) => r.created_at)]) };
+}
+
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage] = await Promise.all([
+  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage, guide] = await Promise.all([
     loadSetupData(db, orgId),
     fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
     db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
@@ -54,9 +69,10 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("org_members").select("user_id,role").eq("org_id", orgId),
     db.from("account_signals").select("id,account_id,title,kind,summary,relevance,url,found_at").eq("org_id", orgId).gte("found_at", new Date(now.getTime() - 14 * 86_400_000).toISOString()).limit(200),
     db.from("product_usage").select("domain,account_id,active_users_7d,active_users_prev_7d").eq("org_id", orgId).order("active_users_7d", { ascending: false }).limit(500),
+    loadSetupGuideExtras(db, orgId),
   ]);
   return {
-    now, orgId, setup,
+    now, orgId, setup, setupSnoozes: guide.snoozes, setupActivityAt: guide.activityAt,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
     deals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     meetings: meetings.data ?? [],
