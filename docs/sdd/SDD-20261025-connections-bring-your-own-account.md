@@ -1,7 +1,7 @@
 # SDD-20261025-connections-bring-your-own-account · [Feature] Conexiones: conecta tus propias cuentas
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede (2026-10-26) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (aprobado por Fede 2026-10-26; U-1 y U-2 entregadas sin proveedores habilitados) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (origen del dato); SDD de Drive por empresa (primer caso)
 
 ## 1. Resumen
@@ -104,8 +104,8 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 3. ¿El orquestador puede elegir cuenta propia o compartida por empresa?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Proveedores con soporte de clave por empresa.
-- [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales.
+- [Por verificar] Proveedores con soporte de clave por empresa. Verificado en `main` (2026-10-26): ninguno la acepta hoy. Apollo, Clay, Parallel, Perplexity, Apify y Drive leen claves del entorno a través de la pasarela de conectores (`*-gateway.ts`, `google-drive.ts`; `runner.ts` solo comprueba variables de entorno) y Firecrawl usa `FIRECRAWL_API_KEY` directa. Si la pasarela admite una clave por empresa no consta en el repo: pregunta 1 para Dani, sin suponer.
+- [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales. Verificado en `main` (2026-10-26): PostHog guarda la clave cifrada con AES-GCM (`INTEGRATION_KEYS_SECRET`, `src/lib/secret-box.server.ts`) en `posthog_connections.api_key_enc`; Stripe la guarda en Supabase Vault (`vault_secret_id`, migración 0027). En ambos solo el servidor la lee y el navegador ve estado y pista por permisos de columna. Es el patrón para el almacén cifrado de las conexiones nuevas; la decisión de diseño sigue siendo de Dani.
 - [Por verificar] Estado en `production` (solo se leyó `main`).
 
 ## 16. Sección de Dani (la completa él)
