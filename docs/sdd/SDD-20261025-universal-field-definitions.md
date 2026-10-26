@@ -1,7 +1,7 @@
 # SDD-20261025-universal-field-definitions · [Feature] Definiciones universales de campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta (base de los otros cinco SDD)
-**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 y U-2 hechas, U-3 hecha salvo la verificación de la migración, U-4 pendiente) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 a U-4 hechas; migración 0058 sin verificar) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 Cada concepto de la plataforma (tamaño de empresa, país, importe, periodo, origen del dato, estado…) debe tener **una sola definición** que valga para todas las pantallas, el Agente, las importaciones y Descubiertos. Hoy el mismo concepto existe con nombres y tipos distintos según la tabla o la pantalla. Este SDD fija el catálogo, las reglas de persistencia y el origen/confirmación de cada valor. Es la base de los SDD de acciones sobre campos, onboarding y guía de estrategia.
@@ -115,7 +115,7 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 ## 17. Delta de implementación (agente, 2026-10-25)
 - U-1 y U-2 entregadas como en el SDD, con periodo sin normalizar (no está en los cuatro conceptos decididos).
 - U-3. Hecho: reglas puras de origen y confirmación, sello de persona en la ficha de cuenta, regla única de escritura automática. Escrita pero **no verificada ni aplicada**: `drizzle/migrations/0058_field_sources_generic.sql` (trigger genérico para `accounts` e `icp_profiles`; lista de comprobaciones en su cabecera). Propuestas pendientes (CA-9) como sugerencias `field_proposal` (decisión de Fede): `src/lib/field-proposals.ts`, creadas por `applyAutoChanges` para sector, tamaño y país, nunca para notas. Alcance de procedencia: `accounts` e `icp_profiles` (decisión de Fede). Falta verificar la migración y que aceptar una propuesta desde Sugerencias deje la marca de persona (depende de si la acción corre con la sesión de la persona).
-- U-4 pendiente.
+- U-4 hecha. `src/lib/field-coverage.ts` y `field-coverage.test.ts`: toda columna de `types.ts` está en el catálogo o en `src/lib/field-baseline.ts` (980 columnas aún sin concepto, solo puede bajar); una columna nueva en ninguno de los dos falla y dice qué concepto asignar o crear (CA-10). `placesOf` lista dónde se guarda y dónde se muestra cada concepto (CA-11). Los jsonb se listan como pendientes sin fallar. Pendiente fuera de U-4: catalogar las 980 columnas (por conceptos, en orden de impacto) y, tras aplicar 0058 y regenerar tipos, añadir `icp_profiles.field_sources` al catálogo.
 
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).

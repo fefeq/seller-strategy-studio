@@ -135,3 +135,24 @@ export function allowedValues(table: string, column: string): readonly string[] 
   const c = conceptById(b.concept);
   return c.allowedBy?.[table] ?? c.allowed ?? null;
 }
+
+/** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
+export const SHOWN_IN: Record<ConceptId, string[]> = {
+  pais: ["src/components/country-pick.tsx", "src/components/account/fit-fields.tsx", "src/components/clay.tsx", "src/components/apollo.tsx", "src/components/parallel.tsx", "src/components/orchestrator/icp-companies.tsx", "src/components/orchestrator/complete-account.tsx", "src/lib/assignment.ts"],
+  paises: ["src/components/icp-editor.tsx", "src/components/discoveries/icp-panel.tsx"],
+  region: ["src/lib/assignment.ts"],
+  geografia_texto: ["src/components/discoveries/icp-panel.tsx", "src/components/parallel.tsx"],
+  tamano_empleados: ["src/components/icp-editor.tsx", "src/components/account/fit-fields.tsx", "src/components/discoveries/icp-panel.tsx", "src/components/clay.tsx", "src/components/apollo.tsx", "src/components/orchestrator/icp-companies.tsx"],
+  tamano_descripcion: ["src/components/icp-editor.tsx", "src/components/setup/wizard.tsx", "src/components/discoveries/icp-panel.tsx"],
+  importe: ["src/lib/money.ts", "src/components/new-deal.tsx", "src/components/metrics/finance-panel.tsx", "src/components/cac-panel.tsx", "src/components/segment-coverage.tsx", "src/components/won-deals-panel.tsx", "src/components/leads/lead-detail.tsx"],
+  origen_valor: ["src/components/account/fit-fields.tsx", "src/lib/provenance.ts"],
+  canal_de_entrada: ["src/routes/_authenticated/deals.tsx", "src/routes/_authenticated/people.tsx", "src/components/metrics/revops-panels.tsx", "src/routes/_authenticated/metrics.tsx"],
+  creado_por: ["src/routes/_authenticated/memory.tsx", "src/routes/_authenticated/debates.tsx"],
+  fuente_citada: ["src/components/leads/lead-dialogs.tsx", "src/lib/web-research-core.ts"],
+};
+
+/** Every place where a concept is stored (columns) and shown (screens and modules). */
+export function placesOf(id: ConceptId): { stored: Binding[]; shown: string[] } {
+  conceptById(id);
+  return { stored: BINDINGS.filter((b) => b.concept === id), shown: SHOWN_IN[id] };
+}
