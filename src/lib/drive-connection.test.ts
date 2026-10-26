@@ -61,10 +61,14 @@ describe("edge cases (SDD 5 §8) · Google errors and revoked access", () => {
     expect(oauthErrorText("x")).toMatch(/Vuelve a intentarlo/);
   });
   it("revoked or expired access is «error»; a provider outage keeps the connection (CA-4, CA-6)", () => {
-    expect(failureStatus(401).status).toBe("error");
-    expect(failureStatus(403).status).toBe("error");
-    expect(failureStatus(503).status).toBe("no_response");
-    expect(failureStatus(null).status).toBe("no_response");
+    expect(failureStatus(401)?.status).toBe("error");
+    expect(failureStatus(400)?.status).toBe("error");
+    expect(failureStatus(503)?.status).toBe("no_response");
+    expect(failureStatus(null)?.status).toBe("no_response");
+  });
+  it("a file we may not touch (403, 404) says nothing about the account", () => {
+    expect(failureStatus(403)).toBeNull();
+    expect(failureStatus(404)).toBeNull();
   });
 });
 

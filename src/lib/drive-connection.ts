@@ -74,8 +74,9 @@ export function oauthErrorText(code: string, description?: string | null): strin
   return why ? `Google no completó la conexión: ${why}` : "Google no completó la conexión. Vuelve a intentarlo.";
 }
 
-/** When the saved account stops working, the status the screen shows and what to ask the Owner. */
-export function failureStatus(httpStatus: number | null): { status: ConnectionStatus; text: string } {
-  if (httpStatus === 400 || httpStatus === 401 || httpStatus === 403) return { status: "error", text: "Google ya no da acceso a esta cuenta. Reconéctala para seguir usándola." };
-  return { status: "no_response", text: "Google no responde ahora. Lo reintentaremos; tu conexión sigue guardada." };
+/** What a failed call says about the saved account: access gone (401, or a refused refresh with 400) is «error»; Google being down is «no_response»; anything else (a file we may not touch, say) says nothing about the account. */
+export function failureStatus(httpStatus: number | null): { status: ConnectionStatus; text: string } | null {
+  if (httpStatus === 400 || httpStatus === 401) return { status: "error", text: "Google ya no da acceso a esta cuenta. Reconéctala para seguir usándola." };
+  if (httpStatus === null || httpStatus >= 500) return { status: "no_response", text: "Google no responde ahora. Lo reintentaremos; tu conexión sigue guardada." };
+  return null;
 }
