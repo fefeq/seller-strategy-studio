@@ -1,12 +1,13 @@
--- NOT VERIFIED: written without a database to run it on (SDD field-actions-edit-delete-confirm, U-3).
--- Depends on 0058 (public.track_field_sources) and is meant for a test environment first. Dani, check with two
--- fictional companies that, for positioning, messaging_pillars and segments:
+-- VERIFIED LOCALLY 2026-10-26 on an in-process Postgres (PGlite) with two fictional companies: src/lib/migrations.pg.test.ts runs
+-- every check below. NOT yet applied to the real database: the test models the touched tables from the generated types
+-- (no other NOT NULL, defaults or triggers the real tables may have), so apply it first on a test copy of the database.
+-- Depends on 0058 (public.track_field_sources). Checks, for positioning, messaging_pillars and segments (all pass in the test):
 --   1. a signed-in edit of a tracked column stamps field_sources {kind persona, confirmed true, confirmedBy};
 --   2. clearing a value removes its mark; a service-role update that does not touch field_sources drops it;
 --   3. an update that also sends field_sources (confirming a field) is kept exactly as sent;
 --   4. existing rows get field_sources = '{}' (every value stays «sin dato», none is read as a person's);
 --   5. the existing policies and the audit trigger still work (nothing here changes them);
---   6. numbering: other branches also add migrations; renumber on merge if needed.
+--   6. numbering: other branches also add migrations; renumber on merge if needed (not a SQL check).
 -- It changes no existing data: three new columns with a default, and three triggers.
 
 ALTER TABLE public.positioning ADD COLUMN IF NOT EXISTS field_sources jsonb NOT NULL DEFAULT '{}'::jsonb;

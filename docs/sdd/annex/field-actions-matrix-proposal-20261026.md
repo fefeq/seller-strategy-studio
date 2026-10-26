@@ -39,13 +39,13 @@ Propuesta: un registro genérico de cambios, `field_edit_log` (empresa, tabla, f
 - Requiere una **migración nueva** (tabla y disparador) que, como la 0058, no puedo verificar aquí: iría sin aplicar y marcada así.
 
 ## 5. Confirmación por campo (CA-8 a CA-10)
-Hoy solo `accounts` tiene procedencia por campo (`field_sources`); `icp_profiles` la recibe con la migración 0058, sin verificar. Para confirmar campo a campo en posicionamiento, pilares y segmentos hace falta la misma columna en esas tablas. Propongo ampliar el alcance de procedencia a `positioning`, `messaging_pillars` y `segments` **solo si confirmas**, porque tocaría de nuevo el esquema.
+Hoy solo `accounts` tiene procedencia por campo (`field_sources`); `icp_profiles` la recibe con la migración 0058 (verificada después en local). Para confirmar campo a campo en posicionamiento, pilares y segmentos hace falta la misma columna en esas tablas. Propongo ampliar el alcance de procedencia a `positioning`, `messaging_pillars` y `segments` **solo si confirmas**, porque tocaría de nuevo el esquema.
 
 ## 6. Decisiones que necesito de Fede
 1. ¿Aceptas la matriz de roles (editar y confirmar: cualquier miembro; borrar: solo Owner, como hoy)?
 2. ¿Aceptas «en uso» como se define arriba, incluido que un **segmento en uso no se borre** y el aviso del borrado en cascada?
 3. ¿Aceptas no crear `archived_at` y resolver el archivado con un registro de cambios con deshacer de 24 horas?
-4. ¿Se amplía la procedencia por campo a `positioning`, `messaging_pillars` y `segments` (migración nueva sin verificar)?
+4. ¿Se amplía la procedencia por campo a `positioning`, `messaging_pillars` y `segments` (migración nueva)?
 5. ¿Editar siempre confirma? Propongo que sí: lo que escribe una persona queda «escrito por ti · confirmado» sin un clic extra (SDD universal CA-8), y «Confirmar» se usa para lo que propuso NOKKO.
 
 ## 7. Límites

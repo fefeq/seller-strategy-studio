@@ -1,5 +1,7 @@
--- NOT VERIFIED: written without a database to run it on (SDD universal-field-definitions, U-3).
--- Dani: apply it first on a test environment and check, with two fictional companies, that
+-- VERIFIED LOCALLY 2026-10-26 on an in-process Postgres (PGlite) with two fictional companies: src/lib/migrations.pg.test.ts runs
+-- every check below. NOT yet applied to the real database: the test models the touched tables from the generated types
+-- (no other NOT NULL, defaults or triggers the real tables may have), so apply it first on a test copy of the database.
+-- Checks (all pass in the test):
 --   1. an authenticated edit of accounts.industry / size / country stamps field_sources with kind persona and confirmed true;
 --   2. clearing the value removes the mark instead of stamping it;
 --   3. an update from the service role (auth.uid() is null) that does not touch field_sources drops the mark, as before;

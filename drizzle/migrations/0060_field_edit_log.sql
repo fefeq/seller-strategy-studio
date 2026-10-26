@@ -1,5 +1,7 @@
--- NOT VERIFIED: written without a database to run it on (SDD field-actions-edit-delete-confirm, U-2).
--- Dani: apply it first on a test environment and check, with two fictional companies, that
+-- VERIFIED LOCALLY 2026-10-26 on an in-process Postgres (PGlite) with two fictional companies: src/lib/migrations.pg.test.ts runs
+-- every check below. NOT yet applied to the real database: the test models the touched tables from the generated types
+-- (no other NOT NULL, defaults or triggers the real tables may have), so apply it first on a test copy of the database.
+-- Checks (all pass in the test):
 --   1. editing or deleting a segment, ICP, pillar or the positioning row writes one field_edit_log row with the
 --      company, the table, the row id, the op, the row before and (for an update) after, who and when;
 --   2. an update that only changes updated_at, updated_by or field_sources writes nothing;
