@@ -10,6 +10,8 @@ import { Link } from "@tanstack/react-router";
 import { startBackgroundJob } from "@/lib/background.functions";
 import { readingCost, type Depth } from "@/lib/onboarding";
 import { errorText } from "@/lib/errors";
+import { FieldActions } from "@/components/field-actions";
+import { MAX_FILES, mergeFiles, removeFileText } from "@/lib/onboarding-sources";
 
 const TEXT_LIMIT = 40_000;
 const FILE_LIMIT = 4 * 1024 * 1024;
@@ -32,7 +34,10 @@ export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jo
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
     }));
-    setFiles(read.filter((x): x is { filename: string; dataUrl: string } => !!x));
+    // CA-12: new files join the ones already listed, never replace them.
+    const merged = mergeFiles(files, read.filter((x): x is { filename: string; dataUrl: string } => !!x));
+    setFiles(merged.files);
+    if (merged.dropped.length) toast.error(`Una lectura admite hasta ${MAX_FILES} documentos. Se quedan fuera: ${merged.dropped.join(", ")}.`);
   }
 
   async function go() {
@@ -44,6 +49,8 @@ export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jo
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
 
+  // A source that has not been read yet is simply taken off the list.
+  const quit = (fn: () => void) => <FieldActions kind="onboarding_source" roles={me?.roles ?? []} labels={{ delete: "Quitar" }} handlers={{ delete: fn }} />;
   const cost = readingCost(depth, !!url.trim());
   const empty = !url.trim() && !text.trim() && !files.length;
   return (
@@ -55,7 +62,7 @@ export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jo
         </div>
         <div>
           <label htmlFor="ob-files" className="smallcaps text-ink-mid">Documentos: business plan, P&L, decks, battlecards, ICP</label>
-          <Input id="ob-files" className="mt-2" type="file" multiple accept=".pdf,.txt,.md,.csv" onChange={(e) => onFiles(e.target.files)} />
+          <Input id="ob-files" className="mt-2" type="file" multiple accept=".pdf,.txt,.md,.csv" onChange={(e) => { const el = e.target; void onFiles(el.files).finally(() => { el.value = ""; }); }} />
           <div className="mt-2"><DriveSetupButton onText={(name, body) => { setText((t) => `${t}\n\n--- ${name} ---\n${body}`.slice(0, TEXT_LIMIT)); setNames((n) => [...n, `${name} (Drive)`]); }} /></div>
         </div>
         <div>
@@ -67,10 +74,10 @@ export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jo
       <div className="border-t-2 border-hairline-firm pt-4">
         <p className="smallcaps">Tus fuentes</p>
         <ul className="mt-2 space-y-1 text-sm">
-          {url.trim() && <li>Web · {url} <span className="text-ink-faint">pendiente</span></li>}
-          {files.map((f) => <li key={f.filename}>{f.filename} <span className="text-ink-faint">pendiente</span></li>)}
-          {names.map((n) => <li key={n}>{n} <span className="text-ink-faint">pendiente</span></li>)}
-          {text.trim() && !names.length && <li>Texto pegado <span className="text-ink-faint">pendiente</span></li>}
+          {url.trim() && <li className="flex flex-wrap items-center gap-2">Web · {url} <span className="text-ink-faint">pendiente</span>{quit(() => setUrl(""))}</li>}
+          {files.map((f) => <li key={f.filename} className="flex flex-wrap items-center gap-2">{f.filename} <span className="text-ink-faint">pendiente</span>{quit(() => setFiles((xs) => xs.filter((x) => x.filename !== f.filename)))}</li>)}
+          {names.map((n) => <li key={n} className="flex flex-wrap items-center gap-2">{n} <span className="text-ink-faint">pendiente</span>{quit(() => { setNames((xs) => xs.filter((x) => x !== n)); setText((t) => removeFileText(t, n)); })}</li>)}
+          {text.trim() && !names.length && <li className="flex flex-wrap items-center gap-2">Texto pegado <span className="text-ink-faint">pendiente</span>{quit(() => setText(""))}</li>}
           {empty && <li className="text-ink-faint">Aún nada. Con la web basta para empezar.</li>}
         </ul>
         <p className="mt-4 text-sm"><span className="smallcaps text-ink-mid">Coste aproximado</span> {cost > 0 ? `${cost.toFixed(2)} en fuentes de pago` : "sin coste en fuentes de pago"}{depth === "deep" ? ", más el debate de los C-Levels" : ""}.</p>

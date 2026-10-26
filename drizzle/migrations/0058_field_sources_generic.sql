@@ -1,5 +1,8 @@
--- NOT VERIFIED: written without a database to run it on (SDD universal-field-definitions, U-3).
--- Dani: apply it first on a test environment and check, with two fictional companies, that
+-- VERIFIED LOCALLY 2026-10-26 on an in-process Postgres (PGlite) with two fictional companies: src/lib/migrations.pg.test.ts runs
+-- every check below on a replica of the real catalog (tables, NOT NULLs, defaults, set_audit, positioning_copy_guard, the
+-- foreign keys into segments and the policies, read from the real database, schema only). NOT yet applied to the real
+-- database: apply it on a copy first, since the replica is not the database itself.
+-- Checks (all pass in the test):
 --   1. an authenticated edit of accounts.industry / size / country stamps field_sources with kind persona and confirmed true;
 --   2. clearing the value removes the mark instead of stamping it;
 --   3. an update from the service role (auth.uid() is null) that does not touch field_sources drops the mark, as before;
@@ -27,8 +30,9 @@ BEGIN
       v := to_jsonb(NEW) -> f;
       IF person AND v IS NOT NULL AND v <> 'null'::jsonb AND v <> '""'::jsonb AND v <> '[]'::jsonb THEN
         NEW.field_sources := NEW.field_sources || jsonb_build_object(f, jsonb_build_object(
-          'source', 'persona', 'kind', 'persona', 'confirmed', true,
-          'at', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')));
+          'source', 'persona', 'kind', 'persona', 'confirmed', true, 'confirmedBy', auth.uid(),
+          'at', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+          'confirmedAt', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')));
       ELSE
         NEW.field_sources := NEW.field_sources - f;
       END IF;

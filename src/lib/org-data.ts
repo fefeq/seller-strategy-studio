@@ -29,7 +29,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     currency: org.data?.currency ?? null,
     segments: (seg.data ?? []) as SetupData["segments"],
     icps: icp.data ?? [],
-    positioning: pos.data ? (({ copy_status: _copy, ...p }) => p)(pos.data) : null,
+    positioning: pos.data ? (({ copy_status: _copy, field_sources: _fs, ...p }) => p)(pos.data) : null,
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,

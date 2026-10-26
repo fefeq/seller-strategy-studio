@@ -48,7 +48,7 @@ export const CONCEPTS: Concept[] = [
   { id: "tamano_empleados", label: "Tamaño (empleados)", meaning: "Número de empleados de una empresa o de la empresa objetivo.", kind: "int_range", format: "Rango de enteros mayores que 0; una cifra exacta tiene mínimo igual a máximo", display: "«51–200 empleados», «más de 500 empleados»" },
   { id: "tamano_descripcion", label: "Tamaño en palabras", meaning: "Tamaño descrito con facturación, etapa u otras palabras; no es número de empleados.", kind: "text", format: "Texto libre", display: "Tal cual se escribió" },
   { id: "importe", label: "Importe", meaning: "Cantidad de dinero en la moneda de la empresa; cada lugar declara su naturaleza y su periodicidad.", kind: "number", format: "Número con dos decimales como máximo; cambiar la moneda reetiqueta, no convierte", display: "formatMoney con la moneda de la empresa" },
-  { id: "origen_valor", label: "Origen del valor", meaning: "De dónde viene un valor y si está confirmado.", kind: "origin", format: "Tipo (persona, fuente, ia, supuesto), detalle, confirmado, fecha y cita opcional", allowed: ["persona", "fuente", "ia", "supuesto"], display: "Palabra de estado: Confirmado, Deducido, Supuesto" },
+  { id: "origen_valor", label: "Origen del valor", meaning: "De dónde viene un valor y si está confirmado.", kind: "origin", format: "Tipo (persona, fuente, ia, supuesto, sin_dato), detalle, confirmado, quién y cuándo, cita opcional", allowed: ["persona", "fuente", "ia", "supuesto", "sin_dato"], display: "Palabra de estado: Confirmado, Deducido, Supuesto" },
   {
     id: "canal_de_entrada", label: "Canal de entrada", meaning: "Por qué canal llegó una persona o un deal.", kind: "enum", format: "Valor cerrado distinto por objeto",
     allowedBy: { deals: ["outbound", "inbound", "partner", "plg", "event", "referral"], people: Object.keys(PERSON_SOURCES) },
@@ -106,6 +106,10 @@ export const BINDINGS: Binding[] = [
   { table: "segment_budget_quarters", column: "actual_revenue", concept: "importe", persistence: saved, nature: "ingreso_real", span: "trimestral" },
   // Origen
   { table: "accounts", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Only the fields of accounts that Nokko fills; legacy shape {source, at, quote}" },
+  { table: "icp_profiles", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0058; tracked columns in TRACKED_FIELDS" },
+  { table: "positioning", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "messaging_pillars", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "segments", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },

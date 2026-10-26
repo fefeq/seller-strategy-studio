@@ -1709,6 +1709,56 @@ export type Database = {
           },
         ]
       }
+      field_edit_log: {
+        Row: {
+          after: Json | null
+          before: Json
+          changed_at: string
+          changed_by: string | null
+          id: string
+          op: string
+          org_id: string
+          row_id: string
+          table_name: string
+          undone_at: string | null
+          undone_by: string | null
+        }
+        Insert: {
+          after?: Json | null
+          before: Json
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          op: string
+          org_id: string
+          row_id: string
+          table_name: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Update: {
+          after?: Json | null
+          before?: Json
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          op?: string
+          org_id?: string
+          row_id?: string
+          table_name?: string
+          undone_at?: string | null
+          undone_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_edit_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_cost_lines: {
         Row: {
           amount: number
@@ -2187,6 +2237,7 @@ export type Database = {
           countries: string[]
           created_at: string
           created_by: string | null
+          field_sources: Json
           funding_signals: string | null
           geography: string | null
           growth_stage: string | null
@@ -2214,6 +2265,7 @@ export type Database = {
           countries?: string[]
           created_at?: string
           created_by?: string | null
+          field_sources?: Json
           funding_signals?: string | null
           geography?: string | null
           growth_stage?: string | null
@@ -2241,6 +2293,7 @@ export type Database = {
           countries?: string[]
           created_at?: string
           created_by?: string | null
+          field_sources?: Json
           funding_signals?: string | null
           geography?: string | null
           growth_stage?: string | null
@@ -3099,6 +3152,7 @@ export type Database = {
         Row: {
           created_at: string
           created_by: string | null
+          field_sources: Json
           id: string
           message: string | null
           org_id: string | null
@@ -3112,6 +3166,7 @@ export type Database = {
         Insert: {
           created_at?: string
           created_by?: string | null
+          field_sources?: Json
           id?: string
           message?: string | null
           org_id?: string | null
@@ -3125,6 +3180,7 @@ export type Database = {
         Update: {
           created_at?: string
           created_by?: string | null
+          field_sources?: Json
           id?: string
           message?: string | null
           org_id?: string | null
@@ -3690,6 +3746,7 @@ export type Database = {
           differentiation: string | null
           differentiator: string | null
           elevator_pitch: string | null
+          field_sources: Json
           id: string
           key_benefit: string | null
           need: string | null
@@ -3715,6 +3772,7 @@ export type Database = {
           differentiation?: string | null
           differentiator?: string | null
           elevator_pitch?: string | null
+          field_sources?: Json
           id?: string
           key_benefit?: string | null
           need?: string | null
@@ -3740,6 +3798,7 @@ export type Database = {
           differentiation?: string | null
           differentiator?: string | null
           elevator_pitch?: string | null
+          field_sources?: Json
           id?: string
           key_benefit?: string | null
           need?: string | null
@@ -4271,6 +4330,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           cycle_days: number | null
+          field_sources: Json
           gross_margin_pct: number | null
           id: string
           motion: string
@@ -4293,6 +4353,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cycle_days?: number | null
+          field_sources?: Json
           gross_margin_pct?: number | null
           id?: string
           motion?: string
@@ -4315,6 +4376,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           cycle_days?: number | null
+          field_sources?: Json
           gross_margin_pct?: number | null
           id?: string
           motion?: string
@@ -5047,6 +5109,7 @@ export type Database = {
       set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }
       stripe_key_for: { Args: { _org: string }; Returns: string }
+      undo_field_edit: { Args: { _log: string }; Returns: undefined }
     }
     Enums: {
       app_role:

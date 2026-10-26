@@ -1214,6 +1214,385 @@
         "outputSchema": null
       },
       {
+        "name": "update_icp",
+        "title": "Editar un ICP",
+        "description": "Edita un ICP existente (icp_id): solo cambia los campos que pases. Países en ISO de 2 letras o por nombre. Editar lo deja como escrito por el usuario y confirmado. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "icp_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name_for_confirmation": {
+              "type": "string"
+            },
+            "fields": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "industries": {
+                  "type": "string"
+                },
+                "company_size": {
+                  "type": "string"
+                },
+                "geography": {
+                  "type": "string"
+                },
+                "why_fit": {
+                  "type": "string"
+                },
+                "anti_icp": {
+                  "type": "string"
+                },
+                "hiring_signals": {
+                  "type": "string"
+                },
+                "funding_signals": {
+                  "type": "string"
+                },
+                "tech_stack": {
+                  "type": "string"
+                },
+                "growth_stage": {
+                  "type": "string"
+                },
+                "adoption": {
+                  "type": "string"
+                },
+                "pains": {
+                  "type": "string"
+                },
+                "min_employees": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "max_employees": {
+                  "type": "integer",
+                  "exclusiveMinimum": 0,
+                  "maximum": 9007199254740991
+                },
+                "countries": {
+                  "description": "países: código ISO de 2 letras o nombre",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "search_keywords": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "target_titles": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "seniorities": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "enum": [
+                      "founder",
+                      "c_suite",
+                      "vp",
+                      "head",
+                      "director",
+                      "manager"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "required": [
+            "icp_id",
+            "fields"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "update_pillar",
+        "title": "Editar un pilar de mensaje",
+        "description": "Edita un pilar de mensaje existente (pillar_id): título, dolor, mensaje o prueba. Solo cambia lo que pases. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "pillar_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            },
+            "pain": {
+              "type": "string"
+            },
+            "message": {
+              "type": "string"
+            },
+            "proof": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "pillar_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "check_delete",
+        "title": "Qué se pierde al borrar (segmento, ICP o pilar)",
+        "description": "Antes de borrar un segmento, ICP o pilar: dice qué se pierde, dónde se usa, si tu rol puede borrarlo y si se puede (un segmento en uso no se borra). No cambia nada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "segment",
+                "icp",
+                "pillar"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "kind",
+            "id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_segment",
+        "title": "Borrar un segmento",
+        "description": "Borra el segmento. Solo el Owner borra. Un segmento en uso no se borra: lo dice la herramienta. Antes de proponerlo llama a check_delete y cuéntale al usuario qué se pierde y dónde se usa. Se puede deshacer 24 horas con undo_change. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nombre tal como aparece en Nokko, para mostrar la confirmación"
+            }
+          },
+          "required": [
+            "id",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_icp",
+        "title": "Borrar o archivar un ICP",
+        "description": "Borra el ICP. Solo el Owner borra. Si está en uso se archiva, que es borrarlo con deshacer. Antes de proponerlo llama a check_delete y cuéntale al usuario qué se pierde y dónde se usa. Se puede deshacer 24 horas con undo_change. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nombre tal como aparece en Nokko, para mostrar la confirmación"
+            }
+          },
+          "required": [
+            "id",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "delete_pillar",
+        "title": "Borrar o archivar un pilar de mensaje",
+        "description": "Borra el pilar de mensaje. Solo el Owner borra. Si está en uso se archiva, que es borrarlo con deshacer. Antes de proponerlo llama a check_delete y cuéntale al usuario qué se pierde y dónde se usa. Se puede deshacer 24 horas con undo_change. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Nombre tal como aparece en Nokko, para mostrar la confirmación"
+            }
+          },
+          "required": [
+            "id",
+            "name"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "confirm_fields",
+        "title": "Confirmar campos",
+        "description": "Marca como confirmados campos de una cuenta, ICP, posicionamiento, pilar o segmento. Solo campos con valor. Campos: account: industry, size, country, notes, linkedin_url | icp: countries, geography, min_employees, max_employees, company_size | positioning: best_customers, alternatives, differentiation, value, trend, target_customer, need, product_name, category, key_benefit, competitive_alternative, differentiator, tagline, one_liner, short_pitch, elevator_pitch | pillar: title, pain, message, proof | segment: name, motion, acv_min, acv_max, win_rate_target, ae_quota, cac_target, cycle_days, gross_margin_pct, payback_months, sdr_per_ae, ae_per_se, notes. Para posicionamiento no hace falta id. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "account",
+                "icp",
+                "positioning",
+                "pillar",
+                "segment"
+              ]
+            },
+            "id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "fields": {
+              "minItems": 1,
+              "maxItems": 20,
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "kind",
+            "fields"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_recent_changes",
+        "title": "Cambios de las últimas 24 horas",
+        "description": "Cambios de las últimas 24 horas en segmentos, ICP, posicionamiento y pilares (ediciones y borrados) que todavía se pueden deshacer, con su id para undo_change.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "undo_change",
+        "title": "Deshacer un cambio",
+        "description": "Deshace un cambio de list_recent_changes (dentro de 24 horas). Deshacer un borrado es solo del Owner. Si el elemento cambió después, no se deshace. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "change_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            },
+            "description": {
+              "description": "Qué cambio es, para mostrar la confirmación",
+              "type": "string"
+            }
+          },
+          "required": [
+            "change_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "get_cycle_status",
         "title": "Estado del ciclo GTM",
         "description": "Estado del Ciclo GTM: fase actual, documentos (brief, plan, arquitectura, revisión, retros) aprobados y en borrador, y siguientes pasos recomendados para el rol del usuario con el agente adecuado.",

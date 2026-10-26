@@ -10,7 +10,11 @@ export type Depth = "express" | "standard" | "deep";
 export type BlockId = "company" | "icp" | "segments" | "positioning" | "messages" | "goals";
 export type Level = "confirmed" | "inferred" | "assumed";
 export type BlockState = { status: "approved" | "skipped"; at: string; undo?: { table: string; id: string }[] };
-export type Finding = { at: string; text: string; source: string | null };
+/** A finding of the reading with its source; the person may confirm, edit or discard it, and discarding is undoable for 24 hours. */
+export type Finding = {
+  at: string; text: string; source: string | null;
+  confirmedBy?: string; confirmedAt?: string; edited?: boolean; discardedAt?: string; sourceRemoved?: boolean;
+};
 export type Opinion = { block: BlockId; persona: string; text: string };
 
 export const BLOCKS: { id: BlockId; label: string; groups: string[] }[] = [

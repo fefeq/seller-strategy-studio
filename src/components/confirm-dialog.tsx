@@ -9,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -35,7 +36,16 @@ type TextRequest = {
   maxLength?: number;
   resolve: (v: string | null) => void;
 };
-type Request = ConfirmRequest | TextRequest;
+type UnsavedRequest = {
+  kind: "unsaved";
+  title: string;
+  body?: string;
+  saveLabel?: string;
+  discardLabel?: string;
+  stayLabel?: string;
+  resolve: (v: "save" | "discard" | "stay") => void;
+};
+type Request = ConfirmRequest | TextRequest | UnsavedRequest;
 
 let push: ((r: Request) => void) | null = null;
 
@@ -47,6 +57,12 @@ export type TextOptions = { body?: string; placeholder?: string; initial?: strin
 export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<boolean> {
   if (!push) return Promise.resolve(typeof window !== "undefined" && window.confirm([title, opts.body].filter(Boolean).join("\n\n")));
   return new Promise((resolve) => push!({ kind: "confirm", title, ...opts, resolve }));
+}
+
+/** Unsaved changes on leaving: «save», «discard» or «stay» (also when the dialog is dismissed). */
+export function askUnsaved(title: string, opts: { body?: string; saveLabel?: string; discardLabel?: string; stayLabel?: string } = {}): Promise<"save" | "discard" | "stay"> {
+  if (!push) return Promise.resolve(typeof window !== "undefined" && window.confirm([title, opts.body].filter(Boolean).join("\n\n")) ? "discard" : "stay");
+  return new Promise((resolve) => push!({ kind: "unsaved", title, ...opts, resolve }));
 }
 
 /** Resolves the trimmed text, or null when cancelled or empty. */
@@ -87,7 +103,13 @@ export function DialogHost() {
   const close = (ok: boolean) => {
     if (!current) return;
     if (current.kind === "confirm") current.resolve(ok);
+    else if (current.kind === "unsaved") current.resolve(ok ? "save" : "stay");
     else current.resolve(ok ? text.trim() || null : null);
+    setQueue((q) => q.slice(1));
+  };
+  const discard = () => {
+    if (current?.kind !== "unsaved") return;
+    current.resolve("discard");
     setQueue((q) => q.slice(1));
   };
 
@@ -141,8 +163,13 @@ export function DialogHost() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => close(false)}>
-              {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : "Cancelar"}
+              {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : current.kind === "unsaved" ? (current.stayLabel ?? "Seguir editando") : "Cancelar"}
             </AlertDialogCancel>
+            {current.kind === "unsaved" && (
+              <Button type="button" variant="outline" onClick={discard}>
+                {current.discardLabel ?? "Descartar"}
+              </Button>
+            )}
             <AlertDialogAction
               disabled={!canSend}
               onClick={(e) => {
@@ -150,7 +177,7 @@ export function DialogHost() {
                 close(true);
               }}
             >
-              {current.confirmLabel ?? (current.kind === "confirm" ? "Seguir" : "Guardar")}
+              {current.kind === "unsaved" ? (current.saveLabel ?? "Guardar") : (current.confirmLabel ?? (current.kind === "confirm" ? "Seguir" : "Guardar"))}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

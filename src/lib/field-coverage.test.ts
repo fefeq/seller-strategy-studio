@@ -74,4 +74,11 @@ describe("field coverage", () => {
     expect(conceptCandidates("lead_source")).toContain("canal_de_entrada");
     expect(conceptCandidates("period")).toEqual(["periodo"]);
   });
+
+  it("the change log is infrastructure: its columns are not concepts, and it must exist in the types", () => {
+    expect(real().has("field_edit_log")).toBe(true);
+    const cov = coverage(real(), BINDINGS, BASELINE);
+    expect(cov.uncatalogued.some((u) => u.table === "field_edit_log")).toBe(false);
+  });
 });
+
