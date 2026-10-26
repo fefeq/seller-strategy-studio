@@ -47,6 +47,7 @@ import { Route as ApiPublicAccountsRouteImport } from './routes/api/public/accou
 import { Route as ApiPublicInngestRouteImport } from './routes/api/public/inngest'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
 import { Route as ApiPublicApolloPhoneWebhookRouteImport } from './routes/api/public/apollo/phone-webhook'
+import { Route as ApiPublicDriveCallbackRouteImport } from './routes/api/public/drive/callback'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
 
@@ -246,6 +247,11 @@ const ApiPublicApolloPhoneWebhookRoute =
     path: '/api/public/apollo/phone-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicDriveCallbackRoute = ApiPublicDriveCallbackRouteImport.update({
+  id: '/api/public/drive/callback',
+  path: '/api/public/drive/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicJobsProactiveRoute = ApiPublicJobsProactiveRouteImport.update({
   id: '/api/public/jobs/proactive',
   path: '/api/public/jobs/proactive',
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
+  '/api/public/drive/callback': typeof ApiPublicDriveCallbackRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
+  '/api/public/drive/callback': typeof ApiPublicDriveCallbackRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -380,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
+  '/api/public/drive/callback': typeof ApiPublicDriveCallbackRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
 }
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/accounts/'
     | '/leads/'
     | '/api/public/apollo/phone-webhook'
+    | '/api/public/drive/callback'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/accounts'
     | '/leads'
     | '/api/public/apollo/phone-webhook'
+    | '/api/public/drive/callback'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   id:
@@ -506,6 +517,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/'
     | '/_authenticated/leads/'
     | '/api/public/apollo/phone-webhook'
+    | '/api/public/drive/callback'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
   fileRoutesById: FileRoutesById
@@ -522,6 +534,7 @@ export interface RootRouteChildren {
   ApiPublicInngestRoute: typeof ApiPublicInngestRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
   ApiPublicApolloPhoneWebhookRoute: typeof ApiPublicApolloPhoneWebhookRoute
+  ApiPublicDriveCallbackRoute: typeof ApiPublicDriveCallbackRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
 }
@@ -794,6 +807,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicApolloPhoneWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/drive/callback': {
+      id: '/api/public/drive/callback'
+      path: '/api/public/drive/callback'
+      fullPath: '/api/public/drive/callback'
+      preLoaderRoute: typeof ApiPublicDriveCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/jobs/proactive': {
       id: '/api/public/jobs/proactive'
       path: '/api/public/jobs/proactive'
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicInngestRoute: ApiPublicInngestRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
   ApiPublicApolloPhoneWebhookRoute: ApiPublicApolloPhoneWebhookRoute,
+  ApiPublicDriveCallbackRoute: ApiPublicDriveCallbackRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
 }
