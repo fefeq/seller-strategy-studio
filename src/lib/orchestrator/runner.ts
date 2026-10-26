@@ -2,6 +2,7 @@
 // failure, logs the estimated spend and returns one result plus a «Fuentes» line. Shared by screens and agent.
 // Only imported from server code (functions handlers and agent tools): gateways read secrets at call time.
 import type { ToolCtx } from "@/lib/agent/tool-kit";
+import type { Json } from "@/integrations/supabase/types";
 import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
 import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
 import type { AccountDraft, CompanyQuery, EnrichChange, EnrichField } from "@/lib/clay";
@@ -117,11 +118,23 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
 
 /** Writes the empty fields an automatic run found, stamped «Automático · fuente · fecha». Returns the field names written. */
 export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<EnrichField[]> {
-  const { stampSources, autoWriteDecision } = await import("@/lib/provenance");
+  const { stampSources } = await import("@/lib/provenance");
+  const { fieldProposalDecision, proposalSuggestion, PROPOSABLE_FIELDS } = await import("@/lib/field-proposals");
   // Only an empty field is written; what a person (or an older process) left there is never replaced.
-  const fill = changes.filter((ch) => ch.empty && autoWriteDecision(ch.current, ch.proposed) === "write");
+  const fill = changes.filter((ch) => ch.empty && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "write");
+  const offers = changes.filter((ch) => PROPOSABLE_FIELDS.includes(ch.field) && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "propose");
+  if (!fill.length && !offers.length) return [];
+  const { data: acc } = await c.db.from("accounts").select("name,owner_id,field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
+  // A different value for a filled field becomes a pending suggestion; a dismissed value never returns (same key).
+  if (acc && offers.length) {
+    const rows = offers.map((ch) => {
+      const sug = proposalSuggestion({ id: accountId, name: acc.name, owner_id: acc.owner_id }, { field: ch.field, current: ch.current, proposed: ch.proposed, source: ch.source }, acc.field_sources);
+      return { ...sug, org_id: c.orgId, action: sug.action as unknown as Json };
+    });
+    const { error: e } = await c.db.from("suggestions").upsert(rows, { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
+    if (e) console.error("field proposals", e.message);
+  }
   if (!fill.length) return [];
-  const { data: acc } = await c.db.from("accounts").select("field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
   const patch: Record<string, unknown> = Object.fromEntries(fill.map((ch) => [ch.field, ch.proposed]));
   patch.field_sources = stampSources(acc?.field_sources, fill.map((ch) => ({ field: ch.field, source: ch.source, quote: ch.quote })), at);
   const { error } = await c.db.from("accounts").update(patch as never).eq("org_id", c.orgId).eq("id", accountId);
