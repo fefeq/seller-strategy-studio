@@ -106,6 +106,13 @@ describe("migration 0060: change log and undo", () => {
     await as(db, U.ownerB, async () => { expect(await rows("select id from field_edit_log")).toHaveLength(0); });
   });
 
+  it("the log table gives anon nothing and authenticated only SELECT, even though Supabase grants everything to new tables (TRUNCATE would skip RLS)", async () => {
+    const priv = async (role: string) => (await rows("select privilege_type from information_schema.table_privileges where table_schema='public' and table_name='field_edit_log' and grantee = $1 order by 1", [role])).map((r) => r.privilege_type);
+    expect(await priv("anon")).toEqual([]);
+    expect(await priv("authenticated")).toEqual(["SELECT"]);
+    expect(await priv("service_role")).toContain("INSERT");
+  });
+
   it("undo restores an edit only while the row still equals what the edit left; it writes no new log row and cannot repeat", async () => {
     const first = (await log()).find((e) => e.table_name === "segments")!.id;
     await as(db, U.aeA, async () => { await db.query("update segments set name = 'Pymes ES v2' where id = $1", [seg]); });

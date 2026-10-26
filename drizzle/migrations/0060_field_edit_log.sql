@@ -31,6 +31,8 @@ CREATE INDEX IF NOT EXISTS field_edit_log_org_at ON public.field_edit_log (org_i
 COMMENT ON TABLE public.field_edit_log IS 'Edits and deletes of strategy rows, kept to undo them for 24 hours. Written only by log_field_edit; undone only by undo_field_edit.';
 
 ALTER TABLE public.field_edit_log ENABLE ROW LEVEL SECURITY;
+-- Supabase grants every privilege on a new public table to anon and authenticated; RLS blocks their writes but TRUNCATE skips RLS.
+REVOKE ALL ON public.field_edit_log FROM anon, authenticated;
 GRANT SELECT ON public.field_edit_log TO authenticated;
 GRANT ALL ON public.field_edit_log TO service_role;
 DROP POLICY IF EXISTS "org read" ON public.field_edit_log;

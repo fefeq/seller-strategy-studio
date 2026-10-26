@@ -34,6 +34,8 @@ export async function build() {
       new.updated_by := coalesce(auth.uid(), new.updated_by); new.updated_at := now(); return new;
     end $$;
   `);
+  // Supabase gives anon and authenticated every privilege on new public tables: mimic it so a migration cannot rely on a bare default.
+  await db.exec(`alter default privileges in schema public grant all on tables to anon, authenticated, service_role; alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;`);
   // The tables as the real database has them (catalog read 2026-10-26). accounts.field_sources comes from 0046 below.
   await db.exec(`
     create table public.segments (

@@ -49,6 +49,11 @@ select tgname from pg_trigger where not tgisinternal and tgname like '%_log_edit
 -- esperado: icp_profiles_log_edit, messaging_pillars_log_edit, positioning_log_edit, segments_log_edit
 select has_function_privilege('anon', 'public.undo_field_edit(uuid)', 'execute');          -- esperado: false
 select has_function_privilege('authenticated', 'public.undo_field_edit(uuid)', 'execute'); -- esperado: true
+select grantee, string_agg(privilege_type, ',' order by privilege_type) from information_schema.table_privileges
+where table_schema='public' and table_name='field_edit_log' and grantee in ('anon','authenticated') group by grantee;
+-- esperado: solo authenticated con SELECT (anon, nada). Supabase da todos los permisos a una tabla nueva y la 0060 los
+-- retira con REVOKE; si salen más, aplica solo esas dos líneas: revoke all on public.field_edit_log from anon, authenticated;
+-- grant select on public.field_edit_log to authenticated;
 
 -- 3c · tras la 0061
 select table_name from information_schema.columns
