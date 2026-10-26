@@ -7,6 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
 import { appendCompetitor, dismissMemory, type DiscoveryKind } from "@/lib/discoveries";
+import { normalizeForSave } from "@/lib/field-normalize";
 
 export const runDiscoveryNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -42,7 +43,10 @@ export const decideDiscovery = createServerFn({ method: "POST" })
     let resultId: string | null = null;
     let message = "";
     if (d.kind === "company") {
-      const { data: acc, error: e } = await db.from("accounts").insert({ name: d.name, domain: det["domain"] ?? null, industry: det["industry"] ?? null, size: det["size"] ?? null, country: det["country"] ?? null, linkedin_url: det["linkedin"] ?? null, notes: det["description"] ?? null, owner_id: ctx.userId }).select("id").single();
+      // Country is saved as ISO only (what does not fit is left empty, never a free text); size as the canonical headcount text.
+      const country = normalizeForSave("accounts", "country", det["country"] ?? null);
+      const size = normalizeForSave("accounts", "size", det["size"] ?? null);
+      const { data: acc, error: e } = await db.from("accounts").insert({ name: d.name, domain: det["domain"] ?? null, industry: det["industry"] ?? null, size: (size.value as string | null) ?? null, country: country.status === "ok" ? (country.value as string) : null, linkedin_url: det["linkedin"] ?? null, notes: det["description"] ?? null, owner_id: ctx.userId }).select("id").single();
       if (e) throw e;
       await db.from("account_plans").insert({ account_id: acc.id });
       resultId = acc.id;

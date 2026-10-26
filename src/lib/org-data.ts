@@ -29,7 +29,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     currency: org.data?.currency ?? null,
     segments: (seg.data ?? []) as SetupData["segments"],
     icps: icp.data ?? [],
-    positioning: pos.data ? (({ copy_status: _copy, ...p }) => p)(pos.data) : null,
+    positioning: pos.data ? (({ copy_status: _copy, field_sources: _fs, ...p }) => p)(pos.data) : null,
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,
@@ -90,7 +90,7 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
   // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling)");
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)");
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
   // never contradicts the screen it links to.
   for (const u of staleTexts(open ?? [], found)) await db.from("suggestions").update({ title: u.title, body: u.body ?? "" }).eq("id", u.id);
