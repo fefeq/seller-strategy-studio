@@ -35,12 +35,12 @@ describe("CA-1 / CA-2 (SDD 5) · the consent request", () => {
   });
 });
 
-describe("CA-3 / CA-6 (SDD 5), CA-5 / CA-6 (SDD 10) · check before saving", () => {
+describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
   const token = { scope: `${DRIVE_SCOPE}`, refresh_token: "r" };
   it("shows the connected account's email (CA-3)", () => {
     expect(checkGrant(token, { user: { emailAddress: " Ana@Ejemplo.test " } })).toEqual({ ok: true, email: "ana@ejemplo.test" });
   });
-  it("never saves when something is missing, and says why (CA-6)", () => {
+  it("never saves when something is missing, and says why (CA-6 of SDD 10)", () => {
     const bad = [
       checkGrant(null, null),
       checkGrant({ scope: "openid", refresh_token: "r" }, { user: { emailAddress: "a@b.test" } }),
@@ -60,7 +60,7 @@ describe("edge cases (SDD 5 §8) · Google errors and revoked access", () => {
     expect(oauthErrorText("x", "motivo de Google")).toContain("motivo de Google");
     expect(oauthErrorText("x")).toMatch(/Vuelve a intentarlo/);
   });
-  it("revoked or expired access is «error»; a provider outage keeps the connection (CA-4, CA-6)", () => {
+  it("revoked or expired access is «error»; a provider outage keeps the connection (§8 of SDD 5)", () => {
     expect(failureStatus(401)?.status).toBe("error");
     expect(failureStatus(400)?.status).toBe("error");
     expect(failureStatus(503)?.status).toBe("no_response");

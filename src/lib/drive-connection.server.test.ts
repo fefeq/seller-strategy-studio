@@ -75,8 +75,8 @@ describe("CA-1, CA-2 (SDD 5) · the consent starts only for a configured server"
   });
 });
 
-describe("CA-3, CA-5, CA-6 (SDD 5) · check before saving", () => {
-  it("saves the checked account sealed, lowercase, with who and when, and logs it (CA-3; CA-10 of SDD 10)", async () => {
+describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
+  it("saves the checked account sealed, lowercase, with who and when, and logs it (CA-3 of SDD 5; CA-2, CA-9, CA-10 of SDD 10)", async () => {
     route = goodGoogle();
     const { db, tables, log } = owner();
     const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
@@ -89,7 +89,7 @@ describe("CA-3, CA-5, CA-6 (SDD 5) · check before saving", () => {
     expect(log.find((l) => l.table === "connection_events")?.row).toMatchObject({ provider: "drive", action: "connected", actor: USER, detail: "ana@ejemplo.test" });
   });
 
-  it("does not save when Google granted less than asked, explains why, and revokes the token (CA-6)", async () => {
+  it("does not save when Google granted less than asked, explains why, and revokes the token (CA-6 of SDD 10)", async () => {
     route = goodGoogle({ scope: "openid" });
     const { db, tables } = owner();
     const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
@@ -99,7 +99,7 @@ describe("CA-3, CA-5, CA-6 (SDD 5) · check before saving", () => {
     expect(calls.some((c) => c.url.includes("/revoke"))).toBe(true);
   });
 
-  it("does not save when the account cannot be checked (CA-5)", async () => {
+  it("does not save when the account cannot be checked (CA-5 of SDD 10)", async () => {
     route = goodGoogle({ email: null });
     const { db, tables } = owner();
     const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
@@ -138,7 +138,7 @@ describe("CA-10 (SDD 5) · only the Owner, and only with a valid state", () => {
   });
 });
 
-describe("CA-7 (SDD 5) · changing account", () => {
+describe("CA-7 (SDD 10) · changing account", () => {
   it("replaces the account, logs «changed», revokes the old token and keeps one row", async () => {
     route = goodGoogle({ email: "nueva@ejemplo.test" });
     const old = await seal("refresh-antiguo");
