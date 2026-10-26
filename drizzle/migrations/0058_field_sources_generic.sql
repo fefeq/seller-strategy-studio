@@ -27,8 +27,9 @@ BEGIN
       v := to_jsonb(NEW) -> f;
       IF person AND v IS NOT NULL AND v <> 'null'::jsonb AND v <> '""'::jsonb AND v <> '[]'::jsonb THEN
         NEW.field_sources := NEW.field_sources || jsonb_build_object(f, jsonb_build_object(
-          'source', 'persona', 'kind', 'persona', 'confirmed', true,
-          'at', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')));
+          'source', 'persona', 'kind', 'persona', 'confirmed', true, 'confirmedBy', auth.uid(),
+          'at', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"'),
+          'confirmedAt', to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS"Z"')));
       ELSE
         NEW.field_sources := NEW.field_sources - f;
       END IF;

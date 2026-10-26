@@ -14,6 +14,7 @@ import { itemDetail, proposalItems, type ProposalItem, type SetupProposal } from
 import { BLOCK_LABEL, LEVEL_LABEL, REDO_HINT_MAX, blockBasis, blockOf, blockOrder, blocksDecided, protectManual, type BlockId, type BlockState, type Opinion } from "@/lib/onboarding";
 import type { Archetype } from "@/lib/gtm-diagnosis";
 import { errorText } from "@/lib/errors";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 
 type Status = Partial<Record<BlockId, BlockState>>;
 
@@ -43,6 +44,9 @@ export function BlocksStep({ proposal, opinions, archetype, status, onStatus, on
   const [off, setOff] = useState<Set<string>>(new Set());
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState<BlockId | null>(null);
+  // CA-3: edits to a proposal item live in this screen until its block is approved; leaving with edits asks first.
+  // The only way to keep them is approving the block they belong to, so «Guardar» is not offered here.
+  useUnsavedGuard(Object.keys(edits).some((k) => { const it = items.find((i) => i.key === k); return !!it && !status[blockOf(it)]; }), undefined);
 
   const order = blockOrder(archetype);
   const byBlock = (b: BlockId) => items.filter((i) => blockOf(i) === b).map((i) => ({ ...i, args: edits[i.key] ?? i.args }));

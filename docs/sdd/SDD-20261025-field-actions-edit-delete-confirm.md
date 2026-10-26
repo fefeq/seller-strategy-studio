@@ -114,5 +114,10 @@ Se guarda registro de quién y cuándo edita/borra/confirma. Solo Owner borra do
 - Estimación:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
+## 17. Delta de implementación (agente, 2026-10-26)
+- Decisiones de Fede aplicadas (`annex/field-actions-matrix-proposal-20261026.md`): editar y confirmar, cualquier miembro; borrar, solo el Owner; «en uso» y archivado vía registro de cambios con deshacer de 24 h (U-2); procedencia ampliada a posicionamiento, pilares y segmentos (U-3); editar siempre confirma.
+- U-1 hecha: matriz y reglas en `src/lib/field-actions.ts`; botones comunes en `src/components/field-actions.tsx`; aviso de cambios sin guardar con `useUnsavedGuard` (CA-3) en el editor de ICP y en la revisión de bloques del onboarding; confirmación por campo, en bloque y por bloque en la ficha de encaje de la cuenta (CA-8 a CA-10). La marca de origen gana quién y cuándo (`confirmedBy`, `confirmedAt`) y el tipo `sin_dato` para confirmar un valor sin origen sin atribuirlo a una persona. La migración 0058 (sin verificar) se ajustó para sellar `confirmedBy` con `auth.uid()`.
+- Alcance de la confirmación en U-1: campos de la cuenta con procedencia (`accounts`). Posicionamiento, pilares, segmentos e ICP la reciben en U-3 (migración nueva, sin verificar).
+
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).

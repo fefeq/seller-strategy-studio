@@ -16,6 +16,8 @@ import { confirmed } from "@/lib/save";
 import { structureIcp } from "@/lib/ai.functions";
 import { icpCompanyQuery, icpPeopleQuery, icpReadiness, icpSizeText, LEVEL_LABEL, splitList } from "@/lib/icp";
 import { DEFAULT_LEVELS, LEVELS } from "@/lib/orchestrator/search";
+import { isDirty } from "@/lib/field-actions";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 
 const PROSE = [
   ["industries", "Sectores o tipo de empresa", "Para el equipo y la puntuación de cuentas"],
@@ -63,13 +65,21 @@ export function IcpEditor() {
     if (error) return toast.error(errorText(error));
     setSel(pick(r)); qc.invalidateQueries({ queryKey: ["icp"] });
   }
-  async function save() {
-    if (!sel) return;
+  // CA-3: the draft lives in this screen until «Guardar ICP»; leaving with changes asks to save or discard.
+  const cmp = (d: Draft | null) => d && Object.fromEntries(Object.entries(d).filter(([k]) => !["created_at", "updated_at", "created_by", "updated_by", "org_id"].includes(k))
+    .map(([k, v]) => [k, (LIST_FIELDS as readonly string[]).includes(k) ? (typeof v === "string" ? splitList(v) : v ?? []) : typeof v === "number" ? String(v) : v]));
+  const savedRow = data?.icps.find((i: Draft) => i.id === sel?.id);
+  useUnsavedGuard(isDirty(cmp(savedRow ? pick(savedRow) : null), cmp(sel)), () => save());
+
+  /** Returns false when the save failed, so leaving keeps the draft. */
+  async function save(): Promise<boolean> {
+    if (!sel) return true;
     const { id, created_at, updated_at, created_by, updated_by, org_id, ...rest } = asIcp(sel);
     try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
-    catch (e) { return toast.error(errorText(e)); }
+    catch (e) { toast.error(errorText(e)); return false; }
     toast.success("ICP guardado. Búsquedas, puntuación e IA ya lo usan.");
     qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["clay-icps"] });
+    return true;
   }
   async function refine() {
     if (!sel) return;

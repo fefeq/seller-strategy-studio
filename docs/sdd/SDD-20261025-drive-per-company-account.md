@@ -1,7 +1,7 @@
 # SDD-20261025-drive-per-company-account · [Feature] Google Drive de una cuenta distinta al email de acceso
 
 **Tipo:** Feature · **Prioridad propuesta:** Media-Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Aprobado por Fede (2026-10-26) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 > Decisión de Fede (2026-10-25): conexión **por empresa**. La entrada vive en Conexiones.
@@ -88,8 +88,8 @@ Ubicación: paso de fuentes del onboarding y ajustes de empresa. Texto: «Conect
 3. ¿Qué permiso mínimo cubre elegir archivos o carpetas?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Mecanismo actual de autorización en producción.
-- [Por verificar] Requisitos de verificación de Google.
+- [Por verificar] Mecanismo actual de autorización en producción. Verificado en `main` (2026-10-26): `src/lib/google-drive.ts` llama a `connector-gateway.lovable.dev/google_drive` con `LOVABLE_API_KEY` + `GOOGLE_DRIVE_API_KEY` del entorno; no hay cliente OAuth de Google, ni flujo de consentimiento, ni tokens por empresa en el repo. Una sola cuenta (la del constructor) para todas las empresas; el aislamiento es en código (`drive-core.ts`, carpeta «Nokko / <empresa>»). Scopes: solo constan en `src/lib/AGENTS.md` (`drive.readonly` + `drive.file`); se fijan en el conector de Lovable, no en el repo. Sigue sin verificar: producción y los scopes realmente concedidos.
+- [Por verificar] Requisitos de verificación de Google. Verificado en la documentación de Google (2026-10-26): `drive.file` es no sensible; `drive.readonly` es restringido (verificación OAuth reforzada y evaluación de seguridad si los datos se guardan en servidor). Sin verificar: si elegir una carpeta con `drive.file` da acceso a su contenido.
 - [Por verificar] Decisión de Fede: conexión por empresa, por usuario o ambas (pregunta de README).
 
 ## 16. Sección de Dani (la completa él)
