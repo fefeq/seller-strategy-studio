@@ -41,6 +41,8 @@ type UnsavedRequest = {
   title: string;
   body?: string;
   saveLabel?: string;
+  discardLabel?: string;
+  stayLabel?: string;
   resolve: (v: "save" | "discard" | "stay") => void;
 };
 type Request = ConfirmRequest | TextRequest | UnsavedRequest;
@@ -58,7 +60,7 @@ export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<bo
 }
 
 /** Unsaved changes on leaving: «save», «discard» or «stay» (also when the dialog is dismissed). */
-export function askUnsaved(title: string, opts: { body?: string; saveLabel?: string } = {}): Promise<"save" | "discard" | "stay"> {
+export function askUnsaved(title: string, opts: { body?: string; saveLabel?: string; discardLabel?: string; stayLabel?: string } = {}): Promise<"save" | "discard" | "stay"> {
   if (!push) return Promise.resolve(typeof window !== "undefined" && window.confirm([title, opts.body].filter(Boolean).join("\n\n")) ? "discard" : "stay");
   return new Promise((resolve) => push!({ kind: "unsaved", title, ...opts, resolve }));
 }
@@ -161,11 +163,11 @@ export function DialogHost() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => close(false)}>
-              {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : current.kind === "unsaved" ? "Seguir editando" : "Cancelar"}
+              {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : current.kind === "unsaved" ? (current.stayLabel ?? "Seguir editando") : "Cancelar"}
             </AlertDialogCancel>
             {current.kind === "unsaved" && (
               <Button type="button" variant="outline" onClick={discard}>
-                Descartar
+                {current.discardLabel ?? "Descartar"}
               </Button>
             )}
             <AlertDialogAction
