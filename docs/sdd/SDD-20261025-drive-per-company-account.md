@@ -88,9 +88,10 @@ Ubicación: paso de fuentes del onboarding y ajustes de empresa. Texto: «Conect
 3. ¿Qué permiso mínimo cubre elegir archivos o carpetas?
 
 ## 15. Pendiente de verificar
-- [Por verificar] Mecanismo actual de autorización en producción.
-- [Por verificar] Requisitos de verificación de Google.
-- [Por verificar] Decisión de Fede: conexión por empresa, por usuario o ambas (pregunta de README).
+- [Por verificar] Mecanismo actual de autorización en producción. Anotado 2026-10-26 (lectura del repo, no de producción): una sola cuenta de Drive para toda la aplicación vía el gestor de conectores (`GOOGLE_DRIVE_API_KEY`); los scopes `drive.readonly` + `drive.file` figuran en `src/lib/AGENTS.md` pero no se pueden comprobar desde el código. Sigue pendiente de Dani.
+- [Por verificar] Requisitos de verificación de Google. Se parte de `drive.file`, que Google trata como no sensible; no confirmado.
+- Decidido por Fede (README): conexión por empresa.
+- Verificado 2026-10-26: con `drive.file` y Google Picker sobre una cuenta de prueba, Fede informa «funciona OK» para leer los documentos de una carpeta elegida. Es un resultado comunicado por Fede, sin el detalle de las llamadas (`files.list` de la carpeta, `files.get` de un hijo); no lo he reproducido yo. Decisión de diseño: permiso `drive.file` + selector, sin `drive.readonly`.
 
 ## 16. Sección de Dani (la completa él)
 - Diseño técnico:
