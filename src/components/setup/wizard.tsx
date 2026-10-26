@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { applySetupItems } from "@/lib/agent.functions";
 import { type SetupProposal } from "@/lib/setup-extraction";
 import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
+import { useSetupGuide } from "@/hooks/use-setup-guide";
+import { NextStepMessage } from "@/components/setup/guide";
 import { quarterOf } from "@/lib/metrics";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
@@ -38,12 +40,13 @@ export function Interview() {
 
 export function Wizard({ proposal }: { proposal: SetupProposal | null }) {
   const { data: setup } = useSetup();
-  // Fixed order and numbering: «paso 2» is always the same step. Saving moves to the next pending one
-  // after the current, never skipping one that is still missing.
+  // Fixed order and numbering: «paso 2» is always the same step. Finishing a step shows the next recommended one
+  // (setup-guide.ts, the same rule as Inicio and the agent) with «Empezar»; it never jumps on its own.
   const [stepId, setStepId] = useState<string | null>(null);
+  const g = useSetupGuide();
   const stepsRef = useRef<HTMLDivElement>(null);
   const isDone = (id: string) => !!setup?.status.items.find((x) => x.id === id)?.done;
-  const firstPending = SETUP_ITEMS.find((i) => !isDone(i.id))?.id ?? SETUP_ITEMS[0].id;
+  const firstPending = g.guide?.next?.id ?? SETUP_ITEMS.find((i) => !isDone(i.id))?.id ?? SETUP_ITEMS[0].id;
   const curId = stepId ?? firstPending;
   const cur = SETUP_ITEMS.find((i) => i.id === curId) ?? SETUP_ITEMS[0];
   // Mobile: the steps are one swipeable row; keep the current one in view.
@@ -54,23 +57,23 @@ export function Wizard({ proposal }: { proposal: SetupProposal | null }) {
   }, [curId]);
   if (!setup) return null;
   const done = isDone(cur.id);
-  const nextPending = () => {
-    const idx = SETUP_ITEMS.findIndex((i) => i.id === cur.id);
-    const after = [...SETUP_ITEMS.slice(idx + 1), ...SETUP_ITEMS.slice(0, idx)].find((i) => !isDone(i.id) && i.id !== cur.id);
-    setStepId(after?.id ?? cur.id);
-  };
 
   return (
     <div className="rounded-lg border bg-card p-5">
       <div ref={stepsRef} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {SETUP_ITEMS.map((i, idx) => (
-          <button key={i.id} data-active={i.id === cur.id || undefined} onClick={() => setStepId(i.id)} className={`min-h-8 shrink-0 whitespace-nowrap rounded-none border px-3 py-1.5 text-xs md:min-h-0 md:py-1 ${i.id === cur.id ? "bg-primary text-primary-foreground" : isDone(i.id) ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}</button>
+          <button key={i.id} data-active={i.id === cur.id || undefined} onClick={() => setStepId(i.id)} className={`min-h-8 shrink-0 whitespace-nowrap rounded-none border px-3 py-1.5 text-xs md:min-h-0 md:py-1 ${i.id === cur.id ? "bg-primary text-primary-foreground" : isDone(i.id) ? "text-muted-foreground line-through" : ""}`}>{idx + 1}. {i.label.split(" (")[0]}{g.guide?.steps.find((x) => x.id === i.id)?.state === "snoozed" && " · Pospuesto"}</button>
         ))}
       </div>
+      {g.justDone && g.message?.stepId !== undefined && g.message && (
+        <div className="mt-4 rounded-lg border bg-muted/40 p-4">
+          <NextStepMessage msg={g.message} onStart={(id) => { setStepId(id); g.clearJustDone(); }} onDismiss={g.clearJustDone} />
+        </div>
+      )}
       <div className="mt-5">
         <h3 className="text-2xl">{cur.label} {done && <span className="ml-2 align-middle text-xs text-success">Completado</span>}</h3>
         <p className="mt-1 text-sm text-muted-foreground">Desbloquea: {cur.unlocks}</p>
-        <div className="mt-4"><StepPanel key={cur.id} id={cur.id} done={done} link={cur.link} proposal={proposal} onSaved={nextPending} /></div>
+        <div className="mt-4"><StepPanel key={cur.id} id={cur.id} done={done} link={cur.link} proposal={proposal} onSaved={() => undefined} /></div>
       </div>
     </div>
   );

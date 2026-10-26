@@ -1,8 +1,9 @@
 // Core reads: overview, search, records, lists, setup status, follow-up drafts, knowledge. Part of the single registry in ../tools.ts (order there is the order the model sees).
 import { z } from "zod";
-import { loadSetupData } from "@/lib/org-data";
+import { loadSetupData, loadSetupGuideExtras } from "@/lib/org-data";
 import { STAGE_ARG, def, like, ok, one, orgStages, resolveStage } from "../tool-kit";
 import { setupStatus } from "@/lib/setup-schema";
+import { guideState, nextMessage } from "@/lib/setup-guide";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
@@ -184,7 +185,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
   }),
   def({
     name: "get_setup_status", kind: "read",
-    description: "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea) y valores actuales de segmentos, ICP, posicionamiento y pilares.",
+    description: "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea), la guía con el siguiente paso recomendado (guia.mensaje) y los pasos pospuestos, y valores actuales de segmentos, ICP, posicionamiento y pilares.",
     input: z.object({}),
     run: async (c) => {
       const d = await loadSetupData(c.db, c.orgId);
@@ -193,7 +194,11 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         c.db.from("icp_profiles").select("id,name,industries,company_size,min_employees,max_employees,countries,search_keywords,target_titles,seniorities,pains,why_fit,anti_icp").eq("org_id", c.orgId),
         c.db.from("messaging_pillars").select("id,title,pain,message,proof").eq("org_id", c.orgId),
       ]);
-      return { estado: setupStatus(d), moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
+      // The guide (setup-guide.ts) decides the next step by a fixed order, the same as the screen; the agent never picks it.
+      const extras = await loadSetupGuideExtras(c.db, c.orgId);
+      const g = guideState(d, extras.snoozes, new Date());
+      const guia = { mensaje: nextMessage(g, c.roles[0]), pospuestos: g.snoozed.map((s) => ({ paso: s.label, hasta: s.snoozedUntil })) };
+      return { estado: setupStatus(d), guia, moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
     },
   }),
   def({

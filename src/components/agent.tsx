@@ -13,6 +13,8 @@ import { decideAgentAction, sendAgentMessage } from "@/lib/agent.functions";
 import { getPersona, personasFor } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
 import { errorText } from "@/lib/errors";
+import { GuideOffer } from "@/components/setup/guide";
+import { SETUP_ITEMS } from "@/lib/setup-schema";
 
 type Mode = "chat" | "interview";
 type Action = { id: string; summary: string; status: string; result?: string };
@@ -202,6 +204,9 @@ export function AgentProvider({ children }: { children: ReactNode }) {
             {workflowId && <p className="mt-1 text-xs text-muted-foreground">Flujo activo: {getWorkflow(workflowId)?.label}</p>}
           </SheetHeader>
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            {/* CA-9 / CA-10: with steps pending the guide's next step is the first suggestion; right after finishing one it says what was done and proposes the next. */}
+            <GuideOffer scope="agent" orgId={me?.currentOrg?.org_id} onStart={(id) => submit(`Quiero completar este paso de mi estrategia GTM: ${SETUP_ITEMS.find((i) => i.id === id)?.label ?? id}. Empieza por lo que falte y propónmelo para confirmar.`, "interview", convId)}
+              wrap={(b) => <div className="rounded-lg border bg-card p-4"><p className="eyebrow mb-2">Primera sugerencia</p>{b}</div>} />
             {msgs.length === 0 && !busy && (
               <div className="space-y-3 pt-6">
                 <p className="text-sm text-muted-foreground">{persona ? `${persona.focus} Elige un código del menú o pregúntame directamente.` : null}</p>

@@ -37,11 +37,12 @@ Reglas:
 - Para cambiar datos usa las herramientas de escritura: NO se ejecutan al momento, quedan como propuesta que el usuario confirma. Di claramente qué has propuesto y que debe confirmarlo.
 - Si necesitas un id, búscalo primero con "search" o "list_deals".
 - Sé proactivo: al final, si ves un riesgo o un siguiente paso evidente, propónlo en una línea.
+- Cuando se complete un paso de la configuración de la estrategia (posicionamiento, ICP, segmentos, benchmarks, pilares, cuota, cuentas, deals), llama a get_setup_status, confirma lo hecho en una frase y propón el siguiente con su motivo tal como lo devuelve guia.mensaje. No elijas tú el siguiente paso: es el que devuelve la herramienta.
 ${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas; usa listas simples." : "- Puedes usar markdown (listas, negritas, tablas pequeñas)."}${memory ? `\n${memory}` : ""}`;
   if (mode !== "interview") return base;
   return `${base}
 MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de la empresa con la mínima fricción.
-- Empieza llamando a get_setup_status y pregunta SOLO por lo que falta, empezando por lo de mayor peso.
+- Empieza llamando a get_setup_status y pregunta SOLO por lo que falta, empezando por el paso de guia.mensaje (orden fijo, no por peso).
 - Una pregunta (o un bloque pequeño relacionado) por turno. Ofrece una propuesta por defecto que el usuario pueda aceptar con "sí".
 - En cuanto tengas una respuesta, propón guardarla con la herramienta adecuada (update_positioning, create_icp, upsert_segment, create_pillar, set_quota, create_account).
 - Cuando todo esté completo, felicítale y sugiere el siguiente paso útil.`;

@@ -375,3 +375,21 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
     await expect(executeTool(ctxWith(db, ["owner"]), "undo_change", { change_id: ID(41) })).rejects.toThrow(/pasaron más de 24 horas/);
   });
 });
+
+describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-7, CA-9, CA-10)", () => {
+  it("returns the same next step as the screen, skipping a snoozed one, and only reads its own company", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "setup_step_snoozes" ? { data: [{ step_id: "positioning", snoozed_until: "2999-01-01T23:59:59.999Z", created_at: "2026-10-26T09:00:00Z" }] } : undefined));
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { guia: { mensaje: { stepId: string; why: string; start: string }; pospuestos: { paso: string }[] } };
+    expect(r.guia.mensaje.stepId).toBe("icp");
+    expect(r.guia.mensaje.why).toContain("priorizar");
+    expect(r.guia.mensaje.start).toBe("Empezar");
+    expect(r.guia.pospuestos).toHaveLength(1);
+    expect(log.some((q) => q.table === "setup_step_snoozes")).toBe(true);
+    expectScoped(log.filter((q) => q.table !== "organizations")); // organizations is read by its own id
+  });
+  it("recommends a step the caller's role can complete", async () => {
+    const { db } = fakeDb();
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { guia: { mensaje: { stepId: string } } };
+    expect(r.guia.mensaje.stepId).toBe("accounts");
+  });
+});
