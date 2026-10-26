@@ -64,4 +64,10 @@ describe("delete rules", () => {
     expect(changeText(entry({ table_name: "messaging_pillars", op: "update", before: { title: "Ahorro" } }))).toBe("Cambiaste el pilar «Ahorro»");
     expect(changeText(entry({ table_name: "positioning", op: "update", before: {} }))).toBe("Cambiaste el posicionamiento");
   });
+
+  it("a single use reads in the singular", () => {
+    const one = { kept: [{ label: "cuentas", one: "cuenta", count: 1 }, { label: "deals", one: "deal", count: 2 }], gone: [] };
+    expect(deletePlan("segment", "Pymes", one, ["owner"]).lines[0]).toBe("Se usa en: 1 cuenta, 2 deals.");
+  });
 });
+

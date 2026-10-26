@@ -68,7 +68,7 @@ describe("migration 0058: provenance trigger on accounts and icp_profiles", () =
 
 describe("migration 0060: change log and undo", () => {
   beforeAll(async () => {
-    await migrate(db, ["0060_field_edit_log.sql", "0061_field_sources_strategy.sql"]);
+    await migrate(db, ["0060_field_edit_log.sql", "0061_field_sources_strategy.sql", "0063_undo_keeps_confirmations.sql"]);
     await as(db, U.ownerA, async () => {
       seg = (await rows("insert into segments (name) values ('Pymes') returning id"))[0]!.id;
       pil = (await rows("insert into messaging_pillars (title) values ('Ahorro') returning id"))[0]!.id;
@@ -221,6 +221,35 @@ describe("what the real database has that the migrations must live with (catalog
     expect(added.map((e) => e.table_name)).toEqual(["segments"]);
     expect(await rows("select id from segment_targets where segment_id = $1", [s2])).toHaveLength(0);
     expect(await rows("select id from account_assignment_rules where segment_id = $1", [s2])).toHaveLength(0);
+  });
+});
+
+describe("migration 0063: undoing an edit keeps the confirmations of other fields", () => {
+  it("gives the reverted field its previous mark (none) and leaves a later confirmation of another field alone", async () => {
+    let id = "";
+    await as(db, U.ownerA, async () => { id = (await rows("insert into messaging_pillars (title) values ('Pilar 63') returning id"))[0]!.id; });
+    await as(db, U.aeA, async () => { await db.query("update messaging_pillars set pain = 'Dolor nuevo' where id = $1", [id]); });
+    const edit = (await log()).filter((e) => e.row_id === id).pop()!;
+    // someone confirms the title after the edit (field_sources only: not logged)
+    await as(db, U.aeA, async () => { await db.query(`update messaging_pillars set field_sources = field_sources || '{"title":{"source":"sin_origen","kind":"sin_dato","confirmed":true,"at":"a","confirmedBy":"x","confirmedAt":"b"}}'::jsonb where id = $1`, [id]); });
+    await as(db, U.aeA, async () => { await db.query("select public.undo_field_edit($1)", [edit.id]); });
+    const row = (await rows("select pain, field_sources from messaging_pillars where id = $1", [id]))[0]!;
+    expect(row.pain).toBe("");
+    expect(row.field_sources).not.toHaveProperty("pain");
+    expect(row.field_sources.title).toMatchObject({ confirmed: true });
+  });
+
+  it("gives back the mark the field had before the edit", async () => {
+    let id = "";
+    await as(db, U.ownerA, async () => { id = (await rows("insert into messaging_pillars (title, message) values ('Pilar 63b', 'Original') returning id"))[0]!.id; });
+    await db.exec(`update messaging_pillars set field_sources = '{"message":{"source":"clay","at":"x"}}'::jsonb where id = '${id}'`);
+    await as(db, U.aeA, async () => { await db.query("update messaging_pillars set message = 'Cambiado' where id = $1", [id]); });
+    expect((await rows("select field_sources from messaging_pillars where id = $1", [id]))[0]!.field_sources.message.kind).toBe("persona");
+    const edit = (await log()).filter((e) => e.row_id === id).pop()!;
+    await as(db, U.aeA, async () => { await db.query("select public.undo_field_edit($1)", [edit.id]); });
+    const row = (await rows("select message, field_sources from messaging_pillars where id = $1", [id]))[0]!;
+    expect(row.message).toBe("Original");
+    expect(row.field_sources.message).toEqual({ source: "clay", at: "x" });
   });
 });
 

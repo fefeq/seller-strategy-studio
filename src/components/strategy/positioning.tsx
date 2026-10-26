@@ -74,7 +74,7 @@ export function Positioning() {
     try { await confirmed(row ? supabase.from("positioning").update({ ...rest, copy_status: kept }).eq("id", row.id).select("id") : supabase.from("positioning").insert(rest).select("id")); }
     catch (e) { toast.error(errorText(e)); return false; }
     toast.success(Object.keys(kept).length < Object.keys(copyStatus).length ? "Posicionamiento guardado. Los textos públicos que has cambiado vuelven a borrador." : "Posicionamiento guardado.");
-    qc.invalidateQueries({ queryKey: ["positioning"] }); qc.invalidateQueries({ queryKey: ["setup"] });
+    qc.invalidateQueries({ queryKey: ["positioning"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["recent-changes"] });
     return true;
   }
   async function setApproval(k: string, approve: boolean) {
@@ -151,7 +151,7 @@ export function Pillars() {
   async function upd(id: string, patch: Record<string, string>) {
     try { await confirmed(supabase.from("messaging_pillars").update(patch as TablesUpdate<"messaging_pillars">).eq("id", id).select("id")); }
     catch (e) { toast.error(errorText(e)); }
-    qc.invalidateQueries({ queryKey: ["pillars"] }); qc.invalidateQueries({ queryKey: ["setup"] });
+    qc.invalidateQueries({ queryKey: ["pillars"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["recent-changes"] });
   }
   // CA-8 to CA-10: confirmation lives in messaging_pillars.field_sources (migration 0061, not applied yet).
   const PILLAR_FIELDS = ["title", "pain", "message", "proof"];
@@ -179,11 +179,11 @@ export function Pillars() {
           const mark = (k: string) => <ConfirmMark field={k} value={(p as Record<string, unknown>)[k] as string | null} marks={marks} roles={roles} userId={me?.user.id} enabled={hasMarks} onConfirm={confirm} />;
           return (
           <div key={p.id} className="space-y-2 rounded-lg border bg-card p-4">
-            <div className="flex items-center gap-2"><span className="font-mono text-xs text-signal">0{i + 1}</span><Input className="font-display md:text-[22px]" defaultValue={p.title} onBlur={(e) => upd(p.id, { title: e.target.value })} /></div>
+            <div className="flex items-center gap-2"><span className="font-mono text-xs text-signal">0{i + 1}</span><Input key={`title-${p.title}`} className="font-display md:text-[22px]" defaultValue={p.title} onBlur={(e) => upd(p.id, { title: e.target.value })} /></div>
             {mark("title")}
-            <Field label="Dolor que resuelve"><Textarea rows={2} defaultValue={p.pain ?? ""} onBlur={(e) => upd(p.id, { pain: e.target.value })} />{mark("pain")}</Field>
-            <Field label="Mensaje"><Textarea rows={2} defaultValue={p.message ?? ""} onBlur={(e) => upd(p.id, { message: e.target.value })} />{mark("message")}</Field>
-            <Field label="Pruebas"><Textarea rows={2} defaultValue={p.proof ?? ""} onBlur={(e) => upd(p.id, { proof: e.target.value })} />{mark("proof")}</Field>
+            <Field label="Dolor que resuelve"><Textarea key={`pain-${p.pain ?? ""}`} rows={2} defaultValue={p.pain ?? ""} onBlur={(e) => upd(p.id, { pain: e.target.value })} />{mark("pain")}</Field>
+            <Field label="Mensaje"><Textarea key={`message-${p.message ?? ""}`} rows={2} defaultValue={p.message ?? ""} onBlur={(e) => upd(p.id, { message: e.target.value })} />{mark("message")}</Field>
+            <Field label="Pruebas"><Textarea key={`proof-${p.proof ?? ""}`} rows={2} defaultValue={p.proof ?? ""} onBlur={(e) => upd(p.id, { proof: e.target.value })} />{mark("proof")}</Field>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <ConfirmBar fields={present} marks={marks} enabled={hasMarks} onConfirm={confirm} />
               <FieldActions kind="pillar" roles={roles} handlers={{ delete: () => setToDelete({ id: p.id, name: p.title || "Sin título" }) }} />

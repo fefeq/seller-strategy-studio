@@ -15,8 +15,8 @@ const TRACKED_TABLE = { account: "accounts", icp: "icp_profiles", positioning: "
 const NOUN = { segment: "el segmento", icp: "el ICP", pillar: "el pilar de mensaje" } as const;
 const ELEMENT: Record<TrackedKind, ElementKind> = { account: "company_field", icp: "icp", positioning: "positioning", pillar: "pillar", segment: "segment" };
 
-const KEPT = [["deals", "deals"], ["accounts", "cuentas"], ["leads", "leads"], ["icp_profiles", "ICP"], ["trials", "pruebas"], ["finance_cost_lines", "líneas de coste"]] as const;
-const GONE = [["segment_targets", "objetivos"], ["cac_costs", "costes de CAC"], ["segment_budget_quarters", "trimestres de presupuesto"], ["account_assignment_rules", "reglas de reparto"]] as const;
+const KEPT = [["deals", "deals", "deal"], ["accounts", "cuentas", "cuenta"], ["leads", "leads", "lead"], ["icp_profiles", "ICP", "ICP"], ["trials", "pruebas", "prueba"], ["finance_cost_lines", "líneas de coste", "línea de coste"]] as const;
+const GONE = [["segment_targets", "objetivos", "objetivo"], ["cac_costs", "costes de CAC", "coste de CAC"], ["segment_budget_quarters", "trimestres de presupuesto", "trimestre de presupuesto"], ["account_assignment_rules", "reglas de reparto", "regla de reparto"]] as const;
 
 async function countBySegment(c: ToolCtx, table: (typeof KEPT)[number][0] | (typeof GONE)[number][0], segmentId: string) {
   const { count, error } = await c.db.from(table).select("id", { count: "exact", head: true }).eq("org_id", c.orgId).eq("segment_id", segmentId);
@@ -28,14 +28,14 @@ async function countBySegment(c: ToolCtx, table: (typeof KEPT)[number][0] | (typ
 async function usageOf(c: ToolCtx, kind: DeleteKind, row: { id: string; segment_id?: string | null }): Promise<{ kept: UsageLine[]; gone: UsageLine[] }> {
   if (kind === "segment") {
     const [kept, gone] = await Promise.all([
-      Promise.all(KEPT.map(async ([t, l]) => ({ label: l, count: await countBySegment(c, t, row.id) }))),
-      Promise.all(GONE.map(async ([t, l]) => ({ label: l, count: await countBySegment(c, t, row.id) }))),
+      Promise.all(KEPT.map(async ([t, l, one]) => ({ label: l, one, count: await countBySegment(c, t, row.id) }))),
+      Promise.all(GONE.map(async ([t, l, one]) => ({ label: l, one, count: await countBySegment(c, t, row.id) }))),
     ]);
     return { kept, gone };
   }
   if (kind === "icp" && row.segment_id) {
     const [accounts, leads] = await Promise.all([countBySegment(c, "accounts", row.segment_id), countBySegment(c, "leads", row.segment_id)]);
-    return { kept: [{ label: "cuentas", count: accounts }, { label: "leads", count: leads }], gone: [] };
+    return { kept: [{ label: "cuentas", one: "cuenta", count: accounts }, { label: "leads", one: "lead", count: leads }], gone: [] };
   }
   return { kept: [], gone: [] };
 }

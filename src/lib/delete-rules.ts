@@ -9,7 +9,8 @@ import { jsonObject } from "@/lib/json";
 /** Undo window, decided by Fede. */
 export const UNDO_HOURS = 24;
 
-export type UsageLine = { label: string; count: number };
+/** `one` is the singular of `label` («1 cuenta», not «1 cuentas»). */
+export type UsageLine = { label: string; count: number; one?: string };
 export type DeleteKind = Extract<ElementKind, "segment" | "icp" | "pillar">;
 
 export type DeletePlan = {
@@ -24,7 +25,7 @@ export type DeletePlan = {
   lines: string[];
 };
 
-const list = (xs: UsageLine[]) => xs.filter((x) => x.count > 0).map((x) => `${x.count} ${x.label}`).join(", ");
+const list = (xs: UsageLine[]) => xs.filter((x) => x.count > 0).map((x) => `${x.count} ${x.count === 1 && x.one ? x.one : x.label}`).join(", ");
 
 /**
  * «Vas a borrar X. Se usa en Y.» For a segment, any use blocks the delete; for an ICP, use means archive;
