@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Aprobado (Fede, 2026-10-26); tabla de la sección 11 pendiente de validar · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen
@@ -64,6 +64,32 @@ Mensaje tipo: «Ya tienes tu ICP. Siguiente: define tu posicionamiento (5 min). 
 
 ## 10. Datos, permisos y privacidad
 Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de terceros. Respetar roles.
+
+## 11. Tabla de los 8 pasos (derivada del código, 2026-10-26)
+Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_LINK` en `src/lib/proactive/resolve.ts`, `src/components/setup/wizard.tsx` y roles en `src/lib/agent/tools/strategy.ts` y `core-write.ts`.
+
+| Nº wizard | id | Peso | Cuenta como completo (hoy) | Dónde se edita | Roles que pueden completarlo | Dependencia en el código |
+|---|---|---|---|---|---|---|
+| 1 | `positioning` | 20 | Los 13 campos de `POSITIONING_FIELDS` con texto | `/strategy?tab=positioning` | owner, sales_leader, marketing | Ninguna |
+| 2 | `icp` | 15 | Al menos un ICP con sectores, tamaño, encaje y anti-ICP | `/strategy?tab=icp` | owner, sales_leader, marketing | Ninguna |
+| 3 | `segments` | 10 | Hay segmentos y todos tienen ACV mín. o máx. | `/strategy?tab=motions` | owner, sales_leader | Necesita segmentos existentes; `create_organization` siembra los de plantilla |
+| 4 | `benchmarks` | 10 | Hay segmentos y todos tienen win rate y cuota AE (0 vale) | `/strategy?tab=motions` | owner, sales_leader | Mismos segmentos que el paso 3; el formulario es el mismo |
+| 5 | `pillars` | 10 | Al menos 3 pilares con título y mensaje | `/strategy?tab=pillars` | owner, sales_leader, marketing | Ninguna |
+| 6 | `quota` | 15 | Cuota del trimestre actual con importe mayor que 0 | `/metrics` | owner, sales_leader | Ninguna; el trimestre se recalcula solo y el paso vuelve a Pendiente al cambiar de trimestre |
+| 7 | `accounts` | 10 | Al menos una cuenta | `/accounts` | Sin restricción de rol en la herramienta | Ninguna; crear un deal sin cuenta crea una, así que el paso 8 puede completar el 7 |
+| 8 | `deals` | 10 | Al menos un deal | `/deals` | Sin restricción de rol en la herramienta | Opcionales: segmento, etapa y cuenta (se crea si no existe) |
+
+**Dos órdenes distintos hoy (incumple CA-3):**
+- Wizard: orden fijo de la tabla (1 a 8). Tras guardar salta al siguiente pendiente en ese orden, circular.
+- Detector `setup-incomplete` y `setupStatus.next`: orden por peso descendente, con empate por posición: positioning, icp, quota, segments, benchmarks, pillars, accounts, deals. La cuota (15) se recomienda antes que segmentos (10).
+
+**Hallazgos:**
+- El código no impone ninguna dependencia entre pasos; solo hay dependencias de datos (3 y 4 sobre los mismos segmentos; 8 puede crear la cuenta del 7).
+- El estado completado ya se deriva de datos (`done(d)`), sin guardar aparte; es la base de la nota técnica de la sección 12.
+- Los roles del paso 7 y 8 no están restringidos: CA-8 solo aplica a los pasos 1 a 6.
+- No hay estado «pospuesto» ni fecha de posposición en ningún sitio: es nuevo (sección 10).
+
+**Orden único propuesto (por validar por Fede):** el del wizard (1 a 8), porque va de estrategia a ejecución y mantiene «paso 2» siempre igual. Regla de siguiente paso: el primer pendiente no pospuesto en ese orden. Implica cambiar el detector, que hoy usa peso. Alternativa: orden por peso, que pone la cuota antes que segmentos.
 
 ## 12. Notas técnicas [Sugerencia — Dani valida]
 - Regla pura sobre `SETUP_ITEMS`/`setupStatus` (`src/lib/setup-schema.ts`); reutilizar detector `src/lib/proactive/detectors/setup-incomplete.ts` y `next-steps`.
