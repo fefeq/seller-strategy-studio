@@ -6,6 +6,7 @@ import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { Motions } from "@/components/strategy/motions";
 import { Pillars, Positioning } from "@/components/strategy/positioning";
+import { RecentChanges } from "@/components/recent-changes";
 
 const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pillars"] as const;
 
@@ -37,6 +38,7 @@ function Strategy() {
         <TabsContent value="positioning"><Positioning /></TabsContent>
         <TabsContent value="pillars"><Pillars /></TabsContent>
       </Tabs>
+      <RecentChanges />
     </Page>
   );
 }

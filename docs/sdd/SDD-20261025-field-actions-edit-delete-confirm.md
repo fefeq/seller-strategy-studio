@@ -1,7 +1,7 @@
 # SDD-20261025-field-actions-edit-delete-confirm · [Feature] Editar, borrar y confirmar en campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-26; U-1 hecha) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-26; U-1 y U-2 hechas) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD-20261025-universal-field-definitions (estado de origen/confirmación)
 
 ## 1. Resumen
@@ -117,6 +117,7 @@ Se guarda registro de quién y cuándo edita/borra/confirma. Solo Owner borra do
 ## 17. Delta de implementación (agente, 2026-10-26)
 - Decisiones de Fede aplicadas (`annex/field-actions-matrix-proposal-20261026.md`): editar y confirmar, cualquier miembro; borrar, solo el Owner; «en uso» y archivado vía registro de cambios con deshacer de 24 h (U-2); procedencia ampliada a posicionamiento, pilares y segmentos (U-3); editar siempre confirma.
 - U-1 hecha: matriz y reglas en `src/lib/field-actions.ts`; botones comunes en `src/components/field-actions.tsx`; aviso de cambios sin guardar con `useUnsavedGuard` (CA-3) en el editor de ICP y en la revisión de bloques del onboarding; confirmación por campo, en bloque y por bloque en la ficha de encaje de la cuenta (CA-8 a CA-10). La marca de origen gana quién y cuándo (`confirmedBy`, `confirmedAt`) y el tipo `sin_dato` para confirmar un valor sin origen sin atribuirlo a una persona. La migración 0058 (sin verificar) se ajustó para sellar `confirmedBy` con `auth.uid()`.
+- U-2 hecha: reglas puras en `src/lib/delete-rules.ts` (qué se pierde y dónde se usa, segmento en uso no se borra, archivar ICP y pilar = borrar con deshacer 24 h, ventana y rol del deshacer); `DeleteSegment` las usa y ofrece «Deshacer» en el aviso; panel «Cambios de las últimas 24 horas» en Estrategia (`recent-changes.tsx`). **Migración 0060 NO VERIFICADA ni aplicada** (`field_edit_log`, disparadores en `segments`, `icp_profiles`, `positioning` y `messaging_pillars`, `undo_field_edit`; lista de comprobaciones en su cabecera). Hasta aplicarla y regenerar los tipos, el borrado de segmentos funciona pero «Deshacer» falla con un error, y `src/lib/field-undo.ts` lleva un cast acotado que hay que retirar. Los botones de borrar/archivar de ICP y pilares llegan en U-3. Numeración: otra rama añade también un `0059`; renumerar al fusionar.
 - Alcance de la confirmación en U-1: campos de la cuenta con procedencia (`accounts`). Posicionamiento, pilares, segmentos e ICP la reciben en U-3 (migración nueva, sin verificar).
 
 ---

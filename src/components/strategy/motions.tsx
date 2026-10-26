@@ -14,6 +14,8 @@ import type { SegLike } from "@/lib/segment-coverage";
 import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
+import { deletePlan } from "@/lib/delete-rules";
+import { latestChangeFor, undoChange } from "@/lib/field-undo";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import type { TablesUpdate } from "@/integrations/supabase/types";
@@ -304,24 +306,34 @@ export const DELETED_WITH_SEGMENT = [["segment_targets", "objetivos"], ["cac_cos
 
 export function DeleteSegment({ target, onClose, onDeleted }: { target: { id: string; name: string } | null; onClose: () => void; onDeleted: () => void }) {
   const [busy, setBusy] = useState(false);
+  const { data: me } = useMe();
   const { data: impact } = useQuery({
     queryKey: ["segment-impact", target?.id],
     enabled: !!target,
     queryFn: async () => {
       const count = async (table: (typeof KEPT_WITHOUT_SEGMENT)[number][0] | (typeof DELETED_WITH_SEGMENT)[number][0]) => (await supabase.from(table).select("id", { count: "exact", head: true }).eq("segment_id", target!.id)).count ?? 0;
       const [kept, gone] = await Promise.all([
-        Promise.all(KEPT_WITHOUT_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
-        Promise.all(DELETED_WITH_SEGMENT.map(async ([t, l]) => [l, await count(t)] as const)),
+        Promise.all(KEPT_WITHOUT_SEGMENT.map(async ([t, l]) => ({ label: l, count: await count(t) }))),
+        Promise.all(DELETED_WITH_SEGMENT.map(async ([t, l]) => ({ label: l, count: await count(t) }))),
       ]);
-      return { kept: kept.filter(([, n]) => n > 0), gone: gone.filter(([, n]) => n > 0) };
+      return { kept, gone };
     },
   });
+  // CA-4, CA-6, CA-7: the plan says what is lost and where it is used; a segment in use is not deleted.
+  const plan = target && impact ? deletePlan("segment", target.name, impact, me?.roles ?? []) : null;
   async function remove() {
     if (!target) return;
     setBusy(true);
     try {
       await confirmed(supabase.from("segments").delete().eq("id", target.id).select("id"));
-      toast.success(`Segmento «${target.name}» eliminado.`);
+      const id = target.id;
+      toast.success(`Segmento «${target.name}» borrado.`, {
+        duration: 15000,
+        action: { label: "Deshacer", onClick: async () => {
+          try { const e = await latestChangeFor(id); if (!e) throw new Error("No encuentro el cambio para deshacerlo."); await undoChange(e.id); toast.success("Borrado deshecho."); onDeleted(); }
+          catch (err) { toast.error(errorText(err)); }
+        } },
+      });
       onDeleted();
       onClose();
     } catch (e) {
@@ -330,30 +342,24 @@ export function DeleteSegment({ target, onClose, onDeleted }: { target: { id: st
       setBusy(false);
     }
   }
-  const list = (xs: readonly (readonly [string, number])[]) => xs.map(([l, n]) => `${n} ${l}`).join(", ");
   return (
     <AlertDialog open={!!target} onOpenChange={(o) => !o && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>¿Eliminar el segmento «{target?.name}»?</AlertDialogTitle>
+          <AlertDialogTitle>{plan?.title ?? `¿Borrar el segmento «${target?.name}»?`}</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-2 text-sm">
-              {!impact ? <p>Comprobando qué datos dependen de este segmento…</p> : (
-                <>
-                  {impact.kept.length === 0 && impact.gone.length === 0 && <p>No hay datos asociados. Deja de contar en la configuración, las métricas y los selectores.</p>}
-                  {impact.kept.length > 0 && <p>Se quedan sin segmento, pero no se borran: {list(impact.kept)}.</p>}
-                  {impact.gone.length > 0 && <p className="text-destructive">Se borran con él: {list(impact.gone)}.</p>}
-                  <p>No se puede deshacer.</p>
-                </>
-              )}
+              {!plan ? <p>Comprobando qué datos dependen de este segmento…</p> : plan.lines.map((l, i) => <p key={i} className={plan.blocked === "in_use" && l.startsWith("Borrarlo") ? "text-destructive" : undefined}>{l}</p>)}
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={busy}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction disabled={busy || !impact} onClick={(e) => { e.preventDefault(); remove(); }} className="bg-destructive text-destructive-foreground">
-            {busy ? "Eliminando…" : "Eliminar segmento"}
-          </AlertDialogAction>
+          <AlertDialogCancel disabled={busy}>{plan?.allowed ? "Cancelar" : "Cerrar"}</AlertDialogCancel>
+          {plan?.allowed && (
+            <AlertDialogAction disabled={busy} onClick={(e) => { e.preventDefault(); remove(); }} className="bg-destructive text-destructive-foreground">
+              {busy ? "Borrando…" : plan.confirmLabel}
+            </AlertDialogAction>
+          )}
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

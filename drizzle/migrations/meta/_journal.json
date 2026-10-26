@@ -414,6 +414,13 @@
       "when": 1792933819000,
       "tag": "0058_field_sources_generic",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792985000000,
+      "tag": "0060_field_edit_log",
+      "breakpoints": true
     }
   ]
 }
