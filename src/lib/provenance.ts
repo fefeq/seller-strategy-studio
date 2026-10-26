@@ -3,13 +3,13 @@
 // an update changes the field without touching field_sources. A value without a mark is «sin dato»: it is never
 // read as written by a person.
 
-export type OriginKind = "persona" | "fuente" | "ia" | "supuesto";
-export type FieldSource = { source: string; at: string; quote?: string; kind?: OriginKind; confirmed?: boolean };
+export type OriginKind = "persona" | "fuente" | "ia" | "supuesto" | "sin_dato";
+export type FieldSource = { source: string; at: string; quote?: string; kind?: OriginKind; confirmed?: boolean; confirmedBy?: string; confirmedAt?: string };
 export type FieldSources = Record<string, FieldSource>;
 
 export const SOURCE_LABEL: Record<string, string> = { apollo: "Apollo", clay: "Clay", web: "Web de la empresa" };
 
-const KINDS: OriginKind[] = ["persona", "fuente", "ia", "supuesto"];
+const KINDS: OriginKind[] = ["persona", "fuente", "ia", "supuesto", "sin_dato"];
 
 /** Marks older rows carry only {source, at, quote}: the kind comes from the source, and only a person's edit is confirmed. */
 export function originOf(s: FieldSource | undefined): { kind: OriginKind; confirmed: boolean; detail: string } | null {
@@ -19,15 +19,28 @@ export function originOf(s: FieldSource | undefined): { kind: OriginKind; confir
 }
 
 /** A person wrote these fields: marked as theirs and confirmed, replacing any automatic mark. */
-export function stampPerson(prev: unknown, fields: string[], at: string): FieldSources {
+export function stampPerson(prev: unknown, fields: string[], at: string, by?: string): FieldSources {
   const out = { ...readSources(prev) };
-  for (const f of fields) out[f] = { source: "persona", kind: "persona", confirmed: true, at };
+  for (const f of fields) out[f] = { source: "persona", kind: "persona", confirmed: true, at, ...(by ? { confirmedBy: by, confirmedAt: at } : {}) };
+  return out;
+}
+
+/**
+ * A person confirms values (SDD field-actions CA-8): the mark keeps where the value came from and gains who and when.
+ * A value with no mark gets kind sin_dato: it is confirmed as correct, not claimed as written by the person.
+ */
+export function confirmSources(prev: unknown, fields: string[], by: string, at: string): FieldSources {
+  const out = { ...readSources(prev) };
+  for (const f of fields) {
+    const m = out[f];
+    out[f] = m ? { ...m, confirmed: true, confirmedBy: by, confirmedAt: at } : { source: "sin_origen", kind: "sin_dato", at, confirmed: true, confirmedBy: by, confirmedAt: at };
+  }
   return out;
 }
 
 /** A person edited fields: a written value is marked as theirs and confirmed, a cleared one loses its mark. */
-export function personEdit(prev: unknown, edits: Record<string, string | null | undefined>, at: string): FieldSources {
-  const out = stampPerson(prev, Object.keys(edits).filter((f) => edits[f]?.trim()), at);
+export function personEdit(prev: unknown, edits: Record<string, string | null | undefined>, at: string, by?: string): FieldSources {
+  const out = stampPerson(prev, Object.keys(edits).filter((f) => edits[f]?.trim()), at, by);
   for (const f of Object.keys(edits)) if (!edits[f]?.trim()) delete out[f];
   return out;
 }
@@ -66,6 +79,7 @@ export function sourceText(s: FieldSource | undefined): string | null {
   if (o.kind === "persona") return `Escrito por ti · Confirmado${day}`;
   if (o.kind === "ia") return `Deducido${o.confirmed ? " · Confirmado" : ""}${day}`;
   if (o.kind === "supuesto") return `Supuesto${day}`;
+  if (o.kind === "sin_dato") return `Sin origen${o.confirmed ? " · Confirmado" : ""}${day}`;
   return `Automático · ${SOURCE_LABEL[s.source] ?? s.source}${o.confirmed ? " · Confirmado" : ""}${day}`;
 }
 
