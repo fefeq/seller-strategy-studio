@@ -3,6 +3,7 @@
 // so the setup step and Cuentas import the same way.
 
 import { normKey } from "@/lib/leads";
+import { normalizeSize } from "@/lib/field-normalize";
 
 export type AccountField = "name" | "domain" | "industry" | "size" | "tier" | "segment" | "notes";
 
@@ -110,6 +111,11 @@ export function planAccountImport(
   );
   const segByName = new Map(segments.map((s) => [s.name.trim().toLowerCase(), s.id]));
   const plan: AccountImportPlan = { rows: [], skipped: [] };
+  // A headcount is saved in the one canonical text; anything else stays as written.
+  const sizeOf = (v: string | null) => {
+    const n = v ? normalizeSize(v) : null;
+    return n?.status === "ok" ? n.value : v;
+  };
   csv.forEach((r, i) => {
     const line = i + 2; // header is line 1
     const domain = cleanDomain(get(r, "domain"));
@@ -123,7 +129,7 @@ export function planAccountImport(
       name,
       domain,
       industry: get(r, "industry"),
-      size: get(r, "size"),
+      size: sizeOf(get(r, "size")),
       tier: tier && ["A", "B", "C"].includes(tier) ? tier : null,
       segment_id: segName ? (segByName.get(segName.toLowerCase()) ?? null) : null,
       notes: get(r, "notes"),

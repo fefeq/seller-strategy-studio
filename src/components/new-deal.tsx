@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { applySetupItems } from "@/lib/agent.functions";
 import { errorText } from "@/lib/errors";
+import { normalizeAmount } from "@/lib/field-normalize";
 import { EntityCombobox } from "@/components/entity-combobox";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
@@ -59,6 +60,8 @@ export function NewDealButton() {
     },
   });
   async function create() {
+    const typed = product || f.amount === "" ? null : normalizeAmount(f.amount);
+    if (typed && typed.status !== "ok") return toast.error("No entiendo ese importe. Escríbelo como 12000 o 12.000,50.");
     setBusy(true);
     try {
       const existing = (accountId ? data?.accounts.find((a) => a.id === accountId) : null) ?? data?.accounts.find(
@@ -71,7 +74,7 @@ export function NewDealButton() {
           account_name: existing ? undefined : f.account.trim() || undefined,
           segment_id: f.segment || undefined,
           stage: f.stage || firstOpenStage(stages).key,
-          amount: product ? undefined : f.amount === "" ? undefined : Number(f.amount.replace(",", ".")),
+          amount: typed?.status === "ok" ? typed.value : undefined,
           product_id: product?.id,
           close_date: f.close ?? undefined,
         }).filter(([, v]) => v !== undefined),

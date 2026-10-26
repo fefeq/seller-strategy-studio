@@ -51,7 +51,7 @@ describe("account import", () => {
       tier: "A",
       segment_id: "s1",
       industry: "Agencia de marca personal",
-      size: "8",
+      size: "8 empleados",
       is_target: true,
     });
     expect(plan.skipped).toEqual([
