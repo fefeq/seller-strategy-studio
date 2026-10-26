@@ -17,6 +17,11 @@ import { structureIcp } from "@/lib/ai.functions";
 import { icpCompanyQuery, icpPeopleQuery, icpReadiness, icpSizeText, LEVEL_LABEL, splitList } from "@/lib/icp";
 import { DEFAULT_LEVELS, LEVELS } from "@/lib/orchestrator/search";
 import { isDirty } from "@/lib/field-actions";
+import { DeleteElement } from "@/components/delete-element";
+import { FieldActions } from "@/components/field-actions";
+import { ConfirmBar } from "@/components/confirm-field";
+import { confirmSources } from "@/lib/provenance";
+import { useMe } from "@/hooks/use-me";
 import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 
 const PROSE = [
@@ -42,6 +47,8 @@ export function IcpEditor() {
   const [sel, setSel] = useState<Draft | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const { data: me } = useMe();
+  const [toDelete, setToDelete] = useState<{ id: string; name: string; segment_id: string | null } | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const selId = sel?.id;
   useEffect(() => {
@@ -66,15 +73,28 @@ export function IcpEditor() {
     setSel(pick(r)); qc.invalidateQueries({ queryKey: ["icp"] });
   }
   // CA-3: the draft lives in this screen until «Guardar ICP»; leaving with changes asks to save or discard.
-  const cmp = (d: Draft | null) => d && Object.fromEntries(Object.entries(d).filter(([k]) => !["created_at", "updated_at", "created_by", "updated_by", "org_id"].includes(k))
+  const cmp = (d: Draft | null) => d && Object.fromEntries(Object.entries(d).filter(([k]) => !["created_at", "updated_at", "created_by", "updated_by", "org_id", "field_sources"].includes(k))
     .map(([k, v]) => [k, (LIST_FIELDS as readonly string[]).includes(k) ? (typeof v === "string" ? splitList(v) : v ?? []) : typeof v === "number" ? String(v) : v]));
-  const savedRow = data?.icps.find((i: Draft) => i.id === sel?.id);
+  const savedRow = data?.icps.find((i: Draft) => i.id === sel?.id) as Draft | undefined;
   useUnsavedGuard(isDirty(cmp(savedRow ? pick(savedRow) : null), cmp(sel)), () => save());
+
+  // CA-8 to CA-10: confirmation lives in field_sources (migration 0058, not applied yet): offered only once the row has it.
+  const hasMarks = !!savedRow && "field_sources" in savedRow;
+  const CONFIRMABLE = ["countries", "geography", "min_employees", "max_employees", "company_size"];
+  const present = CONFIRMABLE.filter((k) => { const v = savedRow?.[k]; return Array.isArray(v) ? v.length > 0 : v != null && String(v).trim() !== ""; });
+  async function confirmFields(fields: string[]) {
+    if (!savedRow || !me?.user.id) return;
+    const field_sources = confirmSources(savedRow.field_sources, fields, me.user.id, new Date().toISOString());
+    // The generated types do not know icp_profiles.field_sources until 0058 is applied and they are regenerated.
+    const { error } = await supabase.from("icp_profiles").update({ field_sources } as never).eq("id", savedRow.id);
+    if (error) return void toast.error(errorText(error));
+    qc.invalidateQueries({ queryKey: ["icp"] });
+  }
 
   /** Returns false when the save failed, so leaving keeps the draft. */
   async function save(): Promise<boolean> {
     if (!sel) return true;
-    const { id, created_at, updated_at, created_by, updated_by, org_id, ...rest } = asIcp(sel);
+    const { id, created_at, updated_at, created_by, updated_by, org_id, field_sources: _fs, ...rest } = asIcp(sel);
     try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
     catch (e) { toast.error(errorText(e)); return false; }
     toast.success("ICP guardado. Búsquedas, puntuación e IA ya lo usan.");
@@ -169,7 +189,12 @@ export function IcpEditor() {
             </ul>
           </section>
 
-          <Button onClick={save}>Guardar ICP</Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button onClick={save}>Guardar ICP</Button>
+            <FieldActions kind="icp" roles={me?.roles ?? []} handlers={{ delete: () => setToDelete({ id: sel.id, name: sel.name || "Sin nombre", segment_id: sel.segment_id || null }) }} />
+            <ConfirmBar fields={present} marks={savedRow?.field_sources} enabled={hasMarks} onConfirm={confirmFields} />
+          </div>
+          <DeleteElement kind="icp" target={toDelete} onClose={() => setToDelete(null)} onDone={() => { setSel(null); qc.invalidateQueries({ queryKey: ["icp"] }); }} />
         </div>
       ) : <Empty>Define tu ICP analizando a tus mejores clientes: quién cierra más rápido, usa más el producto y renueva. Nokko lo usa para buscar empresas y personas, puntuar cuentas y leads, y preparar cada investigación.</Empty>}
     </div>
