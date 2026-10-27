@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, CONNECT_CODES, connectMessage, connectParams, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
+import { ALREADY_ELSEWHERE, buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, NOKKO_ACCOUNT_TEXT, oauthErrorText, CONNECT_CODES, connectMessage, connectParams, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
 
 const row = (status: ConnectionRow["status"]): ConnectionRow => ({ status, google_email: "ana@ejemplo.test", connected_by: null, connected_at: "2026-10-26T10:00:00Z", last_error: null });
 
@@ -40,6 +40,15 @@ describe("CA-1 / CA-2 (SDD 5) · the consent request", () => {
       expect(t).not.toMatch(/que elijas|importar al hub/);
     }
     expect(DRIVE_SCOPE).toBe("https://www.googleapis.com/auth/drive.file");
+  });
+  it("the card for NOKKO's own account promises saving, not working with the person's documents (CA-2 of SDD 5)", () => {
+    expect(NOKKO_ACCOUNT_TEXT).toMatch(/Conecta la tuya para que NOKKO guarde lo que cree en tu Drive\./);
+    expect(NOKKO_ACCOUNT_TEXT).not.toMatch(/propios documentos|tus documentos/);
+  });
+  it("never calls the other company «tuya»: the Owner may not own it", () => {
+    expect(ALREADY_ELSEWHERE).toMatch(/en otra empresa\./);
+    expect(revocationText("shared", "ana@ejemplo.test")).toMatch(/en otra empresa\./);
+    expect(`${ALREADY_ELSEWHERE} ${revocationText("shared", null)}`).not.toMatch(/otra de tus empresas/);
   });
 });
 

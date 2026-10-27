@@ -294,7 +294,7 @@ describe("CA-8 (SDD 10) and CA-4 (SDD 5) · the screen says what really happened
     const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r.ok).toBe(true);
     expect(revoked()).toHaveLength(0);
-    expect(r.message).toMatch(/sigue conectada en otra de tus empresas/);
+    expect(r.message).toMatch(/sigue conectada en otra empresa/);
     expect(tables["drive_connections"]!.find((x) => x["org_id"] === OTHER)).toBeTruthy();
   });
   it("a refused or unanswered revocation is reported as not done, never as revoked", async () => {

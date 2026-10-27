@@ -53,12 +53,15 @@ export function revocationText(outcome: RevokeOutcome, email: string | null): st
     case "failed": return `No pudimos revocar el acceso en Google (${acct}). Quítaselo a NOKKO tú en ${GOOGLE_PERMISSIONS}.`;
     case "unreadable": return `No pudimos leer el acceso guardado de ${acct}, así que no se revocó en Google. Quítaselo a NOKKO tú en ${GOOGLE_PERMISSIONS}.`;
     case "same_account": return "Es la misma cuenta de Google: no se revocó nada.";
-    case "shared": return `No se revocó el acceso en Google porque ${acct} sigue conectada en otra de tus empresas.`;
+    case "shared": return `No se revocó el acceso en Google porque ${acct} sigue conectada en otra empresa.`;
   }
 }
 
 /** What the card says the connection is for: only what drive.file allows today (no picker yet, SDD drive-per-company-account U-2). */
 export const PURPOSE_TEXT = "Para qué se usa: guardar los planes, propuestas y documentos del ciclo en una carpeta por empresa y por cuenta, y leer lo que NOKKO guardó ahí. Todavía no puedes elegir documentos que ya tienes en tu Drive para importarlos: llegará con el selector de Google.";
+
+/** What the card says while the company still uses NOKKO's account: drive.file only lets NOKKO see what it created, so it promises saving, not working with the person's own documents. */
+export const NOKKO_ACCOUNT_TEXT = "Ahora se usa la cuenta que proporciona NOKKO. Conecta la tuya para que NOKKO guarde lo que cree en tu Drive.";
 
 /** How a connection attempt ended. The callback sends only this code (and two flags) in the address, never text: the screen writes the message from it, so a link cannot make NOKKO show words someone else chose. */
 export type ConnectCode =
@@ -102,7 +105,7 @@ export function parseConnectParams(p: URLSearchParams): (ConnectOutcome & { ok: 
   return { ...o, ok: code === "ok", message: connectMessage(o) };
 }
 
-export const ALREADY_ELSEWHERE = "Esta cuenta de Google ya está conectada en otra de tus empresas. Si sigues, también se usará aquí.";
+export const ALREADY_ELSEWHERE = "Esta cuenta de Google ya está conectada en otra empresa. Si sigues, también se usará aquí.";
 
 export type AuthUrlInput = { clientId: string; redirectUri: string; state: string };
 

@@ -8,7 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
-import { canManageConnections, driveConnectionState, MANAGE_DENIED, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
+import { canManageConnections, driveConnectionState, MANAGE_DENIED, NOKKO_ACCOUNT_TEXT, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
 import { disconnectDriveFn, driveConnectionInfoFn, startDriveConnectFn } from "@/lib/drive-connection.functions";
 
 const when = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -82,7 +82,7 @@ export function DriveConnect() {
           {(state === "error" || state === "no_response") && c.last_error && <p className={state === "error" ? "text-destructive" : ""}>{c.last_error}</p>}
         </div>
       )}
-      {!c && state === "nokko" && <p className="mt-3 text-xs text-muted-foreground">Ahora se usa la cuenta que proporciona NOKKO. Conecta la tuya para que NOKKO trabaje con tus propios documentos.</p>}
+      {!c && state === "nokko" && <p className="mt-3 text-xs text-muted-foreground">{NOKKO_ACCOUNT_TEXT}</p>}
       {!c && state === "none" && <p className="mt-3 text-xs text-muted-foreground">No hay ninguna cuenta de Drive conectada.</p>}
 
       {isOwner && (
