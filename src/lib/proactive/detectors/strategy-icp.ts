@@ -42,6 +42,7 @@ export const icpUncoveredWins: Detector = (s) => {
         title: `${g.deals.length} deals ganados comparten ${dimLabel} «${g.label}» y ningún ICP lo incluye`,
         body: `Crea un ICP nuevo o amplía uno existente con ${dimLabel} «${g.label}». Los deals y cuentas de origen están en la evidencia.`,
         evidence, sample_size: Math.max(g.deals.length, evidence.length), link: "/strategy?tab=icp",
+        change: { table: "icp_profiles", op: "create", values: { name: `ICP ${g.label}`.slice(0, 80), ...(dim === "industry" ? { industries: g.label } : dim === "size" ? { company_size: g.label } : { countries: [g.label] }) } },
       }));
     }
   }

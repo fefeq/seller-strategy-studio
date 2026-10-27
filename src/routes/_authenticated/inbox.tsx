@@ -4,6 +4,7 @@ import { useJob } from "@/components/background";
 import { Page, Empty } from "@/components/page";
 import { SuggestionCard, useSuggestions } from "@/components/suggestions";
 import { AssistantActions } from "@/components/assistant-actions";
+import { StrategyChanges } from "@/components/strategy-execute";
 import { SuggestionBoard } from "@/components/suggestion-board";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { suggestionsHeadline } from "@/lib/headlines";
@@ -41,6 +42,7 @@ function Inbox() {
         <TabsContent value="team"><SuggestionBoard /></TabsContent>
         <TabsContent value="me">
       <AssistantActions />
+      <StrategyChanges />
       {!isLoading && data.length === 0 && <Empty>No hay sugerencias pendientes.</Empty>}
       {!list && data.length > 0 && <SuggestionDeck items={data} />}
       {list && <div className="space-y-8">

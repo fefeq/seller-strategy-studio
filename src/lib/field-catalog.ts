@@ -59,7 +59,7 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: "creado_por", label: "Creado por", meaning: "Quién o qué creó el registro.", kind: "enum", format: "Valor cerrado distinto por objeto",
-    allowedBy: { tasks: ["manual", "agent", "debate"], agent_pending_actions: ["agent", "mcp"], memories: ["chat", "meeting", "decision", "suggestion", "manual"] },
+    allowedBy: { tasks: ["manual", "agent", "debate", "strategy"], agent_pending_actions: ["agent", "mcp"], memories: ["chat", "meeting", "decision", "suggestion", "manual"] },
     display: "Etiqueta en español del valor",
   },
   { id: "motivo_perdida", label: "Motivo de pérdida", meaning: "Por qué se perdió un deal; vacío es «sin dato», nunca se deduce.", kind: "enum", format: "Valor de una lista cerrada (Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro)", allowed: LOSS_REASON_KEYS, display: "Etiqueta en español (lossLabel)" },

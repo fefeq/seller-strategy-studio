@@ -7,6 +7,8 @@ import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
 
+export type ExecuteInput = { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft } | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
+
 export async function userCtx(supabase: Db, userId: string): Promise<ToolCtx & { orgName: string }> {
   const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
   const orgId = profile?.current_org_id;
@@ -147,13 +149,13 @@ export const refreshSuggestions = createServerFn({ method: "POST" })
 
 export const decideSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string; decision: "approve" | "snooze" | "dismiss"; reason?: string }) => ({ id: String(d.id), decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as "approve" | "snooze" | "dismiss", reason: typeof d.reason === "string" ? d.reason.slice(0, 500) : undefined }))
+  .inputValidator((d: { id: string; decision: "approve" | "snooze" | "dismiss"; reason?: string; execute?: ExecuteInput }) => ({ id: String(d.id), decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as "approve" | "snooze" | "dismiss", reason: typeof d.reason === "string" ? d.reason.slice(0, 500) : undefined, execute: d.execute }))
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    return decideSuggestionCore(ctx, data.id, data.decision, { reason: data.reason });
+    return decideSuggestionCore(ctx, data.id, data.decision, { reason: data.reason, execute: data.execute });
   });
 
-export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "approve" | "snooze" | "dismiss", opts: { reason?: string } = {}) {
+export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "approve" | "snooze" | "dismiss", opts: { reason?: string; execute?: ExecuteInput } = {}) {
   const { data: s } = await ctx.db.from("suggestions").select("*").eq("id", id).eq("org_id", ctx.orgId).maybeSingle();
   // Telegram runs this with the privileged client: the visibility rule RLS applies in the app is checked here.
   if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles)) throw new Error("Sugerencia no encontrada");
@@ -162,6 +164,13 @@ export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "
   if (s.detector.startsWith("strategy_")) {
     const { decideStrategy } = await import("@/lib/strategy-core");
     const r = await decideStrategy(ctx, s, decision === "approve" ? "accept" : decision === "snooze" ? "postpone" : "dismiss", { reason: opts.reason });
+    if (r.message !== "Ya estaba gestionada" && decision === "approve") {
+      // F3: accepting acts, but only inside the guard rails of strategy-execute (a pending proposal, or a task or experiment the person edited).
+      const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } = await import("@/lib/strategy-execute-core");
+      if (opts.execute?.kind === "experiment") await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
+      else if (opts.execute?.kind === "task") await createTaskFromSuggestion(ctx, id, opts.execute.draft);
+      else if (await proposeChange(ctx, s)) return { ...r, message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada." };
+    }
     if (r.message !== "Ya estaba gestionada") {
       const { rememberDecision } = await import("@/lib/memory.server");
       if (decision !== "snooze") await rememberDecision(ctx, s, decision);

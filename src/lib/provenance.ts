@@ -7,7 +7,7 @@ export type OriginKind = "persona" | "fuente" | "ia" | "supuesto" | "sin_dato";
 export type FieldSource = { source: string; at: string; quote?: string; kind?: OriginKind; confirmed?: boolean; confirmedBy?: string; confirmedAt?: string };
 export type FieldSources = Record<string, FieldSource>;
 
-export const SOURCE_LABEL: Record<string, string> = { apollo: "Apollo", clay: "Clay", web: "Web de la empresa" };
+export const SOURCE_LABEL: Record<string, string> = { apollo: "Apollo", clay: "Clay", web: "Web de la empresa", strategic_review: "Revisión estratégica" };
 
 const KINDS: OriginKind[] = ["persona", "fuente", "ia", "supuesto", "sin_dato"];
 

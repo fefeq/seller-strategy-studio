@@ -4706,6 +4706,63 @@ export type Database = {
           },
         ]
       }
+      strategy_changes: {
+        Row: {
+          applied_at: string | null
+          base: Json
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          element: string
+          id: string
+          op: string
+          org_id: string
+          previous: Json | null
+          status: string
+          suggestion_id: string
+          target_id: string | null
+          target_table: string | null
+          undo_until: string | null
+          values: Json
+        }
+        Insert: {
+          applied_at?: string | null
+          base?: Json
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          element: string
+          id?: string
+          op: string
+          org_id?: string
+          previous?: Json | null
+          status?: string
+          suggestion_id: string
+          target_id?: string | null
+          target_table?: string | null
+          undo_until?: string | null
+          values?: Json
+        }
+        Update: {
+          applied_at?: string | null
+          base?: Json
+          decided_at?: string | null
+          decided_by?: string | null
+          previous?: Json | null
+          status?: string
+          target_id?: string | null
+          undo_until?: string | null
+        }
+        Relationships: []
+      }
+      strategy_links: {
+        Row: { created_at: string; created_by: string | null; id: string; kind: string; org_id: string; ref_id: string; suggestion_id: string }
+        Insert: { created_at?: string; created_by?: string | null; id?: string; kind: string; org_id?: string; ref_id: string; suggestion_id: string }
+        Update: never
+        Relationships: []
+      }
       strategy_decisions: {
         Row: {
           decided_at: string

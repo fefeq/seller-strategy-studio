@@ -15,6 +15,7 @@ import { actionTool } from "@/lib/json";
 import { Input } from "@/components/ui/input";
 import { canViewStrategy, limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
+import { ExecuteDialog, executeKind } from "@/components/strategy-execute";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 
@@ -85,6 +86,7 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
   const recheck = useRecheckSuggestions();
   const [busy, setBusy] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [form, setForm] = useState(false);
   const strategy = parseStrategy(s.strategy);
   async function act(decision: "approve" | "snooze" | "dismiss") {
     setBusy(decision);
@@ -116,10 +118,11 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
         </div>
         {target && <Link to={target.to} search={target.search} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>
+      {strategy && executeKind(s) && form && <ExecuteDialog s={s} open={form} onOpenChange={setForm} reason={reason} />}
       {strategy && <Input className="mt-3" maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (opcional)" aria-label="Motivo de tu decisión (opcional)" />}
       <div className="mt-3 flex flex-wrap gap-2">
         {strategy ? <>
-          <Button size="sm" disabled={!!busy} onClick={() => act("approve")}>Aceptar</Button>
+          <Button size="sm" disabled={!!busy} onClick={() => (executeKind(s) ? setForm(true) : act("approve"))}>Aceptar</Button>
           <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>Más tarde</Button>
           <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}>Descartar</Button>
         </> : <>
