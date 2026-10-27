@@ -108,6 +108,44 @@ describe("CA-3 (SDD 5), CA-6 (SDD 10) and the checking half of CA-5 (SDD 10; the
     expect(calls.some((c) => c.url.includes("/revoke"))).toBe(true);
   });
 
+  describe("a token from an incomplete consent is revoked only when that cannot cut an account in use (CA-6 and CA-8 of SDD 10)", () => {
+    const row = async (org: string, email: string) => ({ org_id: org, google_email: email, refresh_token_enc: await seal("refresh-guardado"), status: "active" });
+    const revoked = () => calls.filter((c) => c.url.includes("/revoke"));
+    const OTHER = "44444444-4444-4444-4444-444444444444";
+
+    it("another account than the saved one and unused elsewhere: revoked", async () => {
+      route = goodGoogle({ scope: "openid", email: "nueva@ejemplo.test" });
+      const { db, tables } = owner({ drive_connections: [await row(ORG, "vieja@ejemplo.test")] });
+      expect((await completeConnect(db, await input(), "https://app.ejemplo.test")).ok).toBe(false);
+      expect(revoked()).toHaveLength(1);
+      expect(revoked()[0]!.body).toContain("refresh-secreto");
+      expect(tables["drive_connections"]![0]!["google_email"]).toBe("vieja@ejemplo.test");
+    });
+    it("the same account this company already has saved: not revoked (it would cut the saved connection)", async () => {
+      route = goodGoogle({ scope: "openid", email: "ana@ejemplo.test" });
+      const { db, tables } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] });
+      expect((await completeConnect(db, await input(), "https://app.ejemplo.test")).ok).toBe(false);
+      expect(revoked()).toHaveLength(0);
+      expect(tables["drive_connections"]).toHaveLength(1);
+    });
+    it("an account another company uses: not revoked", async () => {
+      route = goodGoogle({ scope: "openid", email: "compartida@ejemplo.test" });
+      const { db } = owner({ drive_connections: [await row(OTHER, "compartida@ejemplo.test")] });
+      expect((await completeConnect(db, await input(), "https://app.ejemplo.test")).ok).toBe(false);
+      expect(revoked()).toHaveLength(0);
+    });
+    it("an account whose email is unknown: not revoked, and the log says so without the token", async () => {
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      route = goodGoogle({ scope: "openid", email: null });
+      const { db } = owner();
+      expect((await completeConnect(db, await input(), "https://app.ejemplo.test")).ok).toBe(false);
+      expect(revoked()).toHaveLength(0);
+      expect(warn.mock.calls.map(String).join("\n")).toMatch(/account unknown/);
+      expect(warn.mock.calls.map(String).join("\n")).not.toContain("refresh-secreto");
+      warn.mockRestore();
+    });
+  });
+
   it("does not save when the account cannot be checked (CA-5 of SDD 10)", async () => {
     route = goodGoogle({ email: null });
     const { db, tables } = owner();

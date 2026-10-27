@@ -66,6 +66,21 @@ async function revokeSaved(db: Admin, orgId: string, saved: { google_email: stri
   return revoke(token);
 }
 
+/** Revokes a token that came back in a consent we will not keep (it failed the check), unless that could cut an account still in use: the one this company has saved, or one another company uses. Without the account's email nothing is known about who shares it, so nothing is revoked. Says what it did; never logs the token. */
+async function revokeDiscarded(db: Admin, orgId: string, token: string, email: string | null): Promise<RevokeOutcome | "unknown_account"> {
+  if (!email) {
+    console.warn(`Drive token from an incomplete consent not revoked (account unknown) for org ${orgId}`);
+    return "unknown_account";
+  }
+  const { data: saved } = await db.from("drive_connections").select("google_email").eq("org_id", orgId).maybeSingle();
+  const { count } = await db.from("drive_connections").select("org_id", { count: "exact", head: true }).eq("google_email", email).neq("org_id", orgId);
+  const skip = revokeSkipReason({ oldEmail: saved?.google_email ?? "", newEmail: email, usedElsewhere: !!count });
+  if (skip) return skip;
+  const outcome = await revoke(token);
+  if (outcome === "failed") console.warn(`Drive token from an incomplete consent not revoked (Google refused or did not answer) for org ${orgId}`);
+  return outcome;
+}
+
 export type ConnectResult = { ok: boolean; code: ConnectCode; message: string; returnTo: string; revocation?: RevokeOutcome | null; elsewhere?: boolean };
 const result = (code: ConnectCode, returnTo: string): ConnectResult => ({ ok: false, code, message: connectMessage({ code }), returnTo });
 
@@ -94,14 +109,14 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
     return fail("google_failed");
   }
   const accessToken = String(t.json["access_token"] ?? "");
-  let about: { user?: { emailAddress?: string } } | null = null;
+  let about = null as { user?: { emailAddress?: string } } | null;
   try {
     const r = await fetch(`${GOOGLE_API}/drive/v3/about?fields=user(emailAddress)`, { headers: { Authorization: `Bearer ${accessToken}` } });
     about = r.ok ? ((await r.json()) as typeof about) : null;
   } catch { about = null; }
   const grant = checkGrant({ scope: String(t.json["scope"] ?? ""), refresh_token: typeof t.json["refresh_token"] === "string" ? t.json["refresh_token"] : undefined }, about);
   if (!grant.ok) {
-    if (typeof t.json["refresh_token"] === "string") await revoke(t.json["refresh_token"]);
+    if (typeof t.json["refresh_token"] === "string") await revokeDiscarded(db, st.o, t.json["refresh_token"], about?.user?.emailAddress?.trim().toLowerCase() || null);
     return fail(grant.code);
   }
 
