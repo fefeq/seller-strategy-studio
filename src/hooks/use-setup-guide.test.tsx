@@ -79,6 +79,29 @@ describe("useSetupGuide loads only what the screen needs (the sidebar mounts it 
   });
 });
 
+describe("GuideOffer waits for the company (M-6)", () => {
+  beforeEach(() => { client = new QueryClient(); try { sessionStorage.clear(); } catch { /* none */ } });
+  const offer = (orgId?: string) => <GuideOffer scope="agent" orgId={orgId} onStart={() => {}} />;
+
+  it("shows nothing while orgId is not known yet, then the offer once it is", async () => {
+    setupData = { ...full, deals: 0 };
+    const { rerender } = render(offer(undefined), { wrapper });
+    await settle();
+    expect(screen.queryByText(/Siguiente:/)).not.toBeInTheDocument();
+    rerender(offer("org-1"));
+    expect(await screen.findByText("Siguiente: crea tu primer deal.")).toBeInTheDocument();
+  });
+
+  it("an offer already seen in this session for that company stays closed even if the first render had no orgId", async () => {
+    sessionStorage.setItem("nokko-guide-agent:org-1", "1");
+    setupData = { ...full, deals: 0 };
+    const { rerender } = render(offer(undefined), { wrapper });
+    rerender(offer("org-1"));
+    await settle();
+    expect(screen.queryByText(/Siguiente:/)).not.toBeInTheDocument();
+  });
+});
+
 describe("postponing again counts as activity (M-1)", () => {
   it("every postponement and every clearing rewrites created_at, the time the nudge reads as the person's last act", async () => {
     setupData = { ...full, deals: 0 };

@@ -54,11 +54,14 @@ export function NextStepMessage({ msg, onStart, onDismiss }: { msg: NextMessage;
  */
 export function GuideOffer({ scope, onlyWhenDue, onStart, orgId, wrap }: { scope: OfferScope; onlyWhenDue?: boolean; onStart?: (stepId: string) => void; orgId?: string; wrap?: (children: ReactNode) => ReactNode }) {
   const g = useSetupGuide({ activity: !!onlyWhenDue }); // only the nudge in Inicio needs the activity of the data
-  const [closed, setClosed] = useState(() => nudgeSeen(orgId, scope));
+  const [closedNow, setClosedNow] = useState(false);
+  // orgId is undefined on the first render, before the person's company loads: the «seen» flag is per company, so nothing shows until it is known (M-6).
+  if (!orgId) return null;
+  const closed = closedNow || nudgeSeen(orgId, scope);
   if (!g.guide || !g.message || (!g.message.stepId && !g.justDone)) return null;
   if (onlyWhenDue && !g.nudge && !g.justDone) return null;
   if (closed && !g.justDone) return null;
-  const close = () => { markNudgeSeen(orgId, scope); setClosed(true); g.clearJustDone(); };
+  const close = () => { markNudgeSeen(orgId, scope); setClosedNow(true); g.clearJustDone(); };
   const body = (
     <div>
       <NextStepMessage msg={g.message} onStart={onStart ? (id) => { close(); onStart(id); } : undefined} onDismiss={close} />
