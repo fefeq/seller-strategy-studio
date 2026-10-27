@@ -10,7 +10,7 @@ import { decideSuggestion } from "@/lib/agent.functions";
 import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { actionTool } from "@/lib/json";
 import { errorText } from "@/lib/errors";
-import { parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
+import { limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
 import { executeKind } from "@/components/strategy-execute";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
@@ -24,9 +24,9 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
   const qc = useQueryClient();
   return (
     <SwipeDeck
-      items={items}
+      items={limitStrategy(items, new Date())} // CA-7: at most 7 open strategic suggestions
       keyboard={keyboard}
-      labels={{ right: "Hacer", left: "Descartar", up: "Más tarde" }}
+      labels={(s) => (parseStrategy(s.strategy) ? { right: "Aceptar", left: "Descartar", up: "Más tarde" } : { right: "Hacer", left: "Descartar", up: "Más tarde" })}
       render={(s) => <DeckFace s={s} />}
       onCommit={async (s, dir) => {
         try {

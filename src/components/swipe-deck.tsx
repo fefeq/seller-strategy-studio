@@ -12,7 +12,8 @@ export type DeckLabels = Record<SwipeDir, string>;
  */
 export function SwipeDeck<T extends { id: string }>({ items, labels, render, onCommit, done, undoMs = 5000, keyboard = true }: {
   items: T[];
-  labels: DeckLabels;
+  /** One set for every card, or one per card (strategic suggestions say «Aceptar» instead of «Hacer»). */
+  labels: DeckLabels | ((item: T) => DeckLabels);
   render: (item: T) => ReactNode;
   onCommit: (item: T, dir: SwipeDir) => Promise<void> | void;
   done?: ReactNode;
@@ -20,6 +21,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
   /** Arrow keys and Z; off where the page needs arrows to scroll (Inicio). */
   keyboard?: boolean;
 }) {
+  const labelsOf = (i: T): DeckLabels => (typeof labels === "function" ? labels(i) : labels);
   const [gone, setGone] = useState<Map<string, SwipeDir>>(new Map());
   const [exit, setExit] = useState<SwipeDir>("right");
   const [stats, setStats] = useState({ right: 0, left: 0, up: 0 });
@@ -48,7 +50,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
       if (last.current?.id === item.id) last.current = null;
       void Promise.resolve(onCommit(item, dir)).catch(() => undo());
     }, undoMs);
-    const tid = toast(labels[dir], { duration: undoMs, action: { label: "Deshacer", onClick: () => { clearTimeout(timer); undo(); } } });
+    const tid = toast(labelsOf(item)[dir], { duration: undoMs, action: { label: "Deshacer", onClick: () => { clearTimeout(timer); undo(); } } });
     last.current.cancel = () => { clearTimeout(timer); undo(); };
   }
 
@@ -79,7 +81,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
         <AnimatePresence initial={false} custom={exit}>
           {visible.slice(0, 3).reverse().map((item, i, arr) => {
             const depth = arr.length - 1 - i;
-            return <DeckCard key={item.id} depth={depth} labels={labels} onDecide={decide} exitDir={exit}>{render(item)}</DeckCard>;
+            return <DeckCard key={item.id} depth={depth} labels={labelsOf(item)} onDecide={decide} exitDir={exit}>{render(item)}</DeckCard>;
           })}
         </AnimatePresence>
         {!current && (
@@ -92,9 +94,9 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
       </div>
       {current && (
         <div className="mt-5 flex items-center justify-center gap-4">
-          <Button variant="outline" size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labels.left} onClick={() => decide("left")}>✕</Button>
-          <Button variant="outline" size="lg" className="h-11 rounded-full px-5" aria-label={labels.up} onClick={() => decide("up")}>Más tarde</Button>
-          <Button size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labels.right} onClick={() => decide("right")}>✓</Button>
+          <Button variant="outline" size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labelsOf(current)["left"]} onClick={() => decide("left")}>✕</Button>
+          <Button variant="outline" size="lg" className="h-11 rounded-full px-5" aria-label={labelsOf(current)["up"]} onClick={() => decide("up")}>Más tarde</Button>
+          <Button size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labelsOf(current)["right"]} onClick={() => decide("right")}>✓</Button>
         </div>
       )}
     </div>
