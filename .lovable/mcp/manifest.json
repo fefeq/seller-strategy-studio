@@ -574,6 +574,18 @@
             },
             "meddpicc_value": {
               "type": "string"
+            },
+            "lost_reason": {
+              "description": "Solo en deals perdidos (o al pasarlos a Perdido); opcional. Uno de: price (Precio), competitor (Competidor), no_decision (Sin decisión), no_budget (Sin presupuesto), no_product_fit (Sin encaje con el producto), bad_timing (Mal momento), contact_change (Cambio de contacto), other (Otro)",
+              "type": "string"
+            },
+            "lost_reason_detail": {
+              "description": "Texto libre del motivo de pérdida, hasta 500 caracteres",
+              "type": "string"
+            },
+            "lost_competitor": {
+              "description": "Competidor al que se perdió, texto libre; opcional",
+              "type": "string"
             }
           },
           "required": [

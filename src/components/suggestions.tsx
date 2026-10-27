@@ -12,6 +12,9 @@ import { digest } from "@/lib/proactive";
 import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
+import { Input } from "@/components/ui/input";
+import { limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
+import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 
@@ -64,8 +67,9 @@ export function useSuggestions() {
     queryKey: ["suggestions", orgId],
     enabled: !!orgId,
     queryFn: async () => {
-      const { data } = await supabase.from("suggestions").select("id,title,body,priority,link,action,created_at,detector,dedupe_key").eq("org_id", orgId!).eq("status", "pending").or(`user_id.is.null,user_id.eq.${me!.user.id}`).order("priority").order("created_at", { ascending: false }).limit(100);
-      return data ?? [];
+      const { data } = await supabase.from("suggestions").select("id,title,body,priority,link,action,created_at,detector,dedupe_key,strategy").eq("org_id", orgId!).eq("status", "pending").or(`user_id.is.null,user_id.eq.${me!.user.id}`).order("priority").order("created_at", { ascending: false }).limit(100);
+      // At most 7 strategic suggestions open at once (CA-7); the operational ones are not capped.
+      return limitStrategy(data ?? [], new Date());
     },
   });
 }
@@ -80,10 +84,12 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
   const navigate = useNavigate();
   const recheck = useRecheckSuggestions();
   const [busy, setBusy] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+  const strategy = parseStrategy(s.strategy);
   async function act(decision: "approve" | "snooze" | "dismiss") {
     setBusy(decision);
     try {
-      const r = await decide({ data: { id: s.id, decision } });
+      const r = await decide({ data: { id: s.id, decision, ...(strategy && reason.trim() ? { reason: reason.trim() } : {}) } });
       toast.success(r.message);
       qc.invalidateQueries();
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
@@ -103,13 +109,20 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>{PRIO[s.priority]}</p>
+          <p className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>{PRIO[s.priority]}{strategy ? ` · ${strategyHeading(strategy)}` : ""}</p>
           <p className="mt-0.5 break-words font-medium">{s.title}</p>
           <p className={`mt-1 whitespace-pre-line break-words text-sm text-muted-foreground ${compact ? "line-clamp-3" : ""}`}>{s.body}</p>
+          {strategy && <><StrategyBadge m={strategy} /><StrategyEvidence m={strategy} /></>}
         </div>
         {target && <Link to={target.to} search={target.search} className="-m-2 shrink-0 p-2 text-muted-foreground hover:text-foreground md:m-0 md:p-0" aria-label="Abrir"><span aria-hidden>→</span></Link>}
       </div>
+      {strategy && <Input className="mt-3" maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Motivo (opcional)" aria-label="Motivo de tu decisión (opcional)" />}
       <div className="mt-3 flex flex-wrap gap-2">
+        {strategy ? <>
+          <Button size="sm" disabled={!!busy} onClick={() => act("approve")}>Aceptar</Button>
+          <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>Más tarde</Button>
+          <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}>Descartar</Button>
+        </> : <>
         {hasAction
           ? <Button size="sm" disabled={!!busy} onClick={() => act("approve")}>Aprobar y hacer</Button>
           : <>
@@ -118,6 +131,7 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
             </>}
         <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>En 3 días</Button>
         <Button size="sm" variant="ghost" disabled={!!busy} onClick={() => act("dismiss")}>Descartar</Button>
+        </>}
       </div>
     </div>
   );

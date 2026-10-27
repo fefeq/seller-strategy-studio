@@ -103,6 +103,38 @@ describe("update_deal behaves like the Pipeline screen", () => {
     expect(writes(log)).toHaveLength(0);
   });
 
+  // SDD-20261027 strategic-suggestions-engine, F0 · H-2 (CA-8, CA-9, CA-10): the same loss fields as the Pipeline dialog.
+  it("CA-8: moving to Perdido can carry the reason (fixed list), free text and competitor", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: q.op === "select" ? { ...deal, stage: "negotiation" } : { id: ID(1), name: "Acme", stage: "lost" } } : undefined));
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "lost", lost_reason: "price", lost_reason_detail: " Pidieron un 30 % menos ", lost_competitor: "Rival Uno" });
+    expect(writes(log, "deals")[0].payload).toMatchObject({ stage: "lost", probability: 0, lost_reason: "price", lost_reason_detail: "Pidieron un 30 % menos", lost_competitor: "Rival Uno" });
+    expectScoped(log);
+  });
+
+  it("CA-10: moving to Perdido with no reason saves it as lost and writes no loss fields (counted as sin dato)", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: q.op === "select" ? { ...deal, stage: "negotiation" } : { id: ID(1), name: "Acme", stage: "lost" } } : undefined));
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "lost" });
+    const p = writes(log, "deals")[0].payload;
+    expect(p).toMatchObject({ stage: "lost" });
+    expect(Object.keys(p).some((k) => k.startsWith("lost_"))).toBe(false);
+  });
+
+  it("CA-9: the reason can be completed on a deal that is already lost, touching only what was sent", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: q.op === "select" ? { ...deal, stage: "lost" } : { id: ID(1), name: "Acme", stage: "lost" } } : undefined));
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), lost_competitor: "Rival Dos" });
+    expect(writes(log, "deals")[0].payload).toEqual({ lost_competitor: "Rival Dos" });
+    expectScoped(log);
+  });
+
+  it("a reason outside the list, or a loss reason on a deal that is not lost, is refused and writes nothing", async () => {
+    const open = fakeDb((q) => (q.table === "deals" ? { data: { ...deal, stage: "demo" } } : undefined));
+    await expect(executeTool(ctxWith(open.db), "update_deal", { deal_id: ID(1), lost_reason: "price" })).rejects.toThrow(/solo se guarda en deals perdidos/);
+    expect(writes(open.log)).toHaveLength(0);
+    const bad = fakeDb((q) => (q.table === "deals" ? { data: { ...deal, stage: "lost" } } : undefined));
+    await expect(executeTool(ctxWith(bad.db), "update_deal", { deal_id: ID(1), lost_reason: "caro" })).rejects.toThrow(/Elige uno de la lista/);
+    expect(writes(bad.log)).toHaveLength(0);
+  });
+
   it("refuses a deal from another company", async () => {
     const { db, log } = fakeDb();
     await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), health: "red" })).rejects.toThrow(/No encuentro ese deal/);

@@ -6,6 +6,7 @@ import { firstOpenStage, stagePath } from "@/lib/stages";
 import { TRACKS, stageGate } from "@/lib/bmad/tracks";
 import { lineFromProduct, type Product } from "@/lib/deal-lines";
 import { leadStageLabel } from "@/lib/lead-funnel";
+import { isLostStage, LOSS_REASONS, lossLabel, parseLoss } from "@/lib/loss-reasons";
 import { ask } from "@/lib/ai-gateway";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
 import { CORE_READ_TOOLS } from "./core-read";
@@ -57,17 +58,29 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
       stage: STAGE_ARG.optional(), amount: z.number().nonnegative().optional(), close_date: z.string().optional(),
       health: z.enum(["green", "yellow", "red"]).optional(), forecast_category: z.enum(["pipeline", "best_case", "commit"]).optional(),
       meddpicc_field: z.string().optional(), meddpicc_value: z.string().optional(),
+      lost_reason: z.string().optional().describe(`Solo en deals perdidos (o al pasarlos a Perdido); opcional. Uno de: ${LOSS_REASONS.map((r) => `${r.key} (${r.label})`).join(", ")}`),
+      lost_reason_detail: z.string().optional().describe("Texto libre del motivo de pérdida, hasta 500 caracteres"),
+      lost_competitor: z.string().optional().describe("Competidor al que se perdió, texto libre; opcional"),
     }),
     summarize: (a) => {
       const won = !!a.stage && ["won", "ganado"].includes(a.stage.trim().toLowerCase());
-      const parts = [a.stage && (won ? "pedir aprobación para pasar a Ganado" : `etapa → «${a.stage}»`), a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
+      const parts = [a.lost_reason && `motivo de pérdida → ${lossLabel(a.lost_reason)}`, a.lost_competitor && `competidor → ${a.lost_competitor}`, a.stage && (won ? "pedir aprobación para pasar a Ganado" : `etapa → «${a.stage}»`), a.amount != null && `importe → ${a.amount}`, a.close_date && `cierre → ${a.close_date}`, a.health && `salud → ${a.health}`, a.forecast_category && `forecast → ${a.forecast_category}`, a.meddpicc_field && `MEDDPICC ${a.meddpicc_field}`].filter(Boolean);
       return `Actualizar el deal: ${parts.join(", ") || "sin cambios"}`;
     },
     run: async (c, a) => {
-      const { deal_id, meddpicc_field, meddpicc_value, ...rest } = a;
-      const cur = ok(await c.db.from("deals").select("id,name,amount,meddpicc").eq("org_id", c.orgId).eq("id", deal_id).maybeSingle()) as { id: string; name: string; amount: number | null; meddpicc: Record<string, unknown> | null } | null;
+      const { deal_id, meddpicc_field, meddpicc_value, lost_reason, lost_reason_detail, lost_competitor, ...rest } = a;
+      const cur = ok(await c.db.from("deals").select("id,name,amount,meddpicc,stage").eq("org_id", c.orgId).eq("id", deal_id).maybeSingle()) as { id: string; name: string; amount: number | null; meddpicc: Record<string, unknown> | null; stage?: string } | null;
       if (!cur) throw new Error("No encuentro ese deal en esta empresa. Búscalo primero con search o list_deals.");
       const patch: Record<string, unknown> = { ...rest };
+      // Reason and competitor of a lost deal (SDD estrategia F0): optional, only what was sent is written, never invented.
+      const lossSent = { lost_reason, lost_reason_detail, lost_competitor };
+      if (Object.values(lossSent).some((v) => v !== undefined)) {
+        const parsed = parseLoss({ reason: lost_reason, detail: lost_reason_detail, competitor: lost_competitor });
+        if (!parsed.ok) throw new Error(parsed.error);
+        const toLost = !!rest.stage && (await resolveStage(c, rest.stage)).kind === "lost";
+        if (!toLost && !isLostStage(cur.stage)) throw new Error("El motivo de pérdida solo se guarda en deals perdidos: pasa el deal a Perdido o indícalo al marcarlo.");
+        for (const k of Object.keys(lossSent) as (keyof typeof lossSent)[]) if (lossSent[k] !== undefined) patch[k] = parsed.patch[k];
+      }
       const notes: string[] = [];
       if (rest.amount != null) {
         const { count } = await c.db.from("deal_lines").select("id", { count: "exact", head: true }).eq("org_id", c.orgId).eq("deal_id", deal_id);

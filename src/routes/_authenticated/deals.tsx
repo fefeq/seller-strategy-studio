@@ -28,6 +28,8 @@ import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
+import { LossDialog, LossSection } from "@/components/loss-reason";
+import { needsLossPrompt, type LossPatch } from "@/lib/loss-reasons";
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({ deal: typeof s.deal === "string" ? s.deal : undefined }),
@@ -56,8 +58,13 @@ function Deals() {
   const canEditStale = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { stages } = useStages();
 
-  async function move(id: string, stage: string) {
+  // Moving a deal into «Perdido» first asks why (CA-8); the deal only moves when the person saves, skips or the dialog closes with a choice.
+  const [losing, setLosing] = useState<string | null>(null);
+  const losingDeal = deals.find((d) => d.id === losing) ?? null;
+
+  async function move(id: string, stage: string, loss?: LossPatch | null) {
     const deal = deals.find((d) => d.id === id);
+    if (deal && loss === undefined && needsLossPrompt(stage, deal.stage)) { setLosing(id); return; }
     if (deal && stage !== "lost") {
       const gate = stageGate({ amount: deal.amount, meddpicc: deal.meddpicc as Record<string, unknown> | null }, stage, stagePath(stages));
       if (gate.missing.length) toast.warning(`Camino ${TRACKS[gate.track].label}: para esta etapa falta ${gate.missing.join(", ")}.`, { description: "Puedes moverlo igualmente; completa la cualificación MEDDPICC del deal.", duration: 8000 });
@@ -68,7 +75,7 @@ function Deals() {
       qc.invalidateQueries();
       return;
     }
-    const { error } = await supabase.from("deals").update({ stage, probability: stageProbability(stage, stages) }).eq("id", id);
+    const { error } = await supabase.from("deals").update({ stage, probability: stageProbability(stage, stages), ...(loss ?? {}) }).eq("id", id);
     if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
@@ -111,6 +118,7 @@ function Deals() {
           );
         })}
       </div>
+      <LossDialog deal={losingDeal} onCancel={() => setLosing(null)} onDone={async (patch) => { const id = losing; setLosing(null); if (id) await move(id, "lost", patch); }} />
       <Sheet open={!!selected} onOpenChange={(o) => !o && navigate({ search: { deal: undefined } })} modal={!agentDocked}>
         <SheetContent className="w-full overflow-y-auto sm:max-w-2xl" onInteractOutside={agentDocked ? (e) => e.preventDefault() : undefined}>
           {selected && <DealDetail deal={selected} onMove={(stage) => move(selected.id, stage)} onSaved={() => qc.invalidateQueries({ queryKey: ["deals"] })} />}
@@ -190,6 +198,7 @@ function DealDetail({ deal, onMove, onSaved }: { deal: any; onMove: (stage: stri
         <Field label="Segmento"><Pick value={d.segment_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.segments.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, segment_id: v })} /></Field>
         <Field label="Partner"><Pick value={d.partner_id ?? ""} options={Object.fromEntries([["", "—"], ...lookups.partners.map((s) => [s.id, s.name])])} onChange={(v) => setD({ ...d, partner_id: v })} /></Field>
       </div>
+      {deal.stage === "lost" && <LossSection deal={deal} onSaved={onSaved} />}
       <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
       {d.slip_count > 0 && <p className="text-xs text-signal">La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.</p>}
 

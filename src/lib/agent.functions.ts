@@ -147,17 +147,27 @@ export const refreshSuggestions = createServerFn({ method: "POST" })
 
 export const decideSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { id: string; decision: "approve" | "snooze" | "dismiss" }) => ({ id: String(d.id), decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as "approve" | "snooze" | "dismiss" }))
+  .inputValidator((d: { id: string; decision: "approve" | "snooze" | "dismiss"; reason?: string }) => ({ id: String(d.id), decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as "approve" | "snooze" | "dismiss", reason: typeof d.reason === "string" ? d.reason.slice(0, 500) : undefined }))
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    return decideSuggestionCore(ctx, data.id, data.decision);
+    return decideSuggestionCore(ctx, data.id, data.decision, { reason: data.reason });
   });
 
-export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "approve" | "snooze" | "dismiss") {
+export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "approve" | "snooze" | "dismiss", opts: { reason?: string } = {}) {
   const { data: s } = await ctx.db.from("suggestions").select("*").eq("id", id).eq("org_id", ctx.orgId).maybeSingle();
   // Telegram runs this with the privileged client: the visibility rule RLS applies in the app is checked here.
   if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles)) throw new Error("Sugerencia no encontrada");
   if (s.status !== "pending") return { status: s.status, message: "Ya estaba gestionada" };
+  // Strategic suggestions (F0): the decision is logged with who, when and why (CA-4); acting on it arrives with F3.
+  if (s.detector.startsWith("strategy_")) {
+    const { decideStrategy } = await import("@/lib/strategy-core");
+    const r = await decideStrategy(ctx, s, decision === "approve" ? "accept" : decision === "snooze" ? "postpone" : "dismiss", { reason: opts.reason });
+    if (r.message !== "Ya estaba gestionada") {
+      const { rememberDecision } = await import("@/lib/memory.server");
+      if (decision !== "snooze") await rememberDecision(ctx, s, decision);
+    }
+    return r;
+  }
   const now = new Date().toISOString();
   if (decision === "snooze") {
     await ctx.db.from("suggestions").update({ status: "snoozed", snoozed_until: new Date(Date.now() + 3 * 86_400_000).toISOString(), updated_at: now }).eq("id", id);
