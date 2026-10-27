@@ -5,6 +5,7 @@
 // normalize them (U-2) and the origin stamp (U-3) read these definitions.
 import { COUNTRY_CODES, REGIONS } from "@/lib/assignment";
 import { SOURCES as PERSON_SOURCES } from "@/lib/roles";
+import { ACQUISITION_MOTIONS } from "@/lib/acquisition-motion";
 
 /** How a field is kept while someone edits it (SDD section 5). */
 export type Persistence = "permanent" | "screen_draft" | "session" | "pending_action" | "memory";
@@ -23,7 +24,8 @@ export type ConceptId =
   | "pais" | "paises" | "region" | "geografia_texto"
   | "tamano_empleados" | "tamano_descripcion"
   | "importe"
-  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada";
+  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada"
+  | "motion_adquisicion";
 
 export type Concept = {
   id: ConceptId;
@@ -110,6 +112,7 @@ export const BINDINGS: Binding[] = [
   { table: "positioning", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "messaging_pillars", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "segments", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "segments", column: "acquisition_motion", concept: "motion_adquisicion", persistence: saved, note: "Migration 0071; not tracked in field_sources" },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
@@ -119,6 +122,7 @@ export const BINDINGS: Binding[] = [
   { table: "discoveries", column: "source", concept: "fuente_citada", persistence: saved },
   { table: "leads", column: "source", concept: "fuente_citada", persistence: saved, note: "Free text up to 100 characters (CSV, Descubiertos, utm values)" },
   { table: "trials", column: "source", concept: "fuente_citada", persistence: saved },
+  { id: "motion_adquisicion", label: "Motion de adquisición", meaning: "Cómo adquiere clientes un segmento (producto, venta asistida, marketing o partners); no es el modelo de venta por ACV.", kind: "enum", format: "Valor cerrado; vacío = sin definir", allowed: ACQUISITION_MOTIONS, display: "Etiqueta en español (ACQUISITION_MOTION_LABEL)" },
 ];
 
 export function conceptById(id: ConceptId): Concept {
@@ -153,6 +157,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   canal_de_entrada: ["src/routes/_authenticated/deals.tsx", "src/routes/_authenticated/people.tsx", "src/components/metrics/revops-panels.tsx", "src/routes/_authenticated/metrics.tsx"],
   creado_por: ["src/routes/_authenticated/memory.tsx", "src/routes/_authenticated/debates.tsx"],
   fuente_citada: ["src/components/leads/lead-dialogs.tsx", "src/lib/web-research-core.ts"],
+  motion_adquisicion: ["src/components/strategy/motions.tsx"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */
