@@ -376,6 +376,36 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
   });
 });
 
+describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-7, CA-9, CA-10)", () => {
+  it("returns the same next step as the screen, skipping a snoozed one, and only reads its own company", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "setup_step_snoozes" ? { data: [{ step_id: "positioning", snoozed_until: "2999-01-01T23:59:59.999Z", created_at: "2026-10-26T09:00:00Z" }] } : undefined));
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { guia: { mensaje: { stepId: string; why: string; start: string }; pospuestos: { paso: string }[] } };
+    expect(r.guia.mensaje.stepId).toBe("icp");
+    expect(r.guia.mensaje.why).toContain("priorizar");
+    expect(r.guia.mensaje.start).toBe("Empezar");
+    expect(r.guia.pospuestos).toHaveLength(1);
+    expect(log.some((q) => q.table === "setup_step_snoozes")).toBe(true);
+    expectScoped(log.filter((q) => q.table !== "organizations")); // organizations is read by its own id
+  });
+  it("recommends a step the caller's role can complete", async () => {
+    const { db } = fakeDb();
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { guia: { mensaje: { stepId: string } } };
+    expect(r.guia.mensaje.stepId).toBe("accounts");
+  });
+  it("CA-8: an AE's status lists only what an AE can complete as missing and says the rest is outside their role", async () => {
+    const { db } = fakeDb();
+    type Est = { missing: { id: string }[]; next: { id: string } | null; fuera_de_tu_rol: string[] };
+    const ae = ((await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }).estado;
+    expect(ae.missing.map((i) => i.id)).toEqual(["accounts", "deals"]);
+    expect(ae.next?.id).toBe("accounts");
+    expect(ae.fuera_de_tu_rol).toHaveLength(6);
+    const owner = ((await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }).estado;
+    expect(owner.missing).toHaveLength(8);
+    expect(owner.next?.id).toBe("positioning");
+    expect(owner.fuera_de_tu_rol).toEqual([]);
+  });
+});
+
 describe("segments: acquisition motion", () => {
   it("CA-2: upsert_segment saves it for the caller's company and clears it with null", async () => {
     const { db, log } = fakeDb((q) => (q.op === "update" || q.op === "insert" ? { data: { id: ID(5) } } : undefined));
