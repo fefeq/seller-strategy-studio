@@ -14,6 +14,21 @@ const throws = async (fn: () => Promise<unknown>) => { try { await fn(); return 
 const fs = async (table: string, id: string) => (await rows(`select field_sources from ${table} where id = $1`, [id]))[0]!.field_sources;
 const log = () => rows("select id, table_name, op, row_id, org_id, before, after, changed_by from field_edit_log order by changed_at, id");
 
+
+/** quotas and deals are not in the harness: minimal versions with the audit trigger and company policies. */
+async function addQuotasAndDeals(d: Db) {
+  await d.exec(`
+    create table public.quotas (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), period text not null, amount numeric not null, user_id uuid, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+    create table public.deals (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), name text not null, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+    do $$ declare t text; begin foreach t in array array['quotas','deals'] loop
+      execute format('alter table public.%I enable row level security', t);
+      execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+      execute format('grant all on public.%I to service_role', t);
+      execute format('create policy "org all" on public.%I for all to authenticated using (public.is_org_member(org_id)) with check (public.is_org_member(org_id))', t);
+      execute format('create trigger %I before insert or update on public.%I for each row execute function public.set_audit()', t || '_audit', t);
+    end loop; end $$;`);
+}
+
 let acc: string, icp: string, icpB: string, seg: string, pil: string, pos: string;
 
 beforeAll(async () => {
@@ -352,17 +367,7 @@ describe("migration 0064: last_human_edit_at, only what a person changed", () =>
   const ids: Record<string, string> = {};
 
   beforeAll(async () => {
-    // quotas and deals are not in the harness: minimal versions with the audit trigger and company policies
-    await db.exec(`
-      create table public.quotas (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), period text not null, amount numeric not null, user_id uuid, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
-      create table public.deals (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), name text not null, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
-      do $$ declare t text; begin foreach t in array array['quotas','deals'] loop
-        execute format('alter table public.%I enable row level security', t);
-        execute format('grant select, insert, update, delete on public.%I to authenticated', t);
-        execute format('grant all on public.%I to service_role', t);
-        execute format('create policy "org all" on public.%I for all to authenticated using (public.is_org_member(org_id)) with check (public.is_org_member(org_id))', t);
-        execute format('create trigger %I before insert or update on public.%I for each row execute function public.set_audit()', t || '_audit', t);
-      end loop; end $$;`);
+    await addQuotasAndDeals(db);
     await migrate(db, ["0064_last_human_edit_at.sql"]);
   });
   const stamp = async (t: string, id: string) => (await rows(`select last_human_edit_at, updated_at from ${t} where id = $1`, [id]))[0]!;
@@ -438,5 +443,87 @@ describe("migration 0065: company_diagnosis shares only the diagnosis", () => {
   });
   it("4. the table's policy is unchanged: a colleague's row (proposal, findings) is still not readable directly", async () => {
     await as(db, U.aeA, async () => { expect((await rows("select user_id from onboarding_sessions")).map((r) => r.user_id)).toEqual([U.aeA]); });
+  });
+});
+
+describe("migrations 0060, 0063, 0064 and 0066 together: undo survives a confirmation", () => {
+  let d: Db, A2: string;
+  const rows2 = async (sql: string, params?: unknown[]) => (await d.query(sql, params)).rows as Record<string, any>[];
+  const log2 = () => rows2("select id, row_id, op from field_edit_log order by changed_at, id");
+  const confirm = (id: string, field: string) => as(d, U.aeA, async () => { await d.query(`update messaging_pillars set field_sources = field_sources || '{"${field}":{"source":"persona","kind":"persona","confirmed":true,"at":"a","confirmedBy":"x","confirmedAt":"b"}}'::jsonb where id = $1`, [id]); });
+  const pillar = async (title: string) => { let id = ""; await as(d, U.ownerA, async () => { id = (await rows2("insert into messaging_pillars (title) values ($1) returning id", [title]))[0]!.id; }); return id; };
+
+  beforeAll(async () => {
+    d = await build();
+    ({ A: A2 } = await seed(d));
+    await addQuotasAndDeals(d);
+    await migrate(d, ["0058_field_sources_generic.sql", "0060_field_edit_log.sql", "0061_field_sources_strategy.sql", "0063_undo_keeps_confirmations.sql", "0064_last_human_edit_at.sql"]);
+  }, 60_000);
+
+  it("why 0066 exists: with 0064 but without it, confirming another field logs a second edit and blocks the undo", async () => {
+    const id = await pillar("Sin 0066");
+    await as(d, U.aeA, async () => { await d.query("update messaging_pillars set pain = 'Nuevo' where id = $1", [id]); });
+    const edit = (await log2()).filter((e) => e.row_id === id).pop()!;
+    await confirm(id, "title");
+    expect((await log2()).filter((e) => e.row_id === id)).toHaveLength(2); // the confirmation was logged as an edit
+    expect(await as(d, U.aeA, () => d.query("select public.undo_field_edit($1)", [edit.id]).then(() => "", (e) => String((e as Error).message)))).toMatch(/cambió después/);
+  });
+
+  describe("with 0066 applied", () => {
+    beforeAll(async () => { await migrate(d, ["0066_undo_ignores_last_human_edit.sql"]); });
+
+    it("1-2. an edit, a confirmation of another field, then the undo of the edit: one log row, the undo works and the confirmation stays", async () => {
+      const id = await pillar("Pilar 66");
+      const before = (await log2()).length;
+      await as(d, U.aeA, async () => { await d.query("update messaging_pillars set pain = 'Dolor nuevo' where id = $1", [id]); });
+      await confirm(id, "title");
+      expect((await log2()).length - before).toBe(1);
+      const edit = (await log2()).filter((e) => e.row_id === id).pop()!;
+      await as(d, U.aeA, async () => { await d.query("select public.undo_field_edit($1)", [edit.id]); });
+      const row = (await rows2("select pain, field_sources from messaging_pillars where id = $1", [id]))[0]!;
+      expect(row.pain).toBe("");
+      expect(row.field_sources).not.toHaveProperty("pain");
+      expect(row.field_sources.title).toMatchObject({ confirmed: true }); // «leaves a later confirmation of another field alone», now with 0064
+    });
+
+    it("2. the previous mark of the reverted field comes back", async () => {
+      let id = "";
+      await as(d, U.ownerA, async () => { id = (await rows2("insert into messaging_pillars (title, message) values ('Pilar 66b', 'Original') returning id"))[0]!.id; });
+      await d.exec(`update messaging_pillars set field_sources = '{"message":{"source":"clay","at":"x"}}'::jsonb where id = '${id}'`);
+      await as(d, U.aeA, async () => { await d.query("update messaging_pillars set message = 'Cambiado' where id = $1", [id]); });
+      await confirm(id, "title");
+      const edit = (await log2()).filter((e) => e.row_id === id).pop()!;
+      await as(d, U.aeA, async () => { await d.query("select public.undo_field_edit($1)", [edit.id]); });
+      const row = (await rows2("select message, field_sources from messaging_pillars where id = $1", [id]))[0]!;
+      expect(row.message).toBe("Original");
+      expect(row.field_sources.message).toEqual({ source: "clay", at: "x" });
+      expect(row.field_sources.title).toMatchObject({ confirmed: true });
+    });
+
+    it("3. the confirmation still moves last_human_edit_at: confirming is activity of a person", async () => {
+      const id = await pillar("Pilar 66c");
+      const t0 = (await rows2("select last_human_edit_at t from messaging_pillars where id = $1", [id]))[0]!.t;
+      await new Promise((r) => setTimeout(r, 15)); // timestamps have millisecond resolution here
+      await confirm(id, "title");
+      const t1 = (await rows2("select last_human_edit_at t from messaging_pillars where id = $1", [id]))[0]!.t;
+      expect(new Date(t1).getTime()).toBeGreaterThan(new Date(t0).getTime());
+    });
+
+    it("4. a real edit of another field after the first still blocks the undo of the first", async () => {
+      const id = await pillar("Pilar 66d");
+      await as(d, U.aeA, async () => { await d.query("update messaging_pillars set pain = 'Uno' where id = $1", [id]); });
+      const first = (await log2()).filter((e) => e.row_id === id).pop()!;
+      await as(d, U.aeA, async () => { await d.query("update messaging_pillars set proof = 'Dos' where id = $1", [id]); });
+      expect(await as(d, U.aeA, () => d.query("select public.undo_field_edit($1)", [first.id]).then(() => "", (e) => String((e as Error).message)))).toMatch(/cambió después/);
+    });
+
+    it("undo of a delete and the 24 hour limit are unchanged, and another company still cannot undo", async () => {
+      const id = await pillar("Pilar 66e");
+      await as(d, U.ownerA, async () => { await d.query("delete from messaging_pillars where id = $1", [id]); });
+      const del = (await log2()).filter((e) => e.row_id === id && e.op === "delete").pop()!;
+      expect(await as(d, U.ownerB, () => d.query("select public.undo_field_edit($1)", [del.id]).then(() => "", (e) => String((e as Error).message)))).toMatch(/No encuentro/);
+      await as(d, U.ownerA, async () => { await d.query("select public.undo_field_edit($1)", [del.id]); });
+      expect(await rows2("select id from messaging_pillars where id = $1", [id])).toHaveLength(1);
+    });
   });
 });
