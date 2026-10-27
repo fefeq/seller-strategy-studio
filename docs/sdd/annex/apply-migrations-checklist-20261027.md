@@ -1,16 +1,18 @@
-# Aplicar las migraciones 0058, 0060 y 0061 · lista de comprobación
+# Aplicar las migraciones 0058, 0060, 0061 y 0063 · lista de comprobación
 
-Para quien las aplica desde Lovable (decisión de Fede, 2026-10-27: sin pasar por Dani). Las tres añaden columnas con valor por defecto, una tabla, dos funciones y disparadores. No cambian ni borran datos existentes. Están verificadas en una réplica local del catálogo real (`src/lib/migrations.pg.test.ts`, 18 pruebas), pero **no se han aplicado nunca a la base real**.
+Para quien las aplica desde Lovable (decisión de Fede, 2026-10-27: sin pasar por Dani). Las cuatro añaden columnas con valor por defecto, una tabla, funciones y disparadores; la 0063 solo reemplaza una función. No cambian ni borran datos existentes. Están verificadas en una réplica local del catálogo (`src/lib/migrations.pg.test.ts`), pero **no se han aplicado nunca a una base real**. Aplícalas solo en el entorno de pruebas de NOKKO hasta que haya uno confirmado; nunca en la base que usa nokko.ai sin decisión expresa de Fede.
 
 ## Orden y dependencias
 1. `0058_field_sources_generic.sql`: columna `icp_profiles.field_sources`, función `track_field_sources`, y sustituye el disparador de `accounts`.
 2. `0060_field_edit_log.sql`: tabla `field_edit_log`, `log_field_edit`, `undo_field_edit` y cuatro disparadores. No depende de la 0058.
 3. `0061_field_sources_strategy.sql`: `field_sources` en `positioning`, `messaging_pillars` y `segments`, con disparadores. **Depende de la 0058** (usa `track_field_sources`).
 
+4. `0063_undo_keeps_confirmations.sql`: reemplaza `undo_field_edit` de la 0060 (`CREATE OR REPLACE`, conserva permisos). **Depende de la 0060.** Al deshacer una edición solo devuelve lo que esa edición cambió y conserva las confirmaciones hechas en otros campos; el borrado se deshace igual que antes. Mantiene el plazo de 24 horas y que solo el Owner deshace un borrado.
+
 Se pueden volver a ejecutar sin romper nada (`IF NOT EXISTS`, `DROP ... IF EXISTS`, `CREATE OR REPLACE`).
 
 ## Numeración
-Otras ramas abiertas añaden también migraciones con estos números: `0059_org_connections` o `0059_drive_connections` (conexiones) y `0060_setup_step_snoozes` (guía de estrategia). Los archivos tienen nombres distintos, así que no se pisan, pero el orden y `drizzle/migrations/meta/_journal.json` chocarán al fusionar: renumera en el orden en que se fusionen. Las tres de este PR no dependen de ninguna de esas.
+Otras dos migraciones abiertas ocupan los huecos de `main`: `0059_drive_connections.sql` (PR #32, SDD 10) y `0062_setup_step_snoozes.sql` (PR #31, SDD 3). No hay colisión de números. Lo que chocará al fusionar el segundo PR es `drizzle/migrations/meta/_journal.json` y `BASELINE_MAX`. Estas cuatro no dependen de ninguna de las dos.
 
 ## 1. Antes de aplicar (solo lectura)
 Todo esto debe dar lo que se indica; si no, para.
@@ -23,13 +25,15 @@ where table_schema = 'public' and column_name = 'field_sources' and table_name i
 -- 0060 no aplicada
 select to_regclass('public.field_edit_log');           -- esperado: null
 
+-- 0063 no aplicada: solo existe la versión de la 0060 (se comprueba tras aplicar la 0060; ver 3d)
+
 -- disparador actual de accounts
 select tgname from pg_trigger where tgrelid = 'public.accounts'::regclass and not tgisinternal;
 -- esperado: accounts_audit, accounts_clear_field_sources
 ```
 
 ## 2. Aplicar
-Primero 0058, comprobar el bloque 3a; después 0060 y 0061, y comprobar 3b y 3c.
+Primero 0058 (comprobar 3a); después 0060 (3b), 0061 (3c) y por último 0063 (3d).
 
 ## 3. Después de aplicar (solo lectura)
 ```sql
@@ -61,7 +65,14 @@ where table_schema='public' and column_name='field_sources' and table_name in ('
 -- esperado: messaging_pillars, positioning, segments
 select count(*) from public.positioning where field_sources <> '{}'::jsonb;   -- esperado: 0 (ningún valor existente se lee como de una persona)
 select count(*) from public.field_edit_log;                                    -- esperado: 0 justo después de aplicar
+
+-- 3d · tras la 0063
+select pg_get_functiondef('public.undo_field_edit(uuid)'::regprocedure) like '%changed text[]%' as es_version_0063;
+-- esperado: true
+select has_function_privilege('anon', 'public.undo_field_edit(uuid)', 'execute');          -- esperado: false (permisos conservados)
+select has_function_privilege('authenticated', 'public.undo_field_edit(uuid)', 'execute'); -- esperado: true
 ```
+Prueba funcional con datos ficticios: edita el campo A de un pilar, confirma el campo B y deshaz la edición de A. Esperado: A vuelve al valor anterior y la confirmación de B se mantiene. Con dos empresas ficticias, un miembro de una no puede deshacer cambios de la otra («No encuentro ese cambio»).
 
 ## 4. Prueba en la app (con una empresa de prueba, nunca con datos de clientes)
 1. **Procedencia (0058):** en una cuenta, cambia el sector. Debe aparecer «Escrito por ti · Confirmado». Borra el valor: la marca desaparece.
@@ -83,6 +94,7 @@ drop trigger if exists segments_track_field_sources on public.segments;
 alter table public.positioning drop column if exists field_sources;
 alter table public.messaging_pillars drop column if exists field_sources;
 alter table public.segments drop column if exists field_sources;
+-- 0063: no hay vuelta atrás directa; vuelve a ejecutar el CREATE OR REPLACE de undo_field_edit de la 0060 (esa versión restaura la fila completa)
 -- 0060
 drop trigger if exists segments_log_edit on public.segments;
 drop trigger if exists icp_profiles_log_edit on public.icp_profiles;
