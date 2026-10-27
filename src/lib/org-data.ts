@@ -26,11 +26,14 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
     db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId),
     db.from("deals").select("id", { count: "exact", head: true }).eq("org_id", orgId),
   ]);
+  // A failed query is not an empty table: with empty data every step would read as pending and the guide would tell the person to redo
+  // work they did. Throwing lets the screen keep the last known state (useSetup) and the agent say it could not read.
+  for (const r of [org, seg, icp, pos, pil, quo, acc, deals]) if (r.error) throw new Error(r.error.message);
   return {
     currency: org.data?.currency ?? null,
     segments: (seg.data ?? []) as SetupData["segments"],
     icps: icp.data ?? [],
-    positioning: pos.data ? (({ copy_status: _copy, field_sources: _fs, ...p }) => p)(pos.data) : null,
+    positioning: pos.data ? (({ copy_status: _copy, field_sources: _fs, last_human_edit_at: _edit, ...p }) => p)(pos.data) : null,
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,
@@ -46,15 +49,16 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
   // Only changes a signed-in person made (migration 0064): enrichments, syncs and triggers do not move last_human_edit_at. Empty = unknown.
   const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars") =>
-    db.from(table).select("last_human_edit_at").eq("org_id", orgId).not("last_human_edit_at", "is", null).order("last_human_edit_at", { ascending: false }).limit(1).maybeSingle().then((r) => r.data?.last_human_edit_at ?? null);
+    db.from(table).select("last_human_edit_at").eq("org_id", orgId).not("last_human_edit_at", "is", null).order("last_human_edit_at", { ascending: false }).limit(1).maybeSingle().then((r) => { if (r.error) throw new Error(r.error.message); return r.data?.last_human_edit_at ?? null; });
   const [snoozes, ...stamps] = await Promise.all([
     db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
     ...(withActivity ? [
-      db.from("organizations").select("created_at").eq("id", orgId).maybeSingle().then((r) => r.data?.created_at ?? null),
+      db.from("organizations").select("created_at").eq("id", orgId).maybeSingle().then((r) => { if (r.error) throw new Error(r.error.message); return r.data?.created_at ?? null; }),
       newest("positioning"), newest("segments"), newest("quotas"), newest("accounts"),
       newest("deals"), newest("icp_profiles"), newest("messaging_pillars"),
     ] : []),
   ]);
+  if (snoozes.error) throw new Error(snoozes.error.message); // a failed read is not «nothing postponed»
   const rows = snoozes.data ?? [];
   // Postponing a step is the person's last act on the guide, so it counts as activity.
   // stamps[0] is the company's sign-up date: the fallback when no person ever edited anything the steps read (existing rows have no
