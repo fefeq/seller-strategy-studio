@@ -81,13 +81,13 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
 
   const refresh = useCallback(() => Promise.all([qc.invalidateQueries({ queryKey: ["setup"] }), qc.invalidateQueries({ queryKey: ["setup-guide"] })]), [qc]);
 
-  /** CA-7: postpone a step until a day the person picks. Only a role that can complete the step may postpone it. */
+  /** CA-7: postpone a step until a day the person picks. Only a role that can complete the step may postpone it. created_at is rewritten on every postponement: it is the time of the person's last act on the step, which the nudge counts as activity (M-1). */
   const snooze = useCallback(async (stepId: string, day: string) => {
     if (!orgId || !userId) return false;
     if (!canCompleteStep(stepId, role)) { toast.error("Tu rol no puede posponer este paso."); return false; }
     const until = parseSnoozeDate(day, new Date());
     if (!until) { toast.error("Elige una fecha futura."); return false; }
-    const { error } = await supabase.from("setup_step_snoozes").upsert({ org_id: orgId, step_id: stepId, snoozed_until: until, snoozed_by: userId }, { onConflict: "org_id,step_id" });
+    const { error } = await supabase.from("setup_step_snoozes").upsert({ org_id: orgId, step_id: stepId, snoozed_until: until, snoozed_by: userId, created_at: new Date().toISOString() }, { onConflict: "org_id,step_id" });
     if (error) { toast.error(errorText(error)); return false; }
     setJustDone(null);
     await refresh();
@@ -97,7 +97,7 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
   // Clearing a postponement ends it now instead of deleting the row: the detector keys the returning suggestion on the day it ended.
   const unsnooze = useCallback(async (stepId: string) => {
     if (!orgId || !userId) return;
-    const { error } = await supabase.from("setup_step_snoozes").update({ snoozed_until: new Date().toISOString(), snoozed_by: userId }).eq("org_id", orgId).eq("step_id", stepId);
+    const { error } = await supabase.from("setup_step_snoozes").update({ snoozed_until: new Date().toISOString(), snoozed_by: userId, created_at: new Date().toISOString() }).eq("org_id", orgId).eq("step_id", stepId);
     if (error) toast.error(errorText(error)); else await refresh();
   }, [orgId, userId, refresh]);
 

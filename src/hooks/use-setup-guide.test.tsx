@@ -24,6 +24,7 @@ vi.mock("@/hooks/use-setup", () => ({ useSetup: () => ({ data: { data: setupData
 import { toast } from "sonner";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
 import { GuideOffer } from "@/components/setup/guide";
+import { dayAfter } from "@/lib/setup-guide";
 
 const fullPos = Object.fromEntries(["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "category", "key_benefit", "competitive_alternative", "differentiator", "one_liner", "elevator_pitch"].map((k) => [k, "texto"]));
 const full: SetupData = {
@@ -78,6 +79,20 @@ describe("useSetupGuide loads only what the screen needs (the sidebar mounts it 
   });
 });
 
+describe("postponing again counts as activity (M-1)", () => {
+  it("every postponement and every clearing rewrites created_at, the time the nudge reads as the person's last act", async () => {
+    setupData = { ...full, deals: 0 };
+    writes.length = 0;
+    const { result } = renderHook(() => useSetupGuide(), { wrapper });
+    await waitFor(() => expect(result.current.guide).not.toBeNull());
+    const day = dayAfter(new Date(), 2);
+    expect(await result.current.snooze("deals", day)).toBe(true);
+    expect(writes[0]).toMatch(/^setup_step_snoozes\.upsert:\{"org_id":"org-1","step_id":"deals","snoozed_until":"[^"]+","snoozed_by":"u-1","created_at":"\d{4}-\d{2}-\d{2}T[\d:.]+Z"\}$/);
+    await result.current.unsnooze("deals");
+    expect(writes[1]).toMatch(/"created_at":"\d{4}-\d{2}-\d{2}T[\d:.]+Z"/);
+  });
+});
+
 describe("clearing a postponement", () => {
   it("ends it now instead of deleting the row, so the returning suggestion gets a key of its own", async () => {
     setupData = { ...full, deals: 0 };
@@ -86,7 +101,7 @@ describe("clearing a postponement", () => {
     await waitFor(() => expect(result.current.guide).not.toBeNull());
     await result.current.unsnooze("deals");
     expect(writes).toHaveLength(1);
-    expect(writes[0]).toMatch(/^setup_step_snoozes\.update:\{"snoozed_until":"\d{4}-\d{2}-\d{2}T[\d:.]+Z","snoozed_by":"u-1"\}$/);
+    expect(writes[0]).toMatch(/^setup_step_snoozes\.update:\{"snoozed_until":"\d{4}-\d{2}-\d{2}T[\d:.]+Z","snoozed_by":"u-1","created_at":"\d{4}-\d{2}-\d{2}T[\d:.]+Z"\}$/);
   });
 });
 
