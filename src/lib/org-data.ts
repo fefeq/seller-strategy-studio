@@ -50,13 +50,18 @@ async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Pro
   const [snoozes, ...stamps] = await Promise.all([
     db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
     ...(withActivity ? [
+      db.from("organizations").select("created_at").eq("id", orgId).maybeSingle().then((r) => r.data?.created_at ?? null),
       newest("positioning"), newest("segments"), newest("quotas"), newest("accounts"),
       newest("deals"), newest("icp_profiles"), newest("messaging_pillars"),
     ] : []),
   ]);
   const rows = snoozes.data ?? [];
   // Postponing a step is the person's last act on the guide, so it counts as activity.
-  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt: withActivity ? latestActivity([...stamps, ...rows.map((r) => r.created_at)]) : null };
+  // stamps[0] is the company's sign-up date: the fallback when no person ever edited anything the steps read (existing rows have no
+  // last_human_edit_at until someone edits them), so a company that never came back still gets the nudge.
+  const [signedUp, ...edits] = stamps;
+  const activityAt = withActivity ? latestActivity([...edits, ...rows.map((r) => r.created_at)]) ?? signedUp ?? null : null;
+  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt };
 }
 
 /** Just the snoozes: one query. Enough to pick the next step. */
