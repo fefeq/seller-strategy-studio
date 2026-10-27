@@ -350,7 +350,7 @@
       {
         "name": "get_setup_status",
         "title": "Estado de la configuración",
-        "description": "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea) y valores actuales de segmentos, ICP, posicionamiento y pilares.",
+        "description": "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea), la guía con el siguiente paso recomendado (guia.mensaje) y los pasos pospuestos, y valores actuales de segmentos, ICP, posicionamiento y pilares.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -965,6 +965,29 @@
           "required": [
             "fields"
           ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_funnel_diagnosis",
+        "title": "Diagnóstico AARRR por segmento",
+        "description": "Diagnóstico AARRR por segmento y trimestre (por defecto el actual): Acquisition (leads), Activation (pruebas activadas con el evento de PostHog de la empresa), Retention (churn de Stripe, solo de la empresa), Revenue (según el motion de adquisición del segmento) y Referral (no medido). Cada fase trae valor, denominador y fuente; sin datos dice «sin datos» y qué falta, nunca 0. «fuga» solo aparece si el segmento tiene objetivo (win rate o payback). Solo lee la base de datos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "quarter": {
+              "description": "Trimestre AAAA-QN; por defecto el actual",
+              "type": "string",
+              "pattern": "^\\d{4}-Q[1-4]$"
+            }
+          },
           "additionalProperties": false
         },
         "outputSchema": null

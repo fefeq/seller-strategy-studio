@@ -3,6 +3,7 @@ import { z } from "zod";
 import { def, mustBeMember, ok } from "../tool-kit";
 import { POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
+import { loadFunnelDiagnosis } from "@/lib/funnel-diagnosis-data";
 import { ACQUISITION_MOTIONS } from "@/lib/acquisition-motion";
 import type { AgentTool } from "../tool-kit";
 
@@ -25,6 +26,12 @@ export const STRATEGY_TOOLS: AgentTool[] = [
     description: "Lista los segmentos de la empresa por prioridad, con su motion (modelo de venta por ACV), su acquisition_motion (cómo adquiere clientes; null = sin definir) y sus objetivos.",
     input: z.object({}),
     run: async (c) => ok(await c.db.from("segments").select("id,name,priority,acv_min,acv_max,motion,acquisition_motion,cycle_days,win_rate_target,cac_target,payback_months,gross_margin_pct,ae_quota").eq("org_id", c.orgId).order("priority", { ascending: true, nullsFirst: false }).order("acv_min")),
+  }),
+  def({
+    name: "get_funnel_diagnosis", kind: "read",
+    description: "Diagnóstico AARRR por segmento y trimestre (por defecto el actual): Acquisition (leads), Activation (pruebas activadas con el evento de PostHog de la empresa), Retention (churn de Stripe, solo de la empresa), Revenue (según el motion de adquisición del segmento) y Referral (no medido). Cada fase trae valor, denominador y fuente; sin datos dice «sin datos» y qué falta, nunca 0. «fuga» solo aparece si el segmento tiene objetivo (win rate o payback). Solo lee la base de datos.",
+    input: z.object({ quarter: z.string().regex(/^\d{4}-Q[1-4]$/).optional().describe("Trimestre AAAA-QN; por defecto el actual") }),
+    run: async (c, a) => ok({ data: await loadFunnelDiagnosis(c.db, c.orgId, a.quarter ?? quarterOf(new Date())), error: null }),
   }),
   def({
     name: "upsert_segment", kind: "write", roles: ["owner", "sales_leader"],

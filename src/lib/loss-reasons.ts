@@ -16,23 +16,34 @@ export const LOSS_REASONS = [
 
 export type LossReasonKey = (typeof LOSS_REASONS)[number]["key"];
 export const LOSS_REASON_KEYS: readonly string[] = LOSS_REASONS.map((r) => r.key);
-export const isLossReason = (v: unknown): v is LossReasonKey => typeof v === "string" && LOSS_REASON_KEYS.includes(v);
+export const isLossReason = (v: unknown): v is LossReasonKey =>
+  typeof v === "string" && LOSS_REASON_KEYS.includes(v);
 
 export const MAX_DETAIL = 500;
 export const MAX_COMPETITOR = 200;
 /** A «Competition» note longer than this is a paragraph, not a name worth proposing. */
 const MAX_PROPOSED_COMPETITOR = 80;
 
-export const lossLabel = (key: string | null | undefined): string => LOSS_REASONS.find((r) => r.key === key)?.label ?? "Sin dato";
+export const lossLabel = (key: string | null | undefined): string =>
+  LOSS_REASONS.find((r) => r.key === key)?.label ?? "Sin dato";
 
 /** The lost stage is the fixed key «lost» (a stage key can never be «lost» or «won» for a custom stage). */
 export const isLostStage = (stage: string | null | undefined) => stage === "lost";
 
 /** The loss form opens only when a deal moves into «lost», not when it already was or goes elsewhere. */
-export const needsLossPrompt = (target: string, current: string | null | undefined) => isLostStage(target) && !isLostStage(current);
+export const needsLossPrompt = (target: string, current: string | null | undefined) =>
+  isLostStage(target) && !isLostStage(current);
 
-export type LossInput = { reason?: string | null; detail?: string | null; competitor?: string | null };
-export type LossPatch = { lost_reason: LossReasonKey | null; lost_reason_detail: string | null; lost_competitor: string | null };
+export type LossInput = {
+  reason?: string | null;
+  detail?: string | null;
+  competitor?: string | null;
+};
+export type LossPatch = {
+  lost_reason: LossReasonKey | null;
+  lost_reason_detail: string | null;
+  lost_competitor: string | null;
+};
 export type LossParsed = { ok: true; patch: LossPatch } | { ok: false; error: string };
 
 const clean = (v: string | null | undefined) => {
@@ -43,25 +54,53 @@ const clean = (v: string | null | undefined) => {
 /** Nothing is required (CA-10): an empty form is valid and stores «sin dato». A reason outside the list is not. */
 export function parseLoss(input: LossInput): LossParsed {
   const reason = clean(input.reason);
-  if (reason !== null && !isLossReason(reason)) return { ok: false, error: "Ese motivo no está en la lista. Elige uno de la lista o déjalo en blanco." };
+  if (reason !== null && !isLossReason(reason))
+    return {
+      ok: false,
+      error: "Ese motivo no está en la lista. Elige uno de la lista o déjalo en blanco.",
+    };
   const detail = clean(input.detail);
-  if (detail !== null && detail.length > MAX_DETAIL) return { ok: false, error: `El texto libre admite hasta ${MAX_DETAIL} caracteres. Acórtalo.` };
+  if (detail !== null && detail.length > MAX_DETAIL)
+    return { ok: false, error: `El texto libre admite hasta ${MAX_DETAIL} caracteres. Acórtalo.` };
   const competitor = clean(input.competitor);
-  if (competitor !== null && competitor.length > MAX_COMPETITOR) return { ok: false, error: `El competidor admite hasta ${MAX_COMPETITOR} caracteres. Acórtalo.` };
-  return { ok: true, patch: { lost_reason: reason as LossReasonKey | null, lost_reason_detail: detail, lost_competitor: competitor } };
+  if (competitor !== null && competitor.length > MAX_COMPETITOR)
+    return {
+      ok: false,
+      error: `El competidor admite hasta ${MAX_COMPETITOR} caracteres. Acórtalo.`,
+    };
+  return {
+    ok: true,
+    patch: {
+      lost_reason: reason as LossReasonKey | null,
+      lost_reason_detail: detail,
+      lost_competitor: competitor,
+    },
+  };
 }
 
 /** The MEDDPICC «Competition» note as a proposal for the competitor field (the person edits or clears it). */
-export function competitorFromMeddpicc(meddpicc: Record<string, unknown> | null | undefined): string | null {
+export function competitorFromMeddpicc(
+  meddpicc: Record<string, unknown> | null | undefined,
+): string | null {
   const c = meddpicc?.competition;
-  const text = typeof c === "string" ? c : c && typeof c === "object" && typeof (c as { note?: unknown }).note === "string" ? (c as { note: string }).note : "";
+  const text =
+    typeof c === "string"
+      ? c
+      : c && typeof c === "object" && typeof (c as { note?: unknown }).note === "string"
+        ? (c as { note: string }).note
+        : "";
   const t = text.trim();
   return t && t.length <= MAX_PROPOSED_COMPETITOR ? t : null;
 }
 
-const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const norm = (s: string) =>
+  s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 
-export type LossDeal = { stage: string; lost_reason?: string | null; lost_competitor?: string | null };
+export type LossDeal = {
+  stage: string;
+  lost_reason?: string | null;
+  lost_competitor?: string | null;
+};
 export type LossBreakdown = {
   /** Lost deals. */
   total: number;
@@ -83,11 +122,22 @@ export function lossBreakdown(deals: LossDeal[]): LossBreakdown {
     if (isLossReason(d.lost_reason)) byReason[d.lost_reason] = (byReason[d.lost_reason] ?? 0) + 1;
     else noReason++;
     const name = clean(d.lost_competitor);
-    if (!name) { noCompetitor++; continue; }
+    if (!name) {
+      noCompetitor++;
+      continue;
+    }
     const k = norm(name);
     const cur = comp.get(k);
     if (cur) cur.count++;
     else comp.set(k, { name, count: 1 });
   }
-  return { total: lost.length, noReason, byReason, noCompetitor, byCompetitor: [...comp.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)) };
+  return {
+    total: lost.length,
+    noReason,
+    byReason,
+    noCompetitor,
+    byCompetitor: [...comp.values()].sort(
+      (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+    ),
+  };
 }

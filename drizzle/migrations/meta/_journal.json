@@ -446,19 +446,54 @@
     {
       "idx": 63,
       "version": "7",
+      "when": 1793150100000,
+      "tag": "0062_setup_step_snoozes",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1793150200000,
+      "tag": "0064_last_human_edit_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
+      "version": "7",
+      "when": 1793231200000,
+      "tag": "0065_company_diagnosis",
+      "breakpoints": true
+    },
+    {
+      "idx": 66,
+      "version": "7",
+      "when": 1793317600000,
+      "tag": "0066_undo_ignores_last_human_edit",
+      "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1793404000000,
+      "tag": "0067_last_human_edit_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
       "when": 1793490400000,
       "tag": "0068_strategic_suggestions_and_loss_reason",
       "breakpoints": true
     },
     {
-      "idx": 64,
+      "idx": 69,
       "version": "7",
       "when": 1793576800000,
       "tag": "0069_experiment_close_rule",
       "breakpoints": true
     },
     {
-      "idx": 65,
+      "idx": 70,
       "version": "7",
       "when": 1793663200000,
       "tag": "0070_strategy_execution",

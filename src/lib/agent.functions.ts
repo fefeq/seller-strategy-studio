@@ -164,18 +164,19 @@ export async function decideSuggestionCore(ctx: ToolCtx, id: string, decision: "
   if (s.detector.startsWith("strategy_")) {
     const { decideStrategy } = await import("@/lib/strategy-core");
     const r = await decideStrategy(ctx, s, decision === "approve" ? "accept" : decision === "snooze" ? "postpone" : "dismiss", { reason: opts.reason });
+    let result = r;
     if (r.message !== "Ya estaba gestionada" && decision === "approve") {
       // F3: accepting acts, but only inside the guard rails of strategy-execute (a pending proposal, or a task or experiment the person edited).
       const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } = await import("@/lib/strategy-execute-core");
       if (opts.execute?.kind === "experiment") await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
       else if (opts.execute?.kind === "task") await createTaskFromSuggestion(ctx, id, opts.execute.draft);
-      else if (await proposeChange(ctx, s)) return { ...r, message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada." };
+      else if (await proposeChange(ctx, s)) result = { ...r, message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada." };
     }
     if (r.message !== "Ya estaba gestionada") {
       const { rememberDecision } = await import("@/lib/memory.server");
       if (decision !== "snooze") await rememberDecision(ctx, s, decision);
     }
-    return r;
+    return result;
   }
   const now = new Date().toISOString();
   if (decision === "snooze") {

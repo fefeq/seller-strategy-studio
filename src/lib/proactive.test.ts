@@ -128,6 +128,47 @@ describe("detectors", () => {
     expect(keys(snap({ accounts, stakeholders: [{ account_id: "a1", buying_role: "decision_maker" }] }))).not.toContain("no_decision_maker");
   });
   it("incomplete setup suggests the next item", () => expect(detect(snap({ setup: setup({ quotas: [] }) })).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:quota"));
+  it("setup suggestion follows the fixed order, not the weight (CA-3)", () => {
+    // quota weighs 15, segments 10: segments comes first in the order.
+    const found = detect(snap({ setup: setup({ quotas: [], segments: [] }) })).find((x) => x.detector === "setup_incomplete");
+    expect(found?.dedupe_key).toBe("setup_incomplete:segments");
+    expect(found?.body).toContain("recomendarte el motion");
+  });
+  it("a snoozed setup step gets no suggestion until its date, and the next step takes its place (CA-7)", () => {
+    const s = snap({ setup: setup({ quotas: [], pillars: [] }), setupSnoozes: [{ step_id: "pillars", snoozed_until: "2026-11-05T23:59:59.999Z" }] });
+    expect(detect(s).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:quota");
+    expect(detect({ ...s, now: new Date("2026-11-06T08:00:00Z") }).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:pillars:1793923199"); // keyed by the instant the postponement ended (epoch seconds), so it is a new suggestion even if the old one was closed
+  });
+  it("a company that left the guide for over a day gets the setup suggestion at top priority (CA-6)", () => {
+    const base = snap({ setup: setup({ quotas: [] }) });
+    expect(detect({ ...base, setupActivityAt: "2026-10-18T08:00:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(1);
+    expect(detect({ ...base, setupActivityAt: "2026-10-20T09:30:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(3);
+  });
+  describe("the setup suggestion follows the real roles (CA-8)", () => {
+    const team = [{ user_id: "ae1", role: "ae" }, { user_id: "mk1", role: "marketing" }, { user_id: "sl1", role: "sales_leader" }, { user_id: "own1", role: "owner" }];
+    const setupOf = (o: Partial<SetupData>, members?: Snapshot["members"], extra: Partial<Snapshot> = {}) => detect(snap({ setup: setup(o), members, ...extra })).find((x) => x.detector === "setup_incomplete");
+    it("a step only leaders complete goes to the Owner, so an AE never sees it", () => {
+      const f = setupOf({ quotas: [] }, team);
+      expect(f?.dedupe_key).toBe("setup_incomplete:quota");
+      expect(f?.user_id).toBe("own1");
+    });
+    it("without an Owner it goes to the Sales Leader; a step Marketing can do goes to the first of Owner, Sales Leader, Marketing", () => {
+      expect(setupOf({ quotas: [] }, team.filter((m) => m.role !== "owner"))?.user_id).toBe("sl1");
+      expect(setupOf({ pillars: [] }, team.filter((m) => m.role === "marketing" || m.role === "ae"))?.user_id).toBe("mk1");
+    });
+    it("a step open to every role stays unassigned: any member may take it", () => {
+      const f = setupOf({ deals: 0 }, team);
+      expect(f?.dedupe_key).toBe("setup_incomplete:deals");
+      expect(f?.user_id).toBeNull();
+    });
+    it("no suggestion when nobody on the team can complete the next step", () => {
+      expect(setupOf({ quotas: [] }, [{ user_id: "ae1", role: "ae" }])).toBeUndefined();
+    });
+    it("the inactivity priority does not depend on a role", () => {
+      expect(setupOf({ quotas: [] }, team, { setupActivityAt: "2026-10-18T08:00:00Z" })?.priority).toBe(1);
+      expect(setupOf({ deals: 0 }, team, { setupActivityAt: "2026-10-18T08:00:00Z" })?.priority).toBe(1);
+    });
+  });
   it("digest returns top 3 by priority", () => {
     const d = digest([{ priority: 3, created_at: "1" }, { priority: 1, created_at: "1" }, { priority: 2, created_at: "1" }, { priority: 1, created_at: "2" }]);
     expect(d.map((x) => x.priority)).toEqual([1, 1, 2]);

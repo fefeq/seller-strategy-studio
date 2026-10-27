@@ -4,6 +4,9 @@ export type Snapshot = {
   now: Date;
   orgId: string;
   setup: SetupData;
+  /** Setup steps the company postponed and the latest change in setup data. Optional so older snapshots still work. */
+  setupSnoozes?: { step_id: string; snoozed_until: string }[];
+  setupActivityAt?: string | null;
   deals: { id: string; name: string; stage: string; amount: number | null; close_date: string | null; updated_at: string; owner_id: string | null; meddpicc: Record<string, unknown> | null; account_id: string | null }[];
   /** Upcoming meetings and those of the last 7 days (for the call-notes reminder). */
   meetings: { id: string; title: string; scheduled_at: string | null; ai_brief: string | null; account_id: string | null; created_by: string | null; notes?: string | null; call_notes?: unknown }[];
