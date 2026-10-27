@@ -158,8 +158,24 @@ export const INACTIVITY_MS = 86_400_000; // 1 day, decided by Fede (2026-10-25)
 
 /** CA-6: nudge when steps are pending and nothing in the setup data changed for more than a day. No data of activity = no nudge. */
 export function nudgeDue(guide: Guide, role: string | null | undefined, lastActivityAt: string | null, now: Date): boolean {
-  if (!nextFor(guide, role) || !lastActivityAt) return false;
-  return now.getTime() - new Date(lastActivityAt).getTime() > INACTIVITY_MS;
+  return !!nextFor(guide, role) && inactive(lastActivityAt, now);
+}
+
+/** More than a day since the last activity. No data of activity = not inactive. */
+export function inactive(lastActivityAt: string | null | undefined, now: Date): boolean {
+  return !!lastActivityAt && now.getTime() - new Date(lastActivityAt).getTime() > INACTIVITY_MS;
+}
+
+const ASSIGN_ORDER = ["owner", "sales_leader", "marketing"];
+/**
+ * Who a company-wide suggestion for this step goes to, so nobody sees a step they cannot complete (CA-8): a step open to every role
+ * goes to nobody in particular (null); otherwise the first member whose role can complete it (Owner, then Sales Leader, then
+ * Marketing; ties by id so the choice is stable). Undefined when no member can: there is no one to ask.
+ */
+export function suggestionAssignee(stepId: string, members: GuideMember[]): { user_id: string | null } | undefined {
+  if (STEP_ROLES[stepId] === "all") return { user_id: null };
+  const who = whoCan(stepId, members).sort((a, b) => ASSIGN_ORDER.indexOf(a.role) - ASSIGN_ORDER.indexOf(b.role) || a.user_id.localeCompare(b.user_id))[0];
+  return who ? { user_id: who.user_id } : undefined;
 }
 
 /** Latest of the timestamps, ignoring empties. */

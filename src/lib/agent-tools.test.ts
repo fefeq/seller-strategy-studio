@@ -392,4 +392,16 @@ describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-
     const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { guia: { mensaje: { stepId: string } } };
     expect(r.guia.mensaje.stepId).toBe("accounts");
   });
+  it("CA-8: an AE's status lists only what an AE can complete as missing and says the rest is outside their role", async () => {
+    const { db } = fakeDb();
+    type Est = { missing: { id: string }[]; next: { id: string } | null; fuera_de_tu_rol: string[] };
+    const ae = ((await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }).estado;
+    expect(ae.missing.map((i) => i.id)).toEqual(["accounts", "deals"]);
+    expect(ae.next?.id).toBe("accounts");
+    expect(ae.fuera_de_tu_rol).toHaveLength(6);
+    const owner = ((await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }).estado;
+    expect(owner.missing).toHaveLength(8);
+    expect(owner.next?.id).toBe("positioning");
+    expect(owner.fuera_de_tu_rol).toEqual([]);
+  });
 });

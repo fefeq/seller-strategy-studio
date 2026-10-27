@@ -42,7 +42,7 @@ ${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas;
   if (mode !== "interview") return base;
   return `${base}
 MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de la empresa con la mínima fricción.
-- Empieza llamando a get_setup_status y pregunta SOLO por lo que falta, empezando por el paso de guia.mensaje (orden fijo, no por peso).
+- Empieza llamando a get_setup_status y pregunta SOLO por lo que falta y le corresponde a su rol (estado.missing ya viene filtrado; lo de fuera_de_tu_rol no se lo preguntes), empezando por el paso de guia.mensaje (orden fijo, no por peso).
 - Una pregunta (o un bloque pequeño relacionado) por turno. Ofrece una propuesta por defecto que el usuario pueda aceptar con "sí".
 - En cuanto tengas una respuesta, propón guardarla con la herramienta adecuada (update_positioning, create_icp, upsert_segment, create_pillar, set_quota, create_account).
 - Cuando todo esté completo, felicítale y sugiere el siguiente paso útil.`;

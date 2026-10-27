@@ -144,6 +144,31 @@ describe("detectors", () => {
     expect(detect({ ...base, setupActivityAt: "2026-10-18T08:00:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(1);
     expect(detect({ ...base, setupActivityAt: "2026-10-20T09:30:00Z" }).find((x) => x.detector === "setup_incomplete")?.priority).toBe(3);
   });
+  describe("the setup suggestion follows the real roles (CA-8)", () => {
+    const team = [{ user_id: "ae1", role: "ae" }, { user_id: "mk1", role: "marketing" }, { user_id: "sl1", role: "sales_leader" }, { user_id: "own1", role: "owner" }];
+    const setupOf = (o: Partial<SetupData>, members?: Snapshot["members"], extra: Partial<Snapshot> = {}) => detect(snap({ setup: setup(o), members, ...extra })).find((x) => x.detector === "setup_incomplete");
+    it("a step only leaders complete goes to the Owner, so an AE never sees it", () => {
+      const f = setupOf({ quotas: [] }, team);
+      expect(f?.dedupe_key).toBe("setup_incomplete:quota");
+      expect(f?.user_id).toBe("own1");
+    });
+    it("without an Owner it goes to the Sales Leader; a step Marketing can do goes to the first of Owner, Sales Leader, Marketing", () => {
+      expect(setupOf({ quotas: [] }, team.filter((m) => m.role !== "owner"))?.user_id).toBe("sl1");
+      expect(setupOf({ pillars: [] }, team.filter((m) => m.role === "marketing" || m.role === "ae"))?.user_id).toBe("mk1");
+    });
+    it("a step open to every role stays unassigned: any member may take it", () => {
+      const f = setupOf({ deals: 0 }, team);
+      expect(f?.dedupe_key).toBe("setup_incomplete:deals");
+      expect(f?.user_id).toBeNull();
+    });
+    it("no suggestion when nobody on the team can complete the next step", () => {
+      expect(setupOf({ quotas: [] }, [{ user_id: "ae1", role: "ae" }])).toBeUndefined();
+    });
+    it("the inactivity priority does not depend on a role", () => {
+      expect(setupOf({ quotas: [] }, team, { setupActivityAt: "2026-10-18T08:00:00Z" })?.priority).toBe(1);
+      expect(setupOf({ deals: 0 }, team, { setupActivityAt: "2026-10-18T08:00:00Z" })?.priority).toBe(1);
+    });
+  });
   it("digest returns top 3 by priority", () => {
     const d = digest([{ priority: 3, created_at: "1" }, { priority: 1, created_at: "1" }, { priority: 2, created_at: "1" }, { priority: 1, created_at: "2" }]);
     expect(d.map((x) => x.priority)).toEqual([1, 1, 2]);

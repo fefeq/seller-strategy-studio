@@ -3,7 +3,7 @@ import { z } from "zod";
 import { loadSetupData, loadSetupSnoozes } from "@/lib/org-data";
 import { STAGE_ARG, def, like, ok, one, orgStages, resolveStage } from "../tool-kit";
 import { setupStatus } from "@/lib/setup-schema";
-import { formatDay, guideState, nextMessage } from "@/lib/setup-guide";
+import { canCompleteStep, formatDay, guideState, nextMessage } from "@/lib/setup-guide";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
@@ -197,7 +197,11 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       // The guide (setup-guide.ts) decides the next step by a fixed order, the same as the screen; the agent never picks it.
       const g = guideState(d, await loadSetupSnoozes(c.db, c.orgId), new Date());
       const guia = { mensaje: nextMessage(g, c.roles[0]), pospuestos: g.snoozed.map((s) => ({ paso: s.label, hasta: s.snoozedUntil ? formatDay(s.snoozedUntil) : null })) };
-      return { estado: setupStatus(d), guia, moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
+      // What the person's role can complete: the model must not ask an AE about the quota, nor read it as their next step.
+      const st = setupStatus(d);
+      const mine = st.missing.filter((i) => canCompleteStep(i.id, c.roles[0]));
+      const estado = { ...st, missing: mine, next: mine[0] ?? null, fuera_de_tu_rol: st.missing.filter((i) => !canCompleteStep(i.id, c.roles[0])).map((i) => i.label) };
+      return { estado, guia, moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
     },
   }),
   def({

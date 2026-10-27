@@ -1,13 +1,19 @@
-import { guideState, nudgeDue } from "@/lib/setup-guide";
+import { guideState, inactive, suggestionAssignee } from "@/lib/setup-guide";
 import type { Detector } from "../types";
 import { setupStepLink } from "../resolve";
 
-/** Next step of the guide: first pending in the fixed order, skipping what the company postponed (SDD strategy-setup-guided-next-step). */
+/**
+ * Next step of the guide: first pending in the fixed order, skipping what the company postponed (SDD strategy-setup-guided-next-step).
+ * A suggestion without an owner is seen by every member, so a step only some roles can complete goes to one of them
+ * (suggestionAssignee) and an AE never sees «Completa: cuota». Without the team in the snapshot it stays company-wide, as before.
+ */
 export const setupIncomplete: Detector = (s) => {
   const g = guideState(s.setup, s.setupSnoozes ?? [], s.now);
   if (!g.next) return [];
-  // A company that left the guide for over a day gets it first; the company-wide suggestion has no role, so it is judged as a leader.
-  const stalled = nudgeDue(g, "owner", s.setupActivityAt ?? null, s.now);
+  const who = s.members ? suggestionAssignee(g.next.id, s.members) : { user_id: null };
+  if (!who) return [];
+  // A company that left the guide for over a day gets it first. A next step exists by construction, whoever it goes to.
+  const stalled = inactive(s.setupActivityAt, s.now);
   return [{
     detector: "setup_incomplete",
     dedupe_key: `setup_incomplete:${g.next.id}`,
@@ -17,6 +23,6 @@ export const setupIncomplete: Detector = (s) => {
     body: `${g.next.why} Esto desbloquea: ${g.next.unlocks}.`,
     link: setupStepLink(g.next.id),
     action: null,
-    user_id: null,
+    user_id: who.user_id,
   }];
 };
