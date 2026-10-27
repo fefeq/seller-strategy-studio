@@ -25,7 +25,8 @@ export type ConceptId =
   | "tamano_empleados" | "tamano_descripcion"
   | "importe"
   | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada"
-  | "motivo_perdida" | "detalle_perdida" | "competidor_perdida";
+  | "motivo_perdida" | "detalle_perdida" | "competidor_perdida"
+  | "regla_experimento" | "fecha_revision" | "decision_experimento" | "elemento_cambio" | "registro_decision";
 
 export type Concept = {
   id: ConceptId;
@@ -64,6 +65,11 @@ export const CONCEPTS: Concept[] = [
   { id: "motivo_perdida", label: "Motivo de pérdida", meaning: "Por qué se perdió un deal; vacío es «sin dato», nunca se deduce.", kind: "enum", format: "Valor de una lista cerrada (Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro)", allowed: LOSS_REASON_KEYS, display: "Etiqueta en español (lossLabel)" },
   { id: "detalle_perdida", label: "Detalle de la pérdida", meaning: "Texto libre que acompaña al motivo de pérdida.", kind: "text", format: "Texto libre de hasta 500 caracteres", display: "Tal cual se escribió" },
   { id: "competidor_perdida", label: "Competidor de la pérdida", meaning: "Contra quién se perdió un deal; texto libre hasta que exista la entidad competidor (SDD 7b).", kind: "text", format: "Texto libre de hasta 200 caracteres; mayúsculas y espacios no distinguen al contar", display: "Tal cual se escribió" },
+  { id: "regla_experimento", label: "Criterio del experimento", meaning: "Umbral de éxito, regla de cierre o nota del cambio propuesto de un experimento; vacío es «sin definir».", kind: "text", format: "Texto libre de hasta 500 caracteres", display: "Tal cual se escribió" },
+  { id: "fecha_revision", label: "Fecha de revisión", meaning: "Día en que un experimento en marcha se revisa para decidir.", kind: "text", format: "Fecha AAAA-MM-DD; vacía si no se ha puesto", display: "Fecha en formato local" },
+  { id: "decision_experimento", label: "Decisión del experimento", meaning: "Qué se decidió al revisarlo; vacío es «pendiente».", kind: "enum", format: "Valor de una lista cerrada (Escalar, Ajustar, Cerrar)", allowed: ["scale", "adjust", "close"], display: "Etiqueta en español (DECISION_LABEL)" },
+  { id: "elemento_cambio", label: "Elemento del cambio propuesto", meaning: "Sobre qué parte de la estrategia propone un cambio un experimento decidido.", kind: "enum", format: "Valor de una lista cerrada (ICP, Segmento, Posicionamiento, Producto y precio)", allowed: ["icp", "segment", "positioning", "product_price"], display: "Etiqueta en español (CHANGE_LABEL)" },
+  { id: "registro_decision", label: "Quién y cuándo decidió", meaning: "Persona y momento en que se registró la decisión; los pone el sistema, no se editan.", kind: "text", format: "Identificador de la persona y fecha y hora", display: "Nombre de la persona y fecha" },
   { id: "fuente_citada", label: "Fuente citada", meaning: "Nombre del medio, dirección web o etiqueta de donde sale un hallazgo o un registro.", kind: "text", format: "Texto libre, sin valores cerrados", display: "Tal cual se guardó" },
 ];
 
@@ -91,6 +97,15 @@ export const BINDINGS: Binding[] = [
   { table: "deals", column: "lost_reason", concept: "motivo_perdida", persistence: saved, note: "Dialog when moving to Perdido; editable later in the deal" },
   { table: "deals", column: "lost_reason_detail", concept: "detalle_perdida", persistence: saved },
   { table: "deals", column: "lost_competitor", concept: "competidor_perdida", persistence: saved, note: "Proposed from the MEDDPICC Competition note; the person edits it" },
+  // Experimentos con criterio de cierre (SDD estrategia F2)
+  { table: "gtm_experiments", column: "success_threshold", concept: "regla_experimento", persistence: saved },
+  { table: "gtm_experiments", column: "close_rule", concept: "regla_experimento", persistence: saved },
+  { table: "gtm_experiments", column: "change_note", concept: "regla_experimento", persistence: saved },
+  { table: "gtm_experiments", column: "review_on", concept: "fecha_revision", persistence: saved },
+  { table: "gtm_experiments", column: "decision", concept: "decision_experimento", persistence: saved },
+  { table: "gtm_experiments", column: "change_element", concept: "elemento_cambio", persistence: saved },
+  { table: "gtm_experiments", column: "decided_at", concept: "registro_decision", persistence: saved, note: "Set by the system when the decision is saved" },
+  { table: "gtm_experiments", column: "decided_by", concept: "registro_decision", persistence: saved, note: "Set by the system when the decision is saved" },
   // País
   { table: "accounts", column: "country", concept: "pais", persistence: saved, note: "FitFields saves on blur" },
   { table: "account_assignment_rules", column: "country", concept: "pais", persistence: saved },
@@ -165,6 +180,11 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   motivo_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx", "src/lib/loss-reasons.ts"],
   detalle_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx"],
   competidor_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx", "src/lib/loss-reasons.ts"],
+  regla_experimento: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
+  fecha_revision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
+  decision_experimento: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
+  elemento_cambio: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
+  registro_decision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments-core.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */

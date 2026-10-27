@@ -58,6 +58,7 @@ export function evidenceLink(table: string, id: string): string | null {
     case "positioning": return "/strategy?tab=positioning";
     case "messaging_pillars": return "/strategy?tab=pillars";
     case "products": return "/products";
+    case "gtm_experiments": return "/theory-u";
     default: return null;
   }
 }

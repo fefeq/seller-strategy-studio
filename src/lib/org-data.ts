@@ -40,7 +40,7 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 
 /** Extra reads for the strategic rules (F1). A failed read leaves its list empty: a rule never fires on data it could not read. */
 async function loadStrategyData(db: Db, orgId: string): Promise<import("@/lib/proactive/types").StrategyData> {
-  const [icps, accounts, deals, history, products, lines, costs, budgets] = await Promise.all([
+  const [icps, accounts, deals, history, products, lines, costs, budgets, experiments] = await Promise.all([
     db.from("icp_profiles").select("id,name,industries,company_size,geography,countries,anti_icp,segment_id,created_at").eq("org_id", orgId),
     fetchAll((a, b) => db.from("accounts").select("id,name,industry,size,country,segment_id,tier").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
     fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,account_id,segment_id,close_date,created_at,closed_at,updated_at,lost_reason,lost_competitor").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
@@ -49,12 +49,13 @@ async function loadStrategyData(db: Db, orgId: string): Promise<import("@/lib/pr
     fetchAll((a, b) => db.from("deal_lines").select("id,deal_id,product_id,name,discount_pct,unit_price,created_at").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
     db.from("cac_costs").select("segment_id,period").eq("org_id", orgId),
     db.from("segment_budget_quarters").select("segment_id,period,plan_revenue").eq("org_id", orgId),
+    db.from("gtm_experiments").select("id,title,status,hypothesis,metric,target,result,learning,success_threshold,close_rule,review_on,ends_on,decision").eq("org_id", orgId).eq("status", "running"),
   ]);
   return {
     icps: (icps.data ?? []).map((i) => ({ ...i, countries: i.countries ?? [] })),
     accounts: accounts.data ?? [], deals: deals.data ?? [], history: history.data ?? [], products: products.data ?? [],
     lines: (lines.data ?? []).map((l) => ({ ...l, discount_pct: Number(l.discount_pct), unit_price: Number(l.unit_price) })),
-    costs: costs.data ?? [], budgets: budgets.data ?? [],
+    costs: costs.data ?? [], budgets: budgets.data ?? [], experiments: experiments.data ?? [],
   };
 }
 

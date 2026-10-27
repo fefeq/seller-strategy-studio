@@ -2180,6 +2180,14 @@ export type Database = {
           title: string
           updated_at: string
           updated_by: string | null
+          success_threshold: string
+          close_rule: string
+          review_on: string | null
+          decision: string | null
+          decided_at: string | null
+          decided_by: string | null
+          change_element: string | null
+          change_note: string
         }
         Insert: {
           audience?: string
@@ -2200,6 +2208,14 @@ export type Database = {
           title?: string
           updated_at?: string
           updated_by?: string | null
+          success_threshold?: string
+          close_rule?: string
+          review_on?: string | null
+          decision?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          change_element?: string | null
+          change_note?: string
         }
         Update: {
           audience?: string
@@ -2220,6 +2236,14 @@ export type Database = {
           title?: string
           updated_at?: string
           updated_by?: string | null
+          success_threshold?: string
+          close_rule?: string
+          review_on?: string | null
+          decision?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          change_element?: string | null
+          change_note?: string
         }
         Relationships: [
           {
