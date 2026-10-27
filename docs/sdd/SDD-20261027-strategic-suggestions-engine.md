@@ -259,7 +259,7 @@ Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic
 ### Estimación
 Estimaciones de esfuerzo de Claude Code, sin datos de uso, para planificar y no como compromiso: F0 entregada en este PR (una migración, tres módulos, dos componentes, cambios en cinco archivos existentes y 68 pruebas nuevas). F1 tamaño grande (un detector por regla, CA-12 a CA-25, depende de que la regla de competidores espere al SDD 7b). F2 tamaño medio, F3 tamaño grande (depende de los SDD 1 y 2, que ya están en `main`), F4 tamaño medio con una llamada de IA por revisión, F5 y F6 tamaño medio, F7 bloqueada por P1.1 y P1.2.
 
-- Decisión: Aceptado / Cambios pedidos / Rechazado
+- Decisión: **Aceptado** (27 oct 2026, a petición de Fede; lo ha escrito Claude Code con el texto que Fede aprobó). Motor de sugerencias estratégicas en fases F0 a F3 aprobado: reglas fijas sin IA, cambios ejecutados siempre por una persona con rol suficiente, registrados y deshacibles 24 h. Lista de motivos de pérdida validada. F4 (primera llamada a un LLM) queda pendiente de confirmación expresa; CA-22 sigue bloqueado por el SDD 7b y F7 por P1.1 y P1.2.
 
 ---
-Validación: linter PASA (0 bloqueantes, 0 avisos). Auditoría hecha en el mismo contexto, no por un agente independiente. Decisiones 1 a 4 respondidas por Fede el 27 oct; pendiente su OK final y la pregunta 5.
+Validación: linter PASA (0 bloqueantes, 0 avisos). Auditoría hecha en el mismo contexto, no por un agente independiente. Decisiones 1 a 4 respondidas por Fede el 27 oct; pregunta 5 (motivos de pérdida) validada el 27 oct; decisión final registrada arriba.
