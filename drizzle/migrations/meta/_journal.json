@@ -477,6 +477,13 @@
       "when": 1793404000000,
       "tag": "0067_last_human_edit_index",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1793490400000,
+      "tag": "0068_strategic_suggestions_and_loss_reason",
+      "breakpoints": true
     }
   ]
 }

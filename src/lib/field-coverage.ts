@@ -4,8 +4,11 @@
 // Free-form jsonb columns never fail: they are listed as pending. Pure; the test reads types.ts.
 import type { Binding, ConceptId } from "@/lib/field-catalog";
 
-/** Tables that hold no user field: the change log records edits of other tables (its own columns are not concepts). */
-export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set(["field_edit_log"]);
+/** Tables that hold no user field: the change log records edits of other tables, and the strategy decision log records who decided what (their own columns are not concepts). */
+export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set([
+  "field_edit_log",
+  "strategy_decisions",
+]);
 
 export type ColumnType = "json" | "other";
 export type Columns = Map<string, Map<string, ColumnType>>;
@@ -15,7 +18,8 @@ export function columnsFromTypes(text: string): Columns {
   const out: Columns = new Map();
   for (const m of text.matchAll(/^ {6}(\w+): \{\n {8}Row: \{\n([\s\S]*?)\n {8}\}/gm)) {
     const cols = new Map<string, ColumnType>();
-    for (const c of m[2]!.matchAll(/^ {10}(\w+)\??: (.+)$/gm)) cols.set(c[1]!, /^Json\b/.test(c[2]!) ? "json" : "other");
+    for (const c of m[2]!.matchAll(/^ {10}(\w+)\??: (.+)$/gm))
+      cols.set(c[1]!, /^Json\b/.test(c[2]!) ? "json" : "other");
     out.set(m[1]!, cols);
   }
   return out;
@@ -26,7 +30,10 @@ const HINTS: { test: RegExp; concepts: (ConceptId | "periodo")[] }[] = [
   { test: /countr|geograph|region/i, concepts: ["pais", "paises", "region", "geografia_texto"] },
   { test: /size|employees|headcount/i, concepts: ["tamano_empleados", "tamano_descripcion"] },
   { test: /amount|revenue|price|cost|mrr|total|budget|quota/i, concepts: ["importe"] },
-  { test: /source|origin|channel|created_by_app/i, concepts: ["origen_valor", "canal_de_entrada", "creado_por", "fuente_citada"] },
+  {
+    test: /source|origin|channel|created_by_app/i,
+    concepts: ["origen_valor", "canal_de_entrada", "creado_por", "fuente_citada"],
+  },
   { test: /period|quarter|year|week|month/i, concepts: ["periodo"] },
 ];
 
@@ -46,27 +53,40 @@ export type Coverage = {
   pendingJson: { table: string; column: string }[];
 };
 
-export function coverage(columns: Columns, bindings: Pick<Binding, "table" | "column">[], baseline: Record<string, readonly string[]>): Coverage {
+export function coverage(
+  columns: Columns,
+  bindings: Pick<Binding, "table" | "column">[],
+  baseline: Record<string, readonly string[]>,
+): Coverage {
   const catalogued = new Set(bindings.map((b) => `${b.table}.${b.column}`));
   const based = new Set(Object.entries(baseline).flatMap(([t, cs]) => cs.map((c) => `${t}.${c}`)));
-  const out: Coverage = { uncatalogued: [], staleBaseline: [], missingBindings: [], pendingJson: [] };
+  const out: Coverage = {
+    uncatalogued: [],
+    staleBaseline: [],
+    missingBindings: [],
+    pendingJson: [],
+  };
   for (const [table, cols] of columns) {
     if (INFRASTRUCTURE_TABLES.has(table)) continue;
     for (const [column, type] of cols) {
       const key = `${table}.${column}`;
       if (catalogued.has(key)) continue;
       if (type === "json") out.pendingJson.push({ table, column });
-      else if (!based.has(key)) out.uncatalogued.push({ table, column, candidates: conceptCandidates(column) });
+      else if (!based.has(key))
+        out.uncatalogued.push({ table, column, candidates: conceptCandidates(column) });
     }
   }
   for (const [table, cs] of Object.entries(baseline)) {
     for (const column of cs) {
       const key = `${table}.${column}`;
       if (catalogued.has(key)) out.staleBaseline.push({ table, column, reason: "catalogued" });
-      else if (!columns.get(table)?.has(column)) out.staleBaseline.push({ table, column, reason: "missing" });
+      else if (!columns.get(table)?.has(column))
+        out.staleBaseline.push({ table, column, reason: "missing" });
     }
   }
-  for (const b of bindings) if (!columns.get(b.table)?.has(b.column)) out.missingBindings.push({ table: b.table, column: b.column });
+  for (const b of bindings)
+    if (!columns.get(b.table)?.has(b.column))
+      out.missingBindings.push({ table: b.table, column: b.column });
   return out;
 }
 

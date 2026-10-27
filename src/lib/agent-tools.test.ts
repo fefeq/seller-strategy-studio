@@ -5,28 +5,42 @@ import { TITLES } from "@/lib/mcp/tools/agent-tools";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
 
 // A fake Supabase client: records every query (table, operation, filters, payload) and answers from `reply`.
-type Q = { table: string; op: "select" | "insert" | "update" | "upsert" | "delete"; payload?: any; filters: unknown[][]; head?: boolean };
+type Q = {
+  table: string;
+  op: "select" | "insert" | "update" | "upsert" | "delete";
+  payload?: any;
+  filters: unknown[][];
+  head?: boolean;
+};
 type Reply = { data?: unknown; error?: { message: string } | null; count?: number } | undefined;
 function fakeDb(reply: (q: Q) => Reply = () => undefined) {
   const log: Q[] = [];
   const from = (table: string) => {
     const q: Q = { table, op: "select", filters: [] };
-    const proxy: any = new Proxy({}, {
-      get(_t, prop: string) {
-        if (prop === "then") {
-          log.push(q);
-          const r = reply(q) ?? {};
-          const res = { data: r.data ?? null, error: r.error ?? null, count: r.count ?? null };
-          return (res1: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve(res).then(res1, rej);
-        }
-        return (...args: unknown[]) => {
-          if (prop === "insert" || prop === "update" || prop === "upsert" || prop === "delete") { q.op = prop; q.payload = args[0]; }
-          else if (prop === "select") { if (q.op === "select") q.head = !!(args[1] as { head?: boolean } | undefined)?.head; }
-          else if (!["single", "maybeSingle", "order", "limit"].includes(prop)) q.filters.push([prop, ...args]);
-          return proxy;
-        };
+    const proxy: any = new Proxy(
+      {},
+      {
+        get(_t, prop: string) {
+          if (prop === "then") {
+            log.push(q);
+            const r = reply(q) ?? {};
+            const res = { data: r.data ?? null, error: r.error ?? null, count: r.count ?? null };
+            return (res1: (v: unknown) => unknown, rej: (e: unknown) => unknown) =>
+              Promise.resolve(res).then(res1, rej);
+          }
+          return (...args: unknown[]) => {
+            if (prop === "insert" || prop === "update" || prop === "upsert" || prop === "delete") {
+              q.op = prop;
+              q.payload = args[0];
+            } else if (prop === "select") {
+              if (q.op === "select") q.head = !!(args[1] as { head?: boolean } | undefined)?.head;
+            } else if (!["single", "maybeSingle", "order", "limit"].includes(prop))
+              q.filters.push([prop, ...args]);
+            return proxy;
+          };
+        },
       },
-    });
+    );
     return proxy;
   };
   return { db: { from } as unknown as ToolCtx["db"], log };
@@ -35,13 +49,25 @@ const ORG = "org-1";
 const ME = "11111111-1111-4111-8111-111111111111";
 const OTHER = "22222222-2222-4222-8222-222222222222";
 const ID = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
-const ctxWith = (db: ToolCtx["db"], roles = ["ae"]): ToolCtx => ({ db, orgId: ORG, userId: ME, roles, currency: "EUR" });
-const eq = (q: Q, col: string, val: unknown) => q.filters.some(([op, c, v]) => op === "eq" && c === col && v === val);
-const writes = (log: Q[], table?: string) => log.filter((q) => q.op !== "select" && (!table || q.table === table));
+const ctxWith = (db: ToolCtx["db"], roles = ["ae"]): ToolCtx => ({
+  db,
+  orgId: ORG,
+  userId: ME,
+  roles,
+  currency: "EUR",
+});
+const eq = (q: Q, col: string, val: unknown) =>
+  q.filters.some(([op, c, v]) => op === "eq" && c === col && v === val);
+const writes = (log: Q[], table?: string) =>
+  log.filter((q) => q.op !== "select" && (!table || q.table === table));
 /** Every query reads or writes only the caller's company: the rule that keeps Telegram (privileged client) safe. */
 function expectScoped(log: Q[]) {
   for (const q of log) {
-    if (q.op === "insert" || q.op === "upsert") expect([q.payload].flat().every((p: any) => p.org_id === ORG), `${q.op} ${q.table}`).toBe(true);
+    if (q.op === "insert" || q.op === "upsert")
+      expect(
+        [q.payload].flat().every((p: any) => p.org_id === ORG),
+        `${q.op} ${q.table}`,
+      ).toBe(true);
     else expect(eq(q, "org_id", ORG), `${q.op} ${q.table}`).toBe(true);
   }
 }
@@ -78,8 +104,16 @@ describe("update_deal behaves like the Pipeline screen", () => {
   const deal = { id: ID(1), name: "Acme", amount: 60000, meddpicc: {} };
 
   it("sends Ganado to Aprobaciones instead of moving the deal", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "deals" && q.op === "select" ? { data: deal } : q.table === "approvals" ? { data: { id: ID(9) } } : undefined));
-    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "won" })) as { mensaje: string };
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals" && q.op === "select"
+        ? { data: deal }
+        : q.table === "approvals"
+          ? { data: { id: ID(9) } }
+          : undefined,
+    );
+    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "won" })) as {
+      mensaje: string;
+    };
     const ap = writes(log, "approvals")[0];
     expect(ap.payload).toMatchObject({ kind: "stage_change", title: "Marcar como Ganado: Acme" });
     expect(JSON.parse(ap.payload.evidence)).toEqual({ deal_id: ID(1), stage: "won" });
@@ -89,8 +123,15 @@ describe("update_deal behaves like the Pipeline screen", () => {
   });
 
   it("moves to an open stage with its probability and warns about missing MEDDPICC", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: q.op === "select" ? deal : { id: ID(1), name: "Acme", stage: "proposal" } } : undefined));
-    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "Propuesta" })) as { mensaje?: string };
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? { data: q.op === "select" ? deal : { id: ID(1), name: "Acme", stage: "proposal" } }
+        : undefined,
+    );
+    const r = (await executeTool(ctxWith(db), "update_deal", {
+      deal_id: ID(1),
+      stage: "Propuesta",
+    })) as { mensaje?: string };
     const up = writes(log, "deals")[0];
     expect(up.payload).toMatchObject({ stage: "proposal", probability: 60 });
     expect(r.mensaje).toMatch(/falta/);
@@ -98,20 +139,111 @@ describe("update_deal behaves like the Pipeline screen", () => {
   });
 
   it("does not overwrite the amount of a deal priced by its product lines", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: deal } : q.table === "deal_lines" ? { count: 2 } : undefined));
-    await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), amount: 5 })).rejects.toThrow(/líneas de producto/);
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals" ? { data: deal } : q.table === "deal_lines" ? { count: 2 } : undefined,
+    );
+    await expect(
+      executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), amount: 5 }),
+    ).rejects.toThrow(/líneas de producto/);
     expect(writes(log)).toHaveLength(0);
+  });
+
+  // SDD-20261027 strategic-suggestions-engine, F0 · H-2 (CA-8, CA-9, CA-10): the same loss fields as the Pipeline dialog.
+  it("CA-8: moving to Perdido can carry the reason (fixed list), free text and competitor", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? {
+            data:
+              q.op === "select"
+                ? { ...deal, stage: "negotiation" }
+                : { id: ID(1), name: "Acme", stage: "lost" },
+          }
+        : undefined,
+    );
+    await executeTool(ctxWith(db), "update_deal", {
+      deal_id: ID(1),
+      stage: "lost",
+      lost_reason: "price",
+      lost_reason_detail: " Pidieron un 30 % menos ",
+      lost_competitor: "Rival Uno",
+    });
+    expect(writes(log, "deals")[0].payload).toMatchObject({
+      stage: "lost",
+      probability: 0,
+      lost_reason: "price",
+      lost_reason_detail: "Pidieron un 30 % menos",
+      lost_competitor: "Rival Uno",
+    });
+    expectScoped(log);
+  });
+
+  it("CA-10: moving to Perdido with no reason saves it as lost and writes no loss fields (counted as sin dato)", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? {
+            data:
+              q.op === "select"
+                ? { ...deal, stage: "negotiation" }
+                : { id: ID(1), name: "Acme", stage: "lost" },
+          }
+        : undefined,
+    );
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "lost" });
+    const p = writes(log, "deals")[0].payload;
+    expect(p).toMatchObject({ stage: "lost" });
+    expect(Object.keys(p).some((k) => k.startsWith("lost_"))).toBe(false);
+  });
+
+  it("CA-9: the reason can be completed on a deal that is already lost, touching only what was sent", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? {
+            data:
+              q.op === "select"
+                ? { ...deal, stage: "lost" }
+                : { id: ID(1), name: "Acme", stage: "lost" },
+          }
+        : undefined,
+    );
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), lost_competitor: "Rival Dos" });
+    expect(writes(log, "deals")[0].payload).toEqual({ lost_competitor: "Rival Dos" });
+    expectScoped(log);
+  });
+
+  it("a reason outside the list, or a loss reason on a deal that is not lost, is refused and writes nothing", async () => {
+    const open = fakeDb((q) =>
+      q.table === "deals" ? { data: { ...deal, stage: "demo" } } : undefined,
+    );
+    await expect(
+      executeTool(ctxWith(open.db), "update_deal", { deal_id: ID(1), lost_reason: "price" }),
+    ).rejects.toThrow(/solo se guarda en deals perdidos/);
+    expect(writes(open.log)).toHaveLength(0);
+    const bad = fakeDb((q) =>
+      q.table === "deals" ? { data: { ...deal, stage: "lost" } } : undefined,
+    );
+    await expect(
+      executeTool(ctxWith(bad.db), "update_deal", { deal_id: ID(1), lost_reason: "caro" }),
+    ).rejects.toThrow(/Elige uno de la lista/);
+    expect(writes(bad.log)).toHaveLength(0);
   });
 
   it("refuses a deal from another company", async () => {
     const { db, log } = fakeDb();
-    await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), health: "red" })).rejects.toThrow(/No encuentro ese deal/);
+    await expect(
+      executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), health: "red" }),
+    ).rejects.toThrow(/No encuentro ese deal/);
     expect(writes(log)).toHaveLength(0);
   });
 });
 
 describe("decide_approval", () => {
-  const approval = { id: ID(5), kind: "stage_change", title: "Marcar como Ganado: Acme", status: "pending", evidence: JSON.stringify({ deal_id: ID(1), stage: "won" }) };
+  const approval = {
+    id: ID(5),
+    kind: "stage_change",
+    title: "Marcar como Ganado: Acme",
+    status: "pending",
+    evidence: JSON.stringify({ deal_id: ID(1), stage: "won" }),
+  };
 
   it("claims the approval before moving the deal, with the won stage probability", async () => {
     const { db, log } = fakeDb((q) => {
@@ -119,7 +251,10 @@ describe("decide_approval", () => {
       if (q.table === "approvals" && q.op === "update") return { data: [{ id: ID(5) }] };
       if (q.table === "deals") return { data: { id: ID(1) } };
     });
-    const r = (await executeTool(ctxWith(db, ["deal_desk"]), "decide_approval", { approval_id: ID(5), decision: "apply" })) as { mensaje: string };
+    const r = (await executeTool(ctxWith(db, ["deal_desk"]), "decide_approval", {
+      approval_id: ID(5),
+      decision: "apply",
+    })) as { mensaje: string };
     const claim = log.findIndex((q) => q.table === "approvals" && q.op === "update");
     const move = log.findIndex((q) => q.table === "deals" && q.op === "update");
     expect(claim).toBeGreaterThan(-1);
@@ -136,29 +271,42 @@ describe("decide_approval", () => {
       if (q.table === "approvals" && q.op === "update") return { data: [{ id: ID(5) }] };
       if (q.table === "deals") return { error: { message: "boom" } };
     });
-    await expect(executeTool(ctxWith(db, ["owner"]), "decide_approval", { approval_id: ID(5), decision: "apply" })).rejects.toThrow(/sigue pendiente/);
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "decide_approval", {
+        approval_id: ID(5),
+        decision: "apply",
+      }),
+    ).rejects.toThrow(/sigue pendiente/);
     const ups = writes(log, "approvals");
     expect(ups.at(-1)?.payload).toEqual({ status: "pending" });
   });
 
   it("is refused to roles that cannot decide", async () => {
     const { db } = fakeDb();
-    await expect(executeTool(ctxWith(db, ["ae"]), "decide_approval", { approval_id: ID(5), decision: "skip" })).rejects.toThrow(/rol/);
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "decide_approval", { approval_id: ID(5), decision: "skip" }),
+    ).rejects.toThrow(/rol/);
   });
 });
 
 describe("ids must belong to the caller's company", () => {
   it("log_touch refuses an account it cannot find in the company", async () => {
     const { db, log } = fakeDb();
-    await expect(executeTool(ctxWith(db), "log_touch", { account_id: ID(3), channel: "email" })).rejects.toThrow(/No encuentro esa cuenta/);
+    await expect(
+      executeTool(ctxWith(db), "log_touch", { account_id: ID(3), channel: "email" }),
+    ).rejects.toThrow(/No encuentro esa cuenta/);
     expect(writes(log)).toHaveLength(0);
     expectScoped(log);
   });
 
   it("update_account refuses a segment of another company and an empty change", async () => {
     const { db } = fakeDb((q) => (q.table === "accounts" ? { data: { id: ID(3) } } : undefined));
-    await expect(executeTool(ctxWith(db), "update_account", { account_id: ID(3), segment_id: ID(4) })).rejects.toThrow(/segmento/);
-    await expect(executeTool(ctxWith(db), "update_account", { account_id: ID(3) })).rejects.toThrow(/qué cambiar/);
+    await expect(
+      executeTool(ctxWith(db), "update_account", { account_id: ID(3), segment_id: ID(4) }),
+    ).rejects.toThrow(/segmento/);
+    await expect(executeTool(ctxWith(db), "update_account", { account_id: ID(3) })).rejects.toThrow(
+      /qué cambiar/,
+    );
   });
 
   it("update_account takes ISO country codes only", () => {
@@ -169,58 +317,147 @@ describe("ids must belong to the caller's company", () => {
 });
 
 describe("assign_deal", () => {
-  const replyFor = (owner: string | null, member = true) => (q: Q): Reply => {
-    if (q.table === "deals" && q.op === "select") return { data: { id: ID(1), owner_id: owner, name: "Acme" } };
-    if (q.table === "org_members") return { data: member ? [{ user_id: OTHER }] : [] };
-    if (q.table === "deals") return { data: { id: ID(1) } };
-  };
+  const replyFor =
+    (owner: string | null, member = true) =>
+    (q: Q): Reply => {
+      if (q.table === "deals" && q.op === "select")
+        return { data: { id: ID(1), owner_id: owner, name: "Acme" } };
+      if (q.table === "org_members") return { data: member ? [{ user_id: OTHER }] : [] };
+      if (q.table === "deals") return { data: { id: ID(1) } };
+    };
   it("lets a member hand over their own deal but not take someone else's", async () => {
     const mine = fakeDb(replyFor(ME));
     await executeTool(ctxWith(mine.db), "assign_deal", { deal_id: ID(1), owner_id: OTHER });
     expect(writes(mine.log, "deals")[0].payload).toEqual({ owner_id: OTHER });
     expectScoped(mine.log);
     const theirs = fakeDb(replyFor(OTHER));
-    await expect(executeTool(ctxWith(theirs.db), "assign_deal", { deal_id: ID(1), owner_id: ME })).rejects.toThrow(/Owner o Sales Leader/);
+    await expect(
+      executeTool(ctxWith(theirs.db), "assign_deal", { deal_id: ID(1), owner_id: ME }),
+    ).rejects.toThrow(/Owner o Sales Leader/);
     const leader = fakeDb(replyFor(OTHER));
-    await executeTool(ctxWith(leader.db, ["sales_leader"]), "assign_deal", { deal_id: ID(1), owner_id: null });
+    await executeTool(ctxWith(leader.db, ["sales_leader"]), "assign_deal", {
+      deal_id: ID(1),
+      owner_id: null,
+    });
     expect(writes(leader.log, "deals")).toHaveLength(1);
   });
   it("refuses an owner who is not in the team", async () => {
     const { db } = fakeDb(replyFor(ME, false));
-    await expect(executeTool(ctxWith(db), "assign_deal", { deal_id: ID(1), owner_id: OTHER })).rejects.toThrow(/no es miembro/);
+    await expect(
+      executeTool(ctxWith(db), "assign_deal", { deal_id: ID(1), owner_id: OTHER }),
+    ).rejects.toThrow(/no es miembro/);
   });
 });
 
 describe("deal lines", () => {
   it("refuses a product that is no longer for sale and invalid values, like the line editor", async () => {
-    const { db } = fakeDb((q) => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: { id: ID(2), name: "Plan Pro", price: 100, cost: null, billing: "monthly", active: false } } : undefined));
-    await expect(executeTool(ctxWith(db), "add_deal_line", { deal_id: ID(1), product_id: ID(2) })).rejects.toThrow(/ya no está a la venta/);
-    await expect(executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", { deal_id: ID(1), name: "Setup" })).rejects.toThrow(/precio unitario/);
-    await expect(executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", { deal_id: ID(1), name: "Setup", unit_price: 500, billing: "one_off", discount_pct: 120 })).rejects.toThrow(/entre 0 y 100/);
+    const { db } = fakeDb((q) =>
+      q.table === "deals"
+        ? { data: { id: ID(1) } }
+        : q.table === "products"
+          ? {
+              data: {
+                id: ID(2),
+                name: "Plan Pro",
+                price: 100,
+                cost: null,
+                billing: "monthly",
+                active: false,
+              },
+            }
+          : undefined,
+    );
+    await expect(
+      executeTool(ctxWith(db), "add_deal_line", { deal_id: ID(1), product_id: ID(2) }),
+    ).rejects.toThrow(/ya no está a la venta/);
+    await expect(
+      executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", { deal_id: ID(1), name: "Setup" }),
+    ).rejects.toThrow(/precio unitario/);
+    await expect(
+      executeTool(ctxWith(db, ["deal_desk"]), "add_deal_line", {
+        deal_id: ID(1),
+        name: "Setup",
+        unit_price: 500,
+        billing: "one_off",
+        discount_pct: 120,
+      }),
+    ).rejects.toThrow(/entre 0 y 100/);
   });
   it("adds a catalogue line with its price, cost and billing of today", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: { id: ID(2), name: "Plan Pro", price: 100, cost: 20, billing: "monthly", active: true } } : q.table === "deal_lines" ? { data: { id: ID(7) } } : undefined));
-    await executeTool(ctxWith(db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), quantity: 3 });
-    expect(writes(log, "deal_lines")[0].payload).toMatchObject({ product_id: ID(2), name: "Plan Pro", unit_price: 100, unit_cost: 20, billing: "monthly", quantity: 3, deal_id: ID(1) });
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? { data: { id: ID(1) } }
+        : q.table === "products"
+          ? {
+              data: {
+                id: ID(2),
+                name: "Plan Pro",
+                price: 100,
+                cost: 20,
+                billing: "monthly",
+                active: true,
+              },
+            }
+          : q.table === "deal_lines"
+            ? { data: { id: ID(7) } }
+            : undefined,
+    );
+    await executeTool(ctxWith(db), "add_deal_line", {
+      deal_id: ID(1),
+      product_id: ID(2),
+      quantity: 3,
+    });
+    expect(writes(log, "deal_lines")[0].payload).toMatchObject({
+      product_id: ID(2),
+      name: "Plan Pro",
+      unit_price: 100,
+      unit_cost: 20,
+      billing: "monthly",
+      quantity: 3,
+      deal_id: ID(1),
+    });
     expectScoped(log);
   });
 });
 
 describe("people", () => {
   it("create_person never duplicates an email or LinkedIn and needs one of them", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "people" && q.op === "select" ? { data: [{ email: "ana@acme.com", linkedin_url: null }] } : undefined));
-    const r = (await executeTool(ctxWith(db), "create_person", { full_name: "Ana", email: " ANA@acme.com " })) as { duplicada?: boolean };
+    const { db, log } = fakeDb((q) =>
+      q.table === "people" && q.op === "select"
+        ? { data: [{ email: "ana@acme.com", linkedin_url: null }] }
+        : undefined,
+    );
+    const r = (await executeTool(ctxWith(db), "create_person", {
+      full_name: "Ana",
+      email: " ANA@acme.com ",
+    })) as { duplicada?: boolean };
     expect(r.duplicada).toBe(true);
     expect(writes(log)).toHaveLength(0);
-    await expect(executeTool(ctxWith(db), "create_person", { full_name: "Sin datos" })).rejects.toThrow(/email o su LinkedIn/);
+    await expect(
+      executeTool(ctxWith(db), "create_person", { full_name: "Sin datos" }),
+    ).rejects.toThrow(/email o su LinkedIn/);
   });
 });
 
 describe("meetings", () => {
   it("update_meeting with notes writes the same call-log row as the meeting screen", async () => {
-    const m = { id: ID(8), title: "Demo", account_id: ID(3), deal_id: null, scheduled_at: "2026-10-20T10:00:00Z", notes: null, next_steps: null, call_notes: {} };
-    const { db, log } = fakeDb((q) => (q.table === "meetings" ? { data: q.op === "select" ? m : { id: ID(8) } } : undefined));
-    await executeTool(ctxWith(db), "update_meeting", { meeting_id: ID(8), notes: "Le preocupa la integración" });
+    const m = {
+      id: ID(8),
+      title: "Demo",
+      account_id: ID(3),
+      deal_id: null,
+      scheduled_at: "2026-10-20T10:00:00Z",
+      notes: null,
+      next_steps: null,
+      call_notes: {},
+    };
+    const { db, log } = fakeDb((q) =>
+      q.table === "meetings" ? { data: q.op === "select" ? m : { id: ID(8) } } : undefined,
+    );
+    await executeTool(ctxWith(db), "update_meeting", {
+      meeting_id: ID(8),
+      notes: "Le preocupa la integración",
+    });
     const call = writes(log, "calls")[0];
     expect(call.op).toBe("upsert");
     expect(call.payload).toMatchObject({ id: ID(8), account_id: ID(3), title: "Demo" });
@@ -231,58 +468,134 @@ describe("meetings", () => {
 
 describe("summaries the user confirms", () => {
   it("say what will happen in plain Spanish", () => {
-    expect(getTool("update_deal")!.summarize!({ deal_id: ID(1), stage: "won" })).toBe("Actualizar el deal: pedir aprobación para pasar a Ganado");
-    expect(getTool("decide_suggestion")!.summarize!({ suggestion_id: ID(1), decision: "snooze" })).toBe("Posponer la sugerencia 3 días");
-    expect(getTool("update_account")!.summarize!({ account_id: ID(1), tier: "A", health: "red" })).toBe("Actualizar la cuenta: tier, health");
-    expect(getTool("create_lead")!.summarize!({ company: "Acme", contact_name: "Ana", stage: "mql" })).toBe("Dar de alta el lead «Acme» (Ana) en MQL");
+    expect(getTool("update_deal")!.summarize!({ deal_id: ID(1), stage: "won" })).toBe(
+      "Actualizar el deal: pedir aprobación para pasar a Ganado",
+    );
+    expect(
+      getTool("decide_suggestion")!.summarize!({ suggestion_id: ID(1), decision: "snooze" }),
+    ).toBe("Posponer la sugerencia 3 días");
+    expect(
+      getTool("update_account")!.summarize!({ account_id: ID(1), tier: "A", health: "red" }),
+    ).toBe("Actualizar la cuenta: tier, health");
+    expect(
+      getTool("create_lead")!.summarize!({ company: "Acme", contact_name: "Ana", stage: "mql" }),
+    ).toBe("Dar de alta el lead «Acme» (Ana) en MQL");
   });
 });
 
 describe("fixes from review", () => {
-  const product = { id: ID(2), name: "Plan Pro", price: 100, cost: 20, billing: "monthly", active: true };
-  const lineReply = (q: Q): Reply => (q.table === "deals" ? { data: { id: ID(1) } } : q.table === "products" ? { data: product } : q.table === "deal_lines" ? { data: { id: ID(7), deal_id: ID(1), name: "Plan Pro" } } : undefined);
+  const product = {
+    id: ID(2),
+    name: "Plan Pro",
+    price: 100,
+    cost: 20,
+    billing: "monthly",
+    active: true,
+  };
+  const lineReply = (q: Q): Reply =>
+    q.table === "deals"
+      ? { data: { id: ID(1) } }
+      : q.table === "products"
+        ? { data: product }
+        : q.table === "deal_lines"
+          ? { data: { id: ID(7), deal_id: ID(1), name: "Plan Pro" } }
+          : undefined;
 
   it("only pricing roles set prices, costs or discounts on lines (the trigger Telegram skips)", async () => {
     const ae = fakeDb(lineReply);
-    await expect(executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), name: "Setup", unit_price: 1, billing: "annual" })).rejects.toThrow(/Deal Desk/);
-    await expect(executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), discount_pct: 50 })).rejects.toThrow(/Deal Desk/);
-    await expect(executeTool(ctxWith(ae.db), "update_deal_line", { line_id: ID(7), unit_price: 0 })).rejects.toThrow(/Deal Desk/);
-    await executeTool(ctxWith(ae.db), "add_deal_line", { deal_id: ID(1), product_id: ID(2), quantity: 2 });
+    await expect(
+      executeTool(ctxWith(ae.db), "add_deal_line", {
+        deal_id: ID(1),
+        name: "Setup",
+        unit_price: 1,
+        billing: "annual",
+      }),
+    ).rejects.toThrow(/Deal Desk/);
+    await expect(
+      executeTool(ctxWith(ae.db), "add_deal_line", {
+        deal_id: ID(1),
+        product_id: ID(2),
+        discount_pct: 50,
+      }),
+    ).rejects.toThrow(/Deal Desk/);
+    await expect(
+      executeTool(ctxWith(ae.db), "update_deal_line", { line_id: ID(7), unit_price: 0 }),
+    ).rejects.toThrow(/Deal Desk/);
+    await executeTool(ctxWith(ae.db), "add_deal_line", {
+      deal_id: ID(1),
+      product_id: ID(2),
+      quantity: 2,
+    });
     await executeTool(ctxWith(ae.db), "update_deal_line", { line_id: ID(7), quantity: 4 });
     expect(writes(ae.log, "deal_lines")).toHaveLength(2);
     const desk = fakeDb(lineReply);
-    await executeTool(ctxWith(desk.db, ["deal_desk"]), "update_deal_line", { line_id: ID(7), discount_pct: 15 });
+    await executeTool(ctxWith(desk.db, ["deal_desk"]), "update_deal_line", {
+      line_id: ID(7),
+      discount_pct: 15,
+    });
     expect(writes(desk.log, "deal_lines")[0].payload).toEqual({ discount_pct: 15 });
   });
 
   it("applies a stage-change approval whose evidence is not structured, like the screen", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "approvals" ? { data: q.op === "select" ? { id: ID(5), kind: "stage_change", title: "Antigua", status: "pending", evidence: "texto libre" } : [{ id: ID(5) }] } : undefined));
-    const r = (await executeTool(ctxWith(db, ["owner"]), "decide_approval", { approval_id: ID(5), decision: "apply" })) as { estado: string };
+    const { db, log } = fakeDb((q) =>
+      q.table === "approvals"
+        ? {
+            data:
+              q.op === "select"
+                ? {
+                    id: ID(5),
+                    kind: "stage_change",
+                    title: "Antigua",
+                    status: "pending",
+                    evidence: "texto libre",
+                  }
+                : [{ id: ID(5) }],
+          }
+        : undefined,
+    );
+    const r = (await executeTool(ctxWith(db, ["owner"]), "decide_approval", {
+      approval_id: ID(5),
+      decision: "apply",
+    })) as { estado: string };
     expect(r.estado).toBe("applied");
     expect(writes(log, "deals")).toHaveLength(0);
   });
 
   it("checks ids in the tools that already existed", async () => {
     const { db, log } = fakeDb();
-    await expect(executeTool(ctxWith(db), "create_meeting", { title: "Demo", account_id: ID(3) })).rejects.toThrow(/esa cuenta/);
-    await expect(executeTool(ctxWith(db), "create_stakeholder", { account_id: ID(3), name: "Ana" })).rejects.toThrow(/esa cuenta/);
-    await expect(executeTool(ctxWith(db), "create_task", { title: "Llamar", owner_id: OTHER })).rejects.toThrow(/no es miembro/);
-    await expect(executeTool(ctxWith(db), "create_deal", { name: "Nuevo", account_id: ID(3) })).rejects.toThrow(/esa cuenta/);
+    await expect(
+      executeTool(ctxWith(db), "create_meeting", { title: "Demo", account_id: ID(3) }),
+    ).rejects.toThrow(/esa cuenta/);
+    await expect(
+      executeTool(ctxWith(db), "create_stakeholder", { account_id: ID(3), name: "Ana" }),
+    ).rejects.toThrow(/esa cuenta/);
+    await expect(
+      executeTool(ctxWith(db), "create_task", { title: "Llamar", owner_id: OTHER }),
+    ).rejects.toThrow(/no es miembro/);
+    await expect(
+      executeTool(ctxWith(db), "create_deal", { name: "Nuevo", account_id: ID(3) }),
+    ).rejects.toThrow(/esa cuenta/);
     expect(writes(log)).toHaveLength(0);
   });
 
   it("search_knowledge hides other people's personal docs", async () => {
-    const { db } = fakeDb(() => ({ data: [
-      { section: "playbooks", title: "Equipo", body: "x", scope: "team", created_by: OTHER },
-      { section: "skills", title: "Mío", body: "x", scope: "personal", created_by: ME },
-      { section: "skills", title: "De otro", body: "x", scope: "personal", created_by: OTHER },
-    ] }));
-    const r = (await executeTool(ctxWith(db), "search_knowledge", { query: "x" })) as { title: string }[];
+    const { db } = fakeDb(() => ({
+      data: [
+        { section: "playbooks", title: "Equipo", body: "x", scope: "team", created_by: OTHER },
+        { section: "skills", title: "Mío", body: "x", scope: "personal", created_by: ME },
+        { section: "skills", title: "De otro", body: "x", scope: "personal", created_by: OTHER },
+      ],
+    }));
+    const r = (await executeTool(ctxWith(db), "search_knowledge", { query: "x" })) as {
+      title: string;
+    }[];
     expect(r.map((d) => d.title)).toEqual(["Equipo", "Mío"]);
   });
 
   it("update_account clears a text field with null, as the screen saves it", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "accounts" ? { data: { id: ID(3), name: "Acme" } } : undefined));
+    const { db, log } = fakeDb((q) =>
+      q.table === "accounts" ? { data: { id: ID(3), name: "Acme" } } : undefined,
+    );
     await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "  " });
     expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
   });
@@ -294,28 +607,50 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
   const countOf = (n: number) => (q: Q) => (q.head ? { count: n } : undefined);
 
   it("CA-13: every write is proposed first (a write tool, with a summary), and the reads change nothing", () => {
-    for (const name of ["update_icp", "update_pillar", "delete_segment", "delete_icp", "delete_pillar", "confirm_fields", "undo_change"]) {
+    for (const name of [
+      "update_icp",
+      "update_pillar",
+      "delete_segment",
+      "delete_icp",
+      "delete_pillar",
+      "confirm_fields",
+      "undo_change",
+    ]) {
       expect(getTool(name)!.kind, name).toBe("write");
       expect(typeof getTool(name)!.summarize, name).toBe("function");
     }
-    for (const name of ["check_delete", "list_recent_changes"]) expect(getTool(name)!.kind, name).toBe("read");
+    for (const name of ["check_delete", "list_recent_changes"])
+      expect(getTool(name)!.kind, name).toBe("read");
   });
 
   it("CA-14: deleting is the Owner's in code too: another role gets the screen's reason and nothing is deleted", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(0)(q)));
-    await expect(executeTool(ctxWith(db, ["sales_leader"]), "delete_icp", { id: icp.id, name: "Agencias" })).rejects.toThrow("Solo el Owner puede borrar.");
+    const { db, log } = fakeDb((q) =>
+      q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(0)(q),
+    );
+    await expect(
+      executeTool(ctxWith(db, ["sales_leader"]), "delete_icp", { id: icp.id, name: "Agencias" }),
+    ).rejects.toThrow("Solo el Owner puede borrar.");
     expect(writes(log)).toHaveLength(0);
   });
 
   it("CA-6: a segment in use is not deleted and the error says where it is used", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(3)(q)));
-    await expect(executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Pymes" })).rejects.toThrow(/Se usa en: 3 deals/);
+    const { db, log } = fakeDb((q) =>
+      q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(3)(q),
+    );
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Pymes" }),
+    ).rejects.toThrow(/Se usa en: 3 deals/);
     expect(writes(log)).toHaveLength(0);
   });
 
   it("an unused segment is deleted by the Owner, scoped to the company, saying it can be undone", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q)));
-    const r = (await executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "pymes" })) as { mensaje: string };
+    const { db, log } = fakeDb((q) =>
+      q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q),
+    );
+    const r = (await executeTool(ctxWith(db, ["owner"]), "delete_segment", {
+      id: seg.id,
+      name: "pymes",
+    })) as { mensaje: string };
     expect(writes(log, "segments")).toHaveLength(1);
     expect(writes(log, "segments")[0]!.op).toBe("delete");
     expect(r.mensaje).toContain("24 horas");
@@ -323,56 +658,139 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
   });
 
   it("deleting refuses when the name shown to the person is not the element's", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q)));
-    await expect(executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Otro" })).rejects.toThrow(/El nombre no coincide/);
+    const { db, log } = fakeDb((q) =>
+      q.table === "segments" && q.op === "select" && !q.head ? { data: seg } : countOf(0)(q),
+    );
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "delete_segment", { id: seg.id, name: "Otro" }),
+    ).rejects.toThrow(/El nombre no coincide/);
     expect(writes(log)).toHaveLength(0);
   });
 
   it("an ICP in use is archived (same delete, with the use named) and check_delete says it beforehand", async () => {
-    const { db } = fakeDb((q) => (q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(5)(q)));
-    const plan = (await executeTool(ctxWith(db, ["owner"]), "check_delete", { kind: "icp", id: icp.id })) as { se_puede: boolean; accion: string; texto: string[] };
+    const { db } = fakeDb((q) =>
+      q.table === "icp_profiles" && q.op === "select" ? { data: icp } : countOf(5)(q),
+    );
+    const plan = (await executeTool(ctxWith(db, ["owner"]), "check_delete", {
+      kind: "icp",
+      id: icp.id,
+    })) as { se_puede: boolean; accion: string; texto: string[] };
     expect(plan).toMatchObject({ se_puede: true, accion: "Archivar" });
     expect(plan.texto.join(" ")).toContain("5 cuentas, 5 leads");
   });
 
   it("any member can edit an ICP; countries are normalized and unknown ones are refused", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "icp_profiles" ? { data: q.op === "select" ? { id: icp.id } : { id: icp.id, name: "Agencias" } } : undefined));
-    await executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: { countries: ["España", "fr"], min_employees: 10 } });
-    expect(writes(log, "icp_profiles")[0]!.payload).toEqual({ countries: ["ES", "FR"], min_employees: 10 });
-    await expect(executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: { countries: ["Atlantis"] } })).rejects.toThrow(/No reconozco estos países/);
-    await expect(executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: {} })).rejects.toThrow(/qué cambiar/);
+    const { db, log } = fakeDb((q) =>
+      q.table === "icp_profiles"
+        ? { data: q.op === "select" ? { id: icp.id } : { id: icp.id, name: "Agencias" } }
+        : undefined,
+    );
+    await executeTool(ctxWith(db, ["ae"]), "update_icp", {
+      icp_id: icp.id,
+      fields: { countries: ["España", "fr"], min_employees: 10 },
+    });
+    expect(writes(log, "icp_profiles")[0]!.payload).toEqual({
+      countries: ["ES", "FR"],
+      min_employees: 10,
+    });
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "update_icp", {
+        icp_id: icp.id,
+        fields: { countries: ["Atlantis"] },
+      }),
+    ).rejects.toThrow(/No reconozco estos países/);
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "update_icp", { icp_id: icp.id, fields: {} }),
+    ).rejects.toThrow(/qué cambiar/);
     expectScoped(log);
   });
 
   it("confirm_fields marks only fields with a value, with who and when, scoped to the company", async () => {
-    const row = { id: ID(30), org_id: ORG, title: "Ahorro", pain: "", message: "Menos coste", proof: null, field_sources: {} };
-    const { db, log } = fakeDb((q) => (q.table === "messaging_pillars" ? { data: row } : undefined));
-    const r = (await executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["title", "pain", "message"] })) as { mensaje: string };
+    const row = {
+      id: ID(30),
+      org_id: ORG,
+      title: "Ahorro",
+      pain: "",
+      message: "Menos coste",
+      proof: null,
+      field_sources: {},
+    };
+    const { db, log } = fakeDb((q) =>
+      q.table === "messaging_pillars" ? { data: row } : undefined,
+    );
+    const r = (await executeTool(ctxWith(db, ["ae"]), "confirm_fields", {
+      kind: "pillar",
+      id: ID(30),
+      fields: ["title", "pain", "message"],
+    })) as { mensaje: string };
     const up = writes(log, "messaging_pillars")[0]!;
     expect(Object.keys(up.payload.field_sources)).toEqual(["title", "message"]);
-    expect(up.payload.field_sources.title).toMatchObject({ confirmed: true, confirmedBy: ME, kind: "sin_dato" });
+    expect(up.payload.field_sources.title).toMatchObject({
+      confirmed: true,
+      confirmedBy: ME,
+      kind: "sin_dato",
+    });
     expect(r.mensaje).toContain("Sin valor, no confirmados: pain");
     expectScoped(log);
   });
 
   it("confirm_fields refuses untracked fields and rows without the provenance column", async () => {
-    const { db } = fakeDb((q) => (q.table === "messaging_pillars" ? { data: { id: ID(30), title: "x" } } : undefined));
-    await expect(executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["position"] })).rejects.toThrow(/no se pueden confirmar/);
-    await expect(executeTool(ctxWith(db, ["ae"]), "confirm_fields", { kind: "pillar", id: ID(30), fields: ["title"] })).rejects.toThrow(/todavía no está activada/);
+    const { db } = fakeDb((q) =>
+      q.table === "messaging_pillars" ? { data: { id: ID(30), title: "x" } } : undefined,
+    );
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "confirm_fields", {
+        kind: "pillar",
+        id: ID(30),
+        fields: ["position"],
+      }),
+    ).rejects.toThrow(/no se pueden confirmar/);
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "confirm_fields", {
+        kind: "pillar",
+        id: ID(30),
+        fields: ["title"],
+      }),
+    ).rejects.toThrow(/todavía no está activada/);
   });
 
   it("CA-14: undoing a delete is the Owner's, and a failed undo points to the screen", async () => {
-    const entry = { id: ID(40), table_name: "icp_profiles", row_id: ID(21), op: "delete", before: { name: "Agencias" }, changed_at: new Date().toISOString(), undone_at: null };
+    const entry = {
+      id: ID(40),
+      table_name: "icp_profiles",
+      row_id: ID(21),
+      op: "delete",
+      before: { name: "Agencias" },
+      changed_at: new Date().toISOString(),
+      undone_at: null,
+    };
     const { db } = fakeDb((q) => (q.table === "field_edit_log" ? { data: entry } : undefined));
-    await expect(executeTool(ctxWith(db, ["ae"]), "undo_change", { change_id: ID(40) })).rejects.toThrow("Solo el Owner puede deshacer un borrado.");
-    const rpcDb = { ...db, rpc: async () => ({ error: { message: "No encuentro ese cambio" } }) } as unknown as ToolCtx["db"];
-    await expect(executeTool(ctxWith(rpcDb, ["owner"]), "undo_change", { change_id: ID(40) })).rejects.toThrow(/Hazlo en Estrategia/);
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "undo_change", { change_id: ID(40) }),
+    ).rejects.toThrow("Solo el Owner puede deshacer un borrado.");
+    const rpcDb = {
+      ...db,
+      rpc: async () => ({ error: { message: "No encuentro ese cambio" } }),
+    } as unknown as ToolCtx["db"];
+    await expect(
+      executeTool(ctxWith(rpcDb, ["owner"]), "undo_change", { change_id: ID(40) }),
+    ).rejects.toThrow(/Hazlo en Estrategia/);
   });
 
   it("undo is refused after the 24 hours", async () => {
-    const old = { id: ID(41), table_name: "messaging_pillars", row_id: ID(30), op: "update", before: { title: "x" }, changed_at: new Date(Date.now() - 25 * 3_600_000).toISOString(), undone_at: null };
+    const old = {
+      id: ID(41),
+      table_name: "messaging_pillars",
+      row_id: ID(30),
+      op: "update",
+      before: { title: "x" },
+      changed_at: new Date(Date.now() - 25 * 3_600_000).toISOString(),
+      undone_at: null,
+    };
     const { db } = fakeDb((q) => (q.table === "field_edit_log" ? { data: old } : undefined));
-    await expect(executeTool(ctxWith(db, ["owner"]), "undo_change", { change_id: ID(41) })).rejects.toThrow(/pasaron más de 24 horas/);
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "undo_change", { change_id: ID(41) }),
+    ).rejects.toThrow(/pasaron más de 24 horas/);
   });
 });
 
@@ -408,9 +826,19 @@ describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-
 
 describe("segments: acquisition motion", () => {
   it("CA-2: upsert_segment saves it for the caller's company and clears it with null", async () => {
-    const { db, log } = fakeDb((q) => (q.op === "update" || q.op === "insert" ? { data: { id: ID(5) } } : undefined));
-    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", { segment_id: ID(5), name: "Pymes", acquisition_motion: "plg" });
-    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", { segment_id: ID(5), name: "Pymes", acquisition_motion: null });
+    const { db, log } = fakeDb((q) =>
+      q.op === "update" || q.op === "insert" ? { data: { id: ID(5) } } : undefined,
+    );
+    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", {
+      segment_id: ID(5),
+      name: "Pymes",
+      acquisition_motion: "plg",
+    });
+    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", {
+      segment_id: ID(5),
+      name: "Pymes",
+      acquisition_motion: null,
+    });
     const ups = writes(log, "segments");
     expect(ups[0]!.payload).toMatchObject({ acquisition_motion: "plg" });
     expect(ups[1]!.payload).toMatchObject({ acquisition_motion: null });
@@ -420,17 +848,28 @@ describe("segments: acquisition motion", () => {
 
   it("CA-1: the sales-model values are not valid as acquisition motion", async () => {
     const { db, log } = fakeDb();
-    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_segment", { name: "Pymes", acquisition_motion: "inside" })).rejects.toThrow();
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "upsert_segment", {
+        name: "Pymes",
+        acquisition_motion: "inside",
+      }),
+    ).rejects.toThrow();
     expect(writes(log)).toHaveLength(0);
   });
 
   it("CA-2: only owner and sales_leader may write it", () => {
-    for (const r of ["ae", "marketing", "sdr"]) expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(false);
-    for (const r of ["owner", "sales_leader"]) expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(true);
+    for (const r of ["ae", "marketing", "sdr"])
+      expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(false);
+    for (const r of ["owner", "sales_leader"])
+      expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(true);
   });
 
   it("CA-4: list_segments reads only the caller's company and selects both motions", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "segments" ? { data: [{ id: ID(5), name: "Pymes", motion: "plg", acquisition_motion: null }] } : undefined));
+    const { db, log } = fakeDb((q) =>
+      q.table === "segments"
+        ? { data: [{ id: ID(5), name: "Pymes", motion: "plg", acquisition_motion: null }] }
+        : undefined,
+    );
     const r = await executeTool(ctxWith(db), "list_segments", {});
     expect(r).toEqual([{ id: ID(5), name: "Pymes", motion: "plg", acquisition_motion: null }]);
     expect(writes(log)).toHaveLength(0);

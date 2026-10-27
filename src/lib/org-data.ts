@@ -121,6 +121,12 @@ const REOPENABLE = new Set(["setup_incomplete"]);
  * (solved on its own), so the metrics can tell them apart.
  */
 export async function syncSuggestions(db: Db, orgId: string, found: import("@/lib/proactive/types").Suggestion[], touched: string[] = []) {
+  // Strategic suggestions (strategy_* detectors) carry evidence and keep their own decisions: they are written, reopened and
+  // left alone by syncStrategySuggestions (CA-5, CA-6) and never auto-closed here.
+  const { isStrategySuggestion, syncStrategySuggestions, STRATEGY_DETECTOR_LIKE } = await import("@/lib/strategy-core");
+  const strategic = found.filter(isStrategySuggestion);
+  found = found.filter((f) => !isStrategySuggestion(f));
+  await syncStrategySuggestions(db, orgId, strategic);
   if (found.length) {
     await db.from("suggestions").upsert(
       found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })),
@@ -134,7 +140,7 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
   const again = found.filter((f) => REOPENABLE.has(f.detector)).map((f) => f.dedupe_key);
   if (again.length) await db.from("suggestions").update({ status: "pending", snoozed_until: null, notified_at: null, updated_at: new Date().toISOString() }).eq("org_id", orgId).in("dedupe_key", again).eq("status", "resolved");
   // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)");
+  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)").not("detector", "like", STRATEGY_DETECTOR_LIKE);
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
   // never contradicts the screen it links to.
   for (const u of staleTexts(open ?? [], found)) await db.from("suggestions").update({ title: u.title, body: u.body ?? "" }).eq("id", u.id);

@@ -1,5 +1,12 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useMotionValue, useTransform, useReducedMotion, type PanInfo } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useMotionValue,
+  useTransform,
+  useReducedMotion,
+  type PanInfo,
+} from "motion/react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { keyDirection, swipeDirection, type SwipeDir } from "@/lib/swipe";
@@ -10,9 +17,18 @@ export type DeckLabels = Record<SwipeDir, string>;
  * Tinder-style deck: drag right / left / up (or ← → ↑, or the buttons) to decide.
  * Decisions commit after a short undo window (Z or «Deshacer»), so nothing happens by accident.
  */
-export function SwipeDeck<T extends { id: string }>({ items, labels, render, onCommit, done, undoMs = 5000, keyboard = true }: {
+export function SwipeDeck<T extends { id: string }>({
+  items,
+  labels,
+  render,
+  onCommit,
+  done,
+  undoMs = 5000,
+  keyboard = true,
+}: {
   items: T[];
-  labels: DeckLabels;
+  /** One set for every card, or one per card (strategic suggestions say «Aceptar» instead of «Hacer»). */
+  labels: DeckLabels | ((item: T) => DeckLabels);
   render: (item: T) => ReactNode;
   onCommit: (item: T, dir: SwipeDir) => Promise<void> | void;
   done?: ReactNode;
@@ -20,6 +36,7 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
   /** Arrow keys and Z; off where the page needs arrows to scroll (Inicio). */
   keyboard?: boolean;
 }) {
+  const labelsOf = (i: T): DeckLabels => (typeof labels === "function" ? labels(i) : labels);
   const [gone, setGone] = useState<Map<string, SwipeDir>>(new Map());
   const [exit, setExit] = useState<SwipeDir>("right");
   const [stats, setStats] = useState({ right: 0, left: 0, up: 0 });
@@ -38,7 +55,11 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
     let cancelled = false;
     const undo = () => {
       cancelled = true;
-      setGone((g) => { const n = new Map(g); n.delete(item.id); return n; });
+      setGone((g) => {
+        const n = new Map(g);
+        n.delete(item.id);
+        return n;
+      });
       setStats((s) => ({ ...s, [dir]: Math.max(0, s[dir] - 1) }));
       toast.dismiss(tid);
     };
@@ -48,8 +69,20 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
       if (last.current?.id === item.id) last.current = null;
       void Promise.resolve(onCommit(item, dir)).catch(() => undo());
     }, undoMs);
-    const tid = toast(labels[dir], { duration: undoMs, action: { label: "Deshacer", onClick: () => { clearTimeout(timer); undo(); } } });
-    last.current.cancel = () => { clearTimeout(timer); undo(); };
+    const tid = toast(labelsOf(item)[dir], {
+      duration: undoMs,
+      action: {
+        label: "Deshacer",
+        onClick: () => {
+          clearTimeout(timer);
+          undo();
+        },
+      },
+    });
+    last.current.cancel = () => {
+      clearTimeout(timer);
+      undo();
+    };
   }
 
   useEffect(() => {
@@ -57,9 +90,16 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       if (t && (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName))) return;
-      if (e.key === "z" || e.key === "Z") { last.current?.cancel(); last.current = null; return; }
+      if (e.key === "z" || e.key === "Z") {
+        last.current?.cancel();
+        last.current = null;
+        return;
+      }
       const d = keyDirection(e.key);
-      if (d) { e.preventDefault(); decide(d); }
+      if (d) {
+        e.preventDefault();
+        decide(d);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -70,38 +110,98 @@ export function SwipeDeck<T extends { id: string }>({ items, labels, render, onC
     <div className="mx-auto w-full max-w-xl">
       <div className="mb-3 flex items-center justify-between text-xs text-ink-mid">
         <span>{current ? `${decided + 1} de ${total.current}` : "Todo decidido"}</span>
-        {keyboard && <span className="hidden sm:inline">← descartar · ↑ más tarde · → hacer · Z deshacer</span>}
+        {keyboard && (
+          <span className="hidden sm:inline">← descartar · ↑ más tarde · → hacer · Z deshacer</span>
+        )}
       </div>
       <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-paper-sunk">
-        <motion.div className="h-full rounded-full bg-lime" animate={{ width: `${total.current ? (decided / total.current) * 100 : 100}%` }} transition={{ duration: 0.25 }} />
+        <motion.div
+          className="h-full rounded-full bg-lime"
+          animate={{ width: `${total.current ? (decided / total.current) * 100 : 100}%` }}
+          transition={{ duration: 0.25 }}
+        />
       </div>
       <div className="relative min-h-[340px]">
         <AnimatePresence initial={false} custom={exit}>
-          {visible.slice(0, 3).reverse().map((item, i, arr) => {
-            const depth = arr.length - 1 - i;
-            return <DeckCard key={item.id} depth={depth} labels={labels} onDecide={decide} exitDir={exit}>{render(item)}</DeckCard>;
-          })}
+          {visible
+            .slice(0, 3)
+            .reverse()
+            .map((item, i, arr) => {
+              const depth = arr.length - 1 - i;
+              return (
+                <DeckCard
+                  key={item.id}
+                  depth={depth}
+                  labels={labelsOf(item)}
+                  onDecide={decide}
+                  exitDir={exit}
+                >
+                  {render(item)}
+                </DeckCard>
+              );
+            })}
         </AnimatePresence>
         {!current && (
-          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="rounded-2xl border bg-card p-8 text-center shadow-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="rounded-2xl border bg-card p-8 text-center shadow-sm"
+          >
             <p className="font-display text-3xl">Todo decidido</p>
-            <p className="mt-2 text-sm text-ink-mid">{stats.right} hechas · {stats.up} para más tarde · {stats.left} descartadas</p>
+            <p className="mt-2 text-sm text-ink-mid">
+              {stats.right} hechas · {stats.up} para más tarde · {stats.left} descartadas
+            </p>
             {done}
           </motion.div>
         )}
       </div>
       {current && (
         <div className="mt-5 flex items-center justify-center gap-4">
-          <Button variant="outline" size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labels.left} onClick={() => decide("left")}>✕</Button>
-          <Button variant="outline" size="lg" className="h-11 rounded-full px-5" aria-label={labels.up} onClick={() => decide("up")}>Más tarde</Button>
-          <Button size="lg" className="size-14 rounded-full p-0 text-xl" aria-label={labels.right} onClick={() => decide("right")}>✓</Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="size-14 rounded-full p-0 text-xl"
+            aria-label={labelsOf(current)["left"]}
+            onClick={() => decide("left")}
+          >
+            ✕
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="h-11 rounded-full px-5"
+            aria-label={labelsOf(current)["up"]}
+            onClick={() => decide("up")}
+          >
+            Más tarde
+          </Button>
+          <Button
+            size="lg"
+            className="size-14 rounded-full p-0 text-xl"
+            aria-label={labelsOf(current)["right"]}
+            onClick={() => decide("right")}
+          >
+            ✓
+          </Button>
         </div>
       )}
     </div>
   );
 }
 
-function DeckCard({ children, depth, labels, onDecide, exitDir }: { children: ReactNode; depth: number; labels: DeckLabels; onDecide: (d: SwipeDir) => void; exitDir: SwipeDir }) {
+function DeckCard({
+  children,
+  depth,
+  labels,
+  onDecide,
+  exitDir,
+}: {
+  children: ReactNode;
+  depth: number;
+  labels: DeckLabels;
+  onDecide: (d: SwipeDir) => void;
+  exitDir: SwipeDir;
+}) {
   const reduce = useReducedMotion();
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -114,7 +214,11 @@ function DeckCard({ children, depth, labels, onDecide, exitDir }: { children: Re
     const d = swipeDirection(info.offset.x, info.offset.y, info.velocity.x, info.velocity.y);
     if (d) onDecide(d);
   }
-  const fly = { right: { x: 600, y: 0, rotate: 18 }, left: { x: -600, y: 0, rotate: -18 }, up: { x: 0, y: -600, rotate: 0 } }[exitDir];
+  const fly = {
+    right: { x: 600, y: 0, rotate: 18 },
+    left: { x: -600, y: 0, rotate: -18 },
+    up: { x: 0, y: -600, rotate: 0 },
+  }[exitDir];
   return (
     <motion.div
       className="absolute inset-x-0 top-0 touch-none select-none"
@@ -130,11 +234,28 @@ function DeckCard({ children, depth, labels, onDecide, exitDir }: { children: Re
       whileDrag={{ cursor: "grabbing" }}
     >
       <div className="relative cursor-grab overflow-hidden rounded-2xl border bg-card shadow-md">
-        {top && <>
-          <motion.span style={{ opacity: doOpacity }} className="pointer-events-none absolute left-6 top-1/2 z-10 -translate-y-1/2 -rotate-6 rounded-lg border-2 border-lime bg-lime px-3 py-1 text-xl font-semibold text-lime-foreground">{labels.right}</motion.span>
-          <motion.span style={{ opacity: noOpacity }} className="pointer-events-none absolute right-6 top-1/2 z-10 -translate-y-1/2 rotate-6 rounded-lg border-2 border-state-alarm bg-card px-3 py-1 text-xl font-semibold text-state-alarm">{labels.left}</motion.span>
-          <motion.span style={{ opacity: laterOpacity }} className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-lg border-2 border-foreground bg-card px-3 py-1 text-xl font-semibold">{labels.up}</motion.span>
-        </>}
+        {top && (
+          <>
+            <motion.span
+              style={{ opacity: doOpacity }}
+              className="pointer-events-none absolute left-6 top-1/2 z-10 -translate-y-1/2 -rotate-6 rounded-lg border-2 border-lime bg-lime px-3 py-1 text-xl font-semibold text-lime-foreground"
+            >
+              {labels.right}
+            </motion.span>
+            <motion.span
+              style={{ opacity: noOpacity }}
+              className="pointer-events-none absolute right-6 top-1/2 z-10 -translate-y-1/2 rotate-6 rounded-lg border-2 border-state-alarm bg-card px-3 py-1 text-xl font-semibold text-state-alarm"
+            >
+              {labels.left}
+            </motion.span>
+            <motion.span
+              style={{ opacity: laterOpacity }}
+              className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-lg border-2 border-foreground bg-card px-3 py-1 text-xl font-semibold"
+            >
+              {labels.up}
+            </motion.span>
+          </>
+        )}
         {children}
       </div>
     </motion.div>

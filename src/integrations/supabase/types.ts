@@ -1338,6 +1338,9 @@ export type Database = {
           health: string | null
           id: string
           lead_source_id: string | null
+          lost_competitor: string | null
+          lost_reason: string | null
+          lost_reason_detail: string | null
           meddpicc: Json
           name: string
           one_off_amount: number | null
@@ -1366,6 +1369,9 @@ export type Database = {
           health?: string | null
           id?: string
           lead_source_id?: string | null
+          lost_competitor?: string | null
+          lost_reason?: string | null
+          lost_reason_detail?: string | null
           meddpicc?: Json
           name: string
           one_off_amount?: number | null
@@ -1394,6 +1400,9 @@ export type Database = {
           health?: string | null
           id?: string
           lead_source_id?: string | null
+          lost_competitor?: string | null
+          lost_reason?: string | null
+          lost_reason_detail?: string | null
           meddpicc?: Json
           name?: string
           one_off_amount?: number | null
@@ -4729,6 +4738,57 @@ export type Database = {
           },
         ]
       }
+      strategy_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: string
+          evidence_fingerprint: string
+          id: string
+          org_id: string
+          reason: string | null
+          remind_at: string | null
+          suggestion_id: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by?: string
+          decision: string
+          evidence_fingerprint: string
+          id?: string
+          org_id?: string
+          reason?: string | null
+          remind_at?: string | null
+          suggestion_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          evidence_fingerprint?: string
+          id?: string
+          org_id?: string
+          reason?: string | null
+          remind_at?: string | null
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_decisions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_decisions_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suggestions: {
         Row: {
           action: Json | null
@@ -4743,6 +4803,7 @@ export type Database = {
           priority: number
           snoozed_until: string | null
           status: string
+          strategy: Json | null
           title: string
           updated_at: string
           user_id: string | null
@@ -4760,6 +4821,7 @@ export type Database = {
           priority?: number
           snoozed_until?: string | null
           status?: string
+          strategy?: Json | null
           title: string
           updated_at?: string
           user_id?: string | null
@@ -4777,6 +4839,7 @@ export type Database = {
           priority?: number
           snoozed_until?: string | null
           status?: string
+          strategy?: Json | null
           title?: string
           updated_at?: string
           user_id?: string | null
@@ -5147,6 +5210,17 @@ export type Database = {
         Returns: string
       }
       current_org: { Args: never; Returns: string }
+      decide_strategy_suggestion: {
+        Args: {
+          p_by: string
+          p_decision: string
+          p_org_id: string
+          p_reason: string
+          p_remind_at: string
+          p_suggestion_id: string
+        }
+        Returns: string
+      }
       delete_organization: {
         Args: { _confirm_name: string; _org: string }
         Returns: undefined
