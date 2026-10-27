@@ -2,7 +2,7 @@
 -- VERIFIED LOCALLY on an in-process Postgres (PGlite) with two fictional companies: src/lib/strategy-f0.pg.test.ts runs every check
 -- below on a replica of suggestions and deals (columns and policies of 0007/0013 and types.ts). NOT applied to any real database:
 -- apply it first on a copy, because the replica is not the database itself (the real deals table has triggers the replica lacks).
--- Numbering: 0064 follows 0063; other branches also add migrations, renumber on merge if needed.
+-- Numbering: 0068. 0059 (Drive) and 0062, 0064 to 0067 (guided next step) belong to other open branches, so this one skips them.
 -- What it does (additive; no existing row changes, every new column is nullable):
 --   1. suggestions.strategy jsonb: element, kind, evidence (each item with table, id, label and link), evidence_level, sample_size,
 --      action_type, fingerprint. A strategy_* detector MUST carry a valid one (CA-1); with no evidence it can only be «missing_data»
