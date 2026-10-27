@@ -170,6 +170,7 @@ async function setStatus(db: Admin, orgId: string, current: ConnectionRow["statu
 export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth | null> {
   const { data: row } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
   if (!row) return null;
+  let saved = row;
   let status = row.status as ConnectionRow["status"];
   const note = async (httpStatus: number | null) => {
     const f = failureStatus(httpStatus);
@@ -180,17 +181,23 @@ export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth 
     onFailure: note,
     headers: async () => {
       const hit = access.get(orgId);
-      if (hit && hit.sealed === row.refresh_token_enc && hit.until > Date.now()) return { Authorization: `Bearer ${hit.token}` };
+      if (hit && hit.sealed === saved.refresh_token_enc && hit.until > Date.now()) return { Authorization: `Bearer ${hit.token}` };
       const cfg = oauthConfig();
       if (!cfg) throw new DriveError(NOT_CONFIGURED, 500);
+      // A cache miss may be a disconnect or a change of account (forget() on this instance): this object's copy of
+      // the row can be that old account, so read the row again and never refresh with a token that was replaced or deleted.
+      const { data: current } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
+      if (!current) { forget(orgId); throw new DriveError("La cuenta de Drive de esta empresa ya no está conectada.", 401); }
+      saved = current;
+      status = current.status as ConnectionRow["status"];
       let refresh: string;
-      try { refresh = await open(row.refresh_token_enc); } catch { await note(400); throw new DriveError(failureStatus(400)!.text, 401); }
+      try { refresh = await open(saved.refresh_token_enc); } catch { await note(400); throw new DriveError(failureStatus(400)!.text, 401); }
       let t: Awaited<ReturnType<typeof tokenCall>>;
       try { t = await tokenCall({ refresh_token: refresh, client_id: cfg.clientId, client_secret: cfg.clientSecret, grant_type: "refresh_token" }); }
       catch { await note(null); throw new DriveError(failureStatus(null)!.text, 503); }
       if (!t.ok) { await note(t.status); const f = failureStatus(t.status); throw new DriveError(f?.text ?? "Google no renovó el acceso. Vuelve a intentarlo.", t.status === 400 ? 401 : t.status); }
       const token = String(t.json["access_token"] ?? "");
-      access.set(orgId, { sealed: row.refresh_token_enc, token, until: Date.now() + Math.min(ACCESS_CACHE_MAX_MS, Math.max(60, Number(t.json["expires_in"] ?? 3600) - 60) * 1000) });
+      access.set(orgId, { sealed: saved.refresh_token_enc, token, until: Date.now() + Math.min(ACCESS_CACHE_MAX_MS, Math.max(60, Number(t.json["expires_in"] ?? 3600) - 60) * 1000) });
       if (status !== "active") { await setStatus(db, orgId, status, "active", null); status = "active"; }
       return { Authorization: `Bearer ${token}` };
     },

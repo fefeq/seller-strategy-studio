@@ -373,6 +373,31 @@ describe("CA-8 (SDD 10) and CA-4 (SDD 5) · no instance keeps using an account t
     expect(second["Authorization"]).toContain("refresh-nuevo");
     expect(second["Authorization"]).not.toContain("refresh-viejo");
   });
+  it("the same auth object does not refresh with a token that was replaced or deleted on this instance (CA-8 of SDD 10, CA-4 of SDD 5)", async () => {
+    let n = 0;
+    route = (url, body) => {
+      const p = new URLSearchParams(body);
+      if (url.includes("/token")) return p.get("grant_type") === "authorization_code"
+        ? ok({ access_token: "acc", expires_in: 3600, scope: DRIVE_SCOPE, refresh_token: "refresh-nuevo" })
+        : ok({ access_token: `acceso-${++n}:${p.get("refresh_token")}`, expires_in: 3600 });
+      if (url.includes("/drive/v3/about")) return ok({ user: { emailAddress: "nueva@ejemplo.test" } });
+      return ok({});
+    };
+    const { db } = owner({ drive_connections: [{ org_id: ORG, google_email: "vieja@ejemplo.test", refresh_token_enc: await seal("refresh-viejo"), status: "active" }] });
+    const auth = (await ownDriveAuth(db, ORG))!;
+    expect((await auth.headers())["Authorization"]).toContain("refresh-viejo");
+    // The company changes account on this instance: the row is replaced and the cached access token forgotten.
+    expect((await completeConnect(db, await input(), "https://app.ejemplo.test")).ok).toBe(true);
+    const changed = await auth.headers();
+    expect(changed["Authorization"]).toContain("refresh-nuevo");
+    expect(changed["Authorization"]).not.toContain("refresh-viejo");
+    // Then it disconnects: the old object must not bring the account back from the token it was made with.
+    await disconnectDrive(db, ORG, USER);
+    const refreshes = () => calls.filter((c) => c.url.includes("/token") && c.body.includes("refresh_token=")).length;
+    const before = refreshes();
+    await expect(auth.headers()).rejects.toMatchObject({ status: 401 });
+    expect(refreshes()).toBe(before);
+  });
   it("a cached access token is reused for the same saved account, but only for five minutes", async () => {
     refreshRoute();
     const { db } = owner({ drive_connections: [{ org_id: ORG3, google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-uno"), status: "active" }] });
