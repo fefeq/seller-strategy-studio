@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen
@@ -65,7 +65,7 @@ Mensaje tipo: «Ya tienes tu ICP. Siguiente: define tu posicionamiento (5 min). 
 ## 10. Datos, permisos y privacidad
 Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de terceros. Respetar roles.
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Regla pura sobre `SETUP_ITEMS`/`setupStatus` (`src/lib/setup-schema.ts`); reutilizar detector `src/lib/proactive/detectors/setup-incomplete.ts` y `next-steps`.
 - **Uso de LLM:** cero para decidir el siguiente paso (regla determinista). Opcional: reformular el motivo con modelo barato (`effort: "low"`), con caché por (paso, empresa) y plantilla de respaldo si falla.
 - Estado completado derivado de datos, no guardado aparte, para evitar incoherencias.
@@ -76,7 +76,8 @@ Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de 
 - Ruido: demasiados avisos. Mitigación: máximo un aviso por sesión y posposición.
 - Depende del SDD universal (definición única de completo).
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Dónde viven hoy las definiciones de completo y cuántas son distintas?
 2. ¿Puede el estado derivarse siempre de datos?
 
@@ -84,10 +85,9 @@ Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de 
 - [Por verificar] Si el diagnóstico GTM se puede compartir a nivel empresa sin cambios de permisos.
 - [Por verificar] Línea base de finalización (sin dato).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

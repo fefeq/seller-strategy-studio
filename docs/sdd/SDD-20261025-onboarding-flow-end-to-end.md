@@ -1,7 +1,7 @@
 # SDD-20261025-onboarding-flow-end-to-end · [Feature] Onboarding completo y proactivo
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos, SDD de acciones sobre campos, SDD de guía de estrategia
 
 ## 1. Resumen
@@ -78,18 +78,19 @@ Se guardan hallazgos con su origen. Los documentos leídos no se muestran fuera 
 - U-4: Cierre con resumen y propagación del diagnóstico (H-3).
 - U-5: Invitados (H-5).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - `onboarding_sessions` (estado, hallazgos, `block_status`), `src/lib/onboarding.ts`, `src/hooks/use-onboarding.ts`, `src/components/onboarding/*`.
 - Reutilizar `background_jobs` (`onboarding_read`) y el centro de avisos.
 - **Uso de LLM:** lectura de fuentes ya usa extracción con IA; objetivo: cachear por contenido (hash de fuente) para no releer, usar `effort:"low"` salvo A fondo, y mostrar coste previo. Todo el estado, recordatorios y cierre: reglas deterministas.
 
 ## 13. Riesgos y dependencias
-- Es épica: se propone tratarla tras los SDD 1, 2 y 3 y dividirla en dos entregas (U-1/U-2/U-4 y U-3/U-5) cuando Dani confirme el estado del plan.
+- Es épica: se propone tratarla tras los SDD 1, 2 y 3 y dividirla en dos entregas (U-1/U-2/U-4 y U-3/U-5) cuando Claude Code confirme el estado del plan en el código y los PR.
 - Dueños: «completo» → SDD universal; añadir fuente y no sobrescribir → SDD de acciones y universal (CA-9); este SDD solo los referencia.
 - Depende de tres SDD previos.
-- Riesgo de solapamiento con el plan de 2026-10-24: confirmar con Dani qué falta antes de repartir unidades.
+- Riesgo de solapamiento con el plan de 2026-10-24: comprobar en el código y los PR qué falta antes de repartir unidades.
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Qué tareas del plan de onboarding están ya en `main` y en `production`?
 2. ¿Qué pasa hoy con hallazgos no aprobados al abandonar?
 3. ¿Existe ya recordatorio fuera de Inicio?
@@ -99,10 +100,9 @@ Se guardan hallazgos con su origen. Los documentos leídos no se muestran fuera 
 - [Por verificar] Comportamiento al abandonar.
 - [Por verificar] Diferencias entre `production` y `main` (este análisis solo vio `main`).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

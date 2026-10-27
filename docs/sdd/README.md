@@ -1,6 +1,6 @@
 # SDD 2026-10-25 · UX de estrategia, onboarding y coherencia de campos
 
-Estado: **SDD 1, 2, 3 y 10 aprobados por Fede** (1 y 2 ya implementados; 3 y 10 con PR abiertos, aprobados el 2026-10-27). El resto en **Borrador**; ninguno enviado a Dani. Rama: `sdd/ux-onboarding-coherencia-20261025`.
+Estado: **SDD 1, 2, 3 y 10 aprobados por Fede** (1 y 2 ya implementados; 3 y 10 con PR abiertos, aprobados el 2026-10-27). El resto en **Borrador**; Dani no interviene en NOKKO (decisión de Fede, 2026-10-27): flujo = Fede aprueba, Claude Code implementa, auditoría independiente revisa, Fede fusiona. Rama: `sdd/ux-onboarding-coherencia-20261025`.
 
 ## Índice y orden recomendado
 | # | SDD | Tipo | Depende de |
@@ -21,7 +21,7 @@ Estado: **SDD 1, 2, 3 y 10 aprobados por Fede** (1 y 2 ya implementados; 3 y 10 
 ## Estado a 2026-10-27 (según GitHub)
 | SDD | Estado | PR |
 |---|---|---|
-| 1 Definiciones universales | Fusionado en `main` (U-1 a U-4); sin revisión de Dani | #34 |
+| 1 Definiciones universales | Fusionado en `main` (U-1 a U-4); sin revisión externa | #34 |
 | 2 Acciones sobre campos | Fusionado en `main` (U-1 a U-5) con correcciones | #34, #35 |
 | 3 Guía de estrategia | En revisión; falta cambiar la base a `main` y renumerar la migración | #31 |
 | 10 y 5 Conexiones y Drive | En revisión; entrega parcial (Drive propio, permiso `drive.file`) | #32 |
@@ -51,7 +51,7 @@ Orden de preferencia: regla determinista → dato derivado/caché → modelo bar
 | Theory U: aviso de sensing | 8 notas sin sintetizar |
 
 ## Decisiones que siguen abiertas
-1. [Por verificar] que depende de Dani (ver sección 15 de cada SDD).
+1. [Por verificar] que lo comprueba Claude Code en el código o lo decide Fede (ver sección 15 de cada SDD).
 
 Decididas el 2026-10-27 (OK a las recomendaciones): dueño de «propuesta pendiente» = SDD universal (reutiliza `field_proposal`); moneda única por empresa en productos (otra moneda queda «Falta confirmar», varias monedas fuera); 7a/7b/7c recortados con anexo común `annex/fit-data-common.md`.
 
@@ -60,11 +60,11 @@ Decididas en la segunda ronda: coste del respaldo (se descuenta del presupuesto 
 ## Orden de implementación recomendado
 8 (productos) → 7b (competidores) → 6 (Descubiertos) → 7a (llave mínima) → 4 (onboarding) → 7c (identidad y terceros) → 9 (Theory U). Los SDD 1, 2, 3 y 10 (con el 5) van antes, ya en curso (ver tabla de estado).
 
-## Entorno de pruebas (pendiente de Fede y Dani)
+## Entorno de pruebas (pendiente de Fede)
 Las migraciones nuevas (0058, 0060, 0061, 0063 en `main`, más las de #31 y #32) no están verificadas en una base real. Antes de seguir implementando hay que crear un entorno de pruebas (rama de base de datos de pruebas) y aplicar ahí las migraciones; no se prueba en producción (nokko.ai). Hasta entonces, las pruebas son locales con datos ficticios.
 
 ## Límites del análisis
 - `nokko.ai/discoveries` exige sesión: análisis hecho sobre el código de `main`, no sobre producción.
 - Agrupación de campos por nombre, no por significado.
 - Sin datos de uso: todas las líneas base figuran como «sin dato».
-- Los SDD siguen la plantilla `postin-sdd` aunque el repo tiene convención BMAD (`sdd.config.json`); Dani decide si se convierten.
+- Los SDD siguen la plantilla `postin-sdd` aunque el repo tiene convención BMAD (`sdd.config.json`); lo decide Fede.

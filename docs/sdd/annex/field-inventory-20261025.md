@@ -11,7 +11,7 @@ Generado por script determinista (sin IA) a partir de `src/integrations/supabase
 
 ## 1. Conceptos con varias representaciones (clústeres)
 
-Cada fila agrupa columnas que, por nombre, hablan del mismo concepto. «Tipos» muestra si el mismo concepto se guarda con tipos distintos. **La interpretación es de lectura de nombres: marcar [Por verificar] con Dani antes de decidir.**
+Cada fila agrupa columnas que, por nombre, hablan del mismo concepto. «Tipos» muestra si el mismo concepto se guarda con tipos distintos. **La interpretación es de lectura de nombres: marcar [Por verificar] en el código (lo comprueba Claude Code) antes de decidir.**
 
 | Concepto | Variantes (tabla.columna : tipo) | Nº variantes | Tipos distintos |
 |---|---|---|---|

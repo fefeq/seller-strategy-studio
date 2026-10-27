@@ -47,10 +47,10 @@ Esta tabla es una propuesta de Fede; los datos que realmente exige cada proveedo
 - Base legal y proveedores de datos de contacto: **[Por verificar]**.
 - Datos de ejemplo del SDD: ficticios (acme.com).
 
-## Notas técnicas [Sugerencia — Dani valida]
+## Notas técnicas [Sugerencia — se valida en la implementación]
 - Archivos: `src/lib/orchestrator/planner.ts` (añadir llaves requeridas por `Need`), `search.ts`, `runner.ts`, `src/lib/apollo.ts`, `src/lib/clay.ts` (`AccountDraft`, `StakeholderDraft`), `src/lib/leads-ingest.ts`, `src/lib/lead-qualification.ts` (`emailDomainOf`), `src/lib/autopilot.server.ts`, `src/components/account/stakeholders-tab.tsx`, `src/lib/discoveries.server.ts` (`knownCompetitors`).
 - La regla de «llave mínima» como módulo puro con pruebas, consultado por pantallas, Agente y automatismos.
-- Tablas: `accounts`, `people`, `stakeholders`, `leads`; nueva tabla de competidores o vista sobre posicionamiento (decisión de Dani).
+- Tablas: `accounts`, `people`, `stakeholders`, `leads`; nueva tabla de competidores o vista sobre posicionamiento (decisión de Fede, con recomendación de Claude).
 - **Uso de LLM:** cero para comprobar llaves y derivar dominio (reglas y normalización). LLM solo donde ya existe (investigación), con `effort:"low"`, y evitando llamadas cuando CA-16 aplica. El planificador ya prioriza coste cero/caché: mantener.
 
 ## Riesgos y dependencias
@@ -61,7 +61,7 @@ Esta tabla es una propuesta de Fede; los datos que realmente exige cada proveedo
 - Migración de competidores desde texto: extracción imperfecta; mitigación: propuesta a confirmar por el usuario.
 - Dependencia del SDD universal (origen y normalización) y del de acciones sobre campos (confirmar/editar).
 
-## Preguntas para Dani
+## Decisiones abiertas (recomendación de Claude)
 1. ¿Se relacionan hoy `people` y `stakeholders`? ¿Se pueden unificar o basta con un vínculo?
 2. ¿Qué llaves exige realmente cada proveedor conectado?
 3. ¿Qué datos de la ficha se envían hoy a cada tercero?

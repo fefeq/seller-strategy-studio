@@ -1,7 +1,7 @@
 # SDD-20261025-drive-per-company-account · [Feature] Google Drive de una cuenta distinta al email de acceso
 
 **Tipo:** Feature · **Prioridad propuesta:** Media-Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 > Decisión de Fede (2026-10-25): conexión **por empresa**. La entrada vive en Conexiones.
@@ -13,7 +13,7 @@ Founder o miembro cuyo email de acceso no es la cuenta Google donde están los d
 
 ## 3. Evidencia y por qué ahora
 - Petición directa de Fede (2026-10-25).
-- Código del repo: la conexión a Drive se hace con credenciales de entorno a través de una pasarela de conectores (nombre de variables del código, no fuente de verdad del producto; `src/lib/google-drive.ts`: `LOVABLE_API_KEY`, `GOOGLE_DRIVE_API_KEY`), es decir, una única cuenta para toda la aplicación o constructor. **[Por verificar]** con Dani cómo se vincula la cuenta de cada usuario en producción.
+- Código del repo: la conexión a Drive se hace con credenciales de entorno a través de una pasarela de conectores (nombre de variables del código, no fuente de verdad del producto; `src/lib/google-drive.ts`: `LOVABLE_API_KEY`, `GOOGLE_DRIVE_API_KEY`), es decir, una única cuenta para toda la aplicación o constructor. **[Por verificar]** en el código (lo comprueba Claude Code) cómo se vincula la cuenta de cada usuario en producción.
 - Sin datos de cuántos usuarios lo necesitan (sin dato).
 
 **Apuesta declarada:** no hay datos de uso; la prioridad se apoya en el código de `main` y en la petición de Fede. Se medirá tras el lanzamiento con las métricas de la sección 4.
@@ -72,7 +72,7 @@ Ubicación: paso de fuentes del onboarding y ajustes de empresa. Texto: «Conect
 - U-2: Lectura desde la cuenta de la empresa en onboarding y conocimiento (H-3; depende de U-1).
 - U-3: Estado, errores y roles (H-4; depende de U-1).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Hoy `call()` en `src/lib/google-drive.ts` usa claves de entorno contra `https://connector-gateway.lovable.dev/google_drive`; se necesitaría vincular credenciales por empresa o usuario.
 - Tabla existente de carpetas de Drive: `drizzle/migrations/0033_drive_folders.sql`; revisar su relación con la cuenta.
 - Los permisos de lectura amplios de Drive son «restringidos» en Google y pueden exigir revisión de la app: **[Por verificar]** antes de comprometer fecha.
@@ -80,9 +80,10 @@ Ubicación: paso de fuentes del onboarding y ajustes de empresa. Texto: «Conect
 
 ## 13. Riesgos y dependencias
 - Revisión de Google para permisos restringidos: puede retrasar el lanzamiento.
-- Seguridad de credenciales por empresa: requiere diseño de cifrado/almacén (Dani).
+- Seguridad de credenciales por empresa: requiere diseño de cifrado/almacén (lo propone Claude Code y lo aprueba Fede).
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Cómo se autoriza hoy la cuenta de Drive en producción?
 2. ¿Puede el gestor de conectores actual vincular una cuenta por empresa?
 3. ¿Qué permiso mínimo cubre elegir archivos o carpetas?
@@ -92,10 +93,9 @@ Ubicación: paso de fuentes del onboarding y ajustes de empresa. Texto: «Conect
 - [Por verificar] Requisitos de verificación de Google.
 - [Por verificar] Decisión de Fede: conexión por empresa, por usuario o ambas (pregunta de README).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

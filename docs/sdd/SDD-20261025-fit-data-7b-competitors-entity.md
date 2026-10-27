@@ -1,7 +1,7 @@
 # SDD-20261025-fit-data-7b-competitors-entity · [Feature] Competidores como entidad y alta manual (parte b de 3 de «Datos mínimos de encaje»)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD-20261025-universal-field-definitions; SDD-20261025-fit-data-7a-llave-minima-y-completado (tabla de llaves); SDD-20261025-discoveries-scoped-manual-search (confirmar competidores)
 
 
@@ -68,23 +68,23 @@ Ver `annex/fit-data-common.md`, sección «Datos, permisos y privacidad».
 - U-3: Entidad Competidor, alta manual en tres puntos y sincronía con posicionamiento (H-3, H-6; coordinada con SDD de Descubiertos).
 
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 Ver `annex/fit-data-common.md`, sección «Notas técnicas».
 
 ## 13. Riesgos y dependencias
 Ver `annex/fit-data-common.md`, sección «Riesgos y dependencias».
 
-## 14. Preguntas para Dani
-Ver `annex/fit-data-common.md`, sección «Preguntas para Dani».
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
+Ver `annex/fit-data-common.md`, sección «Decisiones abiertas».
 
 ## 15. Pendiente de verificar
 Ver `annex/fit-data-common.md`, sección «Pendiente de verificar».
 - [Por verificar] Cómo se detecta un texto escrito a mano frente a uno generado (usar el origen del SDD universal).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

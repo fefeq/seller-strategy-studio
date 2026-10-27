@@ -1,7 +1,7 @@
 # SDD-20261025-fit-data-7c-person-identity-and-third-party-results · [Feature] Identidad de persona y resultados de terceros (parte c de 3 de «Datos mínimos de encaje»)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD-20261025-universal-field-definitions; SDD-20261025-fit-data-7a-llave-minima-y-completado (llave mínima)
 
 
@@ -27,7 +27,7 @@ Ver `annex/fit-data-common.md`, sección «Resultado buscado».
 - Guardar lo que devuelven los terceros con proveedor y fecha, sin pisar tus datos.
 - No volver a pedir un dato fresco.
 **No incluye:**
-- Unificar las dos tablas de personas si Dani lo decide (hoy solo se propone vincular).
+- Unificar las dos tablas de personas si Fede lo decide (hoy solo se propone vincular).
 - Contratar proveedores nuevos.
 - Llave mínima (7a) y competidores (7b).
 
@@ -66,14 +66,15 @@ Ver `annex/fit-data-common.md`, sección «Datos, permisos y privacidad».
 - U-5: Escritura de resultados de terceros con origen y propuestas (H-5; depende de SDD universal CA-7 a CA-9).
 
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 Ver `annex/fit-data-common.md`, sección «Notas técnicas».
 
 ## 13. Riesgos y dependencias
 Ver `annex/fit-data-common.md`, sección «Riesgos y dependencias».
 
-## 14. Preguntas para Dani
-Ver `annex/fit-data-common.md`, sección «Preguntas para Dani».
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
+Ver `annex/fit-data-common.md`, sección «Decisiones abiertas».
 
 ## 15. Pendiente de verificar
 Ver `annex/fit-data-common.md`, sección «Pendiente de verificar».
@@ -81,10 +82,9 @@ Ver `annex/fit-data-common.md`, sección «Pendiente de verificar».
 - [Por verificar] Criterio de coincidencia de personas.
 - [Por verificar] Base legal y retención de datos de contacto.
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

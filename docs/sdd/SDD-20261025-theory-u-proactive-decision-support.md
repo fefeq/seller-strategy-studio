@@ -1,7 +1,7 @@
 # SDD-20261025-theory-u-proactive-decision-support · [Feature] Theory U con IA proactiva para decidir
 
 **Tipo:** Feature · **Prioridad propuesta:** Media
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos; SDD de acciones sobre campos
 
 ## 1. Resumen
@@ -81,7 +81,7 @@ Se leen notas de sensing (entrevistado, lo oído, sorpresas), clínicas, prototi
 - U-4: IA en clínicas y prototipos (H-4).
 - U-5: Agente (H-5; depende de U-2).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Código: `src/lib/theory-u.ts` (reglas con pruebas), `src/components/theory-u/*`, `src/lib/ai.functions.ts` (`synthesizeJourney`, `sensingPatterns`), `ai-core.ts` (`U_SYSTEM`, `listeningCoachingCore`), tablas `u_journeys`, `sensing_notes`, `case_clinics`, `gtm_experiments`, `meetings`.
 - Los avisos se añaden como detectores del motor proactivo existente (`src/lib/proactive/detectors/`).
 - **Uso de LLM:** decidir CUÁNDO avisar = reglas deterministas (cero LLM). La síntesis solo corre al aceptar el aviso o al pedirla, `effort:"low"` por defecto, con caché por huella de las notas de entrada (si no cambian, no se regenera) y respuesta estructurada con fuentes. Sin LLM para clasificar niveles de escucha si ya están guardados.
@@ -92,7 +92,8 @@ Se leen notas de sensing (entrevistado, lo oído, sorpresas), clínicas, prototi
 - Depende de los SDD universal y de acciones para propuestas y origen.
 - Dueño de «propuesta pendiente»: SDD universal de campos (CA-9).
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Existe ya algún detector de Theory U en el motor proactivo?
 2. ¿Dónde se guardarían las propuestas pendientes (sin tabla propia)?
 
@@ -101,10 +102,9 @@ Se leen notas de sensing (entrevistado, lo oído, sorpresas), clínicas, prototi
 - [Por verificar] Coste real de una síntesis (sin dato).
 - [Por verificar] Estado en `production`.
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

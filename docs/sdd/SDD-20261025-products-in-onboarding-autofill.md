@@ -1,7 +1,7 @@
 # SDD-20261025-products-in-onboarding-autofill · [Mejora] Productos en el onboarding y autocompletado desde la web
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos; SDD de acciones sobre campos
 
 ## 1. Resumen
@@ -73,7 +73,7 @@ Datos de empresa (nombre, precio, coste, descripción), sin datos de clientes. C
 - U-2: Acciones sobre el catálogo (H-3; depende del SDD de acciones).
 - U-3: Vínculo con posicionamiento y líneas de deal (H-4).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Ampliar `SETUP_EXTRACTION_SCHEMA` en `src/lib/setup-extraction.ts` y `setup-extract.server.ts`; tabla `products`; `useProducts` en `src/components/deal-lines.tsx`; escritura mediante las herramientas del Agente (`core-write.ts`).
 - **Uso de LLM:** cero llamadas nuevas: los productos salen de la misma extracción ya lanzada para los otros bloques (un solo paso, no uno por bloque). Reglas deterministas para duplicados y moneda (única por empresa, la que ya existe en la plataforma).
 
@@ -81,7 +81,8 @@ Datos de empresa (nombre, precio, coste, descripción), sin datos de clientes. C
 - Riesgo: inventar precios a partir de planes de la web. Mitigación: CA-2 y origen visible.
 - Depende de los SDD universal y de acciones.
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Se relaciona hoy el producto del posicionamiento con el catálogo?
 
 ## 15. Pendiente de verificar
@@ -89,10 +90,9 @@ Datos de empresa (nombre, precio, coste, descripción), sin datos de clientes. C
 - [Por verificar] Comportamiento en `production` (solo se leyó `main`).
 - [Por verificar] Si deals y márgenes dependen de campos del catálogo no listados aquí.
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

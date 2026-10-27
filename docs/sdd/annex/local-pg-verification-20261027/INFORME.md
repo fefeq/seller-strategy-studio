@@ -26,8 +26,8 @@ Resultado: **las migraciones 0058, 0060, 0061, 0063 (en `main`), 0059 (PR #32) y
 - Pausas: `snoozed_by` siempre es quien firma; borrar la empresa borra sus pausas y conexiones.
 
 ## Hallazgos
-1. **La cadena de migraciones no construye una base nueva.** `0057_finance_grants.sql` da permisos sobre `finance_cost_lines`, `finance_invoices`, `finance_months` y `finance_settings`, que ninguna migración crea (existen en la base real, creadas fuera de las migraciones). Consecuencia: una base de pruebas nueva no se puede montar solo con las migraciones. Los permisos de finanzas quedan sin probar aquí. Decisión de Dani: crear la migración que falta o aceptar que esas tablas vienen de un volcado del esquema.
-2. **0059 y 0062 pasan, pero la 0062 sigue marcada «NOT VERIFIED» en su cabecera.** Ahora está comprobada en local; conviene quitar esa marca en el PR #31 cuando Dani lo revise.
+1. **La cadena de migraciones no construye una base nueva.** `0057_finance_grants.sql` da permisos sobre `finance_cost_lines`, `finance_invoices`, `finance_months` y `finance_settings`, que ninguna migración crea (existen en la base real, creadas fuera de las migraciones). Consecuencia: una base de pruebas nueva no se puede montar solo con las migraciones. Los permisos de finanzas quedan sin probar aquí. Decisión de Fede (con recomendación de Claude): crear la migración que falta o aceptar que esas tablas vienen de un volcado del esquema.
+2. **0059 y 0062 pasan, pero la 0062 sigue marcada «NOT VERIFIED» en su cabecera.** Ahora está comprobada en local; conviene quitar esa marca en el PR #31 cuando se revise.
 
 ## Límites
 - Es una simulación de la plataforma: no incluye el comportamiento de Supabase real (p. ej. `supabase_realtime` con `wal_level` lógico, tiempos, extensiones) ni los datos reales. Lo que se aplica en la base de NOKKO sigue necesitando la comprobación posterior del checklist.

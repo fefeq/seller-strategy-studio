@@ -1,7 +1,7 @@
 # SDD-20261025-discoveries-scoped-manual-search · [Mejora] Descubiertos: qué busca, cuándo, y búsqueda manual acotada
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 Tres cosas: (a) dejar claro al usuario **qué busca** Descubiertos y **cuándo**; (b) poder lanzar una búsqueda manual **eligiendo qué buscar** (solo empresas, solo contactos, solo competidores o combinaciones); (c) que la búsqueda manual no altere sin avisar el ritmo semanal.
@@ -72,10 +72,10 @@ Founder que dispara una búsqueda manual y no puede decidir el alcance, no sabe 
 - Rol sin permiso para lanzar: ocultar/desactivar con explicación (CA-14).
 
 ## 9. Experiencia y copy
-Botón «Buscar ahora» abre selector: «¿Qué quieres buscar?» Empresas / Contactos / Competidores; «¿En qué ICP?». Antes de lanzar: «Hasta 12 empresas. Coste estimado: *X*. Te quedan *Y*.» Panel: «Última búsqueda: *fecha*. Próxima: *fecha*.» En «tú», sin iconos. Cifras de coste: sin dato hasta que Dani las confirme.
+Botón «Buscar ahora» abre selector: «¿Qué quieres buscar?» Empresas / Contactos / Competidores; «¿En qué ICP?». Antes de lanzar: «Hasta 12 empresas. Coste estimado: *X*. Te quedan *Y*.» Panel: «Última búsqueda: *fecha*. Próxima: *fecha*.» En «tú», sin iconos. Cifras de coste: sin dato hasta que se midan en la implementación.
 
 ## 10. Datos, permisos y privacidad
-Se guardan alcance, origen y coste por ejecución. Contactos: solo datos de fuentes ya usadas hoy; **[Por verificar]** proveedores y base legal de los datos de contacto con Dani. LinkedIn: no se usa más que la API oficial, y NOKKO no valora perfiles de LinkedIn.
+Se guardan alcance, origen y coste por ejecución. Contactos: solo datos de fuentes ya usadas hoy; **[Por verificar]** proveedores y base legal de los datos de contacto (lo decide Fede). LinkedIn: no se usa más que la API oficial, y NOKKO no valora perfiles de LinkedIn.
 
 ## 11. Unidades de trabajo
 - U-1: Panel de qué y cuándo (H-1).
@@ -83,7 +83,7 @@ Se guardan alcance, origen y coste por ejecución. Contactos: solo datos de fuen
 - U-3: Estimación de coste y presupuesto (H-3).
 - U-4: Herramienta del Agente (H-5; depende de U-2).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Código: `src/lib/discoveries.ts`, `discoveries.server.ts`, `discoveries.functions.ts`, `src/components/discoveries/icp-panel.tsx`, `src/routes/_authenticated/discoveries.tsx`, función hora `org-maintenance` en `src/lib/inngest/functions.server.ts`.
 - `discoverForOrg` escribe el bloqueo antes de ejecutar; con `force:true` reinicia el reloj. `decideDiscovery` añade competidores a `positioning.competitive_alternative` (hoy sin confirmación).
 - Los bloqueos (`job_locks`) no son legibles desde el cliente: exponer última/próxima mediante lectura dedicada.
@@ -94,7 +94,8 @@ Se guardan alcance, origen y coste por ejecución. Contactos: solo datos de fuen
 - Gasto: más control puede aumentar lanzamientos; mitigado por CA-9/CA-10.
 - Depende de SDD de acciones sobre campos para confirmar competidores.
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Se puede buscar contactos de empresas ya guardadas sin repetir la búsqueda de empresas?
 2. ¿Qué coste real tiene cada tipo de búsqueda?
 3. ¿Producción coincide con `main` en Descubiertos?
@@ -105,10 +106,9 @@ Se guardan alcance, origen y coste por ejecución. Contactos: solo datos de fuen
 - [Por verificar] Costes por tipo (sin dato).
 - [Por verificar] Base legal y proveedores de contactos.
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

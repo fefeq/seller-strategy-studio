@@ -1,21 +1,21 @@
 # SDD-20261025-universal-field-definitions · [Feature] Definiciones universales de campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta (base de los otros cinco SDD)
-**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 a U-4 hechas; migración 0058 verificada en local, sin aplicar a la base real) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-25; U-1 a U-4 hechas; migración 0058 verificada en local, sin aplicar a la base real) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 
 ## 1. Resumen
 Cada concepto de la plataforma (tamaño de empresa, país, importe, periodo, origen del dato, estado…) debe tener **una sola definición** que valga para todas las pantallas, el Agente, las importaciones y Descubiertos. Hoy el mismo concepto existe con nombres y tipos distintos según la tabla o la pantalla. Este SDD fija el catálogo, las reglas de persistencia y el origen/confirmación de cada valor. Es la base de los SDD de acciones sobre campos, onboarding y guía de estrategia.
 
 ## 2. Problema y para quién
 - **Founder (usuario de NOKKO):** corrige un dato en una pantalla y lo ve distinto en otra; no sabe si un valor es suyo, deducido o supuesto.
-- **Equipo de producto (Fede, Dani):** cada decisión nueva ("qué es un ICP completo", "qué es tamaño") se define de nuevo para cada campo, pantalla o función.
+- **Equipo de producto (Fede):** cada decisión nueva ("qué es un ICP completo", "qué es tamaño") se define de nuevo para cada campo, pantalla o función.
 
 ## 3. Evidencia y por qué ahora
 Fuente: inventario determinista generado desde el esquema de datos del repo (`docs/sdd/annex/field-inventory-20261025.md`, 2026-10-25):
 - 84 tablas, 1043 columnas, 35 columnas de estructura libre (jsonb), 48 columnas de texto que hacen de estado/etapa/tipo/rol/origen.
 - Conceptos repetidos por nombre: Tamaño (4 variantes, 2 tipos de dato), País/geografía (4 variantes, 2 tipos), Importe (13 variantes), Periodo (6 variantes, 2 tipos), Origen (11 variantes, 3 tipos).
 - En el código existen varias definiciones de "ICP completo" y campos duplicados en posicionamiento (ver SDD de onboarding y de acciones sobre campos).
-- Límite del análisis: el agrupamiento es **por nombre de columna**, no por significado. Que dos columnas con el mismo nombre sean el mismo concepto es **[Por verificar]** con Dani.
+- Límite del análisis: el agrupamiento es **por nombre de columna**, no por significado. Que dos columnas con el mismo nombre sean el mismo concepto es **[Por verificar]** en el código (lo comprueba Claude Code).
 - Ahora porque cinco peticiones pendientes (edición, guía, Drive, onboarding, Descubiertos) tocan campos; sin base común cada una añadirá su propia definición.
 
 **Apuesta declarada:** no hay datos de uso; la prioridad se apoya en el código de `main` y en la petición de Fede. Se medirá tras el lanzamiento con las métricas de la sección 4.
@@ -66,7 +66,7 @@ Fuente: inventario determinista generado desde el esquema de datos del repo (`do
 - CA-11: El sistema DEBE permitir listar, para cualquier concepto, todos los lugares donde se guarda o se muestra.
 
 ## 8. Casos límite y errores
-- Concepto con dos significados reales (p. ej. "periodo" mensual vs trimestral): CA-3 aplica solo si Fede/Dani deciden que son el mismo; si no, se crean dos conceptos con nombre distinto (CA-1).
+- Concepto con dos significados reales (p. ej. "periodo" mensual vs trimestral): CA-3 aplica solo si Fede deciden que son el mismo; si no, se crean dos conceptos con nombre distinto (CA-1).
 - Valores históricos que no encajan en la definición: el sistema DEBE conservarlos marcados "sin normalizar" y no borrarlos (CA-7).
 - Estructuras libres (jsonb) sin forma conocida: el sistema DEBE listarlas como pendientes de catalogar (CA-11), sin bloquear.
 - Permisos: solo roles autorizados editan la definición de un concepto; el resto solo valores según su rol.
@@ -85,7 +85,7 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 - U-3: Origen y confirmación universal por valor (cubre H-3; depende de U-1).
 - U-4: Comprobación de coherencia automática (cubre H-4; depende de U-1).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Punto de partida: `docs/sdd/annex/field-inventory-20261025.md` (script reproducible, lee `src/integrations/supabase/types.ts`).
 - Ya existe base de procedencia: `accounts.field_sources`, `src/lib/provenance.ts` y un disparador de BD que retira la marca al editar una persona; conviene generalizarlo, no reinventarlo.
 - Mantener el patrón de módulos de reglas puros con pruebas.
@@ -97,20 +97,20 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 - Dueño de «propuesta pendiente» (decidido): este SDD (CA-9). Se reutiliza el mecanismo de sugerencias `field_proposal` ya en `main`, sin tabla nueva. Los SDD de productos, Theory U y datos de encaje (7a, 7c) solo lo referencian.
 - Es prerrequisito de los otros cinco SDD (ver README).
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Qué clústeres del anexo son el mismo concepto y cuáles solo comparten nombre?
 2. ¿Qué columnas de estado en texto libre deberían ser valores cerrados?
 3. ¿Qué estructuras libres (jsonb) tienen forma estable y cuáles no?
 
 ## 15. Pendiente de verificar
-- [Decidido por Fede 2026-10-25, solo para Origen, País, Tamaño e Importe] Equivalencia de significado entre columnas agrupadas por nombre: ver `annex/concept-catalog-proposal-20261025.md`. El resto de clústeres del anexo sigue [Por verificar] con Dani.
+- [Decidido por Fede 2026-10-25, solo para Origen, País, Tamaño e Importe] Equivalencia de significado entre columnas agrupadas por nombre: ver `annex/concept-catalog-proposal-20261025.md`. El resto de clústeres del anexo sigue [Por verificar] (lo comprueba Claude Code en el código).
 - [Verificado 2026-10-25 en el repo] El disparador de procedencia solo cubre `accounts` y cinco campos: `industry`, `size`, `country`, `notes`, `linkedin_url` (`drizzle/migrations/0046_field_sources_auto_enrich.sql`). `field_sources` solo existe en `accounts`; `people`, `leads`, `icp_profiles` y `positioning` no tienen procedencia. Hay que generalizarlo (U-3).
 - [Por verificar] Volumen de datos reales por columna a migrar (sin dato).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ## 17. Delta de implementación (agente, 2026-10-25)

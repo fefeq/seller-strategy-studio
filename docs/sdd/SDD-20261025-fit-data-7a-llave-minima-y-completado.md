@@ -1,7 +1,7 @@
 # SDD-20261025-fit-data-7a-llave-minima-y-completado · [Feature] Llave mínima y completado asistido (parte a de 3 de «Datos mínimos de encaje»)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** Borrador · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD-20261025-universal-field-definitions
 
 
@@ -52,7 +52,7 @@ Ver `annex/fit-data-common.md`, sección «Resultado buscado».
 - Dominio ya existente en otra cuenta: proponer fusión o confirmar duplicado (CA-1).
 - Varias cuentas con el mismo dominio: pedir que elija una (CA-5).
 - Dominio de correo personal (gmail, outlook u otros): no usarlo como dominio de empresa (CA-6).
-- Lanzamiento automático sin llave: el aviso de dato que falta aplica también a los automatismos (CA-2); cualquier regla de omitir o gastar presupuesto queda para Dani.
+- Lanzamiento automático sin llave: el aviso de dato que falta aplica también a los automatismos (CA-2); cualquier regla de omitir o gastar presupuesto lo decide Fede con recomendación de Claude.
 - Persona con un solo nombre: aceptar y marcar apellido ausente (CA-7).
 - Registros históricos sin llave: listarlos como «Faltan datos» sin bloquear su uso (CA-2).
 - Presupuesto agotado: aplicar la regla existente (pausa al 100 %, fuente: código del repo) y avisar (CA-3).
@@ -69,24 +69,24 @@ Ver `annex/fit-data-common.md`, sección «Datos, permisos y privacidad».
 - U-2: Completado asistido de llaves (H-2).
 
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 Ver `annex/fit-data-common.md`, sección «Notas técnicas».
 
 ## 13. Riesgos y dependencias
 Ver `annex/fit-data-common.md`, sección «Riesgos y dependencias».
 
-## 14. Preguntas para Dani
-Ver `annex/fit-data-common.md`, sección «Preguntas para Dani».
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
+Ver `annex/fit-data-common.md`, sección «Decisiones abiertas».
 
 ## 15. Pendiente de verificar
 Ver `annex/fit-data-common.md`, sección «Pendiente de verificar».
 - [Por verificar] Lista versionada de dominios de correo personal.
 - [Por verificar] Cómo se separa nombre y apellido (nombres compuestos).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---

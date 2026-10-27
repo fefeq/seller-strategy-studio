@@ -1,7 +1,7 @@
 # SDD-20261025-connections-bring-your-own-account · [Feature] Conexiones: conecta tus propias cuentas
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (origen del dato); SDD de Drive por empresa (primer caso)
 
 ## 1. Resumen
@@ -86,10 +86,10 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - U-5: Uso, respaldo y presupuesto (H-4).
 - U-6: Conectar desde onboarding y guía (H-5).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Código: `src/routes/_authenticated/integrations.tsx` (lista `WORKING`/`NOT_YET`), `src/components/stripe-panel.tsx` y `posthog-panel.tsx` (patrón existente), `src/components/orchestrator/budget-panel.tsx`, `src/lib/orchestrator/planner.ts` (servicios y coste), `src/lib/google-drive.ts`.
 - El orquestador ya recibe qué servicios están conectados: se puede alimentar con las conexiones de la empresa.
-- Almacenamiento de credenciales cifradas por empresa (diseño de Dani).
+- Almacenamiento de credenciales cifradas por empresa (diseño: lo propone Claude Code y lo aprueba Fede).
 - **Uso de LLM:** ninguno. Comprobación de credenciales y estados son deterministas.
 
 ## 13. Riesgos y dependencias
@@ -98,7 +98,8 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - Algunos proveedores no ofrecen cuenta propia: se declara en CA-1.
 - Depende del SDD de Drive (primer caso) y del universal (origen).
 
-## 14. Preguntas para Dani
+## 14. Decisiones abiertas (recomendación de Claude)
+Las resuelve Claude Code comprobándolas en el código; lo que no pueda comprobar lo decide Fede con la recomendación de Claude. No hay revisor técnico externo.
 1. ¿Qué proveedores aceptan hoy una clave por empresa sin cambios?
 2. ¿Dónde guardar credenciales de forma segura en el stack actual?
 3. ¿El orquestador puede elegir cuenta propia o compartida por empresa?
@@ -108,10 +109,9 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 - [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales.
 - [Por verificar] Estado en `production` (solo se leyó `main`).
 
-## 16. Sección de Dani (la completa él)
-- Diseño técnico:
-- Tareas:
-- Estimación:
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---
