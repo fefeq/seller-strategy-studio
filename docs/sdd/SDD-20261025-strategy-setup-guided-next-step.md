@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-26; tabla de la sección 11 validada con el orden del wizard; U-1 a U-6 hechas; migración 0060 sin verificar; falta la parte de diagnóstico compartido) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-26; tabla de la sección 11 validada con el orden del wizard; U-1 a U-6 hechas; migración 0062 sin verificar; falta la parte de diagnóstico compartido) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen
@@ -104,7 +104,7 @@ Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_
 
 ## 14. Preguntas para Dani
 1. ¿Dónde viven hoy las definiciones de completo y cuántas son distintas?
-2. ¿Puede el estado derivarse siempre de datos? Implementado así: completado y pendiente se derivan de datos; solo la posposición se guarda (tabla `setup_step_snoozes`, migración 0060, sin verificar).
+2. ¿Puede el estado derivarse siempre de datos? Implementado así: completado y pendiente se derivan de datos; solo la posposición se guarda (tabla `setup_step_snoozes`, migración 0062, sin verificar).
 3. ¿Política de lectura entre miembros sobre `onboarding_sessions`, o copia del diagnóstico a una tabla de empresa? Bloquea el delta «diagnóstico visible para la empresa».
 4. El catálogo de campos (SDD 1, U-4) no prevé tablas nuevas: `org_id` y `created_at` no tienen concepto. Se añadieron las 5 columnas de `setup_step_snoozes` a la línea base y `BASELINE_MAX` sube de 980 a 985, contra la regla de que solo baje. ¿Cubre el catálogo las columnas técnicas de tablas nuevas?
 5. «Máximo un aviso por sesión» se ha leído como una vez por sesión en cada sitio (Inicio y Agente), porque CA-6 pide ambos. ¿Es correcto?
@@ -120,7 +120,7 @@ Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ## 17. Entrega (delta y CA → prueba)
-Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-guide.ts`), U-2 tabla de posposición (`drizzle/migrations/0060_setup_step_snoozes.sql`), U-3 detector y orden único, U-4 hook y componentes (`src/hooks/use-setup-guide.ts`, `src/components/setup/guide.tsx`), U-5 pantallas (asistente, panel de progreso, Inicio, barra lateral), U-6 Agente.
+Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-guide.ts`), U-2 tabla de posposición (`drizzle/migrations/0062_setup_step_snoozes.sql`), U-3 detector y orden único, U-4 hook y componentes (`src/hooks/use-setup-guide.ts`, `src/components/setup/guide.tsx`), U-5 pantallas (asistente, panel de progreso, Inicio, barra lateral), U-6 Agente.
 
 | CA | Prueba automática | Notas |
 |---|---|---|
@@ -135,7 +135,7 @@ Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-
 | CA-9 | `agent-tools.test.ts` (la herramienta devuelve la guía); la tarjeta «Primera sugerencia» no tiene prueba de componente | |
 | CA-10 | Regla en el prompt del Agente y tarjeta «Hecho: …» al completar; sin prueba automática | Verificar a mano |
 
-Fuera de esta entrega: diagnóstico visible para la empresa (pregunta 3). No verificado: migración 0060 y su RLS con dos empresas ficticias (no hay base de pruebas), recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
+Fuera de esta entrega: diagnóstico visible para la empresa (pregunta 3). No verificado: migración 0062 y su RLS con dos empresas ficticias (no hay base de pruebas), recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
 
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).
