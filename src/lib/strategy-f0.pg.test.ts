@@ -1,9 +1,9 @@
 // @vitest-environment node
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from SQL untyped, as in migrations.pg.test.ts */
-// SDD-20261027 strategic-suggestions-engine, F0: runs migration 0064 (strategy evidence on suggestions, the decision log and the
+// SDD-20261027 strategic-suggestions-engine, F0: runs migration 0068 (strategy evidence on suggestions, the decision log and the
 // loss reason on deals) on an in-process Postgres (PGlite) with two fictional companies. Never touches a real database.
 // The harness (src/test/pg-harness.ts) is a replica; suggestions and deals below copy the columns and policies of
-// migrations 0007/0013 and types.ts, reduced to what 0064 touches (the real deals also has triggers 0064 does not use).
+// migrations 0007/0013 and types.ts, reduced to what 0068 touches (the real deals also has triggers 0068 does not use).
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
 
@@ -55,7 +55,7 @@ beforeAll(async () => {
   oldDeal = (await rows(`insert into deals (name, stage, amount, org_id, meddpicc) values ('Deal viejo','lost',1200,'${A}','{"competition":{"score":1,"note":"Rival Uno"}}') returning id`))[0]!.id;
   await db.query(`insert into deals (name, stage, amount, org_id) values ('Deal abierto','demo',500,'${A}')`);
   oldSuggestion = (await rows(`insert into suggestions (org_id, detector, dedupe_key, title, body, priority) values ('${A}','meddpicc_gaps','meddpicc_gaps:1','Completa MEDDPICC','texto',1) returning id`))[0]!.id;
-  await migrate(db, ["0064_strategic_suggestions_and_loss_reason.sql"]);
+  await migrate(db, ["0068_strategic_suggestions_and_loss_reason.sql"]);
 }, 60_000);
 
 describe("CA-11: los deals y las sugerencias existentes quedan intactos al añadir los campos", () => {
@@ -71,7 +71,7 @@ describe("CA-11: los deals y las sugerencias existentes quedan intactos al añad
     expect(s).toMatchObject({ detector: "meddpicc_gaps", title: "Completa MEDDPICC", body: "texto", priority: 1, status: "pending", strategy: null });
   });
   it("the migration is additive: running it again changes nothing and loses nothing", async () => {
-    await migrate(db, ["0064_strategic_suggestions_and_loss_reason.sql"]);
+    await migrate(db, ["0068_strategic_suggestions_and_loss_reason.sql"]);
     expect((await rows("select count(*)::int n from deals"))[0]!.n).toBe(2);
     expect((await rows("select count(*)::int n from suggestions where id = $1", [oldSuggestion]))[0]!.n).toBe(1);
   });
