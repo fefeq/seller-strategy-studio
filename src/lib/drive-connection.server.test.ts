@@ -8,7 +8,7 @@ import { hashNonce, newNonce, signState, STATE_TTL_MS, verifyState } from "./oau
 import { seal } from "./secret-box.server";
 
 type Row = Record<string, unknown>;
-function fakeDb(tables: Record<string, Row[]>) {
+function fakeDb(tables: Record<string, Row[]>, opts: { failDelete?: boolean } = {}) {
   const log: { table: string; op: string; row?: Row }[] = [];
   const from = (table: string) => {
     const filters: [string, "eq" | "neq", unknown][] = [];
@@ -25,6 +25,7 @@ function fakeDb(tables: Record<string, Row[]>) {
       maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
       then(res: (v: unknown) => unknown) {
         if (op === "update") { const hit = rows(); hit.forEach((r) => Object.assign(r, payload)); log.push({ table, op, row: payload }); return res({ error: null }); }
+        if (op === "delete" && opts.failDelete) return res({ error: { message: "boom" } });
         if (op === "delete") { const hit = rows(); tables[table] = (tables[table] ?? []).filter((r) => !hit.includes(r)); log.push({ table, op }); return res({ error: null }); }
         if (op === "insert" || op === "upsert") return res({ error: null });
         return res(head ? { count: rows().length, error: null } : { data: rows(), error: null });
@@ -39,7 +40,7 @@ const SECRET = "secreto-de-prueba";
 const ORG = "11111111-1111-1111-1111-111111111111";
 const USER = "22222222-2222-2222-2222-222222222222";
 const ok = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-let calls: { url: string; body: string }[];
+let calls: { url: string; body: string; signal?: AbortSignal | null }[];
 let route: (url: string, body: string) => Response | Promise<Response>;
 
 beforeEach(() => {
@@ -50,7 +51,7 @@ beforeEach(() => {
   route = () => ok({});
   vi.stubGlobal("fetch", async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input); const body = init?.body ? String(init.body) : "";
-    calls.push({ url, body });
+    calls.push({ url, body, signal: init?.signal });
     return route(url, body);
   });
 });
@@ -71,7 +72,7 @@ const input = async (over: Partial<{ code: string | null; state: string | null; 
   const n = newNonce();
   return { code: "c", state: await state({ n }), error: null, errorDescription: null, nonce: n, ...over };
 };
-const owner = (extra: Record<string, Row[]> = {}) => fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "owner" }], drive_connections: [], connection_events: [], ...extra });
+const owner = (extra: Record<string, Row[]> = {}, opts: { failDelete?: boolean } = {}) => fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "owner" }], drive_connections: [], connection_events: [], ...extra }, opts);
 
 describe("CA-1, CA-2 (SDD 5) · the consent starts only for a configured server", () => {
   it("builds Google's URL with a signed state, and refuses when the server has no OAuth client", async () => {
@@ -324,6 +325,28 @@ describe("CA-8 (SDD 10) and CA-4 (SDD 5) · the screen says what really happened
     expect(d.revocation).toBe("shared");
     expect(revoked()).toHaveLength(0);
     expect(tables["drive_connections"]!.map((x) => x["org_id"])).toEqual([OTHER]);
+  });
+  it("the row is deleted before Google is called, and the revoke call carries a timeout (CA-8 of SDD 10)", async () => {
+    const { db, tables } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] });
+    let rowsWhenRevoking = -1;
+    route = (url) => { if (url.includes("/revoke")) rowsWhenRevoking = tables["drive_connections"]!.length; return ok({}); };
+    expect((await disconnectDrive(db, ORG, USER)).revocation).toBe("revoked");
+    expect(rowsWhenRevoking).toBe(0);
+    expect(revoked()[0]!.signal).toBeInstanceOf(AbortSignal);
+  });
+  it("a revoke that does not answer in time is reported as not done, and the account is already disconnected", async () => {
+    const { db, tables } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] });
+    route = () => { throw new DOMException("The operation timed out.", "TimeoutError"); };
+    const d = await disconnectDrive(db, ORG, USER);
+    expect(d.revocation).toBe("failed");
+    expect(d.message).toMatch(/No pudimos revocar/);
+    expect(tables["drive_connections"]).toHaveLength(0);
+  });
+  it("when the row cannot be deleted nothing is revoked and the person is told", async () => {
+    const { db, tables } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] }, { failDelete: true });
+    await expect(disconnectDrive(db, ORG, USER)).rejects.toThrow(/No se pudo desconectar/);
+    expect(revoked()).toHaveLength(0);
+    expect(tables["drive_connections"]).toHaveLength(1);
   });
   it("an unreadable saved token cannot be revoked and says so", async () => {
     const { db } = owner({ drive_connections: [{ org_id: ORG, google_email: "ana@ejemplo.test", refresh_token_enc: "v1:basura", status: "active" }] });

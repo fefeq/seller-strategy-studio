@@ -48,10 +48,12 @@ async function tokenCall(body: Record<string, string>): Promise<{ ok: boolean; s
   return { ok: res.ok, status: res.status, json: ((await res.json().catch(() => ({}))) as Record<string, unknown>) ?? {} };
 }
 
-/** «revoked» only when Google answered 2xx; anything else (an error answer, no answer) is «failed». */
+const REVOKE_TIMEOUT_MS = 8000;
+
+/** «revoked» only when Google answered 2xx; anything else (an error answer, no answer, no answer in time) is «failed». */
 async function revoke(token: string): Promise<"revoked" | "failed"> {
   try {
-    const res = await fetch(REVOKE_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }) });
+    const res = await fetch(REVOKE_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }), signal: AbortSignal.timeout(REVOKE_TIMEOUT_MS) });
     return res.ok ? "revoked" : "failed";
   } catch { return "failed"; }
 }
@@ -136,15 +138,16 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
   return { ok: true, ...done, message: connectMessage(done), returnTo: st.r };
 }
 
-/** Stops using the account at once, tries to revoke it at Google (unless another company uses the same account) and drops the token. Imported knowledge stays. */
+/** Stops using the account at once (the row goes first), then tries to revoke it at Google unless another company uses the same account. If the row cannot be deleted nothing is revoked. Imported knowledge stays. */
 export async function disconnectDrive(db: Admin, orgId: string, userId: string): Promise<{ email: string | null; revocation: RevokeOutcome | null; message: string }> {
   const { data: row } = await db.from("drive_connections").select("google_email,refresh_token_enc").eq("org_id", orgId).maybeSingle();
   if (!row) return { email: null, revocation: null, message: "No había ninguna cuenta conectada." };
-  const revocation = await revokeSaved(db, orgId, row, null);
-  if (revocation === "failed" || revocation === "unreadable") console.warn(`Drive revoke not done (${revocation}) for org ${orgId}`);
   const { error } = await db.from("drive_connections").delete().eq("org_id", orgId);
   if (error) throw new Error("No se pudo desconectar Drive. Inténtalo de nuevo.");
   forget(orgId);
+  // Checked against the state after the delete: whoever still holds this account is another company.
+  const revocation = await revokeSaved(db, orgId, row, null);
+  if (revocation === "failed" || revocation === "unreadable") console.warn(`Drive revoke not done (${revocation}) for org ${orgId}`);
   await logEvent(db, orgId, userId, "disconnected", `${row.google_email} · ${revocationText(revocation, row.google_email)}`);
   return { email: row.google_email, revocation, message: `NOKKO ya no usa ${row.google_email}. ${revocationText(revocation, row.google_email)}` };
 }
