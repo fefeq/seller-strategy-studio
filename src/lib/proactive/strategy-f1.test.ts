@@ -189,9 +189,10 @@ describe("CA-22 competitor without countermeasure card", () => {
 describe("CA-23 repeated loss reason or competitor", () => {
   const lost = (id: string, o: object = {}) => deal(id, { stage: "lost", ...o });
   it("3 deals with the same reason, citing them", () => {
-    const [x] = repeatedLoss(snap({ deals: [lost("d1", { lost_reason: "precio" }), lost("d2", { lost_reason: "precio" }), lost("d3", { lost_reason: "precio" }), lost("d4", { lost_reason: "otro" })] }));
+    const [x] = repeatedLoss(snap({ deals: [lost("d1", { lost_reason: "price" }), lost("d2", { lost_reason: "price" }), lost("d3", { lost_reason: "price" }), lost("d4", { lost_reason: "otro" })] }));
     expect(x.strategy!.evidence.map((e) => e.id).sort()).toEqual(["d1", "d2", "d3"]);
     expect(x.strategy!.sample_size).toBe(4);
+    expect(x.title).toContain("Precio"); // the label of the stored key, not «Sin dato»
   });
   it("same competitor, ignoring case and accents", () => {
     const [x] = repeatedLoss(snap({ deals: [lost("d1", { lost_competitor: "Compañía X" }), lost("d2", { lost_competitor: "compania x" }), lost("d3", { lost_competitor: "COMPAÑIA X " })] }));
@@ -199,10 +200,10 @@ describe("CA-23 repeated loss reason or competitor", () => {
     expect(x.strategy!.evidence).toHaveLength(3);
   });
   it("two are not enough; deals without a reason are not counted", () => {
-    expect(repeatedLoss(snap({ deals: [lost("d1", { lost_reason: "precio" }), lost("d2", { lost_reason: "precio" }), lost("d3"), lost("d4")] }))).toEqual([]);
+    expect(repeatedLoss(snap({ deals: [lost("d1", { lost_reason: "price" }), lost("d2", { lost_reason: "price" }), lost("d3"), lost("d4")] }))).toEqual([]);
   });
   it("CA-25: the minimum case (3 deals) is emitted with low evidence", () => {
-    const [x] = repeatedLoss(snap({ deals: [1, 2, 3].map((n) => lost(`d${n}`, { lost_reason: "precio" })) }));
+    const [x] = repeatedLoss(snap({ deals: [1, 2, 3].map((n) => lost(`d${n}`, { lost_reason: "price" })) }));
     expect(x.strategy!.evidence_level).toBe("low");
   });
 });
