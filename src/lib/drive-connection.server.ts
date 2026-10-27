@@ -29,9 +29,12 @@ const stateSecret = () => {
   return s;
 };
 const NOT_CONFIGURED = "Falta configurar el acceso a Google en el servidor. Avisa al equipo de Nokko.";
+const READ_FAILED = "No pudimos comprobar la cuenta de Drive de esta empresa. Inténtalo de nuevo en unos minutos.";
 
 async function logEvent(db: Admin, orgId: string, actor: string | null, action: "connected" | "changed" | "disconnected" | "failed", detail: string) {
-  await db.from("connection_events").insert({ org_id: orgId, provider: PROVIDER, action, actor, detail });
+  const { error } = await db.from("connection_events").insert({ org_id: orgId, provider: PROVIDER, action, actor, detail });
+  // After a disconnect this row is the only trace of who did it: a lost one is said in the logs (no email, no token).
+  if (error) console.error(`Drive connection event «${action}» not saved for org ${orgId}`);
 }
 
 /** The URL where the Owner chooses the Google account and accepts the permission, and the nonce the caller must set as an httpOnly cookie in that same browser. */
@@ -142,8 +145,10 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
 export async function disconnectDrive(db: Admin, orgId: string, userId: string): Promise<{ email: string | null; revocation: RevokeOutcome | null; message: string }> {
   const { data: row } = await db.from("drive_connections").select("google_email,refresh_token_enc").eq("org_id", orgId).maybeSingle();
   if (!row) return { email: null, revocation: null, message: "No había ninguna cuenta conectada." };
-  const { error } = await db.from("drive_connections").delete().eq("org_id", orgId);
+  // Deleted by the token that was read: if the account was changed in between, the new one is not removed and the old token is not revoked.
+  const { data: gone, error } = await db.from("drive_connections").delete().eq("org_id", orgId).eq("refresh_token_enc", row.refresh_token_enc).select("org_id");
   if (error) throw new Error("No se pudo desconectar Drive. Inténtalo de nuevo.");
+  if (!gone?.length) return { email: null, revocation: null, message: "La conexión cambió mientras la desconectabas. Mira su estado y vuelve a intentarlo." };
   forget(orgId);
   // Checked against the state after the delete: whoever still holds this account is another company.
   const revocation = await revokeSaved(db, orgId, row, null);
@@ -168,7 +173,9 @@ async function setStatus(db: Admin, orgId: string, current: ConnectionRow["statu
 
 /** The company's own account as a DriveAuth, or null when it has not connected one. A saved account is never silently swapped for NOKKO's. */
 export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth | null> {
-  const { data: row } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
+  const { data: row, error: readError } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
+  // A failed read is not «no own account»: falling back to NOKKO's would save this company's documents in the builder's Drive.
+  if (readError) throw new DriveError(READ_FAILED, 503);
   if (!row) return null;
   let saved = row;
   let status = row.status as ConnectionRow["status"];
@@ -186,7 +193,8 @@ export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth 
       if (!cfg) throw new DriveError(NOT_CONFIGURED, 500);
       // A cache miss may be a disconnect or a change of account (forget() on this instance): this object's copy of
       // the row can be that old account, so read the row again and never refresh with a token that was replaced or deleted.
-      const { data: current } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
+      const { data: current, error: currentError } = await db.from("drive_connections").select("refresh_token_enc,status").eq("org_id", orgId).maybeSingle();
+      if (currentError) throw new DriveError(READ_FAILED, 503);
       if (!current) { forget(orgId); throw new DriveError("La cuenta de Drive de esta empresa ya no está conectada.", 401); }
       saved = current;
       status = current.status as ConnectionRow["status"];
@@ -195,7 +203,19 @@ export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth 
       let t: Awaited<ReturnType<typeof tokenCall>>;
       try { t = await tokenCall({ refresh_token: refresh, client_id: cfg.clientId, client_secret: cfg.clientSecret, grant_type: "refresh_token" }); }
       catch { await note(null); throw new DriveError(failureStatus(null)!.text, 503); }
-      if (!t.ok) { await note(t.status); const f = failureStatus(t.status); throw new DriveError(f?.text ?? "Google no renovó el acceso. Vuelve a intentarlo.", t.status === 400 ? 401 : t.status); }
+      if (!t.ok) {
+        const reason = String(t.json["error"] ?? "");
+        // Only Google saying the grant is gone (or being down) says something about this account. A refused client
+        // (invalid_client: a wrong or rotated secret on our side) is ours to fix and must not flip every company to «error».
+        const down = t.status >= 500;
+        if (reason === "invalid_grant" || down) {
+          const code = down ? t.status : 400;
+          await note(code);
+          throw new DriveError(failureStatus(code)!.text, down ? t.status : 401);
+        }
+        console.error(`Drive refresh refused (${t.status} ${reason.slice(0, 40)}); the saved account is left as it is`);
+        throw new DriveError(reason === "invalid_client" || reason === "unauthorized_client" ? NOT_CONFIGURED : "Google no renovó el acceso. Vuelve a intentarlo.", t.status === 401 ? 500 : t.status);
+      }
       const token = String(t.json["access_token"] ?? "");
       access.set(orgId, { sealed: saved.refresh_token_enc, token, until: Date.now() + Math.min(ACCESS_CACHE_MAX_MS, Math.max(60, Number(t.json["expires_in"] ?? 3600) - 60) * 1000) });
       if (status !== "active") { await setStatus(db, orgId, status, "active", null); status = "active"; }

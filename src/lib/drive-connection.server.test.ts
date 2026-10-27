@@ -8,7 +8,8 @@ import { hashNonce, newNonce, signState, STATE_TTL_MS, verifyState } from "./oau
 import { seal } from "./secret-box.server";
 
 type Row = Record<string, unknown>;
-function fakeDb(tables: Record<string, Row[]>, opts: { failDelete?: boolean } = {}) {
+type FakeOpts = { failDelete?: boolean; failRead?: boolean; failInsert?: boolean; afterRead?: () => void };
+function fakeDb(tables: Record<string, Row[]>, opts: FakeOpts = {}) {
   const log: { table: string; op: string; row?: Row }[] = [];
   const from = (table: string) => {
     const filters: [string, "eq" | "neq", unknown][] = [];
@@ -18,15 +19,22 @@ function fakeDb(tables: Record<string, Row[]>, opts: { failDelete?: boolean } = 
       select(_c?: string, opts?: { head?: boolean }) { if (op === "select") head = !!opts?.head; return q; },
       eq(k: string, v: unknown) { filters.push([k, "eq", v]); return q; },
       neq(k: string, v: unknown) { filters.push([k, "neq", v]); return q; },
-      insert(row: Row) { op = "insert"; log.push({ table, op, row }); (tables[table] ??= []).push(row); return q; },
+      insert(row: Row) { op = "insert"; if (!opts.failInsert) { log.push({ table, op, row }); (tables[table] ??= []).push(row); } return q; },
       upsert(row: Row) { op = "upsert"; log.push({ table, op, row }); tables[table] = [...(tables[table] ?? []).filter((r) => r["org_id"] !== row["org_id"]), row]; return q; },
       update(p: Row) { op = "update"; payload = p; return q; },
       delete() { op = "delete"; return q; },
-      maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
+      maybeSingle: async () => {
+        if (opts.failRead && table === "drive_connections") return { data: null, error: { message: "boom" } };
+        const r = rows()[0];
+        const data = r ? { ...r } : null;
+        if (table === "drive_connections" && opts.afterRead) { const f = opts.afterRead; opts.afterRead = undefined; f(); }
+        return { data, error: null };
+      },
       then(res: (v: unknown) => unknown) {
         if (op === "update") { const hit = rows(); hit.forEach((r) => Object.assign(r, payload)); log.push({ table, op, row: payload }); return res({ error: null }); }
         if (op === "delete" && opts.failDelete) return res({ error: { message: "boom" } });
-        if (op === "delete") { const hit = rows(); tables[table] = (tables[table] ?? []).filter((r) => !hit.includes(r)); log.push({ table, op }); return res({ error: null }); }
+        if (op === "delete") { const hit = rows(); tables[table] = (tables[table] ?? []).filter((r) => !hit.includes(r)); log.push({ table, op }); return res({ data: hit.map((r) => ({ ...r })), error: null }); }
+        if (op === "insert" && opts.failInsert) return res({ error: { message: "boom" } });
         if (op === "insert" || op === "upsert") return res({ error: null });
         return res(head ? { count: rows().length, error: null } : { data: rows(), error: null });
       },
@@ -72,7 +80,7 @@ const input = async (over: Partial<{ code: string | null; state: string | null; 
   const n = newNonce();
   return { code: "c", state: await state({ n }), error: null, errorDescription: null, nonce: n, ...over };
 };
-const owner = (extra: Record<string, Row[]> = {}, opts: { failDelete?: boolean } = {}) => fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "owner" }], drive_connections: [], connection_events: [], ...extra }, opts);
+const owner = (extra: Record<string, Row[]> = {}, opts: FakeOpts = {}) => fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "owner" }], drive_connections: [], connection_events: [], ...extra }, opts);
 
 describe("CA-1, CA-2 (SDD 5) · the consent starts only for a configured server", () => {
   it("builds Google's URL with a signed state, and refuses when the server has no OAuth client", async () => {
@@ -444,5 +452,63 @@ describe("§8 (SDD 5) · access revoked at Google, provider down", () => {
     const auth = (await ownDriveAuth(db, ORG2))!;
     await expect(auth.headers()).rejects.toMatchObject({ status: 503 });
     expect(tables["drive_connections"]![0]!["status"]).toBe("no_response");
+  });
+});
+
+describe("review of SDD 5 / SDD 10 · a failed read, a server-side refusal and a lost event never look like a decision about the account", () => {
+  const ORG3 = "55555555-5555-5555-5555-555555555555";
+  const saved = async (org: string) => ({ org_id: org, google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-secreto"), status: "active" });
+
+  it("a failed read of the saved account is an error, never «no own account»: NOKKO's account is not borrowed", async () => {
+    const { db } = owner({ drive_connections: [await saved(ORG3)] }, { failRead: true });
+    await expect(ownDriveAuth(db, ORG3)).rejects.toMatchObject({ status: 503 });
+    await expect(driveAuthFor(db, ORG3)).rejects.toBeInstanceOf(DriveError);
+  });
+
+  it("a read that fails when the access token is refreshed does not read as a disconnection and changes nothing", async () => {
+    const opts: FakeOpts = {};
+    const { db, tables, log } = owner({ drive_connections: [await saved(ORG3)] }, opts);
+    const auth = (await ownDriveAuth(db, ORG3))!;
+    opts.failRead = true;
+    await expect(auth.headers()).rejects.toMatchObject({ status: 503 });
+    expect(tables["drive_connections"]![0]!["status"]).toBe("active");
+    expect(log.filter((l) => l.table === "connection_events")).toHaveLength(0);
+  });
+
+  it("a refused client (a wrong or rotated secret on our side) leaves the company «active», logs nothing as lost access, and says it is a server matter", async () => {
+    route = (url) => (url.includes("/token") ? ok({ error: "invalid_client" }, 401) : ok({}));
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { db, tables, log } = owner({ drive_connections: [await saved(ORG3)] });
+    const auth = (await ownDriveAuth(db, ORG3))!;
+    await expect(auth.headers()).rejects.toMatchObject({ status: 500, message: expect.stringMatching(/configurar el acceso a Google/) });
+    expect(tables["drive_connections"]![0]!["status"]).toBe("active");
+    expect(log.filter((l) => l.table === "connection_events")).toHaveLength(0);
+    spy.mockRestore();
+  });
+
+  it("an event that cannot be saved is said in the logs, without the account or a token, and the disconnect still goes through", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const { db, tables } = owner({ drive_connections: [await saved(ORG3)] }, { failInsert: true });
+    expect(await disconnectDrive(db, ORG3, USER)).toMatchObject({ email: "ana@ejemplo.test" });
+    expect(tables["drive_connections"]).toHaveLength(0);
+    const said = spy.mock.calls.map((c) => c.join(" ")).join("\n");
+    expect(said).toMatch(/«disconnected» not saved/);
+    expect(said).not.toContain("ana@ejemplo.test");
+    expect(said).not.toContain("refresh-secreto");
+    spy.mockRestore();
+  });
+
+  it("a disconnect never deletes an account that was changed after it was read, and revokes nothing", async () => {
+    const opts: FakeOpts = {};
+    const { db, tables, log } = owner({ drive_connections: [await saved(ORG3)] }, opts);
+    const replacement = await seal("refresh-nuevo");
+    opts.afterRead = () => { tables["drive_connections"]![0]!["refresh_token_enc"] = replacement; };
+    const r = await disconnectDrive(db, ORG3, USER);
+    expect(r).toMatchObject({ email: null, revocation: null });
+    expect(r.message).toMatch(/cambió mientras la desconectabas/);
+    expect(tables["drive_connections"]).toHaveLength(1);
+    expect(tables["drive_connections"]![0]!["refresh_token_enc"]).toBe(replacement);
+    expect(calls.some((c) => c.url.includes("/revoke"))).toBe(false);
+    expect(log.filter((l) => l.table === "connection_events")).toHaveLength(0);
   });
 });
