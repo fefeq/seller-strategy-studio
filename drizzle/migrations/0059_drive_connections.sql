@@ -1,7 +1,7 @@
 -- Google Drive: each company connects its own Google account (SDD drive-per-company-account, U-1; SDD
 -- connections-bring-your-own-account, U-1/U-2). One row per company; the refresh token is stored sealed by
 -- server code (secret-box) and the browser never reads it (column grants only). Only the Owner connects,
--- and only server code writes after that check. Number 0058 is taken by feat/universal-field-definitions.
+-- and only server code writes after that check. Number 0058 is already used (0058_field_sources_generic, in main); this file is 0059 and its journal entry has idx 59.
 create table public.drive_connections (
   org_id uuid primary key default public.current_org() references public.organizations(id) on delete cascade,
   google_email text not null check (google_email like '%@%'),
