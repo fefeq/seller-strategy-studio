@@ -11,7 +11,7 @@ import type { Measure, Phase } from "@/lib/funnel-diagnosis";
 import { errorText } from "@/lib/errors";
 
 const valueText = (m: Measure) => {
-  if (m.value == null) return "sin datos";
+  if (m.value == null) return m.status === "no_medido" ? "no medido" : "sin datos";
   const n = m.value.toLocaleString("es-ES", { maximumFractionDigits: 1 });
   return m.unit === "%" ? `${n} %` : m.unit === "meses" ? `${n} meses` : n;
 };
@@ -30,7 +30,7 @@ function MeasureRow({ m }: { m: Measure }) {
           {m.verdict === "en_objetivo" && <Badge variant="secondary">En objetivo · {m.target} {m.unit === "meses" ? "meses" : "%"}</Badge>}
         </span>
       </div>
-      {m.status !== "ok" && m.missing && <p className="mt-1 text-xs text-muted-foreground">Falta: {m.missing}</p>}
+      {m.status !== "ok" && m.missing && <p className="mt-1 text-xs text-muted-foreground">{m.status === "no_medido" ? m.missing : `Falta: ${m.missing}`}</p>}
       <p className="mt-0.5 break-words text-[11px] text-muted-foreground">Fuente: {m.source}</p>
     </div>
   );
@@ -81,7 +81,7 @@ export function FunnelDiagnosisPanel() {
             <span className="text-sm text-muted-foreground">Motion de adquisición: {acquisitionMotionText(s.acquisition_motion)}</span>
           </div>
           {!s.acquisition_motion && <p className="text-xs text-muted-foreground">Sin motion de adquisición, Revenue muestra prueba a pago y deals sin juicio. Defínelo en «Modelos de venta por segmento».</p>}
-          <div className="grid gap-3 md:grid-cols-2">{s.phases.map((p) => <PhaseBlock key={p.id} p={p} />)}</div>
+          <div className="grid items-start gap-3 md:grid-cols-2">{s.phases.map((p) => <PhaseBlock key={p.id} p={p} />)}</div>
         </section>
       ))}
       {data && (
