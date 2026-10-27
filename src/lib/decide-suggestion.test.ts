@@ -104,7 +104,7 @@ describe("decideSuggestionCore: strategic suggestions", () => {
   it("approve goes to the atomic function with this company and this user, and the decision is remembered", async () => {
     const { db, calls } = fakeDb(strat(), "approved");
     const r = await decideSuggestionCore(ctx(db), "s1", "approve");
-    expect(r).toMatchObject({ status: "approved", message: "Aceptada" });
+    expect(r).toMatchObject({ status: "approved", message: expect.stringMatching(/^Aceptada/) }); // F3 adds what happens next
     expect(rpcCall(calls)).toMatchObject({
       table: "decide_strategy_suggestion",
       payload: { p_suggestion_id: "s1", p_org_id: ORG, p_decision: "accept", p_by: ME },

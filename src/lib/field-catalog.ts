@@ -144,7 +144,7 @@ export const CONCEPTS: Concept[] = [
     kind: "enum",
     format: "Valor cerrado distinto por objeto",
     allowedBy: {
-      tasks: ["manual", "agent", "debate"],
+      tasks: ["manual", "agent", "debate", "strategy"],
       agent_pending_actions: ["agent", "mcp"],
       memories: ["chat", "meeting", "decision", "suggestion", "manual"],
     },

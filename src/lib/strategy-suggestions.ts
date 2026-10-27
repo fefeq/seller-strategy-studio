@@ -4,6 +4,7 @@
 // The data lives in suggestions.strategy (jsonb, validated by the database too, migration 0068) so the existing table,
 // RLS and dedupe key (org_id, dedupe_key) are reused; decisions go to strategy_decisions.
 import type { Suggestion } from "@/lib/proactive/types";
+import { parseChange } from "@/lib/strategy-execute";
 
 export const STRATEGY_ELEMENTS = [
   "icp",
@@ -37,6 +38,8 @@ export type StrategyMeta = {
   action_type: StrategyAction;
   /** Hash of the evidence records: when it changes, a dismissed or postponed suggestion has new evidence (CA-5, CA-6). */
   fingerprint: string;
+  /** What accepting would write, when the rule can say it from data (F3). Without it, accepting leaves a manual proposal. */
+  change?: import("@/lib/strategy-execute").ChangePayload;
 };
 export type StrategySuggestion = Suggestion & { strategy: StrategyMeta };
 
@@ -141,6 +144,7 @@ export type StrategyInput = {
   /** Records examined, when more than the evidence listed. */
   sample_size?: number;
   link?: string | null;
+  change?: import("@/lib/strategy-execute").ChangePayload;
 };
 
 /**
@@ -173,6 +177,7 @@ export function buildStrategySuggestion(i: StrategyInput): StrategySuggestion {
     sample_size: sample,
     action_type: none ? "data_to_complete" : i.action_type,
     fingerprint: evidenceFingerprint(evidence),
+    ...(i.change && !none ? { change: i.change } : {}),
   };
   return {
     detector: `strategy_${i.element}`,
@@ -188,6 +193,8 @@ export function buildStrategySuggestion(i: StrategyInput): StrategySuggestion {
 }
 
 const isStr = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
+
+const readChange = (v: unknown) => (parseChange(v) as import("@/lib/strategy-execute").ChangePayload | null);
 
 /** Reads a stored strategy value; null when anything of CA-1..CA-3 is missing or inconsistent (the database refuses the same). */
 export function parseStrategy(v: unknown): StrategyMeta | null {
@@ -220,6 +227,7 @@ export function parseStrategy(v: unknown): StrategyMeta | null {
     sample_size: n,
     action_type: m.action_type as StrategyAction,
     fingerprint: m.fingerprint,
+    ...(readChange(m.change) ? { change: readChange(m.change)! } : {}),
   };
 }
 

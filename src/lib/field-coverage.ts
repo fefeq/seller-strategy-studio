@@ -5,10 +5,7 @@
 import type { Binding, ConceptId } from "@/lib/field-catalog";
 
 /** Tables that hold no user field: the change log records edits of other tables, and the strategy decision log records who decided what (their own columns are not concepts). */
-export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set([
-  "field_edit_log",
-  "strategy_decisions",
-]);
+export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set(["field_edit_log", "strategy_decisions", "strategy_changes", "strategy_links"]);
 
 export type ColumnType = "json" | "other";
 export type Columns = Map<string, Map<string, ColumnType>>;

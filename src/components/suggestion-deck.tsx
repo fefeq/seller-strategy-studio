@@ -12,6 +12,7 @@ import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { actionTool } from "@/lib/json";
 import { errorText } from "@/lib/errors";
 import { limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
+import { executeKind } from "@/components/strategy-execute";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 type S = NonNullable<ReturnType<typeof useSuggestions>["data"]>[number];
@@ -36,6 +37,8 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
       render={(s) => <DeckFace s={s} onReason={(v) => (reasons.current[s.id] = v)} />}
       onCommit={async (s, dir) => {
         try {
+          // CA-35/36: a test or a commercial action is accepted from the list, where the experiment or task can be edited first.
+          if (dir === "right" && executeKind(s)) throw new Error("Ábrela en la lista para completar el experimento o la tarea antes de aceptarla.");
           const reason = parseStrategy(s.strategy) ? reasons.current[s.id]?.trim() : undefined;
           const r = await decide({
             data: { id: s.id, decision: DECISION[dir], ...(reason ? { reason } : {}) },

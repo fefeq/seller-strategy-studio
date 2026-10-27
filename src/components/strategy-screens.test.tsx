@@ -24,7 +24,10 @@ vi.mock("@/integrations/supabase/client", () => {
 vi.mock("@/hooks/use-me", () => ({
   useMe: () => ({ data: { user: { id: "u1" }, roles: ["owner"], currentOrg: { org_id: "o1" } } }),
 }));
-vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
+vi.mock("@tanstack/react-start", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-start")>()),
+  useServerFn: (f: unknown) => f,
+}));
 vi.mock("@/lib/agent.functions", () => ({ decideSuggestion: hoisted.decide }));
 vi.mock("@/components/suggestions", () => ({ useSuggestions: () => ({}) }));
 vi.mock("@/components/agent", () => ({ useAgent: () => ({ open: vi.fn() }) }));
