@@ -5,10 +5,11 @@ import { IcpEditor } from "@/components/icp-editor";
 import { BudgetQuarters } from "@/components/budget-quarters";
 import { PaybackQuarters } from "@/components/payback-quarters";
 import { Motions } from "@/components/strategy/motions";
+import { FunnelDiagnosisPanel } from "@/components/strategy/funnel-diagnosis";
 import { Pillars, Positioning } from "@/components/strategy/positioning";
 import { RecentChanges } from "@/components/recent-changes";
 
-const STRATEGY_TABS = ["motions", "payback", "budget", "icp", "positioning", "pillars"] as const;
+const STRATEGY_TABS = ["motions", "diagnosis", "payback", "budget", "icp", "positioning", "pillars"] as const;
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
@@ -25,6 +26,7 @@ function Strategy() {
       <Tabs key={tab ?? "motions"} defaultValue={tab ?? "motions"}>
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Modelos de venta por segmento</TabsTrigger>
+          <TabsTrigger value="diagnosis">Diagnóstico AARRR</TabsTrigger>
           <TabsTrigger value="payback">Payback real</TabsTrigger>
           <TabsTrigger value="budget">Presupuesto vs real</TabsTrigger>
           <TabsTrigger value="icp">ICP</TabsTrigger>
@@ -32,6 +34,7 @@ function Strategy() {
           <TabsTrigger value="pillars">Mensajes</TabsTrigger>
         </TabsList>
         <TabsContent value="motions"><Motions /></TabsContent>
+        <TabsContent value="diagnosis"><FunnelDiagnosisPanel /></TabsContent>
         <TabsContent value="payback"><PaybackQuarters /></TabsContent>
         <TabsContent value="budget"><BudgetQuarters /></TabsContent>
         <TabsContent value="icp"><IcpEditor /></TabsContent>

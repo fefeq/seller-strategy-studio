@@ -62,7 +62,7 @@ export function segmentCoverage(segments: SegLike[], deals: DealLike[], targets:
       coverage: target ? coverage(pipeline, target) : null,
       won: { deals: wonQ.length, amount: wonAmount, target: dealsTarget, attainment: target ? wonAmount / target : null },
       opps: { created, open: open.length, target: oppsTarget },
-      winRate: { real: closed.length ? realWin : null, target: winTarget },
+      winRate: { real: closed.length ? realWin : null, target: winTarget, closed: closed.length },
       cac: { ...cac, real: cac.cac, target: cacTarget },
       payback: { real: payback, source: paybackSource, target: seg.payback_months != null ? Number(seg.payback_months) : null, ok: payback != null && seg.payback_months != null ? payback <= Number(seg.payback_months) : null },
     };

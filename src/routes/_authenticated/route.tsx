@@ -13,6 +13,7 @@ import { OrgSwitcher } from "@/components/org-switcher";
 import { OrgOnboarding } from "@/components/org-onboarding";
 import { AgentProvider, useAgent } from "@/components/agent";
 import { useSetup } from "@/hooks/use-setup";
+import { useSetupGuide } from "@/hooks/use-setup-guide";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
 import { Isotipo, Lockup } from "@/components/brand";
@@ -278,6 +279,7 @@ function BottomBar() {
 
 function SetupMeter() {
   const { data } = useSetup();
+  const { nextStep } = useSetupGuide();
   const { data: sugg = [] } = useSuggestions();
   const pct = data?.status.pct;
   return (
@@ -286,7 +288,7 @@ function SetupMeter() {
         <Link to="/setup" className="block border-t border-hairline px-3 pt-3 text-xs hover:text-ink">
           <div className="flex justify-between"><span>Estrategia completada</span><span className="font-mono font-semibold">{pct}%</span></div>
           <div className="mt-1.5 h-0.5 bg-hairline"><div className="h-full bg-ink" style={{ width: `${pct}%` }} /></div>
-          {data?.status.next && <p className="mt-1.5 text-ink-mid">Siguiente: {data.status.next.label.split(" (")[0]}</p>}
+          {nextStep && <p className="mt-1.5 text-ink-mid">Siguiente: {nextStep.label.split(" (")[0]}</p>}
         </Link>
       )}
       {sugg.length > 0 && <Link to="/inbox" className="flex justify-between px-3 py-1.5 text-xs text-ink-mid hover:text-ink"><span>Sugerencias pendientes</span><span className="font-mono">{sugg.length}</span></Link>}

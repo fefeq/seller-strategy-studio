@@ -264,6 +264,7 @@ export type Database = {
           signals_checked_at: string | null
           size: string | null
           tier: string | null
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -288,6 +289,7 @@ export type Database = {
           signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -312,6 +314,7 @@ export type Database = {
           signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1349,6 +1352,7 @@ export type Database = {
           slip_count: number
           source: string | null
           stage: string
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1379,6 +1383,7 @@ export type Database = {
           slip_count?: number
           source?: string | null
           stage: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1409,6 +1414,7 @@ export type Database = {
           slip_count?: number
           source?: string | null
           stage?: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -2263,6 +2269,7 @@ export type Database = {
           seniorities: string[]
           target_titles: string[]
           tech_stack: string | null
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           why_fit: string | null
@@ -2291,6 +2298,7 @@ export type Database = {
           seniorities?: string[]
           target_titles?: string[]
           tech_stack?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           why_fit?: string | null
@@ -2319,6 +2327,7 @@ export type Database = {
           seniorities?: string[]
           target_titles?: string[]
           tech_stack?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           why_fit?: string | null
@@ -3169,6 +3178,7 @@ export type Database = {
           position: number
           proof: string | null
           title: string
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -3183,6 +3193,7 @@ export type Database = {
           position?: number
           proof?: string | null
           title: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3197,6 +3208,7 @@ export type Database = {
           position?: number
           proof?: string | null
           title?: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3766,6 +3778,7 @@ export type Database = {
           tagline: string | null
           target_customer: string | null
           trend: string | null
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           value: string | null
@@ -3792,6 +3805,7 @@ export type Database = {
           tagline?: string | null
           target_customer?: string | null
           trend?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           value?: string | null
@@ -3818,6 +3832,7 @@ export type Database = {
           tagline?: string | null
           target_customer?: string | null
           trend?: string | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           value?: string | null
@@ -4044,6 +4059,7 @@ export type Database = {
           id: string
           org_id: string | null
           period: string
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           user_id: string
@@ -4055,6 +4071,7 @@ export type Database = {
           id?: string
           org_id?: string | null
           period: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id: string
@@ -4066,6 +4083,7 @@ export type Database = {
           id?: string
           org_id?: string | null
           period?: string
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id?: string
@@ -4350,6 +4368,7 @@ export type Database = {
           payback_months: number | null
           priority: number | null
           sdr_per_ae: number | null
+          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           win_rate_target: number | null
@@ -4374,6 +4393,7 @@ export type Database = {
           payback_months?: number | null
           priority?: number | null
           sdr_per_ae?: number | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           win_rate_target?: number | null
@@ -4398,6 +4418,7 @@ export type Database = {
           payback_months?: number | null
           priority?: number | null
           sdr_per_ae?: number | null
+          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           win_rate_target?: number | null
@@ -4484,6 +4505,38 @@ export type Database = {
           },
           {
             foreignKeyName: "sensing_notes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      setup_step_snoozes: {
+        Row: {
+          created_at: string
+          org_id: string
+          snoozed_by: string | null
+          snoozed_until: string
+          step_id: string
+        }
+        Insert: {
+          created_at?: string
+          org_id?: string
+          snoozed_by?: string | null
+          snoozed_until: string
+          step_id: string
+        }
+        Update: {
+          created_at?: string
+          org_id?: string
+          snoozed_by?: string | null
+          snoozed_until?: string
+          step_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "setup_step_snoozes_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -5138,6 +5191,11 @@ export type Database = {
         Args: { _archived: boolean; _org: string }
         Returns: undefined
       }
+      can_complete_setup_step: {
+        Args: { _org: string; _step: string }
+        Returns: boolean
+      }
+      company_diagnosis: { Args: { _org: string }; Returns: Json }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string
