@@ -17,6 +17,7 @@ Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: 
 | 8 | `SDD-20261025-products-in-onboarding-autofill` | Mejora | 1, 2; encaja en onboarding (4) |
 | 9 | `SDD-20261025-theory-u-proactive-decision-support` | Feature | 1, 2 |
 | 10 | `SDD-20261025-connections-bring-your-own-account` | Feature | 1; incluye el SDD 5 como primer caso |
+| 11 | `SDD-20261027-strategic-suggestions-engine` | Feature (maestro, 8 fases) | 1, 2, 7b; usa 9 |
 
 Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
 
