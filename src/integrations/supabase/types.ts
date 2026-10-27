@@ -5104,6 +5104,10 @@ export type Database = {
         Args: { _archived: boolean; _org: string }
         Returns: undefined
       }
+      can_complete_setup_step: {
+        Args: { _org: string; _step: string }
+        Returns: boolean
+      }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string

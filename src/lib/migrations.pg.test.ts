@@ -1,8 +1,10 @@
 // @vitest-environment node
-// Runs migrations 0058 (provenance trigger), 0060 (change log and undo) and 0061 (provenance on strategy tables) on an
-// in-process Postgres with two fictional companies (see src/test/pg-harness.ts for what it does and does not model).
+// Runs migrations 0058 (provenance trigger), 0060 (change log and undo), 0061 (provenance on strategy tables), 0062 (setup step
+// snoozes) and 0063 (undo keeps confirmations) on an in-process Postgres with two fictional companies (see src/test/pg-harness.ts for what it does and does not model).
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
+import { ROLES } from "@/lib/roles";
+import { SETUP_STEP_IDS, STEP_ROLES, canCompleteStep } from "@/lib/setup-guide";
 
 type Db = Awaited<ReturnType<typeof build>>;
 let db: Db;
@@ -253,3 +255,87 @@ describe("migration 0063: undoing an edit keeps the confirmations of other field
   });
 });
 
+
+describe("migration 0062: setup step snoozes", () => {
+  let B: string;
+  beforeAll(async () => {
+    await migrate(db, ["0062_setup_step_snoozes.sql"]);
+    B = (await rows("select id from organizations where name = 'Empresa B'"))[0]!.id;
+  });
+  const until = "2026-11-03T11:00:00Z";
+
+  it("1. a member of company A reads and writes A's snoozes, and org_id and snoozed_by fill themselves", async () => {
+    await as(db, U.aeA, async () => { await db.query("insert into setup_step_snoozes (step_id, snoozed_until) values ('accounts', $1)", [until]); });
+    await as(db, U.ownerA, async () => {
+      const r = await rows("select org_id, step_id, snoozed_by from setup_step_snoozes");
+      expect(r).toEqual([{ org_id: A, step_id: "accounts", snoozed_by: U.aeA }]);
+      // an update must also say who made it (the app's upsert always does)
+      expect(await throws(() => db.query("update setup_step_snoozes set snoozed_until = '2026-11-10T11:00:00Z' where step_id = 'accounts'"))).not.toBe("");
+      await db.query("update setup_step_snoozes set snoozed_until = '2026-11-10T11:00:00Z', snoozed_by = $1 where step_id = 'accounts'", [U.ownerA]);
+    });
+    await as(db, U.aeA, async () => { expect(await rows("select snoozed_until from setup_step_snoozes")).toHaveLength(1); });
+  });
+
+  it("2. a member of company A cannot read, update or delete company B's snoozes, nor write one into B", async () => {
+    await as(db, U.ownerB, async () => { await db.query("insert into setup_step_snoozes (step_id, snoozed_until) values ('quota', $1)", [until]); });
+    await as(db, U.ownerA, async () => {
+      expect((await rows("select step_id from setup_step_snoozes")).map((r) => r.step_id)).toEqual(["accounts"]);
+      expect(await rows("update setup_step_snoozes set snoozed_until = now() where org_id = $1 returning step_id", [B])).toHaveLength(0);
+      expect(await rows("delete from setup_step_snoozes where org_id = $1 returning step_id", [B])).toHaveLength(0);
+      expect(await throws(() => db.query("insert into setup_step_snoozes (org_id, step_id, snoozed_until) values ($1,'deals',$2)", [B, until]))).not.toBe("");
+    });
+    await as(db, U.ownerB, async () => { expect(await rows("select step_id from setup_step_snoozes")).toHaveLength(1); });
+  });
+
+  it("3. snoozed_by is the signed-in person: another person's id is refused on insert and on update", async () => {
+    await as(db, U.ownerA, async () => {
+      expect(await throws(() => db.query("insert into setup_step_snoozes (step_id, snoozed_until, snoozed_by) values ('deals', $1, $2)", [until, U.aeA]))).not.toBe("");
+      expect(await throws(() => db.query("update setup_step_snoozes set snoozed_by = $1 where step_id = 'accounts'", [U.aeA]))).not.toBe("");
+      await db.query("update setup_step_snoozes set snoozed_until = '2026-11-12T11:00:00Z', snoozed_by = $1 where step_id = 'accounts'", [U.ownerA]);
+    });
+  });
+
+  it("4. deleting a company deletes its snoozes", async () => {
+    const C = (await rows("insert into organizations (name) values ('Empresa C') returning id"))[0]!.id;
+    await db.exec(`insert into setup_step_snoozes (org_id, step_id, snoozed_until) values ('${C}','deals','${until}')`);
+    await db.exec(`delete from organizations where id = '${C}'`);
+    expect(await rows("select 1 from setup_step_snoozes where org_id = $1", [C])).toHaveLength(0);
+  });
+
+  it("5. only a role that can complete the step may snooze or clear it", async () => {
+    // an AE completes accounts and deals, not quota
+    await as(db, U.aeA, async () => {
+      expect(await throws(() => db.query("insert into setup_step_snoozes (step_id, snoozed_until) values ('quota', $1)", [until]))).not.toBe("");
+      expect(await throws(() => db.query("insert into setup_step_snoozes (step_id, snoozed_until) values ('no_such_step', $1)", [until]))).not.toBe("");
+    });
+    await as(db, U.ownerA, async () => { await db.query("insert into setup_step_snoozes (step_id, snoozed_until) values ('quota', $1)", [until]); });
+    await as(db, U.aeA, async () => {
+      expect(await rows("update setup_step_snoozes set snoozed_until = '2026-12-01T11:00:00Z' where step_id = 'quota' returning step_id", [])).toHaveLength(0);
+      expect(await rows("delete from setup_step_snoozes where step_id = 'quota' returning step_id")).toHaveLength(0);
+      expect(await rows("select step_id from setup_step_snoozes where step_id = 'quota'")).toHaveLength(1); // members still read it
+    });
+    await as(db, U.ownerA, async () => { expect(await rows("delete from setup_step_snoozes where step_id = 'quota' returning step_id")).toHaveLength(1); });
+  });
+
+  it("5. the SQL role rule and STEP_ROLES say the same for every step and every role", async () => {
+    const roles = Object.keys(ROLES);
+    for (const [i, role] of roles.entries()) {
+      const uid = `00000000-0000-4000-8000-0000000001${String(i).padStart(2, "0")}`;
+      await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${uid}','${role}')`);
+      for (const step of SETUP_STEP_IDS) {
+        const sql = (await as(db, uid, () => rows("select public.can_complete_setup_step($1, $2) as ok", [A, step])))[0]!.ok;
+        expect(sql, `${role} / ${step}`).toBe(canCompleteStep(step, role));
+      }
+    }
+    expect(Object.keys(STEP_ROLES).sort()).toEqual([...SETUP_STEP_IDS].sort());
+    const outsider = (await as(db, U.ownerB, () => rows("select public.can_complete_setup_step($1, 'deals') as ok", [A])))[0]!.ok;
+    expect(outsider).toBe(false);
+  });
+
+  it("6. anon gets nothing and authenticated only SELECT, INSERT, UPDATE and DELETE, even though Supabase grants everything to new tables", async () => {
+    const priv = async (role: string) => (await rows("select privilege_type from information_schema.table_privileges where table_schema='public' and table_name='setup_step_snoozes' and grantee = $1 order by 1", [role])).map((r) => r.privilege_type);
+    expect(await priv("anon")).toEqual([]);
+    expect(await priv("authenticated")).toEqual(["DELETE", "INSERT", "SELECT", "UPDATE"]);
+    expect(await priv("service_role")).toContain("TRUNCATE");
+  });
+});
