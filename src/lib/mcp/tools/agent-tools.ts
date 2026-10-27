@@ -75,6 +75,7 @@ export const TITLES: Record<string, string> = {
   get_artifact: "Ver documento del ciclo GTM",
   get_cycle_status: "Estado del ciclo GTM",
   get_deal: "Ver deal",
+  get_funnel_diagnosis: "Diagnóstico AARRR por segmento",
   get_lead: "Ver lead",
   get_meeting: "Ver reunión",
   get_overview: "Resumen de la empresa",

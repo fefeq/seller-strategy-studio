@@ -5,11 +5,24 @@
 // RLS and dedupe key (org_id, dedupe_key) are reused; decisions go to strategy_decisions.
 import type { Suggestion } from "@/lib/proactive/types";
 
-export const STRATEGY_ELEMENTS = ["icp", "segment", "positioning", "competitor", "product_price", "pipeline", "experiment"] as const;
+export const STRATEGY_ELEMENTS = [
+  "icp",
+  "segment",
+  "positioning",
+  "competitor",
+  "product_price",
+  "pipeline",
+  "experiment",
+] as const;
 export type StrategyElement = (typeof STRATEGY_ELEMENTS)[number];
 export const STRATEGY_KINDS = ["create", "change", "validate", "close", "missing_data"] as const;
 export type StrategyKind = (typeof STRATEGY_KINDS)[number];
-export const STRATEGY_ACTIONS = ["strategy_change", "experiment", "commercial_action", "data_to_complete"] as const;
+export const STRATEGY_ACTIONS = [
+  "strategy_change",
+  "experiment",
+  "commercial_action",
+  "data_to_complete",
+] as const;
 export type StrategyAction = (typeof STRATEGY_ACTIONS)[number];
 export type EvidenceLevel = "low" | "medium" | "high";
 
@@ -33,41 +46,85 @@ export const POSTPONE_DAYS = 3;
 const DAY = 86_400_000;
 
 /** Fixed, visible rule (validated by Fede on 2026-10-27): low under 5 source records, medium 5 to 9, high from 10. */
-export const evidenceLevel = (sample: number): EvidenceLevel => (sample >= 10 ? "high" : sample >= 5 ? "medium" : "low");
-export const EVIDENCE_LEVEL_RULE = "Baja: menos de 5 registros de origen. Media: de 5 a 9. Alta: 10 o más.";
+export const evidenceLevel = (sample: number): EvidenceLevel =>
+  sample >= 10 ? "high" : sample >= 5 ? "medium" : "low";
+export const EVIDENCE_LEVEL_RULE =
+  "Baja: menos de 5 registros de origen. Media: de 5 a 9. Alta: 10 o más.";
 export const levelLabel = (l: EvidenceLevel) => ({ low: "Baja", medium: "Media", high: "Alta" })[l];
-export const sampleLabel = (n: number) => (n <= 0 ? "Sin registros de origen" : `Muestra: ${n} ${n === 1 ? "registro" : "registros"}`);
+export const sampleLabel = (n: number) =>
+  n <= 0 ? "Sin registros de origen" : `Muestra: ${n} ${n === 1 ? "registro" : "registros"}`;
 
-export const ELEMENT_LABEL: Record<StrategyElement, string> = { icp: "ICP", segment: "Segmento", positioning: "Posicionamiento", competitor: "Competidor", product_price: "Producto y precio", pipeline: "Pipeline", experiment: "Experimento" };
-export const KIND_LABEL: Record<StrategyKind, string> = { create: "Crear", change: "Cambiar", validate: "Validar", close: "Cerrar", missing_data: "Falta dato" };
-export const ACTION_LABEL: Record<StrategyAction, string> = { strategy_change: "Cambio de estrategia", experiment: "Prueba", commercial_action: "Acción comercial", data_to_complete: "Dato a completar" };
+export const ELEMENT_LABEL: Record<StrategyElement, string> = {
+  icp: "ICP",
+  segment: "Segmento",
+  positioning: "Posicionamiento",
+  competitor: "Competidor",
+  product_price: "Producto y precio",
+  pipeline: "Pipeline",
+  experiment: "Experimento",
+};
+export const KIND_LABEL: Record<StrategyKind, string> = {
+  create: "Crear",
+  change: "Cambiar",
+  validate: "Validar",
+  close: "Cerrar",
+  missing_data: "Falta dato",
+};
+export const ACTION_LABEL: Record<StrategyAction, string> = {
+  strategy_change: "Cambio de estrategia",
+  experiment: "Prueba",
+  commercial_action: "Acción comercial",
+  data_to_complete: "Dato a completar",
+};
 /** Status words for the six states of the SDD; «Aplicada» arrives with F3 (no stored status yet). */
-export const STRATEGY_STATUS_LABEL: Record<string, string> = { pending: "Nueva", approved: "Aceptada", snoozed: "Pospuesta", dismissed: "Descartada", resolved: "Resuelta" };
+export const STRATEGY_STATUS_LABEL: Record<string, string> = {
+  pending: "Nueva",
+  approved: "Aceptada",
+  snoozed: "Pospuesta",
+  dismissed: "Descartada",
+  resolved: "Resuelta",
+};
 
 /** Heading of a card: the element and the kind; with nothing to recommend from the kind reads «Falta dato» (CA-2). */
-export const strategyHeading = (m: Pick<StrategyMeta, "element" | "kind">) => `${ELEMENT_LABEL[m.element]} · ${KIND_LABEL[m.kind]}`;
+export const strategyHeading = (m: Pick<StrategyMeta, "element" | "kind">) =>
+  `${ELEMENT_LABEL[m.element]} · ${KIND_LABEL[m.kind]}`;
 
 /** Where a source record is opened. A table not listed here must bring its own link. */
 export function evidenceLink(table: string, id: string): string | null {
   switch (table) {
-    case "deals": return `/deals?deal=${id}`;
-    case "accounts": return `/accounts/${id}`;
-    case "leads": return `/leads?lead=${id}`;
-    case "icp_profiles": return "/strategy?tab=icp";
-    case "segments": return "/strategy?tab=motions";
-    case "positioning": return "/strategy?tab=positioning";
-    case "messaging_pillars": return "/strategy?tab=pillars";
-    case "products": return "/products";
-    case "gtm_experiments": return "/theory-u";
-    default: return null;
+    case "deals":
+      return `/deals?deal=${id}`;
+    case "accounts":
+      return `/accounts/${id}`;
+    case "leads":
+      return `/leads?lead=${id}`;
+    case "icp_profiles":
+      return "/strategy?tab=icp";
+    case "segments":
+      return "/strategy?tab=motions";
+    case "positioning":
+      return "/strategy?tab=positioning";
+    case "messaging_pillars":
+      return "/strategy?tab=pillars";
+    case "products":
+      return "/products";
+    case "gtm_experiments":
+      return "/theory-u";
+    default:
+      return null;
   }
 }
 
 /** 32-bit FNV-1a over the sorted, de-duplicated «table:id» of the evidence: same records, same fingerprint. */
-export function evidenceFingerprint<T extends { table: string; id: string }>(evidence: T[]): string {
+export function evidenceFingerprint<T extends { table: string; id: string }>(
+  evidence: T[],
+): string {
   const keys = [...new Set(evidence.map((e) => `${e.table}:${e.id}`))].sort().join("|");
   let h = 0x811c9dc5;
-  for (let i = 0; i < keys.length; i++) { h ^= keys.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  for (let i = 0; i < keys.length; i++) {
+    h ^= keys.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
   return h.toString(16).padStart(8, "0");
 }
 
@@ -98,11 +155,15 @@ export function buildStrategySuggestion(i: StrategyInput): StrategySuggestion {
     if (seen.has(k)) continue;
     seen.add(k);
     const link = e.link ?? evidenceLink(e.table, e.id);
-    if (!link) throw new Error(`Falta el enlace al registro de origen de «${e.table}»: una fuente sin enlace conocido debe traer el suyo.`);
+    if (!link)
+      throw new Error(
+        `Falta el enlace al registro de origen de «${e.table}»: una fuente sin enlace conocido debe traer el suyo.`,
+      );
     evidence.push({ table: e.table, id: e.id, label: e.label, link });
   }
   const sample = i.sample_size ?? evidence.length;
-  if (sample < evidence.length) throw new Error("El tamaño de la muestra no puede ser menor que la evidencia citada.");
+  if (sample < evidence.length)
+    throw new Error("El tamaño de la muestra no puede ser menor que la evidencia citada.");
   const none = evidence.length === 0;
   const strategy: StrategyMeta = {
     element: i.element,
@@ -113,7 +174,17 @@ export function buildStrategySuggestion(i: StrategyInput): StrategySuggestion {
     action_type: none ? "data_to_complete" : i.action_type,
     fingerprint: evidenceFingerprint(evidence),
   };
-  return { detector: `strategy_${i.element}`, dedupe_key: `strategy_${i.element}:${i.cause}`, priority: i.priority, title: i.title, body: i.body, link: i.link ?? null, action: null, user_id: null, strategy };
+  return {
+    detector: `strategy_${i.element}`,
+    dedupe_key: `strategy_${i.element}:${i.cause}`,
+    priority: i.priority,
+    title: i.title,
+    body: i.body,
+    link: i.link ?? null,
+    action: null,
+    user_id: null,
+    strategy,
+  };
 }
 
 const isStr = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
@@ -122,7 +193,12 @@ const isStr = (v: unknown): v is string => typeof v === "string" && v.trim() !==
 export function parseStrategy(v: unknown): StrategyMeta | null {
   if (!v || typeof v !== "object") return null;
   const m = v as Record<string, unknown>;
-  if (!(STRATEGY_ELEMENTS as readonly unknown[]).includes(m.element) || !(STRATEGY_KINDS as readonly unknown[]).includes(m.kind) || !(STRATEGY_ACTIONS as readonly unknown[]).includes(m.action_type)) return null;
+  if (
+    !(STRATEGY_ELEMENTS as readonly unknown[]).includes(m.element) ||
+    !(STRATEGY_KINDS as readonly unknown[]).includes(m.kind) ||
+    !(STRATEGY_ACTIONS as readonly unknown[]).includes(m.action_type)
+  )
+    return null;
   if (!Array.isArray(m.evidence)) return null;
   const evidence: EvidenceItem[] = [];
   for (const e of m.evidence) {
@@ -133,15 +209,31 @@ export function parseStrategy(v: unknown): StrategyMeta | null {
   const n = m.sample_size;
   if (typeof n !== "number" || !Number.isInteger(n) || n < evidence.length) return null;
   if (m.evidence_level !== evidenceLevel(n)) return null;
-  if (evidence.length === 0 && (m.kind !== "missing_data" || m.action_type !== "data_to_complete")) return null;
+  if (evidence.length === 0 && (m.kind !== "missing_data" || m.action_type !== "data_to_complete"))
+    return null;
   if (!isStr(m.fingerprint)) return null;
-  return { element: m.element as StrategyElement, kind: m.kind as StrategyKind, evidence, evidence_level: m.evidence_level as EvidenceLevel, sample_size: n, action_type: m.action_type as StrategyAction, fingerprint: m.fingerprint };
+  return {
+    element: m.element as StrategyElement,
+    kind: m.kind as StrategyKind,
+    evidence,
+    evidence_level: m.evidence_level as EvidenceLevel,
+    sample_size: n,
+    action_type: m.action_type as StrategyAction,
+    fingerprint: m.fingerprint,
+  };
 }
 
 // ---- Decisions (CA-4) ----
 
 export type StrategyDecision = "accept" | "postpone" | "dismiss";
-export type DecisionInput = { decision: StrategyDecision; by: string; now: Date; fingerprint: string; reason?: string | null; remindAt?: Date | null };
+export type DecisionInput = {
+  decision: StrategyDecision;
+  by: string;
+  now: Date;
+  fingerprint: string;
+  reason?: string | null;
+  remindAt?: Date | null;
+};
 export type DecisionRecord = {
   decision: "accepted" | "postponed" | "dismissed";
   /** New status of the suggestion row. */
@@ -155,11 +247,24 @@ export type DecisionRecord = {
 
 export function decisionRecord(i: DecisionInput): DecisionRecord {
   const reason = (i.reason ?? "").trim() || null;
-  if (reason && reason.length > MAX_REASON) throw new Error(`El motivo admite hasta ${MAX_REASON} caracteres. Acórtalo.`);
-  const base = { decided_by: i.by, decided_at: i.now.toISOString(), reason, evidence_fingerprint: i.fingerprint };
-  if (i.decision === "accept") return { ...base, decision: "accepted", status: "approved", remind_at: null };
-  if (i.decision === "dismiss") return { ...base, decision: "dismissed", status: "dismissed", remind_at: null };
-  return { ...base, decision: "postponed", status: "snoozed", remind_at: (i.remindAt ?? new Date(i.now.getTime() + POSTPONE_DAYS * DAY)).toISOString() };
+  if (reason && reason.length > MAX_REASON)
+    throw new Error(`El motivo admite hasta ${MAX_REASON} caracteres. Acórtalo.`);
+  const base = {
+    decided_by: i.by,
+    decided_at: i.now.toISOString(),
+    reason,
+    evidence_fingerprint: i.fingerprint,
+  };
+  if (i.decision === "accept")
+    return { ...base, decision: "accepted", status: "approved", remind_at: null };
+  if (i.decision === "dismiss")
+    return { ...base, decision: "dismissed", status: "dismissed", remind_at: null };
+  return {
+    ...base,
+    decision: "postponed",
+    status: "snoozed",
+    remind_at: (i.remindAt ?? new Date(i.now.getTime() + POSTPONE_DAYS * DAY)).toISOString(),
+  };
 }
 
 // ---- Visibility and re-evaluation (CA-5, CA-6, CA-7) ----
@@ -181,12 +286,15 @@ export type StrategyRow = {
 /** Shown while new, or postponed and past its reminder date. Dismissed, accepted and resolved are never shown as open. */
 export function isVisible(r: Pick<StrategyRow, "status" | "snoozed_until">, now: Date): boolean {
   if (r.status === "pending") return true;
-  if (r.status === "snoozed") return r.snoozed_until !== null && new Date(r.snoozed_until).getTime() <= now.getTime();
+  if (r.status === "snoozed")
+    return r.snoozed_until !== null && new Date(r.snoozed_until).getTime() <= now.getTime();
   return false;
 }
 
 /** CA-7: at most 7 open strategic suggestions, most urgent first, newest first inside a priority. */
-export function openStrategy<T extends Pick<StrategyRow, "status" | "snoozed_until" | "priority" | "created_at">>(rows: T[], now: Date, max = MAX_OPEN_STRATEGY): T[] {
+export function openStrategy<
+  T extends Pick<StrategyRow, "status" | "snoozed_until" | "priority" | "created_at">,
+>(rows: T[], now: Date, max = MAX_OPEN_STRATEGY): T[] {
   return rows
     .filter((r) => isVisible(r, now))
     .sort((a, b) => a.priority - b.priority || b.created_at.localeCompare(a.created_at))
@@ -197,24 +305,61 @@ export function openStrategy<T extends Pick<StrategyRow, "status" | "snoozed_unt
  * CA-7 on a mixed list (the screen reads operational and strategic suggestions together): keeps every operational one and the
  * strategic ones that fit the cap, in the order received.
  */
-export function limitStrategy<T extends { id: string; strategy?: unknown; status?: string; snoozed_until?: string | null; priority: number; created_at: string }>(rows: T[], now: Date, max = MAX_OPEN_STRATEGY): T[] {
+export function limitStrategy<
+  T extends {
+    id: string;
+    strategy?: unknown;
+    status?: string;
+    snoozed_until?: string | null;
+    priority: number;
+    created_at: string;
+  },
+>(rows: T[], now: Date, max = MAX_OPEN_STRATEGY): T[] {
   const strategic = rows.filter((r) => parseStrategy(r.strategy));
-  const keep = new Set(openStrategy(strategic.map((r) => ({ id: r.id, status: r.status ?? "pending", snoozed_until: r.snoozed_until ?? null, priority: r.priority, created_at: r.created_at })), now, max).map((r) => r.id));
+  const keep = new Set(
+    openStrategy(
+      strategic.map((r) => ({
+        id: r.id,
+        status: r.status ?? "pending",
+        snoozed_until: r.snoozed_until ?? null,
+        priority: r.priority,
+        created_at: r.created_at,
+      })),
+      now,
+      max,
+    ).map((r) => r.id),
+  );
   return rows.filter((r) => !parseStrategy(r.strategy) || keep.has(r.id));
 }
 
 export type Reconciled =
   | { action: "insert" }
   | { action: "keep" }
-  | { action: "refresh"; patch: { strategy: StrategyMeta; title: string; body: string; priority: number } }
-  | { action: "reopen"; patch: { status: "pending"; snoozed_until: null; strategy: StrategyMeta; title: string; body: string; priority: number } };
+  | {
+      action: "refresh";
+      patch: { strategy: StrategyMeta; title: string; body: string; priority: number };
+    }
+  | {
+      action: "reopen";
+      patch: {
+        status: "pending";
+        snoozed_until: null;
+        strategy: StrategyMeta;
+        title: string;
+        body: string;
+        priority: number;
+      };
+    };
 
 /**
  * CA-5: «new evidence» means a record that was not behind the decision. A changed fingerprint is not enough: when records
  * drop out (a deal deleted, an account that no longer fits) the fingerprint changes too, and that must not wake the suggestion.
  */
 function hasNewEvidence(existing: StrategyRow, found: StrategySuggestion): boolean {
-  if (found.strategy.fingerprint === (existing.decided_fingerprint ?? existing.strategy.fingerprint)) return false;
+  if (
+    found.strategy.fingerprint === (existing.decided_fingerprint ?? existing.strategy.fingerprint)
+  )
+    return false;
   const before = new Set(existing.strategy.evidence.map((e) => `${e.table}:${e.id}`));
   return found.strategy.evidence.some((e) => !before.has(`${e.table}:${e.id}`));
 }
@@ -223,16 +368,32 @@ function hasNewEvidence(existing: StrategyRow, found: StrategySuggestion): boole
  * What to do when a detector finds a suggestion again. A dismissed or postponed one stays as it is unless its evidence
  * changed since the decision (CA-5, CA-6); an accepted one is never touched; an open one only refreshes its evidence.
  */
-export function reconcile(existing: StrategyRow | null, found: StrategySuggestion, _now: Date): Reconciled {
+export function reconcile(
+  existing: StrategyRow | null,
+  found: StrategySuggestion,
+  _now: Date,
+): Reconciled {
   if (!existing) return { action: "insert" };
-  const patch = { strategy: found.strategy, title: found.title, body: found.body, priority: found.priority };
+  const patch = {
+    strategy: found.strategy,
+    title: found.title,
+    body: found.body,
+    priority: found.priority,
+  };
   switch (existing.status) {
-    case "approved": return { action: "keep" };
+    case "approved":
+      return { action: "keep" };
     case "dismissed":
     case "snoozed":
-      return hasNewEvidence(existing, found) ? { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } } : { action: "keep" };
-    case "resolved": return { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } };
-    default: return found.strategy.fingerprint === existing.strategy.fingerprint ? { action: "keep" } : { action: "refresh", patch };
+      return hasNewEvidence(existing, found)
+        ? { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } }
+        : { action: "keep" };
+    case "resolved":
+      return { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } };
+    default:
+      return found.strategy.fingerprint === existing.strategy.fingerprint
+        ? { action: "keep" }
+        : { action: "refresh", patch };
   }
 }
 

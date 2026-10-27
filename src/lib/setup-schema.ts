@@ -69,6 +69,7 @@ export function setupStatus(d: SetupData) {
   const items = SETUP_ITEMS.map((i) => ({ id: i.id, label: i.label, unlocks: i.unlocks, link: i.link, weight: i.weight, done: i.done(d) }));
   const total = items.reduce((s, i) => s + i.weight, 0);
   const got = items.filter((i) => i.done).reduce((s, i) => s + i.weight, 0);
-  const missing = items.filter((i) => !i.done).sort((a, b) => b.weight - a.weight);
+  // Fixed order of SETUP_ITEMS, never by weight: one order for the wizard, Inicio, the detector and the agent (setup-guide.ts).
+  const missing = items.filter((i) => !i.done);
   return { pct: Math.round((got / total) * 100), items, missing, next: missing[0] ?? null };
 }
