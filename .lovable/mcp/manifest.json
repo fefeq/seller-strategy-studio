@@ -970,6 +970,29 @@
         "outputSchema": null
       },
       {
+        "name": "get_funnel_diagnosis",
+        "title": "Diagnóstico AARRR por segmento",
+        "description": "Diagnóstico AARRR por segmento y trimestre (por defecto el actual): Acquisition (leads), Activation (pruebas activadas con el evento de PostHog de la empresa), Retention (churn de Stripe, solo de la empresa), Revenue (según el motion de adquisición del segmento) y Referral (no medido). Cada fase trae valor, denominador y fuente; sin datos dice «sin datos» y qué falta, nunca 0. «fuga» solo aparece si el segmento tiene objetivo (win rate o payback). Solo lee la base de datos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "quarter": {
+              "description": "Trimestre AAAA-QN; por defecto el actual",
+              "type": "string",
+              "pattern": "^\\d{4}-Q[1-4]$"
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "list_segments",
         "title": "Listar segmentos",
         "description": "Lista los segmentos de la empresa por prioridad, con su motion (modelo de venta por ACV), su acquisition_motion (cómo adquiere clientes; null = sin definir) y sus objetivos.",
