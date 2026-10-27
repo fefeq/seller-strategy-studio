@@ -405,3 +405,36 @@ describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-
     expect(owner.fuera_de_tu_rol).toEqual([]);
   });
 });
+
+describe("segments: acquisition motion", () => {
+  it("CA-2: upsert_segment saves it for the caller's company and clears it with null", async () => {
+    const { db, log } = fakeDb((q) => (q.op === "update" || q.op === "insert" ? { data: { id: ID(5) } } : undefined));
+    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", { segment_id: ID(5), name: "Pymes", acquisition_motion: "plg" });
+    await executeTool(ctxWith(db, ["sales_leader"]), "upsert_segment", { segment_id: ID(5), name: "Pymes", acquisition_motion: null });
+    const ups = writes(log, "segments");
+    expect(ups[0]!.payload).toMatchObject({ acquisition_motion: "plg" });
+    expect(ups[1]!.payload).toMatchObject({ acquisition_motion: null });
+    expect(ups[0]!.payload).not.toHaveProperty("motion");
+    expectScoped(log);
+  });
+
+  it("CA-1: the sales-model values are not valid as acquisition motion", async () => {
+    const { db, log } = fakeDb();
+    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_segment", { name: "Pymes", acquisition_motion: "inside" })).rejects.toThrow();
+    expect(writes(log)).toHaveLength(0);
+  });
+
+  it("CA-2: only owner and sales_leader may write it", () => {
+    for (const r of ["ae", "marketing", "sdr"]) expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(false);
+    for (const r of ["owner", "sales_leader"]) expect(canUseTool(getTool("upsert_segment")!, [r]), r).toBe(true);
+  });
+
+  it("CA-4: list_segments reads only the caller's company and selects both motions", async () => {
+    const { db, log } = fakeDb((q) => (q.table === "segments" ? { data: [{ id: ID(5), name: "Pymes", motion: "plg", acquisition_motion: null }] } : undefined));
+    const r = await executeTool(ctxWith(db), "list_segments", {});
+    expect(r).toEqual([{ id: ID(5), name: "Pymes", motion: "plg", acquisition_motion: null }]);
+    expect(writes(log)).toHaveLength(0);
+    expectScoped(log);
+    expect(getTool("list_segments")!.kind).toBe("read");
+  });
+});

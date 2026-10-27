@@ -439,33 +439,40 @@
     {
       "idx": 62,
       "version": "7",
-      "when": 1793058600000,
-      "tag": "0062_setup_step_snoozes",
+      "when": 1793150000000,
+      "tag": "0071_segment_acquisition_motion",
       "breakpoints": true
     },
     {
       "idx": 63,
       "version": "7",
-      "when": 1793144800000,
-      "tag": "0064_last_human_edit_at",
+      "when": 1793150100000,
+      "tag": "0062_setup_step_snoozes",
       "breakpoints": true
     },
     {
       "idx": 64,
+      "version": "7",
+      "when": 1793150200000,
+      "tag": "0064_last_human_edit_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 65,
       "version": "7",
       "when": 1793231200000,
       "tag": "0065_company_diagnosis",
       "breakpoints": true
     },
     {
-      "idx": 65,
+      "idx": 66,
       "version": "7",
       "when": 1793317600000,
       "tag": "0066_undo_ignores_last_human_edit",
       "breakpoints": true
     },
     {
-      "idx": 66,
+      "idx": 67,
       "version": "7",
       "when": 1793404000000,
       "tag": "0067_last_human_edit_index",
