@@ -1,6 +1,6 @@
 // @vitest-environment node
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from SQL untyped, as in migrations.pg.test.ts */
-// SDD-20261027 F2: runs migration 0065 on an in-process Postgres (PGlite) with fictional companies. Never touches a real database.
+// SDD-20261027 F2: runs migration 0069 on an in-process Postgres (PGlite) with fictional companies. Never touches a real database.
 // gtm_experiments below copies the columns and policies of migration 0003, reduced to what 0065 touches.
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
@@ -27,7 +27,7 @@ beforeAll(async () => {
     create policy "org update" on public.gtm_experiments for update to authenticated using (org_id = public.current_org() and public.is_org_member(org_id)) with check (public.is_org_member(org_id));
   `);
   oldId = (await rows(`insert into gtm_experiments (org_id, title, hypothesis, metric, target, result, learning, status, starts_on, ends_on) values ('${A}','Prueba vieja','Creemos que sí','respuesta','8 %','6 %','Aprendimos','learned','2026-01-01','2026-02-01') returning id`))[0]!.id;
-  await migrate(db, ["0065_experiment_close_rule.sql"]);
+  await migrate(db, ["0069_experiment_close_rule.sql"]);
 }, 60_000);
 
 describe("CA-31: existing experiments keep their data, with the new fields empty", () => {
@@ -36,7 +36,7 @@ describe("CA-31: existing experiments keep their data, with the new fields empty
     expect(e).toMatchObject({ title: "Prueba vieja", hypothesis: "Creemos que sí", metric: "respuesta", target: "8 %", result: "6 %", learning: "Aprendimos", status: "learned", success_threshold: "", close_rule: "", review_on: null, decision: null, decided_at: null, decided_by: null, change_element: null, change_note: "" });
   });
   it("running the migration again changes nothing", async () => {
-    await migrate(db, ["0065_experiment_close_rule.sql"]);
+    await migrate(db, ["0069_experiment_close_rule.sql"]);
     expect((await rows("select count(*)::int n from gtm_experiments"))[0]!.n).toBe(1);
   });
 });
