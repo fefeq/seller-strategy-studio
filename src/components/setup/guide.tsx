@@ -53,7 +53,7 @@ export function NextStepMessage({ msg, onStart, onDismiss }: { msg: NextMessage;
  * `onlyWhenDue` shows it only after a day without activity (Inicio); the agent always offers it as the first suggestion.
  */
 export function GuideOffer({ scope, onlyWhenDue, onStart, orgId, wrap }: { scope: OfferScope; onlyWhenDue?: boolean; onStart?: (stepId: string) => void; orgId?: string; wrap?: (children: ReactNode) => ReactNode }) {
-  const g = useSetupGuide();
+  const g = useSetupGuide({ activity: !!onlyWhenDue }); // only the nudge in Inicio needs the activity of the data
   const [closed, setClosed] = useState(() => nudgeSeen(orgId, scope));
   if (!g.guide || !g.message || (!g.message.stepId && !g.justDone)) return null;
   if (onlyWhenDue && !g.nudge && !g.justDone) return null;

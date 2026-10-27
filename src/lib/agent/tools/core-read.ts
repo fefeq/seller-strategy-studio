@@ -1,6 +1,6 @@
 // Core reads: overview, search, records, lists, setup status, follow-up drafts, knowledge. Part of the single registry in ../tools.ts (order there is the order the model sees).
 import { z } from "zod";
-import { loadSetupData, loadSetupGuideExtras } from "@/lib/org-data";
+import { loadSetupData, loadSetupSnoozes } from "@/lib/org-data";
 import { STAGE_ARG, def, like, ok, one, orgStages, resolveStage } from "../tool-kit";
 import { setupStatus } from "@/lib/setup-schema";
 import { formatDay, guideState, nextMessage } from "@/lib/setup-guide";
@@ -195,8 +195,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         c.db.from("messaging_pillars").select("id,title,pain,message,proof").eq("org_id", c.orgId),
       ]);
       // The guide (setup-guide.ts) decides the next step by a fixed order, the same as the screen; the agent never picks it.
-      const extras = await loadSetupGuideExtras(c.db, c.orgId);
-      const g = guideState(d, extras.snoozes, new Date());
+      const g = guideState(d, await loadSetupSnoozes(c.db, c.orgId), new Date());
       const guia = { mensaje: nextMessage(g, c.roles[0]), pospuestos: g.snoozed.map((s) => ({ paso: s.label, hasta: s.snoozedUntil ? formatDay(s.snoozedUntil) : null })) };
       return { estado: setupStatus(d), guia, moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
     },

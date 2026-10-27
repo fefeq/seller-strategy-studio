@@ -4,9 +4,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
-import { loadSetupGuideExtras } from "@/lib/org-data";
+import { loadSetupGuideExtras, loadSetupSnoozes } from "@/lib/org-data";
 import { errorText } from "@/lib/errors";
-import { canCompleteStep, guideState, nextFor, nextMessage, nudgeDue, parseSnoozeDate, type GuideMember } from "@/lib/setup-guide";
+import { canCompleteStep, guideState, nextFor, nextMessage, nudgeDue, parseSnoozeDate, type GuideMember, type Snooze } from "@/lib/setup-guide";
 
 /** Session-scoped flag: each place (Inicio, the agent) shows the offer once per session, until the person acts on it or closes it. */
 export type OfferScope = "home" | "agent";
@@ -18,8 +18,15 @@ export function markNudgeSeen(orgId: string | undefined, scope: OfferScope) {
   try { sessionStorage.setItem(nudgeKey(orgId, scope), "1"); } catch { /* sessionStorage can be blocked: the offer may repeat, never break */ }
 }
 
-/** The guide of «Configura tu estrategia» for the signed-in person: state per step, next step, who can do what, snooze and nudge. */
-export function useSetupGuide() {
+const NO_SNOOZES: Snooze[] = [];
+
+/**
+ * The guide of «Configura tu estrategia» for the signed-in person: state per step, next step, who can do what, snooze and nudge.
+ * It is mounted in the sidebar of every screen, so it queries only what the screen needs and only while steps are pending:
+ * nothing once the strategy is complete, the snoozes (one query) to pick the next step, the activity of the data (seven more)
+ * only with `activity` (Inicio's nudge), and the members only when a pending step is not the person's to complete.
+ */
+export function useSetupGuide({ activity = false }: { activity?: boolean } = {}) {
   const qc = useQueryClient();
   const { data: me } = useMe();
   const setup = useSetup();
@@ -27,9 +34,14 @@ export function useSetupGuide() {
   const userId = me?.user.id;
   const role = me?.roles[0] ?? null;
 
-  const extras = useQuery({ queryKey: ["setup-guide", orgId], enabled: !!orgId, retry: 2, queryFn: () => loadSetupGuideExtras(supabase, orgId!) });
+  const pendingIds = setup.data ? setup.data.status.items.filter((i) => !i.done).map((i) => i.id) : [];
+  const hasPending = pendingIds.length > 0;
+  const needsMembers = pendingIds.some((id) => !canCompleteStep(id, role));
+
+  const snoozesQ = useQuery({ queryKey: ["setup-guide", "snoozes", orgId], enabled: !!orgId && hasPending, retry: 2, queryFn: () => loadSetupSnoozes(supabase, orgId!) });
+  const activityQ = useQuery({ queryKey: ["setup-guide", "activity", orgId], enabled: !!orgId && hasPending && activity, retry: 2, queryFn: () => loadSetupGuideExtras(supabase, orgId!) });
   const membersQ = useQuery({
-    queryKey: ["setup-guide-members", orgId], enabled: !!orgId, staleTime: 5 * 60_000,
+    queryKey: ["setup-guide-members", orgId], enabled: !!orgId && needsMembers, staleTime: 5 * 60_000,
     queryFn: async (): Promise<GuideMember[]> => {
       const { data: rows } = await supabase.from("org_members").select("user_id,role").eq("org_id", orgId!);
       const ids = (rows ?? []).map((r) => r.user_id);
@@ -38,9 +50,11 @@ export function useSetupGuide() {
       return (rows ?? []).map((r) => ({ user_id: r.user_id, role: String(r.role), name: names.get(r.user_id) ?? null }));
     },
   });
+  const extras = { isError: snoozesQ.isError || activityQ.isError, isLoading: hasPending && (snoozesQ.isLoading || activityQ.isLoading), dataUpdatedAt: Math.max(snoozesQ.dataUpdatedAt, activityQ.dataUpdatedAt), snoozes: snoozesQ.data ?? NO_SNOOZES, activityAt: activityQ.data?.activityAt ?? null };
 
   const now = useMemo(() => new Date(), [setup.dataUpdatedAt, extras.dataUpdatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
-  const guide = useMemo(() => (setup.data ? guideState(setup.data.data, extras.data?.snoozes ?? [], now) : null), [setup.data, extras.data, now]);
+  // Until the snoozes arrive a snoozed step would flash as the next one, so there is no guide yet.
+  const guide = useMemo(() => (setup.data && !(hasPending && snoozesQ.isPending) ? guideState(setup.data.data, extras.snoozes, now) : null), [setup.data, extras.snoozes, now, hasPending, snoozesQ.isPending]);
   const members = membersQ.data ?? [];
 
   // The step the person just finished (here or in any screen): shown as «Hecho: …» with the next step. Cleared when they act on it.
@@ -58,7 +72,7 @@ export function useSetupGuide() {
   }, [guide]);
 
   const message = guide ? nextMessage(guide, role, justDone, members) : null;
-  const nudge = !!guide && nudgeDue(guide, role, extras.data?.activityAt ?? null, now);
+  const nudge = !!guide && nudgeDue(guide, role, extras.activityAt, now);
   // Last known state stays on screen when a refresh fails; the caller says so.
   const stale = (setup.isError || extras.isError) && !!guide;
 

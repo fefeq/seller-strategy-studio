@@ -39,19 +39,29 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
   };
 }
 
-/** Snoozed setup steps of the company and the latest change in the data the setup steps read (SDD strategy-setup-guided-next-step). */
-export async function loadSetupGuideExtras(db: Db, orgId: string): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
+/**
+ * Snoozed setup steps of the company and, only when asked, the latest change in the data the setup steps read
+ * (SDD strategy-setup-guided-next-step). The activity needs one query per table, so screens that don't nudge leave it out.
+ */
+async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
   const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars", col: "updated_at" | "created_at") =>
     db.from(table).select(col).eq("org_id", orgId).order(col, { ascending: false }).limit(1).maybeSingle().then((r) => (r.data as Record<string, string> | null)?.[col] ?? null);
   const [snoozes, ...stamps] = await Promise.all([
     db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
-    newest("positioning", "updated_at"), newest("segments", "updated_at"), newest("quotas", "updated_at"), newest("accounts", "updated_at"),
-    newest("deals", "updated_at"), newest("icp_profiles", "updated_at"), newest("messaging_pillars", "updated_at"),
+    ...(withActivity ? [
+      newest("positioning", "updated_at"), newest("segments", "updated_at"), newest("quotas", "updated_at"), newest("accounts", "updated_at"),
+      newest("deals", "updated_at"), newest("icp_profiles", "updated_at"), newest("messaging_pillars", "updated_at"),
+    ] : []),
   ]);
   const rows = snoozes.data ?? [];
   // Postponing a step is the person's last act on the guide, so it counts as activity.
-  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt: latestActivity([...stamps, ...rows.map((r) => r.created_at)]) };
+  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt: withActivity ? latestActivity([...stamps, ...rows.map((r) => r.created_at)]) : null };
 }
+
+/** Just the snoozes: one query. Enough to pick the next step. */
+export const loadSetupSnoozes = async (db: Db, orgId: string): Promise<Snooze[]> => (await readSetupGuide(db, orgId, false)).snoozes;
+/** Snoozes plus the latest activity (eight queries): for the inactivity nudge and the proactive snapshot. */
+export const loadSetupGuideExtras = (db: Db, orgId: string) => readSetupGuide(db, orgId, true);
 
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
   const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage, guide] = await Promise.all([

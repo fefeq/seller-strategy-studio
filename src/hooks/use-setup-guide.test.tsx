@@ -1,0 +1,72 @@
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode } from "react";
+import { setupStatus, type SetupData } from "@/lib/setup-schema";
+
+// A recording stand-in for the browser client: every query answers empty, and the table names are kept.
+const calls: string[] = [];
+vi.mock("@/integrations/supabase/client", () => {
+  const chain = (): unknown => new Proxy(function () {}, {
+    get: (_t, k) => (k === "then" ? (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res, rej) : () => chain()),
+  });
+  return { supabase: { from: (t: string) => { calls.push(t); return chain(); } } };
+});
+let role = "owner";
+vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { currentOrg: { org_id: "org-1" }, user: { id: "u-1" }, roles: [role] } }) }));
+let setupData: SetupData;
+vi.mock("@/hooks/use-setup", () => ({ useSetup: () => ({ data: { data: setupData, status: setupStatus(setupData) }, isLoading: false, isError: false, dataUpdatedAt: 1 }) }));
+
+import { useSetupGuide } from "@/hooks/use-setup-guide";
+
+const fullPos = Object.fromEntries(["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "category", "key_benefit", "competitive_alternative", "differentiator", "one_liner", "elevator_pitch"].map((k) => [k, "texto"]));
+const full: SetupData = {
+  currency: "EUR", segments: [{ name: "Seg A", acv_min: 1, acv_max: 2, win_rate_target: 20, ae_quota: 100 }], icps: [{ industries: "a", company_size: "b", why_fit: "c", anti_icp: "d" }],
+  positioning: fullPos, pillars: [1, 2, 3].map((n) => ({ title: `T${n}`, message: `M${n}` })), quotas: [{ period: "2026-Q4", amount: 100 }], accounts: 1, deals: 1, quarter: "2026-Q4",
+};
+const ACTIVITY_TABLES = ["positioning", "segments", "quotas", "accounts", "deals", "icp_profiles", "messaging_pillars"];
+const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>;
+const settle = () => new Promise((r) => setTimeout(r, 50));
+
+describe("useSetupGuide loads only what the screen needs (the sidebar mounts it on every screen)", () => {
+  beforeEach(() => { calls.length = 0; role = "owner"; });
+
+  it("queries nothing once every step is complete", async () => {
+    setupData = full;
+    const { result } = renderHook(() => useSetupGuide(), { wrapper });
+    await settle();
+    expect(calls).toEqual([]);
+    expect(result.current.guide?.complete).toBe(true);
+  });
+
+  it("with steps pending and no activity asked, reads only the snoozes: one query", async () => {
+    setupData = { ...full, deals: 0 };
+    const { result } = renderHook(() => useSetupGuide(), { wrapper });
+    await waitFor(() => expect(result.current.guide).not.toBeNull());
+    await settle();
+    expect(calls).toEqual(["setup_step_snoozes"]);
+    expect(result.current.nextStep?.id).toBe("deals");
+  });
+
+  it("reads the activity of the data only when asked, as Inicio's nudge does", async () => {
+    setupData = { ...full, deals: 0 };
+    const { result } = renderHook(() => useSetupGuide({ activity: true }), { wrapper });
+    await waitFor(() => expect(result.current.guide).not.toBeNull());
+    await settle();
+    for (const t of ACTIVITY_TABLES) expect(calls, t).toContain(t);
+  });
+
+  it("reads the members only when a pending step is not the person's to complete (CA-8)", async () => {
+    setupData = { ...full, quotas: [] }; // quota: leaders only
+    role = "ae";
+    const { result } = renderHook(() => useSetupGuide(), { wrapper });
+    await waitFor(() => expect(result.current.guide).not.toBeNull());
+    await settle();
+    expect(calls).toContain("org_members");
+    calls.length = 0;
+    role = "owner";
+    renderHook(() => useSetupGuide(), { wrapper });
+    await settle();
+    expect(calls).not.toContain("org_members");
+  });
+});
