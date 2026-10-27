@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
+import { GuideOffer } from "@/components/setup/guide";
 import { useSetup } from "@/hooks/use-setup";
 import { Briefing } from "@/components/briefing";
 import { NextSteps } from "@/components/next-steps";
@@ -69,6 +70,7 @@ function HomePage() {
       </section>
       <Briefing />
       {leader && <RoadmapCard />}
+      {!hideSetup && <GuideOffer scope="home" onlyWhenDue orgId={me?.currentOrg?.org_id} wrap={(b) => <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs"><p className="eyebrow mb-2">Llevas más de un día sin avanzar</p>{b}</section>} />}
       <div className="grid gap-4 md:grid-cols-4">
         <Stat label="Pipeline abierto" value={fmt(pipeline)} />
         <Stat label="Forecast ponderado" value={fmt(weighted)} />
