@@ -49,7 +49,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-3: Como Owner, quiero que mis credenciales estén protegidas.
 - CA-9: CUANDO guardo una credencial, el sistema DEBE ocultarla a todos los miembros, incluido el Owner, y solo permitir sustituirla.
 - CA-10: El sistema DEBE registrar quién conectó, cambió o desconectó cada cuenta y cuándo.
-- CA-17 [añadido tras la auditoría independiente, 2026-10-27; Fede lo acepta o lo quita]: CUANDO Google devuelve al Owner a NOKKO, el sistema DEBE completar la conexión solo en el mismo navegador que la inició y solo una vez; un enlace de retorno firmado, pero sin ese navegador o ya usado, DEBE rechazarse sin guardar nada.
+- CA-17 [añadido tras la auditoría independiente; aceptado por Fede, 2026-10-27]: CUANDO Google devuelve al Owner a NOKKO, el sistema DEBE completar la conexión solo en el mismo navegador que la inició y solo una vez; un enlace de retorno firmado, pero sin ese navegador o ya usado, DEBE rechazarse sin guardar nada.
 - CA-11: SI mi rol no es Owner, ENTONCES el sistema DEBE mostrar las conexiones en solo lectura y decir quién puede gestionarlas (decidido por Fede: solo el Owner).
 
 ### H-4: Como Owner, quiero controlar el uso y el coste.
@@ -109,10 +109,12 @@ Las resuelve Claude Code comprobándolas en el código; lo que no pueda comproba
 - [Por verificar] Proveedores con soporte de clave por empresa.
 - [Por verificar] Qué hacen hoy los paneles de Stripe y PostHog con sus credenciales.
 - [Por verificar] Estado en `production` (solo se leyó `main`).
+- [Por verificar] Antes de pasar a producción: la revocación y la cookie del retorno con el dominio publicado se prueban con dos empresas y una cuenta de Google de prueba (decidido por Fede, 2026-10-27). Detalle de la revocación en el SDD de Drive §15.
+- Mejora futura anotada (decidido por Fede, 2026-10-27: no se hace ahora): PKCE en el flujo de Google y un «un solo uso» del retorno compartido entre instancias (exige una tabla y una migración).
 
 ## 16. Registro de decisiones (lo completa Fede)
-- Decisiones tomadas:
-- Fecha:
+- Decisiones tomadas (2026-10-27): CA-17 aceptado. Sin PKCE ni «un solo uso» compartido por ahora (mejora futura, §15). Revocación y cookie con dominio publicado se prueban con dos empresas y una cuenta de prueba antes de producción (§15). Estado «Error» con aviso «Sin acceso»: basta. CA-8 se queda en Parcial.
+- Fecha: 2026-10-27
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ## 17. Delta de lo entregado (rama feat/connections-own-account-v2, 2026-10-27)
@@ -127,12 +129,12 @@ Lo entregado es **U-1, U-2 y U-3 solo para Google Drive**; no hay otros proveedo
 | CA-5 | **Parcial** | Comprueba la cuenta antes de guardar (con prueba), pero la guarda de inmediato y el resultado se muestra después de volver, no antes. Tampoco pide confirmación si la cuenta ya está en otra empresa (§8). |
 | CA-6 | Hecho | No guarda y explica el motivo (con prueba). |
 | CA-7 | Hecho | Cambiar y desconectar (con prueba). |
-| CA-8 | Hecho con límites | Deja de usar la cuenta en la siguiente llamada; una llamada ya en curso puede seguir hasta cinco minutos. Dice que lo importado se conserva. La revocación en Google se informa con su resultado real; qué hace Google al revocar es [Por verificar] (SDD de Drive §15). |
+| CA-8 | **Parcial** | Deja de usar la cuenta en la siguiente llamada; una llamada ya en curso puede seguir hasta cinco minutos. Dice que lo importado se conserva. La revocación en Google se informa con su resultado real; qué hace Google al revocar es [Por verificar] (SDD de Drive §15). |
 | CA-9 | Hecho en el esquema | Permisos por columna (migración 0059). Comprobado en un Postgres desechable en una revisión anterior; no está en la suite del repo. |
 | CA-10 | Hecho | Registro de conectar, cambiar, desconectar y fallo (con prueba). |
 | CA-11 | Hecho en servidor | Solo el Owner gestiona (con prueba); el modo solo lectura de la pantalla no tiene prueba. |
 | CA-12 a CA-16 | **No hecho** | U-4, U-5 y U-6. |
-| CA-17 | Hecho | Añadido por la auditoría: el retorno de Google solo se completa en el navegador que lo inició y una sola vez (con prueba). Pendiente de que Fede lo acepte. |
+| CA-17 | Hecho | Añadido por la auditoría y aceptado por Fede (2026-10-27): el retorno de Google solo se completa en el navegador que lo inició y una sola vez, esto último por instancia (con prueba). |
 
 ---
 Validación: OK (autorrevisión). Auditoría: solo linter; la independiente queda pendiente.

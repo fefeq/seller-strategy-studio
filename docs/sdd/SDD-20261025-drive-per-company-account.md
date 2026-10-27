@@ -52,7 +52,7 @@ Founder o miembro cuyo email de acceso no es la cuenta Google donde están los d
 
 ## 8. Casos límite y errores
 - Permiso denegado o cancelado en Google: volver sin cambios y explicarlo (CA-1).
-- Token revocado o caducado desde Google: marcar la conexión como «Sin acceso» y pedir reconectar; no perder lo importado (CA-4, CA-6). Entregado: el estado se llama «Error» (SDD de conexiones, CA-1) y el aviso empieza por «Sin acceso»; Fede decide si basta o se cambia el nombre del estado.
+- Token revocado o caducado desde Google: marcar la conexión como «Sin acceso» y pedir reconectar; no perder lo importado (CA-4, CA-6). Entregado: el estado se llama «Error» (SDD de conexiones, CA-1) y el aviso empieza por «Sin acceso»; Decidido por Fede (2026-10-27): basta.
 - Cuenta sin documentos accesibles: mostrar vacío con explicación (CA-7).
 - Archivo sin acceso dentro de una carpeta: marcarlo «Sin acceso» y seguir con el resto (CA-7).
 - Cuenta ya conectada en otra empresa: informar y pedir confirmación.
@@ -90,7 +90,8 @@ Las resuelve Claude Code comprobándolas en el código; lo que no pueda comproba
 
 ## 15. Pendiente de verificar
 - [Por verificar] Mecanismo actual de autorización en producción. Anotado 2026-10-26 (lectura del repo, no de producción): una sola cuenta de Drive para toda la aplicación vía el gestor de conectores (`GOOGLE_DRIVE_API_KEY`); los scopes `drive.readonly` + `drive.file` figuran en `src/lib/AGENTS.md` pero no se pueden comprobar desde el código. Sigue pendiente: lo decide Fede.
-- [Por verificar] Qué hace Google al revocar un token de actualización. Documentado: revocar un token revoca el permiso concedido a ese cliente OAuth y esa cuenta, así que podría invalidar también el token nuevo de la misma cuenta (cambiar a la misma cuenta) y el de otra empresa que use la misma cuenta. No se ha comprobado con una cuenta real (sin credenciales ni cuenta de prueba). Mientras tanto el código **no revoca** el token antiguo si la cuenta nueva es la misma ni si otra empresa usa la misma cuenta, y la pantalla solo dice «revocado» cuando Google contestó 2xx. Decide Fede si se prueba con dos empresas y una cuenta de prueba antes de pasar a producción. Anotado 2026-10-27.
+- [Por verificar] Qué hace Google al revocar un token de actualización. Documentado: revocar un token revoca el permiso concedido a ese cliente OAuth y esa cuenta, así que podría invalidar también el token nuevo de la misma cuenta (cambiar a la misma cuenta) y el de otra empresa que use la misma cuenta. No se ha comprobado con una cuenta real (sin credenciales ni cuenta de prueba). Mientras tanto el código **no revoca** el token antiguo si la cuenta nueva es la misma ni si otra empresa usa la misma cuenta, y la pantalla solo dice «revocado» cuando Google contestó 2xx. Decidido por Fede (2026-10-27): la revocación y la cookie del retorno con el dominio publicado se prueban con dos empresas y una cuenta de Google de prueba antes de pasar a producción. Anotado 2026-10-27.
+- Mejora futura anotada (decidido por Fede, 2026-10-27: no se hace ahora): PKCE y un «un solo uso» del retorno compartido entre instancias (exige tabla y migración).
 - [Por verificar] Requisitos de verificación de Google. Se parte de `drive.file`, que Google trata como no sensible; no confirmado.
 - Decidido por Fede (README): conexión por empresa.
 - Verificado 2026-10-26: con `drive.file` y Google Picker sobre una cuenta de prueba, Fede informa «funciona OK» para leer los documentos de una carpeta elegida. Es un resultado comunicado por Fede, sin el detalle de las llamadas (`files.list` de la carpeta, `files.get` de un hijo); no lo he reproducido yo. Decisión de diseño: permiso `drive.file` + selector, sin `drive.readonly`.
