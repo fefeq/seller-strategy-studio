@@ -152,6 +152,20 @@ describe("board: list and team view (desktop table and phone cards)", () => {
       expect(hoisted.decide).toHaveBeenCalledWith({ data: { id: "a", decision: "approve" } }),
     );
   });
+  it("the optional reason typed on a strategic row travels with the decision; operational rows have no reason field", async () => {
+    hoisted.rows = [strategic("a"), operational("o")];
+    wrap(<SuggestionBoard />);
+    await screen.findAllByText("Estratégica a");
+    const fields = screen.getAllByLabelText("Motivo de tu decisión (opcional)");
+    expect(fields).toHaveLength(2); // the strategic row, in the table and in the phone cards
+    fireEvent.change(fields[0]!, { target: { value: "  Tras la reunión  " } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Descartar" })[0]!);
+    await waitFor(() =>
+      expect(hoisted.decide).toHaveBeenCalledWith({
+        data: { id: "a", decision: "dismiss", reason: "Tras la reunión" },
+      }),
+    );
+  });
   it("CA-7: of 10 open strategic suggestions only 7 are listed, and every operational one stays", async () => {
     hoisted.rows = [
       ...Array.from({ length: 10 }, (_, i) =>
@@ -193,9 +207,26 @@ describe("deck (Inicio and card view of Sugerencias)", () => {
     wrap(<SuggestionDeck items={items as unknown as Items} keyboard={false} />);
     expect(screen.getByText(/1 de 7/)).toBeInTheDocument();
   });
+  it("the optional reason typed on a strategic card is sent when the swipe commits; an operational card sends none", async () => {
+    vi.useFakeTimers();
+    try {
+      wrap(<SuggestionDeck items={[strategic("a")] as unknown as Items} keyboard={false} />);
+      fireEvent.change(screen.getByLabelText("Motivo de tu decisión (opcional)"), {
+        target: { value: " No aplica " },
+      });
+      fireEvent.click(screen.getByRole("button", { name: /Descartar/ }));
+      await vi.advanceTimersByTimeAsync(5100);
+      expect(hoisted.decide).toHaveBeenCalledWith({
+        data: { id: "a", decision: "dismiss", reason: "No aplica" },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("an operational card keeps «Hacer» and has no evidence block", () => {
     wrap(<SuggestionDeck items={[operational("o")] as unknown as Items} keyboard={false} />);
     expect(screen.getByRole("button", { name: /Hacer/ })).toBeInTheDocument();
     expect(document.querySelector("details")).toBeNull();
+    expect(screen.queryByLabelText("Motivo de tu decisión (opcional)")).toBeNull();
   });
 });
