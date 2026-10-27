@@ -5,6 +5,7 @@
 // normalize them (U-2) and the origin stamp (U-3) read these definitions.
 import { COUNTRY_CODES, REGIONS } from "@/lib/assignment";
 import { SOURCES as PERSON_SOURCES } from "@/lib/roles";
+import { LOSS_REASON_KEYS } from "@/lib/loss-reasons";
 
 /** How a field is kept while someone edits it (SDD section 5). */
 export type Persistence = "permanent" | "screen_draft" | "session" | "pending_action" | "memory";
@@ -23,7 +24,8 @@ export type ConceptId =
   | "pais" | "paises" | "region" | "geografia_texto"
   | "tamano_empleados" | "tamano_descripcion"
   | "importe"
-  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada";
+  | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada"
+  | "motivo_perdida" | "detalle_perdida" | "competidor_perdida";
 
 export type Concept = {
   id: ConceptId;
@@ -59,6 +61,9 @@ export const CONCEPTS: Concept[] = [
     allowedBy: { tasks: ["manual", "agent", "debate"], agent_pending_actions: ["agent", "mcp"], memories: ["chat", "meeting", "decision", "suggestion", "manual"] },
     display: "Etiqueta en español del valor",
   },
+  { id: "motivo_perdida", label: "Motivo de pérdida", meaning: "Por qué se perdió un deal; vacío es «sin dato», nunca se deduce.", kind: "enum", format: "Valor de una lista cerrada (Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro)", allowed: LOSS_REASON_KEYS, display: "Etiqueta en español (lossLabel)" },
+  { id: "detalle_perdida", label: "Detalle de la pérdida", meaning: "Texto libre que acompaña al motivo de pérdida.", kind: "text", format: "Texto libre de hasta 500 caracteres", display: "Tal cual se escribió" },
+  { id: "competidor_perdida", label: "Competidor de la pérdida", meaning: "Contra quién se perdió un deal; texto libre hasta que exista la entidad competidor (SDD 7b).", kind: "text", format: "Texto libre de hasta 200 caracteres; mayúsculas y espacios no distinguen al contar", display: "Tal cual se escribió" },
   { id: "fuente_citada", label: "Fuente citada", meaning: "Nombre del medio, dirección web o etiqueta de donde sale un hallazgo o un registro.", kind: "text", format: "Texto libre, sin valores cerrados", display: "Tal cual se guardó" },
 ];
 
@@ -82,6 +87,10 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  // Pérdida de un deal (SDD estrategia F0)
+  { table: "deals", column: "lost_reason", concept: "motivo_perdida", persistence: saved, note: "Dialog when moving to Perdido; editable later in the deal" },
+  { table: "deals", column: "lost_reason_detail", concept: "detalle_perdida", persistence: saved },
+  { table: "deals", column: "lost_competitor", concept: "competidor_perdida", persistence: saved, note: "Proposed from the MEDDPICC Competition note; the person edits it" },
   // País
   { table: "accounts", column: "country", concept: "pais", persistence: saved, note: "FitFields saves on blur" },
   { table: "account_assignment_rules", column: "country", concept: "pais", persistence: saved },
@@ -153,6 +162,9 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   canal_de_entrada: ["src/routes/_authenticated/deals.tsx", "src/routes/_authenticated/people.tsx", "src/components/metrics/revops-panels.tsx", "src/routes/_authenticated/metrics.tsx"],
   creado_por: ["src/routes/_authenticated/memory.tsx", "src/routes/_authenticated/debates.tsx"],
   fuente_citada: ["src/components/leads/lead-dialogs.tsx", "src/lib/web-research-core.ts"],
+  motivo_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx", "src/lib/loss-reasons.ts"],
+  detalle_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx"],
+  competidor_perdida: ["src/components/loss-reason.tsx", "src/routes/_authenticated/deals.tsx", "src/lib/loss-reasons.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */
