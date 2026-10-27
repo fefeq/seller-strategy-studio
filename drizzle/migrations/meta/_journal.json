@@ -435,6 +435,13 @@
       "when": 1793058400000,
       "tag": "0063_undo_keeps_confirmations",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "7",
+      "when": 1793490400000,
+      "tag": "0068_strategic_suggestions_and_loss_reason",
+      "breakpoints": true
     }
   ]
 }

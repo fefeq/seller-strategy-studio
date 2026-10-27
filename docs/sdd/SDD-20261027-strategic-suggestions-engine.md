@@ -216,11 +216,11 @@ Respondidas por Fede el 27 oct:
 5. ¿Validas esta lista de motivos de pérdida: Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro? Validada tal cual por Fede el 27 oct (respuesta en sesión: «aplica tus recomendaciones y continúa»).
 
 ## 15. Pendiente de verificar
-- [Verificado 2026-10-27 en `main`, ver sección 16] Columnas y estados actuales de la tabla de sugerencias: no admite evidencia estructurada ni nivel; se amplía con `suggestions.strategy` (migración 0064).
+- [Verificado 2026-10-27 en `main`, ver sección 16] Columnas y estados actuales de la tabla de sugerencias: no admite evidencia estructurada ni nivel; se amplía con `suggestions.strategy` (migración 0068).
 - [Por verificar] Estado en `production` y en la preproducción: solo se leyó `main` en el commit d0e4821.
 - [Por verificar] Coste real de una revisión estratégica (sin dato) y cómo se contabiliza en el presupuesto de la empresa.
 - [Por verificar] Volumen de datos reales por empresa (sin dato; la Fase A mostró 0 leads el 21 de octubre de 2026).
-- [Verificado 2026-10-27 en `main`, ver sección 16] No existe motivo de pérdida ni competidor por deal: ni columna, ni migración, ni uso en el código. Se añaden `deals.lost_reason`, `lost_reason_detail` y `lost_competitor` (migración 0064).
+- [Verificado 2026-10-27 en `main`, ver sección 16] No existe motivo de pérdida ni competidor por deal: ni columna, ni migración, ni uso en el código. Se añaden `deals.lost_reason`, `lost_reason_detail` y `lost_competitor` (migración 0068).
 - [Por verificar] Estado de aplicación de las migraciones 0058, 0060, 0061 y 0063 en la base real.
 - [Por verificar] Contenido real del campo «Competition» de MEDDPICC en deals de empresas reales (sin dato). Del código solo consta su forma: `{score, note}` desde la pantalla y texto suelto desde el Agente; F0 lo usa solo como propuesta editable.
 - [Resuelto 2026-10-27] Lista de motivos de pérdida: validada por Fede (pregunta 5).
@@ -249,12 +249,12 @@ Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic
 9. Sin LLM en F0. Ninguna llamada nueva a un modelo ni a un proveedor.
 
 ### Tareas
-- F0-1 Migración 0064 (suggestions.strategy, strategy_decisions, deals.lost_*) con prueba en Postgres local de dos empresas ficticias. Hecho.
+- F0-1 Migración 0068 (suggestions.strategy, strategy_decisions, deals.lost_*) con prueba en Postgres local de dos empresas ficticias. Hecho.
 - F0-2 Módulos puros `loss-reasons.ts` y `strategy-suggestions.ts` y escrituras `strategy-core.ts`, con pruebas. Hecho.
 - F0-3 Diálogo de pérdida en Pipeline y sección «Motivo de pérdida» en deals perdidos. Hecho, sin prueba de componente (el repo no tiene pruebas de pantallas de Pipeline): comprobado con tipos y la lógica pura.
 - F0-4 Tarjetas de sugerencia con evidencia, nivel, muestra y tres botones, y decisiones con motivo. Hecho; sin detectores en F0, así que ninguna sugerencia estratégica aparece hasta F1.
 - F0-5 `update_deal` del Agente y del MCP con motivo y competidor, manifiesto MCP actualizado. Hecho.
-- F0-6 Pendiente de Fede: aplicar la migración 0064 en una copia de la base real y revisarla antes de la base real.
+- F0-6 Pendiente de Fede: aplicar la migración 0068 en una copia de la base real y revisarla antes de la base real.
 
 **F1 · Reglas fijas (rama apilada sobre F0, sin IA)**
 - F1-1 Diez detectores puros en `src/lib/proactive/detectors/strategy-*.ts`, registrados en `STRATEGY_DETECTORS` y ejecutados por `detect`; solo disparan si el snapshot trae `strategy` (CA-24). Datos nuevos cargados por `loadSnapshot` (ICP, cuentas, deals, historial de etapas, productos, líneas, costes y presupuestos). Hecho.
