@@ -121,6 +121,12 @@ describe("CA-5: descartada sin evidencia nueva, no vuelve a mostrarse", () => {
     expect(r).toMatchObject({ action: "reopen", patch: { status: "pending", snoozed_until: null } });
     expect((r as { patch: { strategy: unknown } }).patch.strategy).toEqual(found.strategy);
   });
+  it("it stays hidden when records only drop out of the evidence (nothing new)", () => {
+    const existing = row({ status: "dismissed", decided_fingerprint: fp });
+    expect(reconcile(existing, buildStrategySuggestion({ ...base, evidence: ev(5).slice(0, 4), sample_size: 5 }), now)).toEqual({ action: "keep" });
+    const snoozed = row({ status: "snoozed", snoozed_until: "2026-10-30T10:00:00Z", decided_fingerprint: fp });
+    expect(reconcile(snoozed, buildStrategySuggestion({ ...base, evidence: ev(5).slice(1), sample_size: 5 }), now)).toEqual({ action: "keep" });
+  });
   it("a brand new key is inserted; an open one with new evidence only refreshes its evidence", () => {
     const found = buildStrategySuggestion({ ...base, evidence: ev(6) });
     expect(reconcile(null, found, now)).toEqual({ action: "insert" });
