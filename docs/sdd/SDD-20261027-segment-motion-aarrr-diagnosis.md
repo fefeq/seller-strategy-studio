@@ -36,6 +36,9 @@ NOKKO trata igual a todos los segmentos aunque se vendan de formas distintas (PL
   - Referral: siempre «no medido» (no hay fuente).
 - **CA-6:** sin datos o sin evento configurado, la fase sale «sin datos». Nunca 0 ni estimaciones.
 - **CA-7:** el veredicto «fuga» solo aparece si el segmento tiene un objetivo contra el que comparar. Sin objetivo, se muestran valores sin juicio.
+  - Objetivo = solo lo que existe: `win_rate_target` (win rate) y `payback_months` (payback, solo con CAC real). No hay objetivos por fase AARRR.
+  - «Fuga» = cualquier valor peor que el objetivo, sin tolerancia ni muestra mínima; siempre se muestra el denominador.
+  - Revenue según `acquisition_motion`: `plg` = prueba a pago (sin objetivo, nunca veredicto); `slg` = deals ganados, win rate y payback (con veredicto); `marketing`, `partner` o sin definir = ambas fuentes sin juicio.
 - **CA-8:** herramienta de chat y MCP `get_funnel_diagnosis`, de lectura, sin llamadas a proveedores externos (solo lee la base de datos) y filtrada por `org_id`.
 - **CA-9:** una vista en Estrategia muestra lo mismo que la herramienta, con la misma función.
 
@@ -87,7 +90,9 @@ T-2 y T-3 pueden ir en paralelo; T-5 y T-6 también.
 - **Sin verificar:** los tests no corren en la sesión (`bun install` bloqueado por el proxy, 403); las políticas RLS de `segments` no están en el repo; `leads` tiene `segment_id` pero no se ha comprobado su RLS ni su volumen.
 
 ## 12. Decisión
-Aceptado con cambios — Fede (2026-10-27): columna separada `acquisition_motion`, retención solo a nivel empresa, `list_segments` nueva. T-1 a T-3 en el PR #42 (borrador, sin verificar con tests).
+Aceptado con cambios — Fede (2026-10-27): columna separada `acquisition_motion`, retención solo a nivel empresa, `list_segments` nueva; objetivo, umbral de «fuga» y Revenue por motion como en CA-7; la migración 0071 la aplica Lovable al sincronizar (no verificado).
+- T-1 a T-3: PR #42, fusionado (tsc y 778 tests en una copia con dependencias de npmjs, no del lockfile).
+- T-4 a T-7: PR #43, borrador. No probado en navegador.
 
 ---
 Autoauditoría: OK; la sección 11 recoge lo verificado y lo que sigue sin verificar.
