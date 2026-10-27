@@ -103,6 +103,9 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
   };
 }
 
+/** Detectors whose suggestion reopens when it is found again after the system closed it as «resolved». */
+const REOPENABLE = new Set(["setup_incomplete"]);
+
 /**
  * Saves what the detectors found and closes what no longer applies. A pending suggestion the user worked
  * on with «Resolver» (touched) closes as done by the user ("approved"); the rest close as "resolved"
@@ -116,6 +119,11 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
     );
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
+  // A setup step comes and goes (the order changed, the step was reopened by an edit, the quota's quarter turned): the same key is emitted
+  // again and the unique (company, key) would keep the row we closed as «resolved» closed forever. Reopen those. A dismissed one stays
+  // dismissed: the person said no, and a postponement that ended already produces a key of its own.
+  const again = found.filter((f) => REOPENABLE.has(f.detector)).map((f) => f.dedupe_key);
+  if (again.length) await db.from("suggestions").update({ status: "pending", snoozed_until: null, notified_at: null, updated_at: new Date().toISOString() }).eq("org_id", orgId).in("dedupe_key", again).eq("status", "resolved");
   // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
   const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)");
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
