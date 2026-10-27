@@ -77,7 +77,7 @@ const raw: Record<string, string> = {
   segments: "acv_max acv_min ae_per_se ae_quota cac_target created_at created_by cycle_days gross_margin_pct id motion name notes org_id payback_months priority sdr_per_ae updated_at updated_by win_rate_target",
   sensing_notes: "account_id context created_at created_by emerging heard id interviewee journey_id kind listening_level occurred_on org_id surprised updated_at updated_by",
   // Deviation from the ratchet (SDD strategy-setup-guided-next-step, U-2): a new table has org_id and created_at, which no concept covers, so its 5 columns
-  // go here and BASELINE_MAX rises by 5. Open question for Dani: should the catalog cover technical columns of new tables?
+  // go here and BASELINE_MAX rises by 5. Open decision for Fede (SDD strategy-setup-guided-next-step, section 14.4): should the catalog cover technical columns of new tables?
   setup_step_snoozes: "created_at org_id snoozed_by snoozed_until step_id",
   stakeholders: "account_id buying_role created_at created_by email id linkedin_url name org_id phone priorities reports_to research support title updated_at updated_by",
   stripe_connections: "account_name connected_by created_at key_hint last_error last_synced_at livemode org_id restricted status vault_secret_id",
