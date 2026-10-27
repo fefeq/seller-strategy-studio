@@ -57,28 +57,47 @@ describe("postponing a setup step and its suggestion (CA-7)", () => {
   });
 
   it("the guide itself brings the step back when the postponement ends (screen and agent)", () => {
-    expect(detect(snap("2026-11-04T08:00:00Z", SNOOZED)).map((s) => s.dedupe_key)).toEqual(["setup_incomplete:quota"]);
+    expect(detect(snap("2026-11-04T08:00:00Z", SNOOZED)).map((s) => s.dedupe_key)).toEqual(["setup_incomplete:quota:2026-11-03"]);
     expect(detect(snap("2026-11-02T08:00:00Z", SNOOZED))).toEqual([]);
   });
 
-  // KNOWN GAP, reported to Fede: the suggestion row keeps its key (unique per company), so once it was closed or dismissed the upsert
-  // that should bring it back is ignored. `it.fails` passes while that is true and starts failing the day it is fixed.
-  it.fails("the suggestion comes back when the postponement ends, after the postponement closed it", async () => {
+  // The row of a closed or dismissed suggestion keeps its key (unique per company), so the one that returns carries the day the postponement ended.
+  it("the suggestion comes back when the postponement ends, after the postponement closed it", async () => {
     const store: Row[] = [];
     const db = fakeDb(store);
     await run(db, snap("2026-10-27T08:00:00Z"));
     await run(db, snap("2026-10-27T09:00:00Z", SNOOZED));
     await run(db, snap("2026-11-04T08:00:00Z", SNOOZED));
-    expect(row(store)?.status).toBe("pending");
+    expect(row(store)?.status).toBe("resolved"); // the old row stays closed
+    expect(store.find((r) => r.dedupe_key === "setup_incomplete:quota:2026-11-03")?.status).toBe("pending");
   });
 
-  it.fails("the suggestion comes back when the postponement ends, even if the person had dismissed it before", async () => {
+  it("the suggestion comes back when the postponement ends, even if the person had dismissed it before", async () => {
     const store: Row[] = [];
     const db = fakeDb(store);
     await run(db, snap("2026-10-27T08:00:00Z"));
     row(store)!.status = "dismissed";
     await run(db, snap("2026-10-27T09:00:00Z", SNOOZED));
     await run(db, snap("2026-11-04T08:00:00Z", SNOOZED));
-    expect(row(store)?.status).toBe("pending");
+    expect(row(store)?.status).toBe("dismissed");
+    expect(store.find((r) => r.dedupe_key === "setup_incomplete:quota:2026-11-03")?.status).toBe("pending");
+  });
+
+  it("a second postponement and its end give yet another suggestion, and nothing doubles while it is open", async () => {
+    const store: Row[] = [];
+    const db = fakeDb(store);
+    const later = [{ step_id: "quota", snoozed_until: "2026-11-10T11:00:00.000Z" }];
+    await run(db, snap("2026-11-04T08:00:00Z", SNOOZED));
+    await run(db, snap("2026-11-04T09:00:00Z", SNOOZED));
+    expect(store.filter((r) => r.status === "pending")).toHaveLength(1);
+    await run(db, snap("2026-11-05T08:00:00Z", later)); // postponed again: the open one closes
+    await run(db, snap("2026-11-11T08:00:00Z", later));
+    expect(store.filter((r) => r.status === "pending").map((r) => r.dedupe_key)).toEqual(["setup_incomplete:quota:2026-11-10"]);
+  });
+
+  it("the step is still found from the key: the resolve plan and Inicio read the step as the second part", () => {
+    const found = detect(snap("2026-11-04T08:00:00Z", SNOOZED))[0]!;
+    expect(found.dedupe_key.split(":")[1]).toBe("quota");
+    expect(found.dedupe_key.startsWith("setup_incomplete:")).toBe(true);
   });
 });

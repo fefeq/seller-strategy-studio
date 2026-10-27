@@ -6,11 +6,14 @@ import { setupStatus, type SetupData } from "@/lib/setup-schema";
 
 // A recording stand-in for the browser client: every query answers empty, and the table names are kept.
 const calls: string[] = [];
+const writes: string[] = [];
 vi.mock("@/integrations/supabase/client", () => {
-  const chain = (): unknown => new Proxy(function () {}, {
-    get: (_t, k) => (k === "then" ? (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res, rej) : () => chain()),
+  const chain = (t: string): unknown => new Proxy(function () {}, {
+    get: (_t, k: string) => (k === "then"
+      ? (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => Promise.resolve({ data: [], error: null }).then(res, rej)
+      : (...a: unknown[]) => { if (k === "update" || k === "delete" || k === "upsert") writes.push(`${t}.${k}:${JSON.stringify(a[0] ?? null)}`); return chain(t); }),
   });
-  return { supabase: { from: (t: string) => { calls.push(t); return chain(); } } };
+  return { supabase: { from: (t: string) => { calls.push(t); return chain(t); } } };
 });
 vi.mock("sonner", () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
 let role = "owner";
@@ -72,6 +75,18 @@ describe("useSetupGuide loads only what the screen needs (the sidebar mounts it 
     renderHook(() => useSetupGuide(), { wrapper });
     await settle();
     expect(calls).not.toContain("org_members");
+  });
+});
+
+describe("clearing a postponement", () => {
+  it("ends it now instead of deleting the row, so the returning suggestion gets a key of its own", async () => {
+    setupData = { ...full, deals: 0 };
+    writes.length = 0;
+    const { result } = renderHook(() => useSetupGuide(), { wrapper });
+    await waitFor(() => expect(result.current.guide).not.toBeNull());
+    await result.current.unsnooze("deals");
+    expect(writes).toHaveLength(1);
+    expect(writes[0]).toMatch(/^setup_step_snoozes\.update:\{"snoozed_until":"\d{4}-\d{2}-\d{2}T[\d:.]+Z","snoozed_by":"u-1"\}$/);
   });
 });
 

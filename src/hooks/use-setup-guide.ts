@@ -94,11 +94,12 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
     return true;
   }, [orgId, userId, role, refresh]);
 
+  // Clearing a postponement ends it now instead of deleting the row: the detector keys the returning suggestion on the day it ended.
   const unsnooze = useCallback(async (stepId: string) => {
-    if (!orgId) return;
-    const { error } = await supabase.from("setup_step_snoozes").delete().eq("org_id", orgId).eq("step_id", stepId);
+    if (!orgId || !userId) return;
+    const { error } = await supabase.from("setup_step_snoozes").update({ snoozed_until: new Date().toISOString(), snoozed_by: userId }).eq("org_id", orgId).eq("step_id", stepId);
     if (error) toast.error(errorText(error)); else await refresh();
-  }, [orgId, refresh]);
+  }, [orgId, userId, refresh]);
 
   const nextStep = guide ? nextFor(guide, role) : null;
 

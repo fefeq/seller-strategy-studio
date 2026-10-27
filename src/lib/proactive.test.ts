@@ -137,7 +137,7 @@ describe("detectors", () => {
   it("a snoozed setup step gets no suggestion until its date, and the next step takes its place (CA-7)", () => {
     const s = snap({ setup: setup({ quotas: [], pillars: [] }), setupSnoozes: [{ step_id: "pillars", snoozed_until: "2026-11-05T23:59:59.999Z" }] });
     expect(detect(s).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:quota");
-    expect(detect({ ...s, now: new Date("2026-11-06T08:00:00Z") }).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:pillars");
+    expect(detect({ ...s, now: new Date("2026-11-06T08:00:00Z") }).find((x) => x.detector === "setup_incomplete")?.dedupe_key).toBe("setup_incomplete:pillars:2026-11-05"); // keyed by the day the postponement ended, so it is a new suggestion even if the old one was closed
   });
   it("a company that left the guide for over a day gets the setup suggestion at top priority (CA-6)", () => {
     const base = snap({ setup: setup({ quotas: [] }) });
