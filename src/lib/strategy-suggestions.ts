@@ -394,3 +394,10 @@ export function reconcile(
         : { action: "refresh", patch };
   }
 }
+
+/** A price suggestion (product_price with the «price:» cause) is only for roles that may see prices (CA-19, same roles as canPrice). */
+export const needsPriceAccess = (r: { detector?: string | null; dedupe_key?: string | null }) =>
+  r.detector === "strategy_product_price" && (r.dedupe_key ?? "").startsWith("strategy_product_price:price:");
+export const PRICE_ROLES = ["owner", "sales_leader", "deal_desk"] as const;
+export const canViewStrategy = <T extends { detector?: string | null; dedupe_key?: string | null }>(r: T, roles: readonly string[]): boolean =>
+  !needsPriceAccess(r) || roles.some((x) => (PRICE_ROLES as readonly string[]).includes(x));

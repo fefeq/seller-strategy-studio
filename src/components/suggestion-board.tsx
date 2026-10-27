@@ -8,6 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { decideSuggestion } from "@/lib/agent.functions";
+import { canViewStrategy, limitStrategy, parseStrategy } from "@/lib/strategy-suggestions";
 import {
   STATUS_LABEL,
   ageDays,
@@ -20,7 +21,6 @@ import {
 import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
-import { limitStrategy, parseStrategy } from "@/lib/strategy-suggestions";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
@@ -42,7 +42,7 @@ export function SuggestionBoard() {
   const [reasons, setReasons] = useState<Record<string, string>>({});
 
   const { data } = useQuery({
-    queryKey: ["suggestions", "board", orgId],
+    queryKey: ["suggestions", "board", orgId, (me?.roles ?? []).join(",")],
     enabled: !!orgId,
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
@@ -50,7 +50,7 @@ export function SuggestionBoard() {
         supabase
           .from("suggestions")
           .select(
-            "id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until,strategy",
+            "id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until,detector,dedupe_key,strategy",
           )
           .eq("org_id", orgId!)
           .or(`status.in.(pending,snoozed),updated_at.gte.${since}`)
@@ -64,7 +64,7 @@ export function SuggestionBoard() {
         ? await supabase.from("profiles").select("id,full_name").in("id", ids)
         : { data: [] };
       return {
-        items: s.data ?? [],
+        items: (s.data ?? []).filter((r) => canViewStrategy(r, me?.roles ?? [])),
         members: (p ?? []).map((x) => ({ id: x.id, name: x.full_name || "Sin nombre" })),
       };
     },

@@ -16,7 +16,7 @@ export type Snapshot = {
   stakeholders: { account_id: string; buying_role: string | null }[];
   registrations: { id: string; account_name: string; status: string; expires_at: string | null }[];
   trials: { segment_id: string | null; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null }[];
-  segments: { id: string; name: string }[];
+  segments: { id: string; name: string; cac_target?: number | null; payback_months?: number | null }[];
   /** Open leads (Nuevo…SQL) and the company's stage limits; optional so older snapshots still work. */
   leads?: { id: string; company: string; stage: string; stage_entered_at: string; next_step_at: string | null; owner_id: string | null; account_id: string | null; contacted_at?: string | null; contact_name?: string | null }[];
   leadSla?: import("@/lib/lead-funnel").LeadSla;
@@ -29,7 +29,22 @@ export type Snapshot = {
   /** Account news signals found in the last 14 days (Firecrawl). Optional so older snapshots still work. */
   signals?: { id: string; account_id: string; title: string; kind: string; summary: string; relevance: string; url: string; found_at: string }[];
   /** Product usage per company domain from the company's PostHog. Optional so older snapshots still work. */
+  /** Extra data for the strategic rules (SDD-20261027 F1). Optional so older snapshots still work; without it no strategic rule fires. */
+  strategy?: StrategyData;
   usage?: { domain: string; account_id: string | null; active_users_7d: number; active_users_prev_7d: number }[];
+};
+
+export type StrategyData = {
+  icps: { id: string; name: string; industries: string | null; company_size: string | null; geography: string | null; countries: string[]; anti_icp: string | null; segment_id: string | null; created_at: string }[];
+  accounts: { id: string; name: string; industry: string | null; size: string | null; country: string | null; segment_id: string | null; tier: string | null }[];
+  deals: { id: string; name: string; stage: string; amount: number | null; account_id: string | null; segment_id: string | null; close_date: string | null; created_at: string; closed_at: string | null; updated_at: string; lost_reason: string | null; lost_competitor: string | null }[];
+  history: { deal_id: string; from_stage: string | null; to_stage: string; changed_at: string }[];
+  products: { id: string; name: string; active: boolean; created_at: string }[];
+  lines: { id: string; deal_id: string; product_id: string | null; name: string; discount_pct: number; unit_price: number; created_at: string }[];
+  /** Acquisition costs entered per segment (cac_costs). */
+  costs: { segment_id: string | null; period: string }[];
+  /** Planned revenue per segment and quarter (segment_budget_quarters), the target the coverage is measured against. */
+  budgets: { segment_id: string; period: string; plan_revenue: number | null }[];
 };
 
 export type SuggestionAction = { tool: string; args: Record<string, unknown> };
@@ -43,6 +58,8 @@ export type Suggestion = {
   link: string | null;
   action: SuggestionAction | null;
   user_id: string | null;
+  /** Only strategic suggestions (strategy_* detectors, F0/F1). */
+  strategy?: import("@/lib/strategy-suggestions").StrategyMeta;
 };
 
 export type Detector = (s: Snapshot) => Suggestion[];

@@ -1,7 +1,7 @@
 # SDD-20261027-strategic-suggestions-engine · [Feature] Motor de sugerencias estratégicas para diseñar, ejecutar y monitorear el GTM
 
 **Tipo:** Feature (maestro, dividido en fases) · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 en curso (PR en borrador), F1 a F7 sin empezar; pregunta 5 resuelta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
+**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 y F1 en curso (PR en borrador cada una, F1 apilada sobre F0), F2 a F7 sin empezar; pregunta 5 resuelta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
 **Depende de:** SDD universal de campos (1) y acciones sobre campos (2) para propuestas pendientes, origen y deshacer; SDD 7b (competidores como entidad) para las reglas sobre competidores; SDD 9 (Theory U proactivo) como fuente de evidencia, sin duplicarlo.
 **Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las secciones 14 y 16 conservan el nombre de la plantilla: las preguntas las responde Fede y la sección 16 la completa Claude Code.
 
@@ -255,6 +255,13 @@ Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic
 - F0-4 Tarjetas de sugerencia con evidencia, nivel, muestra y tres botones, y decisiones con motivo. Hecho; sin detectores en F0, así que ninguna sugerencia estratégica aparece hasta F1.
 - F0-5 `update_deal` del Agente y del MCP con motivo y competidor, manifiesto MCP actualizado. Hecho.
 - F0-6 Pendiente de Fede: aplicar la migración 0068 en una copia de la base real y revisarla antes de la base real.
+
+**F1 · Reglas fijas (rama apilada sobre F0, sin IA)**
+- F1-1 Diez detectores puros en `src/lib/proactive/detectors/strategy-*.ts`, registrados en `STRATEGY_DETECTORS` y ejecutados por `detect`; solo disparan si el snapshot trae `strategy` (CA-24). Datos nuevos cargados por `loadSnapshot` (ICP, cuentas, deals, historial de etapas, productos, líneas, costes y presupuestos). Hecho.
+- F1-2 CA-19: `canViewStrategy` oculta las sugerencias de precio (causa `price:`) a quien no sea owner, sales_leader o deal_desk, los mismos roles que `canPrice`; aplicado en Sugerencias, el tablero, la herramienta `list_suggestions` del agente y el email diario. Hecho.
+- F1-3 CA-22 (competidor sin ficha de contramedida): no implementada. Hoy el competidor es texto libre en `lost_competitor` y no hay entidad de competidor ni ficha; depende del SDD 7b. La regla de CA-23 sí usa el competidor como texto.
+- Decisiones propias de F1: (a) CA-15 compara el trimestre actual y el siguiente, porque la cobertura pasada no se guarda; el objetivo es `plan_revenue` de `segment_budget_quarters`. (b) CA-13 considera que un ICP encaja cuando una cuenta coincide en sector o tamaño y no cae en el anti-ICP; leads y deals cuentan a través de su cuenta. (c) CA-17 exige 3 deals abiertos y el 30 % del pipeline abierto en la etapa y 5 deals con historial para comparar conversiones; sin muestra emite «falta dato» sin cifra (CA-25). (d) CA-18 y CA-23 disparan desde 3 deals; con menos de 5 registros el nivel sale «baja» por la regla fija (CA-25). (e) CA-20 solo juzga productos con más de un año de vida. (f) CA-21 no duplica el aviso de configuración: hoy el posicionamiento pesa 20 puntos y siempre es el siguiente paso pendiente, así que la regla queda latente hasta que ese orden cambie. (g) CA-12 compara por sector, tamaño y país con coincidencia exacta normalizada (sin tildes ni mayúsculas) para país y por la regla de `accountFit` para sector y tamaño.
+- Sin verificar en F1: no se ha probado con datos reales, ni la carga de datos de `loadSnapshot` contra una base real (solo tipos y pruebas puras); el correo diario excluye todas las sugerencias de precio porque no conoce el rol de cada destinatario.
 
 ### Estimación
 Estimaciones de esfuerzo de Claude Code, sin datos de uso, para planificar y no como compromiso: F0 entregada en este PR (una migración, tres módulos, dos componentes, cambios en cinco archivos existentes y 68 pruebas nuevas). F1 tamaño grande (un detector por regla, CA-12 a CA-25, depende de que la regla de competidores espere al SDD 7b). F2 tamaño medio, F3 tamaño grande (depende de los SDD 1 y 2, que ya están en `main`), F4 tamaño medio con una llamada de IA por revisión, F5 y F6 tamaño medio, F7 bloqueada por P1.1 y P1.2.
