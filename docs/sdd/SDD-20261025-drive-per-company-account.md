@@ -109,12 +109,12 @@ Lo entregado es **U-1 y U-3**; U-2 (lectura desde la cuenta de la empresa, con s
 | CA-1 | Hecho | Se elige la cuenta cada vez (`prompt=select_account`), con prueba. |
 | CA-2 | Hecho | Solo `drive.file`; el texto dice que NOKKO solo lee lo que él mismo guardó y que elegir documentos propios llegará con el selector (con prueba del texto). |
 | CA-3 | Hecho | Email y fecha guardados (con prueba); la tarjeta no tiene prueba. |
-| CA-4 | Hecho con límites | Misma salvedad que CA-8 del SDD de conexiones (hasta cinco minutos para una llamada en curso). Con prueba. |
+| CA-4 | **Parcial** | Mismo límite que CA-8 del SDD de conexiones: deja de usar la cuenta en la siguiente llamada, pero una llamada en curso puede seguir hasta cinco minutos. Con prueba de lo que sí hace (no se reutiliza un token sustituido o borrado, en la misma instancia y en otra). |
 | CA-5 | **No hecho** | Hoy el diálogo solo informa de que lo importado se conserva; no pregunta ni permite eliminarlo. Los documentos importados no llevan un origen estructurado (depende del SDD 1). |
 | CA-6 | **Parcial** | La fila de la empresa se sustituye (con prueba); que lo importado se conserva no tiene prueba propia. |
 | CA-7, CA-8 | **No hecho** | Requieren U-2 y U-6; solo está el cableado de `driveAuthFor`. |
 | CA-9 | **Parcial** | Muestra quién la conectó; la conexión es siempre de la empresa, no hay «personal». Sin prueba de pantalla. |
-| CA-10 | Hecho | Solo el Owner conecta o desconecta (con prueba en servidor). |
+| CA-10 | Hecho | Solo el Owner conecta o desconecta: la regla pura, `completeConnect` y la comprobación en `startDriveConnectFn` y `disconnectDriveFn` tienen prueba (`drive-connection.functions.test.ts`). |
 
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).

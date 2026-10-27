@@ -130,11 +130,11 @@ Lo entregado es **U-1, U-2 y U-3 solo para Google Drive**; no hay otros proveedo
 | CA-6 | Hecho | No guarda y explica el motivo (con prueba). |
 | CA-7 | Hecho | Cambiar y desconectar (con prueba). |
 | CA-8 | **Parcial** | Deja de usar la cuenta en la siguiente llamada; una llamada ya en curso puede seguir hasta cinco minutos. Dice que lo importado se conserva. La revocación en Google se informa con su resultado real; qué hace Google al revocar es [Por verificar] (SDD de Drive §15). |
-| CA-9 | Hecho en el esquema | Permisos por columna (migración 0059). Comprobado en un Postgres desechable en una revisión anterior; no está en la suite del repo. |
+| CA-9 | Hecho en el esquema, **sin prueba automática** | Permisos por columna (migración 0059) y token sellado. Ninguna prueba del repo nombra este CA: se comprobó a mano en un Postgres desechable en una revisión anterior y no se ha repetido. |
 | CA-10 | Hecho | Registro de conectar, cambiar, desconectar y fallo (con prueba). |
 | CA-11 | Hecho en servidor | Solo el Owner gestiona (con prueba); el modo solo lectura de la pantalla no tiene prueba. |
 | CA-12 a CA-16 | **No hecho** | U-4, U-5 y U-6. |
-| CA-17 | Hecho | Añadido por la auditoría y aceptado por Fede (2026-10-27): el retorno de Google solo se completa en el navegador que lo inició y una sola vez, esto último por instancia (con prueba). |
+| CA-17 | **Parcial** | Añadido por la auditoría y aceptado por Fede (2026-10-27). Hecho: el retorno solo se completa en el navegador que lo inició (el state firmado lleva solo un hash del nonce; el nonce va en una cookie httpOnly) y se rechaza un state con una cookie fabricada a partir de lo que el state muestra (con prueba). No hecho: el «un solo uso» se recuerda por instancia, no entre instancias (mejora futura, §15). |
 
 ---
 Validación: OK (autorrevisión). Auditoría: solo linter; la independiente queda pendiente.

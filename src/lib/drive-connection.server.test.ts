@@ -86,7 +86,7 @@ describe("CA-1, CA-2 (SDD 5) · the consent starts only for a configured server"
 });
 
 describe("CA-3 (SDD 5), CA-6 (SDD 10) and the checking half of CA-5 (SDD 10; the result is shown after saving, not before) · check before saving", () => {
-  it("saves the checked account sealed, lowercase, with who and when, and logs it (CA-3 of SDD 5; CA-2, CA-9, CA-10 of SDD 10)", async () => {
+  it("saves the checked account sealed, lowercase, with who and when, and logs it (CA-3 of SDD 5; CA-2, CA-10 of SDD 10)", async () => {
     route = goodGoogle();
     const { db, tables, log } = owner();
     const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
