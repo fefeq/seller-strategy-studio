@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-26; tabla de la sección 11 validada con el orden del wizard; U-1 a U-6 hechas; correcciones de la auditoría independiente y decisiones de la sección 14 aplicadas el 2026-10-27; migraciones 0062, 0064 y 0065 verificadas en réplica local, no aplicadas a la base real) · **Pide:** Fede · **Para:** Fede · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen
@@ -25,7 +25,7 @@ Fuente: código del repo (2026-10-25); sin datos de uso (sin dato):
 - Tiempo desde terminar un paso hasta iniciar el siguiente (fuente: registro de eventos; hoy no medido, sin dato).
 
 ## 5. Alcance
-**Incluye:** siguiente paso recomendado tras cada paso; panel de progreso con estado real; aviso proactivo en el Agente y en pantalla; motivo de cada paso; posibilidad de posponer.
+**Incluye:** siguiente paso recomendado tras cada paso; panel de progreso con estado real; aviso proactivo en el Agente y en pantalla; motivo de cada paso; posibilidad de posponer; actividad del aviso solo de personas (migración 0064, con el arreglo de «Deshacer» 0066 y su índice 0067); diagnóstico visible para la empresa (migración 0065, propuesta del §14.5).
 **No incluye:** rediseño del contenido de los pasos; nuevos pasos; notificaciones por email (solo si Fede lo pide).
 
 ## 6. Cambios de comportamiento (delta)
@@ -91,7 +91,7 @@ Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_
 
 **Orden único (validado por Fede, 2026-10-26):** el del wizard (1 a 8), porque va de estrategia a ejecución y mantiene «paso 2» siempre igual. Regla de siguiente paso: el primer pendiente no pospuesto en ese orden. El detector y `setupStatus` ya la usan; el peso solo cuenta para el porcentaje.
 
-## 12. Notas técnicas [Sugerencia]
+## 12. Notas técnicas [Sugerencia — se valida en la implementación]
 - Regla pura sobre `SETUP_ITEMS`/`setupStatus` (`src/lib/setup-schema.ts`); reutilizar detector `src/lib/proactive/detectors/setup-incomplete.ts` y `next-steps`.
 - **Uso de LLM:** cero para decidir el siguiente paso (regla determinista). Opcional: reformular el motivo con modelo barato (`effort: "low"`), con caché por (paso, empresa) y plantilla de respaldo si falla.
 - Estado completado derivado de datos, no guardado aparte, para evitar incoherencias.
@@ -104,27 +104,30 @@ Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_
 - Ruido: demasiados avisos. Mitigación: máximo un aviso por sesión y posposición.
 - Depende del SDD universal (definición única de completo).
 
-## 14. Decisiones para Fede
-El 2026-10-27 Fede delegó en el agente cerrar los pendientes: se aplicó la recomendación de cada punto. Revísalas; cualquiera se puede revertir.
-1. **Actividad del CA-6: hecho, opción A.** `updated_at` también lo mueven procesos automáticos y no sirve. Migración 0064: columna `last_human_edit_at` en las 7 tablas de los pasos, puesta por trigger solo cuando hay una persona con sesión; el aviso lee esa columna. Límites: lo que una función del servidor hace con la sesión de la persona cuenta como suyo; las filas existentes quedan vacías (sin dato) hasta que alguien las edite, y sin dato no hay aviso. Alternativas descartadas: contar solo `created_by` y `field_edit_log` (no cubre cuentas, deals ni cuotas) o aceptar el ruido.
-2. **Sugerencia que reaparece al vencer: hecho.** Un paso cuya posposición acabó usa la clave `setup_incomplete:<paso>:<día en que acabó>`, así que es una sugerencia nueva aunque la anterior se cerrara al posponer o se hubiera descartado. «Quitar posposición» ya no borra la fila: la termina ahora, para que valga lo mismo.
-3. **Diagnóstico GTM visible para la empresa: hecho, con una variación.** En vez de ampliar la política de lectura (que habría compartido también propuesta, hallazgos y opiniones), la migración 0065 añade `company_diagnosis(org)`, que devuelve solo el diagnóstico: el tuyo si lo tienes, si no el más reciente de la empresa, y nada a quien no sea miembro. La tarjeta de Inicio la usa.
-4. **`BASELINE_MAX` sube de 980 a 992** (5 columnas de `setup_step_snoozes` y 7 de `last_human_edit_at`), contra la regla de que solo baje. Aceptado, dejado por escrito en `field-baseline.ts`. Pendiente fuera de este SDD: la regla de columnas técnicas de tablas nuevas en el SDD 1.
-5. **«Máximo un aviso por sesión»:** una vez por sesión en cada sitio (Inicio y Agente). Mantenido.
-6. **Copy del §9:** sin «(5 min)» (no hay duración medida) y con «Nokko» como en el resto del producto. Si quieres duraciones, hay que medirlas primero.
-7. **CA-5:** aviso breve en pantalla al descompletar un paso. Mantenido.
-8. **Posponer** solo lo pueden hacer los roles que completan el paso, también en la base de datos. Mantenido.
+## 14. Decisiones abiertas (recomendación de Claude)
+**Propuestas de Claude Code, pendientes de confirmar por Fede.** Fede no ha decidido ninguna: están implementadas en el PR para poder revisarlas y cada una se revierte con un commit. Lo que Claude Code pudo comprobar en el código está en el §15.
+1. **Actividad del CA-6 solo de personas (propuesta, opción A).** `updated_at` también lo mueven procesos automáticos (enriquecimientos, sincronizaciones, triggers) y no sirve: `set_audit` lo pone siempre y, sin sesión, deja el `updated_by` anterior. Migración 0064: columna `last_human_edit_at` en las 7 tablas de los pasos, puesta por un trigger solo cuando hay una persona con sesión. Límite: lo que una función del servidor hace con la sesión de la persona cuenta como suyo. Alternativas: contar solo `created_by` y `field_edit_log` (no cubre cuentas, deals ni cuotas) o aceptar el ruido. Recomiendo A. Consecuencias ya resueltas en el PR: confirmar un campo mueve la columna y rompía «Deshacer» (0066, que la ignora en el registro y en la comparación del deshacer, en vez de no estamparla en las confirmaciones, porque confirmar sí es actividad de una persona); y el índice parcial de la 0067 para las siete consultas del aviso (recomiendo el índice a una consulta única, que seguiría recorriendo las tablas).
+2. **Respaldo cuando no hay dato de actividad (propuesta).** Las filas existentes no tienen `last_human_edit_at` hasta que alguien las edita, y sin dato no habría aviso para ninguna empresa que ya exista. Propuesta: si ningún paso tiene valor y no hay posposiciones, la actividad es la fecha de alta de la empresa. Una edición real o una posposición ganan siempre. Efecto: una empresa que nunca volvió recibe el aviso al pasar un día desde el alta. Alternativa: no avisar hasta la primera edición. Recomiendo el respaldo.
+3. **La sugerencia vuelve (propuesta).** Un paso cuya posposición acabó usa la clave `setup_incomplete:<paso>:<instante en que acabó, en segundos>`, y una sugerencia que el sistema cerró como «resuelta» se reabre cuando su clave se emite de nuevo (cambio de orden, paso reabierto por una edición, nuevo trimestre de la cuota). Una descartada por la persona sigue descartada. «Quitar posposición» termina la posposición ahora en lugar de borrar la fila. Alternativa: añadir un periodo a la clave. Recomiendo esto porque no toca el esquema.
+4. **`BASELINE_MAX` sube de 980 a 992, a decidir por Fede.** 5 columnas de `setup_step_snoozes` y 7 de `last_human_edit_at`, contra la regla de que solo baje, porque `org_id`, `created_at` y las columnas técnicas no tienen concepto en el catálogo. Recomiendo aceptar el aumento y abrir en el SDD 1 la regla de columnas técnicas de tablas nuevas.
+5. **Diagnóstico GTM visible para la empresa: función `company_diagnosis` (migración 0065), a decidir por Fede.** Hoy solo lo lee su autor (`onboarding_sessions`, RLS «Own onboarding in my company»). Ampliar esa política compartiría también propuesta, hallazgos y opiniones, así que la propuesta es una función que devuelve solo el diagnóstico a los miembros: el suyo si lo tiene, si no el más reciente de la empresa. La tarjeta de Inicio la usa. Alternativas: la política de lectura entre miembros, o una copia a una tabla de empresa. Recomiendo la función. Si Fede prefiere otra visibilidad, se cambia la 0065 sin tocar el resto.
+6. **«Máximo un aviso por sesión»:** una vez por sesión en cada sitio (Inicio y Agente), porque el CA-6 pide ambos. Recomiendo mantenerlo.
+7. **Copy del §9:** sin «(5 min)» porque no hay duración medida por paso, y con «Nokko», como en el resto del producto (el ejemplo decía «NOKKO»). Si Fede quiere duraciones, hay que medirlas primero.
+8. **CA-5 y roles:** aviso breve en pantalla al descompletar un paso, y solo pueden posponer un paso los roles que pueden completarlo, también en la base de datos. Recomiendo mantenerlos.
+9. **Migración 0062 editada en el sitio.** Se añadió `DROP POLICY IF EXISTS` antes de cada política porque ningún documento ni lista de comprobación la registra como aplicada en una base real. Claude Code no pudo comprobarlo contra la base de NOKKO. Fede debe confirmar que no está aplicada; si lo está, el cambio no afecta a lo ya aplicado y la 0062 no se vuelve a ejecutar.
 
 ## 15. Pendiente de verificar
-- [Verificado en el código, 2026-10-26] El diagnóstico GTM vivía en `onboarding_sessions.diagnosis` y su RLS («Own onboarding in my company», migración 0052) solo deja leer filas con `user_id = auth.uid()`. Resuelto el 2026-10-27 con la función `company_diagnosis` (migración 0065), sin ampliar esa política (§14.3).
+- [Verificado en el código, 2026-10-26] El diagnóstico GTM vive en `onboarding_sessions.diagnosis` y su RLS («Own onboarding in my company», migración 0052) solo deja leer filas con `user_id = auth.uid()`. Compartirlo exige una política nueva de lectura entre miembros, una copia a una tabla de empresa o una función como `company_diagnosis` (propuesta del §14.5, migración 0065).
+- [Por verificar] Que la migración 0062 no esté aplicada en ninguna base real (§14.9).
 - [Por verificar] Línea base de finalización (sin dato).
 
-## 16. Decisión de Fede
-- Decisiones de la sección 14:
-- Decisión: Aprobado / Cambios pedidos / Rechazado
+## 16. Registro de decisiones (lo completa Fede)
+- Decisiones tomadas:
+- Fecha:
+- Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ## 17. Entrega (delta y CA → prueba)
-Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-guide.ts`), U-2 tabla de posposición (`drizzle/migrations/0062_setup_step_snoozes.sql`), U-3 detector y orden único, U-4 hook y componentes (`src/hooks/use-setup-guide.ts`, `src/components/setup/guide.tsx`), U-5 pantallas (asistente, panel de progreso, Inicio, barra lateral), U-6 Agente.
+Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-guide.ts`), U-2 tabla de posposición (`drizzle/migrations/0062_setup_step_snoozes.sql`), U-3 detector y orden único, U-4 hook y componentes (`src/hooks/use-setup-guide.ts`, `src/components/setup/guide.tsx`), U-5 pantallas (asistente, panel de progreso, Inicio, barra lateral), U-6 Agente, U-7 actividad solo de personas (`drizzle/migrations/0064_last_human_edit_at.sql`, `loadSetupGuideExtras`), U-8 diagnóstico de la empresa (`drizzle/migrations/0065_company_diagnosis.sql`), U-9 «Deshacer» con la 0064 (`drizzle/migrations/0066_undo_ignores_last_human_edit.sql`), U-10 índice de la actividad (`drizzle/migrations/0067_last_human_edit_index.sql`).
 
 | CA | Prueba automática | Notas |
 |---|---|---|
@@ -133,15 +136,15 @@ Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-
 | CA-3 | `setup-guide.test.ts` (orden fijo), `proactive.test.ts` (detector), `agent-tools.test.ts` (`get_setup_status`) | |
 | CA-4 | `setup-guide.test.ts` «CA-4» | |
 | CA-5 | `setup-guide.test.ts` «CA-5» (regla del aviso), `use-setup-guide.test.tsx` «CA-5» (el aviso sale una vez y el paso vuelve a Pendiente) | La actualización sin recarga depende de que cada pantalla invalide `["setup"]`: lo hacen los editores de estrategia, el asistente y el pipeline en vivo; no hay prueba de cada una |
-| CA-6 | `setup-guide.test.ts` (`nudgeDue`), `proactive.test.ts` (prioridad), `setup-activity.test.ts` (lee `last_human_edit_at`), `migrations.pg.test.ts` (migración 0064: solo personas) | Actividad = último cambio de una persona en los datos de los 8 pasos o una posposición |
-| CA-7 | `setup-guide.test.ts` «CA-7» (día guardado y mostrado igual en cuatro zonas horarias, mínimo del selector), `migrations.pg.test.ts` (migración 0062), `setup-snooze-suggestions.test.ts` (cierra al posponer y reaparece al vencer, también si estaba descartada), `use-setup-guide.test.tsx` (quitar posposición) | |
+| CA-6 | `setup-guide.test.ts` (`nudgeDue`), `proactive.test.ts` (prioridad), `setup-activity.test.ts` (lee `last_human_edit_at`, respaldo con la fecha de alta), `migrations.pg.test.ts` (0064 solo personas; 0066 «Deshacer»; 0067 índice), `use-setup-guide.test.tsx` (volver a posponer cuenta) | Actividad = último cambio de una persona en los datos de los 8 pasos, una posposición o, sin nada de eso, la fecha de alta (§14.2) |
+| CA-7 | `setup-guide.test.ts` «CA-7» (día guardado y mostrado igual en cuatro zonas horarias, mínimo del selector), `migrations.pg.test.ts` (migración 0062), `setup-snooze-suggestions.test.ts` (cierra al posponer, reaparece al vencer también si estaba descartada, reabre las resueltas con dos pasos, posponer y quitar dos veces el mismo día), `use-setup-guide.test.tsx` (quitar posposición) | |
 | CA-8 | `setup-guide.test.ts` (roles, incluida la coincidencia con las herramientas del Agente), `proactive.test.ts` (a quién va la sugerencia), `agent-tools.test.ts` (`estado` por rol), `migrations.pg.test.ts` (función de la base frente a `STEP_ROLES`) | |
 | CA-9 | `agent-tools.test.ts` (la herramienta devuelve la guía); la tarjeta «Primera sugerencia» no tiene prueba de componente | |
 | CA-10 | `use-setup-guide.test.tsx` «CA-10» (el panel del Agente muestra «Ya tienes … Siguiente: …» al terminar un paso) | Lo que dice el modelo tras una acción confirmada (llamar a `get_setup_status` y usar `guia.mensaje`) no se puede probar sin llamar al modelo: **verificación manual** |
 
 Cargas: el hook de la guía vive en la barra lateral de todas las pantallas; solo consulta con pasos pendientes: las posposiciones (1 consulta), la actividad (7 más) solo en el aviso de Inicio y los miembros solo si el paso pendiente no es del rol (`use-setup-guide.test.tsx`).
 
-Diagnóstico visible para la empresa: función en `migrations.pg.test.ts` (migración 0065); la tarjeta de Inicio que la usa no tiene prueba de componente. Verificado en local, no en la base real: migraciones 0062, 0064 y 0065 con dos empresas ficticias sobre una réplica en memoria (PGlite), que no es la base de datos. No verificado: recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
+Diagnóstico visible para la empresa: función en `migrations.pg.test.ts` (migración 0065); la tarjeta de Inicio que la usa no tiene prueba de componente. Verificado en local, no en la base real: migraciones 0062, 0064, 0065, 0066 y 0067 con dos empresas ficticias sobre una réplica en memoria (PGlite), que no es la base de datos. No verificado: recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
 
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (pendiente de las decisiones de Fede de la sección 14).
