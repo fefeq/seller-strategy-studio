@@ -267,6 +267,49 @@ describe("CA-8 (SDD 10) and CA-4 (SDD 5) · the screen says what really happened
   });
 });
 
+describe("CA-8 (SDD 10) and CA-4 (SDD 5) · no instance keeps using an account that was changed or disconnected", () => {
+  const ORG3 = "55555555-5555-5555-5555-555555555555";
+  const refreshRoute = () => {
+    let n = 0;
+    route = (url, body) => (url.includes("/token") ? ok({ access_token: `acceso-${++n}:${new URLSearchParams(body).get("refresh_token")}`, expires_in: 3600 }) : ok({}));
+  };
+  it("another instance's cached access token is not reused once the saved account is a different one", async () => {
+    refreshRoute();
+    const t = { org_id: ORG3, google_email: "vieja@ejemplo.test", refresh_token_enc: await seal("refresh-viejo"), status: "active" };
+    const { db, tables } = owner({ drive_connections: [t] });
+    const first = await (await ownDriveAuth(db, ORG3))!.headers();
+    expect(first["Authorization"]).toContain("refresh-viejo");
+    // another instance replaces the account; this instance's map was never told
+    tables["drive_connections"] = [{ ...t, google_email: "nueva@ejemplo.test", refresh_token_enc: await seal("refresh-nuevo") }];
+    const second = await (await ownDriveAuth(db, ORG3))!.headers();
+    expect(second["Authorization"]).toContain("refresh-nuevo");
+    expect(second["Authorization"]).not.toContain("refresh-viejo");
+  });
+  it("a cached access token is reused for the same saved account, but only for five minutes", async () => {
+    refreshRoute();
+    const { db } = owner({ drive_connections: [{ org_id: ORG3, google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-uno"), status: "active" }] });
+    vi.useFakeTimers();
+    try {
+      const auth = (await ownDriveAuth(db, ORG3))!;
+      await auth.headers(); await auth.headers();
+      expect(calls.filter((c) => c.url.includes("/token"))).toHaveLength(1);
+      vi.advanceTimersByTime(5 * 60 * 1000 + 1000);
+      await auth.headers();
+      expect(calls.filter((c) => c.url.includes("/token"))).toHaveLength(2);
+    } finally { vi.useRealTimers(); }
+  });
+  it("a failed revocation is not swallowed: it is logged (without the token) and shown to the person", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    route = () => ok({ error: "invalid_token" }, 400);
+    const { db } = owner({ drive_connections: [{ org_id: ORG3, google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-secreto"), status: "active" }] });
+    const d = await disconnectDrive(db, ORG3, USER);
+    expect(d.message).toMatch(/No pudimos revocar/);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0])).not.toContain("refresh-secreto");
+    warn.mockRestore();
+  });
+});
+
 describe("§8 (SDD 5) · access revoked at Google, provider down", () => {
   const connected = async () => owner({ drive_connections: [{ org_id: "33333333-3333-3333-3333-333333333333", google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-secreto"), status: "active" }] });
   const ORG2 = "33333333-3333-3333-3333-333333333333";

@@ -108,6 +108,7 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
   if (error) return fail("No se pudo guardar la conexión. Inténtalo de nuevo.");
   forget(st.o);
   const revocation = previous ? await revokeSaved(db, st.o, previous, grant.email) : null;
+  if (revocation === "failed" || revocation === "unreadable") console.warn(`Drive revoke of the replaced account not done (${revocation}) for org ${st.o}`);
   await logEvent(db, st.o, st.u, previous && previous.google_email !== grant.email ? "changed" : "connected", grant.email);
   const aboutOld = previous && revocation ? ` ${revocationText(revocation, previous.google_email)}` : "";
   return { ok: true, message: `Drive conectado con ${grant.email}.${count ? ` ${ALREADY_ELSEWHERE}` : ""}${aboutOld}`, returnTo: st.r };
@@ -118,6 +119,7 @@ export async function disconnectDrive(db: Admin, orgId: string, userId: string):
   const { data: row } = await db.from("drive_connections").select("google_email,refresh_token_enc").eq("org_id", orgId).maybeSingle();
   if (!row) return { email: null, revocation: null, message: "No había ninguna cuenta conectada." };
   const revocation = await revokeSaved(db, orgId, row, null);
+  if (revocation === "failed" || revocation === "unreadable") console.warn(`Drive revoke not done (${revocation}) for org ${orgId}`);
   const { error } = await db.from("drive_connections").delete().eq("org_id", orgId);
   if (error) throw new Error("No se pudo desconectar Drive. Inténtalo de nuevo.");
   forget(orgId);
@@ -125,8 +127,12 @@ export async function disconnectDrive(db: Admin, orgId: string, userId: string):
   return { email: row.google_email, revocation, message: `NOKKO ya no usa ${row.google_email}. ${revocationText(revocation, row.google_email)}` };
 }
 
-// Access tokens live about an hour: kept per company in memory so each Drive call does not refresh again.
-const access = new Map<string, { token: string; until: number }>();
+// Access tokens live about an hour; kept per company in memory so each Drive call does not refresh again. Each
+// instance has its own map and cannot be told to forget, so an entry is only used while the saved (sealed) token
+// is the one it was made from: a changed or reconnected account is a cache miss on every instance. And it is
+// kept at most five minutes, which also bounds what a call already in flight can still do after a disconnect.
+const ACCESS_CACHE_MAX_MS = 5 * 60 * 1000;
+const access = new Map<string, { sealed: string; token: string; until: number }>();
 const forget = (orgId: string) => { access.delete(orgId); };
 
 async function setStatus(db: Admin, orgId: string, current: ConnectionRow["status"], status: ConnectionRow["status"], text: string | null) {
@@ -149,7 +155,7 @@ export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth 
     onFailure: note,
     headers: async () => {
       const hit = access.get(orgId);
-      if (hit && hit.until > Date.now()) return { Authorization: `Bearer ${hit.token}` };
+      if (hit && hit.sealed === row.refresh_token_enc && hit.until > Date.now()) return { Authorization: `Bearer ${hit.token}` };
       const cfg = oauthConfig();
       if (!cfg) throw new DriveError(NOT_CONFIGURED, 500);
       let refresh: string;
@@ -159,7 +165,7 @@ export async function ownDriveAuth(db: Admin, orgId: string): Promise<DriveAuth 
       catch { await note(null); throw new DriveError(failureStatus(null)!.text, 503); }
       if (!t.ok) { await note(t.status); const f = failureStatus(t.status); throw new DriveError(f?.text ?? "Google no renovó el acceso. Vuelve a intentarlo.", t.status === 400 ? 401 : t.status); }
       const token = String(t.json["access_token"] ?? "");
-      access.set(orgId, { token, until: Date.now() + Math.max(60, Number(t.json["expires_in"] ?? 3600) - 60) * 1000 });
+      access.set(orgId, { sealed: row.refresh_token_enc, token, until: Date.now() + Math.min(ACCESS_CACHE_MAX_MS, Math.max(60, Number(t.json["expires_in"] ?? 3600) - 60) * 1000) });
       if (status !== "active") { await setStatus(db, orgId, status, "active", null); status = "active"; }
       return { Authorization: `Bearer ${token}` };
     },
