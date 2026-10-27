@@ -1,7 +1,7 @@
 // Strategic suggestions (SDD-20261027 strategic-suggestions-engine, F0 · H-1). Pure: what a suggestion stores (element,
 // kind, evidence with a link per source record, evidence level, proposed action), the fixed level rule, the decision
 // record and when a suggestion is shown again. No AI: titles and bodies come from templates in the detectors (F1).
-// The data lives in suggestions.strategy (jsonb, validated by the database too, migration 0064) so the existing table,
+// The data lives in suggestions.strategy (jsonb, validated by the database too, migration 0068) so the existing table,
 // RLS and dedupe key (org_id, dedupe_key) are reused; decisions go to strategy_decisions.
 import type { Suggestion } from "@/lib/proactive/types";
 
