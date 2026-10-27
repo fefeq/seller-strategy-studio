@@ -45,12 +45,27 @@ describe("setup guide: next-step message (CA-1, CA-2)", () => {
   it("CA-1: after a step, names the next one with why it matters and a start button", () => {
     const g = guideState({ ...full, pillars: [], quotas: [] }, [], NOW);
     const m = nextMessage(g, "owner", "icp");
-    expect(m.title).toContain("Hecho: al menos un icp");
-    expect(m.title).toContain("Siguiente: tres pilares de mensaje");
+    // SDD §9: «Ya tienes tu ICP. Siguiente: …. Así Nokko sabrá …»
+    expect(m.title).toBe("Ya tienes tu ICP. Siguiente: escribe tus tres pilares de mensaje.");
     expect(m.why).toBe(STEP_WHY["pillars"]);
     expect(m.start).toBe("Empezar");
     expect(m.later).toBe("Más tarde");
     expect(m.link).toBe("/strategy");
+  });
+  it("CA-1: acronyms keep their capitals in every sentence the guide writes (ICP, ACV, AE)", () => {
+    const say = (g: ReturnType<typeof guideState>, role: string, done?: string) => { const m = nextMessage(g, role, done, [{ user_id: "u1", role: "owner", name: "Ana" }]); return `${m.title} ${m.why}`; };
+    const texts = [
+      say(guideState({ ...full, icps: [] }, [], NOW), "owner"),
+      say(guideState({ ...full, segments: [{ name: "Seg A", acv_min: null, acv_max: null, win_rate_target: 20, ae_quota: 100 }] }, [], NOW), "owner"),
+      say(guideState({ ...full, segments: [{ name: "Seg A", acv_min: 1, acv_max: 2, win_rate_target: null, ae_quota: null }] }, [], NOW), "owner"),
+      say(guideState({ ...full, icps: [] }, [], NOW), "ae"), // not theirs: «Falta tu ICP. Lo puede completar …»
+      say(guideState({ ...full, positioning: null }, [], NOW), "owner", "icp"),
+    ];
+    for (const t of texts) { expect(t).not.toMatch(/\b(icp|acv|ae)\b/); }
+    expect(texts[0]).toContain("define tu ICP");
+    expect(texts[1]).toContain("ACV");
+    expect(texts[2]).toContain("AE");
+    expect(texts[3]).toContain("Falta tu ICP.");
   });
   it("CA-2: with nothing pending, says what Nokko does alone and what is left for the person", () => {
     const m = nextMessage(guideState(full, [], NOW), "owner");

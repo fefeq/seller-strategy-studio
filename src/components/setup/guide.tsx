@@ -49,7 +49,7 @@ export function NextStepMessage({ msg, onStart, onDismiss }: { msg: NextMessage;
 }
 
 /**
- * The guide's offer in Inicio and in the agent (CA-6, CA-9, CA-10): the next step, or «Hecho: …» plus the next step right after finishing one.
+ * The guide's offer in Inicio and in the agent (CA-6, CA-9, CA-10): the next step, or «Ya tienes …» plus the next step right after finishing one.
  * `onlyWhenDue` shows it only after a day without activity (Inicio); the agent always offers it as the first suggestion.
  */
 export function GuideOffer({ scope, onlyWhenDue, onStart, orgId, wrap }: { scope: OfferScope; onlyWhenDue?: boolean; onStart?: (stepId: string) => void; orgId?: string; wrap?: (children: ReactNode) => ReactNode }) {

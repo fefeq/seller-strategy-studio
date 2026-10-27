@@ -35,6 +35,24 @@ export const STEP_WHY: Record<string, string> = {
   deals: "Así Nokko podrá calcular métricas, avisarte de riesgos y aconsejarte sobre tu pipeline.",
 };
 
+/**
+ * How each step reads inside the guide's sentences (SDD §9: «Ya tienes tu ICP. Siguiente: define tu posicionamiento. Así Nokko sabrá…»).
+ * `have` completes «Ya tienes …» and «Falta …»; `do` is the instruction. Written out, never derived from the label by changing case,
+ * so ICP, ACV and AE keep their capitals.
+ */
+export const STEP_COPY: Record<string, { have: string; do: string }> = {
+  positioning: { have: "tu posicionamiento", do: "define tu posicionamiento" },
+  icp: { have: "tu ICP", do: "define tu ICP" },
+  segments: { have: "tus segmentos con rango de ACV", do: "pon el rango de ACV de tus segmentos" },
+  benchmarks: { have: "el win rate objetivo y la cuota por AE de tus segmentos", do: "fija el win rate objetivo y la cuota por AE de cada segmento" },
+  pillars: { have: "tus tres pilares de mensaje", do: "escribe tus tres pilares de mensaje" },
+  quota: { have: "la cuota de este trimestre", do: "fija la cuota de este trimestre" },
+  accounts: { have: "tus primeras cuentas objetivo", do: "añade tus primeras cuentas objetivo" },
+  deals: { have: "tu pipeline con al menos un deal", do: "crea tu primer deal" },
+};
+const have = (s: { id: string; label: string }) => STEP_COPY[s.id]?.have ?? s.label.split(" (")[0]!;
+const doIt = (s: { id: string; label: string }) => STEP_COPY[s.id]?.do ?? s.label.split(" (")[0]!;
+
 export const STATE_LABEL: Record<StepState, string> = { done: "Completado", pending: "Pendiente", snoozed: "Pospuesto" };
 
 export function canCompleteStep(stepId: string, role: string | null | undefined): boolean {
@@ -110,14 +128,14 @@ export type NextMessage = { stepId: string | null; title: string; why: string; s
 /** The message shown after finishing a step, in Inicio and in the agent. Same text for the same state (CA-3). */
 export function nextMessage(guide: Guide, role: string | null | undefined, justDone?: string | null, members: GuideMember[] = []): NextMessage {
   const doneStep = justDone ? guide.steps.find((s) => s.id === justDone && s.state === "done") : undefined;
-  const lead = doneStep ? `Hecho: ${doneStep.label.split(" (")[0].toLowerCase()}. ` : "";
+  const lead = doneStep ? `Ya tienes ${have(doneStep)}. ` : "";
   const step = nextFor(guide, role);
   if (step) {
-    return { stepId: step.id, title: `${lead}Siguiente: ${step.label.split(" (")[0].toLowerCase()}.`, why: step.why, start: "Empezar", later: "Más tarde", link: step.link };
+    return { stepId: step.id, title: `${lead}Siguiente: ${doIt(step)}.`, why: step.why, start: "Empezar", later: "Más tarde", link: step.link };
   }
-  if (guide.complete) return { stepId: null, title: `${lead}Ya tienes tu estrategia completa.`, why: COMPLETE_TEXT, start: null, later: null, link: null };
+  if (guide.complete) return { stepId: null, title: "Ya tienes tu estrategia completa.", why: COMPLETE_TEXT, start: null, later: null, link: null };
   const other = guide.pending[0];
-  if (other) return { stepId: null, title: `${lead}Lo que queda no es de tu rol.`, why: `Falta ${other.label.split(" (")[0].toLowerCase()}. ${whoCanText(other.id, members)}`, start: null, later: null, link: null };
+  if (other) return { stepId: null, title: `${lead}Lo que queda no es de tu rol.`, why: `Falta ${have(other)}. ${whoCanText(other.id, members)}`, start: null, later: null, link: null };
   const back = guide.snoozed.map((s) => s.snoozedUntil).filter((u): u is string => !!u).sort()[0];
   return { stepId: null, title: `${lead}Los pasos que quedan están pospuestos.`, why: `Vuelven a avisarte el ${back ? formatDay(back) : "día que elegiste"}.`, start: null, later: null, link: null };
 }
