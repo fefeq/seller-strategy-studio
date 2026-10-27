@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { type SetupProposal } from "@/lib/setup-extraction";
 import { AiFill } from "@/components/setup/ai-fill";
 import { Interview, Wizard } from "@/components/setup/wizard";
+import { GuideProgress } from "@/components/setup/guide";
 
 export const Route = createFileRoute("/_authenticated/setup")({
   head: () => ({ meta: [{ title: "Configuración guiada — Nokko" }, { name: "description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:title", content: "Configuración guiada — Nokko" }, { property: "og:description", content: "Completa tu estrategia GTM con IA, una entrevista o paso a paso." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -43,14 +44,7 @@ function SetupPage() {
           <p className="eyebrow">Progreso</p>
           <p className="mt-1 font-display text-5xl">{st?.pct ?? 0}%</p>
           <div className="mt-2 h-2 rounded bg-muted"><div className="h-full rounded bg-primary transition-all" style={{ width: `${st?.pct ?? 0}%` }} /></div>
-          <ul className="mt-4 space-y-2.5 text-sm">
-            {st?.items.map((i) => (
-              <li key={i.id} className="flex gap-2">
-                <span aria-hidden className={`w-4 shrink-0 ${i.done ? "text-success" : "text-muted-foreground"}`}>{i.done ? "✓" : "·"}</span>
-                <div><p className={i.done ? "text-muted-foreground line-through" : ""}>{i.label}</p>{!i.done && <p className="text-xs text-muted-foreground">Desbloquea: {i.unlocks}</p>}</div>
-              </li>
-            ))}
-          </ul>
+          <GuideProgress />
           <div className="mt-5 border-t border-hairline pt-4 text-sm">
             <p className="font-medium">Trabaja con Nokko desde Claude, ChatGPT o Codex</p>
             <p className="mt-1 text-xs text-muted-foreground">Conecta tu asistente por MCP: consulta pipeline, leads y estrategia sin salir de él. Lo que quiera cambiar te llega aquí para confirmar.</p>
