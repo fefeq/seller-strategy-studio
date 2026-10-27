@@ -10,8 +10,8 @@
 --      high, and the sample can never be smaller than the evidence listed (CA-3). The existing (org_id, dedupe_key) unique key and the
 --      RLS of suggestions are reused unchanged.
 --   2. strategy_decisions: append-only log of accept / postpone / dismiss with who, when and an optional reason (CA-4), by company.
---   3. deals.lost_reason (fixed list), lost_reason_detail (free text), lost_competitor (free text) (CA-8 to CA-10). The reason list is
---      Fede's proposal and is NOT confirmed yet (SDD question 5): changing it means changing the check below and src/lib/loss-reasons.ts.
+--   3. deals.lost_reason (fixed list), lost_reason_detail (free text), lost_competitor (free text) (CA-8 to CA-10). The reason list was
+--      validated by Fede on 2026-10-27 (SDD question 5): changing it means a new migration for the check below and src/lib/loss-reasons.ts.
 --      The competitor is free text until the competitors entity (SDD 7b) exists.
 
 -- 1. Strategic suggestions ---------------------------------------------------------------------------------------------------------

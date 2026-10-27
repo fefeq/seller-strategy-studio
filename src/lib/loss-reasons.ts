@@ -1,7 +1,7 @@
 // Why a deal was lost and against whom (SDD-20261027 strategic-suggestions-engine, F0 · H-2). Pure, so the pipeline
 // dialog, the agent tool and the later strategy rules read the same list and the same «sin dato» rule.
-// The list is Fede's proposal and is NOT confirmed yet (SDD question 5): change it here and in the deals.lost_reason
-// check of migration 0064 together.
+// The list was validated by Fede on 2026-10-27 (SDD question 5): change it here and, with a new migration, in the
+// deals_lost_reason_list check of migration 0064 together.
 
 export const LOSS_REASONS = [
   { key: "price", label: "Precio" },

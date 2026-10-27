@@ -1,7 +1,7 @@
 # SDD-20261027-strategic-suggestions-engine · [Feature] Motor de sugerencias estratégicas para diseñar, ejecutar y monitorear el GTM
 
 **Tipo:** Feature (maestro, dividido en fases) · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 en curso (PR en borrador), F1 a F7 sin empezar; pregunta 5 abierta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
+**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 en curso (PR en borrador), F1 a F7 sin empezar; pregunta 5 resuelta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
 **Depende de:** SDD universal de campos (1) y acciones sobre campos (2) para propuestas pendientes, origen y deshacer; SDD 7b (competidores como entidad) para las reglas sobre competidores; SDD 9 (Theory U proactivo) como fuente de evidencia, sin duplicarlo.
 **Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las secciones 14 y 16 conservan el nombre de la plantilla: las preguntas las responde Fede y la sección 16 la completa Claude Code.
 
@@ -188,7 +188,7 @@ Este SDD es maestro. Se recomienda un PR por fase; cada fase puede promoverse a 
 - Almacén: reutilizar las sugerencias existentes con detectores nuevos de la familia `strategy_*`; la evidencia estructurada y el nivel necesitan un lugar propio **[Por verificar]** (columnas actuales de la tabla de sugerencias).
 - Asesor: ampliar `buildSnapshot` en `src/lib/advisor.ts` (puro y con pruebas) con ICP, cuentas, leads y experimentos; ampliar `ADVISOR_SCHEMA` con evidencia citada, nivel y acción propuesta; conservar `gtm_advisories` como historial.
 - Experimentos: migración nueva en `drizzle/migrations` con los campos de umbral de éxito, regla de cierre, fecha de revisión y decisión, con RLS por `org_id` y `GRANT`; los existentes quedan con valores vacíos.
-- Deals perdidos: motivo y competidor como campos propios; el competidor puede proponerse desde el campo «Competition» de MEDDPICC; lista de motivos propuesta: Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro (más texto libre). Fede la valida antes de F0 **[Por verificar]**.
+- Deals perdidos: motivo y competidor como campos propios; el competidor puede proponerse desde el campo «Competition» de MEDDPICC; lista de motivos propuesta: Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro (más texto libre). Validada por Fede el 2026-10-27.
 - Propuestas y origen: reutilizar `applySetupItems`, `undoSetupItems`, `provenance.ts`, `autoWriteDecision` y el patrón de `field-proposals.ts`; origen «Revisión estratégica».
 - Monitoreo: ampliar `src/lib/weekly-report.ts` y reutilizar el trabajo horario existente y `background_jobs` para la revisión periódica.
 - Agente y MCP: módulo nuevo en `src/lib/agent/tools/`, títulos en `TITLES` y manifiesto actualizado; las herramientas que gastan crédito o escriben son de escritura con confirmación (auditoría, punto P1.4); pruebas con `expectScoped` por empresa.
@@ -213,8 +213,7 @@ Respondidas por Fede el 27 oct:
 3. ¿Frecuencia de la revisión periódica? Mensual.
 4. ¿El Asesor GTM actual? Lo sustituye la revisión estratégica.
 
-Abierta:
-5. ¿Validas esta lista de motivos de pérdida: Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro?
+5. ¿Validas esta lista de motivos de pérdida: Precio, Competidor, Sin decisión, Sin presupuesto, Sin encaje con el producto, Mal momento, Cambio de contacto, Otro? Validada tal cual por Fede el 27 oct (respuesta en sesión: «aplica tus recomendaciones y continúa»).
 
 ## 15. Pendiente de verificar
 - [Verificado 2026-10-27 en `main`, ver sección 16] Columnas y estados actuales de la tabla de sugerencias: no admite evidencia estructurada ni nivel; se amplía con `suggestions.strategy` (migración 0064).
@@ -224,7 +223,7 @@ Abierta:
 - [Verificado 2026-10-27 en `main`, ver sección 16] No existe motivo de pérdida ni competidor por deal: ni columna, ni migración, ni uso en el código. Se añaden `deals.lost_reason`, `lost_reason_detail` y `lost_competitor` (migración 0064).
 - [Por verificar] Estado de aplicación de las migraciones 0058, 0060, 0061 y 0063 en la base real.
 - [Por verificar] Contenido real del campo «Competition» de MEDDPICC en deals de empresas reales (sin dato). Del código solo consta su forma: `{score, note}` desde la pantalla y texto suelto desde el Agente; F0 lo usa solo como propuesta editable.
-- [Por verificar] Lista de motivos de pérdida propuesta, pendiente de validar por Fede (pregunta 5).
+- [Resuelto 2026-10-27] Lista de motivos de pérdida: validada por Fede (pregunta 5).
 
 ## 16. Sección de Dani (en NOKKO la completa Claude Code; decide Fede)
 Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic-suggestions-f0`). Lo marcado «no verificado» no pudo comprobarse desde el repo. La decisión final sigue siendo de Fede.
@@ -244,7 +243,7 @@ Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic
 3. Estados: se reutilizan los cinco existentes con palabras propias (Nueva, Aceptada, Pospuesta, Descartada, Resuelta). «Aplicada» llega con F3, que es cuando existe algo que aplicar: en F0 aceptar solo registra la decisión.
 4. CA-5 y CA-6: la clave de deduplicación por elemento y causa impide duplicados, y la huella de la evidencia decide si una descartada o pospuesta vuelve (`reconcile`, puro). `syncStrategySuggestions` aplica esa regla y `syncSuggestions` ya no cierra solas las sugerencias estratégicas (F5 define cuándo se resuelven por evidencia desaparecida, CA-51).
 5. CA-7: tope de 7 abiertas por empresa aplicado al leer (`limitStrategy`), por prioridad y fecha; las operativas no cuentan.
-6. Motivo de pérdida: columnas `deals.lost_reason` (lista fija con restricción en la base), `lost_reason_detail` (texto libre, 500) y `lost_competitor` (texto libre, 200). El competidor es texto hasta que exista la entidad del SDD 7b. La lista es la propuesta de Fede y está sin confirmar (pregunta 5): vive en `src/lib/loss-reasons.ts` y en una restricción de la migración, y cambiarla es un cambio de dos líneas más una migración nueva.
+6. Motivo de pérdida: columnas `deals.lost_reason` (lista fija con restricción en la base), `lost_reason_detail` (texto libre, 500) y `lost_competitor` (texto libre, 200). El competidor es texto hasta que exista la entidad del SDD 7b. La lista, validada por Fede el 27 oct (pregunta 5), vive en `src/lib/loss-reasons.ts` y en una restricción de la migración, y cambiarla es un cambio de dos líneas más una migración nueva.
 7. Pérdida opcional (CA-10): el diálogo de Pipeline ofrece «Guardar y marcar como perdido», «Omitir y marcar como perdido» y «Cancelar». Los motivos se completan después desde el deal (CA-9). El Agente y el MCP aceptan los mismos campos en `update_deal` y solo escriben lo que se envía. La entrada de leads por API o CSV sigue marcando deals perdidos sin motivo (cuentan como «sin dato»); ampliarla queda como mejora.
 8. Un deal que sale de «Perdido» conserva sus campos de pérdida (no se borra nada); el análisis solo lee los deals en etapa `lost`.
 9. Sin LLM en F0. Ninguna llamada nueva a un modelo ni a un proveedor.
@@ -255,7 +254,7 @@ Completada por Claude Code el 2026-10-27 al implementar F0 (rama `feat/strategic
 - F0-3 Diálogo de pérdida en Pipeline y sección «Motivo de pérdida» en deals perdidos. Hecho, sin prueba de componente (el repo no tiene pruebas de pantallas de Pipeline): comprobado con tipos y la lógica pura.
 - F0-4 Tarjetas de sugerencia con evidencia, nivel, muestra y tres botones, y decisiones con motivo. Hecho; sin detectores en F0, así que ninguna sugerencia estratégica aparece hasta F1.
 - F0-5 `update_deal` del Agente y del MCP con motivo y competidor, manifiesto MCP actualizado. Hecho.
-- F0-6 Pendiente de Fede: confirmar la lista de motivos de pérdida; aplicar la migración 0064 en una copia de la base real y revisarla antes de la base real.
+- F0-6 Pendiente de Fede: aplicar la migración 0064 en una copia de la base real y revisarla antes de la base real.
 
 ### Estimación
 Estimaciones de esfuerzo de Claude Code, sin datos de uso, para planificar y no como compromiso: F0 entregada en este PR (una migración, tres módulos, dos componentes, cambios en cinco archivos existentes y 68 pruebas nuevas). F1 tamaño grande (un detector por regla, CA-12 a CA-25, depende de que la regla de competidores espere al SDD 7b). F2 tamaño medio, F3 tamaño grande (depende de los SDD 1 y 2, que ya están en `main`), F4 tamaño medio con una llamada de IA por revisión, F5 y F6 tamaño medio, F7 bloqueada por P1.1 y P1.2.
