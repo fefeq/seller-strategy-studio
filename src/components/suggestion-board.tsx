@@ -7,11 +7,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { decideSuggestion } from "@/lib/agent.functions";
-import { canViewStrategy } from "@/lib/strategy-suggestions";
+import { canViewStrategy, limitStrategy, parseStrategy } from "@/lib/strategy-suggestions";
 import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue } from "@/lib/suggestion-board";
 import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
+import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
@@ -36,7 +37,7 @@ export function SuggestionBoard() {
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
       const [s, m] = await Promise.all([
-        supabase.from("suggestions").select("id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until,detector,dedupe_key")
+        supabase.from("suggestions").select("id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until,detector,dedupe_key,strategy")
           .eq("org_id", orgId!).or(`status.in.(pending,snoozed),updated_at.gte.${since}`).order("priority").order("created_at").limit(500),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
       ]);
@@ -51,10 +52,12 @@ export function SuggestionBoard() {
   const summary = useMemo(() => boardSummary(items), [items]);
   const closed = useMemo(() => closedSummary(items), [items]);
   const groups = useMemo(() => byOwner(items), [items]);
-  const rows = items.filter((s) =>
+  const filtered = items.filter((s) =>
     (status === "open" ? s.status === "pending" || s.status === "snoozed" : status === "closed" ? !["pending", "snoozed"].includes(s.status) : s.status === status)
     && (owner === "all" || (owner === "none" ? !s.user_id : s.user_id === owner))
     && (prio === "all" || String(s.priority) === prio));
+  // CA-7: at most 7 open strategic suggestions, also on this list (closed and postponed views show everything).
+  const rows = status === "open" || status === "pending" ? limitStrategy(filtered, new Date()) : filtered;
 
   async function assign(id: string, userId: string | null) {
     const { error } = await supabase.from("suggestions").update({ user_id: userId }).eq("id", id);
@@ -84,12 +87,13 @@ export function SuggestionBoard() {
     return (
       <div className="flex gap-1">
         {s.link && (() => { const t = linkTarget(s.link)!; return <Button size="icon" variant="ghost" asChild aria-label="Abrir"><Link to={t.to} search={t.search}><span aria-hidden>→</span></Link></Button>; })()}
-        {open && <Button size="icon" variant="ghost" aria-label={actionTool(s.action) ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
+        {open && <Button size="icon" variant="ghost" aria-label={parseStrategy(s.strategy) ? "Aceptar" : actionTool(s.action) ? "Aprobar y hacer" : "Marcar como hecha"} onClick={() => act(s.id, "approve")}><span aria-hidden>✓</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Posponer 3 días" onClick={() => act(s.id, "snooze")}><span aria-hidden className="text-xs">+3 d</span></Button>}
         {open && <Button size="icon" variant="ghost" aria-label="Descartar" onClick={() => act(s.id, "dismiss")}><span aria-hidden>×</span></Button>}
       </div>
     );
   };
+  const strategyBlock = (s: Row) => { const m = parseStrategy(s.strategy); return m ? <><StrategyBadge m={m} /><StrategyEvidence m={m} /></> : null; };
   const statusText = (s: Row) => <>
     {STATUS_LABEL[s.status] ?? s.status}
     {s.status === "snoozed" && s.snoozed_until && <span className="block text-xs text-muted-foreground">hasta {new Date(s.snoozed_until).toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}</span>}
@@ -154,7 +158,7 @@ export function SuggestionBoard() {
                   <span className={s.priority === 1 ? "text-signal" : "text-muted-foreground"}>{PRIO[s.priority]}</span>
                   <span className={overdue ? "text-signal" : "text-muted-foreground"}>· {ageDays(s)} d{overdue ? " · vencida" : ""}</span>
                 </div>
-                <div className="min-w-0 break-words"><p className="font-medium">{s.title}</p><p className="text-xs text-muted-foreground">{s.body}</p></div>
+                <div className="min-w-0 break-words"><p className="font-medium">{s.title}</p><p className="text-xs text-muted-foreground">{s.body}</p>{strategyBlock(s)}</div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="min-w-0 [&_select]:w-full"><p className="eyebrow mb-1">Responsable</p>{ownerCell(s)}</div>
                   <div className="min-w-0"><p className="eyebrow mb-1">Estado</p>{statusText(s)}</div>
@@ -176,7 +180,7 @@ export function SuggestionBoard() {
               return (
                 <tr key={s.id} className="border-b align-top last:border-0">
                   <td className={`px-3 py-2 font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>{PRIO[s.priority]}</td>
-                  <td className="max-w-md px-3 py-2"><p className="font-medium">{s.title}</p><p className="text-xs text-muted-foreground">{s.body}</p></td>
+                  <td className="max-w-md px-3 py-2"><p className="font-medium">{s.title}</p><p className="text-xs text-muted-foreground">{s.body}</p>{strategyBlock(s)}</td>
                   <td className="px-3 py-2">{ownerCell(s)}</td>
                   <td className="whitespace-nowrap px-3 py-2">{statusText(s)}</td>
                   <td className={`whitespace-nowrap px-3 py-2 font-mono text-xs ${overdue ? "text-signal" : "text-muted-foreground"}`}>{ageDays(s)} d{overdue ? " · vencida" : ""}</td>

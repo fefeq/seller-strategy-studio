@@ -53,7 +53,8 @@ describe("CA-4: decidir registra fecha, autor y motivo, y cambia el estado una s
     expect(eq(upd, "org_id", ORG) && eq(upd, "id", "s1") && eq(upd, "status", "pending")).toBe(true);
     const ins = writes(log, "strategy_decisions")[0]!;
     expect(ins.op).toBe("insert");
-    expect(ins.payload).toEqual({ org_id: ORG, suggestion_id: "s1", decision: "accepted", reason: null, remind_at: null, evidence_fingerprint: s.strategy.fingerprint, decided_by: ME, decided_at: "2026-10-27T10:00:00.000Z" });
+    expect(ins.payload).toEqual({ org_id: ORG, suggestion_id: "s1", decision: "accepted", reason: null, remind_at: null, evidence_fingerprint: s.strategy.fingerprint, decided_by: ME });
+    expect(ins.payload).not.toHaveProperty("decided_at"); // the database sets the date
   });
   it("postpone: the row sleeps until the reminder date (3 days by default) and the reason is kept", async () => {
     const { db, log } = fakeDb((q) => (q.op === "update" ? { data: [{ id: "s1" }] } : undefined));

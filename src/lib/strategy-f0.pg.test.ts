@@ -172,6 +172,12 @@ describe("CA-4: la decisión queda registrada con fecha, autor y motivo opcional
     expect(await throws(() => decide(U.aeA, "dismissed", "x".repeat(501)))).toMatch(/reason/);
     expect(await throws(() => as(db, U.aeA, () => db.query("insert into strategy_decisions (org_id, suggestion_id, decision, evidence_fingerprint, decided_by) values ($1,$2,'accepted','f',$3)", [A, sid, U.ownerA])))).toMatch(/row-level security/);
   });
+  it("the app cannot choose the date or a fingerprint other than the suggestion's, and a decided suggestion cannot be deleted", async () => {
+    const ins = (fp: string, at: string) => as(db, U.aeA, () => db.query("insert into strategy_decisions (org_id, suggestion_id, decision, evidence_fingerprint, decided_by, decided_at) values ($1,$2,'accepted',$3,$4,$5::timestamptz)", [A, sid, fp, U.aeA, at]));
+    expect(await throws(() => ins("abc12345", "2020-01-01T00:00:00Z"))).toMatch(/row-level security/);
+    expect(await throws(() => ins("otra-huella", new Date().toISOString()))).toMatch(/row-level security/);
+    expect(await throws(() => db.query("delete from suggestions where id = $1", [sid]))).toMatch(/foreign key|strategy_decisions/);
+  });
   it("a member of another company cannot record or read decisions of this one", async () => {
     expect(await throws(() => decide(U.ownerB, "dismissed", null, null, B))).toMatch(/row-level security/);
     expect(await throws(() => decide(U.ownerB, "dismissed", null, null, A))).toMatch(/row-level security/);

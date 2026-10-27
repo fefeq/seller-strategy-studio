@@ -11,7 +11,7 @@ import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { actionTool } from "@/lib/json";
 import { errorText } from "@/lib/errors";
 import { parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
-import { StrategyBadge } from "@/components/strategy-evidence";
+import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 type S = NonNullable<ReturnType<typeof useSuggestions>["data"]>[number];
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
@@ -57,7 +57,7 @@ function DeckFace({ s }: { s: S }) {
       <p className={`eyebrow ${s.priority === 1 ? "text-state-alarm" : ""}`}>{PRIO[s.priority]}{hasAction ? " · Nokko lo hace por ti" : ""}{strategy ? ` · ${strategyHeading(strategy)}` : ""}</p>
       <h3 className="mt-2 break-words font-display text-2xl leading-tight">{s.title}</h3>
       {s.body && <p className={`mt-3 whitespace-pre-line break-words text-sm text-ink-mid ${open ? "max-h-64 overflow-y-auto" : "line-clamp-3"}`}>{s.body}</p>}
-      {strategy && <StrategyBadge m={strategy} />}
+      {strategy && <><StrategyBadge m={strategy} /><div onPointerDown={stop}><StrategyEvidence m={strategy} /></div></>}
       <div className="mt-5 flex flex-wrap gap-3 text-sm" onPointerDown={stop}>
         {s.body && s.body.length > 140 && <button type="button" className="text-ink-mid underline underline-offset-4 hover:text-ink" onClick={() => setOpen((o) => !o)}>{open ? "Ver menos" : "Ver detalle"}</button>}
         <button type="button" className="text-ink-mid underline underline-offset-4 hover:text-ink" onClick={resolve}>Resolver con el agente</button>
