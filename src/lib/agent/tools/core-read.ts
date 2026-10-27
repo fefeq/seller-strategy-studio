@@ -180,7 +180,12 @@ export const CORE_READ_TOOLS: AgentTool[] = [
     name: "list_suggestions", kind: "read",
     description: "Sugerencias proactivas pendientes del motor (riesgos y próximos pasos).",
     input: z.object({}),
-    run: async (c) => ok(await c.db.from("suggestions").select("id,title,body,priority,link,action").eq("org_id", c.orgId).eq("status", "pending").or(`user_id.is.null,user_id.eq.${c.userId}`).order("priority").limit(15)),
+    run: async (c) => {
+      const r = await c.db.from("suggestions").select("id,title,body,priority,link,action,detector,dedupe_key").eq("org_id", c.orgId).eq("status", "pending").or(`user_id.is.null,user_id.eq.${c.userId}`).order("priority").limit(40);
+      // Price suggestions are only for roles that may see prices (CA-19).
+      const { canViewStrategy } = await import("@/lib/strategy-suggestions");
+      return ok({ ...r, data: (r.data ?? []).filter((x) => canViewStrategy(x, c.roles)).slice(0, 15).map(({ detector: _d, dedupe_key: _k, ...rest }) => rest) });
+    },
   }),
   def({
     name: "get_setup_status", kind: "read",

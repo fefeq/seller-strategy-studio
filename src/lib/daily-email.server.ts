@@ -34,7 +34,7 @@ export async function buildDailyContent(db: Db, userId: string, orgId: string, n
     db.from("leads").select("company,next_step_at,owner_id,stage").eq("org_id", orgId).lte("next_step_at", clock.day).limit(500),
     db.from("approvals").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("status", "pending"),
     db.from("agent_pending_actions").select("id", { count: "exact", head: true }).eq("org_id", orgId).eq("user_id", userId).eq("status", "pending"),
-    db.from("suggestions").select("title,priority,created_at").eq("org_id", orgId).eq("status", "pending").or(mineOrOpen).limit(200),
+    db.from("suggestions").select("title,priority,created_at").eq("org_id", orgId).eq("status", "pending").or(mineOrOpen).not("dedupe_key", "like", "strategy_product_price:price:%").limit(200),
   ]);
   const currency = org.data?.currency ?? "EUR";
   const money = (n: number) => (n < 1 ? new Intl.NumberFormat("es-ES", { style: "currency", currency, minimumFractionDigits: 2 }).format(n) : formatMoney(n, currency, true));

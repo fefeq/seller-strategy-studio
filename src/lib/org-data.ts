@@ -38,6 +38,26 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
   };
 }
 
+/** Extra reads for the strategic rules (F1). A failed read leaves its list empty: a rule never fires on data it could not read. */
+async function loadStrategyData(db: Db, orgId: string): Promise<import("@/lib/proactive/types").StrategyData> {
+  const [icps, accounts, deals, history, products, lines, costs, budgets] = await Promise.all([
+    db.from("icp_profiles").select("id,name,industries,company_size,geography,countries,anti_icp,segment_id,created_at").eq("org_id", orgId),
+    fetchAll((a, b) => db.from("accounts").select("id,name,industry,size,country,segment_id,tier").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
+    fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,account_id,segment_id,close_date,created_at,closed_at,updated_at,lost_reason,lost_competitor").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
+    fetchAll((a, b) => db.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at").eq("org_id", orgId).order("changed_at").range(a, b)).then((r) => ({ data: r.rows })),
+    db.from("products").select("id,name,active,created_at").eq("org_id", orgId),
+    fetchAll((a, b) => db.from("deal_lines").select("id,deal_id,product_id,name,discount_pct,unit_price,created_at").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
+    db.from("cac_costs").select("segment_id,period").eq("org_id", orgId),
+    db.from("segment_budget_quarters").select("segment_id,period,plan_revenue").eq("org_id", orgId),
+  ]);
+  return {
+    icps: (icps.data ?? []).map((i) => ({ ...i, countries: i.countries ?? [] })),
+    accounts: accounts.data ?? [], deals: deals.data ?? [], history: history.data ?? [], products: products.data ?? [],
+    lines: (lines.data ?? []).map((l) => ({ ...l, discount_pct: Number(l.discount_pct), unit_price: Number(l.unit_price) })),
+    costs: costs.data ?? [], budgets: budgets.data ?? [],
+  };
+}
+
 export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
   const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage] = await Promise.all([
     loadSetupData(db, orgId),
@@ -55,8 +75,9 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     db.from("account_signals").select("id,account_id,title,kind,summary,relevance,url,found_at").eq("org_id", orgId).gte("found_at", new Date(now.getTime() - 14 * 86_400_000).toISOString()).limit(200),
     db.from("product_usage").select("domain,account_id,active_users_7d,active_users_prev_7d").eq("org_id", orgId).order("active_users_7d", { ascending: false }).limit(500),
   ]);
+  const strategy = await loadStrategyData(db, orgId);
   return {
-    now, orgId, setup,
+    now, orgId, setup, strategy,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
     deals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     meetings: meetings.data ?? [],

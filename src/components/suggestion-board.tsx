@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { decideSuggestion } from "@/lib/agent.functions";
+import { canViewStrategy } from "@/lib/strategy-suggestions";
 import { STATUS_LABEL, ageDays, boardSummary, byOwner, canSeeTeam, closedSummary, isOverdue } from "@/lib/suggestion-board";
 import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
@@ -30,18 +31,18 @@ export function SuggestionBoard() {
   const [grouped, setGrouped] = useState(false);
 
   const { data } = useQuery({
-    queryKey: ["suggestions", "board", orgId],
+    queryKey: ["suggestions", "board", orgId, (me?.roles ?? []).join(",")],
     enabled: !!orgId,
     queryFn: async () => {
       const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
       const [s, m] = await Promise.all([
-        supabase.from("suggestions").select("id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until")
+        supabase.from("suggestions").select("id,title,body,priority,link,action,status,user_id,created_at,updated_at,snoozed_until,detector,dedupe_key")
           .eq("org_id", orgId!).or(`status.in.(pending,snoozed),updated_at.gte.${since}`).order("priority").order("created_at").limit(500),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
       ]);
       const ids = (m.data ?? []).map((x) => x.user_id);
       const { data: p } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
-      return { items: s.data ?? [], members: (p ?? []).map((x) => ({ id: x.id, name: x.full_name || "Sin nombre" })) };
+      return { items: (s.data ?? []).filter((r) => canViewStrategy(r, me?.roles ?? [])), members: (p ?? []).map((x) => ({ id: x.id, name: x.full_name || "Sin nombre" })) };
     },
   });
 

@@ -13,7 +13,7 @@ import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
 import { Input } from "@/components/ui/input";
-import { limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
+import { canViewStrategy, limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
@@ -64,12 +64,12 @@ export function useSuggestions() {
       .catch((e) => console.warn("[suggestions] background recheck failed", e));
   }, [orgId, refresh, qc]);
   return useQuery({
-    queryKey: ["suggestions", orgId],
+    queryKey: ["suggestions", orgId, (me?.roles ?? []).join(",")],
     enabled: !!orgId,
     queryFn: async () => {
       const { data } = await supabase.from("suggestions").select("id,title,body,priority,link,action,created_at,detector,dedupe_key,strategy").eq("org_id", orgId!).eq("status", "pending").or(`user_id.is.null,user_id.eq.${me!.user.id}`).order("priority").order("created_at", { ascending: false }).limit(100);
       // At most 7 strategic suggestions open at once (CA-7); the operational ones are not capped.
-      return limitStrategy(data ?? [], new Date());
+      return limitStrategy((data ?? []).filter((r) => canViewStrategy(r, me?.roles ?? [])), new Date());
     },
   });
 }
