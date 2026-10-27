@@ -29,6 +29,7 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
     <SwipeDeck
       items={limitStrategy(items, new Date())} // CA-7: at most 7 open strategic suggestions
       keyboard={keyboard}
+      wordButtons={(s) => !!parseStrategy(s.strategy)}
       labels={(s) =>
         parseStrategy(s.strategy)
           ? { right: "Aceptar", left: "Descartar", up: "Más tarde" }

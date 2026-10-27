@@ -25,6 +25,7 @@ export function SwipeDeck<T extends { id: string }>({
   done,
   undoMs = 5000,
   keyboard = true,
+  wordButtons,
 }: {
   items: T[];
   /** One set for every card, or one per card (strategic suggestions say «Aceptar» instead of «Hacer»). */
@@ -35,6 +36,8 @@ export function SwipeDeck<T extends { id: string }>({
   undoMs?: number;
   /** Arrow keys and Z; off where the page needs arrows to scroll (Inicio). */
   keyboard?: boolean;
+  /** Cards that say what each button does in words (Aceptar, Más tarde, Descartar) instead of ✕ and ✓. */
+  wordButtons?: (item: T) => boolean;
 }) {
   const labelsOf = (i: T): DeckLabels => (typeof labels === "function" ? labels(i) : labels);
   const [gone, setGone] = useState<Map<string, SwipeDir>>(new Map());
@@ -155,7 +158,20 @@ export function SwipeDeck<T extends { id: string }>({
           </motion.div>
         )}
       </div>
-      {current && (
+      {current && wordButtons?.(current) && (
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+          <Button variant="outline" className="rounded-full px-5" onClick={() => decide("left")}>
+            {labelsOf(current)["left"]}
+          </Button>
+          <Button variant="outline" className="rounded-full px-5" onClick={() => decide("up")}>
+            {labelsOf(current)["up"]}
+          </Button>
+          <Button className="rounded-full px-6" onClick={() => decide("right")}>
+            {labelsOf(current)["right"]}
+          </Button>
+        </div>
+      )}
+      {current && !wordButtons?.(current) && (
         <div className="mt-5 flex items-center justify-center gap-4">
           <Button
             variant="outline"
