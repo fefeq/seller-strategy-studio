@@ -1,6 +1,6 @@
 // @vitest-environment node
 // Runs migrations 0058 (provenance trigger), 0060 (change log and undo), 0061 (provenance on strategy tables), 0062 (setup step
-// snoozes) and 0063 (undo keeps confirmations) on an in-process Postgres with two fictional companies (see src/test/pg-harness.ts for what it does and does not model).
+// snoozes), 0063 (undo keeps confirmations) on an in-process Postgres with two fictional companies (see src/test/pg-harness.ts for what it does and does not model).
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
 import { ROLES } from "@/lib/roles";
@@ -337,5 +337,72 @@ describe("migration 0062: setup step snoozes", () => {
     expect(await priv("anon")).toEqual([]);
     expect(await priv("authenticated")).toEqual(["DELETE", "INSERT", "SELECT", "UPDATE"]);
     expect(await priv("service_role")).toContain("TRUNCATE");
+  });
+});
+
+describe("migration 0064: last_human_edit_at, only what a person changed", () => {
+  const TABLES = ["positioning", "segments", "quotas", "accounts", "deals", "icp_profiles", "messaging_pillars"];
+  const INSERT: Record<string, string> = {
+    positioning: "insert into positioning (category) values ('X') returning id", segments: "insert into segments (name) values ('S64') returning id",
+    quotas: "insert into quotas (period, amount) values ('2026-Q4', 1) returning id", accounts: "insert into accounts (name) values ('Acc64') returning id",
+    deals: "insert into deals (name) values ('Deal64') returning id", icp_profiles: "insert into icp_profiles (name) values ('Icp64') returning id",
+    messaging_pillars: "insert into messaging_pillars (title) values ('P64') returning id",
+  };
+  const SET: Record<string, string> = { positioning: "category = 'Y'", segments: "name = 'S64b'", quotas: "amount = 2", accounts: "name = 'Acc64b'", deals: "name = 'Deal64b'", icp_profiles: "name = 'Icp64b'", messaging_pillars: "title = 'P64b'" };
+  const ids: Record<string, string> = {};
+
+  beforeAll(async () => {
+    // quotas and deals are not in the harness: minimal versions with the audit trigger and company policies
+    await db.exec(`
+      create table public.quotas (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), period text not null, amount numeric not null, user_id uuid, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+      create table public.deals (id uuid primary key default gen_random_uuid(), org_id uuid default public.current_org(), name text not null, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+      do $$ declare t text; begin foreach t in array array['quotas','deals'] loop
+        execute format('alter table public.%I enable row level security', t);
+        execute format('grant select, insert, update, delete on public.%I to authenticated', t);
+        execute format('grant all on public.%I to service_role', t);
+        execute format('create policy "org all" on public.%I for all to authenticated using (public.is_org_member(org_id)) with check (public.is_org_member(org_id))', t);
+        execute format('create trigger %I before insert or update on public.%I for each row execute function public.set_audit()', t || '_audit', t);
+      end loop; end $$;`);
+    await migrate(db, ["0064_last_human_edit_at.sql"]);
+  });
+  const stamp = async (t: string, id: string) => (await rows(`select last_human_edit_at, updated_at from ${t} where id = $1`, [id]))[0]!;
+
+  it("4. the column exists on the seven tables the setup steps read", async () => {
+    const r = await rows("select table_name from information_schema.columns where column_name = 'last_human_edit_at' and table_schema = 'public' order by 1");
+    expect(r.map((x) => x.table_name)).toEqual([...TABLES].sort());
+  });
+
+  it("1. a signed-in insert and update stamp it", async () => {
+    for (const t of TABLES) {
+      await as(db, U.aeA, async () => { ids[t] = (await rows(INSERT[t]!))[0]!.id; });
+      expect((await stamp(t, ids[t]!)).last_human_edit_at, `${t} insert`).not.toBeNull();
+      await db.exec(`update ${t} set last_human_edit_at = null where id = '${ids[t]}'`); // as superuser: no auth.uid(), so the trigger keeps what is there
+      await as(db, U.ownerA, async () => { await db.query(`update ${t} set ${SET[t]} where id = $1`, [ids[t]]); });
+      expect((await stamp(t, ids[t]!)).last_human_edit_at, `${t} update`).not.toBeNull();
+    }
+  });
+
+  it("2. an update with no signed-in person leaves it as it was while updated_at moves", async () => {
+    for (const t of TABLES) {
+      const before = await stamp(t, ids[t]!);
+      await as(db, null, async () => { await db.query(`update ${t} set ${SET[t]!.replace(/'(.*)b?'/, "'auto'")} where id = $1`, [ids[t]]); });
+      const after = await stamp(t, ids[t]!);
+      expect(after.last_human_edit_at, t).toEqual(before.last_human_edit_at);
+      expect(new Date(after.updated_at).getTime(), t).toBeGreaterThan(new Date(before.updated_at).getTime());
+    }
+  });
+
+  it("3. an insert with no signed-in person leaves it empty", async () => {
+    await as(db, null, async () => { const id = (await rows("insert into accounts (name, org_id) values ('Auto64', $1) returning id", [A]))[0]!.id; expect((await stamp("accounts", id)).last_human_edit_at).toBeNull(); });
+  });
+
+  it("5. a value sent by the client is overwritten", async () => {
+    await as(db, U.aeA, async () => {
+      const id = (await rows("insert into segments (name, last_human_edit_at) values ('Forged', '2000-01-01') returning id"))[0]!.id;
+      expect(new Date((await stamp("segments", id)).last_human_edit_at).getFullYear()).toBeGreaterThan(2000);
+    });
+    const keep = (await stamp("segments", ids["segments"]!)).last_human_edit_at;
+    await as(db, null, async () => { await db.query("update segments set last_human_edit_at = '2000-01-01' where id = $1", [ids["segments"]]); });
+    expect((await stamp("segments", ids["segments"]!)).last_human_edit_at).toEqual(keep);
   });
 });

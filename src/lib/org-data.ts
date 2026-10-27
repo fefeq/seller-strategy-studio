@@ -40,17 +40,18 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 /**
- * Snoozed setup steps of the company and, only when asked, the latest change in the data the setup steps read
+ * Snoozed setup steps of the company and, only when asked, the latest change a person made in the data the setup steps read
  * (SDD strategy-setup-guided-next-step). The activity needs one query per table, so screens that don't nudge leave it out.
  */
 async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
-  const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars", col: "updated_at" | "created_at") =>
-    db.from(table).select(col).eq("org_id", orgId).order(col, { ascending: false }).limit(1).maybeSingle().then((r) => (r.data as Record<string, string> | null)?.[col] ?? null);
+  // Only changes a signed-in person made (migration 0064): enrichments, syncs and triggers do not move last_human_edit_at. Empty = unknown.
+  const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars") =>
+    db.from(table).select("last_human_edit_at").eq("org_id", orgId).not("last_human_edit_at", "is", null).order("last_human_edit_at", { ascending: false }).limit(1).maybeSingle().then((r) => r.data?.last_human_edit_at ?? null);
   const [snoozes, ...stamps] = await Promise.all([
     db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
     ...(withActivity ? [
-      newest("positioning", "updated_at"), newest("segments", "updated_at"), newest("quotas", "updated_at"), newest("accounts", "updated_at"),
-      newest("deals", "updated_at"), newest("icp_profiles", "updated_at"), newest("messaging_pillars", "updated_at"),
+      newest("positioning"), newest("segments"), newest("quotas"), newest("accounts"),
+      newest("deals"), newest("icp_profiles"), newest("messaging_pillars"),
     ] : []),
   ]);
   const rows = snoozes.data ?? [];
