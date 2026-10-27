@@ -18,6 +18,17 @@ Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: 
 | 9 | `SDD-20261025-theory-u-proactive-decision-support` | Feature | 1, 2 |
 | 10 | `SDD-20261025-connections-bring-your-own-account` | Feature | 1; incluye el SDD 5 como primer caso |
 
+## Estado a 2026-10-27 (según GitHub)
+| SDD | Estado | PR |
+|---|---|---|
+| 1 Definiciones universales | Fusionado en `main` (U-1 a U-4); sin revisión de Dani | #34 |
+| 2 Acciones sobre campos | Fusionado en `main` (U-1 a U-5) con correcciones | #34, #35 |
+| 3 Guía de estrategia | En revisión; falta cambiar la base a `main` y renumerar la migración | #31 |
+| 10 y 5 Conexiones y Drive | En revisión; entrega parcial (Drive propio, permiso `drive.file`) | #32 |
+| 4, 6, 7a, 7b, 7c, 8, 9 | Sin empezar | — |
+
+El PR #30 y la rama `feat/connections-own-account` quedan sustituidos por #32.
+
 Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
 
 ## Principio de uso de LLM (aplica a los diez)

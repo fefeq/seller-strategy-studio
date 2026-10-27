@@ -36,13 +36,13 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-1: Como founder, quiero que NOKKO proponga mis productos al compartir mi web.
 - CA-1: CUANDO comparto la URL de mi web o documentos, el sistema DEBE proponer una lista de productos con nombre y descripción y, cuando la fuente los dé, precio y facturación.
 - CA-2: SI la fuente no da precio, ENTONCES el sistema DEBE dejarlo vacío y marcarlo «Falta», nunca inventarlo.
-- CA-3: El sistema DEBE guardar para cada dato propuesto su fuente y su nivel (Confirmado, Deducido, Supuesto).
+- CA-3: El sistema DEBE guardar para cada dato propuesto su fuente y su nivel (Confirmado, Deducido, Supuesto), con el vocabulario y las reglas del SDD universal de campos.
 - CA-4: MIENTRAS yo no haya aprobado el bloque o el producto, el sistema DEBE mantener las propuestas fuera del catálogo.
 
 ### H-2: Como founder, quiero aprobar los productos como parte del onboarding.
 - CA-5: El sistema DEBE ofrecer «Productos» como bloque de aprobación del onboarding, con aprobar, rehacer con una indicación y saltar por ahora.
 - CA-6: CUANDO salto el bloque, el sistema DEBE mantenerlo como pendiente en la guía de estrategia.
-- CA-7: CUANDO apruebo, el sistema DEBE crear los productos en el catálogo y permitirme deshacer.
+- CA-7: CUANDO apruebo, el sistema DEBE crear los productos en el catálogo y permitirme deshacer todo el bloque durante 24 horas, salvo los productos ya usados en líneas de deal.
 
 ### H-3: Como founder, quiero añadir, editar y quitar productos en cualquier momento.
 - CA-8: El sistema DEBE permitir crear, editar, archivar y borrar productos desde Productos y desde el Agente, con las acciones del SDD de acciones sobre campos.

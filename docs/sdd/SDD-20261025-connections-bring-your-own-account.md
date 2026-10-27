@@ -35,7 +35,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 
 ## 7. Historias y criterios de aceptación
 ### H-1: Como Owner, quiero ver todas mis conexiones y su estado en un sitio.
-- CA-1: El sistema DEBE mostrar, por cada proveedor, uno de estos estados: Cuenta propia, Proporcionada por NOKKO, Sin conectar, Error.
+- CA-1: El sistema DEBE mostrar, por cada proveedor, uno de estos estados: Cuenta propia, Proporcionada por NOKKO, Solo proporcionada por NOKKO (el proveedor no admite cuenta propia), Sin conectar, Error o Sin respuesta (el proveedor no contesta).
 - CA-2: El sistema DEBE mostrar, para cada cuenta propia, qué cuenta es (identificador visible, nunca la credencial), quién la conectó y desde cuándo.
 - CA-3: El sistema DEBE indicar para qué se usa cada conexión dentro de NOKKO.
 
@@ -62,7 +62,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 
 ## 8. Casos límite y errores
 - Credencial caducada o revocada por el proveedor: estado Error con aviso, y no perder lo importado (CA-1, CA-8).
-- Cuenta ya conectada en otra empresa: informar y pedir confirmación (CA-5).
+- Cuenta ya conectada en otra empresa: pedir confirmación sin nombrar la otra empresa, para no revelar datos entre empresas (CA-5).
 - Varios miembros intentan conectar a la vez: la última conexión confirmada manda y se avisa al resto (CA-10).
 - Proveedor caído: no marcar como desconectada; mostrar «Sin respuesta» y reintentar (CA-1).
 - Owner que deja la empresa: las conexiones quedan de la empresa, no de la persona (CA-2).
@@ -74,7 +74,7 @@ Tarjeta: nombre, para qué sirve, estado con palabra y botón «Conectar mi cuen
 
 ## 10. Datos, permisos y privacidad
 - Se guardan credenciales y metadatos de conexión por empresa; solo el sistema las usa.
-- Solo roles autorizados gestionan; todos los miembros ven el estado (decisión de Fede sobre qué roles).
+- Solo el Owner gestiona (decidido por Fede); todos los miembros ven el estado.
 - Datos de terceros leídos mediante la cuenta se guardan en la empresa con su origen.
 - LinkedIn: solo API oficial; no se conectan cuentas de LinkedIn para extraer datos fuera de ella.
 

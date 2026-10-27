@@ -2,7 +2,7 @@
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
 **Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
-**Depende de:** SDD-20261025-universal-field-definitions
+**Depende de:** SDD-20261025-universal-field-definitions; SDD-20261025-fit-data-7a-llave-minima-y-completado (llave mínima)
 
 ## 1. Resumen
 Auditoría de los «Datos para el encaje para investigar» de **Cuentas, Personas, Leads y Competidores**. Objetivo: que NOKKO recoja siempre la **información mínima de identidad** (la llave) de cada entidad, para que apps de terceros (hoy Apollo, Clay, Parallel, Firecrawl, Perplexity, Apify) devuelvan datos más valiosos y fieles, y que lo que devuelvan se guarde con su origen sin pisar lo escrito por la persona.
@@ -39,7 +39,7 @@ Fuente: código y esquema del repo `main` (2026-10-25). Sin datos de cuántos re
 ## 6. Cambios de comportamiento (delta)
 **Añadido:** llave mínima por entidad y su comprobación; entidad Competidor con nombre y dominio; vínculo entre registros de persona; aviso «Falta X para investigar»; propuestas de enriquecimiento.
 **Modificado:** tamaño y país de cuenta → valores normalizados (según SDD universal); enriquecimiento → escribe como propuesta/origen externo, no sobrescribe valores confirmados; competidores → de texto libre a lista estructurada (manteniendo la frase de posicionamiento).
-**Eliminado:** duplicidad de identidad de persona entre las dos tablas (según decisión de Dani).
+**Eliminado:** duplicidad de identidad de persona entre las dos tablas (a decidir por Dani: vincular o unificar).
 
 ### Llave mínima propuesta (a validar)
 | Entidad | Llave mínima | Datos de encaje opcionales que mejoran el resultado |
@@ -92,7 +92,7 @@ Mensaje: «Para investigar a *X* falta el dominio. Lo he deducido de su web: *x.
 - **Uso de LLM:** cero para comprobar llaves y derivar dominio (reglas y normalización). LLM solo donde ya existe (investigación), con `effort:"low"`, y evitando llamadas cuando CA-16 aplica. El planificador ya prioriza coste cero/caché: mantener.
 
 ## 13. Riesgos y dependencias
-- Tamaño: la auditoría independiente propone dividirlo en 7a (U-1, U-2), 7b (U-3 competidores, coordinado con Descubiertos) y 7c (U-4, U-5). Fede decide.
+- División: este documento ya es una de las tres partes (7a, 7b, 7c). Los CA y H conservan la numeración original; las referencias a CA que no están aquí remiten a otra parte (7a: CA-1 a CA-7; 7b: CA-8 a CA-10 y CA-17 a CA-21; 7c: CA-11 a CA-16).
 - Dueños: confirmar propuestas → SDD de acciones; no sobrescribir → SDD universal CA-9.
 - Un lead con email personal sin cuenta queda «No enriquecible» hasta que se indique la empresa.
 - Fusión de personas: riesgo de unir a dos personas distintas (CA-12 exige confirmación).
