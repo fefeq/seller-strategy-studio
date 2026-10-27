@@ -56,12 +56,15 @@ export function DriveConnect() {
 
   async function off() {
     const ok = await askConfirm("¿Desconectar tu Google Drive?", {
-      body: "NOKKO dejará de usar esta cuenta ahora mismo y se revocará el acceso en Google. Lo que ya importaste a Conocimiento se conserva con su origen. Los archivos de tu Drive no se tocan.",
+      body: "NOKKO dejará de usar esta cuenta ahora mismo. Después intentaremos revocar el acceso en Google y te diremos si se pudo o no. Lo que ya importaste a Conocimiento se conserva con su origen. Los archivos de tu Drive no se tocan.",
       confirmLabel: "Desconectar",
     });
     if (!ok) return;
     setBusy(true);
-    try { await disconnect(); toast.success("Drive desconectado. Lo importado se conserva en Conocimiento."); }
+    try {
+      const r = await disconnect();
+      (r.revocation === "revoked" ? toast.success : toast.warning)(`Drive desconectado. ${r.message} Lo importado se conserva en Conocimiento.`, { duration: 12000 });
+    }
     catch (e) { toast.error(errorText(e)); }
     finally { setBusy(false); void qc.invalidateQueries({ queryKey: ["drive-connection"] }); }
   }

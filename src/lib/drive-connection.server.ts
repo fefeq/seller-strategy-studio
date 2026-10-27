@@ -4,7 +4,7 @@
 // GOOGLE_OAUTH_CLIENT_SECRET, optional GOOGLE_OAUTH_REDIRECT_URI, and INTEGRATION_KEYS_SECRET (also signs the state).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { ALREADY_ELSEWHERE, buildAuthUrl, checkGrant, failureStatus, oauthErrorText, type ConnectionRow } from "@/lib/drive-connection";
+import { ALREADY_ELSEWHERE, buildAuthUrl, checkGrant, failureStatus, oauthErrorText, revocationText, revokeSkipReason, type ConnectionRow, type RevokeOutcome } from "@/lib/drive-connection";
 import { DriveError, GOOGLE_API, nokkoAuth, type DriveAuth } from "@/lib/google-drive";
 import { consumeNonce, newNonce, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
 import { open, seal } from "@/lib/secret-box.server";
@@ -48,8 +48,22 @@ async function tokenCall(body: Record<string, string>): Promise<{ ok: boolean; s
   return { ok: res.ok, status: res.status, json: ((await res.json().catch(() => ({}))) as Record<string, unknown>) ?? {} };
 }
 
-async function revoke(token: string) {
-  try { await fetch(REVOKE_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }) }); } catch { /* best effort: the token is dropped from NOKKO either way */ }
+/** «revoked» only when Google answered 2xx; anything else (an error answer, no answer) is «failed». */
+async function revoke(token: string): Promise<"revoked" | "failed"> {
+  try {
+    const res = await fetch(REVOKE_URL, { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token }) });
+    return res.ok ? "revoked" : "failed";
+  } catch { return "failed"; }
+}
+
+/** Revokes a saved (sealed) token unless that could cut an account still in use; says what happened. */
+async function revokeSaved(db: Admin, orgId: string, saved: { google_email: string; refresh_token_enc: string }, newEmail: string | null): Promise<RevokeOutcome> {
+  const { count } = await db.from("drive_connections").select("org_id", { count: "exact", head: true }).eq("google_email", saved.google_email).neq("org_id", orgId);
+  const skip = revokeSkipReason({ oldEmail: saved.google_email, newEmail, usedElsewhere: !!count });
+  if (skip) return skip;
+  let token: string;
+  try { token = await open(saved.refresh_token_enc); } catch { return "unreadable"; }
+  return revoke(token);
 }
 
 export type ConnectResult = { ok: boolean; message: string; returnTo: string };
@@ -93,21 +107,22 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
   );
   if (error) return fail("No se pudo guardar la conexión. Inténtalo de nuevo.");
   forget(st.o);
-  if (previous) { try { await revoke(await open(previous.refresh_token_enc)); } catch { /* unreadable old token: nothing to revoke */ } }
+  const revocation = previous ? await revokeSaved(db, st.o, previous, grant.email) : null;
   await logEvent(db, st.o, st.u, previous && previous.google_email !== grant.email ? "changed" : "connected", grant.email);
-  return { ok: true, message: `Drive conectado con ${grant.email}.${count ? ` ${ALREADY_ELSEWHERE}` : ""}`, returnTo: st.r };
+  const aboutOld = previous && revocation ? ` ${revocationText(revocation, previous.google_email)}` : "";
+  return { ok: true, message: `Drive conectado con ${grant.email}.${count ? ` ${ALREADY_ELSEWHERE}` : ""}${aboutOld}`, returnTo: st.r };
 }
 
-/** Stops using the account at once, revokes it at Google and drops the token. Imported knowledge stays. */
-export async function disconnectDrive(db: Admin, orgId: string, userId: string) {
+/** Stops using the account at once, tries to revoke it at Google (unless another company uses the same account) and drops the token. Imported knowledge stays. */
+export async function disconnectDrive(db: Admin, orgId: string, userId: string): Promise<{ email: string | null; revocation: RevokeOutcome | null; message: string }> {
   const { data: row } = await db.from("drive_connections").select("google_email,refresh_token_enc").eq("org_id", orgId).maybeSingle();
-  if (!row) return { email: null };
-  try { await revoke(await open(row.refresh_token_enc)); } catch { /* see revoke */ }
+  if (!row) return { email: null, revocation: null, message: "No había ninguna cuenta conectada." };
+  const revocation = await revokeSaved(db, orgId, row, null);
   const { error } = await db.from("drive_connections").delete().eq("org_id", orgId);
   if (error) throw new Error("No se pudo desconectar Drive. Inténtalo de nuevo.");
   forget(orgId);
-  await logEvent(db, orgId, userId, "disconnected", row.google_email);
-  return { email: row.google_email };
+  await logEvent(db, orgId, userId, "disconnected", `${row.google_email} · ${revocationText(revocation, row.google_email)}`);
+  return { email: row.google_email, revocation, message: `NOKKO ya no usa ${row.google_email}. ${revocationText(revocation, row.google_email)}` };
 }
 
 // Access tokens live about an hour: kept per company in memory so each Drive call does not refresh again.

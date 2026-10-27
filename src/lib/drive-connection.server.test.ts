@@ -200,12 +200,70 @@ describe("CA-4 (SDD 5) · disconnecting stops the use at once", () => {
   it("revokes at Google, deletes the token, logs it, and the company falls back to NOKKO's account", async () => {
     const { db, tables, log } = owner({ drive_connections: [{ org_id: ORG, google_email: "ana@ejemplo.test", refresh_token_enc: await seal("refresh-secreto"), status: "active" }] });
     expect(await ownDriveAuth(db, ORG)).not.toBeNull();
-    expect(await disconnectDrive(db, ORG, USER)).toEqual({ email: "ana@ejemplo.test" });
+    expect(await disconnectDrive(db, ORG, USER)).toMatchObject({ email: "ana@ejemplo.test", revocation: "revoked" });
     expect(tables["drive_connections"]).toHaveLength(0);
     expect(calls.some((c) => c.url.includes("/revoke") && c.body.includes("refresh-secreto"))).toBe(true);
     expect(log.find((l) => l.table === "connection_events")?.row).toMatchObject({ action: "disconnected", actor: USER });
     expect(await ownDriveAuth(db, ORG)).toBeNull();
     expect(await driveAuthFor(db, ORG)).toBe(nokkoAuth);
+  });
+});
+
+describe("CA-8 (SDD 10) and CA-4 (SDD 5) · the screen says what really happened at Google", () => {
+  const row = async (org: string, email: string, token = "refresh-secreto") => ({ org_id: org, google_email: email, refresh_token_enc: await seal(token), status: "active" });
+  const OTHER = "44444444-4444-4444-4444-444444444444";
+  const revoked = () => calls.filter((c) => c.url.includes("/revoke"));
+
+  it("changing to the same account revokes nothing (the new token shares the old one's grant)", async () => {
+    route = goodGoogle({ email: "ana@ejemplo.test" });
+    const { db } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test", "refresh-antiguo")] });
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
+    expect(r.ok).toBe(true);
+    expect(revoked()).toHaveLength(0);
+    expect(r.message).toMatch(/misma cuenta/);
+  });
+  it("changing away from an account another company also uses revokes nothing and says why", async () => {
+    route = goodGoogle({ email: "nueva@ejemplo.test" });
+    const { db, tables } = owner({ drive_connections: [await row(ORG, "compartida@ejemplo.test", "refresh-antiguo"), await row(OTHER, "compartida@ejemplo.test", "refresh-otra")] });
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
+    expect(r.ok).toBe(true);
+    expect(revoked()).toHaveLength(0);
+    expect(r.message).toMatch(/sigue conectada en otra de tus empresas/);
+    expect(tables["drive_connections"]!.find((x) => x["org_id"] === OTHER)).toBeTruthy();
+  });
+  it("a refused or unanswered revocation is reported as not done, never as revoked", async () => {
+    route = (url) => (url.includes("/revoke") ? ok({ error: "invalid_token" }, 400) : goodGoogle({ email: "nueva@ejemplo.test" })(url));
+    const a = owner({ drive_connections: [await row(ORG, "vieja@ejemplo.test")] });
+    const r = await completeConnect(a.db, await input(), "https://app.ejemplo.test");
+    expect(r.ok).toBe(true);
+    expect(r.message).toMatch(/No pudimos revocar el acceso en Google/);
+    expect(r.message).not.toMatch(/confirmó/);
+
+    const b = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] });
+    route = () => { throw new Error("red caída"); };
+    const d = await disconnectDrive(b.db, ORG, USER);
+    expect(d.revocation).toBe("failed");
+    expect(d.message).toMatch(/No pudimos revocar/);
+    expect(b.tables["drive_connections"]).toHaveLength(0);
+  });
+  it("disconnecting confirms the revocation only when Google answered 2xx, and logs the result", async () => {
+    const { db, log } = owner({ drive_connections: [await row(ORG, "ana@ejemplo.test")] });
+    const d = await disconnectDrive(db, ORG, USER);
+    expect(d).toMatchObject({ revocation: "revoked" });
+    expect(d.message).toMatch(/Google confirmó/);
+    expect(String(log.find((l) => l.table === "connection_events")?.row?.["detail"])).toMatch(/Google confirmó/);
+  });
+  it("disconnecting an account another company also uses leaves Google's access alone", async () => {
+    const { db, tables } = owner({ drive_connections: [await row(ORG, "compartida@ejemplo.test"), await row(OTHER, "compartida@ejemplo.test", "refresh-otra")] });
+    const d = await disconnectDrive(db, ORG, USER);
+    expect(d.revocation).toBe("shared");
+    expect(revoked()).toHaveLength(0);
+    expect(tables["drive_connections"]!.map((x) => x["org_id"])).toEqual([OTHER]);
+  });
+  it("an unreadable saved token cannot be revoked and says so", async () => {
+    const { db } = owner({ drive_connections: [{ org_id: ORG, google_email: "ana@ejemplo.test", refresh_token_enc: "v1:basura", status: "active" }] });
+    expect((await disconnectDrive(db, ORG, USER)).revocation).toBe("unreadable");
+    expect(revoked()).toHaveLength(0);
   });
 });
 

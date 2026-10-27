@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, PERMISSIONS_TEXT, STATE_LABEL, type ConnectionRow } from "./drive-connection";
+import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, PERMISSIONS_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
 
 const row = (status: ConnectionRow["status"]): ConnectionRow => ({ status, google_email: "ana@ejemplo.test", connected_by: null, connected_at: "2026-10-26T10:00:00Z", last_error: null });
 
@@ -76,5 +76,20 @@ describe("CA-10 (SDD 5) / CA-11 (SDD 10) · who manages", () => {
   it("only the Owner", () => {
     expect(canManageConnections("owner")).toBe(true);
     for (const r of ["sales_leader", "member", "viewer", "", null, undefined]) expect(canManageConnections(r)).toBe(false);
+  });
+});
+
+describe("CA-8 (SDD 10) · when the old access is left alone, and what the screen says", () => {
+  it("skips the revocation for the same account or an account another company uses", () => {
+    expect(revokeSkipReason({ oldEmail: "a@x.test", newEmail: "a@x.test", usedElsewhere: false })).toBe("same_account");
+    expect(revokeSkipReason({ oldEmail: "a@x.test", newEmail: "b@x.test", usedElsewhere: true })).toBe("shared");
+    expect(revokeSkipReason({ oldEmail: "a@x.test", newEmail: null, usedElsewhere: true })).toBe("shared");
+    expect(revokeSkipReason({ oldEmail: "a@x.test", newEmail: "b@x.test", usedElsewhere: false })).toBeNull();
+    expect(revokeSkipReason({ oldEmail: "a@x.test", newEmail: null, usedElsewhere: false })).toBeNull();
+  });
+  it("only «revoked» says Google confirmed; the other outcomes never claim it", () => {
+    expect(revocationText("revoked", "a@x.test")).toMatch(/Google confirmó/);
+    for (const o of ["failed", "unreadable", "same_account", "shared"] as const) expect(revocationText(o, "a@x.test")).not.toMatch(/confirmó|se revocó el acceso de NOKKO/);
+    expect(revocationText("failed", "a@x.test")).toMatch(/myaccount\.google\.com\/permissions/);
   });
 });

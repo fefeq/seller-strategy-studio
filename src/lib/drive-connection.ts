@@ -34,6 +34,28 @@ export const PERMISSIONS_TEXT = {
   revoke: "Puedes desconectarla cuando quieras.",
 } as const;
 
+/** What happened to the access at Google when a saved account was replaced or disconnected. Only «revoked» means Google confirmed it. */
+export type RevokeOutcome = "revoked" | "failed" | "unreadable" | "same_account" | "shared";
+
+/** Google ties its tokens to the grant of the account, so the old token is left alone when revoking it could cut an account still in use: the new connection is the same account, or another company uses it. */
+export function revokeSkipReason(a: { oldEmail: string; newEmail?: string | null; usedElsewhere: boolean }): "same_account" | "shared" | null {
+  if (a.usedElsewhere) return "shared";
+  if (a.newEmail && a.newEmail === a.oldEmail) return "same_account";
+  return null;
+}
+
+const GOOGLE_PERMISSIONS = "myaccount.google.com/permissions";
+/** What the screen says about the revocation: never more than what happened. */
+export function revocationText(outcome: RevokeOutcome, email: string): string {
+  switch (outcome) {
+    case "revoked": return `Google confirmó que se revocó el acceso de NOKKO a ${email}.`;
+    case "failed": return `No pudimos revocar el acceso en Google (${email}). Quítaselo a NOKKO tú en ${GOOGLE_PERMISSIONS}.`;
+    case "unreadable": return `No pudimos leer el acceso guardado de ${email}, así que no se revocó en Google. Quítaselo a NOKKO tú en ${GOOGLE_PERMISSIONS}.`;
+    case "same_account": return "Es la misma cuenta de Google: no se revocó nada.";
+    case "shared": return `No se revocó el acceso en Google porque ${email} sigue conectada en otra de tus empresas.`;
+  }
+}
+
 export const ALREADY_ELSEWHERE = "Esta cuenta de Google ya está conectada en otra de tus empresas. Si sigues, también se usará aquí.";
 
 export type AuthUrlInput = { clientId: string; redirectUri: string; state: string };
