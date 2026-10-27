@@ -90,6 +90,7 @@ export const TITLES: Record<string, string> = {
   list_meetings: "Listar reuniones",
   list_people: "Listar personas",
   list_products: "Listar productos",
+  list_segments: "Listar segmentos",
   list_stages: "Listar etapas del pipeline",
   list_suggestions: "Listar sugerencias",
   list_tasks: "Listar tareas",
