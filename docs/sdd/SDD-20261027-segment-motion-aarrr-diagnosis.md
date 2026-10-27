@@ -3,8 +3,6 @@
 **Tipo:** Feature · **Prioridad propuesta:** Media-alta (desbloquea plantillas por motion)
 **Estado:** Aceptado con cambios (ver sección 12) · **Pide:** Fede · **Para:** Claude Code (sin Dani) · **Fecha:** 2026-10-27
 
-Copia en Drive: Postin Core → 02 — Producto → «SDD — Motion por segmento y diagnóstico AARRR (Nokko)».
-
 ## 1. Problema
 NOKKO trata igual a todos los segmentos aunque se vendan de formas distintas (PLG, venta asistida, partners). Tampoco responde a «¿dónde se pierde negocio?» con los datos que ya tiene.
 
@@ -91,8 +89,8 @@ T-2 y T-3 pueden ir en paralelo; T-5 y T-6 también.
 
 ## 12. Decisión
 Aceptado con cambios — Fede (2026-10-27): columna separada `acquisition_motion`, retención solo a nivel empresa, `list_segments` nueva; objetivo, umbral de «fuga» y Revenue por motion como en CA-7; la migración 0071 la aplica Lovable al sincronizar (no verificado).
-- T-1 a T-3: PR #42, fusionado (tsc y 778 tests en una copia con dependencias de npmjs, no del lockfile).
-- T-4 a T-7: PR #43, borrador. No probado en navegador.
+- T-1 a T-3: PR #42, fusionado en `main` (`a69015c`). La migración 0071 no está verificada como aplicada en la base real.
+- T-4 a T-7: PR #43, fusionado en `main` (`e8ddfcf`). Resultado de la fusión: tsc y 874 tests en una copia con dependencias de npmjs, no del lockfile. Pestaña probada en Chromium solo con datos ficticios; falta probarla con datos reales y con la RLS de la base real.
 
 ---
 Autoauditoría: OK; la sección 11 recoge lo verificado y lo que sigue sin verificar.
