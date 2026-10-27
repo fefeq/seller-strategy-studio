@@ -20,6 +20,9 @@ const raw: Record<string, string> = {
   campaigns: "channel copy created_at created_by id list_description meetings_booked name org_id updated_at updated_by",
   case_clinics: "case_giver closing coaches created_at created_by deal_id dialogue edge held_on help_needed id mirror_feeling mirror_gesture mirror_image next_steps org_id situation status title updated_at updated_by",
   channel_links: "channel chat_id code_expires_at created_at daily_digest id link_code linked_at user_id",
+  // Deviation from the ratchet (SDD drive-per-company-account, U-1): the two new tables hold technical columns (actor, status, tokens, timestamps) that no concept
+  // covers, so their 15 columns go here and BASELINE_MAX rises by 15. Open question for Dani: should the catalog cover technical columns of new tables?
+  connection_events: "action actor created_at detail id org_id provider",
   deal_lines: "billing created_at created_by deal_id discount_pct id name org_id product_id quantity unit_cost unit_price",
   deal_offers: "created_at created_by deal_id id notes one_off_total org_id recurring_total status title updated_at updated_by valid_until version",
   deal_registrations: "account_id account_name created_at created_by deal_id expires_at id notes org_id partner_id status updated_at updated_by",
@@ -28,6 +31,7 @@ const raw: Record<string, string> = {
   deals: "account_id close_date closed_at created_at created_by external_id forecast_category gross_margin health id lead_source_id name org_id owner_id partner_id probability segment_id slip_count stage updated_at updated_by",
   debates: "created_at created_by id level org_id participants subject_id subject_type topic updated_at updated_by",
   discoveries: "created_at decided_at decided_by dedupe_key dismiss_reason id kind name org_id reason result_id status week",
+  drive_connections: "connected_at connected_by google_email last_error org_id refresh_token_enc status updated_at",
   drive_doc_summaries: "account_id created_by file_id file_modified_at id org_id summary updated_at",
   drive_folders: "account_id created_at created_by created_by_app folder_id id name org_id",
   email_templates: "body created_at created_by id name org_id stage subject updated_at updated_by",
@@ -92,4 +96,4 @@ const raw: Record<string, string> = {
 export const BASELINE: Record<string, string[]> = Object.fromEntries(Object.entries(raw).map(([t, cs]) => [t, cs.split(" ")]));
 
 /** Upper bound of the baseline: lower it as columns get catalogued, never raise it. */
-export const BASELINE_MAX = 980;
+export const BASELINE_MAX = 995;
