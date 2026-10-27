@@ -970,9 +970,26 @@
         "outputSchema": null
       },
       {
+        "name": "list_segments",
+        "title": "Listar segmentos",
+        "description": "Lista los segmentos de la empresa por prioridad, con su motion (modelo de venta por ACV), su acquisition_motion (cómo adquiere clientes; null = sin definir) y sus objetivos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "upsert_segment",
         "title": "Crear o actualizar segmento",
-        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion (modelo de venta por ACV), acquisition_motion (cómo adquiere clientes: plg, slg, marketing o partner; null = sin definir), win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -1004,6 +1021,22 @@
                 "inside",
                 "field",
                 "strategic"
+              ]
+            },
+            "acquisition_motion": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "plg",
+                    "slg",
+                    "marketing",
+                    "partner"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "win_rate_target": {
