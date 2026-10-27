@@ -25,7 +25,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 
 ## 5. Alcance
 **Incluye:** bloque «Productos» en el onboarding; propuesta desde web y documentos con origen por dato; revisión, edición, borrado y confirmación; vínculo con el producto del posicionamiento y con las líneas de deal; acceso desde el Agente.
-**No incluye:** facturación o precios públicos de Postin; importar catálogos desde un ERP o tienda; cambiar el cálculo de margen de las líneas de deal; productos con variantes complejas (tallas, packs).
+**No incluye:** facturación o precios públicos de Postin; importar catálogos desde un ERP o tienda; cambiar el cálculo de margen de las líneas de deal; productos con variantes complejas (tallas, packs); productos con precios en varias monedas.
 
 ## 6. Cambios de comportamiento (delta)
 **Añadido:** bloque Productos en onboarding; propuesta automática; origen y confirmación por producto; vínculo producto–posicionamiento.
@@ -56,7 +56,8 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ## 8. Casos límite y errores
 - Web sin productos identificables: ofrecer añadir a mano y no inventar (CA-1).
 - Productos duplicados entre fuentes: proponer uno solo y mostrar las fuentes (CA-1).
-- Precio en otra moneda que la de la empresa: mostrarlo con su moneda y pedir confirmar (CA-3).
+- Precio en otra moneda que la de la empresa (decidido: una sola moneda por empresa, la ya configurada): queda «Falta confirmar» y no se convierte ni se inventa tipo de cambio (CA-3).
+- Producto con varios precios en distintas monedas: «No incluye»; se importa solo el de la moneda de la empresa o ninguno (CA-3).
 - Pago único (puesta en marcha, formación) junto a suscripción: marcar la facturación de cada uno (CA-1).
 - Fallo de lectura de la web: indicarlo y permitir pegar texto (CA-1).
 - Fuente de precio contradictoria con otra: mostrar ambas y no elegir (CA-3).
@@ -74,7 +75,7 @@ Datos de empresa (nombre, precio, coste, descripción), sin datos de clientes. C
 
 ## 12. Notas técnicas [Sugerencia — Dani valida]
 - Ampliar `SETUP_EXTRACTION_SCHEMA` en `src/lib/setup-extraction.ts` y `setup-extract.server.ts`; tabla `products`; `useProducts` en `src/components/deal-lines.tsx`; escritura mediante las herramientas del Agente (`core-write.ts`).
-- **Uso de LLM:** cero llamadas nuevas: los productos salen de la misma extracción ya lanzada para los otros bloques (un solo paso, no uno por bloque). Reglas deterministas para duplicados y moneda.
+- **Uso de LLM:** cero llamadas nuevas: los productos salen de la misma extracción ya lanzada para los otros bloques (un solo paso, no uno por bloque). Reglas deterministas para duplicados y moneda (única por empresa, la que ya existe en la plataforma).
 
 ## 13. Riesgos y dependencias
 - Riesgo: inventar precios a partir de planes de la web. Mitigación: CA-2 y origen visible.
@@ -82,7 +83,6 @@ Datos de empresa (nombre, precio, coste, descripción), sin datos de clientes. C
 
 ## 14. Preguntas para Dani
 1. ¿Se relaciona hoy el producto del posicionamiento con el catálogo?
-2. ¿El catálogo debe cubrir productos de varias monedas?
 
 ## 15. Pendiente de verificar
 - [Por verificar] Relación actual entre posicionamiento y catálogo.

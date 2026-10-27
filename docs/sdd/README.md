@@ -29,7 +29,7 @@ Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: 
 
 El PR #30 y la rama `feat/connections-own-account` quedan sustituidos por #32.
 
-Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
+Anexos: `annex/fit-data-common.md` (contexto común de 7a/7b/7c) y `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
 
 ## Principio de uso de LLM (aplica a los diez)
 Orden de preferencia: regla determinista → dato derivado/caché → modelo barato (`effort:"low"`) → modelo caro (solo A fondo). Cada SDD declara sus llamadas; los primeros no añaden ninguna salvo reformular textos con caché.
@@ -51,10 +51,17 @@ Orden de preferencia: regla determinista → dato derivado/caché → modelo bar
 | Theory U: aviso de sensing | 8 notas sin sintetizar |
 
 ## Decisiones que siguen abiertas
-1. Productos: moneda y productos en varias monedas.
-2. Resto de [Por verificar] que depende de Dani (ver sección 15 de cada SDD).
+1. [Por verificar] que depende de Dani (ver sección 15 de cada SDD).
+
+Decididas el 2026-10-27 (OK a las recomendaciones): dueño de «propuesta pendiente» = SDD universal (reutiliza `field_proposal`); moneda única por empresa en productos (otra moneda queda «Falta confirmar», varias monedas fuera); 7a/7b/7c recortados con anexo común `annex/fit-data-common.md`.
 
 Decididas en la segunda ronda: coste del respaldo (se descuenta del presupuesto de la empresa), Theory U avisa a los 14 días en la misma fase, queda aparte y la guía lo sugiere, y el catálogo empieza por Origen, País, Tamaño e Importe.
+
+## Orden de implementación recomendado
+8 (productos) → 7b (competidores) → 6 (Descubiertos) → 7a (llave mínima) → 4 (onboarding) → 7c (identidad y terceros) → 9 (Theory U). Los SDD 1, 2, 3 y 10 (con el 5) van antes, ya en curso (ver tabla de estado).
+
+## Entorno de pruebas (pendiente de Fede y Dani)
+Las migraciones nuevas (0058, 0060, 0061, 0063 en `main`, más las de #31 y #32) no están verificadas en una base real. Antes de seguir implementando hay que crear un entorno de pruebas (rama de base de datos de pruebas) y aplicar ahí las migraciones; no se prueba en producción (nokko.ai). Hasta entonces, las pruebas son locales con datos ficticios.
 
 ## Límites del análisis
 - `nokko.ai/discoveries` exige sesión: análisis hecho sobre el código de `main`, no sobre producción.

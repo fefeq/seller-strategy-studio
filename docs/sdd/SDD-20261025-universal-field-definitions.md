@@ -94,6 +94,7 @@ Sin pantallas nuevas en este SDD. Los textos de estado (Confirmado / Deducido / 
 ## 13. Riesgos y dependencias
 - Riesgo: migrar tipos en tablas con datos (Tamaño y Periodo con tipos distintos). Mitigación: por conceptos y con conservación del valor original.
 - Dependencia: decisiones de Fede (sección 14) antes de U-1.
+- Dueño de «propuesta pendiente» (decidido): este SDD (CA-9). Se reutiliza el mecanismo de sugerencias `field_proposal` ya en `main`, sin tabla nueva. Los SDD de productos, Theory U y datos de encaje (7a, 7c) solo lo referencian.
 - Es prerrequisito de los otros cinco SDD (ver README).
 
 ## 14. Preguntas para Dani
