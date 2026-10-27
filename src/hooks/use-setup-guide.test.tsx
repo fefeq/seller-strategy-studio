@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { renderHook, waitFor } from "@testing-library/react";
+import { render, renderHook, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { setupStatus, type SetupData } from "@/lib/setup-schema";
@@ -12,12 +12,15 @@ vi.mock("@/integrations/supabase/client", () => {
   });
   return { supabase: { from: (t: string) => { calls.push(t); return chain(); } } };
 });
+vi.mock("sonner", () => ({ toast: { info: vi.fn(), error: vi.fn(), success: vi.fn() } }));
 let role = "owner";
 vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { currentOrg: { org_id: "org-1" }, user: { id: "u-1" }, roles: [role] } }) }));
 let setupData: SetupData;
 vi.mock("@/hooks/use-setup", () => ({ useSetup: () => ({ data: { data: setupData, status: setupStatus(setupData) }, isLoading: false, isError: false, dataUpdatedAt: 1 }) }));
 
+import { toast } from "sonner";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
+import { GuideOffer } from "@/components/setup/guide";
 
 const fullPos = Object.fromEntries(["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "category", "key_benefit", "competitive_alternative", "differentiator", "one_liner", "elevator_pitch"].map((k) => [k, "texto"]));
 const full: SetupData = {
@@ -25,11 +28,12 @@ const full: SetupData = {
   positioning: fullPos, pillars: [1, 2, 3].map((n) => ({ title: `T${n}`, message: `M${n}` })), quotas: [{ period: "2026-Q4", amount: 100 }], accounts: 1, deals: 1, quarter: "2026-Q4",
 };
 const ACTIVITY_TABLES = ["positioning", "segments", "quotas", "accounts", "deals", "icp_profiles", "messaging_pillars"];
-const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>;
+let client = new QueryClient();
+const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>;
 const settle = () => new Promise((r) => setTimeout(r, 50));
 
 describe("useSetupGuide loads only what the screen needs (the sidebar mounts it on every screen)", () => {
-  beforeEach(() => { calls.length = 0; role = "owner"; });
+  beforeEach(() => { calls.length = 0; role = "owner"; client = new QueryClient(); vi.mocked(toast.info).mockClear(); try { sessionStorage.clear(); } catch { /* none */ } });
 
   it("queries nothing once every step is complete", async () => {
     setupData = full;
@@ -68,5 +72,34 @@ describe("useSetupGuide loads only what the screen needs (the sidebar mounts it 
     renderHook(() => useSetupGuide(), { wrapper });
     await settle();
     expect(calls).not.toContain("org_members");
+  });
+});
+
+describe("the guide reacts to edits made anywhere, without a reload", () => {
+  beforeEach(() => { calls.length = 0; role = "owner"; client = new QueryClient(); vi.mocked(toast.info).mockClear(); try { sessionStorage.clear(); } catch { /* none */ } });
+
+  it("CA-5: an edit that makes a step incomplete turns it back to Pendiente and says so, once", async () => {
+    setupData = full;
+    const { result, rerender } = renderHook(() => useSetupGuide(), { wrapper });
+    await settle();
+    expect(toast.info).not.toHaveBeenCalled();
+    setupData = { ...full, icps: [] };
+    rerender();
+    await waitFor(() => expect(result.current.guide?.steps.find((s) => s.id === "icp")?.state).toBe("pending"));
+    expect(toast.info).toHaveBeenCalledWith("Paso pendiente de nuevo: tu ICP.", expect.objectContaining({ id: "setup-reopened:icp" }));
+    rerender();
+    await settle();
+    expect(new Set(vi.mocked(toast.info).mock.calls.map((c) => (c[1] as { id: string }).id))).toEqual(new Set(["setup-reopened:icp"])); // same id: copies of the hook share one notice
+  });
+
+  it("CA-10: in the Agent panel, finishing a step says what you have now and proposes the next one", async () => {
+    setupData = { ...full, pillars: [], deals: 0 };
+    const ui = () => <GuideOffer scope="agent" orgId="org-1" onStart={() => {}} />; // a new element per render, or React skips it
+    const { rerender } = render(ui(), { wrapper });
+    expect(await screen.findByText("Siguiente: escribe tus tres pilares de mensaje.")).toBeInTheDocument();
+    setupData = { ...full, deals: 0 }; // the pillars were saved from the Agent's confirmed action
+    rerender(ui());
+    expect(await screen.findByText("Ya tienes tus tres pilares de mensaje. Siguiente: crea tu primer deal.")).toBeInTheDocument();
+    expect(screen.getByText(/Así Nokko podrá calcular métricas/)).toBeInTheDocument();
   });
 });

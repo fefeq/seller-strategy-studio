@@ -3,7 +3,7 @@ import { SETUP_ITEMS, type SetupData } from "@/lib/setup-schema";
 import { getTool } from "@/lib/agent/tools";
 import {
   COMPLETE_TEXT, INACTIVITY_MS, STEP_ROLES, STEP_WHY, canCompleteStep, guideState, latestActivity, nextFor, nextMessage, nudgeDue,
-  dayAfter, formatDay, localDay, parseSnoozeDate, stepsFor, whoCan, whoCanText,
+  dayAfter, formatDay, localDay, parseSnoozeDate, reopenedSteps, reopenedText, stepsFor, whoCan, whoCanText,
 } from "@/lib/setup-guide";
 
 const NOW = new Date("2026-10-26T10:00:00Z");
@@ -98,6 +98,15 @@ describe("setup guide: real state per step (CA-4, CA-5)", () => {
     const g = guideState(edited, [], NOW);
     expect(g.steps.find((s) => s.id === "positioning")?.state).toBe("pending");
     expect(g.next?.id).toBe("positioning");
+  });
+  it("CA-5: reopenedSteps lists what was done and no longer is, and the notice names it", () => {
+    const was = new Set(guideState(full, [], NOW).steps.filter((x) => x.state === "done").map((x) => x.id));
+    const g = guideState({ ...full, icps: [], quotas: [] }, [], NOW);
+    expect(reopenedSteps(was, g).map((x) => x.id)).toEqual(["icp", "quota"]);
+    expect(reopenedText(reopenedSteps(was, g))).toBe("Pasos pendientes de nuevo: tu ICP; la cuota de este trimestre.");
+    expect(reopenedText(reopenedSteps(was, guideState({ ...full, icps: [] }, [], NOW)))).toBe("Paso pendiente de nuevo: tu ICP.");
+    expect(reopenedSteps(was, guideState(full, [], NOW))).toEqual([]);
+    expect(reopenedSteps(new Set(), g)).toEqual([]); // first load: nothing to compare with, no notice
   });
   it("a quarter change turns the quota back to Pendiente (done is derived, never stored)", () => {
     expect(guideState({ ...full, quarter: "2027-Q1" }, [], NOW).next?.id).toBe("quota");

@@ -53,6 +53,16 @@ export const STEP_COPY: Record<string, { have: string; do: string }> = {
 const have = (s: { id: string; label: string }) => STEP_COPY[s.id]?.have ?? s.label.split(" (")[0]!;
 const doIt = (s: { id: string; label: string }) => STEP_COPY[s.id]?.do ?? s.label.split(" (")[0]!;
 
+/** CA-5: steps that were done and no longer are, because the data behind them was edited or deleted (or the quarter changed). */
+export function reopenedSteps(wasDone: ReadonlySet<string>, guide: Guide): GuideStep[] {
+  return guide.steps.filter((s) => wasDone.has(s.id) && s.state !== "done");
+}
+
+/** The notice for them, in «tú», one line: «Paso pendiente de nuevo: tu ICP.» */
+export function reopenedText(steps: GuideStep[]): string {
+  return `${steps.length > 1 ? "Pasos pendientes de nuevo" : "Paso pendiente de nuevo"}: ${steps.map(have).join("; ")}.`;
+}
+
 export const STATE_LABEL: Record<StepState, string> = { done: "Completado", pending: "Pendiente", snoozed: "Pospuesto" };
 
 export function canCompleteStep(stepId: string, role: string | null | undefined): boolean {

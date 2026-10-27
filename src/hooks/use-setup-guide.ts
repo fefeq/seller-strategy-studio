@@ -6,7 +6,7 @@ import { useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
 import { loadSetupGuideExtras, loadSetupSnoozes } from "@/lib/org-data";
 import { errorText } from "@/lib/errors";
-import { canCompleteStep, guideState, nextFor, nextMessage, nudgeDue, parseSnoozeDate, type GuideMember, type Snooze } from "@/lib/setup-guide";
+import { canCompleteStep, guideState, nextFor, nextMessage, nudgeDue, parseSnoozeDate, reopenedSteps, reopenedText, type GuideMember, type Snooze } from "@/lib/setup-guide";
 
 /** Session-scoped flag: each place (Inicio, the agent) shows the offer once per session, until the person acts on it or closes it. */
 export type OfferScope = "home" | "agent";
@@ -67,8 +67,11 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
     doneRef.current = done;
     if (!before) return;
     const added = [...done].filter((id) => !before.has(id));
+    const reopened = reopenedSteps(before, guide);
     if (added.length) setJustDone(added[added.length - 1]!);
-    else if (before.size > done.size) setJustDone(null);
+    else if (reopened.length) setJustDone(null);
+    // CA-5: an edit that un-completes a step says so. The fixed id makes the copies of this hook in other components share one notice.
+    if (reopened.length) toast.info(reopenedText(reopened), { id: `setup-reopened:${reopened.map((s) => s.id).join(",")}` });
   }, [guide]);
 
   const message = guide ? nextMessage(guide, role, justDone, members) : null;
