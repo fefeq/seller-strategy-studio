@@ -1,7 +1,7 @@
 // @vitest-environment node
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from SQL untyped, as in migrations.pg.test.ts */
 // SDD-20261027 F2: runs migration 0069 on an in-process Postgres (PGlite) with fictional companies. Never touches a real database.
-// gtm_experiments below copies the columns and policies of migration 0003, reduced to what 0065 touches.
+// gtm_experiments below copies the columns and policies of migration 0003, reduced to what 0069 touches.
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
 
