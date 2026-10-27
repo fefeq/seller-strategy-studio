@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { decideSuggestion } from "@/lib/agent.functions";
 import {
   STATUS_LABEL,
@@ -38,6 +39,7 @@ export function SuggestionBoard() {
   const [status, setStatus] = useState("open");
   const [prio, setPrio] = useState("all");
   const [grouped, setGrouped] = useState(false);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
 
   const { data } = useQuery({
     queryKey: ["suggestions", "board", orgId],
@@ -103,7 +105,11 @@ export function SuggestionBoard() {
   }
   async function act(id: string, decision: "approve" | "snooze" | "dismiss") {
     try {
-      toast.success((await decide({ data: { id, decision } })).message);
+      // The optional reason only travels with strategic suggestions (it goes to the decision log).
+      const reason = reasons[id]?.trim();
+      toast.success(
+        (await decide({ data: { id, decision, ...(reason ? { reason } : {}) } })).message,
+      );
       qc.invalidateQueries();
     } catch (e) {
       toast.error(errorText(e));
@@ -198,6 +204,16 @@ export function SuggestionBoard() {
       <>
         <StrategyBadge m={m} />
         <StrategyEvidence m={m} />
+        {s.status === "pending" && (
+          <Input
+            className="mt-2 max-w-sm"
+            maxLength={500}
+            value={reasons[s.id] ?? ""}
+            onChange={(e) => setReasons((r) => ({ ...r, [s.id]: e.target.value }))}
+            placeholder="Motivo (opcional)"
+            aria-label="Motivo de tu decisión (opcional)"
+          />
+        )}
       </>
     ) : null;
   };
