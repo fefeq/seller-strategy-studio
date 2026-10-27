@@ -115,5 +115,24 @@ Las resuelve Claude Code comprobándolas en el código; lo que no pueda comproba
 - Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
+## 17. Delta de lo entregado (rama feat/connections-own-account-v2, 2026-10-27)
+Lo entregado es **U-1, U-2 y U-3 solo para Google Drive**; no hay otros proveedores. Estado por CA, sin contar más de lo que hay:
+
+| CA | Estado | Qué hay y qué no |
+|---|---|---|
+| CA-1 | **Parcial** | Estados Cuenta propia, Proporcionada por NOKKO, Sin conectar, Error y Sin respuesta, solo en la tarjeta de Drive. No hay «Solo proporcionada por NOKKO» ni tarjetas de otros proveedores. Prueba: la regla (`driveConnectionState`); la pantalla no tiene prueba. |
+| CA-2 | Hecho para Drive | Email, quién y cuándo (nunca la credencial). Prueba del guardado; la tarjeta no tiene prueba. |
+| CA-3 | **Parcial** | Texto de para qué se usa, solo en la tarjeta de Drive (con prueba del texto). |
+| CA-4 | **Parcial** | Un solo paso (el consentimiento de Google); no hay guía paso a paso. Sin prueba. |
+| CA-5 | **Parcial** | Comprueba la cuenta antes de guardar (con prueba), pero la guarda de inmediato y el resultado se muestra después de volver, no antes. Tampoco pide confirmación si la cuenta ya está en otra empresa (§8). |
+| CA-6 | Hecho | No guarda y explica el motivo (con prueba). |
+| CA-7 | Hecho | Cambiar y desconectar (con prueba). |
+| CA-8 | Hecho con límites | Deja de usar la cuenta en la siguiente llamada; una llamada ya en curso puede seguir hasta cinco minutos. Dice que lo importado se conserva. La revocación en Google se informa con su resultado real; qué hace Google al revocar es [Por verificar] (SDD de Drive §15). |
+| CA-9 | Hecho en el esquema | Permisos por columna (migración 0059). Comprobado en un Postgres desechable en una revisión anterior; no está en la suite del repo. |
+| CA-10 | Hecho | Registro de conectar, cambiar, desconectar y fallo (con prueba). |
+| CA-11 | Hecho en servidor | Solo el Owner gestiona (con prueba); el modo solo lectura de la pantalla no tiene prueba. |
+| CA-12 a CA-16 | **No hecho** | U-4, U-5 y U-6. |
+| CA-17 | Hecho | Añadido por la auditoría: el retorno de Google solo se completa en el navegador que lo inició y una sola vez (con prueba). Pendiente de que Fede lo acepte. |
+
 ---
 Validación: OK (autorrevisión). Auditoría: solo linter; la independiente queda pendiente.

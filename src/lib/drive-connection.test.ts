@@ -3,7 +3,7 @@ import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, D
 
 const row = (status: ConnectionRow["status"]): ConnectionRow => ({ status, google_email: "ana@ejemplo.test", connected_by: null, connected_at: "2026-10-26T10:00:00Z", last_error: null });
 
-describe("CA-1 (SDD 10) · one state per provider", () => {
+describe("CA-1 (SDD 10, partial: only Drive has a card with states) · state of the Drive connection", () => {
   it("the company's account wins; else NOKKO's when configured; else not connected", () => {
     expect(driveConnectionState(row("active"), true)).toBe("own");
     expect(driveConnectionState(null, true)).toBe("nokko");
@@ -33,7 +33,7 @@ describe("CA-1 / CA-2 (SDD 5) · the consent request", () => {
     expect(PERMISSIONS_TEXT.saves).toMatch(/Nokko/);
     expect(PERMISSIONS_TEXT.revoke).toMatch(/desconectarla/);
   });
-  it("does not promise to read documents the person already has: drive.file cannot, and there is no picker yet (CA-2)", () => {
+  it("does not promise to read documents the person already has: drive.file cannot, and there is no picker yet (CA-2 of SDD 5; CA-3 of SDD 10, partial: Drive card only)", () => {
     for (const t of [PERMISSIONS_TEXT.reads, PURPOSE_TEXT]) {
       expect(t).toMatch(/Todavía no/);
       expect(t).toMatch(/selector de Google/);
@@ -43,7 +43,7 @@ describe("CA-1 / CA-2 (SDD 5) · the consent request", () => {
   });
 });
 
-describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
+describe("CA-3 (SDD 5), CA-6 (SDD 10) and the checking half of CA-5 (SDD 10; the result is shown after saving, not before) · check before saving", () => {
   const token = { scope: `${DRIVE_SCOPE}`, refresh_token: "r" };
   it("shows the connected account's email (CA-3)", () => {
     expect(checkGrant(token, { user: { emailAddress: " Ana@Ejemplo.test " } })).toEqual({ ok: true, email: "ana@ejemplo.test" });
@@ -100,4 +100,14 @@ describe("CA-8 (SDD 10) · when the old access is left alone, and what the scree
     for (const o of ["failed", "unreadable", "same_account", "shared"] as const) expect(revocationText(o, "a@x.test")).not.toMatch(/confirmó|se revocó el acceso de NOKKO/);
     expect(revocationText("failed", "a@x.test")).toMatch(/myaccount\.google\.com\/permissions/);
   });
+});
+
+// Not done: no test exists because the behaviour does not. Listed so the gap shows in every run.
+describe("not done", () => {
+  it.todo("CA-5 (SDD 5): on disconnect, ask whether to keep or delete the imported knowledge (today the dialog only says it is kept)");
+  it.todo("CA-7, CA-8 (SDD 5): list from the company's account and offer to connect in onboarding (SDD 5 U-2, U-6; needs the Google picker)");
+  it.todo("CA-4 (SDD 10): guide the connection step by step (today it is a single step: Google's consent)");
+  it.todo("CA-5 (SDD 10): show the check's result before saving (today it is saved at once and the result is shown after returning)");
+  it.todo("CA-1 (SDD 10): states for providers other than Drive, and «Solo proporcionada por NOKKO»");
+  it.todo("SDD 10 §8: ask for confirmation when the account is already connected in another company");
 });

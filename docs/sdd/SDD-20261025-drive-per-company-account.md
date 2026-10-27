@@ -100,5 +100,20 @@ Las resuelve Claude Code comprobándolas en el código; lo que no pueda comproba
 - Fecha:
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
+## 17. Delta de lo entregado (rama feat/connections-own-account-v2, 2026-10-27)
+Lo entregado es **U-1 y U-3**; U-2 (lectura desde la cuenta de la empresa, con selector) y U-6 no están hechas. Estado por CA:
+
+| CA | Estado | Qué hay y qué no |
+|---|---|---|
+| CA-1 | Hecho | Se elige la cuenta cada vez (`prompt=select_account`), con prueba. |
+| CA-2 | Hecho | Solo `drive.file`; el texto dice que NOKKO solo lee lo que él mismo guardó y que elegir documentos propios llegará con el selector (con prueba del texto). |
+| CA-3 | Hecho | Email y fecha guardados (con prueba); la tarjeta no tiene prueba. |
+| CA-4 | Hecho con límites | Misma salvedad que CA-8 del SDD de conexiones (hasta cinco minutos para una llamada en curso). Con prueba. |
+| CA-5 | **No hecho** | Hoy el diálogo solo informa de que lo importado se conserva; no pregunta ni permite eliminarlo. Los documentos importados no llevan un origen estructurado (depende del SDD 1). |
+| CA-6 | **Parcial** | La fila de la empresa se sustituye (con prueba); que lo importado se conserva no tiene prueba propia. |
+| CA-7, CA-8 | **No hecho** | Requieren U-2 y U-6; solo está el cableado de `driveAuthFor`. |
+| CA-9 | **Parcial** | Muestra quién la conectó; la conexión es siempre de la empresa, no hay «personal». Sin prueba de pantalla. |
+| CA-10 | Hecho | Solo el Owner conecta o desconecta (con prueba en servidor). |
+
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (bloqueado hasta cerrar decisiones de Fede).
