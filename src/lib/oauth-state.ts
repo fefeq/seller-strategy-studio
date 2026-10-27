@@ -1,11 +1,13 @@
 // The `state` of an OAuth round trip: who started it (company, person, provider), where to come back to and
 // when it stops being valid, signed so the callback can trust it without a session. Shared by every provider
 // in Conexiones. Web Crypto only (tested in oauth-state.test.ts).
-// `n` is a random nonce also set as an httpOnly cookie in the browser that started the flow: the callback only
-// accepts a state whose nonce matches that cookie, so a signed state alone (a link someone else sends, one
-// that leaked) is useless in another browser. The session lives in localStorage, so the callback has no
+// The random nonce lives only in an httpOnly cookie in the browser that started the flow. The state carries
+// `h`, a keyed hash of that nonce (hashNonce), never the nonce itself: the state is signed, not encrypted, so
+// whoever holds it can read it, and a nonce inside it could be copied into their own cookie. The callback
+// accepts the state only when hashNonce(cookie) equals `h`, so a signed state alone (a link someone else sends,
+// one that leaked) is useless in another browser. The session lives in localStorage, so the callback has no
 // session to read: the cookie is what ties the callback to the browser of whoever started it.
-export type OAuthState = { p: string; o: string; u: string; r: string; t: number; n: string };
+export type OAuthState = { p: string; o: string; u: string; r: string; t: number; h: string };
 
 /** Ten minutes is enough to choose an account and accept the consent. */
 export const STATE_TTL_MS = 10 * 60 * 1000;
@@ -32,7 +34,7 @@ export async function verifyState(secret: string, token: string, now = Date.now(
     if (!body || !sig) return null;
     if (!(await crypto.subtle.verify("HMAC", await key(secret), unb64u(sig), enc.encode(body)))) return null;
     const s = JSON.parse(new TextDecoder().decode(unb64u(body))) as Partial<OAuthState>;
-    if (typeof s.p !== "string" || typeof s.o !== "string" || typeof s.u !== "string" || typeof s.r !== "string" || typeof s.t !== "number" || typeof s.n !== "string" || s.n.length < 16) return null;
+    if (typeof s.p !== "string" || typeof s.o !== "string" || typeof s.u !== "string" || typeof s.r !== "string" || typeof s.t !== "number" || typeof s.h !== "string" || s.h.length < 16) return null;
     return now > s.t ? null : (s as OAuthState);
   } catch {
     return null;
@@ -48,6 +50,11 @@ export function safeReturnPath(raw: unknown, fallback = "/integrations"): string
 /** 256 bits of randomness, URL-safe. */
 export const newNonce = () => b64u(crypto.getRandomValues(new Uint8Array(32)));
 
+/** What the state keeps of a nonce: HMAC-SHA256 with the server key. Without the key it cannot be turned back into a nonce, so reading the state does not give the cookie value. The `nonce:` prefix keeps it apart from state signatures (a signed body is base64url and never contains a colon). */
+export async function hashNonce(secret: string, nonce: string): Promise<string> {
+  return b64u(new Uint8Array(await crypto.subtle.sign("HMAC", await key(secret), enc.encode(`nonce:${nonce}`))));
+}
+
 export const nonceCookieName = (provider: string) => `nokko_oauth_${provider}`;
 /** Only the callback of that provider receives it; Lax so it travels on Google's top-level redirect back. */
 export const nonceCookieOptions = (provider: string, secure: boolean) =>
@@ -62,7 +69,7 @@ export function readCookie(header: string | null | undefined, name: string): str
   return null;
 }
 
-/** Same length and content, without stopping at the first different character. */
+/** Same length and content, without stopping at the first different character. Compares the two hashes (state vs cookie). */
 export function sameNonce(a: string, b: string): boolean {
   if (a.length !== b.length) return false;
   let diff = 0;
@@ -70,13 +77,13 @@ export function sameNonce(a: string, b: string): boolean {
   return diff === 0;
 }
 
-// Nonces already spent, kept until their state would have expired anyway. Per instance: the cookie is deleted on
-// use, so a replay needs a browser that still holds the cookie; this closes the repeat on the same instance.
+// Nonce hashes already spent, kept until their state would have expired anyway. Per instance: the cookie is
+// deleted on use, so a replay needs a browser that still holds the cookie; this closes the repeat on the same instance.
 const spent = new Map<string, number>();
-/** True the first time a nonce is consumed, false on any repeat. */
-export function consumeNonce(nonce: string, expiresAt: number, now = Date.now()): boolean {
+/** True the first time a nonce hash is consumed, false on any repeat. */
+export function consumeNonce(hash: string, expiresAt: number, now = Date.now()): boolean {
   for (const [k, until] of spent) if (until < now) spent.delete(k);
-  if (spent.has(nonce)) return false;
-  spent.set(nonce, expiresAt);
+  if (spent.has(hash)) return false;
+  spent.set(hash, expiresAt);
   return true;
 }

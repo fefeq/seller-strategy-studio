@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { buildAuthUrl, checkGrant, connectMessage, failureStatus, revocationText, revokeSkipReason, type ConnectCode, type ConnectionRow, type RevokeOutcome } from "@/lib/drive-connection";
 import { DriveError, GOOGLE_API, nokkoAuth, type DriveAuth } from "@/lib/google-drive";
-import { consumeNonce, newNonce, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
+import { consumeNonce, hashNonce, newNonce, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
 import { open, seal } from "@/lib/secret-box.server";
 
 type Admin = SupabaseClient<Database>;
@@ -39,7 +39,7 @@ export async function startConnect(orgId: string, userId: string, origin: string
   const cfg = oauthConfig();
   if (!cfg) throw new Error(NOT_CONFIGURED);
   const nonce = newNonce();
-  const state = await signState(stateSecret(), { p: PROVIDER, o: orgId, u: userId, r: safeReturnPath(returnTo), t: Date.now() + STATE_TTL_MS, n: nonce });
+  const state = await signState(stateSecret(), { p: PROVIDER, o: orgId, u: userId, r: safeReturnPath(returnTo), t: Date.now() + STATE_TTL_MS, h: await hashNonce(stateSecret(), nonce) });
   return { url: buildAuthUrl({ clientId: cfg.clientId, redirectUri: redirectUri(origin), state }), nonce };
 }
 
@@ -73,8 +73,8 @@ const result = (code: ConnectCode, returnTo: string): ConnectResult => ({ ok: fa
 export async function completeConnect(db: Admin, input: { code: string | null; state: string | null; error: string | null; errorDescription: string | null; nonce: string | null }, origin: string): Promise<ConnectResult> {
   const st = input.state ? await verifyState(stateSecret(), input.state) : null;
   if (!st || st.p !== PROVIDER) return result("expired", "/integrations");
-  // The state must come back in the browser that started it (the cookie holds the nonce), and only once.
-  if (!input.nonce || !sameNonce(input.nonce, st.n) || !consumeNonce(st.n, st.t)) return result("wrong_browser", safeReturnPath(st.r));
+  // The state must come back in the browser that started it (the cookie holds the nonce, the state only its hash), and only once.
+  if (!input.nonce || !sameNonce(await hashNonce(stateSecret(), input.nonce), st.h) || !consumeNonce(st.h, st.t)) return result("wrong_browser", safeReturnPath(st.r));
   const fail = (code: ConnectCode): ConnectResult => result(code, st.r);
   if (input.error) {
     if (input.error !== "access_denied" && input.error !== "admin_policy_enforced") console.warn(`Drive consent returned an error: ${input.error.slice(0, 60)}`);

@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { DRIVE_SCOPE } from "./drive-connection";
 import { completeConnect, disconnectDrive, driveAuthFor, ownDriveAuth, startConnect } from "./drive-connection.server";
 import { DriveError, nokkoAuth } from "./google-drive";
-import { newNonce, signState, STATE_TTL_MS, verifyState } from "./oauth-state";
+import { hashNonce, newNonce, signState, STATE_TTL_MS, verifyState } from "./oauth-state";
 import { seal } from "./secret-box.server";
 
 type Row = Record<string, unknown>;
@@ -61,7 +61,11 @@ const goodGoogle = (over: { scope?: string; refresh?: string | null; email?: str
   if (url.includes("/drive/v3/about")) return ok(over.email === null ? { user: {} } : { user: { emailAddress: over.email ?? "Ana@Ejemplo.test" } });
   return ok({});
 };
-const state = (over: Partial<{ o: string; u: string; t: number; n: string }> = {}) => signState(SECRET, { p: "drive", o: ORG, u: USER, r: "/integrations", t: Date.now() + STATE_TTL_MS, n: newNonce(), ...over });
+/** A state as startConnect makes it: it carries the hash of `n`, the nonce that only the cookie holds. */
+const state = async (over: Partial<{ o: string; u: string; t: number; n: string }> = {}) => {
+  const { n = newNonce(), ...rest } = over;
+  return signState(SECRET, { p: "drive", o: ORG, u: USER, r: "/integrations", t: Date.now() + STATE_TTL_MS, h: await hashNonce(SECRET, n), ...rest });
+};
 /** What the callback receives for a flow started in this browser: a signed state and the cookie holding its nonce. */
 const input = async (over: Partial<{ code: string | null; state: string | null; error: string | null; errorDescription: string | null; nonce: string | null }> = {}) => {
   const n = newNonce();
@@ -144,11 +148,34 @@ describe("CA-10 (SDD 5) · only the Owner, and only with a valid state", () => {
 });
 
 describe("CA-17 (SDD 10) · the callback only finishes in the browser that started it, once", () => {
-  it("startConnect puts the nonce in the signed state and hands it back for the cookie", async () => {
+  it("startConnect puts only the hash of the nonce in the signed state and hands the nonce back for the cookie", async () => {
     const { url, nonce } = await startConnect(ORG, USER, "https://app.ejemplo.test", "/");
-    const st = await verifyState(SECRET, new URL(url).searchParams.get("state")!);
+    const token = new URL(url).searchParams.get("state")!;
+    const st = await verifyState(SECRET, token);
     expect(nonce.length).toBeGreaterThanOrEqual(32);
-    expect(st?.n).toBe(nonce);
+    expect(st?.h).toBe(await hashNonce(SECRET, nonce));
+    expect(st?.h).not.toBe(nonce);
+    expect(token).not.toContain(nonce);
+    expect(JSON.stringify(st)).not.toContain(nonce);
+  });
+  it("a leaked state does not bind to another browser: a cookie built from what the state shows is rejected, the real one works", async () => {
+    route = goodGoogle();
+    const { url, nonce } = await startConnect(ORG, USER, "https://app.ejemplo.test", "/");
+    const leaked = new URL(url).searchParams.get("state")!;
+    // The attacker reads everything the signed state shows (it is signed, not encrypted) and tries each value as the cookie.
+    const shown = (await verifyState(SECRET, leaked))!;
+    const body = JSON.parse(atob(leaked.split(".")[0]!.replace(/-/g, "+").replace(/_/g, "/"))) as Record<string, unknown>;
+    for (const forged of [shown.h, ...Object.values(body).map(String)]) {
+      const { db, tables } = owner();
+      const r = await completeConnect(db, { code: "c", state: leaked, error: null, errorDescription: null, nonce: forged }, "https://app.ejemplo.test");
+      expect(r).toMatchObject({ ok: false, code: "wrong_browser" });
+      expect(tables["drive_connections"]).toHaveLength(0);
+    }
+    expect(calls).toHaveLength(0);
+    // Rejections do not spend the state: the browser that started it still finishes.
+    const { db, tables } = owner();
+    expect((await completeConnect(db, { code: "c", state: leaked, error: null, errorDescription: null, nonce }, "https://app.ejemplo.test")).ok).toBe(true);
+    expect(tables["drive_connections"]).toHaveLength(1);
   });
   it("a valid state without the right cookie is rejected: nothing saved, Google never called", async () => {
     route = goodGoogle();

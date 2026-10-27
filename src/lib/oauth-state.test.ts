@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { consumeNonce, newNonce, nonceCookieOptions, readCookie, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState, type OAuthState } from "./oauth-state";
+import { consumeNonce, hashNonce, newNonce, nonceCookieOptions, readCookie, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState, type OAuthState } from "./oauth-state";
 
 const now = 1_800_000_000_000;
-const state: OAuthState = { p: "drive", o: "org-1", u: "user-1", r: "/integrations", t: now + STATE_TTL_MS, n: "nonce-de-prueba-0123456789" };
+const state: OAuthState = { p: "drive", o: "org-1", u: "user-1", r: "/integrations", t: now + STATE_TTL_MS, h: "hash-de-prueba-0123456789" };
 
 describe("state signature (CA-17 of SDD 10 · a state cannot be forged, changed or kept past its time)", () => {
   it("round-trips a valid state", async () => {
@@ -25,10 +25,19 @@ describe("state signature (CA-17 of SDD 10 · a state cannot be forged, changed 
 });
 
 describe("browser binding (CA-17 of SDD 10 · the state alone is not enough)", () => {
-  it("refuses a signed state without a nonce", async () => {
-    const { n: _n, ...noNonce } = state;
-    const token = await signState("secreto-de-prueba", noNonce as OAuthState);
+  it("refuses a signed state without a nonce hash", async () => {
+    const { h: _h, ...noHash } = state;
+    const token = await signState("secreto-de-prueba", noHash as OAuthState);
     expect(await verifyState("secreto-de-prueba", token, now)).toBeNull();
+  });
+  it("the hash depends on the nonce and on the server key, and is not the nonce", async () => {
+    const n = newNonce();
+    const h = await hashNonce("secreto-de-prueba", n);
+    expect(h).not.toContain(n);
+    expect(h).toBe(await hashNonce("secreto-de-prueba", n));
+    expect(h).not.toBe(await hashNonce("otro-secreto", n));
+    expect(h).not.toBe(await hashNonce("secreto-de-prueba", newNonce()));
+    expect(h).not.toBe(n);
   });
   it("makes unpredictable nonces and compares them whole", () => {
     expect(newNonce()).not.toBe(newNonce());
