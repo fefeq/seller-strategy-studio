@@ -44,6 +44,7 @@ export type StrategyData = {
   /** Acquisition costs entered per segment (cac_costs). */
   costs: { segment_id: string | null; period: string }[];
   /** Planned revenue per segment and quarter (segment_budget_quarters), the target the coverage is measured against. */
+  experiments?: import("@/lib/experiments").ExperimentLike[];
   budgets: { segment_id: string; period: string; plan_revenue: number | null }[];
 };
 

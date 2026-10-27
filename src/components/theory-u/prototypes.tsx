@@ -10,6 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { EXPERIMENT_STATUS } from "@/lib/theory-u";
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
+import { useMe } from "@/hooks/use-me";
+import { CHANGE_ELEMENTS, CHANGE_LABEL, DECISION_LABEL, missingCriteria, suggestedReviewOn, type ChangeElement, type ExperimentDecision } from "@/lib/experiments";
+import { decideExperiment } from "@/lib/experiments-core";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -24,6 +27,8 @@ const TEXT_FIELDS = [
   ["audience", "Con quién lo probamos", ""],
   ["metric", "Métrica", "Ej.: tasa de respuesta, reuniones agendadas, win rate"],
   ["target", "Objetivo", "Ej.: >8% respuesta en 50 cuentas"],
+  ["success_threshold", "Umbral de éxito", "Ej.: 8 % de respuesta o más. Con menos, no escalamos."],
+  ["close_rule", "Regla de cierre", "Ej.: lo cerramos a los 30 días o al llegar a 50 cuentas contactadas."],
   ["result", "Resultado", ""],
   ["learning", "Aprendizaje", "¿Qué haríamos distinto? ¿Escalamos, iteramos o soltamos?"],
 ] as const;
@@ -43,6 +48,18 @@ export function Prototypes() {
     },
   });
   const exps = data?.exps ?? [];
+  const { data: me } = useMe();
+  const [dec, setDec] = useState<{ decision: ExperimentDecision; next_review_on: string | null; change_element: ChangeElement | ""; change_note: string }>({ decision: "close", next_review_on: null, change_element: "", change_note: "" });
+  const gaps = sel ? missingCriteria(sel) : [];
+
+  async function decide() {
+    if (!sel || !me?.currentOrg?.org_id) return;
+    try {
+      const r = await decideExperiment({ db: supabase, orgId: me.currentOrg.org_id, userId: me.user.id }, sel.id, { decision: dec.decision, result: sel.result ?? "", learning: sel.learning ?? "", next_review_on: dec.next_review_on, change_element: dec.change_element || null, change_note: dec.change_note });
+      toast.success(r.proposed ? "Decisión guardada. Te dejé el cambio propuesto en Sugerencias, pendiente de tu decisión." : "Decisión guardada.");
+      setSel(null); qc.invalidateQueries({ queryKey: ["gtm_experiments"] }); qc.invalidateQueries({ queryKey: ["suggestions"] });
+    } catch (e) { toast.error(errorText(e)); }
+  }
 
   async function add() {
     const { data: row, error } = await supabase.from("gtm_experiments").insert({ title: "Nuevo prototipo" }).select().single();
@@ -52,7 +69,7 @@ export function Prototypes() {
   }
   async function save() {
     const { id, org_id: _o, created_at: _c, updated_at: _u, created_by: _cb, updated_by: _ub, ...rest } = sel;
-    const { error } = await supabase.from("gtm_experiments").update({ ...rest, journey_id: rest.journey_id || null, starts_on: rest.starts_on || null, ends_on: rest.ends_on || null }).eq("id", id);
+    const { error } = await supabase.from("gtm_experiments").update({ ...rest, journey_id: rest.journey_id || null, starts_on: rest.starts_on || null, ends_on: rest.ends_on || null, review_on: rest.review_on || null }).eq("id", id);
     if (error) return toast.error(errorText(error));
     toast.success("Prototipo guardado."); qc.invalidateQueries({ queryKey: ["gtm_experiments"] });
   }
@@ -95,7 +112,23 @@ export function Prototypes() {
               <Field key={k} label={label}><Textarea rows={2} placeholder={ph} value={sel[k] ?? ""} onChange={(e) => setSel({ ...sel, [k]: e.target.value })} /></Field>
             ))}
           </div>
+          <Field label="Fecha de revisión"><DateField value={sel.review_on ?? suggestedReviewOn(sel)} onChange={(iso) => setSel({ ...sel, review_on: iso })} /></Field>
+          {gaps.length > 0 && <p className="text-sm text-muted-foreground">Falta por definir: {gaps.join(", ")}. Todo es editable.</p>}
           <Button onClick={save}>Guardar</Button>
+          {sel.status === "running" && (
+            <div className="space-y-3 rounded-md border p-4">
+              <p className="eyebrow">Decidir: escalar, ajustar o cerrar</p>
+              <p className="text-sm text-muted-foreground">Escribe antes el resultado y el aprendizaje y guarda. Para ajustar, elige una nueva fecha de revisión.</p>
+              <div className="grid gap-3 md:grid-cols-3">
+                <Field label="Decisión"><Pick value={dec.decision} options={DECISION_LABEL} onChange={(v) => setDec({ ...dec, decision: v as ExperimentDecision })} /></Field>
+                {dec.decision === "adjust"
+                  ? <Field label="Nueva fecha de revisión"><DateField value={dec.next_review_on} onChange={(iso) => setDec({ ...dec, next_review_on: iso })} /></Field>
+                  : <Field label="Propone un cambio en"><Pick value={dec.change_element} options={{ "": "Ninguno", ...Object.fromEntries(CHANGE_ELEMENTS.map((k) => [k, CHANGE_LABEL[k]])) }} onChange={(v) => setDec({ ...dec, change_element: v as ChangeElement | "" })} /></Field>}
+              </div>
+              {dec.decision !== "adjust" && dec.change_element && <Field label="Qué cambiarías"><Textarea rows={2} value={dec.change_note} onChange={(e) => setDec({ ...dec, change_note: e.target.value })} /></Field>}
+              <Button variant="outline" onClick={decide}>Registrar decisión</Button>
+            </div>
+          )}
         </div>
       ) : exps.length === 0 ? <Empty>Aún no hay prototipos GTM. Crea el primero.</Empty> : null}
       </div>
