@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, PERMISSIONS_TEXT, PURPOSE_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
+import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, CONNECT_CODES, connectMessage, connectParams, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
 
 const row = (status: ConnectionRow["status"]): ConnectionRow => ({ status, google_email: "ana@ejemplo.test", connected_by: null, connected_at: "2026-10-26T10:00:00Z", last_error: null });
 
@@ -68,6 +68,11 @@ describe("edge cases (SDD 5 §8) · Google errors and revoked access", () => {
     expect(oauthErrorText("x", "motivo de Google")).toContain("motivo de Google");
     expect(oauthErrorText("x")).toMatch(/Vuelve a intentarlo/);
   });
+  it("the outage text promises no retry that does not exist, and lost access says «Sin acceso» under the «Error» state (§8 of SDD 5, CA-1 of SDD 10)", () => {
+    expect(failureStatus(503)?.text).not.toMatch(/reintentaremos/);
+    expect(failureStatus(401)?.text).toMatch(/^Sin acceso/);
+    expect(STATE_LABEL.error).toBe("Error");
+  });
   it("revoked or expired access is «error»; a provider outage keeps the connection (§8 of SDD 5)", () => {
     expect(failureStatus(401)?.status).toBe("error");
     expect(failureStatus(400)?.status).toBe("error");
@@ -77,6 +82,28 @@ describe("edge cases (SDD 5 §8) · Google errors and revoked access", () => {
   it("a file we may not touch (403, 404) says nothing about the account", () => {
     expect(failureStatus(403)).toBeNull();
     expect(failureStatus(404)).toBeNull();
+  });
+});
+
+describe("return to Conexiones (CA-6 and CA-8 of SDD 10 shown on screen) · the address carries only codes, never text", () => {
+  it("every outcome round-trips through the address and reads back the same message", () => {
+    for (const code of CONNECT_CODES) {
+      const o = code === "ok" ? { code, revocation: "shared" as const, elsewhere: true } : { code };
+      const back = parseConnectParams(new URLSearchParams(connectParams(o)));
+      expect(back).toMatchObject({ ok: code === "ok", code, message: connectMessage(o) });
+    }
+  });
+  it("text, unknown codes and tampered values in the address are never shown", () => {
+    const evil = "Tu cuenta está comprometida, entra en http://evil.test";
+    const back = parseConnectParams(new URLSearchParams({ drive: "ok", msg: evil, code: evil, rev: evil, dup: "1" }));
+    expect(back?.message).not.toContain("evil");
+    expect(back?.message).not.toContain("comprometida");
+    expect(parseConnectParams(new URLSearchParams({ drive: "error", code: evil, msg: evil }))?.message).toBe(connectMessage({ code: "google_failed" }));
+    expect(parseConnectParams(new URLSearchParams({ msg: evil }))).toBeNull();
+    expect(Object.keys(connectParams({ code: "ok", revocation: "revoked", elsewhere: true })).sort()).toEqual(["code", "drive", "dup", "rev"]);
+  });
+  it("no message carries an email", () => {
+    for (const code of CONNECT_CODES) expect(connectMessage({ code, revocation: "failed", elsewhere: true })).not.toMatch(/@/);
   });
 });
 

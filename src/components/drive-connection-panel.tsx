@@ -8,7 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
-import { canManageConnections, driveConnectionState, MANAGE_DENIED, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
+import { canManageConnections, driveConnectionState, MANAGE_DENIED, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
 import { disconnectDriveFn, driveConnectionInfoFn, startDriveConnectFn } from "@/lib/drive-connection.functions";
 
 const when = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -34,11 +34,10 @@ export function DriveConnect() {
   // Google sends the Owner back here with the result of the connection.
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    const result = p.get("drive");
+    const result = parseConnectParams(p);
     if (!result) return;
-    const msg = p.get("msg") ?? (result === "ok" ? "Drive conectado." : "No se pudo conectar Drive.");
-    (result === "ok" ? toast.success : toast.error)(msg);
-    for (const k of ["drive", "msg"]) p.delete(k);
+    (result.ok ? toast.success : toast.error)(result.message, { duration: 12000 });
+    for (const k of ["drive", "code", "rev", "dup"]) p.delete(k);
     window.history.replaceState(null, "", `${window.location.pathname}${p.size ? `?${p}` : ""}${window.location.hash}`);
     void qc.invalidateQueries({ queryKey: ["drive-connection"] });
   }, [qc]);

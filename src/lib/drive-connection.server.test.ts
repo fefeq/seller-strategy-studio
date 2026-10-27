@@ -86,7 +86,7 @@ describe("CA-3 (SDD 5), CA-6 (SDD 10) and the checking half of CA-5 (SDD 10; the
     const { db, tables, log } = owner();
     const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r).toMatchObject({ ok: true, returnTo: "/integrations" });
-    expect(r.message).toContain("ana@ejemplo.test");
+    expect(r).toMatchObject({ code: "ok", message: "Drive conectado." });
     const row = tables["drive_connections"]![0]!;
     expect(row).toMatchObject({ org_id: ORG, google_email: "ana@ejemplo.test", status: "active", connected_by: USER });
     expect(String(row["refresh_token_enc"])).toMatch(/^v1:/);

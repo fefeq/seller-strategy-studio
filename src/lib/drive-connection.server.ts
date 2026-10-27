@@ -4,7 +4,7 @@
 // GOOGLE_OAUTH_CLIENT_SECRET, optional GOOGLE_OAUTH_REDIRECT_URI, and INTEGRATION_KEYS_SECRET (also signs the state).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { ALREADY_ELSEWHERE, buildAuthUrl, checkGrant, failureStatus, oauthErrorText, revocationText, revokeSkipReason, type ConnectionRow, type RevokeOutcome } from "@/lib/drive-connection";
+import { buildAuthUrl, checkGrant, connectMessage, failureStatus, revocationText, revokeSkipReason, type ConnectCode, type ConnectionRow, type RevokeOutcome } from "@/lib/drive-connection";
 import { DriveError, GOOGLE_API, nokkoAuth, type DriveAuth } from "@/lib/google-drive";
 import { consumeNonce, newNonce, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
 import { open, seal } from "@/lib/secret-box.server";
@@ -66,26 +66,33 @@ async function revokeSaved(db: Admin, orgId: string, saved: { google_email: stri
   return revoke(token);
 }
 
-export type ConnectResult = { ok: boolean; message: string; returnTo: string };
+export type ConnectResult = { ok: boolean; code: ConnectCode; message: string; returnTo: string; revocation?: RevokeOutcome | null; elsewhere?: boolean };
+const result = (code: ConnectCode, returnTo: string): ConnectResult => ({ ok: false, code, message: connectMessage({ code }), returnTo });
 
 /** What Google sent back to the callback. Saves the account only when it was checked and works (CA-5, CA-6). */
 export async function completeConnect(db: Admin, input: { code: string | null; state: string | null; error: string | null; errorDescription: string | null; nonce: string | null }, origin: string): Promise<ConnectResult> {
   const st = input.state ? await verifyState(stateSecret(), input.state) : null;
-  if (!st || st.p !== PROVIDER) return { ok: false, message: "El enlace de conexión ha caducado. Vuelve a pulsar «Conectar mi cuenta».", returnTo: "/integrations" };
+  if (!st || st.p !== PROVIDER) return result("expired", "/integrations");
   // The state must come back in the browser that started it (the cookie holds the nonce), and only once.
-  if (!input.nonce || !sameNonce(input.nonce, st.n) || !consumeNonce(st.n, st.t)) return { ok: false, message: "Esta conexión no se inició en este navegador o ya se usó. Vuelve a pulsar «Conectar mi cuenta».", returnTo: safeReturnPath(st.r) };
-  const fail = (message: string): ConnectResult => ({ ok: false, message, returnTo: st.r });
-  if (input.error) return fail(oauthErrorText(input.error, input.errorDescription));
-  if (!input.code) return fail(oauthErrorText("missing_code"));
+  if (!input.nonce || !sameNonce(input.nonce, st.n) || !consumeNonce(st.n, st.t)) return result("wrong_browser", safeReturnPath(st.r));
+  const fail = (code: ConnectCode): ConnectResult => result(code, st.r);
+  if (input.error) {
+    if (input.error !== "access_denied" && input.error !== "admin_policy_enforced") console.warn(`Drive consent returned an error: ${input.error.slice(0, 60)}`);
+    return fail(input.error === "access_denied" ? "cancelled" : input.error === "admin_policy_enforced" ? "admin_policy" : "google_failed");
+  }
+  if (!input.code) return fail("google_failed");
   const cfg = oauthConfig();
-  if (!cfg) return fail(NOT_CONFIGURED);
+  if (!cfg) return fail("not_configured");
 
   // Whoever started it must still be the Owner of that company.
   const { data: member } = await db.from("org_members").select("role").eq("org_id", st.o).eq("user_id", st.u).maybeSingle();
-  if (member?.role !== "owner") return fail("Solo el Owner de la empresa puede conectar Drive.");
+  if (member?.role !== "owner") return fail("owner_only");
 
   const t = await tokenCall({ code: input.code, client_id: cfg.clientId, client_secret: cfg.clientSecret, redirect_uri: redirectUri(origin), grant_type: "authorization_code" });
-  if (!t.ok) return fail(oauthErrorText("token", typeof t.json["error_description"] === "string" ? t.json["error_description"] : null));
+  if (!t.ok) {
+    console.warn(`Drive token exchange refused (${t.status})`);
+    return fail("google_failed");
+  }
   const accessToken = String(t.json["access_token"] ?? "");
   let about: { user?: { emailAddress?: string } } | null = null;
   try {
@@ -95,7 +102,7 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
   const grant = checkGrant({ scope: String(t.json["scope"] ?? ""), refresh_token: typeof t.json["refresh_token"] === "string" ? t.json["refresh_token"] : undefined }, about);
   if (!grant.ok) {
     if (typeof t.json["refresh_token"] === "string") await revoke(t.json["refresh_token"]);
-    return fail(grant.error);
+    return fail(grant.code);
   }
 
   const { data: previous } = await db.from("drive_connections").select("google_email,refresh_token_enc").eq("org_id", st.o).maybeSingle();
@@ -105,13 +112,13 @@ export async function completeConnect(db: Admin, input: { code: string | null; s
     { org_id: st.o, google_email: grant.email, refresh_token_enc: await seal(String(t.json["refresh_token"])), status: "active", last_error: null, connected_by: st.u, connected_at: now, updated_at: now },
     { onConflict: "org_id" },
   );
-  if (error) return fail("No se pudo guardar la conexión. Inténtalo de nuevo.");
+  if (error) return fail("save_failed");
   forget(st.o);
   const revocation = previous ? await revokeSaved(db, st.o, previous, grant.email) : null;
   if (revocation === "failed" || revocation === "unreadable") console.warn(`Drive revoke of the replaced account not done (${revocation}) for org ${st.o}`);
   await logEvent(db, st.o, st.u, previous && previous.google_email !== grant.email ? "changed" : "connected", grant.email);
-  const aboutOld = previous && revocation ? ` ${revocationText(revocation, previous.google_email)}` : "";
-  return { ok: true, message: `Drive conectado con ${grant.email}.${count ? ` ${ALREADY_ELSEWHERE}` : ""}${aboutOld}`, returnTo: st.r };
+  const done = { code: "ok" as const, revocation, elsewhere: !!count };
+  return { ok: true, ...done, message: connectMessage(done), returnTo: st.r };
 }
 
 /** Stops using the account at once, tries to revoke it at Google (unless another company uses the same account) and drops the token. Imported knowledge stays. */

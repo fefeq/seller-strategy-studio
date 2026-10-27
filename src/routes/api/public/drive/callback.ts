@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { connectParams, type ConnectOutcome } from "@/lib/drive-connection";
 import { nonceCookieName, nonceCookieOptions, readCookie } from "@/lib/oauth-state";
 
 // Google sends the Owner back here after the consent. The signed state says which company and person started
@@ -10,7 +11,7 @@ export const Route = createFileRoute("/api/public/drive/callback")({
         const url = new URL(request.url);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { completeConnect } = await import("@/lib/drive-connection.server");
-        let result: { ok: boolean; message: string; returnTo: string };
+        let result: ConnectOutcome & { returnTo: string };
         try {
           result = await completeConnect(supabaseAdmin, {
             code: url.searchParams.get("code"), state: url.searchParams.get("state"),
@@ -19,11 +20,11 @@ export const Route = createFileRoute("/api/public/drive/callback")({
           }, url.origin);
         } catch (e) {
           console.error("Drive callback failed", e instanceof Error ? e.message : e);
-          result = { ok: false, message: "No se pudo completar la conexión con Google. Inténtalo de nuevo.", returnTo: "/integrations" };
+          result = { code: "google_failed", returnTo: "/integrations" };
         }
         const back = new URL(result.returnTo, url.origin);
-        back.searchParams.set("drive", result.ok ? "ok" : "error");
-        back.searchParams.set("msg", result.message);
+        // Only a code goes in the address, never text: the screen writes the message from the code.
+        for (const [k, v] of Object.entries(connectParams(result))) back.searchParams.set(k, v);
         // The nonce is single use: the cookie goes away whatever the outcome.
         const o = nonceCookieOptions("drive", url.protocol === "https:");
         const clear = `${nonceCookieName("drive")}=; Path=${o.path}; Max-Age=0; HttpOnly; SameSite=Lax${o.secure ? "; Secure" : ""}`;

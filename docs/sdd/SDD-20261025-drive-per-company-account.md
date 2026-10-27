@@ -52,7 +52,7 @@ Founder o miembro cuyo email de acceso no es la cuenta Google donde están los d
 
 ## 8. Casos límite y errores
 - Permiso denegado o cancelado en Google: volver sin cambios y explicarlo (CA-1).
-- Token revocado o caducado desde Google: marcar la conexión como «Sin acceso» y pedir reconectar; no perder lo importado (CA-4, CA-6).
+- Token revocado o caducado desde Google: marcar la conexión como «Sin acceso» y pedir reconectar; no perder lo importado (CA-4, CA-6). Entregado: el estado se llama «Error» (SDD de conexiones, CA-1) y el aviso empieza por «Sin acceso»; Fede decide si basta o se cambia el nombre del estado.
 - Cuenta sin documentos accesibles: mostrar vacío con explicación (CA-7).
 - Archivo sin acceso dentro de una carpeta: marcarlo «Sin acceso» y seguir con el resto (CA-7).
 - Cuenta ya conectada en otra empresa: informar y pedir confirmación.
