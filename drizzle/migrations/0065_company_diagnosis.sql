@@ -12,7 +12,7 @@
 -- It changes no existing data: one function.
 
 CREATE OR REPLACE FUNCTION public.company_diagnosis(_org uuid)
-RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
   SELECT s.diagnosis
   FROM public.onboarding_sessions s
   WHERE s.org_id = _org AND s.diagnosis IS NOT NULL AND public.is_org_member(_org)

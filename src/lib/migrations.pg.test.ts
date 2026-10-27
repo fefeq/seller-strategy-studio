@@ -549,3 +549,20 @@ describe("migration 0067: partial index for the activity query", () => {
 
   it("re-running the migration changes nothing", async () => { await migrate(db, ["0067_last_human_edit_index.sql"]); });
 });
+
+describe("migration hygiene (audit point 5): re-running 0062 and the search_path of the security definer functions", () => {
+  it("0062 can be run again: its policies are dropped and recreated, not duplicated", async () => {
+    await migrate(db, ["0062_setup_step_snoozes.sql"]);
+    const p = await rows("select policyname from pg_policies where tablename = 'setup_step_snoozes' order by policyname");
+    expect(p).toHaveLength(4);
+    await as(db, U.aeA, async () => { expect((await rows("select 1 from setup_step_snoozes")).length).toBeGreaterThan(0); }); // data kept, policies still work
+  });
+
+  it("can_complete_setup_step and company_diagnosis pin search_path to public, pg_temp", async () => {
+    for (const fn of ["can_complete_setup_step", "company_diagnosis"]) {
+      const r = (await rows("select prosecdef, proconfig from pg_proc where proname = $1 and pronamespace = 'public'::regnamespace", [fn]))[0]!;
+      expect(r.prosecdef, fn).toBe(true);
+      expect(r.proconfig, fn).toContain("search_path=public, pg_temp");
+    }
+  });
+});
