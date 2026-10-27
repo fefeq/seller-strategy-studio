@@ -59,7 +59,7 @@ export function LossDialog({ deal, onDone, onCancel }: { deal: LossDeal | null; 
             <AlertDialogDescription>Cuéntanos por qué se perdió para que Nokko lo tenga en cuenta. No es obligatorio: puedes completarlo más tarde desde el deal.</AlertDialogDescription>
           </AlertDialogHeader>
           <LossFields form={form} onChange={setForm} />
-          <AlertDialogFooter className="gap-2 sm:gap-2">
+          <AlertDialogFooter className="flex-wrap gap-2 sm:flex-wrap sm:gap-2">
             <Button variant="ghost" disabled={busy} onClick={onCancel}>Cancelar</Button>
             <Button variant="outline" disabled={busy} onClick={() => void submit(true)}>Omitir y marcar como perdido</Button>
             <Button disabled={busy} onClick={() => void submit(false)}>Guardar y marcar como perdido</Button>
