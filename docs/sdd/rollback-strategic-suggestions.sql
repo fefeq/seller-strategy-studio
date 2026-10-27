@@ -5,6 +5,9 @@
 
 BEGIN;
 
+-- 0072_strategy_reviews
+DROP TABLE IF EXISTS public.strategy_reviews;
+
 -- 0070_strategy_execution
 DROP TABLE IF EXISTS public.strategy_links;
 DROP TABLE IF EXISTS public.strategy_changes;

@@ -7,17 +7,38 @@ import { PaybackQuarters } from "@/components/payback-quarters";
 import { Motions } from "@/components/strategy/motions";
 import { FunnelDiagnosisPanel } from "@/components/strategy/funnel-diagnosis";
 import { Pillars, Positioning } from "@/components/strategy/positioning";
+import { StrategyReviewPanel } from "@/components/strategy-review";
 import { RecentChanges } from "@/components/recent-changes";
 
-const STRATEGY_TABS = ["motions", "diagnosis", "payback", "budget", "icp", "positioning", "pillars"] as const;
+const STRATEGY_TABS = [
+  "motions",
+  "diagnosis",
+  "payback",
+  "budget",
+  "icp",
+  "positioning",
+  "pillars",
+  "review",
+] as const;
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
-    STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number]) ? { tab: s.tab as (typeof STRATEGY_TABS)[number] } : {},
-  head: () => ({ meta: [{ title: "Estrategia GTM — Nokko" }, { name: "description", content: "Modelos de venta por segmento, ICP y posicionamiento." }, { property: "og:title", content: "Estrategia GTM — Nokko" }, { property: "og:description", content: "Modelos de venta por segmento, ICP y posicionamiento." }] }),
+    STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number])
+      ? { tab: s.tab as (typeof STRATEGY_TABS)[number] }
+      : {},
+  head: () => ({
+    meta: [
+      { title: "Estrategia GTM — Nokko" },
+      { name: "description", content: "Modelos de venta por segmento, ICP y posicionamiento." },
+      { property: "og:title", content: "Estrategia GTM — Nokko" },
+      {
+        property: "og:description",
+        content: "Modelos de venta por segmento, ICP y posicionamiento.",
+      },
+    ],
+  }),
   component: Strategy,
 });
-
 
 function Strategy() {
   const { tab } = Route.useSearch();
@@ -32,17 +53,34 @@ function Strategy() {
           <TabsTrigger value="icp">ICP</TabsTrigger>
           <TabsTrigger value="positioning">Posicionamiento</TabsTrigger>
           <TabsTrigger value="pillars">Mensajes</TabsTrigger>
+          <TabsTrigger value="review">Revisión con IA</TabsTrigger>
         </TabsList>
-        <TabsContent value="motions"><Motions /></TabsContent>
-        <TabsContent value="diagnosis"><FunnelDiagnosisPanel /></TabsContent>
-        <TabsContent value="payback"><PaybackQuarters /></TabsContent>
-        <TabsContent value="budget"><BudgetQuarters /></TabsContent>
-        <TabsContent value="icp"><IcpEditor /></TabsContent>
-        <TabsContent value="positioning"><Positioning /></TabsContent>
-        <TabsContent value="pillars"><Pillars /></TabsContent>
+        <TabsContent value="motions">
+          <Motions />
+        </TabsContent>
+        <TabsContent value="diagnosis">
+          <FunnelDiagnosisPanel />
+        </TabsContent>
+        <TabsContent value="payback">
+          <PaybackQuarters />
+        </TabsContent>
+        <TabsContent value="budget">
+          <BudgetQuarters />
+        </TabsContent>
+        <TabsContent value="icp">
+          <IcpEditor />
+        </TabsContent>
+        <TabsContent value="positioning">
+          <Positioning />
+        </TabsContent>
+        <TabsContent value="pillars">
+          <Pillars />
+        </TabsContent>
+        <TabsContent value="review">
+          <StrategyReviewPanel />
+        </TabsContent>
       </Tabs>
       <RecentChanges />
     </Page>
   );
 }
-
