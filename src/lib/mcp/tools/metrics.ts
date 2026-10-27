@@ -58,7 +58,7 @@ export const segmentCoverageTool = defineTool({
     return json({
       quarter: q, currency: c.currency, cost_by_channel: costByChannel(costs),
       segments: rows.map((r, i) => ({
-        name: r.segment.name, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
+        name: r.segment.name, motion: (r.segment as { motion?: string | null }).motion ?? null, acquisition_motion: (r.segment as { acquisition_motion?: string | null }).acquisition_motion ?? null, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
         cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target },
         // The margin the payback above used (budget actuals → won deals with lines → plan → target).
         gross_margin: { pct: round((r.segment as { gross_margin_pct: number | null }).gross_margin_pct), source: (r.segment as { margin_source?: string | null }).margin_source ?? null },

@@ -16,22 +16,25 @@ import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { DeleteElement } from "@/components/delete-element";
 import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
+import { ACQUISITION_MOTION_LABEL, NO_ACQUISITION_MOTION, readAcquisitionMotion } from "@/lib/acquisition-motion";
 import type { TablesUpdate } from "@/integrations/supabase/types";
 
 export const MOTION_OPTS = Object.fromEntries(Object.entries(MOTIONS).map(([k, v]) => [k, v.label]));
+/** «Sin definir» first: an empty value is a real answer, never filled in for the person. */
+const ACQUISITION_OPTS: Record<string, string> = { "": NO_ACQUISITION_MOTION, ...ACQUISITION_MOTION_LABEL };
 export const MONEY_COLS = ["acv_min", "acv_max", "cac_target", "ae_quota"];
 export const SEG_LABEL: Record<string, string> = {
-  priority: "Prioridad", acv_min: "ACV mín", acv_max: "ACV máx", motion: "Modelo de venta", cycle_days: "Ciclo (días)",
+  priority: "Prioridad", acv_min: "ACV mín", acv_max: "ACV máx", motion: "Modelo de venta", acquisition_motion: "Motion de adquisición", cycle_days: "Ciclo (días)",
   sdr_per_ae: "SDR por AE", ae_per_se: "AE por SE", win_rate_target: "Win rate obj. %", ae_quota: "Cuota anual AE",
   cac_target: "CAC objetivo", gross_margin_pct: "Margen bruto %", payback_months: "Payback obj. (m)",
 };
 // [title, columns, show the «real» columns and actions in this block]
 export const SEG_GROUPS = [
   ["Económicos", ["priority", "acv_min", "acv_max", "win_rate_target", "ae_quota", "cac_target", "gross_margin_pct", "payback_months"], true],
-  ["Modelo de venta y capacidad", ["motion", "cycle_days", "sdr_per_ae", "ae_per_se"], false],
+  ["Modelo de venta y capacidad", ["motion", "acquisition_motion", "cycle_days", "sdr_per_ae", "ae_per_se"], false],
 ] as const;
 export const SEG_COLS = [
-  ["priority", "Prioridad"], ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["cycle_days", "Ciclo (días)"],
+  ["priority", "Prioridad"], ["acv_min", "ACV mín"], ["acv_max", "ACV máx"], ["motion", "Modelo de venta"], ["acquisition_motion", "Motion de adquisición"], ["cycle_days", "Ciclo (días)"],
   ["sdr_per_ae", "SDR por AE"], ["ae_per_se", "AE por SE"], ["win_rate_target", "Win rate obj. %"], ["ae_quota", "Cuota anual AE"],
   ["cac_target", "CAC objetivo"], ["gross_margin_pct", "Margen bruto %"], ["payback_months", "Payback obj. (m)"],
 ] as const;
@@ -46,6 +49,7 @@ export function Motions() {
   const { data: me } = useMe();
   const { currency, symbol, money } = useCurrency();
   const isOwner = me?.roles.includes("owner");
+  const canEditMotion = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [acvManual, setAcvManual] = useState<number | null>(null);
   const [basis, setBasis] = useState<"target" | "real">("target");
   const [forced, setForced] = useState("");
@@ -135,6 +139,10 @@ export function Motions() {
         <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
         {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
       </>;
+    }
+    if (k === "acquisition_motion") {
+      // Only Owner and Sales Leader edit it (the same people who may save segments through the agent).
+      return <Pick aria-label={`Motion de adquisición de ${s.name}`} disabled={!canEditMotion} value={readAcquisitionMotion(s.acquisition_motion) ?? ""} options={ACQUISITION_OPTS} onChange={(v) => upd(s.id, { acquisition_motion: v === "" ? null : v })} />;
     }
     const error = invalid[`${s.id}:${k}`];
     return <>
@@ -266,7 +274,7 @@ export function Motions() {
                     <tr key={s.id} className={`border-b last:border-0 ${seg?.id === s.id ? "bg-signal/5" : ""}`}>
                       <td className="sticky left-0 z-10 min-w-40 border-r bg-background px-2 py-2">{showReal ? <Input aria-label="Nombre del segmento" defaultValue={s.name} onBlur={(e) => e.target.value.trim() && e.target.value !== s.name && upd(s.id, { name: e.target.value.trim() })} /> : <span className="block px-1 font-medium">{s.name}</span>}</td>
                       {keys.map((k) => (
-                        <td key={k} className={`px-2 py-2 ${k === "motion" ? "min-w-44" : MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>{segCell(s, k)}</td>
+                        <td key={k} className={`px-2 py-2 ${k === "motion" || k === "acquisition_motion" ? "min-w-44" : MONEY_COLS.includes(k) ? "min-w-28" : "min-w-20"}`}>{segCell(s, k)}</td>
                       ))}
                       {showReal && <>
                         <td className="whitespace-nowrap bg-signal/5 px-3 py-2">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</td>
