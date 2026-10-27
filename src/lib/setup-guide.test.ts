@@ -1,12 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { SETUP_ITEMS, type SetupData } from "@/lib/setup-schema";
 import { getTool } from "@/lib/agent/tools";
 import {
   COMPLETE_TEXT, INACTIVITY_MS, STEP_ROLES, STEP_WHY, canCompleteStep, guideState, latestActivity, nextFor, nextMessage, nudgeDue,
-  parseSnoozeDate, stepsFor, whoCan, whoCanText,
+  dayAfter, formatDay, localDay, parseSnoozeDate, stepsFor, whoCan, whoCanText,
 } from "@/lib/setup-guide";
 
 const NOW = new Date("2026-10-26T10:00:00Z");
+const TZ0 = process.env.TZ;
+/** Runs fn with the process in a time zone (Node re-reads TZ on change). */
+const inZone = <T,>(tz: string, fn: () => T): T => { process.env.TZ = tz; try { return fn(); } finally { if (TZ0 === undefined) delete process.env.TZ; else process.env.TZ = TZ0; } };
+afterEach(() => { if (TZ0 === undefined) delete process.env.TZ; else process.env.TZ = TZ0; });
 const fullPos = Object.fromEntries(["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "category", "key_benefit", "competitive_alternative", "differentiator", "one_liner", "elevator_pitch"].map((k) => [k, "texto"]));
 const full: SetupData = {
   currency: "EUR",
@@ -58,10 +62,11 @@ describe("setup guide: next-step message (CA-1, CA-2)", () => {
     expect(m.start).toBeNull();
   });
   it("only snoozed steps left: no next step and says when it comes back", () => {
-    const g = guideState({ ...full, deals: 0 }, [{ step_id: "deals", snoozed_until: "2026-11-03T23:59:59.999Z" }], NOW);
+    const g = guideState({ ...full, deals: 0 }, [{ step_id: "deals", snoozed_until: "2026-11-03T11:00:00.000Z" }], NOW);
     expect(g.next).toBeNull();
     expect(g.complete).toBe(false);
-    expect(nextMessage(g, "owner").why).toContain("2026-11-03");
+    expect(inZone("Europe/Madrid", () => nextMessage(g, "owner").why)).toContain("3 de noviembre de 2026"); // CA-7: Spanish day, never ISO
+    expect(nextMessage(g, "owner").why).not.toContain("2026-11-03");
   });
 });
 
@@ -99,11 +104,30 @@ describe("setup guide: snooze (CA-7)", () => {
     expect(guideState(full, [{ step_id: "deals", snoozed_until: "2026-12-01T23:59:59.999Z" }], NOW).steps.find((s) => s.id === "deals")?.state).toBe("done");
   });
   it("accepts only a real future day", () => {
-    expect(parseSnoozeDate("2026-10-27", NOW)).toBe("2026-10-27T23:59:59.999Z");
-    expect(parseSnoozeDate("2026-10-26", NOW)).toBeNull();
-    expect(parseSnoozeDate("2026-10-01", NOW)).toBeNull();
-    expect(parseSnoozeDate("2026-02-31", NOW)).toBeNull();
-    expect(parseSnoozeDate("mañana", NOW)).toBeNull();
+    inZone("Europe/Madrid", () => {
+      expect(parseSnoozeDate("2026-10-27", NOW)).toBe("2026-10-27T11:00:00.000Z");
+      expect(parseSnoozeDate("2026-10-26", NOW)).toBeNull();
+      expect(parseSnoozeDate("2026-10-01", NOW)).toBeNull();
+      expect(parseSnoozeDate("2026-02-31", NOW)).toBeNull();
+      expect(parseSnoozeDate("mañana", NOW)).toBeNull();
+    });
+  });
+  it("CA-7: the day the person picks is the day saved and shown, in every zone, by the wizard, the panel and the agent", () => {
+    for (const tz of ["Europe/Madrid", "America/Mexico_City", "America/Argentina/Buenos_Aires", "UTC"]) {
+      const stored = inZone(tz, () => parseSnoozeDate("2026-11-03", NOW));
+      expect(stored, tz).not.toBeNull();
+      // read back where the person is (screens) and on a UTC server (agent): the same day, in Spanish
+      expect(inZone(tz, () => formatDay(stored!)), tz).toBe("3 de noviembre de 2026");
+      expect(inZone("UTC", () => formatDay(stored!)), tz).toBe("3 de noviembre de 2026");
+      expect(inZone(tz, () => localDay(new Date(stored!))), tz).toBe("2026-11-03");
+    }
+  });
+  it("CA-7: the picker's minimum is tomorrow in local time, not UTC (23:30 in Madrid is already the next day in UTC)", () => {
+    const lateMadrid = new Date("2026-10-26T22:30:00Z"); // 23:30 CET on the 26th, 22:30 UTC the same day
+    const earlyMadrid = new Date("2026-10-26T23:30:00Z"); // 00:30 CET on the 27th, still the 26th in UTC
+    expect(inZone("Europe/Madrid", () => dayAfter(lateMadrid, 1))).toBe("2026-10-27");
+    expect(inZone("Europe/Madrid", () => dayAfter(earlyMadrid, 1))).toBe("2026-10-28");
+    expect(inZone("Europe/Madrid", () => parseSnoozeDate("2026-10-27", earlyMadrid))).toBeNull(); // today in local time
   });
 });
 

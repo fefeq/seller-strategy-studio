@@ -3,7 +3,7 @@ import { z } from "zod";
 import { loadSetupData, loadSetupGuideExtras } from "@/lib/org-data";
 import { STAGE_ARG, def, like, ok, one, orgStages, resolveStage } from "../tool-kit";
 import { setupStatus } from "@/lib/setup-schema";
-import { guideState, nextMessage } from "@/lib/setup-guide";
+import { formatDay, guideState, nextMessage } from "@/lib/setup-guide";
 import { buildSnapshot } from "@/lib/advisor";
 import { cohort, funnelBySegment, funnelStats } from "@/lib/self-service";
 import { quarterOf, quarterRange } from "@/lib/metrics";
@@ -197,7 +197,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       // The guide (setup-guide.ts) decides the next step by a fixed order, the same as the screen; the agent never picks it.
       const extras = await loadSetupGuideExtras(c.db, c.orgId);
       const g = guideState(d, extras.snoozes, new Date());
-      const guia = { mensaje: nextMessage(g, c.roles[0]), pospuestos: g.snoozed.map((s) => ({ paso: s.label, hasta: s.snoozedUntil })) };
+      const guia = { mensaje: nextMessage(g, c.roles[0]), pospuestos: g.snoozed.map((s) => ({ paso: s.label, hasta: s.snoozedUntil ? formatDay(s.snoozedUntil) : null })) };
       return { estado: setupStatus(d), guia, moneda: d.currency, posicionamiento: d.positioning, segmentos: segs.data, icp: icps.data, pilares: pils.data };
     },
   }),

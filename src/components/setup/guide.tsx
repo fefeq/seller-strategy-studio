@@ -3,24 +3,21 @@ import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { markNudgeSeen, nudgeSeen, useSetupGuide, type OfferScope } from "@/hooks/use-setup-guide";
-import { STATE_LABEL, canCompleteStep, stepsFor, whoCanText, type NextMessage } from "@/lib/setup-guide";
+import { STATE_LABEL, canCompleteStep, dayAfter, formatDay, stepsFor, whoCanText, type NextMessage } from "@/lib/setup-guide";
 import { linkTarget, setupStepLink } from "@/lib/proactive/resolve";
 
 /** The screen where a step is edited, as router props (strategy tab, metrics, accounts or deals). */
 const stepTarget = (id: string) => linkTarget(setupStepLink(id))!;
 
-const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { dateStyle: "medium" }) : "");
-const tomorrow = () => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-
 /** «Más tarde»: the person picks the day the step comes back. */
 export function SnoozeForm({ stepId, onDone }: { stepId: string; onDone: () => void }) {
   const { snooze } = useSetupGuide();
-  const [value, setValue] = useState(() => new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10));
+  const [value, setValue] = useState(() => dayAfter(new Date(), 3));
   const [busy, setBusy] = useState(false);
   return (
     <form className="mt-3 flex flex-wrap items-end gap-2" onSubmit={async (e) => { e.preventDefault(); setBusy(true); const ok = await snooze(stepId, value); setBusy(false); if (ok) onDone(); }}>
       <label className="text-xs text-muted-foreground">Avísame de nuevo el
-        <Input type="date" className="mt-1 h-9 w-44" min={tomorrow()} value={value} onChange={(e) => setValue(e.target.value)} />
+        <Input type="date" className="mt-1 h-9 w-44" min={dayAfter(new Date(), 1)} value={value} onChange={(e) => setValue(e.target.value)} />
       </label>
       <Button type="submit" size="sm" disabled={busy || !value}>Posponer</Button>
       <Button type="button" size="sm" variant="ghost" onClick={onDone}>Cancelar</Button>
@@ -88,7 +85,7 @@ export function GuideProgress() {
             </div>
             {s.state !== "done" && <p className="text-xs text-muted-foreground">Desbloquea: {s.unlocks}</p>}
             {s.state === "snoozed" && (
-              <p className="text-xs text-muted-foreground">Te aviso de nuevo el {day(s.snoozedUntil)}. {canCompleteStep(s.id, g.role) && <button className="underline" onClick={() => g.unsnooze(s.id)}>Quitar posposición</button>}</p>
+              <p className="text-xs text-muted-foreground">Te aviso de nuevo el {s.snoozedUntil ? formatDay(s.snoozedUntil) : ""}. {canCompleteStep(s.id, g.role) && <button className="underline" onClick={() => g.unsnooze(s.id)}>Quitar posposición</button>}</p>
             )}
             {s.state !== "done" && !canCompleteStep(s.id, g.role) && <p className="text-xs text-muted-foreground">{whoCanText(s.id, g.members)}</p>}
             {s.state === "pending" && canCompleteStep(s.id, g.role) && (

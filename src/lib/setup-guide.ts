@@ -118,7 +118,8 @@ export function nextMessage(guide: Guide, role: string | null | undefined, justD
   if (guide.complete) return { stepId: null, title: `${lead}Ya tienes tu estrategia completa.`, why: COMPLETE_TEXT, start: null, later: null, link: null };
   const other = guide.pending[0];
   if (other) return { stepId: null, title: `${lead}Lo que queda no es de tu rol.`, why: `Falta ${other.label.split(" (")[0].toLowerCase()}. ${whoCanText(other.id, members)}`, start: null, later: null, link: null };
-  return { stepId: null, title: `${lead}Los pasos que quedan están pospuestos.`, why: `Vuelven a avisarte el ${guide.snoozed.map((s) => s.snoozedUntil).filter(Boolean).sort()[0]?.slice(0, 10) ?? "día que elegiste"}.`, start: null, later: null, link: null };
+  const back = guide.snoozed.map((s) => s.snoozedUntil).filter((u): u is string => !!u).sort()[0];
+  return { stepId: null, title: `${lead}Los pasos que quedan están pospuestos.`, why: `Vuelven a avisarte el ${back ? formatDay(back) : "día que elegiste"}.`, start: null, later: null, link: null };
 }
 
 /** CA-2: what Nokko does by itself and what is left for the person once nothing is pending. */
@@ -139,12 +140,34 @@ export function latestActivity(stamps: (string | null | undefined)[]): string | 
   return t.length ? t[t.length - 1]! : null;
 }
 
-/** CA-7: a snooze date must be a real day after today. Returns the end of that day (ISO) or null. */
+const pad = (n: number) => String(n).padStart(2, "0");
+
+/** The calendar day of a date in the reader's time zone as YYYY-MM-DD. Never toISOString(): that is UTC and shifts the day near midnight. */
+export function localDay(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** The day `n` days after `now`, in local time (what the date picker's min and default use). */
+export function dayAfter(now: Date, n: number): string {
+  return localDay(new Date(now.getFullYear(), now.getMonth(), now.getDate() + n));
+}
+
+/**
+ * CA-7: the day the person picked, as a stored instant: midday of that local day. Midday keeps the same calendar day when it is read
+ * back in UTC (the agent runs on a server) for every zone from UTC-12 to UTC+11, and the step comes back that day. Null unless it is a
+ * real day after today.
+ */
 export function parseSnoozeDate(input: string, now: Date): string | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(input)) return null;
-  const end = new Date(`${input}T23:59:59.999Z`);
-  if (Number.isNaN(end.getTime()) || end.toISOString().slice(0, 10) !== input) return null;
-  return end.getTime() > now.getTime() && input > now.toISOString().slice(0, 10) ? end.toISOString() : null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input);
+  if (!m) return null;
+  const at = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12);
+  if (localDay(at) !== input) return null; // 2026-02-31 rolls over to March
+  return input > localDay(now) ? at.toISOString() : null;
+}
+
+/** The day a step comes back, in Spanish («3 de noviembre de 2026»); the same text in the wizard, the panel and the agent. */
+export function formatDay(iso: string): string {
+  return new Date(iso).toLocaleDateString("es-ES", { dateStyle: "long" });
 }
 
 export const SETUP_STEP_IDS = SETUP_ITEMS.map((i) => i.id);
