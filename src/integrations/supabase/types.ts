@@ -4331,6 +4331,7 @@ export type Database = {
       }
       segments: {
         Row: {
+          acquisition_motion: string | null
           acv_max: number | null
           acv_min: number | null
           ae_per_se: number | null
@@ -4354,6 +4355,7 @@ export type Database = {
           win_rate_target: number | null
         }
         Insert: {
+          acquisition_motion?: string | null
           acv_max?: number | null
           acv_min?: number | null
           ae_per_se?: number | null
@@ -4377,6 +4379,7 @@ export type Database = {
           win_rate_target?: number | null
         }
         Update: {
+          acquisition_motion?: string | null
           acv_max?: number | null
           acv_min?: number | null
           ae_per_se?: number | null
