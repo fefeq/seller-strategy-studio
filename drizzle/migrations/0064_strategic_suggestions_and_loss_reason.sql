@@ -51,7 +51,7 @@ ALTER TABLE public.suggestions ADD CONSTRAINT suggestions_strategy_detector CHEC
 CREATE TABLE IF NOT EXISTS public.strategy_decisions (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id uuid NOT NULL DEFAULT public.current_org() REFERENCES public.organizations(id) ON DELETE CASCADE,
-  suggestion_id uuid NOT NULL REFERENCES public.suggestions(id) ON DELETE CASCADE,
+  suggestion_id uuid NOT NULL REFERENCES public.suggestions(id), -- no cascade: a suggestion with decisions cannot be deleted on its own (the log is a record); deleting the company still removes both
   decision text NOT NULL CONSTRAINT strategy_decisions_decision CHECK (decision IN ('accepted','postponed','dismissed')),
   reason text CONSTRAINT strategy_decisions_reason CHECK (reason IS NULL OR length(reason) <= 500),
   remind_at timestamptz,
@@ -71,7 +71,7 @@ CREATE POLICY "org read" ON public.strategy_decisions FOR SELECT TO authenticate
   USING (org_id = public.current_org() AND public.is_org_member(org_id) AND EXISTS (SELECT 1 FROM public.suggestions s WHERE s.id = suggestion_id AND s.org_id = strategy_decisions.org_id));
 DROP POLICY IF EXISTS "org insert" ON public.strategy_decisions;
 CREATE POLICY "org insert" ON public.strategy_decisions FOR INSERT TO authenticated
-  WITH CHECK (public.is_org_member(org_id) AND decided_by = auth.uid() AND EXISTS (SELECT 1 FROM public.suggestions s WHERE s.id = suggestion_id AND s.org_id = strategy_decisions.org_id));
+  WITH CHECK (public.is_org_member(org_id) AND decided_by = auth.uid() AND decided_at = now() AND EXISTS (SELECT 1 FROM public.suggestions s WHERE s.id = suggestion_id AND s.org_id = strategy_decisions.org_id AND s.strategy->>'fingerprint' = strategy_decisions.evidence_fingerprint));
 COMMENT ON TABLE public.strategy_decisions IS 'Who accepted, postponed or dismissed a strategic suggestion, when and why; keeps the evidence fingerprint at that moment.';
 
 -- 3. Loss reason and competitor on deals ---------------------------------------------------------------------------------------------

@@ -43,7 +43,7 @@ export async function decideStrategy(
   if (!claimed?.length) return { status: rec.status, message: "Ya estaba gestionada" };
   const { error } = await ctx.db.from("strategy_decisions").insert({
     org_id: ctx.orgId, suggestion_id: s.id, decision: rec.decision, reason: rec.reason, remind_at: rec.remind_at,
-    evidence_fingerprint: rec.evidence_fingerprint, decided_by: rec.decided_by, decided_at: rec.decided_at,
+    evidence_fingerprint: rec.evidence_fingerprint, decided_by: rec.decided_by, // decided_at: the database sets it (the policy requires now())
   });
   if (error) {
     await ctx.db.from("suggestions").update({ status: "pending", snoozed_until: null, updated_at: at }).eq("id", s.id).eq("org_id", ctx.orgId);

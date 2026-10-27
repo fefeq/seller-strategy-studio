@@ -217,6 +217,16 @@ export type Reconciled =
   | { action: "reopen"; patch: { status: "pending"; snoozed_until: null; strategy: StrategyMeta; title: string; body: string; priority: number } };
 
 /**
+ * CA-5: «new evidence» means a record that was not behind the decision. A changed fingerprint is not enough: when records
+ * drop out (a deal deleted, an account that no longer fits) the fingerprint changes too, and that must not wake the suggestion.
+ */
+function hasNewEvidence(existing: StrategyRow, found: StrategySuggestion): boolean {
+  if (found.strategy.fingerprint === (existing.decided_fingerprint ?? existing.strategy.fingerprint)) return false;
+  const before = new Set(existing.strategy.evidence.map((e) => `${e.table}:${e.id}`));
+  return found.strategy.evidence.some((e) => !before.has(`${e.table}:${e.id}`));
+}
+
+/**
  * What to do when a detector finds a suggestion again. A dismissed or postponed one stays as it is unless its evidence
  * changed since the decision (CA-5, CA-6); an accepted one is never touched; an open one only refreshes its evidence.
  */
@@ -227,7 +237,7 @@ export function reconcile(existing: StrategyRow | null, found: StrategySuggestio
     case "approved": return { action: "keep" };
     case "dismissed":
     case "snoozed":
-      return found.strategy.fingerprint === (existing.decided_fingerprint ?? existing.strategy.fingerprint) ? { action: "keep" } : { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } };
+      return hasNewEvidence(existing, found) ? { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } } : { action: "keep" };
     case "resolved": return { action: "reopen", patch: { status: "pending", snoozed_until: null, ...patch } };
     default: return found.strategy.fingerprint === existing.strategy.fingerprint ? { action: "keep" } : { action: "refresh", patch };
   }
