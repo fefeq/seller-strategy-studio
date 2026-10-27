@@ -1,4 +1,6 @@
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useAgent } from "@/components/agent";
 import { useOnboarding } from "@/hooks/use-onboarding";
@@ -15,8 +17,10 @@ export function RoadmapCard() {
   const { open: openAgent } = useAgent();
   const g = useSetupGuide();
   const pct = st?.status.pct ?? 0;
+  // The diagnosis is the company's: your own if you have one, else the latest a colleague made (company_diagnosis, migration 0065).
+  const { data: shared } = useQuery({ queryKey: ["company-diagnosis", g.orgId], enabled: !!g.orgId && !!st, queryFn: async () => (await supabase.rpc("company_diagnosis", { _org: g.orgId! })).data });
   if (!st || !showRoadmapCard(session, pct)) return null;
-  const diag = jsonObject(session?.diagnosis ?? null) as { result?: { archetype?: string; name?: string; nextStep?: string } } | null;
+  const diag = jsonObject(shared ?? session?.diagnosis ?? null) as { result?: { archetype?: string; name?: string; nextStep?: string } } | null;
   return (
     <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs">
       <div className="flex flex-wrap items-baseline justify-between gap-3">

@@ -406,3 +406,37 @@ describe("migration 0064: last_human_edit_at, only what a person changed", () =>
     expect((await stamp("segments", ids["segments"]!)).last_human_edit_at).toEqual(keep);
   });
 });
+
+describe("migration 0065: company_diagnosis shares only the diagnosis", () => {
+  const D = (n: string) => JSON.stringify({ result: { name: n } });
+  beforeAll(async () => {
+    await migrate(db, ["0052_onboarding_sessions.sql"]);
+    await migrate(db, ["0065_company_diagnosis.sql"]);
+    await db.exec(`insert into onboarding_sessions (org_id, user_id, diagnosis, updated_at) values
+      ('${A}', '${U.ownerA}', '${D("Dueño")}', '2026-10-20T10:00:00Z'),
+      ('${A}', '${U.aeA}', null, '2026-10-26T10:00:00Z')`);
+  });
+  const diag = (uid: string | null, org = A) => as(db, uid, async () => (await rows("select public.company_diagnosis($1) as d", [org]))[0]!.d);
+
+  it("1. a member without a diagnosis of their own gets a colleague's", async () => {
+    expect(await diag(U.aeA)).toEqual({ result: { name: "Dueño" } });
+  });
+  it("2. their own wins over a colleague's, and among colleagues the most recently updated", async () => {
+    await db.exec(`update onboarding_sessions set diagnosis = '${D("Mía")}', updated_at = '2026-10-21T10:00:00Z' where user_id = '${U.aeA}'`);
+    expect(await diag(U.aeA)).toEqual({ result: { name: "Mía" } });
+    expect(await diag(U.ownerA)).toEqual({ result: { name: "Dueño" } });
+    const u3 = "00000000-0000-4000-8000-0000000000c3";
+    await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${u3}','marketing'); insert into profiles (id, current_org_id) values ('${u3}','${A}');`);
+    expect(await diag(u3)).toEqual({ result: { name: "Mía" } }); // newest of the two
+  });
+  it("3. someone outside the company gets nothing, and so does anon", async () => {
+    expect(await diag(U.ownerB)).toBeNull();
+    expect(await as(db, U.ownerB, () => throws(() => db.query("select public.company_diagnosis($1)", [A])))).toBe("");
+    await db.exec("set role anon");
+    expect(await throws(() => db.query("select public.company_diagnosis($1)", [A]))).not.toBe("");
+    await db.exec("reset role");
+  });
+  it("4. the table's policy is unchanged: a colleague's row (proposal, findings) is still not readable directly", async () => {
+    await as(db, U.aeA, async () => { expect((await rows("select user_id from onboarding_sessions")).map((r) => r.user_id)).toEqual([U.aeA]); });
+  });
+});

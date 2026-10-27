@@ -5129,6 +5129,7 @@ export type Database = {
         Args: { _org: string; _step: string }
         Returns: boolean
       }
+      company_diagnosis: { Args: { _org: string }; Returns: Json }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string

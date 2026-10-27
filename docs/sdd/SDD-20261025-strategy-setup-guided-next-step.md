@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-26; tabla de la sección 11 validada con el orden del wizard; U-1 a U-6 hechas; correcciones de la auditoría independiente hechas el 2026-10-27, salvo CA-6 y la reaparición de la sugerencia, que esperan decisión de Fede; migración 0062 verificada en réplica local, no aplicada a la base real; falta la parte de diagnóstico compartido) · **Pide:** Fede · **Para:** Fede · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-26; tabla de la sección 11 validada con el orden del wizard; U-1 a U-6 hechas; correcciones de la auditoría independiente y decisiones de la sección 14 aplicadas el 2026-10-27; migraciones 0062, 0064 y 0065 verificadas en réplica local, no aplicadas a la base real) · **Pide:** Fede · **Para:** Fede · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen
@@ -60,7 +60,7 @@ Fuente: código del repo (2026-10-25); sin datos de uso (sin dato):
 - Usuario invitado: ve solo los pasos que le competen (CA-8).
 
 ## 9. Experiencia y copy
-Mensaje tipo: «Ya tienes tu ICP. Siguiente: define tu posicionamiento (5 min). Así NOKKO sabrá qué diferencia contar.» Botones: «Empezar», «Más tarde». Todo en «tú», sin iconos.
+Mensaje tipo: «Ya tienes tu ICP. Siguiente: define tu posicionamiento. Así Nokko sabrá qué diferencia contar.» (sin duración por paso: no hay medida; marca escrita «Nokko» como en el resto del producto) Botones: «Empezar», «Más tarde». Todo en «tú», sin iconos.
 
 ## 10. Datos, permisos y privacidad
 Se guarda estado por elemento y fecha de posposición por empresa. Sin datos de terceros. Respetar roles.
@@ -105,18 +105,18 @@ Fuente: `SETUP_ITEMS` y `setupStatus` en `src/lib/setup-schema.ts`, `SETUP_STEP_
 - Depende del SDD universal (definición única de completo).
 
 ## 14. Decisiones para Fede
-Cada una con mi recomendación. Nada de esto está implementado hasta que decidas.
-1. **Actividad del CA-6 (bloqueante de esa corrección).** Hoy la «actividad» es el último `updated_at` de las tablas de los 8 pasos, y `updated_at` también lo mueven procesos automáticos (enriquecimientos, sincronizaciones, triggers). Con los datos actuales no se pueden separar: `set_audit` pone `updated_at = now()` siempre y, si escribe un proceso sin sesión, deja el `updated_by` anterior. Solo `field_edit_log` distingue personas (`changed_by`), y solo cubre segmentos, ICP, posicionamiento y pilares, no cuentas, deals ni cuotas. Opciones: (A) columna `last_human_edit_at` mantenida por trigger cuando hay `auth.uid()` en las 7 tablas, más migración; (B) medir solo lo que hoy se puede atribuir (`created_by` y `field_edit_log`) y declarar que cuentas, deals y cuotas no cuentan; (C) dejarlo y aceptar el ruido. **Recomiendo A**: es la única que da una respuesta correcta y es una migración pequeña con la misma prueba local que la 0062.
-2. **La sugerencia no reaparece al vencer la posposición.** Verificado con prueba: posponer sí cierra `setup_incomplete:<paso>` (en la siguiente pasada del job), pero al vencer el detector vuelve a emitir la misma clave y el `upsert` con `ignoreDuplicates` choca con la fila cerrada o descartada, así que no vuelve a la bandeja. La guía en pantalla y en el Agente sí reaparece. Opciones: (A) incluir el día de fin de la posposición en la clave (`setup_incomplete:<paso>:<día>`) cuando el paso tuvo una; (B) reabrir en `syncSuggestions` la fila cerrada de un paso cuya posposición acaba de vencer. **Recomiendo A**: no toca el esquema ni la lógica de cierre. Efecto secundario: una posposición nueva genera una sugerencia nueva, que es lo que quieres.
-3. **Diagnóstico GTM visible para la empresa.** Hoy solo lo lee su autor (`onboarding_sessions`, RLS «Own onboarding in my company»). Opciones: política nueva de lectura entre miembros, o copia a una tabla de empresa. **Recomiendo la política de lectura** (el autor sigue siendo el único que escribe): no duplica datos ni puede desincronizarse.
-4. **`BASELINE_MAX` sube de 980 a 985** por las 5 columnas de `setup_step_snoozes` (`org_id` y `created_at` no tienen concepto en el catálogo), contra la regla de que solo baje. **Recomiendo aceptar +5 ahora**, dejado por escrito en `field-baseline.ts`, y abrir en el SDD 1 la regla de columnas técnicas de tablas nuevas para que no se repita.
-5. **«Máximo un aviso por sesión»** leído como una vez por sesión en cada sitio (Inicio y Agente), porque el CA-6 pide ambos. **Recomiendo mantener** esa lectura.
-6. **Copy del §9.** Faltan dos cosas del mensaje tipo: la duración («5 min») y la grafía de la marca. No hay medida de duración por paso, así que no la escribo (no invento cifras); **recomiendo quitar «(5 min)» del ejemplo** o dame las duraciones. La app escribe «Nokko» en las 326 apariciones; el ejemplo dice «NOKKO». **Recomiendo «Nokko»**, como el resto del producto.
-7. **Aviso del CA-5 al descompletar un paso.** Implementado como aviso breve en pantalla («Paso pendiente de nuevo: tu ICP.»), uno por cambio. Confirma si prefieres un mensaje fijo en el panel de progreso en lugar del aviso.
-8. **Posponer solo lo pueden hacer los roles que completan el paso** (también en la base de datos). **Recomiendo mantenerlo**; la alternativa es que cualquier miembro pueda posponerle cualquier paso a la empresa.
+El 2026-10-27 Fede delegó en el agente cerrar los pendientes: se aplicó la recomendación de cada punto. Revísalas; cualquiera se puede revertir.
+1. **Actividad del CA-6: hecho, opción A.** `updated_at` también lo mueven procesos automáticos y no sirve. Migración 0064: columna `last_human_edit_at` en las 7 tablas de los pasos, puesta por trigger solo cuando hay una persona con sesión; el aviso lee esa columna. Límites: lo que una función del servidor hace con la sesión de la persona cuenta como suyo; las filas existentes quedan vacías (sin dato) hasta que alguien las edite, y sin dato no hay aviso. Alternativas descartadas: contar solo `created_by` y `field_edit_log` (no cubre cuentas, deals ni cuotas) o aceptar el ruido.
+2. **Sugerencia que reaparece al vencer: hecho.** Un paso cuya posposición acabó usa la clave `setup_incomplete:<paso>:<día en que acabó>`, así que es una sugerencia nueva aunque la anterior se cerrara al posponer o se hubiera descartado. «Quitar posposición» ya no borra la fila: la termina ahora, para que valga lo mismo.
+3. **Diagnóstico GTM visible para la empresa: hecho, con una variación.** En vez de ampliar la política de lectura (que habría compartido también propuesta, hallazgos y opiniones), la migración 0065 añade `company_diagnosis(org)`, que devuelve solo el diagnóstico: el tuyo si lo tienes, si no el más reciente de la empresa, y nada a quien no sea miembro. La tarjeta de Inicio la usa.
+4. **`BASELINE_MAX` sube de 980 a 992** (5 columnas de `setup_step_snoozes` y 7 de `last_human_edit_at`), contra la regla de que solo baje. Aceptado, dejado por escrito en `field-baseline.ts`. Pendiente fuera de este SDD: la regla de columnas técnicas de tablas nuevas en el SDD 1.
+5. **«Máximo un aviso por sesión»:** una vez por sesión en cada sitio (Inicio y Agente). Mantenido.
+6. **Copy del §9:** sin «(5 min)» (no hay duración medida) y con «Nokko» como en el resto del producto. Si quieres duraciones, hay que medirlas primero.
+7. **CA-5:** aviso breve en pantalla al descompletar un paso. Mantenido.
+8. **Posponer** solo lo pueden hacer los roles que completan el paso, también en la base de datos. Mantenido.
 
 ## 15. Pendiente de verificar
-- [Verificado en el código, 2026-10-26] El diagnóstico GTM NO se puede compartir a nivel empresa sin cambiar permisos: vive en `onboarding_sessions.diagnosis` y su RLS («Own onboarding in my company», migración 0052) solo deja leer y escribir filas con `user_id = auth.uid()`. Compartirlo exige una política nueva de lectura entre miembros o copiarlo a una tabla de empresa. Ninguna de las dos se ha hecho: el cambio de «diagnóstico por usuario → visible para la empresa» queda fuera de esta entrega a la espera de tu decisión (punto 3 de la sección 14).
+- [Verificado en el código, 2026-10-26] El diagnóstico GTM vivía en `onboarding_sessions.diagnosis` y su RLS («Own onboarding in my company», migración 0052) solo deja leer filas con `user_id = auth.uid()`. Resuelto el 2026-10-27 con la función `company_diagnosis` (migración 0065), sin ampliar esa política (§14.3).
 - [Por verificar] Línea base de finalización (sin dato).
 
 ## 16. Decisión de Fede
@@ -133,15 +133,15 @@ Rama `feat/strategy-guided-next-step`. Unidades: U-1 regla pura (`src/lib/setup-
 | CA-3 | `setup-guide.test.ts` (orden fijo), `proactive.test.ts` (detector), `agent-tools.test.ts` (`get_setup_status`) | |
 | CA-4 | `setup-guide.test.ts` «CA-4» | |
 | CA-5 | `setup-guide.test.ts` «CA-5» (regla del aviso), `use-setup-guide.test.tsx` «CA-5» (el aviso sale una vez y el paso vuelve a Pendiente) | La actualización sin recarga depende de que cada pantalla invalide `["setup"]`: lo hacen los editores de estrategia, el asistente y el pipeline en vivo; no hay prueba de cada una |
-| CA-6 | `setup-guide.test.ts` (`nudgeDue`), `proactive.test.ts` (prioridad) | **Pendiente de decisión (§14.1):** hoy los procesos automáticos también cuentan como actividad |
-| CA-7 | `setup-guide.test.ts` «CA-7» (día guardado y mostrado igual en cuatro zonas horarias, mínimo del selector), `migrations.pg.test.ts` (migración 0062), `setup-snooze-suggestions.test.ts` | La sugerencia no reaparece al vencer (§14.2): dos pruebas `it.fails` lo documentan |
+| CA-6 | `setup-guide.test.ts` (`nudgeDue`), `proactive.test.ts` (prioridad), `setup-activity.test.ts` (lee `last_human_edit_at`), `migrations.pg.test.ts` (migración 0064: solo personas) | Actividad = último cambio de una persona en los datos de los 8 pasos o una posposición |
+| CA-7 | `setup-guide.test.ts` «CA-7» (día guardado y mostrado igual en cuatro zonas horarias, mínimo del selector), `migrations.pg.test.ts` (migración 0062), `setup-snooze-suggestions.test.ts` (cierra al posponer y reaparece al vencer, también si estaba descartada), `use-setup-guide.test.tsx` (quitar posposición) | |
 | CA-8 | `setup-guide.test.ts` (roles, incluida la coincidencia con las herramientas del Agente), `proactive.test.ts` (a quién va la sugerencia), `agent-tools.test.ts` (`estado` por rol), `migrations.pg.test.ts` (función de la base frente a `STEP_ROLES`) | |
 | CA-9 | `agent-tools.test.ts` (la herramienta devuelve la guía); la tarjeta «Primera sugerencia» no tiene prueba de componente | |
 | CA-10 | `use-setup-guide.test.tsx` «CA-10» (el panel del Agente muestra «Ya tienes … Siguiente: …» al terminar un paso) | Lo que dice el modelo tras una acción confirmada (llamar a `get_setup_status` y usar `guia.mensaje`) no se puede probar sin llamar al modelo: **verificación manual** |
 
 Cargas: el hook de la guía vive en la barra lateral de todas las pantallas; solo consulta con pasos pendientes: las posposiciones (1 consulta), la actividad (7 más) solo en el aviso de Inicio y los miembros solo si el paso pendiente no es del rol (`use-setup-guide.test.tsx`).
 
-Fuera de esta entrega: diagnóstico visible para la empresa (§14.3). Verificado en local, no en la base real: migración 0062 con dos empresas ficticias sobre una réplica en memoria (PGlite), que no es la base de datos. No verificado: recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
+Diagnóstico visible para la empresa: función en `migrations.pg.test.ts` (migración 0065); la tarjeta de Inicio que la usa no tiene prueba de componente. Verificado en local, no en la base real: migraciones 0062, 0064 y 0065 con dos empresas ficticias sobre una réplica en memoria (PGlite), que no es la base de datos. No verificado: recorrido de los flujos en local (la app solo arranca contra el backend real) y el escaneo de seguridad DAST (la aplicación no se ejecutó).
 
 ---
 Validación: OK (autorrevisión). Auditoría: ver AUDIT-20261025.md (pendiente de las decisiones de Fede de la sección 14).
