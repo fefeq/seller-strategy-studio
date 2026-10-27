@@ -48,7 +48,12 @@ export function SuggestionBoard() {
   });
 
   const name = (id: string | null) => (id ? data?.members.find((m) => m.id === id)?.name ?? "Ex-miembro" : "Sin responsable");
-  const items = data?.items ?? [];
+  // CA-7: strategic suggestions beyond the cap of 7 stay out of the counters too, so the numbers match the list.
+  const all = data?.items ?? [];
+  const items = useMemo(() => {
+    const shown = new Set(limitStrategy(all, new Date()).map((r) => r.id));
+    return all.filter((r) => !(parseStrategy(r.strategy) && r.status === "pending" && !shown.has(r.id)));
+  }, [all]);
   const summary = useMemo(() => boardSummary(items), [items]);
   const closed = useMemo(() => closedSummary(items), [items]);
   const groups = useMemo(() => byOwner(items), [items]);
