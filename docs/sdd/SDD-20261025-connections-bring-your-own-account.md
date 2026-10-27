@@ -1,7 +1,7 @@
 # SDD-20261025-connections-bring-your-own-account · [Feature] Conexiones: conecta tus propias cuentas
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (origen del dato); SDD de Drive por empresa (primer caso)
 
 ## 1. Resumen

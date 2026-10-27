@@ -1,6 +1,6 @@
 # SDD 2026-10-25 · UX de estrategia, onboarding y coherencia de campos
 
-Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: `sdd/ux-onboarding-coherencia-20261025`.
+Estado: **SDD 1, 2, 3 y 10 aprobados por Fede** (1 y 2 ya implementados; 3 y 10 con PR abiertos, aprobados el 2026-10-27). El resto en **Borrador**; ninguno enviado a Dani. Rama: `sdd/ux-onboarding-coherencia-20261025`.
 
 ## Índice y orden recomendado
 | # | SDD | Tipo | Depende de |
