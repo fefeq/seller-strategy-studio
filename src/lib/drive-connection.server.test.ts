@@ -4,7 +4,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { DRIVE_SCOPE } from "./drive-connection";
 import { completeConnect, disconnectDrive, driveAuthFor, ownDriveAuth, startConnect } from "./drive-connection.server";
 import { DriveError, nokkoAuth } from "./google-drive";
-import { signState, STATE_TTL_MS } from "./oauth-state";
+import { newNonce, signState, STATE_TTL_MS, verifyState } from "./oauth-state";
 import { seal } from "./secret-box.server";
 
 type Row = Record<string, unknown>;
@@ -61,7 +61,12 @@ const goodGoogle = (over: { scope?: string; refresh?: string | null; email?: str
   if (url.includes("/drive/v3/about")) return ok(over.email === null ? { user: {} } : { user: { emailAddress: over.email ?? "Ana@Ejemplo.test" } });
   return ok({});
 };
-const state = (over: Partial<{ o: string; u: string; t: number }> = {}) => signState(SECRET, { p: "drive", o: ORG, u: USER, r: "/integrations", t: Date.now() + STATE_TTL_MS, ...over });
+const state = (over: Partial<{ o: string; u: string; t: number; n: string }> = {}) => signState(SECRET, { p: "drive", o: ORG, u: USER, r: "/integrations", t: Date.now() + STATE_TTL_MS, n: newNonce(), ...over });
+/** What the callback receives for a flow started in this browser: a signed state and the cookie holding its nonce. */
+const input = async (over: Partial<{ code: string | null; state: string | null; error: string | null; errorDescription: string | null; nonce: string | null }> = {}) => {
+  const n = newNonce();
+  return { code: "c", state: await state({ n }), error: null, errorDescription: null, nonce: n, ...over };
+};
 const owner = (extra: Record<string, Row[]> = {}) => fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "owner" }], drive_connections: [], connection_events: [], ...extra });
 
 describe("CA-1, CA-2 (SDD 5) · the consent starts only for a configured server", () => {
@@ -79,7 +84,7 @@ describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
   it("saves the checked account sealed, lowercase, with who and when, and logs it (CA-3 of SDD 5; CA-2, CA-9, CA-10 of SDD 10)", async () => {
     route = goodGoogle();
     const { db, tables, log } = owner();
-    const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r).toMatchObject({ ok: true, returnTo: "/integrations" });
     expect(r.message).toContain("ana@ejemplo.test");
     const row = tables["drive_connections"]![0]!;
@@ -92,7 +97,7 @@ describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
   it("does not save when Google granted less than asked, explains why, and revokes the token (CA-6 of SDD 10)", async () => {
     route = goodGoogle({ scope: "openid" });
     const { db, tables } = owner();
-    const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r.ok).toBe(false);
     expect(r.message).toMatch(/permiso de Drive/);
     expect(tables["drive_connections"]).toHaveLength(0);
@@ -102,14 +107,14 @@ describe("CA-3 (SDD 5), CA-5 and CA-6 (SDD 10) · check before saving", () => {
   it("does not save when the account cannot be checked (CA-5 of SDD 10)", async () => {
     route = goodGoogle({ email: null });
     const { db, tables } = owner();
-    const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r.ok).toBe(false);
     expect(tables["drive_connections"]).toHaveLength(0);
   });
 
   it("returns without changes when the person cancels at Google (§8)", async () => {
     const { db, tables } = owner();
-    const r = await completeConnect(db, { code: null, state: await state(), error: "access_denied", errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input({ code: null, error: "access_denied" }), "https://app.ejemplo.test");
     expect(r).toMatchObject({ ok: false, returnTo: "/integrations" });
     expect(r.message).toMatch(/No se ha cambiado nada/);
     expect(tables["drive_connections"]).toHaveLength(0);
@@ -121,7 +126,7 @@ describe("CA-10 (SDD 5) · only the Owner, and only with a valid state", () => {
   it("a member who is not Owner cannot finish a connection", async () => {
     route = goodGoogle();
     const { db, tables } = fakeDb({ org_members: [{ org_id: ORG, user_id: USER, role: "member" }], drive_connections: [], connection_events: [] });
-    const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r.ok).toBe(false);
     expect(r.message).toMatch(/Solo el Owner/);
     expect(tables["drive_connections"]).toHaveLength(0);
@@ -130,11 +135,50 @@ describe("CA-10 (SDD 5) · only the Owner, and only with a valid state", () => {
   it("an expired or forged state saves nothing and never calls Google", async () => {
     const { db, tables } = owner();
     for (const bad of [await state({ t: Date.now() - 1 }), "forjado.forjado", ""]) {
-      const r = await completeConnect(db, { code: "c", state: bad, error: null, errorDescription: null }, "https://app.ejemplo.test");
+      const r = await completeConnect(db, await input({ state: bad }), "https://app.ejemplo.test");
       expect(r.ok).toBe(false);
     }
     expect(tables["drive_connections"]).toHaveLength(0);
     expect(calls).toHaveLength(0);
+  });
+});
+
+describe("CA-17 (SDD 10) · the callback only finishes in the browser that started it, once", () => {
+  it("startConnect puts the nonce in the signed state and hands it back for the cookie", async () => {
+    const { url, nonce } = await startConnect(ORG, USER, "https://app.ejemplo.test", "/");
+    const st = await verifyState(SECRET, new URL(url).searchParams.get("state")!);
+    expect(nonce.length).toBeGreaterThanOrEqual(32);
+    expect(st?.n).toBe(nonce);
+  });
+  it("a valid state without the right cookie is rejected: nothing saved, Google never called", async () => {
+    route = goodGoogle();
+    for (const nonce of [null, "", newNonce()]) {
+      const { db, tables } = owner();
+      const r = await completeConnect(db, await input({ nonce }), "https://app.ejemplo.test");
+      expect(r.ok).toBe(false);
+      expect(r.message).toMatch(/en este navegador/);
+      expect(tables["drive_connections"]).toHaveLength(0);
+    }
+    expect(calls).toHaveLength(0);
+  });
+  it("a state that was already used is rejected even with the same cookie", async () => {
+    route = goodGoogle();
+    const { db, tables } = owner();
+    const again = await input();
+    expect((await completeConnect(db, again, "https://app.ejemplo.test")).ok).toBe(true);
+    const callsAfterFirst = calls.length;
+    tables["drive_connections"] = [];
+    const r = await completeConnect(db, again, "https://app.ejemplo.test");
+    expect(r.ok).toBe(false);
+    expect(r.message).toMatch(/ya se usó/);
+    expect(tables["drive_connections"]).toHaveLength(0);
+    expect(calls).toHaveLength(callsAfterFirst);
+  });
+  it("a cancelled flow also spends the nonce", async () => {
+    const { db } = owner();
+    const cancelled = await input({ code: null, error: "access_denied" });
+    expect((await completeConnect(db, cancelled, "https://app.ejemplo.test")).message).toMatch(/Cancelaste/);
+    expect((await completeConnect(db, cancelled, "https://app.ejemplo.test")).message).toMatch(/ya se usó/);
   });
 });
 
@@ -143,7 +187,7 @@ describe("CA-7 (SDD 10) · changing account", () => {
     route = goodGoogle({ email: "nueva@ejemplo.test" });
     const old = await seal("refresh-antiguo");
     const { db, tables, log } = owner({ drive_connections: [{ org_id: ORG, google_email: "vieja@ejemplo.test", refresh_token_enc: old, status: "active" }] });
-    const r = await completeConnect(db, { code: "c", state: await state(), error: null, errorDescription: null }, "https://app.ejemplo.test");
+    const r = await completeConnect(db, await input(), "https://app.ejemplo.test");
     expect(r.ok).toBe(true);
     expect(tables["drive_connections"]).toHaveLength(1);
     expect(tables["drive_connections"]![0]!["google_email"]).toBe("nueva@ejemplo.test");

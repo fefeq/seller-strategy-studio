@@ -1,12 +1,13 @@
 // A company's own Google Drive from Conexiones. Every member reads the state; only the Owner connects,
 // changes or disconnects. The token never comes back to the browser (column grants + encryption).
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
+import { getRequest, setCookie } from "@tanstack/react-start/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canManageConnections, MANAGE_DENIED } from "@/lib/drive-connection";
+import { nonceCookieName, nonceCookieOptions } from "@/lib/oauth-state";
 
 async function currentOrg(supabase: SupabaseClient<Database>, userId: string): Promise<{ orgId: string; role: string }> {
   const { data: profile } = await supabase.from("profiles").select("current_org_id").eq("id", userId).single();
@@ -46,7 +47,10 @@ export const startDriveConnectFn = createServerFn({ method: "POST" })
     const { orgId, role } = await currentOrg(context.supabase, context.userId);
     mustOwner(role);
     const { startConnect } = await import("@/lib/drive-connection.server");
-    return startConnect(orgId, context.userId, new URL(getRequest().url).origin, data.returnTo);
+    const origin = new URL(getRequest().url).origin;
+    const { url, nonce } = await startConnect(orgId, context.userId, origin, data.returnTo);
+    setCookie(nonceCookieName("drive"), nonce, nonceCookieOptions("drive", origin.startsWith("https:")));
+    return { url };
   });
 
 export const disconnectDriveFn = createServerFn({ method: "POST" })

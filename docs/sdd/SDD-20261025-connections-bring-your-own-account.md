@@ -49,6 +49,7 @@ Fuente: código del repo `main` (2026-10-25) y petición de Fede. Sin datos de u
 ### H-3: Como Owner, quiero que mis credenciales estén protegidas.
 - CA-9: CUANDO guardo una credencial, el sistema DEBE ocultarla a todos los miembros, incluido el Owner, y solo permitir sustituirla.
 - CA-10: El sistema DEBE registrar quién conectó, cambió o desconectó cada cuenta y cuándo.
+- CA-17 [añadido tras la auditoría independiente, 2026-10-27; Fede lo acepta o lo quita]: CUANDO Google devuelve al Owner a NOKKO, el sistema DEBE completar la conexión solo en el mismo navegador que la inició y solo una vez; un enlace de retorno firmado, pero sin ese navegador o ya usado, DEBE rechazarse sin guardar nada.
 - CA-11: SI mi rol no es Owner, ENTONCES el sistema DEBE mostrar las conexiones en solo lectura y decir quién puede gestionarlas (decidido por Fede: solo el Owner).
 
 ### H-4: Como Owner, quiero controlar el uso y el coste.

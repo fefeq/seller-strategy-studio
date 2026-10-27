@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { ALREADY_ELSEWHERE, buildAuthUrl, checkGrant, failureStatus, oauthErrorText, type ConnectionRow } from "@/lib/drive-connection";
 import { DriveError, GOOGLE_API, nokkoAuth, type DriveAuth } from "@/lib/google-drive";
-import { safeReturnPath, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
+import { consumeNonce, newNonce, safeReturnPath, sameNonce, signState, STATE_TTL_MS, verifyState } from "@/lib/oauth-state";
 import { open, seal } from "@/lib/secret-box.server";
 
 type Admin = SupabaseClient<Database>;
@@ -34,12 +34,13 @@ async function logEvent(db: Admin, orgId: string, actor: string | null, action: 
   await db.from("connection_events").insert({ org_id: orgId, provider: PROVIDER, action, actor, detail });
 }
 
-/** The URL where the Owner chooses the Google account and accepts the permission. */
+/** The URL where the Owner chooses the Google account and accepts the permission, and the nonce the caller must set as an httpOnly cookie in that same browser. */
 export async function startConnect(orgId: string, userId: string, origin: string, returnTo: unknown) {
   const cfg = oauthConfig();
   if (!cfg) throw new Error(NOT_CONFIGURED);
-  const state = await signState(stateSecret(), { p: PROVIDER, o: orgId, u: userId, r: safeReturnPath(returnTo), t: Date.now() + STATE_TTL_MS });
-  return { url: buildAuthUrl({ clientId: cfg.clientId, redirectUri: redirectUri(origin), state }) };
+  const nonce = newNonce();
+  const state = await signState(stateSecret(), { p: PROVIDER, o: orgId, u: userId, r: safeReturnPath(returnTo), t: Date.now() + STATE_TTL_MS, n: nonce });
+  return { url: buildAuthUrl({ clientId: cfg.clientId, redirectUri: redirectUri(origin), state }), nonce };
 }
 
 async function tokenCall(body: Record<string, string>): Promise<{ ok: boolean; status: number; json: Record<string, unknown> }> {
@@ -54,9 +55,11 @@ async function revoke(token: string) {
 export type ConnectResult = { ok: boolean; message: string; returnTo: string };
 
 /** What Google sent back to the callback. Saves the account only when it was checked and works (CA-5, CA-6). */
-export async function completeConnect(db: Admin, input: { code: string | null; state: string | null; error: string | null; errorDescription: string | null }, origin: string): Promise<ConnectResult> {
+export async function completeConnect(db: Admin, input: { code: string | null; state: string | null; error: string | null; errorDescription: string | null; nonce: string | null }, origin: string): Promise<ConnectResult> {
   const st = input.state ? await verifyState(stateSecret(), input.state) : null;
   if (!st || st.p !== PROVIDER) return { ok: false, message: "El enlace de conexión ha caducado. Vuelve a pulsar «Conectar mi cuenta».", returnTo: "/integrations" };
+  // The state must come back in the browser that started it (the cookie holds the nonce), and only once.
+  if (!input.nonce || !sameNonce(input.nonce, st.n) || !consumeNonce(st.n, st.t)) return { ok: false, message: "Esta conexión no se inició en este navegador o ya se usó. Vuelve a pulsar «Conectar mi cuenta».", returnTo: safeReturnPath(st.r) };
   const fail = (message: string): ConnectResult => ({ ok: false, message, returnTo: st.r });
   if (input.error) return fail(oauthErrorText(input.error, input.errorDescription));
   if (!input.code) return fail(oauthErrorText("missing_code"));
