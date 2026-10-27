@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { TOOLS, canUseTool, executeTool, getTool, type ToolCtx } from "@/lib/agent/tools";
 import { TITLES } from "@/lib/mcp/tools/agent-tools";
@@ -436,5 +436,61 @@ describe("segments: acquisition motion", () => {
     expect(writes(log)).toHaveLength(0);
     expectScoped(log);
     expect(getTool("list_segments")!.kind).toBe("read");
+  });
+});
+
+describe("get_funnel_diagnosis", () => {
+  const seg = { id: ID(5), name: "Pymes", acv_min: 0, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null, acquisition_motion: null };
+
+  it("CA-8: reads only the caller's company, writes nothing and calls no provider", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const { db, log } = fakeDb((q) => (q.table === "segments" ? { data: [seg] } : undefined));
+    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" })) as { quarter: string; segments: { phases: { id: string; status: string }[] }[] };
+    expect(r.quarter).toBe("2026-Q3");
+    expect(r.segments).toHaveLength(1);
+    expect(r.segments[0]!.phases.find((p) => p.id === "acquisition")!.status).toBe("sin_datos");
+    expect(writes(log)).toHaveLength(0);
+    expect(new Set(log.map((q) => q.table))).toEqual(new Set(["segments", "deals", "leads", "trials", "cac_costs", "posthog_connections", "stripe_snapshots"]));
+    expectScoped(log);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+
+  it("CA-8: rows of another company that a privileged client might return never reach the caller's quarter filter (every query carries org_id and the quarter)", async () => {
+    const { db, log } = fakeDb();
+    await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" });
+    for (const t of ["leads", "trials"]) {
+      const q = log.find((x) => x.table === t)!;
+      expect(eq(q, "org_id", ORG), t).toBe(true);
+      expect(q.filters.some(([op]) => op === "gte"), t).toBe(true);
+      expect(q.filters.some(([op]) => op === "lt"), t).toBe(true);
+    }
+    expect(eq(log.find((x) => x.table === "cac_costs")!, "period", "2026-Q3")).toBe(true);
+  });
+
+  it("is a read tool open to every role, with a title, and rejects a quarter that is not AAAA-QN", async () => {
+    const t = getTool("get_funnel_diagnosis")!;
+    expect(t.kind).toBe("read");
+    expect(t.roles).toBeUndefined();
+    expect(TITLES.get_funnel_diagnosis).toBeTruthy();
+    const { db } = fakeDb();
+    await expect(executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-T3" })).rejects.toThrow();
+  });
+
+  it("CA-8 (structure): the diagnosis code imports no provider, gateway or sync module", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of ["src/lib/funnel-diagnosis.ts", "src/lib/funnel-diagnosis-data.ts"]) {
+      const src = readFileSync(f, "utf8");
+      const imports = [...src.matchAll(/from "([^"]+)"/g)].map((m) => m[1]!);
+      for (const i of imports) expect(i, `${f} imports ${i}`).not.toMatch(/gateway|\.server|posthog|stripe|apollo|clay|firecrawl|apify|parallel|perplexity|jev|inngest|ai-core/i);
+      expect(src, f).not.toMatch(/\bfetch\(/);
+    }
+  });
+
+  it("CA-8 (structure): the MCP manifest lists it, and list_segments, as read-only tools", async () => {
+    const { readFileSync } = await import("node:fs");
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const tools: { name: string; annotations: { readOnlyHint: boolean } }[] = manifest.mcp.tools;
+    for (const n of ["get_funnel_diagnosis", "list_segments"]) expect(tools.find((t) => t.name === n)?.annotations.readOnlyHint, n).toBe(true);
   });
 });
