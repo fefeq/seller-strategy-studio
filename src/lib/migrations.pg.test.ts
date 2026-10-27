@@ -448,6 +448,8 @@ describe("migration 0065: company_diagnosis shares only the diagnosis", () => {
 
 describe("migrations 0060, 0063, 0064 and 0066 together: undo survives a confirmation", () => {
   let d: Db, A2: string;
+  // rows are free-shaped SQL results, as in `rows` at the top of this file
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const rows2 = async (sql: string, params?: unknown[]) => (await d.query(sql, params)).rows as Record<string, any>[];
   const log2 = () => rows2("select id, row_id, op from field_edit_log order by changed_at, id");
   const confirm = (id: string, field: string) => as(d, U.aeA, async () => { await d.query(`update messaging_pillars set field_sources = field_sources || '{"${field}":{"source":"persona","kind":"persona","confirmed":true,"at":"a","confirmedBy":"x","confirmedAt":"b"}}'::jsonb where id = $1`, [id]); });
