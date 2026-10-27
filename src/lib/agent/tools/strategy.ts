@@ -1,8 +1,9 @@
-// Strategy writes: positioning, segments, ICP, pillars, currency, quotas. Part of the single registry in ../tools.ts (order there is the order the model sees).
+// Strategy: list_segments (read) and the writes for positioning, segments, ICP, pillars, currency, quotas. Part of the single registry in ../tools.ts (order there is the order the model sees).
 import { z } from "zod";
 import { def, mustBeMember, ok } from "../tool-kit";
 import { POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
+import { ACQUISITION_MOTIONS } from "@/lib/acquisition-motion";
 import type { AgentTool } from "../tool-kit";
 
 export const STRATEGY_TOOLS: AgentTool[] = [
@@ -20,9 +21,15 @@ export const STRATEGY_TOOLS: AgentTool[] = [
     },
   }),
   def({
+    name: "list_segments", kind: "read",
+    description: "Lista los segmentos de la empresa por prioridad, con su motion (modelo de venta por ACV), su acquisition_motion (cómo adquiere clientes; null = sin definir) y sus objetivos.",
+    input: z.object({}),
+    run: async (c) => ok(await c.db.from("segments").select("id,name,priority,acv_min,acv_max,motion,acquisition_motion,cycle_days,win_rate_target,cac_target,payback_months,gross_margin_pct,ae_quota").eq("org_id", c.orgId).order("priority", { ascending: true, nullsFirst: false }).order("acv_min")),
+  }),
+  def({
     name: "upsert_segment", kind: "write", roles: ["owner", "sales_leader"],
-    description: "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion, win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos.",
-    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), win_rate_target: z.number().min(0).max(100).optional(), ae_quota: z.number().min(0).optional(), gross_margin_pct: z.number().min(0).max(100).optional(), priority: z.number().int().min(1).optional(), notes: z.string().optional() }),
+    description: "Crea o actualiza (si se pasa segment_id) un segmento con rango de ACV, motion (modelo de venta por ACV), acquisition_motion (cómo adquiere clientes: plg, slg, marketing o partner; null = sin definir), win rate objetivo (%), cuota anual AE, prioridad (1 = el primero) y una nota. El nombre es solo el nombre: la prioridad y las notas van en sus campos.",
+    input: z.object({ segment_id: z.string().uuid().optional(), name: z.string().min(1), acv_min: z.number().optional(), acv_max: z.number().optional(), motion: z.enum(["plg", "inside", "field", "strategic"]).optional(), acquisition_motion: z.enum(ACQUISITION_MOTIONS).nullable().optional(), win_rate_target: z.number().min(0).max(100).optional(), ae_quota: z.number().min(0).optional(), gross_margin_pct: z.number().min(0).max(100).optional(), priority: z.number().int().min(1).optional(), notes: z.string().optional() }),
     summarize: (a) => `${a.segment_id ? "Actualizar" : "Crear"} el segmento «${a.name}»`,
     run: async (c, a) => {
       const { segment_id, ...rest } = a;

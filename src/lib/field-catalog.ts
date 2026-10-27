@@ -6,6 +6,7 @@
 import { COUNTRY_CODES, REGIONS } from "@/lib/assignment";
 import { SOURCES as PERSON_SOURCES } from "@/lib/roles";
 import { LOSS_REASON_KEYS } from "@/lib/loss-reasons";
+import { ACQUISITION_MOTIONS } from "@/lib/acquisition-motion";
 
 /** How a field is kept while someone edits it (SDD section 5). */
 export type Persistence = "permanent" | "screen_draft" | "session" | "pending_action" | "memory";
@@ -26,7 +27,8 @@ export type ConceptId =
   | "importe"
   | "origen_valor" | "canal_de_entrada" | "creado_por" | "fuente_citada"
   | "motivo_perdida" | "detalle_perdida" | "competidor_perdida"
-  | "regla_experimento" | "fecha_revision" | "decision_experimento" | "elemento_cambio" | "registro_decision";
+  | "regla_experimento" | "fecha_revision" | "decision_experimento" | "elemento_cambio" | "registro_decision"
+  | "motion_adquisicion";
 
 export type Concept = {
   id: ConceptId;
@@ -71,6 +73,7 @@ export const CONCEPTS: Concept[] = [
   { id: "elemento_cambio", label: "Elemento del cambio propuesto", meaning: "Sobre qué parte de la estrategia propone un cambio un experimento decidido.", kind: "enum", format: "Valor de una lista cerrada (ICP, Segmento, Posicionamiento, Producto y precio)", allowed: ["icp", "segment", "positioning", "product_price"], display: "Etiqueta en español (CHANGE_LABEL)" },
   { id: "registro_decision", label: "Quién y cuándo decidió", meaning: "Persona y momento en que se registró la decisión; los pone el sistema, no se editan.", kind: "text", format: "Identificador de la persona y fecha y hora", display: "Nombre de la persona y fecha" },
   { id: "fuente_citada", label: "Fuente citada", meaning: "Nombre del medio, dirección web o etiqueta de donde sale un hallazgo o un registro.", kind: "text", format: "Texto libre, sin valores cerrados", display: "Tal cual se guardó" },
+  { id: "motion_adquisicion", label: "Motion de adquisición", meaning: "Cómo adquiere clientes un segmento (producto, venta asistida, marketing o partners); no es el modelo de venta por ACV.", kind: "enum", format: "Valor cerrado; vacío = sin definir", allowed: ACQUISITION_MOTIONS, display: "Etiqueta en español (ACQUISITION_MOTION_LABEL)" },
 ];
 
 export type ImporteNature = "acv" | "pago_unico" | "valor_estimado" | "objetivo" | "cuota" | "coste_adquisicion" | "coste_recurrente" | "factura" | "ingreso_plan" | "ingreso_real";
@@ -134,6 +137,7 @@ export const BINDINGS: Binding[] = [
   { table: "positioning", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "messaging_pillars", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
   { table: "segments", column: "field_sources", concept: "origen_valor", persistence: saved, note: "Migration 0061" },
+  { table: "segments", column: "acquisition_motion", concept: "motion_adquisicion", persistence: saved, note: "Migration 0071; not tracked in field_sources" },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
@@ -185,6 +189,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   decision_experimento: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
   elemento_cambio: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
   registro_decision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments-core.ts"],
+  motion_adquisicion: ["src/components/strategy/motions.tsx"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */

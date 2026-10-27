@@ -439,6 +439,13 @@
     {
       "idx": 62,
       "version": "7",
+      "when": 1793150000000,
+      "tag": "0071_segment_acquisition_motion",
+      "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
       "when": 1793490400000,
       "tag": "0068_strategic_suggestions_and_loss_reason",
       "breakpoints": true
