@@ -28,17 +28,32 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
     <SwipeDeck
       items={limitStrategy(items, new Date())} // CA-7: at most 7 open strategic suggestions
       keyboard={keyboard}
-      labels={(s) => (parseStrategy(s.strategy) ? { right: "Aceptar", left: "Descartar", up: "Más tarde" } : { right: "Hacer", left: "Descartar", up: "Más tarde" })}
+      labels={(s) =>
+        parseStrategy(s.strategy)
+          ? { right: "Aceptar", left: "Descartar", up: "Más tarde" }
+          : { right: "Hacer", left: "Descartar", up: "Más tarde" }
+      }
       render={(s) => <DeckFace s={s} onReason={(v) => (reasons.current[s.id] = v)} />}
       onCommit={async (s, dir) => {
         try {
           const reason = parseStrategy(s.strategy) ? reasons.current[s.id]?.trim() : undefined;
-          const r = await decide({ data: { id: s.id, decision: DECISION[dir], ...(reason ? { reason } : {}) } });
+          const r = await decide({
+            data: { id: s.id, decision: DECISION[dir], ...(reason ? { reason } : {}) },
+          });
           if (dir === "right") toast.success(r.message);
           qc.invalidateQueries({ queryKey: ["suggestions"] });
-        } catch (e) { toast.error(errorText(e)); throw e; }
+        } catch (e) {
+          toast.error(errorText(e));
+          throw e;
+        }
       }}
-      done={<p className="mt-4 text-sm"><Link to="/inbox" search={{ vista: "lista" }} className="underline underline-offset-4">Ver la lista</Link></p>}
+      done={
+        <p className="mt-4 text-sm">
+          <Link to="/inbox" search={{ vista: "lista" }} className="underline underline-offset-4">
+            Ver la lista
+          </Link>
+        </p>
+      }
     />
   );
 }
@@ -51,20 +66,67 @@ function DeckFace({ s, onReason }: { s: S; onReason: (v: string) => void }) {
   const strategy = parseStrategy(s.strategy);
   function resolve() {
     const plan = resolvePlan(s);
-    openAgent({ prompt: plan.prompt, fresh: true, docked: true, side: plan.side, mode: "chat", personaId: null, workflowId: null });
+    openAgent({
+      prompt: plan.prompt,
+      fresh: true,
+      docked: true,
+      side: plan.side,
+      mode: "chat",
+      personaId: null,
+      workflowId: null,
+    });
     const to = linkTarget(plan.to);
     if (to) navigate({ to: to.to, search: to.search });
   }
   const stop = (e: React.PointerEvent) => e.stopPropagation();
   return (
     <div className="p-6">
-      <p className={`eyebrow ${s.priority === 1 ? "text-state-alarm" : ""}`}>{PRIO[s.priority]}{hasAction ? " · Nokko lo hace por ti" : ""}{strategy ? ` · ${strategyHeading(strategy)}` : ""}</p>
+      <p className={`eyebrow ${s.priority === 1 ? "text-state-alarm" : ""}`}>
+        {PRIO[s.priority]}
+        {hasAction ? " · Nokko lo hace por ti" : ""}
+        {strategy ? ` · ${strategyHeading(strategy)}` : ""}
+      </p>
       <h3 className="mt-2 break-words font-display text-2xl leading-tight">{s.title}</h3>
-      {s.body && <p className={`mt-3 whitespace-pre-line break-words text-sm text-ink-mid ${open ? "max-h-64 overflow-y-auto" : "line-clamp-3"}`}>{s.body}</p>}
-      {strategy && <><StrategyBadge m={strategy} /><div onPointerDown={stop}><StrategyEvidence m={strategy} /><Input className="mt-3" maxLength={500} defaultValue="" onChange={(e) => onReason(e.target.value)} placeholder="Motivo (opcional)" aria-label="Motivo de tu decisión (opcional)" /></div></>}
+      {s.body && (
+        <p
+          className={`mt-3 whitespace-pre-line break-words text-sm text-ink-mid ${open ? "max-h-64 overflow-y-auto" : "line-clamp-3"}`}
+        >
+          {s.body}
+        </p>
+      )}
+      {strategy && (
+        <>
+          <StrategyBadge m={strategy} />
+          <div onPointerDown={stop}>
+            <StrategyEvidence m={strategy} />
+            <Input
+              className="mt-3"
+              maxLength={500}
+              defaultValue=""
+              onChange={(e) => onReason(e.target.value)}
+              placeholder="Motivo (opcional)"
+              aria-label="Motivo de tu decisión (opcional)"
+            />
+          </div>
+        </>
+      )}
       <div className="mt-5 flex flex-wrap gap-3 text-sm" onPointerDown={stop}>
-        {s.body && s.body.length > 140 && <button type="button" className="text-ink-mid underline underline-offset-4 hover:text-ink" onClick={() => setOpen((o) => !o)}>{open ? "Ver menos" : "Ver detalle"}</button>}
-        <button type="button" className="text-ink-mid underline underline-offset-4 hover:text-ink" onClick={resolve}>Resolver con el agente</button>
+        {s.body && s.body.length > 140 && (
+          <button
+            type="button"
+            className="text-ink-mid underline underline-offset-4 hover:text-ink"
+            onClick={() => setOpen((o) => !o)}
+          >
+            {open ? "Ver menos" : "Ver detalle"}
+          </button>
+        )}
+        <button
+          type="button"
+          className="text-ink-mid underline underline-offset-4 hover:text-ink"
+          onClick={resolve}
+        >
+          Resolver con el agente
+        </button>
       </div>
     </div>
   );
