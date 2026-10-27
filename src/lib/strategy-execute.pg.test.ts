@@ -1,6 +1,6 @@
 // @vitest-environment node
 /* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from SQL untyped, as in migrations.pg.test.ts */
-// SDD-20261027 F3: runs migration 0066 (pending strategy changes and links) on an in-process Postgres (PGlite) with two fictional
+// SDD-20261027 F3: runs migration 0070 (pending strategy changes and links) on an in-process Postgres (PGlite) with two fictional
 // companies. Never touches a real database. «suggestions» below copies the columns and policies of migrations 0007/0013, reduced.
 import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
@@ -28,12 +28,12 @@ beforeAll(async () => {
   `);
   sA = (await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${A}','strategy_icp','strategy_icp:x','t') returning id`))[0]!.id;
   sB = (await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${B}','strategy_icp','strategy_icp:y','t') returning id`))[0]!.id;
-  await migrate(db, ["0066_strategy_execution.sql"]);
+  await migrate(db, ["0070_strategy_execution.sql"]);
 }, 60_000);
 
-describe("migration 0066 is additive", () => {
+describe("migration 0070 is additive", () => {
   it("running it again changes nothing", async () => {
-    await migrate(db, ["0066_strategy_execution.sql"]);
+    await migrate(db, ["0070_strategy_execution.sql"]);
     expect((await rows("select count(*)::int n from strategy_changes"))[0]!.n).toBe(0);
   });
 });
