@@ -8,7 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
-import { canManageConnections, driveConnectionState, MANAGE_DENIED, PERMISSIONS_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
+import { canManageConnections, driveConnectionState, MANAGE_DENIED, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
 import { disconnectDriveFn, driveConnectionInfoFn, startDriveConnectFn } from "@/lib/drive-connection.functions";
 
 const when = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -75,7 +75,7 @@ export function DriveConnect() {
         <span className="font-medium">Google Drive</span>
         <span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${TONE[state]}`}>{STATE_LABEL[state]}</span>
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">Para qué se usa: importar al hub y a la configuración los documentos que elijas, y guardar los planes, propuestas y documentos del ciclo en una carpeta por empresa y por cuenta.</p>
+      <p className="mt-1 text-sm text-muted-foreground">{PURPOSE_TEXT}</p>
 
       {c && (
         <div className="mt-3 space-y-1 text-xs text-muted-foreground">

@@ -29,7 +29,7 @@ export const MANAGE_DENIED = "Solo el Owner de la empresa puede conectar o desco
 
 export const PERMISSIONS_TEXT = {
   intro: "Usa tu propia cuenta de Google Drive. NOKKO solo hará lo que se indica aquí.",
-  reads: "Podrá leer únicamente los archivos y carpetas que elijas.",
+  reads: "Solo podrá leer lo que NOKKO haya guardado antes en tu Drive. Todavía no puede leer los documentos que ya tienes: elegirlos para importarlos llegará con el selector de Google.",
   saves: "Podrá guardar los planes, propuestas y documentos que NOKKO cree, en una carpeta «Nokko» de tu Drive.",
   revoke: "Puedes desconectarla cuando quieras.",
 } as const;
@@ -55,6 +55,9 @@ export function revocationText(outcome: RevokeOutcome, email: string): string {
     case "shared": return `No se revocó el acceso en Google porque ${email} sigue conectada en otra de tus empresas.`;
   }
 }
+
+/** What the card says the connection is for: only what drive.file allows today (no picker yet, SDD drive-per-company-account U-2). */
+export const PURPOSE_TEXT = "Para qué se usa: guardar los planes, propuestas y documentos del ciclo en una carpeta por empresa y por cuenta, y leer lo que NOKKO guardó ahí. Todavía no puedes elegir documentos que ya tienes en tu Drive para importarlos: llegará con el selector de Google.";
 
 export const ALREADY_ELSEWHERE = "Esta cuenta de Google ya está conectada en otra de tus empresas. Si sigues, también se usará aquí.";
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, PERMISSIONS_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
+import { buildAuthUrl, canManageConnections, checkGrant, driveConnectionState, DRIVE_SCOPE, failureStatus, oauthErrorText, PERMISSIONS_TEXT, PURPOSE_TEXT, revocationText, revokeSkipReason, STATE_LABEL, type ConnectionRow } from "./drive-connection";
 
 const row = (status: ConnectionRow["status"]): ConnectionRow => ({ status, google_email: "ana@ejemplo.test", connected_by: null, connected_at: "2026-10-26T10:00:00Z", last_error: null });
 
@@ -29,9 +29,17 @@ describe("CA-1 / CA-2 (SDD 5) · the consent request", () => {
     expect(u.toString()).not.toMatch(/readonly|auth\/drive(&|$)/);
   });
   it("explains what NOKKO can read and save before continuing (CA-2)", () => {
-    expect(PERMISSIONS_TEXT.reads).toMatch(/únicamente/);
+    expect(PERMISSIONS_TEXT.reads).toMatch(/Solo podrá leer lo que NOKKO haya guardado/);
     expect(PERMISSIONS_TEXT.saves).toMatch(/Nokko/);
     expect(PERMISSIONS_TEXT.revoke).toMatch(/desconectarla/);
+  });
+  it("does not promise to read documents the person already has: drive.file cannot, and there is no picker yet (CA-2)", () => {
+    for (const t of [PERMISSIONS_TEXT.reads, PURPOSE_TEXT]) {
+      expect(t).toMatch(/Todavía no/);
+      expect(t).toMatch(/selector de Google/);
+      expect(t).not.toMatch(/que elijas|importar al hub/);
+    }
+    expect(DRIVE_SCOPE).toBe("https://www.googleapis.com/auth/drive.file");
   });
 });
 
