@@ -350,7 +350,7 @@
       {
         "name": "get_setup_status",
         "title": "Estado de la configuración",
-        "description": "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea) y valores actuales de segmentos, ICP, posicionamiento y pilares.",
+        "description": "Estado de la configuración estratégica (% completado, qué falta y qué desbloquea), la guía con el siguiente paso recomendado (guia.mensaje) y los pasos pospuestos, y valores actuales de segmentos, ICP, posicionamiento y pilares.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
