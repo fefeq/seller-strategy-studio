@@ -527,3 +527,25 @@ describe("migrations 0060, 0063, 0064 and 0066 together: undo survives a confirm
     });
   });
 });
+
+describe("migration 0067: partial index for the activity query", () => {
+  const TABLES = ["positioning", "segments", "quotas", "accounts", "deals", "icp_profiles", "messaging_pillars"];
+  beforeAll(async () => { await migrate(db, ["0067_last_human_edit_index.sql"]); });
+
+  it("the seven indexes exist, on (org_id, last_human_edit_at DESC) and only for rows someone edited", async () => {
+    const r = await rows("select tablename, indexdef from pg_indexes where schemaname = 'public' and indexname like '%_org_human_edit_idx' order by tablename");
+    expect(r.map((x) => x.tablename)).toEqual([...TABLES].sort());
+    for (const x of r) { expect(x.indexdef).toContain("(org_id, last_human_edit_at DESC)"); expect(x.indexdef).toContain("WHERE (last_human_edit_at IS NOT NULL)"); }
+  });
+
+  it("the nudge's query for each table is answered from its index", async () => {
+    for (const t of TABLES) {
+      await db.exec("set enable_seqscan = off"); // a tiny test table would otherwise prefer a scan; this checks the index can serve the query
+      const plan = (await rows(`explain select last_human_edit_at from ${t} where org_id = '${A}' and last_human_edit_at is not null order by last_human_edit_at desc limit 1`)).map((x) => x["QUERY PLAN"]).join("\n");
+      await db.exec("reset enable_seqscan");
+      expect(plan, t).toContain(`${t}_org_human_edit_idx`);
+    }
+  });
+
+  it("re-running the migration changes nothing", async () => { await migrate(db, ["0067_last_human_edit_index.sql"]); });
+});
