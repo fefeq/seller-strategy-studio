@@ -8,7 +8,7 @@ import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
-import { canManageConnections, driveConnectionState, MANAGE_DENIED, NOKKO_ACCOUNT_TEXT, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
+import { canManageConnections, driveConnectionState, MANAGE_DENIED, NOKKO_ACCOUNT_TEXT, parseConnectParams, PERMISSIONS_TEXT, PURPOSE_TEXT, READ_STATE_FAILED_TEXT, STATE_LABEL, type ConnectionRow, type ConnectionState } from "@/lib/drive-connection";
 import { disconnectDriveFn, driveConnectionInfoFn, startDriveConnectFn } from "@/lib/drive-connection.functions";
 
 const when = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -29,7 +29,7 @@ export function DriveConnect() {
   const start = useServerFn(startDriveConnectFn);
   const disconnect = useServerFn(disconnectDriveFn);
   const [busy, setBusy] = useState(false);
-  const { data } = useQuery({ queryKey: ["drive-connection"], queryFn: () => info() });
+  const { data, isError, refetch } = useQuery({ queryKey: ["drive-connection"], queryFn: () => info() });
 
   // Google sends the Owner back here with the result of the connection.
   useEffect(() => {
@@ -41,6 +41,15 @@ export function DriveConnect() {
     window.history.replaceState(null, "", `${window.location.pathname}${p.size ? `?${p}` : ""}${window.location.hash}`);
     void qc.invalidateQueries({ queryKey: ["drive-connection"] });
   }, [qc]);
+
+  // A failed read is not «Sin conectar»: say so and offer no connect or disconnect until the state is known.
+  if (isError && !data) return (
+    <div className="rounded-lg border bg-card p-4">
+      <span className="font-medium">Google Drive</span>
+      <p className="mt-1 text-sm text-muted-foreground">{READ_STATE_FAILED_TEXT}</p>
+      <Button size="sm" variant="ghost" className="mt-3" onClick={() => void refetch()}>Reintentar</Button>
+    </div>
+  );
 
   const c = data?.connection ?? null;
   const state = driveConnectionState(c as ConnectionRow | null, !!data?.nokkoAvailable);

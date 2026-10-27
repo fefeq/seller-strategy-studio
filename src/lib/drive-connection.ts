@@ -61,6 +61,9 @@ export function revocationText(outcome: RevokeOutcome, email: string | null): st
 export const PURPOSE_TEXT = "Para qué se usa: guardar los planes, propuestas y documentos del ciclo en una carpeta por empresa y por cuenta, y leer lo que NOKKO guardó ahí. Todavía no puedes elegir documentos que ya tienes en tu Drive para importarlos: llegará con el selector de Google.";
 
 /** What the card says while the company still uses NOKKO's account: drive.file only lets NOKKO see what it created, so it promises saving, not working with the person's own documents. */
+/** What the card says when the state of the connection could not be read: never «Sin conectar», because the read failed, not the account. */
+export const READ_STATE_FAILED_TEXT = "No pudimos leer el estado de Drive. Tu conexión no ha cambiado; vuelve a intentarlo.";
+
 export const NOKKO_ACCOUNT_TEXT = "Ahora se usa la cuenta que proporciona NOKKO. Conecta la tuya para que NOKKO guarde lo que cree en tu Drive.";
 
 /** How a connection attempt ended. The callback sends only this code (and two flags) in the address, never text: the screen writes the message from it, so a link cannot make NOKKO show words someone else chose. */

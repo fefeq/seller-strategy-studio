@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { canManageConnections, MANAGE_DENIED } from "@/lib/drive-connection";
+import { canManageConnections, MANAGE_DENIED, READ_STATE_FAILED_TEXT } from "@/lib/drive-connection";
 import { nonceCookieName, nonceCookieOptions } from "@/lib/oauth-state";
 
 async function currentOrg(supabase: SupabaseClient<Database>, userId: string): Promise<{ orgId: string; role: string }> {
@@ -25,10 +25,13 @@ export const driveConnectionInfoFn = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { orgId } = await currentOrg(context.supabase, context.userId);
     const { oauthConfigured, nokkoDriveAvailable } = await import("@/lib/drive-connection.server");
-    const [{ data: connection }, { data: events }] = await Promise.all([
+    const [{ data: connection, error: connectionError }, { data: events, error: eventsError }] = await Promise.all([
       context.supabase.from("drive_connections").select("google_email,status,last_error,connected_by,connected_at").eq("org_id", orgId).maybeSingle(),
       context.supabase.from("connection_events").select("action,actor,detail,created_at").eq("org_id", orgId).eq("provider", "drive").order("created_at", { ascending: false }).limit(5),
     ]);
+    // A failed read must not look like «no connection»; the history is secondary, so only the account stops the card.
+    if (connectionError) throw new Error(READ_STATE_FAILED_TEXT);
+    if (eventsError) console.warn("Drive connection history could not be read");
     const ids = [...new Set([connection?.connected_by, ...(events ?? []).map((e) => e.actor)].filter((x): x is string => !!x))];
     const { data: people } = ids.length ? await context.supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] as { id: string; full_name: string }[] };
     const names = Object.fromEntries((people ?? []).map((p) => [p.id, p.full_name || "Alguien del equipo"]));
