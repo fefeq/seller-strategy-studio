@@ -114,6 +114,11 @@ export function nextFor(guide: Guide, role: string | null | undefined): GuideSte
   return guide.pending.find((s) => canCompleteStep(s.id, role)) ?? null;
 }
 
+/** The step the wizard opens on: the first pending one this role can complete; if it has none, the first pending one; else the first step. */
+export function startStepId(guide: Guide, role: string | null | undefined): string {
+  return (nextFor(guide, role) ?? guide.pending[0] ?? guide.steps.find((s) => s.state !== "done") ?? guide.steps[0])!.id;
+}
+
 /** The steps a role sees: those it can complete, plus the pending ones it can't (shown with who can). A person never sees a done step hidden. */
 export function stepsFor(guide: Guide, role: string | null | undefined): GuideStep[] {
   return guide.steps.filter((s) => canCompleteStep(s.id, role) || s.state !== "done");

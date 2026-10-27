@@ -3,7 +3,7 @@ import { SETUP_ITEMS, type SetupData } from "@/lib/setup-schema";
 import { getTool } from "@/lib/agent/tools";
 import {
   COMPLETE_TEXT, INACTIVITY_MS, STEP_ROLES, STEP_WHY, canCompleteStep, guideState, latestActivity, nextFor, nextMessage, nudgeDue,
-  dayAfter, formatDay, localDay, parseSnoozeDate, reopenedSteps, reopenedText, stepsFor, whoCan, whoCanText,
+  dayAfter, formatDay, localDay, parseSnoozeDate, reopenedSteps, reopenedText, startStepId, stepsFor, whoCan, whoCanText,
 } from "@/lib/setup-guide";
 
 const NOW = new Date("2026-10-26T10:00:00Z");
@@ -188,6 +188,17 @@ describe("setup guide: roles (CA-8)", () => {
     expect(nextFor(g, "ae")?.id).toBe("accounts");
     expect(nextFor(g, "marketing")?.id).toBe("positioning");
     expect(nextMessage(g, "ae").stepId).toBe("accounts");
+  });
+  it("M-5: the wizard opens on the first step the role can complete, not the company's first pending one", () => {
+    const g = guideState({ ...full, quotas: [], accounts: 0, deals: 0 }, [], NOW);
+    expect(startStepId(g, "owner")).toBe("quota");
+    expect(startStepId(g, "ae")).toBe("accounts");
+    expect(startStepId(guideState(empty, [], NOW), "marketing")).toBe("positioning");
+    // an AE with nothing of their own pending still opens on something real: the first pending step, which says who can do it
+    expect(startStepId(guideState({ ...full, quotas: [] }, [], NOW), "ae")).toBe("quota");
+    expect(startStepId(guideState(full, [], NOW), "ae")).toBe("positioning");
+    // a postponed step is skipped
+    expect(startStepId(guideState(empty, [{ step_id: "positioning", snoozed_until: "2026-11-10T11:00:00Z" }], NOW), "owner")).toBe("icp");
   });
   it("an invited role sees the steps it can do and the pending ones it can't, never done ones of others", () => {
     const g = guideState({ ...full, deals: 0, quotas: [] }, [], NOW);

@@ -14,6 +14,7 @@ import { applySetupItems } from "@/lib/agent.functions";
 import { type SetupProposal } from "@/lib/setup-extraction";
 import { DUNFORD_FIELDS, POSITIONING_FIELDS, SETUP_ITEMS } from "@/lib/setup-schema";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
+import { startStepId } from "@/lib/setup-guide";
 import { NextStepMessage } from "@/components/setup/guide";
 import { quarterOf } from "@/lib/metrics";
 import { firstOpenStage, stageOptions } from "@/lib/stages";
@@ -46,7 +47,8 @@ export function Wizard({ proposal }: { proposal: SetupProposal | null }) {
   const g = useSetupGuide();
   const stepsRef = useRef<HTMLDivElement>(null);
   const isDone = (id: string) => !!setup?.status.items.find((x) => x.id === id)?.done;
-  const firstPending = g.guide?.next?.id ?? SETUP_ITEMS.find((i) => !isDone(i.id))?.id ?? SETUP_ITEMS[0].id;
+  // The first step this role can complete, not the company's first pending one: an AE must not open on the quota (M-5).
+  const firstPending = g.guide ? startStepId(g.guide, g.role) : SETUP_ITEMS.find((i) => !isDone(i.id))?.id ?? SETUP_ITEMS[0].id;
   const curId = stepId ?? firstPending;
   const cur = SETUP_ITEMS.find((i) => i.id === curId) ?? SETUP_ITEMS[0];
   // Mobile: the steps are one swipeable row; keep the current one in view.
