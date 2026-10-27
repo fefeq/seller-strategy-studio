@@ -5149,6 +5149,17 @@ export type Database = {
         Returns: string
       }
       current_org: { Args: never; Returns: string }
+      decide_strategy_suggestion: {
+        Args: {
+          p_by: string
+          p_decision: string
+          p_org_id: string
+          p_reason: string
+          p_remind_at: string
+          p_suggestion_id: string
+        }
+        Returns: string
+      }
       delete_organization: {
         Args: { _confirm_name: string; _org: string }
         Returns: undefined
