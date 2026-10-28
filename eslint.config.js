@@ -20,6 +20,8 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // A new missing dependency breaks the lint instead of hiding among warnings (SDD-20261028-hooks-lint-hygiene CA-8).
+      "react-hooks/exhaustive-deps": "error",
       "no-restricted-imports": [
         "error",
         {
