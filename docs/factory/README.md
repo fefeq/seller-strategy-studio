@@ -36,6 +36,9 @@ Entrada: skill `nokko-factory`. Reglas base: `GROUND-RULES.md`.
 6. **Bus de mensajes con verificación de remitente y despertador de sesiones:** sin implementar; se usa `list_sessions` y `SendMessage`.
 7. **Lint:** el repo ya arrastra miles de errores de prettier en la base. El gate valida solo los archivos que toca cada cambio.
 
+## Dónde viven los tickets
+`.factory/ledger.json` en el **checkout principal** (`seller-strategy-studio`). Todos los worktrees de trabajo leen y escriben ese mismo archivo (lo resuelve `scripts/factory/paths.mjs`), y solo el tracker lo escribe. El ledger se versiona en la rama de referencia; la evidencia (`.factory/evidence/`) no. Los tickets de `tickets.toml` y `.bmad/tickets/` son unidades de SDD y son independientes.
+
 ## Uso rápido
 ```bash
 node scripts/factory/ledger.mjs log "<título>" --kind bug

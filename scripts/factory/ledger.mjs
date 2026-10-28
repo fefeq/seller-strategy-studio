@@ -3,11 +3,10 @@
 // States: LOGGED -> PROMOTED -> SHIPPED -> VERIFIED. Logging never assigns an owner; only `promote` (human GO) does.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { FACTORY_DIR } from "./paths.mjs";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const FILE = resolve(ROOT, process.env.FACTORY_LEDGER ?? ".factory/ledger.json");
-const EVIDENCE = resolve(ROOT, ".factory/evidence");
+const FILE = process.env.FACTORY_LEDGER ? resolve(process.env.FACTORY_LEDGER) : resolve(FACTORY_DIR, "ledger.json");
+const EVIDENCE = resolve(FACTORY_DIR, "evidence");
 const STATES = ["LOGGED", "PROMOTED", "SHIPPED", "VERIFIED"];
 const KINDS = ["bug", "feature", "alert"];
 
