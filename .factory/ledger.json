@@ -1,0 +1,363 @@
+{
+  "version": 1,
+  "seq": 17,
+  "tickets": [
+    {
+      "id": "NK-0001",
+      "title": "Enforce RLS policies on all tables",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.350Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0002",
+      "title": "Refactor client queries to rely on RLS",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.403Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0003",
+      "title": "Migrate useEffect data fetching to React Query",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.462Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0004",
+      "title": "Verify server-side AI execution",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.516Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0005",
+      "title": "Enforce utility-first styling",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.568Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0006",
+      "title": "Definiciones universales de campos",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-universal-field-definitions.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.829Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0007",
+      "title": "Editar, borrar y confirmar en campos",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-field-actions-edit-delete-confirm.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.893Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0008",
+      "title": "Configura tu estrategia que guía al siguiente paso",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-strategy-setup-guided-next-step.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.940Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0009",
+      "title": "Onboarding completo y proactivo",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-onboarding-flow-end-to-end.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.987Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0010",
+      "title": "Google Drive de una cuenta distinta al email de acceso",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-drive-per-company-account.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.036Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0011",
+      "title": "Descubiertos: alcance y búsqueda manual acotada",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-discoveries-scoped-manual-search.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.081Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0012",
+      "title": "Datos de encaje 7a: llave mínima y completado asistido",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-fit-data-7a-llave-minima-y-completado.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.126Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0013",
+      "title": "Datos de encaje 7b: competidores como entidad",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-fit-data-7b-competitors-entity.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.170Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0014",
+      "title": "Datos de encaje 7c: identidad de persona y resultados de terceros",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-fit-data-7c-person-identity-and-third-party-results.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.216Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0015",
+      "title": "Productos en el onboarding y autocompletado desde la web",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-products-in-onboarding-autofill.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.260Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0016",
+      "title": "Theory U con IA proactiva para decidir",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-theory-u-proactive-decision-support.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.305Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0017",
+      "title": "Conexiones: conecta tus propias cuentas",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-connections-bring-your-own-account.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.352Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    }
+  ]
+}
