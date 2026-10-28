@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { FACTORY_DIR } from "./paths.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const o = {};
@@ -37,7 +38,7 @@ const sig = (rs) => (rs.find((r) => r.status !== 0)?.stdout ?? "").split("\n").f
 const tipFails = fails(onTip);
 const baseFails = fails(onBase);
 const verdict = tipFails === 0 ? "PASSES_ON_TIP" : baseFails > 0 ? "FLAKE" : "REGRESSION";
-const dir = resolve(ROOT, ".factory/evidence", o.ticket);
+const dir = resolve(FACTORY_DIR, "evidence", o.ticket);
 mkdirSync(dir, { recursive: true });
 const out = { file: o.file, tip, base: o.base, runs, tipFails, baseFails, verdict, signature: sig(onTip) };
 writeFileSync(resolve(dir, `flake-${o.file.replace(/\W+/g, "-")}.json`), JSON.stringify(out, null, 2) + "\n");

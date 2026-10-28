@@ -2,10 +2,11 @@
 // Independent gate (README layer 3). Run it from a fresh session that wrote none of the code.
 // Fixed core checks + optional change-specific extras (--extra "<cmd>"). It can add checks, never remove or weaken one.
 // It never edits product code, assertions or timeouts. Failed attempts stay in the evidence.
-// usage: gate.mjs --ticket NK-0001 --base <commit> [--extra "<cmd>"]... [--known .factory/known-failures.json]
+// usage: gate.mjs --ticket NK-0001 --base <commit> [--extra "<cmd>"]...
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
+import { FACTORY_DIR } from "./paths.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const argv = process.argv.slice(2);
@@ -27,7 +28,7 @@ const git = (c) => sh(`git ${c}`).stdout.trim();
 
 const sha = git("rev-parse HEAD");
 const dirty = git("status --porcelain");
-const outDir = resolve(ROOT, ".factory/evidence", opt.ticket, sha.slice(0, 12));
+const outDir = resolve(FACTORY_DIR, "evidence", opt.ticket, sha.slice(0, 12));
 mkdirSync(outDir, { recursive: true });
 const checks = [];
 const record = (name, ok, detail, file) => {
@@ -119,8 +120,8 @@ let failedFiles = [];
     record("full unit suite", false, "no JSON report produced", file);
   } else {
     const known = new Set(
-      existsSync(resolve(ROOT, opt.known ?? ".factory/known-failures.json"))
-        ? JSON.parse(readFileSync(resolve(ROOT, opt.known ?? ".factory/known-failures.json"), "utf8")).tests ?? []
+      existsSync(resolve(FACTORY_DIR, "known-failures.json"))
+        ? JSON.parse(readFileSync(resolve(FACTORY_DIR, "known-failures.json"), "utf8")).tests ?? []
         : [],
     );
     const noAssertions = [];
@@ -171,7 +172,7 @@ for (const cmd of opt.extra) {
 const verdict = checks.every((c) => c.ok) ? "PASS" : "FAIL";
 const result = { ticket: opt.ticket, sha, base: opt.base, at: new Date().toISOString(), verdict, failedFiles, checks };
 writeFileSync(resolve(outDir, "gate.json"), JSON.stringify(result, null, 2) + "\n");
-writeFileSync(resolve(ROOT, ".factory/evidence", opt.ticket, `gate-${sha.slice(0, 12)}.json`), JSON.stringify(result, null, 2) + "\n");
+writeFileSync(resolve(FACTORY_DIR, "evidence", opt.ticket, `gate-${sha.slice(0, 12)}.json`), JSON.stringify(result, null, 2) + "\n");
 console.log(`\nVERDICT ${verdict} on ${sha.slice(0, 12)}  evidence: ${outDir}`);
 if (verdict === "FAIL") console.log("Next: scripts/factory/flake.mjs for each unexpected failing test file before sending it back to the author.");
 process.exit(verdict === "PASS" ? 0 : 1);
