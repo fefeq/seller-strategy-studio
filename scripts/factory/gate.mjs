@@ -2,13 +2,12 @@
 // Independent gate (README layer 3). Run it from a fresh session that wrote none of the code.
 // Fixed core checks + optional change-specific extras (--extra "<cmd>"). It can add checks, never remove or weaken one.
 // It never edits product code, assertions or timeouts. Failed attempts stay in the evidence.
-// usage: gate.mjs --ticket NK-0001 --base <commit> [--extra "<cmd>"]...
+// usage: gate.mjs --ticket NK-0001 --base <commit> [--root <worktree>] [--extra "<cmd>"]...
 import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { FACTORY_DIR } from "./paths.mjs";
 
-const ROOT = resolve(import.meta.dirname, "../..");
 const argv = process.argv.slice(2);
 const opt = { extra: [] };
 for (let i = 0; i < argv.length; i++) {
@@ -17,8 +16,9 @@ for (let i = 0; i < argv.length; i++) {
   if (k === "extra") opt.extra.push(argv[++i]);
   else opt[k] = argv[++i];
 }
+const ROOT = resolve(opt.root ?? resolve(import.meta.dirname, "../.."));
 if (!opt.ticket || !opt.base) {
-  console.error("usage: gate.mjs --ticket NK-0001 --base <commit> [--extra <cmd>]...");
+  console.error("usage: gate.mjs --ticket NK-0001 --base <commit> [--root <worktree>] [--extra <cmd>]...");
   process.exit(2);
 }
 
