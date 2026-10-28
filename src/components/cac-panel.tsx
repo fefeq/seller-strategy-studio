@@ -92,7 +92,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
   const [copying, setCopying] = useState(false);
 
   const rows = useMemo(() => (data ? segmentCoverage(data.segments, data.deals, data.targets, quarterRange(quarter), data.costs) : []), [data, quarter]);
-  const costs = data?.costs ?? [];
+  const costs = useMemo(() => data?.costs ?? [], [data]);
   const channels = useMemo(() => [...new Set([...CAC_CHANNELS, ...costs.map((c) => c.channel), ...extra])], [costs, extra]);
   const cell = (channel: string, seg: string) => costs.find((c) => c.channel === channel && (c.segment_id ?? SHARED) === seg);
   const columns = [...(data?.segments ?? []).map((s) => ({ id: s.id, name: s.name })), { id: SHARED, name: "Compartido" }];

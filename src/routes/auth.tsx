@@ -50,7 +50,6 @@ function AuthPage() {
   const { next: rawNext } = Route.useSearch();
   // Validated once; external assistants send users back to the consent page through this.
   const next = rawNext ? oauthReturnPath(rawNext) : null;
-  const goOn = () => (next ? window.location.assign(next) : navigate({ to: "/home", replace: true }));
   const [mode, setMode] = useState<"in" | "up">("in");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,6 +57,7 @@ function AuthPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    const goOn = () => (next ? window.location.assign(next) : navigate({ to: "/home", replace: true }));
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         trackGoogleReturn(data.session.user.created_at);

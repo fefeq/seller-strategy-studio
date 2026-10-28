@@ -4,7 +4,7 @@ import { useAccountOptions } from "@/components/entity-combobox";
 import { markKnown } from "@/lib/match";
 import { CompanyLogo } from "@/components/company-logo";
 // (and by Inngest when it is answering, so they also finish with nobody watching).
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -29,19 +29,24 @@ function usePollRuns(runs: Run[], queryKey: unknown[]) {
   const check = useServerFn(checkRunFn);
   const qc = useQueryClient();
   const running = runs.filter((r) => r.status === "running").map((r) => r.id).join(",");
+  // Latest values read by the polling loop; they must not restart it when only their identity changes.
+  const checkRef = useRef(check);
+  checkRef.current = check;
+  const keyRef = useRef(queryKey);
+  keyRef.current = queryKey;
   useEffect(() => {
     if (!running) return;
     let stop = false;
     const tick = async () => {
       for (const id of running.split(",")) {
-        const r = await check({ data: { id } }).catch((e) => { if (!stop) toast.error(`No pude comprobar el informe: ${errorText(e)}`); stop = true; return null; });
-        if (r && r.status !== "running") qc.invalidateQueries({ queryKey });
+        const r = await checkRef.current({ data: { id } }).catch((e) => { if (!stop) toast.error(`No pude comprobar el informe: ${errorText(e)}`); stop = true; return null; });
+        if (r && r.status !== "running") qc.invalidateQueries({ queryKey: keyRef.current });
       }
     };
     void tick();
     const t = setInterval(() => { if (!stop) void tick(); }, 8_000);
     return () => { stop = true; clearInterval(t); };
-  }, [running]);
+  }, [running, qc]);
 }
 
 const CONF: Record<string, string> = { low: "confianza baja", medium: "confianza media", high: "confianza alta" };
@@ -208,6 +213,8 @@ export function EnrichTableButton() {
   const [rows, setRows] = useState<(EnrichRow & { name: string })[] | null>(null);
   const { data: accs = [] } = useQuery({ queryKey: ["accounts-enrich"], enabled: open, queryFn: async () => ((await supabase.from("accounts").select("id,name,domain,industry,size,country,notes").order("created_at", { ascending: false }).limit(300)).data ?? []) as Acc[] });
   const missing = useMemo(() => accs.filter((a) => !a.industry || !a.size || !a.country), [accs]);
+  // Preselect only when the dialog opens (or the candidate list size changes), never over a manual selection.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (open && !Object.keys(sel).length) setSel(Object.fromEntries(missing.slice(0, 10).map((a) => [a.id, true]))); }, [open, missing.length]);
   const chosen = Object.entries(sel).filter(([, v]) => v).map(([k]) => k);
   async function go() {

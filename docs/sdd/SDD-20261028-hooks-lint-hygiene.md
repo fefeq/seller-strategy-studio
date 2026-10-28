@@ -1,7 +1,7 @@
 # SDD-20261028-hooks-lint-hygiene · [Mejora] Cero avisos de reglas de hooks, con una corrección en el Hub
 
 **Tipo:** Mejora · **Prioridad propuesta:** Baja (higiene; solo la fila 9 es un fallo latente) · **Track:** medio (un solo PR, sin Unidades de Trabajo independientes)
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
+**Estado:** En curso (Aprobado por Fede, 2026-10-28; implementado en el PR #50, pendiente de aceptación de Dani) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
 
 ## Decisiones de Fede (2026-10-28)
 - Repo destino: `fefeq/seller-strategy-studio` (Nokko), base `main`.
@@ -138,4 +138,6 @@ Mejora de track medio: se entrega en un solo PR en borrador. Orden sugerido dent
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---
-Validación: linter OK; pendiente el OK explícito de Fede al texto final.
+Validación: linter OK; aprobado por Fede el 2026-10-28.
+
+Entrega (2026-10-28): 15 avisos a 0 (1 silenciado con comentario, fila 4); `exhaustive-deps` en error; H-3 corregida con `useOpenDocFromUrl` y pruebas CA-11 a CA-14. Sin prueba automática nueva: CA-4, CA-5, CA-6, CA-9 y CA-10 (cubiertos solo por las pruebas existentes y por `tsc`; la validación en navegador queda para Dani).
