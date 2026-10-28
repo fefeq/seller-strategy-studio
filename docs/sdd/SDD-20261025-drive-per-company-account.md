@@ -98,7 +98,8 @@ Las resuelve Claude Code comprobándolas en el código; lo que no pueda comproba
 
 ## 16. Registro de decisiones (lo completa Fede)
 - Decisiones tomadas:
-- Fecha:
+- Decisiones de Fede (2026-10-28, anotadas por el agente): selector de Google (U-2) fuera de este PR, porque con `drive.file` NOKKO solo ve lo que crea. Verificación de la pantalla de consentimiento de Google: se pide antes de abrirlo a clientes (plazo de Google [Por verificar]). El guion de prueba lo ejecuta Fede con dos empresas de prueba. El PR #32 sale de borrador tras el guion y HawkScan.
+- Fecha: 2026-10-28
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ## 17. Delta de lo entregado (rama feat/connections-own-account-v2, 2026-10-27)
