@@ -18,8 +18,8 @@ const MATRIX: Record<ElementKind, Record<Action, Who>> = {
   segment: { edit: "members", delete: "owner", confirm: "members", undo: "members" },
   positioning: { edit: "members", delete: "none", confirm: "members", undo: "members" },
   pillar: { edit: "members", delete: "owner", confirm: "members", undo: "members" },
-  onboarding_source: { edit: "none", delete: "members", confirm: "none", undo: "members" },
-  finding: { edit: "members", delete: "members", confirm: "members", undo: "members" },
+  onboarding_source: { edit: "none", delete: "owner", confirm: "none", undo: "members" },
+  finding: { edit: "members", delete: "owner", confirm: "members", undo: "members" },
 };
 
 export type Availability = {

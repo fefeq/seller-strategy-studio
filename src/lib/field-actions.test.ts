@@ -9,6 +9,33 @@ describe("field actions", () => {
     expect(canDo("pillar", "delete", ["marketing"]).allowed).toBe(false);
   });
 
+  it("CA-7: only the Owner deletes onboarding sources and findings; another member sees it disabled with the reason", () => {
+    for (const kind of ["onboarding_source", "finding"] as const) {
+      expect(canDo(kind, "delete", ["owner"]), kind).toEqual({
+        available: true,
+        allowed: true,
+        reason: null,
+      });
+      for (const role of ["sales_leader", "marketing", "sdr", "ae"]) {
+        expect(canDo(kind, "delete", [role]), `${kind} ${role}`).toEqual({
+          available: true,
+          allowed: false,
+          reason: "Solo el Owner puede borrar.",
+        });
+      }
+    }
+    expect(actionsFor("finding", ["ae"]).map((a) => `${a.action}:${a.allowed}`)).toEqual([
+      "edit:true",
+      "confirm:true",
+      "delete:false",
+      "undo:true",
+    ]);
+    expect(actionsFor("onboarding_source", ["ae"]).map((a) => `${a.action}:${a.allowed}`)).toEqual([
+      "delete:false",
+      "undo:true",
+    ]);
+  });
+
   it("CA-1: any member can edit and confirm", () => {
     for (const role of ["owner", "sales_leader", "marketing", "sdr", "ae"]) {
       expect(canDo("icp", "edit", [role]).allowed, role).toBe(true);
