@@ -39,7 +39,10 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
       onCommit={async (s, dir) => {
         try {
           // CA-35/36: a test or a commercial action is accepted from the list, where the experiment or task can be edited first.
-          if (dir === "right" && executeKind(s)) throw new Error("Ábrela en la lista para completar el experimento o la tarea antes de aceptarla.");
+          if (dir === "right" && executeKind(s))
+            throw new Error(
+              "Ábrela en la lista para completar el experimento o la tarea antes de aceptarla.",
+            );
           const reason = parseStrategy(s.strategy) ? reasons.current[s.id]?.trim() : undefined;
           const r = await decide({
             data: { id: s.id, decision: DECISION[dir], ...(reason ? { reason } : {}) },
