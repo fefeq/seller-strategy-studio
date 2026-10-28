@@ -1,0 +1,376 @@
+From 6808738ad5c7249b32199513c20a060d8e839b4c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 20:43:46 +0100
+Subject: [PATCH] fix(leads): count SLA in business days and make late-lead
+ alerts less noisy
+
+- DEFAULT_LEAD_SLA is in business days (Mon-Fri); new goes from 1 to 2.
+- Late-lead task is due the next business day in the Madrid calendar.
+- Owner falls back to the account owner, then the company owner.
+- Four or more late leads per person become one grouped suggestion.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/components/leads/lead-detail.tsx      |  2 +-
+ src/components/leads/lead-dialogs.tsx     |  4 +-
+ src/lib/agent/tools/core-read.ts          |  2 +-
+ src/lib/field-help-data.ts                |  2 +-
+ src/lib/lead-funnel.test.ts               | 27 ++++++++--
+ src/lib/lead-funnel.ts                    | 34 +++++++++++--
+ src/lib/pipeline-board.test.ts            |  2 +-
+ src/lib/proactive.test.ts                 | 21 +++++++-
+ src/lib/proactive/detectors/late-leads.ts | 60 +++++++++++++++++++----
+ src/lib/weekly-report.test.ts             |  2 +-
+ src/routes/_authenticated/leads.index.tsx |  4 +-
+ 11 files changed, 131 insertions(+), 29 deletions(-)
+
+diff --git a/src/components/leads/lead-detail.tsx b/src/components/leads/lead-detail.tsx
+index 2f3a33a..5b1abc7 100644
+--- a/src/components/leads/lead-detail.tsx
++++ b/src/components/leads/lead-detail.tsx
+@@ -76,7 +76,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
+   return (
+     <div className="space-y-5">
+       <SheetHeader>
+-        <p className="eyebrow pr-10">{leadStageLabel(lead.stage)} · {Math.floor(delay.daysInStage)} días en la etapa</p>
++        <p className="eyebrow pr-10">{leadStageLabel(lead.stage)} · {Math.floor(delay.daysInStage)} días laborables en la etapa</p>
+         <SheetTitle className="break-words pr-10 text-3xl">{lead.company}</SheetTitle>
+       </SheetHeader>
+       {delay.late && <p className="rounded-md bg-signal/10 p-3 text-sm text-signal">Con retraso: {delayText(delay)}.</p>}
+diff --git a/src/components/leads/lead-dialogs.tsx b/src/components/leads/lead-dialogs.tsx
+index edd3f84..8f6993c 100644
+--- a/src/components/leads/lead-dialogs.tsx
++++ b/src/components/leads/lead-dialogs.tsx
+@@ -97,8 +97,8 @@ export function SlaSettings({ sla, canEdit, orgId }: { sla: LeadSla; canEdit: bo
+         <p className="text-sm text-muted-foreground">Un lead va con retraso si pasa en una etapa más días de los indicados <strong>o</strong> si su fecha de próximo seguimiento ya ha pasado.</p>
+         <div className="grid grid-cols-2 gap-3">
+           {OPEN_LEAD_STAGES.map((k) => (
+-            <Field key={k} label={`${leadStageLabel(k)} · días máx.`}>
+-              {canEdit ? <Input type="number" min={1} value={v[k]} onChange={(e) => setV((p) => ({ ...p, [k]: Number(e.target.value) }))} /> : <p className="font-mono">{sla[k]} días</p>}
++            <Field key={k} label={`${leadStageLabel(k)} · días laborables máx.`}>
++              {canEdit ? <Input type="number" min={1} value={v[k]} onChange={(e) => setV((p) => ({ ...p, [k]: Number(e.target.value) }))} /> : <p className="font-mono">{sla[k]} días laborables</p>}
+             </Field>
+           ))}
+         </div>
+diff --git a/src/lib/agent/tools/core-read.ts b/src/lib/agent/tools/core-read.ts
+index b8f18d6..581fa42 100644
+--- a/src/lib/agent/tools/core-read.ts
++++ b/src/lib/agent/tools/core-read.ts
+@@ -154,7 +154,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
+       const list = rows.filter((x) => (!a.stage || x.stage === a.stage) && (!a.late_only || x.delay.late)).sort(byScore((x) => x.score)).slice(0, 40);
+       const f = leadFunnel(leadCohort(l.data ?? [], start, end), d.data ?? []);
+       return {
+-        plazos_dias: sla,
++        plazos_dias_laborables: sla,
+         embudo_trimestre: f.steps.map((st) => ({ paso: st.label, leads: st.count, entrada_directa: st.direct, conversion_paso_anterior: st.fromPrev })),
+         leads: list.map((x) => ({ id: x.id, empresa: x.company, contacto: x.contact_name ?? x.email, etapa: leadStageLabel(x.stage), origen: x.source, puntuacion: x.score.total, encaje_icp: x.score.total == null ? "sin datos" : fitText(x.score.fit), actividad: x.score.activity, proximo_paso: x.next_step, seguimiento: x.next_step_at, retraso: x.delay.late ? delayText(x.delay) : null, deal_id: x.deal_id })),
+       };
+diff --git a/src/lib/field-help-data.ts b/src/lib/field-help-data.ts
+index a176a48..ef22c6c 100644
+--- a/src/lib/field-help-data.ts
++++ b/src/lib/field-help-data.ts
+@@ -121,7 +121,7 @@ export const FIELD_HELP: HelpEntry[] = [
+   { labels: ["Poder de decisión"], description: "Peso de la autoridad de la persona (0–100).", goal: "Decide cuánto cuenta que el lead pueda decidir o influir en la compra.", prompt: false },
+   { labels: ["MQL desde"], description: "Nota mínima para proponer un lead como MQL.", goal: "Marca cuándo marketing considera el lead cualificado.", prompt: false },
+   { labels: ["SQL desde"], description: "Nota mínima para proponer un lead como SQL.", goal: "Marca cuándo ventas debe tomar el lead.", prompt: false },
+-  { labels: ["Días máx.", "Días máximos en la etapa"], description: "Días que puede pasar un lead en esta etapa antes de considerarse retrasado.", goal: "Activa los avisos de leads atascados.", prompt: false },
++  { labels: ["Días máx.", "Días máximos en la etapa", "Días laborables máx."], description: "Días laborables (lunes a viernes) que puede pasar un lead en esta etapa antes de considerarse retrasado.", goal: "Activa los avisos de leads atascados.", prompt: false },
+   { labels: ["Días sin actividad para darlo por enfriado"], description: "Días sin actividad tras los que una cuenta se considera fría.", goal: "Activa la revisión automática de cuentas que se enfrían.", prompt: false },
+
+   // ---------------- Entrada de leads ----------------
+diff --git a/src/lib/lead-funnel.test.ts b/src/lib/lead-funnel.test.ts
+index a534c13..0fceca5 100644
+--- a/src/lib/lead-funnel.test.ts
++++ b/src/lib/lead-funnel.test.ts
+@@ -1,15 +1,15 @@
+ import { describe, expect, it } from "vitest";
+-import { DEFAULT_LEAD_SLA, funnelBy, leadCohort, leadDelay, leadFunnel, readSla, type LeadRow } from "./lead-funnel";
++import { DEFAULT_LEAD_SLA, businessDaysBetween, funnelBy, nextBusinessDay, leadCohort, leadDelay, leadFunnel, readSla, type LeadRow } from "./lead-funnel";
+
+ const now = new Date("2026-10-20T12:00:00Z");
+ const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
+
+ describe("delayed leads", () => {
+-  it("default limits are Nuevo 1, Contactado 3, MQL 5 and SQL 7 days", () => {
+-    expect(DEFAULT_LEAD_SLA).toEqual({ new: 1, contacted: 3, mql: 5, sql: 7 });
++  it("default limits are Nuevo 2, Contactado 3, MQL 5 and SQL 7 business days", () => {
++    expect(DEFAULT_LEAD_SLA).toEqual({ new: 2, contacted: 3, mql: 5, sql: 7 });
+   });
+   it("a lead staying longer than its stage limit is delayed", () => {
+-    expect(leadDelay({ stage: "contacted", stage_entered_at: daysAgo(4), next_step_at: null }, DEFAULT_LEAD_SLA, now).reasons).toEqual(["stalled"]);
++    expect(leadDelay({ stage: "contacted", stage_entered_at: daysAgo(6), next_step_at: null }, DEFAULT_LEAD_SLA, now).reasons).toEqual(["stalled"]);
+     expect(leadDelay({ stage: "contacted", stage_entered_at: daysAgo(2), next_step_at: null }, DEFAULT_LEAD_SLA, now).late).toBe(false);
+   });
+   it("a lead whose follow-up date has passed is delayed even inside its limit", () => {
+@@ -18,7 +18,7 @@ describe("delayed leads", () => {
+     expect(d.followupOverdueDays).toBe(2);
+   });
+   it("both reasons can apply at once", () => {
+-    expect(leadDelay({ stage: "new", stage_entered_at: daysAgo(3), next_step_at: "2026-10-19" }, DEFAULT_LEAD_SLA, now).reasons).toEqual(["stalled", "followup"]);
++    expect(leadDelay({ stage: "new", stage_entered_at: daysAgo(6), next_step_at: "2026-10-19" }, DEFAULT_LEAD_SLA, now).reasons).toEqual(["stalled", "followup"]);
+   });
+   it("converted and discarded leads are never delayed", () => {
+     expect(leadDelay({ stage: "opportunity", stage_entered_at: daysAgo(90), next_step_at: "2026-01-01" }, DEFAULT_LEAD_SLA, now).late).toBe(false);
+@@ -27,6 +27,23 @@ describe("delayed leads", () => {
+   it("each company can change its limits", () => {
+     expect(readSla({ new: 2, mql: "x" })).toEqual({ new: 2, contacted: 3, mql: 5, sql: 7 });
+   });
++  it("weekends do not count: a lead from Friday is not late on Sunday, but is by Wednesday", () => {
++    const fri = "2026-10-16T12:00:00Z";
++    expect(leadDelay({ stage: "contacted", stage_entered_at: fri, next_step_at: null }, DEFAULT_LEAD_SLA, new Date("2026-10-18T12:00:00Z")).late).toBe(false);
++    expect(leadDelay({ stage: "contacted", stage_entered_at: fri, next_step_at: null }, DEFAULT_LEAD_SLA, new Date("2026-10-21T20:00:00Z")).late).toBe(true);
++  });
++  it("counts only Monday to Friday", () => {
++    expect(businessDaysBetween(new Date("2026-10-16T00:00:00Z"), new Date("2026-10-19T00:00:00Z"))).toBe(1);
++    expect(businessDaysBetween(new Date("2026-10-19T00:00:00Z"), new Date("2026-10-26T00:00:00Z"))).toBe(5);
++    expect(businessDaysBetween(new Date("2026-10-20T00:00:00Z"), new Date("2026-10-19T00:00:00Z"))).toBe(0);
++  });
++  it("the next business day skips the weekend and uses the Madrid calendar day", () => {
++    expect(nextBusinessDay(new Date("2026-10-23T10:00:00Z"))).toBe("2026-10-26");
++    expect(nextBusinessDay(new Date("2026-10-24T10:00:00Z"))).toBe("2026-10-26");
++    expect(nextBusinessDay(new Date("2026-10-20T10:00:00Z"))).toBe("2026-10-21");
++    // 23:30 UTC on Thursday is already Friday in Madrid (CEST): next business day is Monday.
++    expect(nextBusinessDay(new Date("2026-10-22T23:30:00Z"))).toBe("2026-10-26");
++  });
+ });
+
+ const L = (id: string, o: Partial<LeadRow>): LeadRow => ({ id, stage: "new", created_at: "2026-10-01T00:00:00Z", stage_entered_at: "2026-10-01T00:00:00Z", contacted_at: null, mql_at: null, sql_at: null, opportunity_at: null, next_step_at: null, deal_id: null, segment_id: null, source: null, ...o });
+diff --git a/src/lib/lead-funnel.ts b/src/lib/lead-funnel.ts
+index 0f47903..38f0ac5 100644
+--- a/src/lib/lead-funnel.ts
++++ b/src/lib/lead-funnel.ts
+@@ -15,8 +15,8 @@ export const OPEN_LEAD_STAGES = ["new", "contacted", "mql", "sql"] as const;
+ export type OpenLeadStage = (typeof OPEN_LEAD_STAGES)[number];
+ export type LeadSla = Record<OpenLeadStage, number>;
+
+-/** Days a lead may stay in each stage before it counts as delayed. */
+-export const DEFAULT_LEAD_SLA: LeadSla = { new: 1, contacted: 3, mql: 5, sql: 7 };
++/** Business days (Mon–Fri) a lead may stay in each stage before it counts as delayed. */
++export const DEFAULT_LEAD_SLA: LeadSla = { new: 2, contacted: 3, mql: 5, sql: 7 };
+
+ export const leadStageLabel = (s: string) => (s === DISQUALIFIED.id ? DISQUALIFIED.label : LEAD_STAGES.find((x) => x.id === s)?.label ?? s);
+ export const isOpenLeadStage = (s: string): s is OpenLeadStage => (OPEN_LEAD_STAGES as readonly string[]).includes(s);
+@@ -51,6 +51,32 @@ export type DealOutcome = { id: string; stage: string; closed_at: string | null
+ const DAY = 86_400_000;
+ const isoDay = (d: Date) => d.toISOString().slice(0, 10);
+
++/** Business days (Mon–Fri, UTC) elapsed between two instants; Saturdays and Sundays do not count. */
++export function businessDaysBetween(from: Date, to: Date): number {
++  const end = to.getTime();
++  let t = from.getTime();
++  if (end <= t) return 0;
++  let ms = 0;
++  while (t < end) {
++    const dayStart = Math.floor(t / DAY) * DAY;
++    const next = Math.min(end, dayStart + DAY);
++    const dow = new Date(dayStart).getUTCDay();
++    if (dow !== 0 && dow !== 6) ms += next - t;
++    t = next;
++  }
++  return ms / DAY;
++}
++
++/** Company calendar day (YYYY-MM-DD) of an instant; Spain by default so «today» matches what the user sees. */
++export const localIsoDay = (d: Date, timeZone = "Europe/Madrid") => d.toLocaleDateString("sv-SE", { timeZone });
++
++/** The next Mon–Fri day after `d`, as YYYY-MM-DD in the company time zone. */
++export function nextBusinessDay(d: Date, timeZone = "Europe/Madrid"): string {
++  const t = new Date(`${localIsoDay(d, timeZone)}T12:00:00Z`);
++  do { t.setUTCDate(t.getUTCDate() + 1); } while (t.getUTCDay() === 0 || t.getUTCDay() === 6);
++  return isoDay(t);
++}
++
+ export type LeadDelay = {
+   late: boolean;
+   /** stalled = more days in the stage than allowed; followup = next-step date already passed. */
+@@ -62,7 +88,7 @@ export type LeadDelay = {
+
+ /** A lead is delayed when it stays longer than its stage limit, when its follow-up date has passed, or both. */
+ export function leadDelay(lead: Pick<LeadRow, "stage" | "stage_entered_at" | "next_step_at">, sla: LeadSla, now = new Date()): LeadDelay {
+-  const daysInStage = Math.max(0, (now.getTime() - new Date(lead.stage_entered_at).getTime()) / DAY);
++  const daysInStage = businessDaysBetween(new Date(lead.stage_entered_at), now);
+   if (!isOpenLeadStage(lead.stage)) return { late: false, reasons: [], daysInStage, limit: null, followupOverdueDays: 0 };
+   const limit = sla[lead.stage];
+   const reasons: LeadDelay["reasons"] = [];
+@@ -77,7 +103,7 @@ export function leadDelay(lead: Pick<LeadRow, "stage" | "stage_entered_at" | "ne
+
+ export function delayText(d: LeadDelay) {
+   const parts: string[] = [];
+-  if (d.reasons.includes("stalled")) parts.push(`${Math.floor(d.daysInStage)} días en la etapa (máx. ${d.limit})`);
++  if (d.reasons.includes("stalled")) parts.push(`${Math.floor(d.daysInStage)} días laborables en la etapa (máx. ${d.limit})`);
+   if (d.reasons.includes("followup")) parts.push(`seguimiento vencido hace ${d.followupOverdueDays} ${d.followupOverdueDays === 1 ? "día" : "días"}`);
+   return parts.join(" · ");
+ }
+diff --git a/src/lib/pipeline-board.test.ts b/src/lib/pipeline-board.test.ts
+index a04c4ae..ec28e2b 100644
+--- a/src/lib/pipeline-board.test.ts
++++ b/src/lib/pipeline-board.test.ts
+@@ -32,7 +32,7 @@ describe("pipelineBoard", () => {
+     const nuevo = g("leads").columns.find((c) => c.stage === "new")!;
+     expect(nuevo.items.map((i) => i.name)).toEqual(["Antiguo", "Reciente"]);
+     expect(nuevo.items[0].late).toBe(true);
+-    expect(nuevo.items[0].lateText).toContain("días en la etapa");
++    expect(nuevo.items[0].lateText).toContain("días laborables en la etapa");
+     expect(nuevo.items[1].late).toBe(false);
+   });
+   it("splits open deals into opportunities and deals in progress", () => {
+diff --git a/src/lib/proactive.test.ts b/src/lib/proactive.test.ts
+index 5655d61..91d5472 100644
+--- a/src/lib/proactive.test.ts
++++ b/src/lib/proactive.test.ts
+@@ -40,12 +40,31 @@ describe("setup completeness", () => {
+
+ describe("detectors", () => {
+   it("a delayed lead proposes a follow-up task; one on time does not", () => {
+-    const lead = (o: object) => ({ id: "l1", company: "Acme", stage: "contacted", stage_entered_at: new Date(NOW.getTime() - 4 * 864e5).toISOString(), next_step_at: null, owner_id: "u1", account_id: null, ...o });
++    const lead = (o: object) => ({ id: "l1", company: "Acme", stage: "contacted", stage_entered_at: new Date(NOW.getTime() - 6 * 864e5).toISOString(), next_step_at: null, owner_id: "u1", account_id: null, ...o });
+     const s = detect(snap({ leads: [lead({})] })).find((x) => x.detector === "late_lead");
+     expect(s?.action?.tool).toBe("create_task");
++    // NOW is Tuesday: the task is for the next business day, never today.
++    expect(s?.action?.args["due_date"]).toBe("2026-10-21");
+     expect(keys(snap({ leads: [lead({ stage_entered_at: new Date(NOW.getTime() - 2 * 864e5).toISOString() })] }))).not.toContain("late_lead");
+     expect(keys(snap({ leads: [lead({ stage_entered_at: NOW.toISOString(), next_step_at: "2026-10-19" })] }))).toContain("late_lead");
+   });
++  it("late leads without owner fall back to the account owner, then to the company owner", () => {
++    const lead = { id: "l1", company: "Acme", stage: "mql", stage_entered_at: new Date(NOW.getTime() - 14 * 864e5).toISOString(), next_step_at: null, owner_id: null, account_id: "a1" };
++    const withAccountOwner = detect(snap({ leads: [lead], accounts: [{ id: "a1", name: "Acme", is_target: false, owner_id: "u2" }] })).find((x) => x.detector === "late_lead");
++    expect(withAccountOwner?.user_id).toBe("u2");
++    expect(withAccountOwner?.action?.args["owner_id"]).toBe("u2");
++    const withCompanyOwner = detect(snap({ leads: [lead], members: [{ user_id: "boss", role: "owner" }] })).find((x) => x.detector === "late_lead");
++    expect(withCompanyOwner?.user_id).toBe("boss");
++  });
++  it("four or more late leads for one person become a single grouped suggestion", () => {
++    const mk = (i: number) => ({ id: `l${i}`, company: `Co${i}`, stage: "mql", stage_entered_at: new Date(NOW.getTime() - 14 * 864e5).toISOString(), next_step_at: null, owner_id: "u1", account_id: null });
++    const out = detect(snap({ leads: [1, 2, 3, 4, 5].map(mk) })).filter((x) => x.detector === "late_lead");
++    expect(out).toHaveLength(1);
++    expect(out[0]?.title).toBe("5 leads van con retraso");
++    expect(out[0]?.action).toBeNull();
++    expect(out[0]?.dedupe_key).toBe("late_lead_group:u1:2026-10-19");
++    expect(detect(snap({ leads: [1, 2, 3].map(mk) })).filter((x) => x.detector === "late_lead")).toHaveLength(3);
++  });
+   it("follow-up sequence: day 3, 7 and 14 on contacted leads, with a draft and the lead update", () => {
+     const ago = (n: number) => new Date(NOW.getTime() - n * 864e5).toISOString();
+     const contacted = (n: number) => ({ id: "l1", company: "Acme", stage: "contacted", stage_entered_at: ago(n), contacted_at: ago(n), contact_name: "Ana Ruiz", next_step_at: null, owner_id: "u1", account_id: null });
+diff --git a/src/lib/proactive/detectors/late-leads.ts b/src/lib/proactive/detectors/late-leads.ts
+index c91b373..48b00c4 100644
+--- a/src/lib/proactive/detectors/late-leads.ts
++++ b/src/lib/proactive/detectors/late-leads.ts
+@@ -1,29 +1,69 @@
+-import { DAY, isoDate, type Detector } from "../types";
+-import { DEFAULT_LEAD_SLA, delayText, leadDelay, leadStageLabel } from "@/lib/lead-funnel";
++import { isoDate, type Detector, type Suggestion } from "../types";
++import { DEFAULT_LEAD_SLA, delayText, leadDelay, leadStageLabel, nextBusinessDay } from "@/lib/lead-funnel";
+ import { followupStatus } from "@/lib/followup";
+
++/** More late leads than this per person collapse into one grouped suggestion instead of one each. */
++export const LATE_LEADS_GROUP_FROM = 4;
++
++/** Who gets the follow-up: the lead's owner, else its account's owner, else the company owner. */
++function responsible(s: Parameters<Detector>[0], l: { owner_id: string | null; account_id: string | null }): string | null {
++  if (l.owner_id) return l.owner_id;
++  const accountOwner = l.account_id ? s.accounts.find((a) => a.id === l.account_id)?.owner_id : null;
++  if (accountOwner) return accountOwner;
++  return (s.members ?? []).find((m) => m.role === "owner")?.user_id ?? null;
++}
++
++/** Monday of the week of `d`: keeps a grouped suggestion's key stable for the whole week. */
++function weekKey(d: Date) {
++  const t = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
++  t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7));
++  return isoDate(t);
++}
++
+ /**
+- * Lead stuck past its stage limit or with an overdue follow-up → propose a follow-up task for tomorrow.
+- * While the day-3/7/14 sequence runs on a contacted lead, that rule owns it (one voice per lead).
++ * Lead stuck past its stage limit (in business days) or with an overdue follow-up → propose a follow-up task
++ * for the next business day. While the day-3/7/14 sequence runs on a contacted lead, that rule owns it
++ * (one voice per lead). When one person has many late leads, one grouped suggestion replaces the pile.
+  */
+ export const lateLeads: Detector = (s) => {
+   const sla = s.leadSla ?? DEFAULT_LEAD_SLA;
+-  return (s.leads ?? []).flatMap((l) => {
++  const due = nextBusinessDay(s.now);
++  const late = (s.leads ?? []).flatMap((l) => {
+     const d = leadDelay(l, sla, s.now);
+     if (!d.late) return [];
+     const seq = followupStatus({ stage: l.stage, contacted_at: l.contacted_at ?? null, next_step_at: l.next_step_at, company: l.company }, s.now);
+     if (seq.due || seq.reason === "scheduled" || (seq.next && seq.reason == null)) return [];
+     const severe = d.reasons.length === 2 || (d.limit != null && d.daysInStage > d.limit * 2);
+-    return [{
++    return [{ l, d, severe, owner: responsible(s, l) }];
++  });
++
++  const byOwner = new Map<string | null, typeof late>();
++  for (const x of late) byOwner.set(x.owner, [...(byOwner.get(x.owner) ?? []), x]);
++
++  return [...byOwner.entries()].flatMap(([owner, items]): Suggestion[] => {
++    if (items.length >= LATE_LEADS_GROUP_FROM) {
++      const worst = items.filter((x) => x.severe).length;
++      return [{
++        detector: "late_lead",
++        dedupe_key: `late_lead_group:${owner ?? "none"}:${weekKey(s.now)}`,
++        priority: worst ? 1 : 2,
++        title: `${items.length} leads van con retraso`,
++        body: `${items.slice(0, 3).map((x) => x.l.company).join(", ")} y ${items.length - 3} más llevan más tiempo del permitido en su etapa o tienen el seguimiento vencido. Revisa la lista en Leads y decide a cuáles das prioridad.`,
++        link: "/leads",
++        action: null,
++        user_id: owner,
++      }];
++    }
++    return items.map(({ l, d, severe }): Suggestion => ({
+       detector: "late_lead",
+       // Stable while the lead stays in the same stage, so a dismissed one does not come back.
+       dedupe_key: `late_lead:${l.id}:${l.stage}:${l.stage_entered_at.slice(0, 10)}`,
+       priority: severe ? 1 : 2,
+       title: `El lead ${l.company} va con retraso en ${leadStageLabel(l.stage)}`,
+-      body: `${delayText(d)}. Te propongo una tarea para moverlo mañana.`,
++      body: `${delayText(d)}. Te propongo una tarea para moverlo el próximo día laborable (${due.split("-").reverse().join("/")}).`,
+       link: "/leads",
+-      action: { tool: "create_task", args: { title: `Seguimiento lead ${l.company} (${leadStageLabel(l.stage)})`, due_date: isoDate(new Date(s.now.getTime() + DAY)), ...(l.account_id ? { account_id: l.account_id } : {}), owner_id: l.owner_id } },
+-      user_id: l.owner_id,
+-    }];
++      action: { tool: "create_task", args: { title: `Seguimiento lead ${l.company} (${leadStageLabel(l.stage)})`, due_date: due, ...(l.account_id ? { account_id: l.account_id } : {}), ...(owner ? { owner_id: owner } : {}) } },
++      user_id: owner,
++    }));
+   });
+ };
+diff --git a/src/lib/weekly-report.test.ts b/src/lib/weekly-report.test.ts
+index 7ff04cc..8d56bcb 100644
+--- a/src/lib/weekly-report.test.ts
++++ b/src/lib/weekly-report.test.ts
+@@ -39,7 +39,7 @@ describe("weekly report", () => {
+     expect(r.todo[0]).toBe("Retomar D: 40 días sin actividad.");
+   });
+   it("counts leads of the week and late ones", () => {
+-    const r = weeklyReport({ ...base, deals: [deal("a")], leads: [lead("l1", { sql_at: ago(1), stage: "sql" }), lead("l2", { created_at: ago(10), stage: "contacted", stage_entered_at: ago(5) }), lead("l3", { stage: "opportunity", opportunity_at: ago(2) })] });
++    const r = weeklyReport({ ...base, deals: [deal("a")], leads: [lead("l1", { sql_at: ago(1), stage: "sql" }), lead("l2", { created_at: ago(10), stage: "contacted", stage_entered_at: ago(8) }), lead("l3", { stage: "opportunity", opportunity_at: ago(2) })] });
+     expect(r.leads).toEqual({ entered: 2, toSql: 1, toOpportunity: 1, late: 1 });
+   });
+   it("with nothing to report says so instead of inventing numbers", () => {
+diff --git a/src/routes/_authenticated/leads.index.tsx b/src/routes/_authenticated/leads.index.tsx
+index 5ede7df..f86015c 100644
+--- a/src/routes/_authenticated/leads.index.tsx
++++ b/src/routes/_authenticated/leads.index.tsx
+@@ -149,7 +149,7 @@ function LeadsPage() {
+                               </select>
+                             </td>
+                             <td className="px-3 py-2"><ScoreBadge score={view.scores.get(l.id)!} /></td>
+-                            <td className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}>{closed ? "—" : `${Math.floor(d.daysInStage)} d${d.late ? " · tarde" : ""}`}</td>
++                            <td className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}>{closed ? "—" : `${Math.floor(d.daysInStage)} d lab.${d.late ? " · tarde" : ""}`}</td>
+                             <td className="px-3 py-2 text-xs">{l.next_step_at ?? "—"}</td>
+                             <td className="px-3 py-2 text-right" onClick={(e) => e.stopPropagation()}><LeadQuickActions lead={l} onMove={move} /></td>
+                           </tr>
+@@ -188,7 +188,7 @@ function LeadsPage() {
+                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                                 {l.source && <span className="rounded bg-muted px-1.5 py-0.5">{l.source}</span>}
+                                 {segName(l.segment_id) && <span className="rounded bg-muted px-1.5 py-0.5">{segName(l.segment_id)}</span>}
+-                                {st.id !== "opportunity" && st.id !== "disqualified" && <span className="font-mono">{Math.floor(d.daysInStage)} d</span>}
++                                {st.id !== "opportunity" && st.id !== "disqualified" && <span className="font-mono">{Math.floor(d.daysInStage)} d lab.</span>}
+                               </span>
+                               {st.id !== "opportunity" && st.id !== "disqualified" && view.quals.get(l.id)?.move && <span className="mt-1.5 block"><QualTag view={view.quals.get(l.id)!} /></span>}
+                               {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal">{delayText(d)}</span>}
+--
+2.43.0
+

@@ -1,0 +1,141 @@
+From e79afae71926384a452a06dc627818625560be30 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:31:55 +0100
+Subject: [PATCH] feat(icp): warn when an ICP is too open to mean anything
+
+Shows a notice (never blocks saving) when sectors, size, geography or
+anti-ICP leave almost every company fitting.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/components/icp-editor.tsx | 10 +++++++++
+ src/lib/icp-breadth.test.ts   | 31 ++++++++++++++++++++++++++
+ src/lib/icp-breadth.ts        | 42 +++++++++++++++++++++++++++++++++++
+ 3 files changed, 83 insertions(+)
+ create mode 100644 src/lib/icp-breadth.test.ts
+ create mode 100644 src/lib/icp-breadth.ts
+
+diff --git a/src/components/icp-editor.tsx b/src/components/icp-editor.tsx
+index b3864cc..dba38df 100644
+--- a/src/components/icp-editor.tsx
++++ b/src/components/icp-editor.tsx
+@@ -24,6 +24,7 @@ import { ConfirmBar } from "@/components/confirm-field";
+ import { confirmSources } from "@/lib/provenance";
+ import { useMe } from "@/hooks/use-me";
+ import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
++import { icpBreadthWarnings, MIN_WARNINGS_TO_SHOW } from "@/lib/icp-breadth";
+
+ const PROSE = [
+   ["industries", "Sectores o tipo de empresa", "Para el equipo y la puntuación de cuentas"],
+@@ -117,6 +118,7 @@ export function IcpEditor() {
+   const q = current ? icpCompanyQuery(current).query : null;
+   const people = current ? icpPeopleQuery(current) : null;
+   const levels: string[] = sel?.seniorities ?? [];
++  const breadth = sel ? icpBreadthWarnings(sel) : [];
+
+   return (
+     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+@@ -153,6 +155,14 @@ export function IcpEditor() {
+             </div>
+           </section>
+
++          {breadth.length >= MIN_WARNINGS_TO_SHOW && (
++            <section role="status" className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-sm">
++              <p className="font-medium">Este ICP es muy abierto</p>
++              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">{breadth.map((m) => <li key={m}>{m}</li>)}</ul>
++              <p className="mt-1 text-xs text-muted-foreground">Es un aviso: puedes guardarlo así. Cuanto más abierto, menos dice la puntuación de encaje y más se gasta buscando.</p>
++            </section>
++          )}
++
+           <section>
+             <p className="eyebrow mb-2">A quién buscar dentro · personas clave</p>
+             <Field label="Cargos en inglés"><Input placeholder="VP Sales, Head of RevOps, CRO" value={sel.target_titles} onChange={(e) => set("target_titles", e.target.value)} /></Field>
+diff --git a/src/lib/icp-breadth.test.ts b/src/lib/icp-breadth.test.ts
+new file mode 100644
+index 0000000..ab53a33
+--- /dev/null
++++ b/src/lib/icp-breadth.test.ts
+@@ -0,0 +1,31 @@
++import { describe, expect, it } from "vitest";
++import { icpBreadthWarnings } from "./icp-breadth";
++
++const tight = { industries: "SaaS B2B, agencias de marketing", company_size: "", min_employees: 20, max_employees: 200, countries: ["ES"], anti_icp: "Autónomos y empresas de menos de 5 personas" };
++
++describe("icpBreadthWarnings", () => {
++  it("is quiet for a focused ICP", () => expect(icpBreadthWarnings(tight)).toEqual([]));
++  it("warns about everything for an empty ICP", () => expect(icpBreadthWarnings({})).toHaveLength(4));
++  it("flags «todos los sectores» and long lists", () => {
++    expect(icpBreadthWarnings({ ...tight, industries: "todos los sectores" })[0]).toContain("demasiado amplios");
++    expect(icpBreadthWarnings({ ...tight, industries: "a, b, c, d, e, f, g" })[0]).toContain("demasiado amplios");
++    expect(icpBreadthWarnings({ ...tight, industries: "a, b, c, d, e, f" })).toEqual([]);
++  });
++  it("flags a very wide employee range, not a normal one", () => {
++    expect(icpBreadthWarnings({ ...tight, min_employees: 10, max_employees: 1000 })[0]).toContain("rango de empleados");
++    expect(icpBreadthWarnings({ ...tight, min_employees: 50, max_employees: 1000 })).toEqual([]);
++  });
++  it("size in words counts when no employees are set", () => {
++    expect(icpBreadthWarnings({ ...tight, min_employees: null, max_employees: null, company_size: "Startups en serie A" })).toEqual([]);
++  });
++  it("accepts the numbers as typed text", () => {
++    expect(icpBreadthWarnings({ ...tight, min_employees: "10", max_employees: "1000" })).toHaveLength(1);
++  });
++  it("min without max and no description warns", () => {
++    expect(icpBreadthWarnings({ ...tight, max_employees: null })[0]).toContain("sin máximo");
++  });
++  it("accepts countries as typed text", () => expect(icpBreadthWarnings({ ...tight, countries: "ES, MX" })).toEqual([]));
++  it("«todo en uno» is not «todos los sectores»", () => {
++    expect(icpBreadthWarnings({ ...tight, industries: "Software todo en uno para pymes" })).toEqual([]);
++  });
++});
+diff --git a/src/lib/icp-breadth.ts b/src/lib/icp-breadth.ts
+new file mode 100644
+index 0000000..ebad27d
+--- /dev/null
++++ b/src/lib/icp-breadth.ts
+@@ -0,0 +1,42 @@
++// Tells the founder when an ICP is so open that «encaje» means little: every company would fit, so
++// the scoring, the searches (Apollo, Clay) and their cost are spread over everyone.
++// The limits below are simple rules of thumb, not benchmarks; they only decide when to show a notice.
++
++export const MAX_INDUSTRY_ITEMS = 6;
++/** Employee range whose top is more than this many times its bottom (e.g. 10 to 1.000). */
++export const MAX_EMPLOYEE_SPREAD = 20;
++
++type IcpDraft = {
++  industries?: string | null;
++  company_size?: string | null;
++  geography?: string | null;
++  anti_icp?: string | null;
++  countries?: string | string[] | null;
++  min_employees?: number | string | null;
++  max_employees?: number | string | null;
++};
++
++const filled = (v: unknown) => (Array.isArray(v) ? v.length > 0 : typeof v === "string" && v.trim().length > 0);
++const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null; };
++const ANY = /\b(todos|todas|cualquiera?|todo tipo|de todo|any|all|everyone)\b/i;
++
++/** One notice is normal while an ICP is being written; the panel shows them from this many on. */
++export const MIN_WARNINGS_TO_SHOW = 2;
++
++export function icpBreadthWarnings(i: IcpDraft): string[] {
++  const out: string[] = [];
++  const min = num(i.min_employees), max = num(i.max_employees);
++
++  if (!filled(i.industries)) out.push("No has indicado sectores: cualquier empresa encaja.");
++  else if (ANY.test(i.industries!) || i.industries!.split(/[,;\n/]+/).filter((s) => s.trim()).length > MAX_INDUSTRY_ITEMS) {
++    out.push(`Los sectores son demasiado amplios (más de ${MAX_INDUSTRY_ITEMS} o «cualquiera»). Quédate con los dos o tres donde ya has vendido o tienes más opciones.`);
++  }
++
++  if (!min && !max && !filled(i.company_size)) out.push("No has fijado tamaño de empresa (ni empleados ni descripción).");
++  else if (min && max && max / min > MAX_EMPLOYEE_SPREAD) out.push(`El rango de empleados (${min} a ${max}) abarca empresas de realidades muy distintas. Estréchalo al tramo donde mejor te va.`);
++  else if (min && !max && !filled(i.company_size)) out.push("El tamaño solo tiene mínimo: sin máximo entran también las grandes.");
++
++  if (!filled(i.countries) && !filled(i.geography)) out.push("No has indicado dónde están: sin país ni región, la búsqueda no se limita.");
++  if (!filled(i.anti_icp)) out.push("No hay anti-ICP: nada se descarta, y descartar también ahorra coste de búsqueda.");
++  return out;
++}
+--
+2.43.0
+

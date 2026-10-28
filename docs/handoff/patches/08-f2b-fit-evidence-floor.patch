@@ -1,0 +1,74 @@
+From 8bf7501e3eb8a03fcc27e1235e9a9d9ccb219420 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:17:25 +0100
+Subject: [PATCH] fix(scoring): keep the fit near the middle when little is
+ known
+
+A lead with one known criterion (e.g. only its segment) scored 100% or 0%. The
+weight of the checked criteria is now topped up to 5 with neutral evidence, so
+extreme scores need real evidence. Activity from real touches is not changed
+here: it needs a decision on what counts as a touch.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/lib/scoring.test.ts | 12 +++++++++++-
+ src/lib/scoring.ts      | 10 +++++++++-
+ 2 files changed, 20 insertions(+), 2 deletions(-)
+
+diff --git a/src/lib/scoring.test.ts b/src/lib/scoring.test.ts
+index bc64193..ad73f34 100644
+--- a/src/lib/scoring.test.ts
++++ b/src/lib/scoring.test.ts
+@@ -29,9 +29,19 @@ describe("ICP fit", () => {
+   it("unknown criteria are left out instead of counted as zero", () => {
+     const f = accountFit({ segment_id: null, industry: "Fintech", size: null, tier: null }, [ICP]);
+     expect(f.known).toBe(2); // industry + anti-ICP
+-    expect(f.score).toBe(100);
++    expect(f.score).toBe(90); // 4 of 4 checked, topped up to 5 with neutral evidence
+     expect(f.criteria.find((c) => c.id === "segment")?.status).toBe("unknown");
+   });
++  it("one criterion alone never gives 0 or 100: little evidence stays near the middle", () => {
++    const icp: IcpProfile = { ...ICP, anti_icp: null, industries: "", company_size: "" };
++    const only = (segment_id: string) => accountFit({ segment_id, industry: null, size: null, tier: null }, [{ ...icp, segment_id: "mid" }]).score;
++    expect(only("mid")).toBe(69); // never «alto» (70) from a single criterion
++    expect(only("other")).toBe(31);
++  });
++  it("with enough criteria checked the score reaches the ends", () => {
++    const f = accountFit({ segment_id: "mid", industry: "Fintech", size: "100 empleados", tier: "A", name: "Acme" }, [ICP]);
++    expect(f.score).toBe(100);
++  });
+   it("an account with only a name has no fit, even when the ICP defines an anti-ICP", () => {
+     // Before: «no coincide con el anti-ICP» counted as a match and a bare CSV account scored 100.
+     const f = accountFit({ segment_id: null, industry: null, size: null, tier: null, name: "Northwind" }, [ICP]);
+diff --git a/src/lib/scoring.ts b/src/lib/scoring.ts
+index a2ed245..db6ebb6 100644
+--- a/src/lib/scoring.ts
++++ b/src/lib/scoring.ts
+@@ -7,6 +7,8 @@ import { employeesText } from "@/lib/icp";
+
+ export const FIT_WEIGHT = 0.7;
+ export const ACTIVITY_WEIGHT = 0.3;
++/** Criteria weight we want checked before a fit can reach 0 % or 100 % (segment 2 + sector 2 + size 1 = 5). */
++export const EVIDENCE_FLOOR = 5;
+
+ export type IcpProfile = {
+   id?: string;
+@@ -151,7 +153,13 @@ function fitAgainst(a: AccountFitInput, icp: IcpProfile, segmentNames?: Map<stri
+   const known = criteria.filter((c) => c.status !== "unknown");
+   const total = known.reduce((s, c) => s + c.weight, 0);
+   const got = known.filter((c) => c.status === "match").reduce((s, c) => s + c.weight, 0);
+-  return { score: total ? Math.round((got / total) * 100) : null, known: known.length, total: criteria.length, criteria, icpIndex: null };
++  // With little evidence the score stays near the middle: one matching criterion (a CSV lead with only a segment) is not a
++  // 100 % fit. The weights of the criteria we could check are topped up to EVIDENCE_FLOOR with neutral (50 %) evidence.
++  const pad = total ? Math.max(0, EVIDENCE_FLOOR - total) : 0;
++  // A single criterion of weight 2 (total < 3) cannot reach the «alto» line (70) or the bottom band (30) on its own.
++  const raw = total ? Math.round(((got + pad / 2) / (total + pad)) * 100) : null;
++  const score = raw != null && total < 3 ? Math.min(69, Math.max(31, raw)) : raw;
++  return { score, known: known.length, total: criteria.length, criteria, icpIndex: null };
+ }
+
+ /** Fit against the ICP of the account's segment when there is one, else the best fit among all ICPs. */
+--
+2.43.0
+

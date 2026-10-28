@@ -1,0 +1,349 @@
+From 7e9dde2e8a41b6386f9a3ebdea09669e6ee2f23c Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:36:36 +0100
+Subject: [PATCH] feat(agent): chat can create/change products and re-read
+ Stripe
+
+upsert_product (owner, sales leader, deal desk; no duplicates, never
+deletes) and sync_stripe_now (owner, sales leader; rate limited). Both
+only queue a confirmation. Stacked on the read lookup tools.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ .lovable/mcp/manifest.json                  | 90 +++++++++++++++++++++
+ src/lib/agent-tools.test.ts                 | 68 ++++++++++++++++
+ src/lib/agent/tools.ts                      |  3 +-
+ src/lib/agent/tools/admin-writes.ts         | 63 +++++++++++++++
+ src/lib/agent/tools/sync-stripe-now.test.ts | 41 ++++++++++
+ src/lib/mcp/tools/agent-tools.ts            |  2 +
+ 6 files changed, 266 insertions(+), 1 deletion(-)
+ create mode 100644 src/lib/agent/tools/admin-writes.ts
+ create mode 100644 src/lib/agent/tools/sync-stripe-now.test.ts
+
+diff --git a/.lovable/mcp/manifest.json b/.lovable/mcp/manifest.json
+index b5e535c..130ab13 100644
+--- a/.lovable/mcp/manifest.json
++++ b/.lovable/mcp/manifest.json
+@@ -1778,6 +1778,96 @@
+         },
+         "outputSchema": null
+       },
++      {
++        "name": "upsert_product",
++        "title": "Crear o cambiar un producto",
++        "description": "Crea un producto del catálogo o, si pasas product_id, cambia el que ya existe (nombre, precio, coste, cobro, activo). Precio y coste son por periodo de cobro (monthly, annual, one_off). Para desactivar un producto usa active=false: no se borra. Mira antes list_products para no duplicar. (Queda pendiente: el usuario la confirma en Nokko.)",
++        "annotations": {
++          "readOnlyHint": false,
++          "destructiveHint": false,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {
++            "product_id": {
++              "description": "Si se pasa, actualiza ese producto",
++              "type": "string",
++              "format": "uuid",
++              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
++            },
++            "name": {
++              "type": "string",
++              "minLength": 1,
++              "maxLength": 120
++            },
++            "price": {
++              "type": "number",
++              "minimum": 0,
++              "maximum": 100000000
++            },
++            "cost": {
++              "description": "null borra el coste",
++              "anyOf": [
++                {
++                  "type": "number",
++                  "minimum": 0,
++                  "maximum": 100000000
++                },
++                {
++                  "type": "null"
++                }
++              ]
++            },
++            "billing": {
++              "type": "string",
++              "enum": [
++                "monthly",
++                "annual",
++                "one_off"
++              ]
++            },
++            "active": {
++              "type": "boolean"
++            },
++            "description": {
++              "type": "string",
++              "maxLength": 1000
++            },
++            "sku": {
++              "anyOf": [
++                {
++                  "type": "string",
++                  "maxLength": 60
++                },
++                {
++                  "type": "null"
++                }
++              ]
++            }
++          },
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
++      {
++        "name": "sync_stripe_now",
++        "title": "Leer Stripe ahora",
++        "description": "Vuelve a leer Stripe ahora (clientes, MRR, altas y bajas). No más de una vez cada pocos minutos; si Stripe no está conectado lo dice. (Queda pendiente: el usuario la confirma en Nokko.)",
++        "annotations": {
++          "readOnlyHint": false,
++          "destructiveHint": false,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {},
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
+       {
+         "name": "list_pending_imports",
+         "title": "Ver importaciones pendientes",
+diff --git a/src/lib/agent-tools.test.ts b/src/lib/agent-tools.test.ts
+index f4231e6..7c47bb0 100644
+--- a/src/lib/agent-tools.test.ts
++++ b/src/lib/agent-tools.test.ts
+@@ -444,3 +444,71 @@ describe("lookup tools (segments, team, trials, links)", () => {
+     for (const n of ["list_segments", "list_members", "list_trials", "get_link"]) expect(getTool(n)!.kind).toBe("read");
+   });
+ });
++
++describe("upsert_product", () => {
++  it("is limited to the roles that may price, and only queues a confirmation", () => {
++    const t = getTool("upsert_product")!;
++    expect(t.kind).toBe("write");
++    for (const r of ["owner", "sales_leader", "deal_desk"]) expect(canUseTool(t, [r])).toBe(true);
++    for (const r of ["ae", "sdr", "marketing"]) expect(canUseTool(t, [r])).toBe(false);
++  });
++
++  it("creates a product inside the company, after checking the name is free", async () => {
++    const { db, log } = fakeDb((q) => (q.op === "insert" ? { data: { id: ID(70) } } : { data: [] }));
++    await executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "Plan Pro", price: 99, billing: "monthly" });
++    expect(writes(log, "products")[0].payload).toMatchObject({ name: "Plan Pro", price: 99, billing: "monthly", org_id: ORG });
++    expectScoped(log);
++  });
++
++  it("refuses a name that already exists and points to the existing product", async () => {
++    const { db, log } = fakeDb(() => ({ data: [{ id: ID(71), name: "Plan Pro" }] }));
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "plan pro", price: 99 })).rejects.toThrow(new RegExp(ID(71)));
++    expect(writes(log)).toHaveLength(0);
++  });
++
++  it("needs a name and a price to create, and a change to update", async () => {
++    const { db } = fakeDb(() => ({ data: [] }));
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { price: 5 })).rejects.toThrow(/nombre/);
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "X" })).rejects.toThrow(/precio/);
++    const one = fakeDb(() => ({ data: [{ id: ID(72), name: "Existente" }] }));
++    await expect(executeTool(ctxWith(one.db, ["owner"]), "upsert_product", { product_id: ID(72) })).rejects.toThrow(/qué cambiar/);
++  });
++
++  it("updates only the fields given, scoped to the company, and checks the product is theirs", async () => {
++    const { db, log } = fakeDb(() => ({ data: [{ id: ID(72), name: "Existente" }] }));
++    await executeTool(ctxWith(db, ["deal_desk"]), "upsert_product", { product_id: ID(72), price: 120, active: false });
++    const upd = writes(log, "products")[0];
++    expect(upd.op).toBe("update");
++    expect(upd.payload).toEqual({ price: 120, active: false });
++    expect(eq(upd, "id", ID(72))).toBe(true);
++    expectScoped(log);
++    const none = fakeDb(() => ({ data: null }));
++    await expect(executeTool(ctxWith(none.db, ["owner"]), "upsert_product", { product_id: ID(73), price: 1 })).rejects.toThrow(/No encuentro ese producto/);
++  });
++
++  it("renaming to another product's name is refused, renaming to its own name is fine", async () => {
++    const { db } = fakeDb(() => ({ data: [{ id: ID(72), name: "Plan A" }, { id: ID(73), name: "Plan B" }] }));
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { product_id: ID(72), name: " plan b " })).rejects.toThrow(/Elige otro nombre/);
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { product_id: ID(72), name: "PLAN A" })).resolves.toBeDefined();
++  });
++
++  it("a * in a name is not a wildcard, and the billing period is required to create", async () => {
++    const { db, log } = fakeDb(() => ({ data: [{ id: ID(72), name: "Plan Pro" }] }));
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "Plan *", price: 5, billing: "annual" })).resolves.toBeDefined();
++    expect(writes(log, "products")[0].payload).toMatchObject({ name: "Plan *" });
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "Otro", price: 5 })).rejects.toThrow(/cobro/);
++  });
++
++  it("the confirmation text of an update says what changes", () => {
++    const text = getTool("upsert_product")!.summarize!({ product_id: ID(72), price: 120, active: false } as never);
++    expect(text).toContain("precio 120");
++    expect(text).toContain("desactivarlo");
++  });
++
++  it("rejects negative prices and an unknown billing period before touching the database", async () => {
++    const { db, log } = fakeDb();
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "X", price: -1 })).rejects.toThrow();
++    await expect(executeTool(ctxWith(db, ["owner"]), "upsert_product", { name: "X", price: 1, billing: "weekly" })).rejects.toThrow();
++    expect(log).toHaveLength(0);
++  });
++});
+diff --git a/src/lib/agent/tools.ts b/src/lib/agent/tools.ts
+index be14eaf..6e0c2ce 100644
+--- a/src/lib/agent/tools.ts
++++ b/src/lib/agent/tools.ts
+@@ -20,10 +20,11 @@ import { STRATEGY_TOOLS } from "./tools/strategy";
+ import { FIELD_ACTION_TOOLS } from "./tools/field-actions";
+ import { CYCLE_TOOLS } from "./tools/cycle";
+ import { LOOKUP_TOOLS } from "./tools/lookups";
++import { ADMIN_WRITE_TOOLS } from "./tools/admin-writes";
+
+ export type { AgentTool, ToolCtx } from "./tool-kit";
+
+-const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS, ...LOOKUP_TOOLS];
++const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS, ...LOOKUP_TOOLS, ...ADMIN_WRITE_TOOLS];
+
+ export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS, ...PARALLEL_TOOLS, ...NEED_TOOLS];
+
+diff --git a/src/lib/agent/tools/admin-writes.ts b/src/lib/agent/tools/admin-writes.ts
+new file mode 100644
+index 0000000..148c95b
+--- /dev/null
++++ b/src/lib/agent/tools/admin-writes.ts
+@@ -0,0 +1,63 @@
++// Writes the chat was missing for setup work: the product catalogue and the Stripe re-read.
++// Both only queue a confirmation (kind "write"); the person approves in Sugerencias.
++import { z } from "zod";
++import { BILLING_LABELS } from "@/lib/deal-lines";
++import { canPrice, def, defined, ok, type AgentTool } from "../tool-kit";
++
++const PRICING_ROLES = ["owner", "sales_leader", "deal_desk"] as const;
++
++export const ADMIN_WRITE_TOOLS: AgentTool[] = [
++  def({
++    name: "upsert_product", kind: "write", roles: [...PRICING_ROLES],
++    description: "Crea un producto del catálogo o, si pasas product_id, cambia el que ya existe (nombre, precio, coste, cobro, activo). Precio y coste son por periodo de cobro (monthly, annual, one_off). Para desactivar un producto usa active=false: no se borra. Mira antes list_products para no duplicar.",
++    input: z.object({
++      product_id: z.string().uuid().optional().describe("Si se pasa, actualiza ese producto"),
++      name: z.string().trim().min(1).max(120).optional(),
++      price: z.number().min(0).max(100_000_000).optional(),
++      cost: z.number().min(0).max(100_000_000).nullable().optional().describe("null borra el coste"),
++      billing: z.enum(Object.keys(BILLING_LABELS) as [string, ...string[]]).optional(),
++      active: z.boolean().optional(),
++      description: z.string().max(1000).optional(),
++      sku: z.string().trim().max(60).nullable().optional(),
++    }),
++    summarize: (a) => a.product_id
++      ? `Actualizar un producto: ${[a.name ? `nombre «${a.name}»` : "", a.price != null ? `precio ${a.price}` : "", a.cost !== undefined ? (a.cost === null ? "quitar el coste" : `coste ${a.cost}`) : "", a.billing ? `cobro ${BILLING_LABELS[a.billing as keyof typeof BILLING_LABELS]}` : "", a.active === false ? "desactivarlo" : a.active === true ? "activarlo" : ""].filter(Boolean).join(", ") || "sin cambios indicados"}`
++      : `Crear el producto «${a.name ?? "sin nombre"}»${a.price != null ? ` a ${a.price}` : ""}${a.billing ? ` (${BILLING_LABELS[a.billing as keyof typeof BILLING_LABELS]})` : ""}`,
++    run: async (c, a) => {
++      // Who may set prices is also enforced by the database, but Telegram and cron use a client that skips it.
++      if (!canPrice(c.roles)) throw new Error("Solo Owner, Sales Leader o Deal Desk pueden cambiar el catálogo.");
++      const { product_id, ...fields } = a;
++      const patch = defined(fields);
++      // Exact, case-insensitive comparison in code: a * or % typed in a name must not act as a wildcard.
++      const names = ok(await c.db.from("products").select("id,name").eq("org_id", c.orgId).limit(2000)) ?? [];
++      const clash = a.name ? names.find((p) => p.id !== product_id && p.name.trim().toLowerCase() === a.name!.trim().toLowerCase()) : undefined;
++      if (clash) throw new Error(`Ya hay un producto llamado «${clash.name}». ${product_id ? "Elige otro nombre." : `Para cambiarlo pasa product_id (${clash.id}).`}`);
++      if (product_id) {
++        if (!names.some((p) => p.id === product_id)) throw new Error("No encuentro ese producto en esta empresa. Búscalo primero con list_products.");
++        if (!Object.keys(patch).length) throw new Error("No has indicado qué cambiar del producto.");
++        return ok(await c.db.from("products").update(patch).eq("org_id", c.orgId).eq("id", product_id).select("id").single());
++      }
++      if (!a.name) throw new Error("Falta el nombre del producto.");
++      if (a.price == null) throw new Error("Falta el precio del producto (por periodo de cobro).");
++      if (!a.billing) throw new Error("Falta el cobro del producto: monthly (mensual), annual (anual) u one_off (pago único). El precio es por ese periodo.");
++      return ok(await c.db.from("products").insert({ ...patch, name: a.name, price: a.price, billing: a.billing, org_id: c.orgId }).select("id").single());
++    },
++  }),
++  def({
++    name: "sync_stripe_now", kind: "write", roles: ["owner", "sales_leader"],
++    description: "Vuelve a leer Stripe ahora (clientes, MRR, altas y bajas). No más de una vez cada pocos minutos; si Stripe no está conectado lo dice.",
++    input: z.object({}),
++    summarize: () => "Leer Stripe ahora",
++    run: async (c) => {
++      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
++      const { syncStripeOrg, MANUAL_SYNC_MINUTES } = await import("@/lib/stripe/sync.server");
++      const { data: conn } = await supabaseAdmin.from("stripe_connections").select("last_synced_at").eq("org_id", c.orgId).maybeSingle();
++      if (!conn) throw new Error("Stripe no está conectado en esta empresa. Conéctalo en Conexiones.");
++      if (conn.last_synced_at && Date.now() - new Date(conn.last_synced_at).getTime() < MANUAL_SYNC_MINUTES * 60_000)
++        throw new Error(`Stripe se ha leído hace menos de ${MANUAL_SYNC_MINUTES} minutos. Espera un poco antes de volver a leerlo.`);
++      const r = await syncStripeOrg(supabaseAdmin, c.orgId);
++      if (!r.ok) throw new Error(r.error ?? "Stripe no ha respondido.");
++      return { mensaje: "Stripe leído. Consulta get_stripe_metrics para ver las cifras actualizadas." };
++    },
++  }),
++];
+diff --git a/src/lib/agent/tools/sync-stripe-now.test.ts b/src/lib/agent/tools/sync-stripe-now.test.ts
+new file mode 100644
+index 0000000..2663959
+--- /dev/null
++++ b/src/lib/agent/tools/sync-stripe-now.test.ts
+@@ -0,0 +1,41 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import type { ToolCtx } from "@/lib/agent/tool-kit";
++
++const state = { connection: null as { last_synced_at: string | null } | null, synced: [] as string[], eqs: [] as unknown[][], result: { ok: true } as { ok: boolean; error?: string } };
++vi.mock("@/integrations/supabase/client.server", () => ({
++  supabaseAdmin: { from: () => ({ select: () => ({ eq: (...a: unknown[]) => { state.eqs.push(a); return { maybeSingle: async () => ({ data: state.connection }) }; } }) }) },
++}));
++vi.mock("@/lib/stripe/sync.server", () => ({
++  MANUAL_SYNC_MINUTES: 2,
++  syncStripeOrg: async (_db: unknown, orgId: string) => { state.synced.push(orgId); return state.result; },
++}));
++
++import { ADMIN_WRITE_TOOLS } from "./admin-writes";
++const tool = ADMIN_WRITE_TOOLS.find((t) => t.name === "sync_stripe_now")!;
++const ctx = { db: {}, orgId: "org-1", userId: "u", roles: ["owner"], currency: "EUR" } as unknown as ToolCtx;
++
++describe("sync_stripe_now", () => {
++  beforeEach(() => { state.connection = null; state.synced = []; state.eqs = []; state.result = { ok: true }; });
++
++  it("only leaders may use it, and it is a confirmed write", () => {
++    expect(tool.kind).toBe("write");
++    expect(tool.roles).toEqual(["owner", "sales_leader"]);
++  });
++  it("says so when Stripe is not connected and reads nothing", async () => {
++    await expect(tool.run(ctx, {})).rejects.toThrow(/no está conectado/);
++    expect(state.synced).toEqual([]);
++  });
++  it("does not hammer Stripe: a read from the last two minutes is refused", async () => {
++    state.connection = { last_synced_at: new Date(Date.now() - 30_000).toISOString() };
++    await expect(tool.run(ctx, {})).rejects.toThrow(/menos de 2 minutos/);
++    expect(state.synced).toEqual([]);
++  });
++  it("syncs only the caller's company when allowed, and surfaces a Stripe error", async () => {
++    state.connection = { last_synced_at: new Date(Date.now() - 10 * 60_000).toISOString() };
++    await tool.run(ctx, {});
++    expect(state.synced).toEqual(["org-1"]);
++    expect(state.eqs).toEqual([["org_id", "org-1"]]); // the connection read is the caller's company's
++    state.result = { ok: false, error: "Clave no válida" };
++    await expect(tool.run(ctx, {})).rejects.toThrow("Clave no válida");
++  });
++});
+diff --git a/src/lib/mcp/tools/agent-tools.ts b/src/lib/mcp/tools/agent-tools.ts
+index bd61b9b..198afbd 100644
+--- a/src/lib/mcp/tools/agent-tools.ts
++++ b/src/lib/mcp/tools/agent-tools.ts
+@@ -114,6 +114,8 @@ export const TITLES: Record<string, string> = {
+   search_knowledge: "Buscar en el conocimiento",
+   set_currency: "Cambiar moneda",
+   set_quota: "Fijar cuota",
++  upsert_product: "Crear o cambiar un producto",
++  sync_stripe_now: "Leer Stripe ahora",
+   update_account: "Actualizar cuenta",
+   update_deal: "Actualizar deal",
+   update_deal_line: "Cambiar línea de un deal",
+--
+2.43.0
+

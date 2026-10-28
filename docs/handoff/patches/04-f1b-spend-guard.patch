@@ -1,0 +1,390 @@
+From 5fcfaf662ba1c8c1bf985a721e1dec877e6f5383 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 21:07:53 +0100
+Subject: [PATCH] fix(agent): cap and log the spend of chat/MCP integration
+ tools
+
+11 read tools (Apollo, Clay, Parallel, Firecrawl/Perplexity, Apify) spent
+credits without checking the monthly cap and without being logged, so the
+spend meter missed everything done from the chat. executeTool now checks the
+cap before the call and logs the approximate spend after it. MCP no longer
+marks these tools as read-only.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ .lovable/mcp/manifest.json        | 44 +++++++--------
+ src/lib/agent/agent.server.ts     |  4 +-
+ src/lib/agent/spend-guard.test.ts | 91 +++++++++++++++++++++++++++++++
+ src/lib/agent/spend-guard.ts      | 48 ++++++++++++++++
+ src/lib/agent/tools.ts            | 19 ++++++-
+ src/lib/mcp/tools/agent-tools.ts  |  4 +-
+ 6 files changed, 183 insertions(+), 27 deletions(-)
+ create mode 100644 src/lib/agent/spend-guard.test.ts
+ create mode 100644 src/lib/agent/spend-guard.ts
+
+diff --git a/.lovable/mcp/manifest.json b/.lovable/mcp/manifest.json
+index 8629daa..5afa21a 100644
+--- a/.lovable/mcp/manifest.json
++++ b/.lovable/mcp/manifest.json
+@@ -3169,8 +3169,8 @@
+         "title": "Buscar empresas en Clay",
+         "description": "Busca empresas nuevas en Clay para prospectar (por palabras clave en su descripción, sector de LinkedIn en inglés, país ISO, empleados e ingresos). Marca las que ya están en Nokko. Gasta cupo de Clay: pide pocos resultados. Para guardarlas usa create_account; para más resultados repite con search_id.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3259,8 +3259,8 @@
+         "title": "Buscar personas de una cuenta en Clay",
+         "description": "Busca en Clay personas de una cuenta de Nokko (por su dominio): cargos y seniority. Marca las que ya están en su mapa de stakeholders. Gasta cupo de Clay. Para añadirlas usa create_stakeholder con nombre, cargo y LinkedIn.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3336,8 +3336,8 @@
+         "title": "Completar cuenta con Clay",
+         "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3422,8 +3422,8 @@
+         "title": "Buscar empresas en Apollo",
+         "description": "Busca empresas nuevas en Apollo por palabras clave, país ISO y empleados. Gasta créditos de Apollo por página: pide solo las páginas necesarias. Marca las que ya están en Nokko; para guardarlas usa create_account.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3476,8 +3476,8 @@
+         "title": "Completar cuenta con Apollo",
+         "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account. Gasta 1 crédito de Apollo.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3570,8 +3570,8 @@
+         "title": "Investigar una cuenta en la web",
+         "description": "Investiga una cuenta en la web (su web y noticias del último año) y propone qué escribir en su plan de cuenta (situación, dolores, iniciativas, competencia, riesgos, whitespace) con fuentes. No guarda nada: para guardarlo usa upsert_account_plan. Tarda unos segundos y gasta créditos de lectura web.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3848,8 +3848,8 @@
+         "title": "Publicaciones de LinkedIn de una cuenta",
+         "description": "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3874,8 +3874,8 @@
+         "title": "Publicaciones de LinkedIn de un stakeholder",
+         "description": "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3900,8 +3900,8 @@
+         "title": "Ofertas de empleo de una cuenta",
+         "description": "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -3926,8 +3926,8 @@
+         "title": "Reseñas de un competidor en G2",
+         "description": "Reseñas recientes de un competidor en G2 (por nombre del producto o enlace de G2): nota, qué valoran, qué critican y por qué se cambian. Gasta saldo de Apify (unos 0,06 $ por cada 10 reseñas).",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+@@ -4136,8 +4136,8 @@
+         "title": "Completar cuentas en tabla (Parallel)",
+         "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account. Gasta créditos.",
+         "annotations": {
+-          "readOnlyHint": true,
+-          "idempotentHint": false,
++          "readOnlyHint": false,
++          "destructiveHint": false,
+           "openWorldHint": true
+         },
+         "inputSchema": {
+diff --git a/src/lib/agent/agent.server.ts b/src/lib/agent/agent.server.ts
+index 873a838..e51695c 100644
+--- a/src/lib/agent/agent.server.ts
++++ b/src/lib/agent/agent.server.ts
+@@ -6,7 +6,7 @@ import { z } from "zod";
+ import { aiProviders, fixGeminiStream, geminiAgentModel, GEMINI_OPENAI_BASE, geminiErrorMessage, OPENROUTER_BASE, openrouterModel, openrouterRouting, sanitizeSchema, shouldFallBack, withThoughtSignatures, type AiProvider } from "@/lib/gemini";
+ import { openrouterErrorMessage } from "@/lib/ai-gateway";
+ import { createLovableAiGatewayRunIdFetch } from "./run-id";
+-import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
++import { runTool, summarizeAction, toolsFor, type ToolCtx } from "./tools";
+ import { ROLES, type Role } from "@/lib/roles";
+ import { getPersona } from "@/lib/bmad/personas";
+ import { getWorkflow } from "@/lib/bmad/workflows";
+@@ -112,7 +112,7 @@ async function runWith(kind: AiProvider, ctx: ToolCtx, opts: { conversationId: s
+           : t.input,
+         execute: async (args: unknown) => {
+           if (t.kind === "read") {
+-            try { return await t.run(ctx, args as never); } catch (e) { return { error: (e as Error).message }; }
++            try { return await runTool(ctx, t, args); } catch (e) { return { error: (e as Error).message }; }
+           }
+           const summary = summarizeAction(t.name, args);
+           const { data, error } = await ctx.db.from("agent_pending_actions").insert({ org_id: ctx.orgId, user_id: ctx.userId, conversation_id: opts.conversationId, tool: t.name, args: args as unknown as Json, summary }).select("id").single();
+diff --git a/src/lib/agent/spend-guard.test.ts b/src/lib/agent/spend-guard.test.ts
+new file mode 100644
+index 0000000..6610889
+--- /dev/null
++++ b/src/lib/agent/spend-guard.test.ts
+@@ -0,0 +1,91 @@
++import { describe, expect, it } from "vitest";
++import { readFileSync } from "node:fs";
++import { TOOLS, executeTool, getTool, runTool, type ToolCtx } from "@/lib/agent/tools";
++import { SPEND, guardSpend, isSpendingTool, recordSpend, spendOf } from "@/lib/agent/spend-guard";
++import { agentMcpTools } from "@/lib/mcp/tools/agent-tools";
++
++const ORG = "org-1";
++type Ins = { table: string; payload: unknown };
++/** Fake client: org_budgets answers the limit, integration_usage answers past rows and records inserts. */
++function fakeDb(limit: number | null, past: number[]) {
++  const inserts: Ins[] = [];
++  const db = {
++    from: (table: string) => {
++      let insert: unknown;
++      const p: any = new Proxy({}, {
++        get: (_t, prop: string) => {
++          if (prop === "then") {
++            return (ok: (v: unknown) => unknown) => {
++              if (insert !== undefined) { inserts.push({ table, payload: insert }); return Promise.resolve({ data: null, error: null }).then(ok); }
++              const data = table === "org_budgets" ? (limit == null ? null : { monthly_limit: limit }) : past.map((cost) => ({ cost }));
++              return Promise.resolve({ data, error: null }).then(ok);
++            };
++          }
++          return (...a: unknown[]) => { if (prop === "insert") insert = a[0]; return p; };
++        },
++      });
++      return p;
++    },
++  } as unknown as ToolCtx["db"];
++  return { db, inserts };
++}
++const ctx = (db: ToolCtx["db"]): ToolCtx => ({ db, orgId: ORG, userId: "u", roles: ["owner"], currency: "EUR" });
++
++describe("spend guard", () => {
++  it("every spending tool exists in the registry and stays a read tool", () => {
++    for (const name of Object.keys(SPEND)) {
++      const t = getTool(name);
++      expect(t, name).toBeTruthy();
++      expect(t!.kind, name).toBe("read");
++    }
++    expect(TOOLS.length).toBeGreaterThan(Object.keys(SPEND).length);
++  });
++
++  it("prices enrich_accounts_table per account and research_account with both sources", () => {
++    expect(spendOf("enrich_accounts_table", { account_ids: ["a", "b", "c", "d"] })!.used[0]!.cost).toBeCloseTo(0.2);
++    expect(spendOf("research_account", {})!.used.map((u) => u.service)).toEqual(["firecrawl", "perplexity"]);
++    expect(spendOf("apollo_find_people", {})).toBeNull();
++  });
++
++  it("lets a call through with no cap, and under the cap", async () => {
++    await expect(guardSpend(ctx(fakeDb(null, [999]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
++    await expect(guardSpend(ctx(fakeDb(10, [1, 2]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
++  });
++
++  it("refuses a call that would pass the monthly cap and says why", async () => {
++    await expect(guardSpend(ctx(fakeDb(10, [9.98]).db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/tope mensual/);
++  });
++
++  it("logs the approximate spend of a call as manual usage for the org", async () => {
++    const { db, inserts } = fakeDb(null, []);
++    await recordSpend(ctx(db), spendOf("clay_enrich_account", {})!);
++    expect(inserts).toHaveLength(1);
++    expect(inserts[0]!.table).toBe("integration_usage");
++    const row = (inserts[0]!.payload as Record<string, unknown>[])[0]!;
++    expect(row).toMatchObject({ org_id: ORG, service: "clay", need: "enrich_account", trigger: "manual", cost: 0.1 });
++  });
++
++  it("executeTool stops a spending tool at the cap before running it", async () => {
++    const { db } = fakeDb(1, [1]);
++    await expect(executeTool(ctx(db), "clay_find_companies", {})).rejects.toThrow(/tope mensual/);
++  });
++
++  it("runTool, the route the chat uses, stops a spending tool at the cap", async () => {
++    const { db } = fakeDb(1, [1]);
++    await expect(runTool(ctx(db), getTool("apollo_find_companies")!, {})).rejects.toThrow(/tope mensual/);
++  });
++
++  it("the in-app and Telegram chat runs read tools through runTool, not tool.run directly", () => {
++    const src = readFileSync(`${process.cwd()}/src/lib/agent/agent.server.ts`, "utf8");
++    expect(src).toContain("runTool(ctx, t, args)");
++    expect(src).not.toMatch(/t\.run\(ctx/);
++  });
++
++  it("MCP no longer calls a spending tool read-only", () => {
++    const hint = (name: string) => (agentMcpTools.find((t) => t.name === name) as unknown as { annotations: { readOnlyHint: boolean } }).annotations.readOnlyHint;
++    expect(isSpendingTool("clay_find_companies")).toBe(true);
++    expect(hint("clay_find_companies")).toBe(false);
++    expect(hint("apollo_find_people")).toBe(true);
++    expect(hint("list_accounts")).toBe(true);
++  });
++});
+diff --git a/src/lib/agent/spend-guard.ts b/src/lib/agent/spend-guard.ts
+new file mode 100644
+index 0000000..d922a75
+--- /dev/null
++++ b/src/lib/agent/spend-guard.ts
+@@ -0,0 +1,48 @@
++// Tools that return data to the conversation (so they stay `read`) but spend integration credits or save data.
++// The tool layer is where every route meets (chat, Telegram, MCP): here the monthly cap is checked before the call
++// and the approximate spend is logged after it, so the Integraciones meter sees what the chat spends.
++// Costs are the rough per-call EUR figures of the orchestrator catalogue (planner.ts), not billing data.
++import type { Need, Service } from "@/lib/orchestrator/planner";
++import type { ToolCtx } from "./tool-kit";
++
++export type Spend = { need: Need; used: { service: Service; cost: number }[] };
++
++const one = (need: Need, service: Service, cost: number): Spend => ({ need, used: [{ service, cost }] });
++
++/** Spend of one successful call, by tool; apollo_find_people is free and not listed. */
++export const SPEND: Record<string, (args: Record<string, unknown>) => Spend> = {
++  apollo_find_companies: () => one("icp_companies", "apollo", 0.05),
++  apollo_enrich_account: () => one("enrich_account", "apollo", 0.02),
++  clay_find_companies: () => one("icp_companies", "clay", 0.2),
++  clay_find_people: () => one("find_stakeholders", "clay", 0.1),
++  clay_enrich_account: () => one("enrich_account", "clay", 0.1),
++  enrich_accounts_table: (a) => one("enrich_account", "parallel", 0.05 * (Array.isArray(a["account_ids"]) ? a["account_ids"].length : 1)),
++  research_account: () => ({ need: "research_account", used: [{ service: "firecrawl", cost: 0.02 }, { service: "perplexity", cost: 0.01 }] }),
++  company_job_postings: () => one("competitors", "apify", 0.05),
++  competitor_reviews: () => one("competitors", "apify", 0.05),
++  linkedin_company_posts: () => one("news_signals", "apify", 0.05),
++  linkedin_profile_posts: () => one("news_signals", "apify", 0.05),
++};
++
++/** Tools that spend credits (or save data) and so must not be advertised as read-only. */
++export const isSpendingTool = (name: string) => name in SPEND;
++
++export const spendOf = (name: string, args: unknown): Spend | null => SPEND[name]?.((args ?? {}) as Record<string, unknown>) ?? null;
++
++export const eur = (n: number) => n.toFixed(2).replace(".", ",");
++
++/** Refuses a call that would pass the company's monthly cap; with no cap set it lets everything through. */
++export async function guardSpend(c: ToolCtx, spend: Spend) {
++  const { monthBudget } = await import("@/lib/orchestrator/runner");
++  const b = await monthBudget(c);
++  if (b.limit == null) return;
++  const cost = spend.used.reduce((s, u) => s + u.cost, 0);
++  if (b.spent + cost > b.limit) {
++    throw new Error(`Has llegado al tope mensual de integraciones (${eur(b.spent)} € de ${eur(b.limit)} €). No he hecho la consulta; el owner puede subir el tope.`);
++  }
++}
++
++export async function recordSpend(c: ToolCtx, spend: Spend) {
++  const { logUsage } = await import("@/lib/orchestrator/runner");
++  await logUsage(c, spend.need, spend.used, "manual");
++}
+diff --git a/src/lib/agent/tools.ts b/src/lib/agent/tools.ts
+index da3cd83..f0f1e0c 100644
+--- a/src/lib/agent/tools.ts
++++ b/src/lib/agent/tools.ts
+@@ -20,6 +20,8 @@ import { STRATEGY_TOOLS } from "./tools/strategy";
+ import { FIELD_ACTION_TOOLS } from "./tools/field-actions";
+ import { CYCLE_TOOLS } from "./tools/cycle";
+
++import { guardSpend, recordSpend, spendOf } from "./spend-guard";
++
+ export type { AgentTool, ToolCtx } from "./tool-kit";
+
+ const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS];
+@@ -38,13 +40,26 @@ export function toolsFor(roles: string[]) {
+   return TOOLS.filter((t) => canUseTool(t, roles));
+ }
+
++/**
++ * Runs a tool that is already validated and allowed. Every route that executes a read tool goes through here (the chat
++ * in the app and Telegram, MCP, confirmed actions): a spending tool (spend-guard.ts) is checked against the monthly/daily
++ * cap first and its approximate spend is logged after. The cap is soft: concurrent calls read the same total.
++ */
++export async function runTool(ctx: ToolCtx, tool: AgentTool, args: unknown) {
++  const spend = spendOf(tool.name, args);
++  if (spend) await guardSpend(ctx, spend);
++  const result = await tool.run(ctx, args as never);
++  // Only a call that went through is logged; a failure (not connected, provider error) costs nothing here.
++  if (spend) await recordSpend(ctx, spend).catch((e) => console.error("recordSpend failed", (e as Error).message));
++  return result;
++}
++
+ /** Validates args and runs a tool after checking role permissions. */
+ export async function executeTool(ctx: ToolCtx, name: string, rawArgs: unknown) {
+   const tool = getTool(name);
+   if (!tool) throw new Error(`Acción desconocida: ${name}`);
+   if (!canUseTool(tool, ctx.roles)) throw new Error("Tu rol no permite esta acción");
+-  const args = tool.input.parse(rawArgs ?? {});
+-  return tool.run(ctx, args);
++  return runTool(ctx, tool, tool.input.parse(rawArgs ?? {}));
+ }
+
+ export function summarizeAction(name: string, args: unknown) {
+diff --git a/src/lib/mcp/tools/agent-tools.ts b/src/lib/mcp/tools/agent-tools.ts
+index 2b26e57..a5a581d 100644
+--- a/src/lib/mcp/tools/agent-tools.ts
++++ b/src/lib/mcp/tools/agent-tools.ts
+@@ -3,6 +3,7 @@
+ import { defineTool, ToolError } from "@lovable.dev/mcp-js";
+ import type { z } from "zod";
+ import { TOOLS, canUseTool, executeTool, summarizeAction } from "@/lib/agent/tools";
++import { isSpendingTool } from "@/lib/agent/spend-guard";
+ import { mcpCtx, json, text } from "../context";
+ import { errorText } from "@/lib/errors";
+
+@@ -130,7 +131,8 @@ export const agentMcpTools = TOOLS.map((t) =>
+     description: t.kind === "write" ? `${t.description} (Queda pendiente: el usuario la confirma en Nokko.)` : t.description,
+     inputSchema: ((t.input as z.ZodObject<z.ZodRawShape>).shape ?? {}) as z.ZodRawShape,
+     // Clay and Apollo tools reach an outside data source and spend the workspace's allowance or credits.
+-    annotations: t.kind === "read"
++    // A read tool that spends credits or saves data (spend-guard.ts) is not read-only: clients can then ask before running it.
++    annotations: t.kind === "read" && !isSpendingTool(t.name)
+       ? { readOnlyHint: true, idempotentHint: !EXTERNAL.test(t.name), openWorldHint: EXTERNAL.test(t.name) }
+       : { readOnlyHint: false, destructiveHint: false, openWorldHint: EXTERNAL.test(t.name) },
+     handler: async (args, ctx) => {
+--
+2.43.0
+

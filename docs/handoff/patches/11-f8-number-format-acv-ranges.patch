@@ -1,0 +1,345 @@
+From f1c755dbb95fc94fe2ebaeec160d849d703b2cdc Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:30:08 +0100
+Subject: [PATCH 2/2] feat(ui): one number format and a warning for overlapping
+ ACV ranges
+
+- formatNumber/formatMoney group thousands from 1.000 (es-ES skips it
+  for 4-digit numbers); six local fmt1 copies use the shared helper
+- Estrategia shows when segment ACV ranges overlap or leave a gap
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/components/budget-panel.tsx         |  3 ++-
+ src/components/budget-quarters.tsx      |  3 ++-
+ src/components/payback-card.tsx         |  3 ++-
+ src/components/payback-quarters.tsx     |  3 ++-
+ src/components/pipeline-board-panel.tsx |  3 ++-
+ src/components/quarter-kpis-panel.tsx   |  3 ++-
+ src/components/strategy/motions.tsx     | 13 +++++++---
+ src/components/stripe-panel.tsx         |  9 +++----
+ src/lib/money.test.ts                   | 19 +++++++++++++++
+ src/lib/money.ts                        |  8 +++++++
+ src/lib/segment-fields.test.ts          | 32 ++++++++++++++++++++++++-
+ src/lib/segment-fields.ts               | 24 +++++++++++++++++++
+ 12 files changed, 109 insertions(+), 14 deletions(-)
+ create mode 100644 src/lib/money.test.ts
+
+diff --git a/src/components/budget-panel.tsx b/src/components/budget-panel.tsx
+index 0822af9..0d17f79 100644
+--- a/src/components/budget-panel.tsx
++++ b/src/components/budget-panel.tsx
+@@ -5,8 +5,9 @@ import { useCurrency, useMe } from "@/hooks/use-me";
+ import { supabase } from "@/integrations/supabase/client";
+ import { annualFromQuarters, quartersOfYear, segmentBudget, type SegmentBudgetRow } from "@/lib/segment-budget";
+ import { Deviation } from "@/components/budget-quarters";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+ const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
+
+ /** Annual plan vs actual per segment (sum of the quarters entered in Estrategia GTM) → real margin and payback. */
+diff --git a/src/components/budget-quarters.tsx b/src/components/budget-quarters.tsx
+index 948de9a..9d122de 100644
+--- a/src/components/budget-quarters.tsx
++++ b/src/components/budget-quarters.tsx
+@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
+ import { Pick } from "@/components/fields";
+ import { deviation, quarterlyBudget, quartersOfYear, type BudgetField, type SegmentBudgetRow } from "@/lib/segment-budget";
+ import { errorText } from "@/lib/errors";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+ const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
+
+ /** Deviation of actual vs plan in %, green when it goes the good way (red otherwise). */
+diff --git a/src/components/payback-card.tsx b/src/components/payback-card.tsx
+index dafd7e5..a070314 100644
+--- a/src/components/payback-card.tsx
++++ b/src/components/payback-card.tsx
+@@ -1,8 +1,9 @@
+ import { Link } from "@tanstack/react-router";
+ import { usePaybackQuarters } from "@/components/payback-quarters";
+ import { paybackSummary } from "@/lib/segment-coverage";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+
+ /** Dashboard card: real payback per segment over the last 4 quarters vs each segment's target. */
+ export function PaybackCard() {
+diff --git a/src/components/payback-quarters.tsx b/src/components/payback-quarters.tsx
+index 8111f29..1bbf33f 100644
+--- a/src/components/payback-quarters.tsx
++++ b/src/components/payback-quarters.tsx
+@@ -9,8 +9,9 @@ import { quarterOf, quarterRange } from "@/lib/metrics";
+ import { quartersUpTo } from "@/lib/cac";
+ import { paybackByQuarter, type QuarterPayback, type SegLike } from "@/lib/segment-coverage";
+ import { withPeriodMargin } from "@/lib/segment-budget";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+
+ /** Segments, won deals, costs and budget margins of the last `count` quarters → real payback per segment and quarter. */
+ export function usePaybackQuarters(count: number) {
+diff --git a/src/components/pipeline-board-panel.tsx b/src/components/pipeline-board-panel.tsx
+index f15420e..51cc3b7 100644
+--- a/src/components/pipeline-board-panel.tsx
++++ b/src/components/pipeline-board-panel.tsx
+@@ -11,8 +11,9 @@ import { quarterKpis } from "@/lib/quarter-kpis";
+ import { closingIn, pipelineBoard, pipelineEconomics, type BoardColumn, type BoardGroup } from "@/lib/pipeline-board";
+ import type { SegLike } from "@/lib/segment-coverage";
+ import { useStages } from "@/components/stage-settings";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+ const SHOW = 5;
+
+ /** Leads → oportunidades → deals en proceso → ganados, who is in each stage, and what it does to the real CAC and payback. */
+diff --git a/src/components/quarter-kpis-panel.tsx b/src/components/quarter-kpis-panel.tsx
+index af3f3d0..e0473e9 100644
+--- a/src/components/quarter-kpis-panel.tsx
++++ b/src/components/quarter-kpis-panel.tsx
+@@ -8,8 +8,9 @@ import { quartersUpTo } from "@/lib/cac";
+ import { quarterKpis, type KpiSide, type QuarterKpis } from "@/lib/quarter-kpis";
+ import { Deviation } from "@/components/budget-quarters";
+ import type { SegLike } from "@/lib/segment-coverage";
++import { formatNumber } from "@/lib/money";
+
+-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
++const fmt1 = (n: number) => formatNumber(n, 1);
+ const pct = (n: number | null) => (n == null ? "—" : `${fmt1(n)}%`);
+
+ type Line = {
+diff --git a/src/components/strategy/motions.tsx b/src/components/strategy/motions.tsx
+index e7ed9be..3bd30d8 100644
+--- a/src/components/strategy/motions.tsx
++++ b/src/components/strategy/motions.tsx
+@@ -7,7 +7,7 @@ import { Field, Pick } from "@/components/fields";
+ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { capacityPlan, matchSegment, MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
+-import { CURRENCIES, formatMoney } from "@/lib/money";
++import { CURRENCIES, formatMoney, formatNumber } from "@/lib/money";
+ import { useCurrency, useMe } from "@/hooks/use-me";
+ import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
+ import type { SegLike } from "@/lib/segment-coverage";
+@@ -15,7 +15,7 @@ import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-bud
+ import { errorText } from "@/lib/errors";
+ import { confirmed } from "@/lib/save";
+ import { DeleteElement } from "@/components/delete-element";
+-import { checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
++import { acvRangeIssues, checkAcvRange, checkSegmentField, type SegmentNumericField } from "@/lib/segment-fields";
+ import type { TablesUpdate } from "@/integrations/supabase/types";
+
+ export const MOTION_OPTS = Object.fromEntries(Object.entries(MOTIONS).map(([k, v]) => [k, v.label]));
+@@ -126,7 +126,7 @@ export function Motions() {
+     await qc.invalidateQueries({ queryKey: ["me"] });
+     toast.success(`Moneda: ${CURRENCIES[c]}. Las cifras no se han convertido: revisa importes y benchmarks.`);
+   }
+-  const fmt1 = (n: number | null) => (n == null ? "—" : n.toLocaleString("es-ES", { maximumFractionDigits: 1 }));
++  const fmt1 = (n: number | null) => (n == null ? "—" : formatNumber(n, 1));
+   // One editable cell, shared by the mobile cards and the desktop table.
+   const segCell = (s: (typeof segs)[number], k: (typeof SEG_COLS)[number][0]) => {
+     if (k === "motion") {
+@@ -144,8 +144,15 @@ export function Motions() {
+     </>;
+   };
+
++  const acvIssues = acvRangeIssues(segs);
+   return (
+     <div className="space-y-8">
++      {acvIssues.length > 0 && (
++        <div role="status" className="rounded-lg border border-warning/40 bg-warning/5 p-4 text-sm">
++          <p className="font-medium">Revisa los rangos de ACV de tus segmentos</p>
++          <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">{acvIssues.map((m) => <li key={m}>{m}</li>)}</ul>
++        </div>
++      )}
+       <div className="grid gap-6 rounded-lg border bg-card p-6 md:grid-cols-[1fr_2fr]">
+         <div className="space-y-4">
+           <p className="eyebrow">Calculadora de estrategia GTM</p>
+diff --git a/src/components/stripe-panel.tsx b/src/components/stripe-panel.tsx
+index 1d32999..9b3a879 100644
+--- a/src/components/stripe-panel.tsx
++++ b/src/components/stripe-panel.tsx
+@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
+ import { Input } from "@/components/ui/input";
+ import { errorText } from "@/lib/errors";
+ import { connectStripe, syncStripeNow } from "@/lib/stripe.functions";
++import { formatNumber } from "@/lib/money";
+
+ /** Connection status and the latest Stripe read of the current company. Key "stripe". */
+ export function useStripe() {
+@@ -129,7 +130,7 @@ export function StripeMetricsPanel() {
+     );
+   if (!s) return <p className="text-xs text-muted-foreground">Stripe está conectado pero aún no hay ninguna lectura{c?.status === "error" && c.last_error ? `: ${c.last_error}` : "."}</p>;
+   const d = (s.details ?? {}) as { truncated?: boolean; unpriced_items?: number; other_currencies?: Record<string, { mrr: number; customers: number }> };
+-  const pctText = (x: number | null) => (x == null ? "—" : `${x.toLocaleString("es-ES", { maximumFractionDigits: 1 })} %`);
++  const pctText = (x: number | null) => (x == null ? "—" : `${formatNumber(x, 1)} %`);
+   const sameCurrency = s.currency === currency;
+   const tile = (label: string, v: string, hint?: string) => (
+     <div className="rounded-lg border bg-card p-4">
+@@ -145,9 +146,9 @@ export function StripeMetricsPanel() {
+         <span className="text-xs text-muted-foreground">Lectura del {when(s.taken_at)}{!c ? " · Stripe está desconectado: es la última lectura, no se actualiza" : c.status === "error" ? " · la última sincronización falló, ver Conexiones" : ""}</span>
+       </div>
+       <div className="grid gap-4 md:grid-cols-4">
+-        {tile("MRR", sameCurrency ? money(Number(s.mrr)) : `${Number(s.mrr).toLocaleString("es-ES")} ${s.currency}`, `ARR ${sameCurrency ? money(Number(s.mrr) * 12) : `${(Number(s.mrr) * 12).toLocaleString("es-ES")} ${s.currency}`}`)}
++        {tile("MRR", sameCurrency ? money(Number(s.mrr)) : `${formatNumber(Number(s.mrr), 0)} ${s.currency}`, `ARR ${sameCurrency ? money(Number(s.mrr) * 12) : `${formatNumber(Number(s.mrr) * 12, 0)} ${s.currency}`}`)}
+         {tile("Clientes de pago", String(s.active_customers), s.trialing ? `${s.trialing} en prueba` : undefined)}
+-        {tile(`Altas (${s.window_days} días)`, String(s.new_customers), `+${sameCurrency ? money(Number(s.new_mrr)) : `${Number(s.new_mrr).toLocaleString("es-ES")} ${s.currency}`} de MRR`)}
++        {tile(`Altas (${s.window_days} días)`, String(s.new_customers), `+${sameCurrency ? money(Number(s.new_mrr)) : `${formatNumber(Number(s.new_mrr), 0)} ${s.currency}`} de MRR`)}
+         {tile(`Bajas (${s.window_days} días)`, String(s.churned_customers), `Churn ${pctText(s.logo_churn_pct == null ? null : Number(s.logo_churn_pct))} de clientes · ${pctText(s.revenue_churn_pct == null ? null : Number(s.revenue_churn_pct))} del MRR`)}
+       </div>
+       <p className="mt-2 text-xs text-muted-foreground">
+@@ -155,7 +156,7 @@ export function StripeMetricsPanel() {
+         {d.unpriced_items ? ` ${d.unpriced_items} conceptos con precio por tramos o por uso no se han podido sumar.` : ""}
+         {d.truncated ? " Hay más de 5.000 suscripciones: las cifras son parciales." : ""}
+         {d.other_currencies && Object.keys(d.other_currencies).length
+-          ? ` Suscripciones en otras monedas, sin convertir: ${Object.entries(d.other_currencies).map(([k, v]) => `${v.customers} clientes y ${v.mrr.toLocaleString("es-ES")} ${k} de MRR`).join("; ")}.`
++          ? ` Suscripciones en otras monedas, sin convertir: ${Object.entries(d.other_currencies).map(([k, v]) => `${v.customers} clientes y ${formatNumber(v.mrr, 0)} ${k} de MRR`).join("; ")}.`
+           : ""}
+       </p>
+     </section>
+diff --git a/src/lib/money.test.ts b/src/lib/money.test.ts
+new file mode 100644
+index 0000000..a843aaa
+--- /dev/null
++++ b/src/lib/money.test.ts
+@@ -0,0 +1,19 @@
++import { describe, expect, it } from "vitest";
++import { formatMoney, formatNumber } from "./money";
++
++// Intl uses a no-break space before «€»; compare without caring which space.
++const flat = (s: string) => s.replace(/\s/g, " ");
++
++describe("number formats", () => {
++  it("puts the thousands separator from 1.000, not only from 10.000", () => {
++    expect(formatNumber(1234, 0)).toBe("1.234");
++    expect(flat(formatMoney(1234))).toBe("1.234 €");
++    expect(flat(formatMoney(12345))).toBe("12.345 €");
++  });
++
++  it("uses a decimal comma and caps the decimals", () => {
++    expect(formatNumber(1234.56)).toBe("1.234,6");
++    expect(formatNumber(3.14159, 2)).toBe("3,14");
++    expect(formatNumber(2, 1)).toBe("2");
++  });
++});
+diff --git a/src/lib/money.ts b/src/lib/money.ts
+index 34fc707..1880339 100644
+--- a/src/lib/money.ts
++++ b/src/lib/money.ts
+@@ -13,12 +13,17 @@ export const CURRENCIES: Record<string, string> = {
+   CAD: "Dólar canadiense (CAD)",
+ };
+
++// TypeScript's lib still types useGrouping as boolean; the runtime accepts "always".
++const ALWAYS_GROUP = "always" as unknown as boolean;
++
+ export function formatMoney(n: number, currency = "EUR", compact = false) {
+   return new Intl.NumberFormat("es-ES", {
+     style: "currency",
+     currency,
+     maximumFractionDigits: compact ? 1 : 0,
+     notation: compact ? "compact" : "standard",
++    // es-ES leaves 4-digit numbers without a separator («1234 €») unless asked: «1.234 €» everywhere.
++    useGrouping: ALWAYS_GROUP,
+   }).format(n);
+ }
+
+@@ -28,3 +33,6 @@ export function currencySymbol(currency = "EUR") {
+
+ /** A 0–1 ratio as a whole percentage («0.123» → «12%»). The one percentage format for screens. */
+ export const pct = (ratio: number) => `${Math.round(ratio * 100)}%`;
++
++/** A plain number the Spanish way, with thousands separator also from 1.000 («1.234,5»). */
++export const formatNumber = (n: number, maxDecimals = 1) => n.toLocaleString("es-ES", { maximumFractionDigits: maxDecimals, useGrouping: ALWAYS_GROUP });
+diff --git a/src/lib/segment-fields.test.ts b/src/lib/segment-fields.test.ts
+index 50bafcd..2f08d28 100644
+--- a/src/lib/segment-fields.test.ts
++++ b/src/lib/segment-fields.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { checkAcvRange, checkSegmentField } from "./segment-fields";
++import { acvRangeIssues, checkAcvRange, checkSegmentField } from "./segment-fields";
+
+ describe("checkSegmentField", () => {
+   it("keeps 0 as a real value and empty as null", () => {
+@@ -35,3 +35,33 @@ describe("checkAcvRange", () => {
+     expect(checkAcvRange(6000, null)).toBeNull();
+   });
+ });
++
++describe("acvRangeIssues", () => {
++  const seg = (name: string, acv_min: number | null, acv_max: number | null) => ({ name, acv_min, acv_max });
++  it("is quiet for ranges that touch or do not need a neighbour", () => {
++    expect(acvRangeIssues([seg("A", 0, 5000), seg("B", 5000, 20000), seg("C", 20000, 100000)])).toEqual([]);
++    expect(acvRangeIssues([seg("A", 0, 5000)])).toEqual([]);
++  });
++  it("names an overlap", () => {
++    const r = acvRangeIssues([seg("Pyme", 1000, 8000), seg("Mid", 5000, 30000)]);
++    expect(r).toHaveLength(1);
++    expect(r[0]).toContain("se solapan");
++    expect(r[0]).toContain("«Pyme»");
++  });
++  it("names a gap", () => {
++    const r = acvRangeIssues([seg("Pyme", 1000, 5000), seg("Mid", 9000, 30000)]);
++    expect(r[0]).toContain("hueco");
++  });
++  it("ignores segments without both ends or with min above max", () => {
++    expect(acvRangeIssues([seg("A", null, 5000), seg("B", 9000, 100), seg("C", 1000, 2000)])).toEqual([]);
++  });
++  it("a wide range holding small ones is an overlap, never a gap", () => {
++    const r = acvRangeIssues([seg("A", 0, 100000), seg("B", 5000, 6000), seg("C", 7000, 8000)]);
++    expect(r.some((m) => m.includes("hueco"))).toBe(false);
++    expect(r.filter((m) => m.includes("se solapan"))).toHaveLength(2);
++    expect(r[1]).toContain("«A» y «C»");
++  });
++  it("writes thousands with a dot from 1.000", () => {
++    expect(acvRangeIssues([seg("A", 1000, 4000), seg("B", 3000, 9000)])[0]).toContain("3.000 y 4.000");
++  });
++});
+diff --git a/src/lib/segment-fields.ts b/src/lib/segment-fields.ts
+index 99054b5..fdf8228 100644
+--- a/src/lib/segment-fields.ts
++++ b/src/lib/segment-fields.ts
+@@ -1,3 +1,4 @@
++import { formatNumber } from "@/lib/money";
+ // Validation of the numeric benchmarks a person types in the segment table. Pure so the table can
+ // refuse a bad value before it reaches the database and say which field and why, instead of
+ // the generic «algún valor no tiene el formato correcto».
+@@ -70,3 +71,26 @@ export function checkAcvRange(
+   if (min == null || max == null || Number(min) <= Number(max)) return null;
+   return `El ACV mín${segmentName ? ` de «${segmentName}»` : ""} es mayor que el ACV máx. Corrige uno de los dos.`;
+ }
++
++/**
++ * Overlaps and gaps between the ACV ranges of the segments that have both ends. An overlap makes the
++ * automatic segment ambiguous (the segment with the higher minimum wins); a gap leaves deals in between with no segment.
++ * Ranges that touch (one max equal to the next min) are fine. Returns plain sentences for the screen.
++ */
++export function acvRangeIssues(segs: { name: string; acv_min: number | null; acv_max: number | null }[]): string[] {
++  const rs = segs
++    .filter((s) => s.acv_min != null && s.acv_max != null && Number(s.acv_min) <= Number(s.acv_max))
++    .map((s) => ({ name: s.name, min: Number(s.acv_min), max: Number(s.acv_max) }))
++    .sort((a, b) => a.min - b.min || a.max - b.max);
++  const fmt = (n: number) => formatNumber(n, 0);
++  const out: string[] = [];
++  // Compared with the highest ceiling seen so far, not only the neighbour: a wide range that contains a
++  // small one must not read as a gap after it.
++  let top = rs[0];
++  for (const cur of rs.slice(1)) {
++    if (cur.min < top.max) out.push(`Los rangos de ACV de «${top.name}» y «${cur.name}» se solapan: un deal entre ${fmt(cur.min)} y ${fmt(Math.min(cur.max, top.max))} cabe en los dos.`);
++    else if (cur.min > top.max) out.push(`Entre «${top.name}» (hasta ${fmt(top.max)}) y «${cur.name}» (desde ${fmt(cur.min)}) hay un hueco: esos deals no encajan en ningún segmento.`);
++    if (cur.max > top.max) top = cur;
++  }
++  return out;
++}
+--
+2.43.0
+

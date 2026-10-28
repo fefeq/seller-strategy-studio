@@ -1,0 +1,101 @@
+From 321c333915860d725f4b0d3edbacd29638ef0dfe Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 20:39:09 +0100
+Subject: [PATCH] fix(agent): emit lead events when create_lead makes a lead
+
+Leads made from the chat/MCP never entered enrichment or the follow-up
+sequence, unlike the screen (leadTouched) and update_lead.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ .../agent/tools/create-lead-events.test.ts    | 56 +++++++++++++++++++
+ src/lib/agent/tools/pipeline.ts               |  9 +++
+ 2 files changed, 65 insertions(+)
+ create mode 100644 src/lib/agent/tools/create-lead-events.test.ts
+
+diff --git a/src/lib/agent/tools/create-lead-events.test.ts b/src/lib/agent/tools/create-lead-events.test.ts
+new file mode 100644
+index 0000000..372bbf2
+--- /dev/null
++++ b/src/lib/agent/tools/create-lead-events.test.ts
+@@ -0,0 +1,56 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++const sent: unknown[][] = [];
++vi.mock("@/lib/inngest/send.server", () => ({ trySend: async (e: unknown[]) => { sent.push(e); return true; } }));
++const ingest = vi.fn();
++vi.mock("@/lib/leads-ingest", () => ({ ingestLead: (...a: unknown[]) => ingest(...a) }));
++
++import { getTool, type ToolCtx } from "@/lib/agent/tools";
++import { EV } from "@/lib/inngest/events";
++
++const ORG = "org-1";
++const queries: { table: string; filters: unknown[][] }[] = [];
++function db(leadRow: unknown) {
++  return {
++    from: (table: string) => {
++      const q = { table, filters: [] as unknown[][] };
++      queries.push(q);
++      const p: any = new Proxy({}, {
++        get: (_t, prop: string) => {
++          if (prop === "then") return (ok: (v: unknown) => unknown) => Promise.resolve({ data: table === "leads" ? leadRow : [], error: null }).then(ok);
++          return (...args: unknown[]) => { if (prop === "eq") q.filters.push(["eq", ...args]); return p; };
++        },
++      });
++      return p;
++    },
++  } as unknown as ToolCtx["db"];
++}
++const ctx = (d: ToolCtx["db"]): ToolCtx => ({ db: d, orgId: ORG, userId: "u", roles: ["ae"], currency: "EUR" });
++
++describe("create_lead emits the lead events", () => {
++  beforeEach(() => { sent.length = 0; queries.length = 0; ingest.mockReset(); });
++
++  it("sends created + changed for a new, not enriched lead, scoped to the org", async () => {
++    ingest.mockResolvedValue({ status: "created", leadId: "l1", accountId: "a1", dealId: null, accountCreated: false, summary: "ok" });
++    const row = { id: "l1", stage: "new", contacted_at: null, enriched_at: null, created_at: new Date().toISOString() };
++    await getTool("create_lead")!.run(ctx(db(row)), { company: "Acme" });
++    expect(sent).toHaveLength(1);
++    expect((sent[0] as { name: string }[]).map((e) => e.name)).toContain(EV.leadCreated);
++    const lookup = queries.find((q) => q.table === "leads")!;
++    expect(lookup.filters).toContainEqual(["eq", "org_id", ORG]);
++  });
++
++  it("a contacted lead also starts its follow-up sequence, and an enriched one does not ask for enrichment", async () => {
++    ingest.mockResolvedValue({ status: "created", leadId: "l2", accountId: "a1", dealId: null, accountCreated: false, summary: "ok" });
++    const at = new Date().toISOString();
++    await getTool("create_lead")!.run(ctx(db({ id: "l2", stage: "contacted", contacted_at: at, enriched_at: at, created_at: at })), { company: "Acme", stage: "contacted" });
++    const names = (sent[0] as { name: string }[]).map((e) => e.name);
++    expect(names).toEqual([EV.leadChanged, EV.leadContacted]);
++  });
++
++  it("sends nothing when ingestion returned no lead", async () => {
++    ingest.mockResolvedValue({ status: "updated", leadId: null, accountId: "a1", dealId: "d1", accountCreated: false, summary: "ok" });
++    await getTool("create_lead")!.run(ctx(db(null)), { company: "Acme" });
++    expect(sent).toHaveLength(0);
++  });
++});
+diff --git a/src/lib/agent/tools/pipeline.ts b/src/lib/agent/tools/pipeline.ts
+index b6cd4f6..85eefe6 100644
+--- a/src/lib/agent/tools/pipeline.ts
++++ b/src/lib/agent/tools/pipeline.ts
+@@ -83,6 +83,15 @@ export const PIPELINE_TOOLS: AgentTool[] = [
+         }
+         await c.db.from("leads").update({ notes }).eq("org_id", c.orgId).eq("id", r.leadId);
+       }
++      // Same as the screen (leadTouched) and update_lead: a lead made from the chat/MCP enters the enrichment and
++      // follow-up flow too. Never blocks the creation (trySend swallows errors; the hourly sweep catches up).
++      if (r.leadId) {
++        const { data: saved } = await c.db.from("leads").select("id,stage,contacted_at,enriched_at,created_at").eq("org_id", c.orgId).eq("id", r.leadId).maybeSingle();
++        if (saved) {
++          const [{ leadEvents }, { trySend }] = await Promise.all([import("@/lib/inngest/lead-events"), import("@/lib/inngest/send.server")]);
++          await trySend(leadEvents(c.orgId, saved));
++        }
++      }
+       return { ...r, mensaje: r.status === "updated" ? `Ya existía: ${r.summary}` : r.summary };
+     },
+   }),
+--
+2.43.0
+

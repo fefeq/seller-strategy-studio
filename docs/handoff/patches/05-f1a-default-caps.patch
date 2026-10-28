@@ -1,0 +1,407 @@
+From b7b6861b5a94b98fb65292c3607752f541f37a42 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 21:15:35 +0100
+Subject: [PATCH] feat(budget): default monthly cap of 25 EUR for new
+ companies, daily cap of 20% of it
+
+A company with no org_budgets row used to have no cap at all. Now it gets
+25 EUR/month; an owner can change it or clear it (a row with an empty limit
+still means no limit). Companies that already exist keep their behaviour:
+migration 0065 gives them an explicit empty-limit row. The daily cap is 20% of
+the monthly one, so no schema change is needed. The cap applies to automatic
+work, manual orchestrator requests and chat/MCP spending tools (spend guard).
+
+Depends on fix/f1b (spend guard).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ ...065_existing_orgs_keep_no_budget_limit.sql |  9 +++++
+ drizzle/migrations/meta/_journal.json         |  7 ++++
+ src/components/orchestrator/budget-panel.tsx  |  5 +--
+ src/lib/agent/spend-guard.test.ts             | 34 +++++++++++++++---
+ src/lib/agent/spend-guard.ts                  | 11 ++++--
+ src/lib/agent/tools/needs.ts                  |  2 +-
+ src/lib/budget-backfill.pg.test.ts            | 35 +++++++++++++++++++
+ src/lib/onboarding.server.ts                  |  2 +-
+ src/lib/orchestrator.functions.ts             |  2 +-
+ src/lib/orchestrator/planner.test.ts          | 21 ++++++++++-
+ src/lib/orchestrator/planner.ts               | 22 ++++++++++--
+ src/lib/orchestrator/runner.ts                | 25 +++++++++----
+ 12 files changed, 153 insertions(+), 22 deletions(-)
+ create mode 100644 drizzle/migrations/0065_existing_orgs_keep_no_budget_limit.sql
+ create mode 100644 src/lib/budget-backfill.pg.test.ts
+
+diff --git a/drizzle/migrations/0065_existing_orgs_keep_no_budget_limit.sql b/drizzle/migrations/0065_existing_orgs_keep_no_budget_limit.sql
+new file mode 100644
+index 0000000..afcc0b8
+--- /dev/null
++++ b/drizzle/migrations/0065_existing_orgs_keep_no_budget_limit.sql
+@@ -0,0 +1,9 @@
++-- F1a gives a company with NO org_budgets row a default cap (25 EUR/month). Companies that already exist keep the
++-- behaviour they have today (no cap): they get an explicit row with an empty limit, which means «sin límite» and is the
++-- owner's to change in Integraciones. Companies created afterwards have no row and start with the default.
++-- Existing rows (a limit the owner already set) are left untouched. Idempotent.
++INSERT INTO public.org_budgets (org_id, monthly_limit)
++SELECT o.id, NULL
++FROM public.organizations o
++WHERE NOT EXISTS (SELECT 1 FROM public.org_budgets b WHERE b.org_id = o.id)
++ON CONFLICT (org_id) DO NOTHING;
+diff --git a/drizzle/migrations/meta/_journal.json b/drizzle/migrations/meta/_journal.json
+index ad0d29f..0ed0349 100644
+--- a/drizzle/migrations/meta/_journal.json
++++ b/drizzle/migrations/meta/_journal.json
+@@ -435,6 +435,13 @@
+       "when": 1793058400000,
+       "tag": "0063_undo_keeps_confirmations",
+       "breakpoints": true
++    },
++    {
++      "idx": 63,
++      "version": "7",
++      "when": 1793150000000,
++      "tag": "0065_existing_orgs_keep_no_budget_limit",
++      "breakpoints": true
+     }
+   ]
+ }
+diff --git a/src/components/orchestrator/budget-panel.tsx b/src/components/orchestrator/budget-panel.tsx
+index f91998f..46c69bd 100644
+--- a/src/components/orchestrator/budget-panel.tsx
++++ b/src/components/orchestrator/budget-panel.tsx
+@@ -34,7 +34,7 @@ export function BudgetPanel() {
+
+   if (!s) return null;
+   const rows = Object.entries(s.byService).sort((a, b) => b[1].cost - a[1].cost);
+-  const state = s.paused ? "En pausa: lo automático espera al mes que viene" : s.warn ? "Cerca del límite" : "Dentro del límite";
++  const state = s.paused ? (s.dailyReached ? "Tope de hoy alcanzado: se libera mañana" : "En pausa: lo automático espera al mes que viene") : s.warn ? "Cerca del límite" : "Dentro del límite";
+   return (
+     <section className="mb-10">
+       <p className="eyebrow">Nokko elige las fuentes</p>
+@@ -44,6 +44,7 @@ export function BudgetPanel() {
+         <div>
+           <p className="font-display text-4xl">{eur(s.spent)}</p>
+           <p className="text-sm text-muted-foreground">{s.limit == null ? "Sin límite mensual" : `de ${eur(s.limit)} · ${Math.round(s.pct * 100)} % · ${state}`}</p>
++          {s.dailyLimit != null && <p className="text-xs text-muted-foreground">Hoy: {eur(s.spentToday)} de {eur(s.dailyLimit)} (el 20 % del límite mensual).</p>}
+           {s.automatic > 0 && <p className="text-xs text-muted-foreground">{eur(s.automatic)} en trabajo automático.</p>}
+         </div>
+         <div className="text-sm">
+@@ -56,7 +57,7 @@ export function BudgetPanel() {
+           {isOwner ? (
+             <>
+               <div className="flex gap-2"><Input aria-label="Límite mensual en euros" inputMode="decimal" placeholder="Sin límite" value={limit ?? (s.limit == null ? "" : String(s.limit))} onChange={(e) => setLimit(e.target.value)} /><Button size="sm" onClick={save} disabled={limit === null}>Guardar</Button></div>
+-              <p className="text-xs text-muted-foreground">Déjalo vacío para no poner límite. Importes aproximados.</p>
++              <p className="text-xs text-muted-foreground">Una empresa que nunca ha guardado un límite tiene 25 €. Vacía el campo y guarda para no poner límite. Importes aproximados.</p>
+             </>
+           ) : <p className="text-sm text-muted-foreground">Solo el Owner puede cambiarlo.</p>}
+         </div>
+diff --git a/src/lib/agent/spend-guard.test.ts b/src/lib/agent/spend-guard.test.ts
+index 6610889..d992f05 100644
+--- a/src/lib/agent/spend-guard.test.ts
++++ b/src/lib/agent/spend-guard.test.ts
+@@ -2,12 +2,13 @@ import { describe, expect, it } from "vitest";
+ import { readFileSync } from "node:fs";
+ import { TOOLS, executeTool, getTool, runTool, type ToolCtx } from "@/lib/agent/tools";
+ import { SPEND, guardSpend, isSpendingTool, recordSpend, spendOf } from "@/lib/agent/spend-guard";
++import { trackedRun } from "@/lib/orchestrator/runner";
+ import { agentMcpTools } from "@/lib/mcp/tools/agent-tools";
+
+ const ORG = "org-1";
+ type Ins = { table: string; payload: unknown };
+-/** Fake client: org_budgets answers the limit, integration_usage answers past rows and records inserts. */
+-function fakeDb(limit: number | null, past: number[]) {
++/** Fake client: org_budgets answers the limit ("none" = no row), integration_usage answers past rows and records inserts. */
++function fakeDb(limit: number | null | "none", past: number[], usageAt = "2026-01-01T00:00:00Z") {
+   const inserts: Ins[] = [];
+   const db = {
+     from: (table: string) => {
+@@ -17,7 +18,7 @@ function fakeDb(limit: number | null, past: number[]) {
+           if (prop === "then") {
+             return (ok: (v: unknown) => unknown) => {
+               if (insert !== undefined) { inserts.push({ table, payload: insert }); return Promise.resolve({ data: null, error: null }).then(ok); }
+-              const data = table === "org_budgets" ? (limit == null ? null : { monthly_limit: limit }) : past.map((cost) => ({ cost }));
++              const data = table === "org_budgets" ? (limit === "none" ? null : { monthly_limit: limit }) : past.map((cost) => ({ cost, created_at: usageAt }));
+               return Promise.resolve({ data, error: null }).then(ok);
+             };
+           }
+@@ -47,15 +48,38 @@ describe("spend guard", () => {
+     expect(spendOf("apollo_find_people", {})).toBeNull();
+   });
+
+-  it("lets a call through with no cap, and under the cap", async () => {
++  it("lets a call through when the owner chose no cap, and under the cap", async () => {
+     await expect(guardSpend(ctx(fakeDb(null, [999]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
+-    await expect(guardSpend(ctx(fakeDb(10, [1, 2]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
++    await expect(guardSpend(ctx(fakeDb(100, [1, 2]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
+   });
+
+   it("refuses a call that would pass the monthly cap and says why", async () => {
+     await expect(guardSpend(ctx(fakeDb(10, [9.98]).db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/tope mensual/);
+   });
+
++  it("a company with no budget row gets the default cap instead of no cap", async () => {
++    await expect(guardSpend(ctx(fakeDb("none", [24.99]).db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/tope mensual/);
++    await expect(guardSpend(ctx(fakeDb("none", [1]).db), spendOf("apollo_find_companies", {})!)).resolves.toBeUndefined();
++  });
++
++  it("refuses a call that would pass today's cap even with month left", async () => {
++    const { db } = fakeDb(25, [4.98], new Date().toISOString());
++    await expect(guardSpend(ctx(db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/tope de hoy/);
++  });
++
++  it("a manual orchestrator request at the cap is refused before it runs; with room it runs", async () => {
++    let ran = 0;
++    await expect(trackedRun(ctx(fakeDb(1, [1]).db), "research_account", "manual", async () => { ran++; return {}; })).rejects.toThrow(/tope mensual/);
++    expect(ran).toBe(0);
++    await trackedRun(ctx(fakeDb(100, [1]).db), "research_account", "manual", async () => { ran++; return {}; });
++    expect(ran).toBe(1);
++  });
++
++  it("says «superaría» when the call would pass the cap and «has llegado» when it is already there", async () => {
++    await expect(guardSpend(ctx(fakeDb(10, [9.98]).db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/superaría el tope mensual/);
++    await expect(guardSpend(ctx(fakeDb(10, [10]).db), spendOf("apollo_find_companies", {})!)).rejects.toThrow(/Has llegado al tope mensual/);
++  });
++
+   it("logs the approximate spend of a call as manual usage for the org", async () => {
+     const { db, inserts } = fakeDb(null, []);
+     await recordSpend(ctx(db), spendOf("clay_enrich_account", {})!);
+diff --git a/src/lib/agent/spend-guard.ts b/src/lib/agent/spend-guard.ts
+index d922a75..a2b7b81 100644
+--- a/src/lib/agent/spend-guard.ts
++++ b/src/lib/agent/spend-guard.ts
+@@ -31,14 +31,19 @@ export const spendOf = (name: string, args: unknown): Spend | null => SPEND[name
+
+ export const eur = (n: number) => n.toFixed(2).replace(".", ",");
+
+-/** Refuses a call that would pass the company's monthly cap; with no cap set it lets everything through. */
++/** Refuses a call that would pass the monthly or the daily cap; with no cap set it lets everything through. */
+ export async function guardSpend(c: ToolCtx, spend: Spend) {
+   const { monthBudget } = await import("@/lib/orchestrator/runner");
+   const b = await monthBudget(c);
+-  if (b.limit == null) return;
++  if (b.limit == null || b.limit <= 0) return;
+   const cost = spend.used.reduce((s, u) => s + u.cost, 0);
++  if (b.dailyLimit != null && b.spentToday + cost > b.dailyLimit) {
++    const reached = b.spentToday >= b.dailyLimit;
++    throw new Error(`${reached ? "Has llegado al" : "Esta consulta superaría el"} tope de hoy en integraciones (${eur(b.spentToday)} € de ${eur(b.dailyLimit)} €). No he hecho la consulta; el tope diario se libera al cambiar de día (hora UTC), o el owner puede subir el tope mensual.`);
++  }
+   if (b.spent + cost > b.limit) {
+-    throw new Error(`Has llegado al tope mensual de integraciones (${eur(b.spent)} € de ${eur(b.limit)} €). No he hecho la consulta; el owner puede subir el tope.`);
++    const reached = b.spent >= b.limit;
++    throw new Error(`${reached ? "Has llegado al" : "Esta consulta superaría el"} tope mensual de integraciones (${eur(b.spent)} € de ${eur(b.limit)} € gastados). No he hecho la consulta; el owner puede subir el tope.`);
+   }
+ }
+
+diff --git a/src/lib/agent/tools/needs.ts b/src/lib/agent/tools/needs.ts
+index 76de6ad..fabf294 100644
+--- a/src/lib/agent/tools/needs.ts
++++ b/src/lib/agent/tools/needs.ts
+@@ -45,7 +45,7 @@ export const NEED_TOOLS: AgentTool[] = [
+     input: z.object({}),
+     run: async (c) => {
+       const b = await monthBudget(c);
+-      return { gastado_eur: Math.round(b.spent * 100) / 100, limite_eur: b.limit, aviso_80: b.warn, automatico_en_pausa: b.paused };
++      return { gastado_eur: Math.round(b.spent * 100) / 100, limite_eur: b.limit, gastado_hoy_eur: Math.round(b.spentToday * 100) / 100, limite_diario_eur: b.dailyLimit, aviso_80: b.warn, automatico_en_pausa: b.paused };
+     },
+   }),
+ ];
+diff --git a/src/lib/budget-backfill.pg.test.ts b/src/lib/budget-backfill.pg.test.ts
+new file mode 100644
+index 0000000..9129363
+--- /dev/null
++++ b/src/lib/budget-backfill.pg.test.ts
+@@ -0,0 +1,35 @@
++// @vitest-environment node
++// Runs migration 0065 (existing companies keep «sin límite») on an in-process Postgres with fictional companies.
++import { beforeAll, describe, expect, it } from "vitest";
++import { build, migrate, seed } from "@/test/pg-harness";
++
++type Db = Awaited<ReturnType<typeof build>>;
++let db: Db;
++let A: string;
++let B: string;
++const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Record<string, any>[];
++const budget = async (org: string) => (await rows("select monthly_limit from org_budgets where org_id = $1", [org]))[0];
++
++beforeAll(async () => {
++  db = await build();
++  ({ A, B } = await seed(db));
++  await migrate(db, ["0041_orchestrator_budget_usage.sql"]);
++  // Company B's owner already chose a limit.
++  await db.query("insert into org_budgets (org_id, monthly_limit) values ($1, 100)", [B]);
++}, 60_000);
++
++describe("migration 0065: existing companies keep no cap", () => {
++  it("a company with no row gets a row with an empty limit; a chosen limit is untouched", async () => {
++    expect(await budget(A)).toBeUndefined();
++    await migrate(db, ["0065_existing_orgs_keep_no_budget_limit.sql"]);
++    expect(await budget(A)).toMatchObject({ monthly_limit: null });
++    expect(Number((await budget(B))!.monthly_limit)).toBe(100);
++  });
++
++  it("is idempotent, and a company created afterwards has no row (so it gets the default)", async () => {
++    await migrate(db, ["0065_existing_orgs_keep_no_budget_limit.sql"]);
++    expect((await rows("select count(*)::int as n from org_budgets"))[0]!.n).toBe(2);
++    const C = (await rows("insert into organizations (name) values ('Empresa nueva') returning id"))[0]!.id;
++    expect(await budget(C)).toBeUndefined();
++  });
++});
+diff --git a/src/lib/onboarding.server.ts b/src/lib/onboarding.server.ts
+index 83772fd..86ed35c 100644
+--- a/src/lib/onboarding.server.ts
++++ b/src/lib/onboarding.server.ts
+@@ -22,7 +22,7 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string)
+   const files = (input.files ?? []).slice(0, 3);
+
+   const b = await monthBudget(c);
+-  if (b.paused) throw new Error("Has llegado al límite mensual de gasto en fuentes. Súbelo en Conexiones o espera al mes que viene.");
++  if (b.paused) throw new Error("Has llegado al límite de gasto en fuentes (mensual o de hoy). Súbelo en Conexiones o espera a que se libere.");
+
+   // A new reading starts clean: the previous proposal and block decisions belong to the previous sources.
+   await c.db.from("onboarding_sessions").update({ findings: [] as unknown as Json, proposal: null, opinions: null, block_status: {} as unknown as Json }).eq("org_id", c.orgId).eq("user_id", c.userId);
+diff --git a/src/lib/orchestrator.functions.ts b/src/lib/orchestrator.functions.ts
+index afb4166..34aea75 100644
+--- a/src/lib/orchestrator.functions.ts
++++ b/src/lib/orchestrator.functions.ts
+@@ -27,7 +27,7 @@ export const orchestratorStatus = createServerFn({ method: "POST" })
+       s.calls++; s.cost += Number(r.cost || 0);
+       if (r.trigger === "automatic") automatic += Number(r.cost || 0);
+     }
+-    return { connected: connectedServices(), spent: b.spent, limit: b.limit, warn: b.warn, paused: b.paused, pct: b.pct, automatic, byService };
++    return { connected: connectedServices(), spent: b.spent, limit: b.limit, dailyLimit: b.dailyLimit, spentToday: b.spentToday, dailyReached: b.dailyReached, warn: b.warn, paused: b.paused, pct: b.pct, automatic, byService };
+   });
+
+ const Cursor = z.union([
+diff --git a/src/lib/orchestrator/planner.test.ts b/src/lib/orchestrator/planner.test.ts
+index fa6a04f..705d361 100644
+--- a/src/lib/orchestrator/planner.test.ts
++++ b/src/lib/orchestrator/planner.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { budgetState, planFor, sourcesLine } from "./planner";
++import { DEFAULT_MONTHLY_LIMIT, budgetCaps, budgetState, planFor, sourcesLine } from "./planner";
+
+ const open = { remaining: 100, automatic: false, paused: false };
+
+@@ -29,6 +29,25 @@ describe("budgetState", () => {
+   });
+ });
+
++describe("budgetCaps", () => {
++  it("the default monthly cap is 25 € and the daily one is 20 % of it", () => {
++    expect(DEFAULT_MONTHLY_LIMIT).toBe(25);
++    expect(budgetCaps(0, 0, 25).dailyLimit).toBe(5);
++  });
++  it("reaching today's cap pauses and leaves nothing to spend, with month to spare", () => {
++    const c = budgetCaps(6, 5, 25);
++    expect(c).toMatchObject({ paused: true, dailyReached: true, remaining: 0 });
++    expect(budgetCaps(6, 4, 25)).toMatchObject({ paused: false, dailyReached: false, remaining: 1 });
++  });
++  it("the tighter cap wins: the month can leave less than the day", () => {
++    expect(budgetCaps(24, 1, 25).remaining).toBe(1);
++    expect(budgetCaps(24.5, 0, 25).remaining).toBe(0.5);
++  });
++  it("no limit means no caps", () => {
++    expect(budgetCaps(999, 999, null)).toMatchObject({ paused: false, dailyLimit: null, remaining: Infinity });
++  });
++});
++
+ it("sourcesLine names services and total", () => {
+   expect(sourcesLine([{ service: "parallel", cost: 0.3 }, { service: "firecrawl", cost: 0.1 }])).toBe("Fuentes: Parallel, Firecrawl · coste aprox. 0,40 €");
+ });
+diff --git a/src/lib/orchestrator/planner.ts b/src/lib/orchestrator/planner.ts
+index 7f0a7db..0d2f4c8 100644
+--- a/src/lib/orchestrator/planner.ts
++++ b/src/lib/orchestrator/planner.ts
+@@ -46,7 +46,7 @@ export type Plan = { steps: Option[]; skipped: { service: Service; reason: strin
+ export function planFor(input: PlanInput): Plan {
+   const cap = CAPABILITIES[input.need];
+   const skipped: Plan["skipped"] = [];
+-  if (input.budget.automatic && input.budget.paused) return { steps: [], skipped, blocked: "Límite mensual alcanzado: lo automático está en pausa hasta el mes que viene o hasta que el Owner lo suba." };
++  if (input.budget.automatic && input.budget.paused) return { steps: [], skipped, blocked: "Límite de gasto alcanzado (mensual o de hoy): lo automático está en pausa hasta que se libere o hasta que el Owner suba el límite." };
+   const usable = cap.options.filter((o) => {
+     if (!input.connected.includes(o.service)) { skipped.push({ service: o.service, reason: "no conectado" }); return false; }
+     if (input.alreadyHave?.includes(o.service)) { skipped.push({ service: o.service, reason: "ya hay datos" }); return false; }
+@@ -59,7 +59,25 @@ export function planFor(input: PlanInput): Plan {
+   return { steps, skipped, blocked: steps.length ? null : "Ningún servicio conectado puede cubrir esto ahora." };
+ }
+
+-/** Budget state: warn at 80 %, pause automatic work at 100 %; manual requests are never paused. */
++/** Cap for a company with no org_budgets row (new companies): approximate EUR per month. An owner can change it or clear it. */
++export const DEFAULT_MONTHLY_LIMIT = 25;
++/** Daily cap = this share of the monthly one (5 € of 25 €), so one runaway loop cannot spend the month in an afternoon. */
++export const DAILY_SHARE = 0.2;
++
++/**
++ * Month and day caps together. Warns at 80 % of the month; `paused` when either cap is reached; `remaining` is what
++ * the tightest cap still allows, so manual calls and the agent respect it too. No limit (null or 0) = no caps.
++ */
++export function budgetCaps(spentMonth: number, spentToday: number, limit: number | null) {
++  const month = budgetState(spentMonth, limit);
++  if (!limit || limit <= 0) return { ...month, dailyLimit: null as number | null, spentToday, dailyReached: false };
++  const dailyLimit = Math.round(limit * DAILY_SHARE * 100) / 100;
++  const dailyReached = spentToday >= dailyLimit;
++  const dailyRemaining = Math.max(0, dailyLimit - spentToday);
++  return { ...month, remaining: Math.min(month.remaining, dailyRemaining), paused: month.paused || dailyReached, dailyLimit: dailyLimit as number | null, spentToday, dailyReached };
++}
++
++/** Budget state: warn at 80 %, pause at 100 % (automatic work, and manual requests through trackedRun and the spend guard). */
+ export function budgetState(spent: number, limit: number | null) {
+   if (!limit || limit <= 0) return { remaining: Infinity, warn: false, paused: false, pct: 0 };
+   const pct = spent / limit;
+diff --git a/src/lib/orchestrator/runner.ts b/src/lib/orchestrator/runner.ts
+index c87b53b..5d5616f 100644
+--- a/src/lib/orchestrator/runner.ts
++++ b/src/lib/orchestrator/runner.ts
+@@ -6,7 +6,7 @@ import type { Json } from "@/integrations/supabase/types";
+ import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
+ import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
+ import type { AccountDraft, CompanyQuery, EnrichChange, EnrichField } from "@/lib/clay";
+-import { budgetState, planFor, sourcesLine, CAPABILITIES, type Need, type Service } from "./planner";
++import { DEFAULT_MONTHLY_LIMIT, budgetCaps, planFor, sourcesLine, CAPABILITIES, type Need, type Service } from "./planner";
+ import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
+
+ const ENV: Partial<Record<Service, string[]>> = {
+@@ -22,14 +22,22 @@ export type Trigger = "manual" | "automatic";
+ export type Used = { service: Service; cost: number };
+
+ export async function monthBudget(c: ToolCtx) {
+-  const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
++  const now = new Date();
++  const start = new Date(now); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
+   const [{ data: b }, { data: rows }] = await Promise.all([
+     c.db.from("org_budgets").select("monthly_limit").eq("org_id", c.orgId).maybeSingle(),
+-    c.db.from("integration_usage").select("cost").eq("org_id", c.orgId).gte("created_at", start.toISOString()),
++    c.db.from("integration_usage").select("cost,created_at").eq("org_id", c.orgId).gte("created_at", start.toISOString()),
+   ]);
+-  const spent = (rows ?? []).reduce((s: number, r: { cost: number | string }) => s + Number(r.cost || 0), 0);
+-  const limit = b?.monthly_limit == null ? null : Number(b.monthly_limit);
+-  return { spent, limit, ...budgetState(spent, limit) };
++  const today = now.toISOString().slice(0, 10);
++  let spent = 0, spentToday = 0;
++  for (const r of (rows ?? []) as { cost: number | string; created_at?: string }[]) {
++    const cost = Number(r.cost || 0);
++    spent += cost;
++    if (r.created_at?.slice(0, 10) === today) spentToday += cost;
++  }
++  // No row = a new company: the default cap applies. A row with an empty limit is the owner's choice of «sin límite».
++  const limit = !b ? DEFAULT_MONTHLY_LIMIT : b.monthly_limit == null ? null : Number(b.monthly_limit);
++  return { spent, limit, ...budgetCaps(spent, spentToday, limit) };
+ }
+
+ export async function logUsage(c: ToolCtx, need: Need, used: Used[], trigger: Trigger) {
+@@ -146,6 +154,11 @@ export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: S
+ export async function trackedRun<T>(c: ToolCtx, need: Need, trigger: Trigger, run: () => Promise<T>): Promise<T & { via: string }> {
+   const plan = await planNeed(c, need, trigger);
+   if (plan.blocked && trigger === "automatic") throw new Error(plan.blocked);
++  // A manual request at the cap is refused too (it used to run and log nothing): the screen shows this message.
++  if (trigger === "manual") {
++    const b = await monthBudget(c);
++    if (b.paused) throw new Error(b.dailyReached ? "Has llegado al tope de gasto de hoy en integraciones. Se libera al cambiar de día o si el Owner sube el límite mensual." : "Has llegado al tope mensual de gasto en integraciones. Pide al Owner que lo suba o espera al mes que viene.");
++  }
+   const out = await run();
+   const used = plan.steps.filter((s) => s.service === "firecrawl" || s.service === "perplexity").map((s) => ({ service: s.service, cost: s.cost }));
+   await logUsage(c, need, used, trigger);
+--
+2.43.0
+

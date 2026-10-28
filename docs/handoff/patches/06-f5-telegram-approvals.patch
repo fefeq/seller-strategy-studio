@@ -1,0 +1,215 @@
+From ce65fa9fbdc3744b23921c66bad387e4af598f82 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 21:23:21 +0100
+Subject: [PATCH] fix(approvals): let decide_approval work from Telegram,
+ checked in the database
+
+guard_approval read auth.uid(), which is NULL for the service-role client that
+Telegram uses, so every decision failed. Migration 0064 lets the service role
+decide only when the row names a decided_by that is an owner, sales_leader or
+deal_desk member of the approval's company. decide_approval now sets decided_by.
+Signed-in users are checked exactly as before. Verified on PGlite (7 tests).
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ .../0064_guard_approval_privileged_path.sql   | 29 ++++++
+ drizzle/migrations/meta/_journal.json         |  7 ++
+ src/lib/AGENTS.md                             |  2 +-
+ src/lib/agent-tools.test.ts                   |  2 +
+ src/lib/agent/tools/inbox.ts                  |  2 +-
+ src/lib/approvals-guard.pg.test.ts            | 89 +++++++++++++++++++
+ 6 files changed, 129 insertions(+), 2 deletions(-)
+ create mode 100644 drizzle/migrations/0064_guard_approval_privileged_path.sql
+ create mode 100644 src/lib/approvals-guard.pg.test.ts
+
+diff --git a/drizzle/migrations/0064_guard_approval_privileged_path.sql b/drizzle/migrations/0064_guard_approval_privileged_path.sql
+new file mode 100644
+index 0000000..8c59740
+--- /dev/null
++++ b/drizzle/migrations/0064_guard_approval_privileged_path.sql
+@@ -0,0 +1,29 @@
++-- decide_approval failed from Telegram: guard_approval (0002) reads auth.uid(), which is NULL for the privileged client
++-- (service role) that Telegram and cron use, so every decision raised «Solo owner, sales leader o deal desk…».
++-- A signed-in user is checked exactly as before. The service role may now decide only when the row names WHO decides
++-- (decided_by) and that person is an owner, sales_leader or deal_desk member of THIS approval's company: the app code
++-- already checks the role of the Telegram-linked user, and the database now checks it too and keeps the audit trail.
++-- Anyone else (anon, or authenticated with no uid) is refused. Verified locally in approvals-guard.pg.test.ts.
++
++CREATE OR REPLACE FUNCTION public.guard_approval()
++RETURNS trigger LANGUAGE plpgsql SET search_path = public AS $$
++BEGIN
++  IF new.status <> old.status THEN
++    IF auth.uid() IS NOT NULL THEN
++      IF NOT (public.has_org_role(new.org_id,'owner') OR public.has_org_role(new.org_id,'sales_leader') OR public.has_org_role(new.org_id,'deal_desk')) THEN
++        RAISE EXCEPTION 'Solo owner, sales leader o deal desk pueden decidir aprobaciones';
++      END IF;
++      new.decided_by := auth.uid();
++    ELSIF current_user = 'service_role' THEN
++      IF new.decided_by IS NULL OR NOT EXISTS (
++        SELECT 1 FROM public.org_members m
++        WHERE m.org_id = new.org_id AND m.user_id = new.decided_by AND m.role IN ('owner','sales_leader','deal_desk')
++      ) THEN
++        RAISE EXCEPTION 'Solo owner, sales leader o deal desk pueden decidir aprobaciones';
++      END IF;
++    ELSE
++      RAISE EXCEPTION 'Solo owner, sales leader o deal desk pueden decidir aprobaciones';
++    END IF;
++  END IF;
++  RETURN new;
++END $$;
+diff --git a/drizzle/migrations/meta/_journal.json b/drizzle/migrations/meta/_journal.json
+index ad0d29f..4fb29ba 100644
+--- a/drizzle/migrations/meta/_journal.json
++++ b/drizzle/migrations/meta/_journal.json
+@@ -435,6 +435,13 @@
+       "when": 1793058400000,
+       "tag": "0063_undo_keeps_confirmations",
+       "breakpoints": true
++    },
++    {
++      "idx": 62,
++      "version": "7",
++      "when": 1793140000000,
++      "tag": "0064_guard_approval_privileged_path",
++      "breakpoints": true
+     }
+   ]
+ }
+diff --git a/src/lib/AGENTS.md b/src/lib/AGENTS.md
+index dfa32bb..b4f0d26 100644
+--- a/src/lib/AGENTS.md
++++ b/src/lib/AGENTS.md
+@@ -4,7 +4,7 @@
+ - Self-service funnel: trials table, cohort maths by signup date in src/lib/self-service.ts (tested).
+ - GTM Advisor: the server fn re-checks the caller's org role and the gtm_advisories RLS limits read/insert to owner and sales_leader; the data snapshot sent to the AI is built by pure code in src/lib/advisor.ts (tested) and the model must answer with its strict JSON schema.
+ - Onboarding data is defined once in src/lib/setup-schema.ts (items, weights, unlocks, completeness); the AI fill, wizard, interview, sidebar meter and proactive detector all read it, so new required data = one new item there.
+-- The agent's capabilities live in one registry (src/lib/agent/tools.ts only assembles the area modules in src/lib/agent/tools/ — core-read, core-write, strategy, cycle, accounts, pipeline, meetings, inbox and the services — in a fixed order, which is the order the model sees; shared types/helpers in tool-kit.ts, including one() for a row that must exist): read tools run immediately, write tools only create agent_pending_actions executed after explicit confirmation; every handler scopes by org_id explicitly and checks with mustFind/mustBeMember every id it links to (account, deal, segment, member), reads related names with the company filter (accountNames, never an embedded join), because Telegram/cron run it with the privileged client; rules RLS or triggers give the app are enforced in code too (suggestion visibility via canActOnSuggestion, approval deciders, who reassigns a deal, prices/costs/discounts on deal lines only for canPrice roles, personal knowledge docs only for their author). Known gap: the guard_approval trigger reads auth.uid(), so decide_approval fails from Telegram until a migration lets the privileged path pass the decider. A tool reuses the pure function or core the screen uses, never parallel logic: AI generations shared with screens live in src/lib/ai-core.ts (org-scoped when given a scope). A write may return { mensaje } and decidePending appends it to «Hecho: …» (warnings, «enviado a Aprobaciones»). update_deal mirrors Pipeline: a won-kind stage creates a stage_change approval, the MEDDPICC stage gate warns, and a deal with product lines keeps the amount of its lines. Tests with a recording fake client in src/lib/agent-tools.test.ts (expectScoped checks org scoping). After changing tools run `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` to refresh .lovable/mcp/manifest.json, and add the title to TITLES.
++- The agent's capabilities live in one registry (src/lib/agent/tools.ts only assembles the area modules in src/lib/agent/tools/ — core-read, core-write, strategy, cycle, accounts, pipeline, meetings, inbox and the services — in a fixed order, which is the order the model sees; shared types/helpers in tool-kit.ts, including one() for a row that must exist): read tools run immediately, write tools only create agent_pending_actions executed after explicit confirmation; every handler scopes by org_id explicitly and checks with mustFind/mustBeMember every id it links to (account, deal, segment, member), reads related names with the company filter (accountNames, never an embedded join), because Telegram/cron run it with the privileged client; rules RLS or triggers give the app are enforced in code too (suggestion visibility via canActOnSuggestion, approval deciders, who reassigns a deal, prices/costs/discounts on deal lines only for canPrice roles, personal knowledge docs only for their author). guard_approval (0064) lets the privileged client (Telegram, cron) decide an approval only when the row names a decided_by who is an owner, sales_leader or deal_desk member of that approval's company, so decide_approval sets decided_by to the caller; a signed-in user is checked as before. A tool reuses the pure function or core the screen uses, never parallel logic: AI generations shared with screens live in src/lib/ai-core.ts (org-scoped when given a scope). A write may return { mensaje } and decidePending appends it to «Hecho: …» (warnings, «enviado a Aprobaciones»). update_deal mirrors Pipeline: a won-kind stage creates a stage_change approval, the MEDDPICC stage gate warns, and a deal with product lines keeps the amount of its lines. Tests with a recording fake client in src/lib/agent-tools.test.ts (expectScoped checks org scoping). After changing tools run `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` to refresh .lovable/mcp/manifest.json, and add the title to TITLES.
+ - Agent turns run server-side via AI SDK Responses (src/lib/agent/agent.server.ts) and return final text; transcripts store only plain user/assistant text so channels (app, Telegram, future WhatsApp) share one core.
+ - Proactive rules are pure detectors, one file each in src/lib/proactive/detectors/ (tested in src/lib/proactive.test.ts); suggestions dedupe on (org_id, dedupe_key) so dismissed items never return, and actions reuse agent tools.
+ - Suggestions: members see own + unassigned, owner/sales_leader see and reassign all (RLS); team panel rules pure in src/lib/suggestion-board.ts (tested); "Para mí" filters own/unassigned explicitly.
+diff --git a/src/lib/agent-tools.test.ts b/src/lib/agent-tools.test.ts
+index 8c27b91..5a0172c 100644
+--- a/src/lib/agent-tools.test.ts
++++ b/src/lib/agent-tools.test.ts
+@@ -125,6 +125,8 @@ describe("decide_approval", () => {
+     expect(claim).toBeGreaterThan(-1);
+     expect(move).toBeGreaterThan(claim);
+     expect(eq(log[claim], "status", "pending")).toBe(true);
++    // The privileged path (Telegram) names who decides: migration 0064 checks that person is an approver of the company.
++    expect(log[claim].payload).toEqual({ status: "applied", decided_by: ME });
+     expect(log[move].payload).toEqual({ stage: "won", probability: 100 });
+     expect(r.mensaje).toContain("Aplicada");
+     expectScoped(log);
+diff --git a/src/lib/agent/tools/inbox.ts b/src/lib/agent/tools/inbox.ts
+index 1e8fd97..a112f5b 100644
+--- a/src/lib/agent/tools/inbox.ts
++++ b/src/lib/agent/tools/inbox.ts
+@@ -60,7 +60,7 @@ export const INBOX_TOOLS: AgentTool[] = [
+       if (ap.status !== "pending") return { estado: ap.status, mensaje: "Esa aprobación ya estaba decidida." };
+       const status = a.decision === "apply" ? "applied" : "skipped";
+       // Claim first: a double confirmation cannot apply it twice, and nothing moves if the decision is refused.
+-      const claimed = ok(await c.db.from("approvals").update({ status }).eq("org_id", c.orgId).eq("id", ap.id).eq("status", "pending").select("id"));
++      const claimed = ok(await c.db.from("approvals").update({ status, decided_by: c.userId }).eq("org_id", c.orgId).eq("id", ap.id).eq("status", "pending").select("id"));
+       if (!claimed?.length) return { estado: status, mensaje: "Esa aprobación ya estaba decidida." };
+       if (status === "applied" && ap.kind === "stage_change") {
+         // Like the Aprobaciones screen: evidence that is not structured is applied as a plain decision.
+diff --git a/src/lib/approvals-guard.pg.test.ts b/src/lib/approvals-guard.pg.test.ts
+new file mode 100644
+index 0000000..573d1bb
+--- /dev/null
++++ b/src/lib/approvals-guard.pg.test.ts
+@@ -0,0 +1,89 @@
++// @vitest-environment node
++// Runs migration 0064 (guard_approval with a privileged path) on an in-process Postgres: the function from 0002 first,
++// then the new one, with two fictional companies. See src/test/pg-harness.ts for what it models.
++import { readFileSync } from "node:fs";
++import { beforeAll, describe, expect, it } from "vitest";
++import { REPO, as, build, migrate, seed, U } from "@/test/pg-harness";
++
++type Db = Awaited<ReturnType<typeof build>>;
++let db: Db;
++let A: string;
++let B: string;
++const SALES_A = "00000000-0000-4000-8000-0000000000a3";
++const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Record<string, any>[];
++const throws = async (fn: () => Promise<unknown>) => { try { await fn(); return ""; } catch (e) { return String((e as Error).message); } };
++const newApproval = async (org: string) => (await rows("insert into approvals (org_id, kind, title) values ($1, 'other', 'x') returning id", [org]))[0]!.id as string;
++const state = async (id: string) => (await rows("select status, decided_by from approvals where id = $1", [id]))[0]!;
++
++beforeAll(async () => {
++  db = await build();
++  ({ A, B } = await seed(db));
++  await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${SALES_A}','sales_leader')`);
++  // Supabase gives service_role every privilege on public tables (the harness creates org_members before its default privileges).
++  await db.exec("grant all on public.org_members to service_role");
++  await db.exec(`create table public.approvals (id uuid primary key default gen_random_uuid(), org_id uuid, kind text not null, title text not null, evidence text default '', status text not null default 'pending', decided_by uuid, created_by uuid, updated_by uuid, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
++    grant all on public.approvals to authenticated, service_role;`);
++  // The function as 0002 left it (what production runs today), then the trigger and migration 0064.
++  const m2 = readFileSync(`${REPO}/drizzle/migrations/0002_multitenant_organizations.sql`, "utf8");
++  const old = m2.slice(m2.indexOf("create or replace function public.guard_approval()"), m2.indexOf("-- 7. Create organization"));
++  await db.exec(old);
++  await db.exec("create trigger approvals_guard before update on public.approvals for each row execute function public.guard_approval()");
++}, 60_000);
++
++describe("guard_approval before 0064 (the gap)", () => {
++  it("a service-role decision is refused, as Telegram saw", async () => {
++    const id = await newApproval(A);
++    expect(await as(db, null, () => throws(() => db.query("update approvals set status = 'applied', decided_by = $2 where id = $1", [id, U.ownerA])))).toMatch(/Solo owner/);
++  });
++});
++
++describe("migration 0064: guard_approval with a privileged path", () => {
++  beforeAll(async () => { await migrate(db, ["0064_guard_approval_privileged_path.sql"]); });
++
++  it("a signed-in owner or sales leader still decides, and decided_by is forced to them", async () => {
++    const id = await newApproval(A);
++    await as(db, SALES_A, async () => { await db.query("update approvals set status = 'applied', decided_by = $2 where id = $1", [id, U.ownerA]); });
++    expect(await state(id)).toMatchObject({ status: "applied", decided_by: SALES_A });
++  });
++
++  it("a signed-in member without an approver role is refused", async () => {
++    const id = await newApproval(A);
++    expect(await as(db, U.aeA, () => throws(() => db.query("update approvals set status = 'applied' where id = $1", [id])))).toMatch(/Solo owner/);
++    expect((await state(id)).status).toBe("pending");
++  });
++
++  it("the service role decides when it names an approver of the approval's company", async () => {
++    const id = await newApproval(A);
++    await as(db, null, async () => { await db.query("update approvals set status = 'skipped', decided_by = $2 where id = $1", [id, SALES_A]); });
++    expect(await state(id)).toMatchObject({ status: "skipped", decided_by: SALES_A });
++  });
++
++  it("the service role is refused without a decider, or with one who cannot decide or belongs to another company", async () => {
++    const id = await newApproval(A);
++    const decide = (who: string | null) => as(db, null, () => throws(() => db.query("update approvals set status = 'applied', decided_by = $2 where id = $1", [id, who])));
++    expect(await decide(null)).toMatch(/Solo owner/);
++    expect(await decide(U.aeA)).toMatch(/Solo owner/);
++    expect(await decide(U.ownerB)).toMatch(/Solo owner/);
++    expect(await decide("00000000-0000-4000-8000-00000000ffff")).toMatch(/Solo owner/);
++    expect((await state(id)).status).toBe("pending");
++  });
++
++  it("an approver of company B cannot decide company A's approval through the service role", async () => {
++    const id = await newApproval(A);
++    expect(await as(db, null, () => throws(() => db.query("update approvals set status = 'applied', decided_by = $2 where id = $1", [id, U.ownerB])))).toMatch(/Solo owner/);
++    const idB = await newApproval(B);
++    await as(db, null, async () => { await db.query("update approvals set status = 'applied', decided_by = $2 where id = $1", [idB, U.ownerB]); });
++    expect((await state(idB)).status).toBe("applied");
++  });
++
++  it("the anon role and updates that do not change the status are not affected", async () => {
++    const id = await newApproval(A);
++    await db.exec("set role anon");
++    const anon = await throws(() => db.query("update approvals set status = 'applied' where id = $1", [id]));
++    await db.exec("reset role");
++    expect(anon).toBeTruthy();
++    expect((await state(id)).status).toBe("pending");
++    await as(db, U.aeA, async () => { await db.query("update approvals set title = 'y' where id = $1", [id]); });
++    expect((await rows("select title from approvals where id = $1", [id]))[0]!.title).toBe("y");
++  });
++});
+--
+2.43.0
+

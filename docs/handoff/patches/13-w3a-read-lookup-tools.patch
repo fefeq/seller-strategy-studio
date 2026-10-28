@@ -1,0 +1,330 @@
+From 1bb99a0c3993ebcabf6591c685eb0c8105e439fa Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:34:21 +0100
+Subject: [PATCH] feat(agent): chat can list segments, team and trials and give
+ links
+
+Four read-only tools (list_segments, list_members, list_trials,
+get_link), all scoped by org_id; emails of the team only for leaders.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ .lovable/mcp/manifest.json       | 94 ++++++++++++++++++++++++++++++++
+ src/lib/agent-tools.test.ts      | 69 +++++++++++++++++++++++
+ src/lib/agent/tools.ts           |  3 +-
+ src/lib/agent/tools/lookups.ts   | 76 ++++++++++++++++++++++++++
+ src/lib/mcp/tools/agent-tools.ts |  4 ++
+ 5 files changed, 245 insertions(+), 1 deletion(-)
+ create mode 100644 src/lib/agent/tools/lookups.ts
+
+diff --git a/.lovable/mcp/manifest.json b/.lovable/mcp/manifest.json
+index 8629daa..b5e535c 100644
+--- a/.lovable/mcp/manifest.json
++++ b/.lovable/mcp/manifest.json
+@@ -1684,6 +1684,100 @@
+         },
+         "outputSchema": null
+       },
++      {
++        "name": "list_segments",
++        "title": "Listar segmentos",
++        "description": "Segmentos de la empresa en orden de prioridad: rango de ACV, modelo de venta, win rate objetivo, cuota anual por AE, CAC y payback objetivo. Úsalo antes de crear o editar un segmento o al recomendar a qué segmento va una cuenta.",
++        "annotations": {
++          "readOnlyHint": true,
++          "idempotentHint": true,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {},
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
++      {
++        "name": "list_members",
++        "title": "Ver el equipo y sus roles",
++        "description": "Personas del equipo de esta empresa y su rol (owner, sales_leader, ae, sdr, deal_desk, marketing…). Los emails solo los ven Owner y Sales Leader. Úsalo para saber a quién asignar algo.",
++        "annotations": {
++          "readOnlyHint": true,
++          "idempotentHint": true,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {},
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
++      {
++        "name": "list_trials",
++        "title": "Listar pruebas (self-service)",
++        "description": "Altas self-service (pruebas): email, empresa, plan, fecha de alta, activación y pago. Filtra por estado: pending (sin activar), activated (activadas sin pagar) o converted (de pago). Más recientes primero.",
++        "annotations": {
++          "readOnlyHint": true,
++          "idempotentHint": true,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {
++            "status": {
++              "type": "string",
++              "enum": [
++                "pending",
++                "activated",
++                "converted"
++              ]
++            },
++            "limit": {
++              "type": "integer",
++              "minimum": 1,
++              "maximum": 50
++            }
++          },
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
++      {
++        "name": "get_link",
++        "title": "Enlace a una pantalla o cuenta",
++        "description": "Enlace directo a una pantalla de Nokko por su nombre («Pipeline», «Equipo», «Conexiones»…) o a la ficha de una cuenta (account_id). Úsalo cuando la persona quiera ver o hacer algo que solo se hace en pantalla.",
++        "annotations": {
++          "readOnlyHint": true,
++          "idempotentHint": true,
++          "openWorldHint": false
++        },
++        "inputSchema": {
++          "$schema": "https://json-schema.org/draft/2020-12/schema",
++          "type": "object",
++          "properties": {
++            "page": {
++              "description": "Nombre de la pantalla tal como se ve en el menú",
++              "type": "string",
++              "minLength": 2,
++              "maxLength": 60
++            },
++            "account_id": {
++              "type": "string",
++              "format": "uuid",
++              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
++            }
++          },
++          "additionalProperties": false
++        },
++        "outputSchema": null
++      },
+       {
+         "name": "list_pending_imports",
+         "title": "Ver importaciones pendientes",
+diff --git a/src/lib/agent-tools.test.ts b/src/lib/agent-tools.test.ts
+index 8c27b91..f4231e6 100644
+--- a/src/lib/agent-tools.test.ts
++++ b/src/lib/agent-tools.test.ts
+@@ -375,3 +375,72 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
+     await expect(executeTool(ctxWith(db, ["owner"]), "undo_change", { change_id: ID(41) })).rejects.toThrow(/pasaron más de 24 horas/);
+   });
+ });
++
++describe("lookup tools (segments, team, trials, links)", () => {
++  it("list_segments reads only this company's segments and returns plain numbers", async () => {
++    const { db, log } = fakeDb(() => ({ data: [{ id: ID(50), name: "Mid", motion: "inside", priority: 1, acv_min: "5000", acv_max: 50000, win_rate_target: null, ae_quota: 600000, cac_target: null, payback_months: 12, gross_margin_pct: 80, cycle_days: 45, notes: null }] }));
++    const r = (await executeTool(ctxWith(db), "list_segments", {})) as { nombre: string; acv_min: number; win_rate_objetivo_pct: number | null }[];
++    expect(r[0]).toMatchObject({ nombre: "Mid", acv_min: 5000, win_rate_objetivo_pct: null });
++    expectScoped(log);
++  });
++
++  it("list_members asks for profiles only of this company's members and hides emails from non-leaders", async () => {
++    const reply = (q: Q): Reply => q.table === "org_members" ? { data: [{ user_id: ME, role: "ae" }, { user_id: OTHER, role: "owner" }] } : { data: [{ id: ME, full_name: "Ana", email: "ana@example.com" }, { id: OTHER, full_name: "Luis", email: "luis@example.com" }] };
++    const ae = fakeDb(reply);
++    const seenByAe = (await executeTool(ctxWith(ae.db, ["ae"]), "list_members", {})) as Record<string, unknown>[];
++    expect(seenByAe.some((m) => "email" in m)).toBe(false);
++    expect(seenByAe[0]).toMatchObject({ nombre: "Ana", rol: "ae", eres_tu: true });
++    const members = ae.log.find((q) => q.table === "org_members")!;
++    expect(eq(members, "org_id", ORG)).toBe(true);
++    const profiles = ae.log.find((q) => q.table === "profiles")!;
++    expect(profiles.filters.some(([op, col, ids]) => op === "in" && col === "id" && JSON.stringify(ids) === JSON.stringify([ME, OTHER]))).toBe(true);
++    const leader = fakeDb(reply);
++    const seenByLeader = (await executeTool(ctxWith(leader.db, ["sales_leader"]), "list_members", {})) as { email?: string }[];
++    expect(seenByLeader[0].email).toBe("ana@example.com");
++  });
++
++  it("list_members shows a person with two roles once", async () => {
++    const { db } = fakeDb((q) => (q.table === "org_members" ? { data: [{ user_id: ME, role: "ae" }, { user_id: ME, role: "marketing" }] } : { data: [{ id: ME, full_name: "Ana", email: "a@example.com" }] }));
++    const r = (await executeTool(ctxWith(db), "list_members", {})) as { rol: string }[];
++    expect(r).toHaveLength(1);
++    expect(r[0].rol).toBe("ae, marketing");
++  });
++
++  it("list_members does not query profiles when the company has no members", async () => {
++    const { db, log } = fakeDb(() => ({ data: [] }));
++    expect(await executeTool(ctxWith(db), "list_members", {})).toEqual([]);
++    expect(log.map((q) => q.table)).toEqual(["org_members"]);
++  });
++
++  it("list_trials filters by state and stays in the company", async () => {
++    const rows = [{ id: ID(51), email: "a@example.com", company: "Acme", plan: "free", mrr: null, signed_up_at: "2026-10-01", activated_at: "2026-10-02", converted_at: null, source: "web" }];
++    const { db, log } = fakeDb(() => ({ data: rows }));
++    const r = (await executeTool(ctxWith(db), "list_trials", { status: "activated" })) as { estado: string }[];
++    expect(r[0].estado).toBe("activada");
++    expect(log[0].filters).toEqual(expect.arrayContaining([["not", "activated_at", "is", null], ["is", "converted_at", null]]));
++    expectScoped(log);
++  });
++
++  it("get_link builds a link by screen name and respects leaders-only screens", async () => {
++    const { db } = fakeDb();
++    const a = (await executeTool(ctxWith(db), "get_link", { page: "pipeline" })) as { enlace: string };
++    expect(a.enlace).toMatch(/\/deals$/);
++    const b = (await executeTool(ctxWith(db), "get_link", { page: "Equipo" })) as { enlace: string };
++    expect(b.enlace).toMatch(/\/team$/);
++    await expect(executeTool(ctxWith(db, ["ae"]), "get_link", { page: "Asesor GTM" })).rejects.toThrow(/No conozco la pantalla/);
++    expect(((await executeTool(ctxWith(db, ["owner"]), "get_link", { page: "Asesor GTM" })) as { enlace: string }).enlace).toMatch(/\/advisor$/);
++  });
++
++  it("get_link for an account checks it belongs to the company", async () => {
++    const miss = fakeDb(() => ({ data: null }));
++    await expect(executeTool(ctxWith(miss.db), "get_link", { account_id: ID(60) })).rejects.toThrow(/No encuentro esa cuenta/);
++    const hit = fakeDb(() => ({ data: { id: ID(60), name: "Acme" } }));
++    const r = (await executeTool(ctxWith(hit.db), "get_link", { account_id: ID(60) })) as { enlace: string };
++    expect(r.enlace).toMatch(new RegExp(`/accounts/${ID(60)}$`));
++    expectScoped(hit.log);
++  });
++
++  it("are read tools, so they run without confirmation", () => {
++    for (const n of ["list_segments", "list_members", "list_trials", "get_link"]) expect(getTool(n)!.kind).toBe("read");
++  });
++});
+diff --git a/src/lib/agent/tools.ts b/src/lib/agent/tools.ts
+index da3cd83..be14eaf 100644
+--- a/src/lib/agent/tools.ts
++++ b/src/lib/agent/tools.ts
+@@ -19,10 +19,11 @@ import { CORE_WRITE_TOOLS } from "./tools/core-write";
+ import { STRATEGY_TOOLS } from "./tools/strategy";
+ import { FIELD_ACTION_TOOLS } from "./tools/field-actions";
+ import { CYCLE_TOOLS } from "./tools/cycle";
++import { LOOKUP_TOOLS } from "./tools/lookups";
+
+ export type { AgentTool, ToolCtx } from "./tool-kit";
+
+-const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS];
++const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS, ...LOOKUP_TOOLS];
+
+ export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS, ...PARALLEL_TOOLS, ...NEED_TOOLS];
+
+diff --git a/src/lib/agent/tools/lookups.ts b/src/lib/agent/tools/lookups.ts
+new file mode 100644
+index 0000000..a41056f
+--- /dev/null
++++ b/src/lib/agent/tools/lookups.ts
+@@ -0,0 +1,76 @@
++// Read-only lookups the chat needed to answer simple questions without sending the person to a screen:
++// segments, team, self-service trials and links. Every query scopes org_id (these also run on Telegram
++// with the privileged client, where RLS does not apply).
++import { z } from "zod";
++import { NAV } from "@/lib/nav";
++import { SITE_URL } from "@/lib/site";
++import { def, isLeader, mustFind, ok, type AgentTool } from "../tool-kit";
++
++const plain = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
++const num = (v: unknown) => (v == null ? null : Number(v));
++
++export const LOOKUP_TOOLS: AgentTool[] = [
++  def({
++    name: "list_segments", kind: "read",
++    description: "Segmentos de la empresa en orden de prioridad: rango de ACV, modelo de venta, win rate objetivo, cuota anual por AE, CAC y payback objetivo. Úsalo antes de crear o editar un segmento o al recomendar a qué segmento va una cuenta.",
++    input: z.object({}),
++    run: async (c) => {
++      const rows = ok(await c.db.from("segments").select("id,name,motion,priority,acv_min,acv_max,win_rate_target,ae_quota,cac_target,payback_months,gross_margin_pct,cycle_days,notes").eq("org_id", c.orgId).order("priority", { ascending: true, nullsFirst: false }).order("acv_min", { ascending: true }));
++      return (rows ?? []).map((s) => ({
++        id: s.id, nombre: s.name, modelo: s.motion, prioridad: s.priority, acv_min: num(s.acv_min), acv_max: num(s.acv_max), win_rate_objetivo_pct: num(s.win_rate_target),
++        cuota_anual_ae: num(s.ae_quota), cac_objetivo: num(s.cac_target), payback_objetivo_meses: num(s.payback_months), margen_bruto_pct: num(s.gross_margin_pct), ciclo_dias: num(s.cycle_days), nota: s.notes,
++      }));
++    },
++  }),
++  def({
++    name: "list_members", kind: "read",
++    description: "Personas del equipo de esta empresa y su rol (owner, sales_leader, ae, sdr, deal_desk, marketing…). Los emails solo los ven Owner y Sales Leader. Úsalo para saber a quién asignar algo.",
++    input: z.object({}),
++    run: async (c) => {
++      const members = ok(await c.db.from("org_members").select("user_id,role,created_at").eq("org_id", c.orgId).order("created_at"));
++      const ids = [...new Set((members ?? []).map((m) => m.user_id))];
++      // Profiles are read by the ids of this company's members only, never by a wide query.
++      const profiles = ids.length ? ok(await c.db.from("profiles").select("id,full_name,email").in("id", ids)) : [];
++      const byId = new Map((profiles ?? []).map((p) => [p.id, p]));
++      const leader = isLeader(c.roles);
++      // A person with two roles is one person with two roles, not two rows.
++      const roles = new Map<string, string[]>();
++      for (const m of members ?? []) roles.set(m.user_id, [...(roles.get(m.user_id) ?? []), m.role]);
++      return [...roles].map(([id, rs]) => ({ user_id: id, nombre: byId.get(id)?.full_name || null, rol: rs.join(", "), ...(leader ? { email: byId.get(id)?.email ?? null } : {}), eres_tu: id === c.userId }));
++    },
++  }),
++  def({
++    name: "list_trials", kind: "read",
++    description: "Altas self-service (pruebas): email, empresa, plan, fecha de alta, activación y pago. Filtra por estado: pending (sin activar), activated (activadas sin pagar) o converted (de pago). Más recientes primero.",
++    input: z.object({ status: z.enum(["pending", "activated", "converted"]).optional(), limit: z.number().int().min(1).max(50).optional() }),
++    run: async (c, a) => {
++      let q = c.db.from("trials").select("id,email,company,plan,mrr,signed_up_at,activated_at,converted_at,source").eq("org_id", c.orgId).order("signed_up_at", { ascending: false }).limit(a.limit ?? 20);
++      if (a.status === "pending") q = q.is("activated_at", null).is("converted_at", null);
++      if (a.status === "activated") q = q.not("activated_at", "is", null).is("converted_at", null);
++      if (a.status === "converted") q = q.not("converted_at", "is", null);
++      const rows = ok(await q);
++      return (rows ?? []).map((t) => ({
++        id: t.id, email: t.email, empresa: t.company, plan: t.plan, mrr: num(t.mrr), alta: t.signed_up_at, origen: t.source,
++        estado: t.converted_at ? "de pago" : t.activated_at ? "activada" : "sin activar", activada: t.activated_at, de_pago: t.converted_at,
++      }));
++    },
++  }),
++  def({
++    name: "get_link", kind: "read",
++    description: "Enlace directo a una pantalla de Nokko por su nombre («Pipeline», «Equipo», «Conexiones»…) o a la ficha de una cuenta (account_id). Úsalo cuando la persona quiera ver o hacer algo que solo se hace en pantalla.",
++    input: z.object({ page: z.string().min(2).max(60).optional().describe("Nombre de la pantalla tal como se ve en el menú"), account_id: z.string().uuid().optional() }),
++    run: async (c, a) => {
++      const base = process.env["APP_URL"] || SITE_URL;
++      if (a.account_id) {
++        const acc = await mustFind<{ id: string; name: string }>(c, "accounts", a.account_id, "esa cuenta", "id,name");
++        return { pantalla: acc.name, enlace: `${base}/accounts/${acc.id}` };
++      }
++      if (!a.page) throw new Error("Dime a qué pantalla quieres ir o pasa account_id.");
++      const want = plain(a.page);
++      const items = NAV.filter((i) => !i.leadersOnly || isLeader(c.roles));
++      const hit = items.find((i) => plain(i.label) === want) ?? items.find((i) => plain(i.label).includes(want) || want.includes(plain(i.label)) || plain(i.keywords ?? "").split(" ").includes(want));
++      if (!hit) throw new Error(`No conozco la pantalla «${a.page}». Pantallas: ${items.map((i) => i.label).join(", ")}.`);
++      return { pantalla: hit.label, enlace: `${base}${hit.to}` };
++    },
++  }),
++];
+diff --git a/src/lib/mcp/tools/agent-tools.ts b/src/lib/mcp/tools/agent-tools.ts
+index 2b26e57..bd61b9b 100644
+--- a/src/lib/mcp/tools/agent-tools.ts
++++ b/src/lib/mcp/tools/agent-tools.ts
+@@ -25,6 +25,7 @@ export const TITLES: Record<string, string> = {
+   start_icp_account_list: "Buscar empresas por ICP (Parallel)",
+   get_account_report: "Informe profundo de una cuenta",
+   start_account_report: "Investigar a fondo una cuenta (Parallel)",
++  get_link: "Enlace a una pantalla o cuenta",
+   get_product_usage: "Uso del producto por cuenta (PostHog)",
+   sync_product_data: "Leer ahora los datos de PostHog",
+   create_battlecard_from_reviews: "Battlecard desde reseñas de G2",
+@@ -89,10 +90,13 @@ export const TITLES: Record<string, string> = {
+   list_leads: "Listar leads",
+   list_meetings: "Listar reuniones",
+   list_people: "Listar personas",
++  list_members: "Ver el equipo y sus roles",
+   list_products: "Listar productos",
++  list_segments: "Listar segmentos",
+   list_stages: "Listar etapas del pipeline",
+   list_suggestions: "Listar sugerencias",
+   list_tasks: "Listar tareas",
++  list_trials: "Listar pruebas (self-service)",
+   listening_coaching: "Coaching de escucha",
+   log_call: "Registrar llamada",
+   log_touch: "Registrar toque con una cuenta",
+--
+2.43.0
+

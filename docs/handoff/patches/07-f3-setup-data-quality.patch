@@ -1,0 +1,113 @@
+From a7afe018820256f9bfb2dee1bd7c0da6218edf94 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:12:21 +0100
+Subject: [PATCH] fix(setup): count accounts and deals as done only when they
+ are usable
+
+The completeness meter reached 100% with an empty base because accounts>0 and
+deals>0 were enough. Accounts now need domain, sector, size and country and
+deals an amount and a close date, on at least half of the records. Older
+snapshots without the counts keep the plain count.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/lib/org-data.ts       |  7 ++++++-
+ src/lib/proactive.test.ts | 11 +++++++++++
+ src/lib/setup-schema.ts   | 16 ++++++++++++----
+ 3 files changed, 29 insertions(+), 5 deletions(-)
+
+diff --git a/src/lib/org-data.ts b/src/lib/org-data.ts
+index 1ee9729..1d4f4fa 100644
+--- a/src/lib/org-data.ts
++++ b/src/lib/org-data.ts
+@@ -15,7 +15,7 @@ import { jsonObject } from "@/lib/json";
+ export type Db = SupabaseClient<Database>;
+
+ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
+-  const [org, seg, icp, pos, pil, quo, acc, deals] = await Promise.all([
++  const [org, seg, icp, pos, pil, quo, acc, deals, accOk, dealsOk] = await Promise.all([
+     db.from("organizations").select("currency").eq("id", orgId).maybeSingle(),
+     db.from("segments").select("name,acv_min,acv_max,win_rate_target,ae_quota").eq("org_id", orgId),
+     db.from("icp_profiles").select("industries,company_size,why_fit,anti_icp").eq("org_id", orgId),
+@@ -24,6 +24,9 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
+     db.from("quotas").select("period,amount").eq("org_id", orgId),
+     db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId),
+     db.from("deals").select("id", { count: "exact", head: true }).eq("org_id", orgId),
++    // Usable rows: an account needs domain, sector, size and country; a deal an amount and a close date.
++    db.from("accounts").select("id", { count: "exact", head: true }).eq("org_id", orgId).not("domain", "is", null).neq("domain", "").not("industry", "is", null).neq("industry", "").not("size", "is", null).neq("size", "").not("country", "is", null).neq("country", ""),
++    db.from("deals").select("id", { count: "exact", head: true }).eq("org_id", orgId).gt("amount", 0).not("close_date", "is", null),
+   ]);
+   return {
+     currency: org.data?.currency ?? null,
+@@ -34,6 +37,8 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
+     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
+     accounts: acc.count ?? 0,
+     deals: deals.count ?? 0,
++    accountsComplete: accOk.count ?? 0,
++    dealsComplete: dealsOk.count ?? 0,
+     quarter: quarterOf(new Date()),
+   };
+ }
+diff --git a/src/lib/proactive.test.ts b/src/lib/proactive.test.ts
+index 5655d61..8f47863 100644
+--- a/src/lib/proactive.test.ts
++++ b/src/lib/proactive.test.ts
+@@ -24,6 +24,17 @@ const keys = (s: Snapshot) => detect(s).map((x) => x.detector);
+
+ describe("setup completeness", () => {
+   it("full data is 100%", () => expect(setupStatus(setup()).pct).toBe(100));
++  it("accounts and deals with nothing filled in do not count as a base", () => {
++    const st = setupStatus(setup({ accounts: 40, accountsComplete: 0, deals: 5, dealsComplete: 0 }));
++    expect(st.pct).toBe(80);
++    expect(st.missing.map((m) => m.id).sort()).toEqual(["accounts", "deals"]);
++  });
++  it("half usable accounts is enough; fewer is not; older snapshots without the counts keep the plain count", () => {
++    expect(setupStatus(setup({ accounts: 10, accountsComplete: 5 })).items.find((i) => i.id === "accounts")?.done).toBe(true);
++    expect(setupStatus(setup({ accounts: 10, accountsComplete: 4 })).items.find((i) => i.id === "accounts")?.done).toBe(false);
++    expect(setupStatus(setup({ accounts: 10, accountsComplete: undefined })).items.find((i) => i.id === "accounts")?.done).toBe(true);
++    expect(setupStatus(setup({ accounts: 0, accountsComplete: 0 })).items.find((i) => i.id === "accounts")?.done).toBe(false);
++  });
+   it("missing quota costs 15 points and is the next step", () => {
+     const st = setupStatus(setup({ quotas: [] }));
+     expect(st.pct).toBe(85);
+diff --git a/src/lib/setup-schema.ts b/src/lib/setup-schema.ts
+index 64c69aa..0951d7a 100644
+--- a/src/lib/setup-schema.ts
++++ b/src/lib/setup-schema.ts
+@@ -10,9 +10,17 @@ export type SetupData = {
+   quotas: { period: string; amount: number }[];
+   accounts: number;
+   deals: number;
++  /** Accounts with domain, sector, size and country filled in; optional so older snapshots still work (then only the count is checked). */
++  accountsComplete?: number;
++  /** Deals with an amount and a close date; optional like accountsComplete. */
++  dealsComplete?: number;
+   quarter: string;
+ };
+
++/** At least half of the records must be usable for the step to count as done: a base of empty rows is not a base. */
++export const USABLE_SHARE = 0.5;
++const mostlyUsable = (total: number, usable: number | undefined) => total > 0 && (usable === undefined || usable / total >= USABLE_SHARE);
++
+ // The five fields of April Dunford's framework come first: the statement and the pitch are built on them,
+ // so the milestone is not done while they are empty.
+ export const DUNFORD_FIELDS = [
+@@ -59,10 +67,10 @@ export const SETUP_ITEMS: SetupItem[] = [
+     done: (d) => d.pillars.filter((p) => filled(p.title) && filled(p.message)).length >= 3 },
+   { id: "quota", label: "Cuota del trimestre actual", weight: 15, unlocks: "Cobertura de pipeline y forecast", link: "/metrics",
+     done: (d) => d.quotas.some((q) => q.period === d.quarter && Number(q.amount) > 0) },
+-  { id: "accounts", label: "Primeras cuentas objetivo", weight: 10, unlocks: "Planes de cuenta, ABM y planificador de reuniones", link: "/accounts",
+-    done: (d) => d.accounts > 0 },
+-  { id: "deals", label: "Pipeline: al menos un deal", weight: 10, unlocks: "Métricas, Asesor GTM y alertas de riesgo", link: "/deals",
+-    done: (d) => d.deals > 0 },
++  { id: "accounts", label: "Primeras cuentas objetivo con dominio, sector, tamaño y país", weight: 10, unlocks: "Planes de cuenta, ABM, enriquecimiento y planificador de reuniones", link: "/accounts",
++    done: (d) => mostlyUsable(d.accounts, d.accountsComplete) },
++  { id: "deals", label: "Pipeline: deals con importe y fecha de cierre", weight: 10, unlocks: "Métricas, Asesor GTM y alertas de riesgo", link: "/deals",
++    done: (d) => mostlyUsable(d.deals, d.dealsComplete) },
+ ];
+
+ export function setupStatus(d: SetupData) {
+--
+2.43.0
+

@@ -1,0 +1,104 @@
+From 1470d17382adc15a63d5bdaf23bc60e81750fa1e Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:37:31 +0100
+Subject: [PATCH] test(agent): integration tools never touch another company's
+ ids
+
+Runs every Apollo/Clay/Parallel/Firecrawl/Drive/LinkedIn chat tool that
+takes an account or stakeholder id with an id from another company: no
+outside call, no write, every query scoped by org_id.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/lib/integration-tools-isolation.test.ts | 79 +++++++++++++++++++++
+ 1 file changed, 79 insertions(+)
+
+diff --git a/src/lib/integration-tools-isolation.test.ts b/src/lib/integration-tools-isolation.test.ts
+new file mode 100644
+index 0000000..d426f18
+--- /dev/null
++++ b/src/lib/integration-tools-isolation.test.ts
+@@ -0,0 +1,79 @@
++// Every chat tool that reaches an outside service (Apollo, Clay, Parallel, Firecrawl, Drive, LinkedIn…)
++// is given ids that do not belong to the caller's company. None may call out or write, and every query
++// it makes has to be scoped to the caller's company: Telegram and cron run with the privileged client,
++// where the database's own rules do not apply.
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { TOOLS, type ToolCtx } from "@/lib/agent/tools";
++
++type Q = { table: string; op: string; payload?: unknown; filters: unknown[][] };
++function foreignDb() {
++  const log: Q[] = [];
++  const from = (table: string) => {
++    const q: Q = { table, op: "select", filters: [] };
++    const proxy: any = new Proxy({}, {
++      get(_t, prop: string) {
++        if (prop === "then") { log.push(q); return (ok: (v: unknown) => unknown) => Promise.resolve({ data: null, error: null, count: 0 }).then(ok); }
++        return (...args: unknown[]) => {
++          if (["insert", "update", "upsert", "delete"].includes(prop)) { q.op = prop; q.payload = args[0]; }
++          else if (!["select", "single", "maybeSingle", "order", "limit", "range"].includes(prop)) q.filters.push([prop, ...args]);
++          return proxy;
++        };
++      },
++    });
++    return proxy;
++  };
++  return { db: { from, rpc: async () => ({ data: null, error: null }) } as unknown as ToolCtx["db"], log };
++}
++
++const ORG = "org-mine";
++const ID = "00000000-0000-4000-8000-0000000000aa"; // an id from another company
++const IDS: Record<string, unknown> = {
++  apollo_find_people: { account_id: ID },
++  apollo_enrich_account: { account_id: ID },
++  apollo_reveal_contacts: { account_id: ID, apollo_ids: ["abcdef123456"] },
++  apollo_reveal_stakeholder: { stakeholder_id: ID },
++  clay_find_people: { account_id: ID },
++  clay_enrich_account: { account_id: ID },
++  complete_account: { account_id: ID },
++  find_key_people: { account_id: ID },
++  enrich_accounts_table: { account_ids: [ID] },
++  research_account: { account_id: ID },
++  list_account_signals: { account_id: ID },
++  refresh_account_signals: { account_id: ID },
++  start_account_report: { account_id: ID },
++  get_account_report: { account_id: ID },
++  drive_list_account_files: { account_id: ID },
++  drive_link_account_folder: { account_id: ID },
++  drive_save_document: { title: "Acta", content: "Texto", account_id: ID },
++  linkedin_company_posts: { account_id: ID },
++  linkedin_profile_posts: { stakeholder_id: ID },
++  company_job_postings: { account_id: ID },
++};
++
++describe("integration tools given another company's ids", () => {
++  const calls: string[] = [];
++  beforeEach(() => {
++    calls.length = 0;
++    vi.stubGlobal("fetch", async (url: unknown) => { calls.push(String(url)); throw new Error("blocked in test"); });
++  });
++  afterEach(() => vi.unstubAllGlobals());
++
++  it("covers every tool that takes an account or stakeholder id from an integration module", () => {
++    const idTools = TOOLS.filter((t) => /^(apollo_|clay_|linkedin_|company_job|research_account|complete_account|find_key_people|enrich_accounts|list_account_signals|refresh_account_signals|start_account_report|get_account_report|drive_)/.test(t.name))
++      .filter((t) => JSON.stringify(Object.keys((t.input as unknown as { shape: object }).shape)).match(/account_id|stakeholder_id|account_ids/));
++    expect(idTools.map((t) => t.name).filter((n) => !(n in IDS)), "add these tools to IDS").toEqual([]);
++  });
++
++  for (const [name, args] of Object.entries(IDS)) {
++    it(`${name}: no outside call, no write, every query in the caller's company`, async () => {
++      const tool = TOOLS.find((t) => t.name === name)!;
++      expect(tool, name).toBeTruthy();
++      const { db, log } = foreignDb();
++      const ctx = { db, orgId: ORG, userId: "u-1", roles: ["owner"], currency: "EUR" } as ToolCtx;
++      await Promise.resolve(tool.run(ctx, tool.input.parse(args))).catch(() => undefined);
++      expect(calls, "outside service called").toEqual([]);
++      expect(log.filter((q) => q.op !== "select"), "wrote something").toEqual([]);
++      for (const q of log) expect(q.filters.some(([op, col, v]) => op === "eq" && col === "org_id" && v === ORG), `${q.table} query without org_id`).toBe(true);
++    });
++  }
++});
+--
+2.43.0
+

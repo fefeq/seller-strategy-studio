@@ -1,0 +1,141 @@
+From 2220d76b9f17f9489803c46c39c58a3d4829ead5 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 20:46:52 +0100
+Subject: [PATCH] fix(scoring): match the anti-ICP by clause, not by a single
+ shared word
+
+A clause of the anti-ICP only hits when all its content words are in the
+account's sector, size or name. A single-word clause that the ICP itself
+targets never decides, and numeric size clauses are compared as numbers.
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/lib/scoring.test.ts | 45 +++++++++++++++++++++++++++++++++++++++++
+ src/lib/scoring.ts      | 40 ++++++++++++++++++++++++++++++++++--
+ 2 files changed, 83 insertions(+), 2 deletions(-)
+
+diff --git a/src/lib/scoring.test.ts b/src/lib/scoring.test.ts
+index a842302..bc64193 100644
+--- a/src/lib/scoring.test.ts
++++ b/src/lib/scoring.test.ts
+@@ -43,6 +43,51 @@ describe("ICP fit", () => {
+     expect(accountFit({ segment_id: null, industry: null, size: null, tier: "B" }, [{ ...ICP, anti_icp: null }]).score).toBeNull();
+     expect(accountFit({ segment_id: "mid", industry: "Fintech", size: "100" }, []).score).toBeNull();
+   });
++  it("sharing one word with a longer anti-ICP phrase is not a hit", () => {
++    const icp: IcpProfile = { ...ICP, industries: "SaaS B2B, Fintech", anti_icp: "Agencias de marketing pequeñas, freelance" };
++    const anti = (industry: string, name = "Acme") => accountFit({ segment_id: null, industry, size: "100 empleados", name }, [icp]).criteria.find((c) => c.id === "anti_icp");
++    expect(anti("Software para agencias")?.status).toBe("match");
++    expect(anti("Agencias de marketing pequeñas")?.status).toBe("miss");
++    expect(anti("Consultoría", "Pablo freelance")?.status).toBe("miss");
++  });
++  it("a single-word anti-ICP clause the ICP itself targets never decides", () => {
++    const icp: IcpProfile = { ...ICP, industries: "Agencias de software", anti_icp: "Agencias" };
++    expect(accountFit({ segment_id: null, industry: "Agencias de software", size: "100" }, [icp]).criteria.find((c) => c.id === "anti_icp")?.status).toBe("match");
++  });
++  it("numeric size clauses of the anti-ICP are compared as numbers", () => {
++    const icp: IcpProfile = { ...ICP, anti_icp: "Menos de 10 empleados" };
++    const anti = (size: string) => accountFit({ segment_id: null, industry: "Fintech", size }, [icp]).criteria.find((c) => c.id === "anti_icp")?.status;
++    expect(anti("5 empleados")).toBe("miss");
++    expect(anti("200 empleados")).toBe("match");
++  });
++  it("names with digits («B2C», «Web3») are words, not sizes", () => {
++    const icp: IcpProfile = { ...ICP, anti_icp: "Empresas B2C" };
++    const r = accountFit({ segment_id: null, industry: "Ecommerce B2C", size: "100 empleados" }, [icp]).criteria.find((c) => c.id === "anti_icp");
++    expect(r?.status).toBe("miss");
++  });
++  it("slash, ampersand and «e» split the list into clauses", () => {
++    const anti = (text: string, industry: string) => accountFit({ segment_id: null, industry, size: "100" }, [{ ...ICP, anti_icp: text }]).criteria.find((c) => c.id === "anti_icp")?.status;
++    expect(anti("Freelance/autónomo", "Autónomo")).toBe("miss");
++    expect(anti("Banca & seguros", "Banca")).toBe("miss");
++    expect(anti("Gestorías e inmobiliarias", "Inmobiliaria")).toBe("miss");
++    expect(anti("Gestorías e inmobiliarias", "Software")).toBe("match");
++  });
++  it("a negated clause never decides", () => {
++    const r = accountFit({ segment_id: null, industry: "Retail web", size: "100" }, [{ ...ICP, anti_icp: "Empresas sin web" }]).criteria.find((c) => c.id === "anti_icp");
++    expect(r?.status).toBe("match");
++  });
++  it("a clause with words and a size needs both", () => {
++    const icp: IcpProfile = { ...ICP, anti_icp: "Agencias con menos de 10 empleados" };
++    const anti = (industry: string, size: string) => accountFit({ segment_id: null, industry, size }, [icp]).criteria.find((c) => c.id === "anti_icp")?.status;
++    expect(anti("Fintech", "5 empleados")).toBe("match");
++    expect(anti("Agencias", "5 empleados")).toBe("miss");
++    expect(anti("Agencias", "200 empleados")).toBe("match");
++  });
++  it("thousands dots in sizes are read as thousands", () => {
++    expect(numbersIn("5.000 empleados")).toEqual([5000]);
++    expect(numbersIn("más de 1.200")).toEqual([1200]);
++    expect(numbersIn("1,5k")).toEqual([1500]);
++  });
+   it("matching the anti-ICP is a miss with double weight", () => {
+     const f = accountFit({ segment_id: "mid", industry: "Agencia de marketing", size: "20", tier: null, name: "Agencias Pérez" }, [ICP], names);
+     // segment 2 ✓, industry 2 ✗, size 1 ✗ (20 outside 50-500), anti 2 ✗ → 2/7
+diff --git a/src/lib/scoring.ts b/src/lib/scoring.ts
+index cd8be58..a2ed245 100644
+--- a/src/lib/scoring.ts
++++ b/src/lib/scoring.ts
+@@ -59,6 +59,8 @@ const overlap = (a: Set<string>, b: Set<string>) => [...a].filter((t) => b.has(t
+ export function numbersIn(text: string | null | undefined): number[] {
+   if (!text) return [];
+   const out: number[] = [];
++  // «5.000» is five thousand in Spanish, not 5: drop the thousands dots before reading.
++  text = text.replace(/(\d)\.(?=\d{3}(?!\d))/g, "$1");
+   for (const m of text.toLowerCase().matchAll(/(\d+(?:[.,]\d+)?)\s*(k|mil)?/g)) {
+     const n = Number(m[1].replace(",", "."));
+     if (Number.isFinite(n)) out.push(m[2] ? n * 1000 : n);
+@@ -82,6 +84,41 @@ function sizeCriterion(icpSize: string | null, accountSize: string | null): Pick
+   return { status: "miss", note: `${accountSize} frente a ${icpSize}` };
+ }
+
++/** A clause that talks about company size (so its numbers are a headcount, not part of a name like «B2C» or «Web3»). */
++const SIZE_CUE = /empleado|persona|trabajador|plantilla|employee|staff|headcount|m[aá]s de|menos de|hasta \d|desde \d|[<>]|\d\s*[-–]\s*\d|\d\s*\+|\d\s*(?:k|mil)\b/i;
++const NEGATION = /\b(?:sin|no|ni|nunca|ning[uú]n[oa]?)\b/i;
++const SEPARATORS = /[,;\n•·/&|]+|\s+(?:y|e|o|u|ni)\s+/i;
++
++/**
++ * Which clauses of the anti-ICP the account matches. The anti-ICP is read clause by clause ("agencias de marketing,
++ * freelance, menos de 10 empleados") and a clause only hits when ALL its content words are in the account's sector,
++ * size or name: one shared word is not enough ("Software para agencias" shares «agencia» with "agencias de marketing"
++ * and is not an agency). A single-word clause that the ICP itself targets is ambiguous and never decides, and a
++ * negated clause ("empresas sin web") says what an account lacks, which this check cannot see, so it never decides.
++ * A clause that talks about size is also compared as numbers; with words too ("agencias de menos de 10 empleados")
++ * both must hold.
++ */
++function antiIcpHits(icp: IcpProfile, a: AccountFitInput): string[] {
++  const mine = new Set([...tokens(a.industry), ...tokens(a.size), ...tokens(a.name)]);
++  const targeted = new Set([...tokens(icp.industries), ...tokens(icp.company_size), ...(icp.search_keywords ?? []).flatMap((k) => [...tokens(k)])]);
++  const hits: string[] = [];
++  for (const clause of (icp.anti_icp ?? "").split(SEPARATORS).map((c) => c.trim()).filter(Boolean)) {
++    if (NEGATION.test(clause)) continue;
++    const words = [...tokens(clause)];
++    const sizeClause = SIZE_CUE.test(clause) && numbersIn(clause).length > 0;
++    if (sizeClause) {
++      if (!numbersIn(a.size).length || sizeCriterion(clause, a.size).status !== "match") continue;
++      if (words.length && !words.every((w) => mine.has(w))) continue;
++      hits.push(clause);
++      continue;
++    }
++    if (!words.length) continue;
++    if (words.length === 1 && targeted.has(words[0])) continue;
++    if (words.every((w) => mine.has(w))) hits.push(...words);
++  }
++  return [...new Set(hits)];
++}
++
+ function fitAgainst(a: AccountFitInput, icp: IcpProfile, segmentNames?: Map<string, string>): Fit {
+   const criteria: Criterion[] = [];
+   const segName = (id: string | null) => (id && segmentNames?.get(id)) || null;
+@@ -100,8 +137,7 @@ function fitAgainst(a: AccountFitInput, icp: IcpProfile, segmentNames?: Map<stri
+
+   if (!icp.anti_icp) criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "unknown", weight: 2, note: "El ICP no define anti-ICP" });
+   else {
+-    const mine = new Set([...tokens(a.industry), ...tokens(a.size), ...tokens(a.name)]);
+-    const hit = overlap(tokens(icp.anti_icp), mine);
++    const hit = antiIcpHits(icp, a);
+     // A hit disqualifies even on the name alone; "no hit" only proves something when we know the
+     // account's sector or size. With just a name, not matching the anti-ICP says nothing.
+     if (hit.length) criteria.push({ id: "anti_icp", label: "Anti-ICP", status: "miss", weight: 2, note: `Coincide con el anti-ICP en ${hit.join(", ")}` });
+--
+2.43.0
+

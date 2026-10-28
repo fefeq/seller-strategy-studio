@@ -1,0 +1,434 @@
+From 817ed19dd4122180992a807ae4380e4c7da95044 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 27 Oct 2026 22:24:59 +0100
+Subject: [PATCH] fix(import): read Sales Navigator style exports without
+ emails
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- map profile / company LinkedIn URL columns (EN and ES) and keep a
+  LinkedIn address from becoming the company domain
+- «Nombre» + «Apellidos» now gives the full name
+- create and dedupe the person without an email (LinkedIn URL, else
+  name inside the account); another person at the same company is
+  a new lead instead of overwriting the first
+- store the company LinkedIn page on the account when empty
+
+Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_013oUyrHdHaQ4SjMaiyKsvHA
+---
+ src/lib/leads-ingest.test.ts | 144 +++++++++++++++++++++++++++++++++++
+ src/lib/leads-ingest.ts      |  52 +++++++++----
+ src/lib/leads.test.ts        |  49 +++++++++++-
+ src/lib/leads.ts             |  42 ++++++++--
+ 4 files changed, 264 insertions(+), 23 deletions(-)
+ create mode 100644 src/lib/leads-ingest.test.ts
+
+diff --git a/src/lib/leads-ingest.test.ts b/src/lib/leads-ingest.test.ts
+new file mode 100644
+index 0000000..35e7137
+--- /dev/null
++++ b/src/lib/leads-ingest.test.ts
+@@ -0,0 +1,144 @@
++import { describe, expect, it } from "vitest";
++import { ingestLead } from "./leads-ingest";
++import { normalizeLead } from "./leads";
++
++// In-memory stand-in for the few query shapes ingestLead uses (synthetic rows only).
++type Row = Record<string, unknown>;
++function fakeDb() {
++  const t: Record<string, Row[]> = { accounts: [], people: [], leads: [], deals: [] };
++  let n = 0;
++  const rx = (p: string) => new RegExp(`^${p.replace(/\\(.)/g, "\u0000$1").replace(/[.*+?^${}()|[\]]/g, "\\$&").replace(/%/g, ".*").replace(/_/g, ".").replace(/\u0000(.)/g, (_m, c) => c.replace(/[.*+?^${}()|[\]\\%_]/g, "\\$&"))}$`, "i");
++  const from = (name: string) => {
++    const filters: ((r: Row) => boolean)[] = [];
++    let mode: "select" | "update" = "select";
++    let patch: Row = {};
++    const run = () => {
++      const rows = (t[name] ?? []).filter((r) => filters.every((f) => f(r)));
++      if (mode === "update") rows.forEach((r) => Object.assign(r, patch));
++      return rows;
++    };
++    const b: Record<string, unknown> = {
++      select: () => b,
++      eq: (c: string, v: unknown) => (filters.push((r) => r[c] === v), b),
++      is: (c: string, v: unknown) => (filters.push((r) => (r[c] ?? null) === v), b),
++      ilike: (c: string, p: string) => (filters.push((r) => typeof r[c] === "string" && rx(p).test(r[c] as string)), b),
++      filter: (c: string, _op: string, v: string) => (filters.push((r) => v.slice(1, -1).split(",").includes(r[c] as string)), b),
++      not: () => b,
++      order: () => b,
++      limit: () => b,
++      maybeSingle: async () => ({ data: run().at(-1) ?? null, error: null }),
++      single: async () => ({ data: run().at(-1) ?? null, error: null }),
++      update: (p: Row) => ((mode = "update"), (patch = p), b),
++      insert: (r: Row) => {
++        const row = { id: `${name}-${++n}`, linkedin_url: null, created_at: new Date().toISOString(), ...r };
++        t[name].push(row);
++        return { select: () => ({ single: async () => ({ data: row, error: null }) }) };
++      },
++      then: (res: (v: unknown) => unknown) => res({ data: run(), error: null }),
++    };
++    return b;
++  };
++  return { db: { from } as never, t };
++}
++
++const ctx = { orgId: "org-1", segments: [], stages: [] };
++const lead = (rec: Row) => {
++  const r = normalizeLead(rec);
++  if ("error" in r) throw new Error(r.error);
++  return r.lead;
++};
++
++describe("ingestLead with a list that has no emails (synthetic rows)", () => {
++  it("creates the person with profile and title, and the company page on the account", async () => {
++    const { db, t } = fakeDb();
++    await ingestLead(db, ctx, lead({ Nombre: "Ana", Apellidos: "Prueba", Cargo: "Head of Sales", Empresa: "Acme Demo", "URL del perfil": "https://www.linkedin.com/in/ana-prueba", "URL de la empresa": "https://www.linkedin.com/company/acme-demo" }));
++    expect(t.people).toHaveLength(1);
++    expect(t.people[0]).toMatchObject({ full_name: "Ana Prueba", title: "Head of Sales", linkedin_url: "https://www.linkedin.com/in/ana-prueba", account_id: t.accounts[0].id });
++    expect(t.accounts[0].name).toBe("Acme Demo");
++    expect(t.accounts[0].domain).toBeNull();
++    expect(t.accounts[0].linkedin_url).toBe("https://www.linkedin.com/company/acme-demo");
++    expect(t.leads[0]).toMatchObject({ person_id: t.people[0].id, contact_name: "Ana Prueba" });
++  });
++
++  it("a second person at the same company is a second lead, not the first one overwritten", async () => {
++    const { db, t } = fakeDb();
++    const base = { Empresa: "Acme Demo", "URL de la empresa": "https://www.linkedin.com/company/acme-demo" };
++    await ingestLead(db, ctx, lead({ ...base, Nombre: "Ana", Apellidos: "Prueba", Cargo: "CEO", "URL del perfil": "https://www.linkedin.com/in/ana" }));
++    await ingestLead(db, ctx, lead({ ...base, Nombre: "Luis", Apellidos: "Ejemplo", Cargo: "CTO", "URL del perfil": "https://www.linkedin.com/in/luis" }));
++    expect(t.accounts).toHaveLength(1);
++    expect(t.people).toHaveLength(2);
++    expect(t.leads).toHaveLength(2);
++    expect(t.leads.map((l) => l.title).sort()).toEqual(["CEO", "CTO"]);
++  });
++
++  it("importing the same list again updates instead of duplicating", async () => {
++    const { db, t } = fakeDb();
++    const rec = { Empresa: "Acme Demo", Nombre: "Ana", Apellidos: "Prueba", Cargo: "CEO", "URL del perfil": "https://www.linkedin.com/in/ana" };
++    await ingestLead(db, ctx, lead(rec));
++    const again = await ingestLead(db, ctx, lead(rec));
++    expect(again.status).toBe("updated");
++    expect(t.people).toHaveLength(1);
++    expect(t.leads).toHaveLength(1);
++  });
++
++  it("a person without profile is matched by name inside the account", async () => {
++    const { db, t } = fakeDb();
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", Nombre: "Ana", Apellidos: "Prueba" }));
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", Nombre: "Ana", Apellidos: "Prueba", Cargo: "CEO" }));
++    expect(t.people).toHaveLength(1);
++    expect(t.leads).toHaveLength(1);
++  });
++
++  it("keeps a company page that is already there", async () => {
++    const { db, t } = fakeDb();
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", "URL de la empresa": "https://www.linkedin.com/company/acme-demo" }));
++    t.accounts[0].linkedin_url = "https://www.linkedin.com/company/otra";
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", "URL de la empresa": "https://www.linkedin.com/company/acme-demo" }));
++    expect(t.accounts[0].linkedin_url).toBe("https://www.linkedin.com/company/otra");
++  });
++
++  it("two people with the same name but different profiles stay two people", async () => {
++    const { db, t } = fakeDb();
++    const base = { Empresa: "Acme Demo", Nombre: "Juan", Apellidos: "García" };
++    await ingestLead(db, ctx, lead({ ...base, "URL del perfil": "https://www.linkedin.com/in/juan-1" }));
++    await ingestLead(db, ctx, lead({ ...base, "URL del perfil": "https://www.linkedin.com/in/juan-2" }));
++    expect(t.people).toHaveLength(2);
++    expect(t.leads).toHaveLength(2);
++  });
++
++  it("names match without caring about accents or case", async () => {
++    const { db, t } = fakeDb();
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", Nombre: "José", Apellidos: "García" }));
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", Nombre: "jose", Apellidos: "garcia" }));
++    expect(t.people).toHaveLength(1);
++    expect(t.leads).toHaveLength(1);
++  });
++
++  it("a profile stored with a trailing slash is still found, and a row with only the profile creates a person", async () => {
++    const { db, t } = fakeDb();
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", "URL del perfil": "https://www.linkedin.com/in/zed" }));
++    t.people[0].linkedin_url = "https://www.linkedin.com/in/zed/";
++    await ingestLead(db, ctx, lead({ Empresa: "Acme Demo", "URL del perfil": "https://www.linkedin.com/in/zed" }));
++    expect(t.people).toHaveLength(1);
++  });
++
++  it("the same person at another company gets a lead there; the old lead is not touched", async () => {
++    const { db, t } = fakeDb();
++    const p = { Nombre: "Ana", Apellidos: "Prueba", "URL del perfil": "https://www.linkedin.com/in/ana" };
++    await ingestLead(db, ctx, lead({ ...p, Empresa: "Vieja SL" }));
++    const out = await ingestLead(db, ctx, lead({ ...p, Empresa: "Nueva SL" }));
++    expect(t.accounts).toHaveLength(2);
++    expect(t.leads).toHaveLength(2);
++    expect(out.status).toBe("created");
++    expect(t.leads.find((l) => l.account_id === out.accountId)).toBeTruthy();
++  });
++
++  it("re-importing without a stage does not move the person back to «new»", async () => {
++    const { db, t } = fakeDb();
++    const rec = { Empresa: "Acme Demo", Nombre: "Ana", Apellidos: "Prueba", "URL del perfil": "https://www.linkedin.com/in/ana" };
++    await ingestLead(db, ctx, lead(rec));
++    t.people[0].crm_stage = "won";
++    await ingestLead(db, ctx, lead(rec));
++    expect(t.people[0].crm_stage).toBe("won");
++  });
++});
+diff --git a/src/lib/leads-ingest.ts b/src/lib/leads-ingest.ts
+index 0941271..26b704d 100644
+--- a/src/lib/leads-ingest.ts
++++ b/src/lib/leads-ingest.ts
+@@ -3,7 +3,7 @@
+ // so every query scopes org_id explicitly.
+ import type { SupabaseClient } from "@supabase/supabase-js";
+ import type { Database } from "@/integrations/supabase/types";
+-import { isPreDealStage, type NormalizedLead } from "@/lib/leads";
++import { isPreDealStage, normKey, type NormalizedLead } from "@/lib/leads";
+ import { leadStageLabel } from "@/lib/lead-funnel";
+ import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stages";
+
+@@ -21,11 +21,13 @@ type LeadHit = { id: string; stage: string; deal_id: string | null; external_id:
+ const LEAD_COLS = "id,stage,deal_id,external_id,contact_name,email,person_id";
+
+ /** Same lead: by its deal → external id → email → an open lead of the same account. */
+-async function findLead(db: Db, orgId: string, k: { dealId?: string | null; externalId?: string | null; email?: string | null; accountId: string }): Promise<LeadHit | null> {
++async function findLead(db: Db, orgId: string, k: { dealId?: string | null; externalId?: string | null; email?: string | null; personId?: string | null; accountId: string }): Promise<LeadHit | null> {
+   const base = () => db.from("leads").select(LEAD_COLS).eq("org_id", orgId);
+   if (k.dealId) { const r = (await base().eq("deal_id", k.dealId).limit(1).maybeSingle()).data; if (r) return r; }
+   if (k.externalId) { const r = (await base().eq("external_id", k.externalId).limit(1).maybeSingle()).data; if (r) return r; }
+-  const free = (r: LeadHit | null) => (r && (!k.dealId || !r.deal_id || r.deal_id === k.dealId) ? r : null);
++  // Another person at the same company is another lead (a Sales Navigator list has no emails to tell them apart).
++  const free = (r: LeadHit | null) => (r && (!k.dealId || !r.deal_id || r.deal_id === k.dealId) && (!k.personId || !r.person_id || r.person_id === k.personId) ? r : null);
++  if (k.personId) { const r = free((await base().eq("person_id", k.personId).eq("account_id", k.accountId).order("created_at", { ascending: false }).limit(1).maybeSingle()).data); if (r) return r; }
+   if (k.email) { const r = free((await base().ilike("email", like(k.email)).order("created_at", { ascending: false }).limit(1).maybeSingle()).data); if (r) return r; }
+   return free((await base().eq("account_id", k.accountId).filter("stage", "in", OPEN_LEAD).order("created_at", { ascending: false }).limit(1).maybeSingle()).data);
+ }
+@@ -53,19 +55,37 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead):
+   } else if (!account.domain && lead.domain) {
+     await db.from("accounts").update({ domain: lead.domain }).eq("id", account.id).eq("org_id", orgId);
+   }
++  // The company's LinkedIn page, only into an empty field: a value someone typed or enrichment found wins.
++  if (lead.companyLinkedin) await db.from("accounts").update({ linkedin_url: lead.companyLinkedin }).eq("id", account.id).eq("org_id", orgId).is("linkedin_url", null);
+
+-  // 2. Contact person (deduped by email).
++  // 2. Contact person: deduped by email, else by LinkedIn URL, else by name inside the account.
++  // A Sales Navigator export has no emails, so without this the person (and their title) was lost.
+   let personId: string | null = null;
+-  if (lead.email) {
+-    const { data: person } = await db.from("people").select("id,account_id").eq("org_id", orgId).ilike("email", like(lead.email)).limit(1).maybeSingle();
+-    if (!person) {
+-      const { data, error } = await db.from("people").insert({ org_id: orgId, full_name: lead.fullName ?? lead.email, email: lead.email, title: lead.title, linkedin_url: lead.linkedin, company: lead.company, account_id: account.id, source: lead.source ?? "Entrada de leads", crm_stage: lead.stage }).select("id").single();
+-      if (error && !/duplicate/i.test(error.message)) throw new Error(`Persona: ${error.message}`);
+-      personId = data?.id ?? null;
+-    } else {
+-      personId = person.id;
+-      await db.from("people").update({ crm_stage: lead.stage, ...(person.account_id ? {} : { account_id: account.id }) }).eq("id", person.id).eq("org_id", orgId);
+-    }
++  const personFields = { full_name: lead.fullName ?? lead.email ?? lead.linkedin ?? "", email: lead.email, title: lead.title, linkedin_url: lead.linkedin, company: lead.company, account_id: account.id, source: lead.source ?? "Entrada de leads", crm_stage: lead.stage };
++  type PersonHit = { id: string; account_id: string | null };
++  let person: PersonHit | null = null;
++  const peopleBy = () => db.from("people").select("id,account_id").eq("org_id", orgId);
++  if (lead.email) person = (await peopleBy().ilike("email", like(lead.email)).limit(1).maybeSingle()).data;
++  if (!person && lead.linkedin) {
++    // With or without the trailing slash an older import may have stored.
++    const tail = like(lead.linkedin.replace(/^https?:\/\/(www\.)?/i, "").replace(/\/+$/, ""));
++    person = (await peopleBy().ilike("linkedin_url", `%${tail}`).limit(1).maybeSingle()).data
++      ?? (await peopleBy().ilike("linkedin_url", `%${tail}/`).limit(1).maybeSingle()).data;
++  }
++  if (!person && !lead.email && lead.fullName) {
++    // Same name inside the account, ignoring accents and case («José García» = «Jose Garcia»). Two people with
++    // different LinkedIn profiles are two people even if they share a name.
++    const key = normKey(lead.fullName);
++    const { data: mates } = await db.from("people").select("id,account_id,full_name,linkedin_url").eq("org_id", orgId).eq("account_id", account.id).limit(500);
++    person = (mates ?? []).find((m) => normKey(m.full_name ?? "") === key && (!lead.linkedin || !m.linkedin_url)) ?? null;
++  }
++  if (person) {
++    personId = person.id;
++    await db.from("people").update({ ...(lead.stageGiven ? { crm_stage: lead.stage } : {}), ...(person.account_id ? {} : { account_id: account.id }) }).eq("id", person.id).eq("org_id", orgId);
++  } else if (lead.email || lead.fullName || lead.linkedin) {
++    const { data, error } = await db.from("people").insert({ org_id: orgId, ...personFields }).select("id").single();
++    if (error && !/duplicate/i.test(error.message)) throw new Error(`Persona: ${error.message}`);
++    personId = data?.id ?? null;
+   }
+
+   const segmentId = lead.segment ? ctx.segments.find((s) => s.name.trim().toLowerCase() === lead.segment!.trim().toLowerCase())?.id ?? null : null;
+@@ -80,7 +100,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead):
+
+   // 3a. Still a lead (Nuevo, Contactado, MQL, SQL, Descartado): no deal yet.
+   if (isPreDealStage(lead.stage)) {
+-    const hit = await findLead(db, orgId, { externalId: lead.externalId, email: lead.email, accountId: account.id });
++    const hit = await findLead(db, orgId, { externalId: lead.externalId, email: lead.email, personId, accountId: account.id });
+     if (hit) {
+       // A lead already converted keeps its opportunity; CRMs often send the old lead status late.
+       const patch: LeadUpdate = { ...contactPatch(hit) };
+@@ -162,7 +182,7 @@ export async function ingestLead(db: Db, ctx: IngestCtx, lead: NormalizedLead):
+   }
+
+   // 4. The lead behind the deal is now an Oportunidad.
+-  const hit = await findLead(db, orgId, { dealId: deal.id, externalId: lead.externalId, email: lead.email, accountId: account.id });
++  const hit = await findLead(db, orgId, { dealId: deal.id, externalId: lead.externalId, email: lead.email, personId, accountId: account.id });
+   let leadId: string | null = hit?.id ?? null;
+   if (hit) {
+     const patch: LeadUpdate = { ...contactPatch(hit), deal_id: deal.id };
+diff --git a/src/lib/leads.test.ts b/src/lib/leads.test.ts
+index 44fcfbb..d82a570 100644
+--- a/src/lib/leads.test.ts
++++ b/src/lib/leads.test.ts
+@@ -1,5 +1,5 @@
+ import { describe, expect, it } from "vitest";
+-import { flattenPayload, mapStage, normalizeLead, parseAmount, parseDate } from "./leads";
++import { applyColumnMapping, columnMapping, flattenPayload, mapStage, normalizeLead, parseAmount, parseDate } from "./leads";
+ import { actuals } from "./pipeline-real";
+ import { cleanDomain } from "./leads";
+ import { cleanDomain as fromImport } from "./account-import";
+@@ -147,3 +147,50 @@ describe("cleanDomain (one rule for leads and accounts)", () => {
+     expect(cleanDomain("WWW.acme.co.uk/path")).toBe("acme.co.uk");
+   });
+ });
++
++describe("Sales Navigator style exports (synthetic rows)", () => {
++  it("English headers: profile and company URLs, no email", () => {
++    const l = lead({ "First Name": "Ana", "Last Name": "Prueba", Title: "Head of Sales", Company: "Acme Demo", "Profile URL": "https://www.linkedin.com/in/ana-prueba/?trk=abc", "Company URL": "https://www.linkedin.com/company/acme-demo/" });
++    expect(l.fullName).toBe("Ana Prueba");
++    expect(l.linkedin).toBe("https://www.linkedin.com/in/ana-prueba");
++    expect(l.companyLinkedin).toBe("https://www.linkedin.com/company/acme-demo");
++    expect(l.domain).toBeNull();
++  });
++
++  it("Spanish headers: «Nombre» + «Apellidos» is the full name", () => {
++    const l = lead({ Nombre: "Luis", Apellidos: "Ejemplo", Cargo: "CEO", Empresa: "Demo SL", "URL del perfil": "https://es.linkedin.com/in/luis-ejemplo", "URL de la empresa": "linkedin.com/company/demo-sl" });
++    expect(l.fullName).toBe("Luis Ejemplo");
++    expect(l.linkedin).toBe("https://www.linkedin.com/in/luis-ejemplo");
++    expect(l.companyLinkedin).toBe("https://www.linkedin.com/company/demo-sl");
++  });
++
++  it("does not repeat the surname when the name already has it", () => {
++    expect(lead({ Nombre: "Luis Ejemplo", Apellidos: "Ejemplo", Empresa: "Demo SL" }).fullName).toBe("Luis Ejemplo");
++  });
++
++  it("a LinkedIn address is never the company's domain", () => {
++    const l = lead({ Empresa: "Demo SL", Web: "https://www.linkedin.com/company/demo-sl", Email: "x@demo.es" });
++    expect(l.domain).toBe("demo.es");
++    expect(l.companyLinkedin).toBe("https://www.linkedin.com/company/demo-sl");
++    expect(lead({ Empresa: "Demo SL", "Company URL": "https://demo.es" }).domain).toBe("demo.es");
++  });
++
++  it("columns swapped by the user still land on the right field", () => {
++    const l = lead({ Empresa: "Demo SL", linkedin: "https://www.linkedin.com/company/demo-sl", company_linkedin_url: "https://www.linkedin.com/in/pepe" });
++    expect(l.linkedin).toBe("https://www.linkedin.com/in/pepe");
++    expect(l.companyLinkedin).toBe("https://www.linkedin.com/company/demo-sl");
++  });
++
++  it("ignores non-LinkedIn text in the LinkedIn columns", () => {
++    expect(lead({ Empresa: "Demo SL", linkedin: "https://example.com/in/x" }).linkedin).toBeNull();
++  });
++
++  it("preview mapping shows both URL columns and the surname", () => {
++    const m = columnMapping(["Nombre", "Apellidos", "Cargo", "Empresa", "URL del perfil", "URL de la empresa"]);
++    expect(m["URL del perfil"]).toBe("linkedin");
++    expect(m["URL de la empresa"]).toBe("companyLinkedin");
++    expect(m.Apellidos).toBe("lastName");
++    const rows = applyColumnMapping([{ Nombre: "Luis", Apellidos: "Ejemplo", Empresa: "Demo SL", "URL del perfil": "https://www.linkedin.com/in/luis" }], m);
++    expect(lead(rows[0]).fullName).toBe("Luis Ejemplo");
++  });
++});
+diff --git a/src/lib/leads.ts b/src/lib/leads.ts
+index e615186..69cfd15 100644
+--- a/src/lib/leads.ts
++++ b/src/lib/leads.ts
+@@ -23,6 +23,8 @@ export type NormalizedLead = {
+   fullName: string | null;
+   title: string | null;
+   linkedin: string | null;
++  /** linkedin.com/company/... URL of the company (Sales Navigator exports it next to the person's). */
++  companyLinkedin: string | null;
+   stage: IntakeStage;
+   /** False when the payload had no stage (then existing leads/deals keep theirs). */
+   stageGiven: boolean;
+@@ -59,7 +61,9 @@ const FIELDS: { key: keyof NormalizedLead | "firstName" | "lastName"; exact: str
+   { key: "lastName", exact: ["last_name", "lastname", "apellido", "apellidos"] },
+   { key: "fullName", exact: ["name", "full_name", "nombre", "nombre_completo", "contact_name", "contacto"], contains: ["nombre", "name"] },
+   { key: "title", exact: ["title", "job_title", "cargo", "puesto", "position", "rol", "role", "jobtitle"], contains: ["cargo", "puesto", "job_title"] },
+-  { key: "linkedin", exact: ["linkedin", "linkedin_url", "linkedin_profile"], contains: ["linkedin"] },
++  // Company page first, so «Company LinkedIn URL» never lands in the person's field via the generic «linkedin» word.
++  { key: "companyLinkedin", exact: ["company_linkedin_url", "company_linkedin", "linkedin_company_url", "linkedin_company", "company_profile_url", "company_url", "url_de_la_empresa", "url_empresa", "linkedin_empresa", "empresa_linkedin"], contains: ["company_linkedin", "linkedin_company", "linkedin_empresa", "empresa_linkedin"] },
++  { key: "linkedin", exact: ["linkedin", "linkedin_url", "linkedin_profile", "linkedin_profile_url", "profile_url", "profileurl", "profile_link", "url_del_perfil", "url_perfil", "perfil_linkedin", "sales_navigator_url", "sales_navigator_profile_url", "lead_url"], contains: ["linkedin"] },
+   { key: "stage", exact: ["stage", "etapa", "dealstage", "deal_stage", "fase", "estado", "status", "lifecyclestage", "lead_status"] },
+   { key: "enteredAt", exact: ["date", "fecha", "created_at", "createdate", "created", "fecha_entrada", "fecha_de_entrada", "fecha_alta", "fecha_de_alta", "fecha_lead", "submitted_at", "add_time", "signup_date", "lead_date", "entered_at"] },
+   { key: "closeDate", exact: ["close_date", "closedate", "fecha_cierre", "fecha_de_cierre", "fecha_cierre_prevista", "fecha_prevista_de_cierre", "cierre_previsto", "expected_close_date", "cierre", "won_time", "close_time"], contains: ["cierre", "close_date"] },
+@@ -70,13 +74,13 @@ const FIELDS: { key: keyof NormalizedLead | "firstName" | "lastName"; exact: str
+ ];
+
+ export type CsvField =
+-  | "externalId" | "email" | "domain" | "company" | "firstName" | "lastName" | "fullName" | "title" | "linkedin"
++  | "externalId" | "email" | "domain" | "company" | "firstName" | "lastName" | "fullName" | "title" | "linkedin" | "companyLinkedin"
+   | "stage" | "enteredAt" | "closeDate" | "amount" | "dealName" | "segment" | "source";
+
+ /** What each field is called on screen, for the CSV preview. */
+ export const CSV_FIELD_LABELS: Record<CsvField, string> = {
+   externalId: "Id externo", email: "Email", domain: "Dominio / web", company: "Empresa", firstName: "Nombre de pila", lastName: "Apellidos",
+-  fullName: "Nombre de la persona", title: "Cargo", linkedin: "LinkedIn", stage: "Etapa", enteredAt: "Fecha de entrada del lead",
++  fullName: "Nombre de la persona", title: "Cargo", linkedin: "LinkedIn de la persona", companyLinkedin: "LinkedIn de la empresa", stage: "Etapa", enteredAt: "Fecha de entrada del lead",
+   closeDate: "Fecha de cierre del deal", amount: "Importe", dealName: "Nombre del deal", segment: "Segmento", source: "Origen",
+ };
+
+@@ -211,6 +215,25 @@ export function cleanDomain(raw: unknown): string | null {
+   return /^[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(s) ? s : null;
+ }
+
++/** https URL on linkedin.com, or null. Query strings (Sales Navigator tracking) are dropped. */
++function linkedinUrl(raw: string | undefined): string | null {
++  const m = raw?.trim().match(/^(?:https?:\/\/)?(?:[a-z]{2,3}\.)?(?:www\.)?(linkedin\.com\/[^\s?#]+)/i);
++  return m ? `https://www.${m[1].replace(/\/+$/, "")}`.slice(0, 300) : null;
++}
++
++/** Sorts LinkedIn addresses into person (/in/, /sales/lead/) and company (/company/); a swapped column still lands right. */
++function splitLinkedin(...raws: (string | undefined)[]): { person: string | null; company: string | null } {
++  let person: string | null = null;
++  let company: string | null = null;
++  for (const r of raws) {
++    const u = linkedinUrl(r);
++    if (!u) continue;
++    if (/linkedin\.com\/(company|sales\/company|school)\//i.test(u)) company ??= u;
++    else if (/linkedin\.com\/(in|sales\/lead|sales\/people|pub)\//i.test(u)) person ??= u;
++  }
++  return { person, company };
++}
++
+ export function domainFromEmail(email: string | null) {
+   const d = email?.split("@")[1]?.toLowerCase();
+   return d && !FREEMAIL.has(d) ? d : null;
+@@ -296,11 +319,17 @@ export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage
+   }
+
+   const email = picked.email && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(picked.email) ? picked.email.toLowerCase() : null;
+-  const domain = cleanDomain(picked.domain) ?? domainFromEmail(email);
++  // A LinkedIn address is never the company's web: «linkedin.com» would otherwise become its domain.
++  const webCandidate = picked.domain && !/(^|\/\/|\.)linkedin\.com/i.test(picked.domain) ? picked.domain : picked.companyLinkedin && !/linkedin\./i.test(picked.companyLinkedin) ? picked.companyLinkedin : undefined;
++  const domain = cleanDomain(webCandidate) ?? domainFromEmail(email);
++  const { person: personLinkedin, company: companyLinkedin } = splitLinkedin(picked.linkedin, picked.companyLinkedin, picked.domain);
+   const company = (picked.company?.slice(0, 200) || (domain ? companyFromDomain(domain) : "")).trim();
+   if (!company) return { error: "Falta la empresa: envía «empresa», un dominio/web o un email corporativo." };
+
+-  const fullName = picked.fullName ?? ([picked.firstName, picked.lastName].filter(Boolean).join(" ") || null);
++  // «Nombre» + «Apellidos» (Sales Navigator in Spanish) is first name + surname, not the whole name.
++  const fullName = picked.firstName || !picked.lastName || !picked.fullName
++    ? picked.fullName ?? ([picked.firstName, picked.lastName].filter(Boolean).join(" ") || null)
++    : picked.fullName.toLowerCase().includes(picked.lastName.toLowerCase()) ? picked.fullName : `${picked.fullName} ${picked.lastName}`;
+   const { stage, recognized } = mapStage(picked.stage, opts.defaultStage ?? "new");
+   const entered = parseDate(picked.enteredAt);
+   const close = parseDate(picked.closeDate);
+@@ -311,7 +340,8 @@ export function normalizeLead(rec: Record<string, unknown>, opts: { defaultStage
+       email,
+       fullName: fullName?.slice(0, 200) ?? null,
+       title: picked.title?.slice(0, 200) ?? null,
+-      linkedin: picked.linkedin?.includes("linkedin.") ? picked.linkedin.slice(0, 300) : null,
++      linkedin: personLinkedin,
++      companyLinkedin,
+       stage,
+       stageGiven: !!picked.stage,
+       stageRecognized: recognized,
+--
+2.43.0
+
