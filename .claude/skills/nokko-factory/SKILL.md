@@ -13,6 +13,7 @@ Lee antes `docs/factory/GROUND-RULES.md` y `docs/factory/README.md`.
 | # | Estación | Skill / agente | Comprobación |
 |---|---|---|---|
 | 1 | Intake y triage | `nokko-intake` (agente `nokko-tracker`) | ID único, owner solo tras GO |
+| 1b | Shape: PRD y SDD según el tipo de trabajo | `nokko-shape` | nivel justificado, cada CA con prueba, aprobación de Fede |
 | 2 | Brief | `nokko-brief` (coordinador, tú) | commit base, test fail-first y movimientos prohibidos nombrados |
 | 3 | Fan-out | `nokko-fanout` | ningún worktree saturado, ninguna sesión callada sin aviso |
 | 4 | Build con test fallando | `nokko-build` (agente `nokko-author`) | falla en base, pasa en tip, evidencia en disco |
@@ -23,6 +24,7 @@ Lee antes `docs/factory/GROUND-RULES.md` y `docs/factory/README.md`.
 ## Cómo conducir un trabajo
 1. `nokko-intake` registra → `LOGGED`. Nada tiene owner.
 2. Fede dice GO → `ledger.mjs promote` (exige `--go`). Si no hay GO explícito en el chat, no promociones.
+2b. `nokko-shape` elige el nivel (solo ticket, SDD corto, PRD + SDD) y redacta lo que toque. Sin SDD aprobado no hay brief.
 3. `nokko-brief` → `nokko-fanout` (worktree + sesión por trabajo) → `nokko-build`.
 4. `nokko-review` lee el diff y fusiona cada trabajo como commit propio en la rama de integración.
 5. `nokko-gate` (sesión sin contexto del código) + `nokko-walkthrough`.

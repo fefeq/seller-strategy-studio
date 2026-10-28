@@ -9,6 +9,8 @@ const FILE = process.env.FACTORY_LEDGER ? resolve(process.env.FACTORY_LEDGER) : 
 const EVIDENCE = resolve(FACTORY_DIR, "evidence");
 const STATES = ["LOGGED", "PROMOTED", "SHIPPED", "VERIFIED"];
 const KINDS = ["bug", "feature", "alert"];
+// Estado values of a PRD/SDD that Fede has approved (see docs/factory/templates).
+const APPROVED = ["Aprobado", "En curso", "Hecho"];
 
 function load() {
   if (!existsSync(FILE)) return { version: 1, seq: 0, tickets: [] };
@@ -68,6 +70,9 @@ switch (cmd) {
     if (!title) fail('usage: log "<title>" --kind bug|feature|alert [--source <where>] [--by <name>]');
     const kind = a.kind ?? "bug";
     if (!KINDS.includes(kind)) fail(`kind must be one of ${KINDS.join(", ")}`);
+    for (const [k, v] of [["sdd", a.sdd], ["prd", a.prd]]) {
+      if (v && !existsSync(resolve(FACTORY_DIR, "..", v))) fail(`${k} file not found in the main checkout: ${v}`);
+    }
     const dup = db.tickets
       .filter((t) => !t.duplicate_of)
       .map((t) => ({ t, s: similarity(t.title, title) }))
@@ -83,6 +88,7 @@ switch (cmd) {
       owner: null,
       duplicate_of: dup && dup.s >= 0.6 ? dup.t.id : null,
       sdd: a.sdd ?? null,
+      prd: a.prd ?? null,
       branch: null,
       base_commit: null,
       history: [{ state: "LOGGED", at: now(), by: a.by ?? "tracker", note: "" }],
@@ -102,6 +108,14 @@ switch (cmd) {
     if (!a.owner) fail("promote needs --owner <session or person>");
     if (t.duplicate_of) fail(`${t.id} is a duplicate of ${t.duplicate_of}; promote the original`);
     if (t.state !== "LOGGED") fail(`${t.id} is ${t.state}, expected LOGGED`);
+    if (t.kind === "feature" && !t.sdd) fail(`${t.id} is a feature and needs an approved SDD: run nokko-shape, then \`doc ${t.id} --sdd <path>\``);
+    for (const [k, v] of [["SDD", t.sdd], ["PRD", t.prd]]) {
+      if (!v) continue;
+      const file = resolve(FACTORY_DIR, "..", v);
+      if (!existsSync(file)) fail(`${k} file not found in the main checkout: ${v}`);
+      const estado = /^\*\*Estado:\*\*\s*([^\s·(]+(?: curso)?)/m.exec(readFileSync(file, "utf8"))?.[1];
+      if (!APPROVED.includes(estado ?? "")) fail(`${k} ${v} is "${estado ?? "no Estado"}", needs Aprobado before promote`);
+    }
     t.owner = a.owner;
     t.branch = a.branch ?? null;
     t.base_commit = a.base ?? null;
@@ -133,6 +147,19 @@ switch (cmd) {
     console.log(`${t.id} VERIFIED`);
     break;
   }
+  case "doc": {
+    const t = find(db, a._[0]);
+    if (!a.sdd && !a.prd) fail("usage: doc NK-xxxx [--sdd <path>] [--prd <path>]");
+    for (const [k, v] of [["sdd", a.sdd], ["prd", a.prd]]) {
+      if (!v) continue;
+      if (!existsSync(resolve(FACTORY_DIR, "..", v))) fail(`${k} file not found in the main checkout: ${v} (commit or copy it there first)`);
+      t[k] = v;
+    }
+    t.history.push({ state: t.state, at: now(), by: a.by ?? "tracker", note: `docs: sdd=${t.sdd ?? "-"} prd=${t.prd ?? "-"}` });
+    save(db);
+    console.log(`${t.id} docs linked (sdd ${t.sdd ?? "-"}, prd ${t.prd ?? "-"})`);
+    break;
+  }
   case "link": {
     const t = find(db, a._[0]);
     const to = find(db, a._[1]);
@@ -155,6 +182,6 @@ switch (cmd) {
     break;
   }
   default:
-    console.error("usage: ledger.mjs log|promote|ship|verify|link|show|list ...");
+    console.error("usage: ledger.mjs log|promote|ship|verify|doc|link|show|list ...");
     process.exit(2);
 }

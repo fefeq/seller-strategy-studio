@@ -8,7 +8,7 @@ description: Estación 2 de la factory NOKKO. Escribe el brief de un trabajo (co
 Cada trabajo es un brief escrito. Sin brief completo no se lanza sesión.
 
 ## Pasos
-1. Lee el SDD (`docs/sdd/`), `AGENTS.md`, `src/lib/AGENTS.md` y `docs/sdd/EXECUTION.md`.
+1. Comprueba el nivel que fijó `nokko-shape`: si el trabajo exige SDD, debe estar «Aprobado» por Fede; si no, no hay brief. Un bug que no toca esquema, RLS ni datos puede ir sin SDD. Lee el SDD (`docs/sdd/`), `AGENTS.md`, `src/lib/AGENTS.md` y `docs/sdd/EXECUTION.md`.
 2. Fija el commit base exacto: `git rev-parse <rama base>`. Escríbelo completo.
 3. Copia `docs/factory/templates/brief.md` a `.factory/briefs/<ticket>.md` y rellénalo:
    - Un check de aceptación por cada CA-n del SDD, con el archivo de prueba que lo nombra.

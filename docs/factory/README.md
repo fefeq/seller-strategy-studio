@@ -8,6 +8,7 @@ Entrada: skill `nokko-factory`. Reglas base: `GROUND-RULES.md`.
 | Original | En NOKKO | Estado |
 |---|---|---|
 | 1 Intake, ledger LOGGED→PROMOTED→SHIPPED→VERIFIED | `nokko-intake`, `scripts/factory/ledger.mjs`, `.factory/ledger.json` | Hecho y probado (ID único, duplicados, owner solo con `--go`) |
+| 1b Shape (PRD y SDD por niveles; añadido en NOKKO) | `nokko-shape`, `templates/prd.md`, `templates/sdd.md` | Hecho; el ledger enlaza `--sdd` y `--prd` con `ledger.mjs doc` y `promote` exige SDD (y PRD, si está enlazado) en Aprobado; una feature sin SDD no se promueve (pruebas en `src/test/factory-ledger.test.ts`) |
 | 2 Brief | `nokko-brief`, `templates/brief.md` | Hecho |
 | 3 Fan-out, worktrees, balance por uso, supervisión | `nokko-fanout`, `scripts/factory/worktree.mjs` | Hecho; la supervisión es manual con `list_sessions` (sin tarea programada) |
 | 4 Build contra test que falla | `nokko-build`, `scripts/factory/fail-first.mjs`, `templates/result.md` | Hecho |
@@ -37,7 +38,7 @@ Entrada: skill `nokko-factory`. Reglas base: `GROUND-RULES.md`.
 7. **Lint:** el repo ya arrastra miles de errores de prettier en la base. El gate valida solo los archivos que toca cada cambio.
 
 ## Dónde viven los tickets
-`.factory/ledger.json` en el **checkout principal** (`seller-strategy-studio`). Todos los worktrees de trabajo leen y escriben ese mismo archivo (lo resuelve `scripts/factory/paths.mjs`), y solo el tracker lo escribe. El ledger se versiona en la rama de referencia; la evidencia (`.factory/evidence/`) no. Los tickets de `tickets.toml` y `.bmad/tickets/` son unidades de SDD y son independientes.
+`.factory/ledger.json` en el **checkout principal** (`seller-strategy-studio`). Todos los worktrees de trabajo leen y escriben ese mismo archivo (lo resuelve `scripts/factory/paths.mjs`), y solo el tracker lo escribe. El ledger se versiona en la rama de referencia; la evidencia (`.factory/evidence/`) no. BMAD (`tickets.toml`, `.bmad/`) está archivado en `docs/archivado/bmad/`; sus 5 tickets de «auditoría técnica» están en el ledger como NK-0001 a NK-0005. Las unidades de trabajo (U-n) viven en cada SDD.
 
 ## Uso rápido
 ```bash
