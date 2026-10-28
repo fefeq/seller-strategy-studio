@@ -1,7 +1,7 @@
 # SDD-20261025-field-actions-edit-delete-confirm · [Feature] Editar, borrar y confirmar en campos
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** Aprobado (Fede, 2026-10-29); alcance de NK-0007: solo CA-12 y CA-7 pendientes · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-2) · **Depende de:** SDD-20261025-universal-field-definitions (estado de origen/confirmación)
 
 ## 1. Resumen
