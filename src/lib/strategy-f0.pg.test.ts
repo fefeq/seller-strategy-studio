@@ -97,7 +97,10 @@ beforeAll(async () => {
       `insert into suggestions (org_id, detector, dedupe_key, title, body, priority) values ('${A}','meddpicc_gaps','meddpicc_gaps:1','Completa MEDDPICC','texto',1) returning id`,
     )
   )[0]!.id;
-  await migrate(db, ["0068_strategic_suggestions_and_loss_reason.sql"]);
+  await migrate(db, [
+    "0068_strategic_suggestions_and_loss_reason.sql",
+    "0073_strategy_decisions_guard.sql",
+  ]);
 }, 60_000);
 
 describe("CA-11: los deals y las sugerencias existentes quedan intactos al añadir los campos", () => {
@@ -126,7 +129,10 @@ describe("CA-11: los deals y las sugerencias existentes quedan intactos al añad
     });
   });
   it("the migration is additive: running it again changes nothing and loses nothing", async () => {
-    await migrate(db, ["0068_strategic_suggestions_and_loss_reason.sql"]);
+    await migrate(db, [
+      "0068_strategic_suggestions_and_loss_reason.sql",
+      "0073_strategy_decisions_guard.sql", // in order: 0068 alone would put back its own decide_strategy_suggestion
+    ]);
     expect((await rows("select count(*)::int n from deals"))[0]!.n).toBe(2);
     expect(
       (await rows("select count(*)::int n from suggestions where id = $1", [oldSuggestion]))[0]!.n,
@@ -636,4 +642,259 @@ describe("migration on a database that already has strategy_* rows (no failure o
     );
     expect(r).toEqual([]);
   });
+});
+
+describe("migration 0073: a member cannot skip the decision log from the browser", () => {
+  const fresh = async (orgId = A) =>
+    (await insertStrategy(meta(), "strategy_icp", orgId)).rows[0]!.id as string;
+  const logCount = async (id: string) =>
+    (
+      await rows("select count(*)::int n from strategy_decisions where suggestion_id = $1", [id])
+    )[0]!.n as number;
+  const status = async (id: string) =>
+    (await rows("select status, snoozed_until, strategy from suggestions where id = $1", [id]))[0]!;
+  const update = (uid: string | null, id: string, set: string, params: unknown[] = []) =>
+    as(db, uid, () => db.query(`update suggestions set ${set} where id = $1`, [id, ...params]));
+  const GUARD = /decide_strategy_suggestion|strategic suggestion|42501|decided/;
+
+  it("a member cannot change the status of a strategy_* suggestion with a direct update (accepted, dismissed, snoozed, resolved)", async () => {
+    for (const st of ["approved", "dismissed", "snoozed", "resolved"]) {
+      const id = await fresh();
+      expect(await throws(() => update(U.aeA, id, "status = $2", [st]))).toMatch(GUARD);
+      expect((await status(id)).status).toBe("pending");
+      expect(await logCount(id)).toBe(0);
+    }
+  });
+  it("nor postpone it by only moving snoozed_until, nor close it with an owner's role", async () => {
+    const id = await fresh();
+    expect(
+      await throws(() => update(U.aeA, id, "snoozed_until = now() + interval '3 days'")),
+    ).toMatch(GUARD);
+    expect(await throws(() => update(U.ownerA, id, "status = 'approved'"))).toMatch(GUARD);
+    expect((await status(id)).status).toBe("pending");
+  });
+  it("a member cannot change the detector to or from strategy_*, nor the evidence of a decided suggestion", async () => {
+    const id = await fresh();
+    expect(await throws(() => update(U.aeA, id, "detector = 'meddpicc_gaps'"))).toMatch(GUARD);
+    const op = (await rows("select id from suggestions where id = $1", [oldSuggestion]))[0]!
+      .id as string;
+    expect(await throws(() => update(U.aeA, op, "detector = 'strategy_icp'"))).toMatch(GUARD);
+    const d = await fresh();
+    await as(db, U.aeA, () =>
+      db.query("select public.decide_strategy_suggestion($1,$2,'accept',null,null,$3)", [
+        d,
+        A,
+        U.aeA,
+      ]),
+    );
+    expect(
+      await throws(() =>
+        update(U.aeA, d, "strategy = $2::jsonb", [
+          JSON.stringify(meta({ fingerprint: "forged999" })),
+        ]),
+      ),
+    ).toMatch(GUARD);
+    expect((await status(d)).strategy.fingerprint).toBe("abc12345");
+  });
+  it("the evidence of a pending suggestion can still be refreshed with the user's client (refreshSuggestions does it)", async () => {
+    const id = await fresh();
+    await update(U.aeA, id, "strategy = $2::jsonb, title = 'otro'", [
+      JSON.stringify(meta({ fingerprint: "nuevo1234" })),
+    ]);
+    expect((await status(id)).strategy.fingerprint).toBe("nuevo1234");
+  });
+  it("a member can reopen a dismissed or postponed suggestion and wake a postponed one (what the sync and the wake do), but not an accepted one", async () => {
+    const dis = await fresh();
+    const snz = await fresh();
+    const acc = await fresh();
+    for (const [id, d] of [
+      [dis, "dismiss"],
+      [snz, "postpone"],
+      [acc, "accept"],
+    ] as const)
+      await as(db, U.aeA, () =>
+        db.query("select public.decide_strategy_suggestion($1,$2,$3,null,null,$4)", [
+          id,
+          A,
+          d,
+          U.aeA,
+        ]),
+      );
+    await update(U.aeA, dis, "status = 'pending', snoozed_until = null, strategy = $2::jsonb", [
+      JSON.stringify(meta({ fingerprint: "mas99999" })),
+    ]);
+    await update(U.aeA, snz, "status = 'pending', snoozed_until = null");
+    expect((await status(dis)).status).toBe("pending");
+    expect((await status(snz)).status).toBe("pending");
+    expect(
+      await throws(() => update(U.aeA, acc, "status = 'pending', snoozed_until = null")),
+    ).toMatch(GUARD);
+    expect((await status(acc)).status).toBe("approved");
+  });
+  it("a member cannot insert a strategy_* suggestion in a state other than pending (nor with a postponement date)", async () => {
+    for (const st of ["approved", "dismissed", "snoozed", "resolved"]) {
+      expect(
+        await throws(() =>
+          as(db, U.aeA, () =>
+            db.query(
+              "insert into suggestions (org_id, detector, dedupe_key, title, strategy, status) values ($1,'strategy_icp',$2,'t',$3::jsonb,$4)",
+              [A, `forged:${st}`, JSON.stringify(meta()), st],
+            ),
+          ),
+        ),
+      ).toMatch(GUARD);
+    }
+    expect(
+      await throws(() =>
+        as(db, U.aeA, () =>
+          db.query(
+            "insert into suggestions (org_id, detector, dedupe_key, title, strategy, snoozed_until) values ($1,'strategy_icp','forged:snz','t',$2::jsonb, now())",
+            [A, JSON.stringify(meta())],
+          ),
+        ),
+      ),
+    ).toMatch(GUARD);
+    // a pending one is what the sync inserts with the user's client: allowed
+    await as(db, U.aeA, () =>
+      db.query(
+        "insert into suggestions (org_id, detector, dedupe_key, title, strategy) values ($1,'strategy_icp','ok:pending','t',$2::jsonb)",
+        [A, JSON.stringify(meta())],
+      ),
+    );
+    expect(
+      (await rows("select status from suggestions where dedupe_key = 'ok:pending'"))[0]!.status,
+    ).toBe("pending");
+  });
+  it("decide_strategy_suggestion still accepts, postpones and dismisses, one log row each, and the guard is off again afterwards", async () => {
+    for (const [d, st] of [
+      ["accept", "approved"],
+      ["postpone", "snoozed"],
+      ["dismiss", "dismissed"],
+    ] as const) {
+      const id = await fresh();
+      const r = await as(
+        db,
+        U.aeA,
+        async () =>
+          (
+            (
+              await db.query(
+                "select public.decide_strategy_suggestion($1,$2,$3,'motivo',null,$4) r",
+                [id, A, d, U.aeA],
+              )
+            ).rows[0] as Record<string, string>
+          ).r,
+      );
+      expect(r).toBe(st);
+      expect((await status(id)).status).toBe(st);
+      expect(await logCount(id)).toBe(1);
+    }
+    // the exemption does not outlive the function: inside the same transaction, a direct update right after it is refused
+    const decided = await fresh();
+    const other = await fresh();
+    const msg = await throws(() =>
+      as(db, U.aeA, async () => {
+        await db.exec("begin");
+        try {
+          await db.query("select public.decide_strategy_suggestion($1,$2,'accept',null,null,$3)", [
+            decided,
+            A,
+            U.aeA,
+          ]);
+          await db.query("update suggestions set status = 'approved' where id = $1", [other]);
+        } finally {
+          await db.exec("rollback");
+        }
+      }),
+    );
+    expect(msg).toMatch(GUARD);
+    expect((await status(other)).status).toBe("pending");
+  });
+  it("a failed log insert still undoes the status change (atomicity is kept)", async () => {
+    const id = await fresh();
+    expect(
+      await throws(() =>
+        as(db, U.aeA, () =>
+          db.query("select public.decide_strategy_suggestion($1,$2,'accept',null,null,$3)", [
+            id,
+            A,
+            U.ownerA,
+          ]),
+        ),
+      ),
+    ).not.toBe("");
+    expect((await status(id)).status).toBe("pending");
+    expect(await logCount(id)).toBe(0);
+  });
+  it("the privileged client (service_role: cron, Telegram, sync) can still insert, reopen, wake, close and decide", async () => {
+    const id = await fresh();
+    await update(null, id, "status = 'snoozed', snoozed_until = now() - interval '1 day'");
+    await update(null, id, "status = 'pending', snoozed_until = null");
+    await update(null, id, "status = 'resolved'");
+    expect((await status(id)).status).toBe("resolved");
+    await as(db, null, () =>
+      db.query(
+        "insert into suggestions (org_id, detector, dedupe_key, title, strategy, status) values ($1,'strategy_icp','svc:1','t',$2::jsonb,'dismissed')",
+        [A, JSON.stringify(meta())],
+      ),
+    );
+    const d = await fresh();
+    expect(
+      await as(
+        db,
+        null,
+        async () =>
+          (
+            (
+              await db.query(
+                "select public.decide_strategy_suggestion($1,$2,'dismiss',null,null,$3) r",
+                [d, A, U.aeA],
+              )
+            ).rows[0] as Record<string, string>
+          ).r,
+      ),
+    ).toBe("dismissed");
+  });
+  it("operational suggestions are not affected: a member still changes status, snooze and assignment with a direct update", async () => {
+    await update(
+      U.aeA,
+      oldSuggestion,
+      "status = 'snoozed', snoozed_until = now() + interval '3 days'",
+    );
+    await update(U.aeA, oldSuggestion, "status = 'dismissed'");
+    await update(U.aeA, oldSuggestion, "status = 'pending', snoozed_until = null");
+    await as(db, U.aeA, () =>
+      db.query(
+        "insert into suggestions (org_id, detector, dedupe_key, title, status) values ($1,'meddpicc_gaps','op:done','t','approved')",
+        [A],
+      ),
+    );
+    expect((await status(oldSuggestion)).status).toBe("pending");
+  });
+  it("another company is still isolated: its member cannot touch this company's strategic suggestions", async () => {
+    const id = await fresh();
+    await update(U.ownerB, id, "status = 'approved'"); // RLS filters the row out: no error, no change
+    expect((await status(id)).status).toBe("pending");
+  });
+  it("the migration is repeatable and does not fail with strategy_* rows that already exist", async () => {
+    const d2 = await build();
+    const { A: A2 } = await seed(d2);
+    await createReplica(d2);
+    await d2.query(
+      "insert into suggestions (org_id, detector, dedupe_key, title, status) values ($1,'strategy_icp','old:1','Antigua','dismissed')",
+      [A2],
+    );
+    for (let i = 0; i < 3; i++)
+      await migrate(d2, [
+        "0068_strategic_suggestions_and_loss_reason.sql",
+        "0073_strategy_decisions_guard.sql",
+      ]);
+    const c = await d2.query(
+      "select count(*)::int n from pg_trigger where tgname = 'suggestions_strategy_guard'",
+    );
+    expect((c.rows[0] as Record<string, number>).n).toBe(1);
+    expect(
+      (await d2.query("select status from suggestions where dedupe_key = 'old:1'")).rows[0],
+    ).toEqual({ status: "dismissed" });
+  }, 60_000);
 });
