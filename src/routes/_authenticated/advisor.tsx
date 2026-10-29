@@ -9,16 +9,33 @@ import { Page, Empty } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { canUseAdvisor, HORIZONS, LEVELS, sortRecommendations, WINDOWS, type AdvisorRecommendation, type AdvisorResult } from "@/lib/advisor";
+import {
+  canUseAdvisor,
+  HORIZONS,
+  LEVELS,
+  sortRecommendations,
+  WINDOWS,
+  type AdvisorRecommendation,
+  type AdvisorResult,
+} from "@/lib/advisor";
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
 import { errorText } from "@/lib/errors";
+import { StrategyReviewPanel } from "@/components/strategy-review";
 
 const TITLE = "Asesor GTM — Nokko";
-const DESC = "Describe un objetivo o problema comercial y recibe recomendaciones de go-to-market priorizadas a partir de tu pipeline, métricas y segmentos.";
+const DESC =
+  "Describe un objetivo o problema comercial y recibe recomendaciones de go-to-market priorizadas a partir de tu pipeline, métricas y segmentos.";
 
 export const Route = createFileRoute("/_authenticated/advisor")({
-  head: () => ({ meta: [{ title: TITLE }, { name: "description", content: DESC }, { property: "og:title", content: TITLE }, { property: "og:description", content: DESC }] }),
+  head: () => ({
+    meta: [
+      { title: TITLE },
+      { name: "description", content: DESC },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESC },
+    ],
+  }),
   component: Advisor,
 });
 
@@ -36,7 +53,11 @@ function revealOnMobile(el: HTMLElement | null) {
   }
 }
 
-const TONE: Record<string, string> = { high: "bg-signal/15 text-signal", medium: "bg-warning/25 text-foreground", low: "bg-muted text-muted-foreground" };
+const TONE: Record<string, string> = {
+  high: "bg-signal/15 text-signal",
+  medium: "bg-warning/25 text-foreground",
+  low: "bg-muted text-muted-foreground",
+};
 
 function Advisor() {
   const { data: me } = useMe();
@@ -52,7 +73,14 @@ function Advisor() {
   const { data: history = [] } = useQuery({
     queryKey: ["gtm_advisories"],
     enabled: allowed,
-    queryFn: async () => (await supabase.from("gtm_advisories").select("id,goal,horizon,result,created_at").order("created_at", { ascending: false }).limit(30)).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("gtm_advisories")
+          .select("id,goal,horizon,result,created_at")
+          .order("created_at", { ascending: false })
+          .limit(30)
+      ).data ?? [],
   });
   const current = history.find((h) => h.id === selId) ?? (selId === null ? history[0] : undefined);
 
@@ -72,7 +100,13 @@ function Advisor() {
   }
 
   if (me && !allowed) {
-    return <Page eyebrow="Dirección comercial" title="Asesor GTM"><Empty>El Asesor GTM está disponible solo para el Owner y el Sales Leader de la empresa.</Empty></Page>;
+    return (
+      <Page eyebrow="Dirección comercial" title="Asesor GTM">
+        <Empty>
+          El Asesor GTM está disponible solo para el Owner y el Sales Leader de la empresa.
+        </Empty>
+      </Page>
+    );
   }
 
   return (
@@ -82,35 +116,83 @@ function Advisor() {
         <div className="contents lg:block lg:space-y-4">
           <div className="order-1 space-y-3 rounded-lg border bg-card p-5 lg:order-none">
             <Field label="Objetivo o problema comercial">
-              <Textarea rows={6} maxLength={4000} value={goal} onChange={(e) => setGoal(e.target.value)} placeholder="Ej.: Necesitamos 400K de nuevo negocio este trimestre y la cobertura está en 2x." />
+              <Textarea
+                rows={6}
+                maxLength={4000}
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                placeholder="Ej.: Necesitamos 400K de nuevo negocio este trimestre y la cobertura está en 2x."
+              />
             </Field>
             <div className="flex flex-wrap gap-1.5">
-              {EXAMPLES.map((ex) => <button key={ex} onClick={() => setGoal(ex)} className="rounded-none border px-2.5 py-2 text-left text-xs hover:border-signal md:py-1">{ex}</button>)}
+              {EXAMPLES.map((ex) => (
+                <button
+                  key={ex}
+                  onClick={() => setGoal(ex)}
+                  className="rounded-none border px-2.5 py-2 text-left text-xs hover:border-signal md:py-1"
+                >
+                  {ex}
+                </button>
+              ))}
             </div>
-            <Field label="Horizonte"><Pick value={horizon} options={HORIZONS} onChange={setHorizon} /></Field>
-            <Button className="h-auto min-h-10 w-full whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={analyze} disabled={busy || goal.trim().length < 10}>
+            <Field label="Horizonte">
+              <Pick value={horizon} options={HORIZONS} onChange={setHorizon} />
+            </Field>
+            <Button
+              className="h-auto min-h-10 w-full whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap"
+              onClick={analyze}
+              disabled={busy || goal.trim().length < 10}
+            >
               {busy ? "Analizando pipeline, métricas y segmentos…" : "Generar recomendaciones"}
             </Button>
-            <p className="text-xs text-muted-foreground">Se analizan tus deals, la conversión por etapa, la cobertura del trimestre, el win rate por fuente y por segmento, los benchmarks de cada segmento, el posicionamiento y el ICP. Puede tardar hasta un minuto.</p>
+            <p className="text-xs text-muted-foreground">
+              Se analizan tus deals, la conversión por etapa, la cobertura del trimestre, el win
+              rate por fuente y por segmento, los benchmarks de cada segmento, el posicionamiento y
+              el ICP. Puede tardar hasta un minuto.
+            </p>
           </div>
           {history.length > 0 && (
             <div className="order-3 space-y-2 lg:order-none">
               <p className="eyebrow">Análisis anteriores</p>
               {history.map((h) => (
-                <button key={h.id} onClick={() => { setSelId(h.id); revealOnMobile(resultRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${current?.id === h.id ? "border-signal" : ""}`}>
+                <button
+                  key={h.id}
+                  onClick={() => {
+                    setSelId(h.id);
+                    revealOnMobile(resultRef.current);
+                  }}
+                  className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${current?.id === h.id ? "border-signal" : ""}`}
+                >
                   <span className="line-clamp-2">{h.goal}</span>
-                  <span className="block font-mono text-xs text-muted-foreground">{new Date(h.created_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })} · {HORIZONS[h.horizon] ?? h.horizon}</span>
+                  <span className="block font-mono text-xs text-muted-foreground">
+                    {new Date(h.created_at).toLocaleString("es-ES", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}{" "}
+                    · {HORIZONS[h.horizon] ?? h.horizon}
+                  </span>
                 </button>
               ))}
             </div>
           )}
         </div>
         <div ref={resultRef} className="order-2 min-w-0 scroll-mt-20 lg:order-none">
-          {busy && !current ? <Empty>Analizando…</Empty> : current ? <AdviceView goal={current.goal} result={current.result as unknown as AdvisorResult} /> : (
-            <Empty>Describe un objetivo o un problema y obtendrás un diagnóstico basado en tus datos y un plan de acción priorizado.</Empty>
+          {busy && !current ? (
+            <Empty>Analizando…</Empty>
+          ) : current ? (
+            <AdviceView goal={current.goal} result={current.result as unknown as AdvisorResult} />
+          ) : (
+            <Empty>
+              Describe un objetivo o un problema y obtendrás un diagnóstico basado en tus datos y un
+              plan de acción priorizado.
+            </Empty>
           )}
         </div>
       </div>
+      <section className="mt-10 space-y-3">
+        <p className="eyebrow">Revisión estratégica con IA</p>
+        <StrategyReviewPanel />
+      </section>
     </Page>
   );
 }
@@ -140,7 +222,11 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
       )}
       <div>
         <p className="eyebrow mb-2">Recomendaciones priorizadas</p>
-        <div className="space-y-3">{recs.map((r, i) => <RecCard key={i} rec={r} index={i} />)}</div>
+        <div className="space-y-3">
+          {recs.map((r, i) => (
+            <RecCard key={i} rec={r} index={i} />
+          ))}
+        </div>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
         <ListBox title="Riesgos" items={result.risks} />
@@ -154,7 +240,13 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
 function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) {
   const [saved, setSaved] = useState(false);
   async function toPrototype() {
-    const { error } = await supabase.from("gtm_experiments").insert({ title: rec.title, hypothesis: rec.rationale, prototype: rec.actions.join("\n"), metric: rec.kpi, target: rec.target });
+    const { error } = await supabase.from("gtm_experiments").insert({
+      title: rec.title,
+      hypothesis: rec.rationale,
+      prototype: rec.actions.join("\n"),
+      metric: rec.kpi,
+      target: rec.target,
+    });
     if (error) return toast.error(errorText(error));
     setSaved(true);
     toast.success("Añadido a Theory U → Prototipos.");
@@ -163,26 +255,40 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
     <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
-          <span className="font-display text-3xl leading-none text-signal">{String(index + 1).padStart(2, "0")}</span>
+          <span className="font-display text-3xl leading-none text-signal">
+            {String(index + 1).padStart(2, "0")}
+          </span>
           <div className="min-w-0 break-words">
             <p className="font-display text-[22px] leading-tight">{rec.title}</p>
             <p className="mt-1 text-sm text-muted-foreground">{rec.rationale}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-1.5 font-mono text-[10px] uppercase">
-          <span className={`rounded px-1.5 py-0.5 ${TONE[rec.impact]}`}>Impacto {LEVELS[rec.impact]}</span>
+          <span className={`rounded px-1.5 py-0.5 ${TONE[rec.impact]}`}>
+            Impacto {LEVELS[rec.impact]}
+          </span>
           <span className="rounded bg-muted px-1.5 py-0.5">Esfuerzo {LEVELS[rec.effort]}</span>
           <span className="rounded bg-muted px-1.5 py-0.5">{WINDOWS[rec.window]}</span>
         </div>
       </div>
       <ul className="mt-3 space-y-1 text-sm">
-        {rec.actions.map((a, i) => <li key={i} className="flex gap-2"><span className="text-signal">→</span>{a}</li>)}
+        {rec.actions.map((a, i) => (
+          <li key={i} className="flex gap-2">
+            <span className="text-signal">→</span>
+            {a}
+          </li>
+        ))}
       </ul>
       <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t pt-3 text-xs">
         <span className="min-w-0 break-words text-muted-foreground">
-          <b className="text-foreground">{ROLES[rec.owner_role as Role]?.label ?? rec.owner_role}</b> · KPI: {rec.kpi} · Objetivo: {rec.target}
+          <b className="text-foreground">
+            {ROLES[rec.owner_role as Role]?.label ?? rec.owner_role}
+          </b>{" "}
+          · KPI: {rec.kpi} · Objetivo: {rec.target}
         </span>
-        <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}>{saved ? "En Prototipos" : "Convertir en prototipo"}</Button>
+        <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}>
+          {saved ? "En Prototipos" : "Convertir en prototipo"}
+        </Button>
       </div>
     </div>
   );
@@ -193,7 +299,11 @@ function ListBox({ title, items }: { title: string; items: string[] }) {
   return (
     <div className="rounded-lg border bg-card p-4">
       <p className="eyebrow mb-2">{title}</p>
-      <ul className="space-y-1.5 text-sm">{items.map((x, i) => <li key={i}>· {x}</li>)}</ul>
+      <ul className="space-y-1.5 text-sm">
+        {items.map((x, i) => (
+          <li key={i}>· {x}</li>
+        ))}
+      </ul>
     </div>
   );
 }
