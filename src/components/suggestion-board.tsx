@@ -144,6 +144,33 @@ export function SuggestionBoard() {
     );
   const rowActions = (s: Row) => {
     const open = s.status === "pending";
+    if (open && parseStrategy(s.strategy)) {
+      // Strategic suggestions say what each button does, in words (CA-4).
+      return (
+        <div className="flex flex-wrap gap-1">
+          {s.link &&
+            (() => {
+              const t = linkTarget(s.link)!;
+              return (
+                <Button size="sm" variant="ghost" asChild aria-label="Abrir">
+                  <Link to={t.to} search={t.search}>
+                    <span aria-hidden>→</span>
+                  </Link>
+                </Button>
+              );
+            })()}
+          <Button size="sm" onClick={() => act(s.id, "approve")}>
+            Aceptar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => act(s.id, "snooze")}>
+            Más tarde
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => act(s.id, "dismiss")}>
+            Descartar
+          </Button>
+        </div>
+      );
+    }
     return (
       <div className="flex gap-1">
         {s.link &&

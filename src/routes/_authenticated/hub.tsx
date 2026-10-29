@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
+import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
 import { canDelete } from "@/lib/roles";
 import { Page, Empty } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -60,10 +61,8 @@ function Hub() {
   });
   const list = docs.filter((d) => d.section === section);
   const { doc: docParam } = Route.useSearch();
-  useEffect(() => {
-    const d = docParam ? docs.find((x) => x.id === docParam) : undefined;
-    if (d) { setSection(d.section); setSelected(d); }
-  }, [docParam, docs.length]);
+  // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
+  useOpenDocFromUrl(docParam, docs, (d) => { setSection(d.section); setSelected(d); });
   /** After an import or a generated doc: refresh and open it. */
   async function openDoc(docId: string) {
     await qc.invalidateQueries({ queryKey: ["docs"] });

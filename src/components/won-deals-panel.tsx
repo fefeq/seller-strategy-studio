@@ -19,7 +19,6 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
   const qc = useQueryClient();
-  const range = quarterRange(quarter);
   const [adding, setAdding] = useState(false);
   const { data } = useQuery({
     queryKey: ["segment-coverage", orgId, "won-deals"],
@@ -34,7 +33,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
     },
   });
   const segments = data?.segments ?? [];
-  const rows = useMemo(() => (data ? wonDealRows(data.deals, data.segments, range) : []), [data, quarter]);
+  const rows = useMemo(() => (data ? wonDealRows(data.deals, data.segments, quarterRange(quarter)) : []), [data, quarter]);
   const summary = wonSummary(rows, segments);
   const openDeals = (data?.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost");
   const accountName = (id: string | null) => data?.accounts.find((a) => a.id === id)?.name;

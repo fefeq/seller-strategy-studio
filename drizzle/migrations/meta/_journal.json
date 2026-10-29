@@ -502,6 +502,13 @@
     {
       "idx": 71,
       "version": "7",
+      "when": 1793706400000,
+      "tag": "0073_strategy_decisions_guard",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
       "when": 1793749600000,
       "tag": "0072_strategy_reviews",
       "breakpoints": true
