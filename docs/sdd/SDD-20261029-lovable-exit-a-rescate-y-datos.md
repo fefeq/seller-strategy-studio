@@ -180,5 +180,59 @@ Copiadas sin editar del SDD paraguas y de su anexo; los números de línea («SD
 - No comprobé si un Vault restaurado descifra en el proyecto nuevo, ni si `pg_dump` de `auth` conserva hashes, identidades de Google o clientes OAuth.
 - No leí el contenido de los secretos.
 
+
+### Primera pasada del gate sobre este hijo A (2026-10-29), copiada sin editar
+Revisión del texto en `ee2b468`; el código se revisó en `d02114b`.
+
+**Veredicto del gate:** Objeciones
+
+**Objeciones previas que afectan a A:**
+- Abierta: la que dice que U-1 restaura y aplica `drizzle/migrations`. El texto sigue igual en A:81. Las migraciones 0018, 0022, 0027 y 0029 no tienen ni una línea activa, y 0054 está vacía.
+- Abierta: las claves de Stripe guardadas en el Vault. Fuera de la sección 17, A no nombra el Vault y ningún CA lo cubre (`stripe/sync.server.ts:76`).
+- Abierta: 0058 y 0059 entran en U-1. Las dos están en `_journal.json`. La pregunta 15.7 lo aclara, pero U-1 (A:81) no se corrigió y A:96 dice que la pregunta sigue abierta.
+- Cerrada solo en el papel: CA-27 tiene ya unidad (A:80), pero tiene un hueco (ver abajo).
+- Abierta: el punto 16.4. A:115 lo da como pendiente, cuando ya se puede comprobar.
+- Cerrada: separar U-0 y U-1. Pero A:95 todavía dice «un solo SDD».
+
+**CA sin prueba posible o con hueco:**
+- CA-27: `INTEGRATION_KEYS_SECRET` es una variable del entorno de la app (`secret-box.server.ts:8`), así que depende del hosting, que está en B. U-0 es anterior al cambio. Además, una prueba con valores ficticios ya pasa hoy y no falla primero (`GROUND-RULES.md:9`). Por último, cifra solo la clave de PostHog de cada empresa, no tokens «de cada usuario» (`posthog-sync.server.ts:58`).
+- CA-5: A:80 pide validar CA-5 en U-0, cuando todavía no hay destino. No se define cómo se calcula la suma de verificación, ni que los recuentos salgan de la misma instantánea que el volcado. El origen ya reactivado sigue recibiendo escrituras.
+- CA-7: «hasta que Fede autorice borrarla» no se puede probar con un test. Tampoco se puede comprobar el hash de la segunda copia, que está cifrada con la clave de Fede.
+- CA-6: necesita una base real y ninguna unidad la prepara.
+
+**Riesgos de seguridad, datos y rescate:**
+- El volcado de U-0 incluye solo `public` y `auth` (A:80). Deja fuera `vault`, el esquema `drizzle`, las extensiones y las publicaciones. Las claves de Stripe de cada empresa se pierden, o no se pueden descifrar en el proyecto nuevo.
+- El plan B (A:80) no dice qué hacer si soporte entrega un volcado parcial, ni cuál es el plazo.
+- Las evidencias van a `.factory/evidence/` (A:80), que está ignorada por git pero no cifrada (`.factory/.gitignore`). Choca con A:67.
+- `drizzle.config.ts:8` lee la URL de la base, con contraseña, del entorno local. Si el agente aplica las migraciones, ve el secreto, y eso contradice la decisión 3 (A:102).
+
+**Choque con migraciones:**
+- A no fija qué migraciones se aplican en el destino. 0000:47 vuelve a crear el disparador y chocaría con el volcado restaurado.
+- `drizzle-kit migrate` lleva su registro en el esquema `drizzle`, que no se vuelca, así que intentaría aplicar todo, incluidas 0058 y 0059. Esto último es el comportamiento por defecto de drizzle-kit; no lo ejecuté.
+- A:115 dice «U-1 debe aplicarlos» sin indicar el orden.
+
+**Contradicciones con el código o con decisiones previas:**
+- A:5 dice que A no depende de B. Pero B:139 exige el modo seguro (CA-26) «antes de restaurar datos», que es justo lo que hace U-1.
+- A:95 (un solo SDD) contradice A:107. A:96 contradice A:106.
+- A:27-28 describen el resultado del paraguas completo, no el de A.
+
+**Lo que falta en A tras la división:**
+- CA-23, la parada antes de recargar créditos, contactar con soporte o cambiar algo en el origen, está solo en B:104, aunque A:59 la cita.
+- CA-26 está solo en B:107.
+- CA-8 (`job_locks`, A:60) y CA-16 (A:61) están en B.
+- Falta un CA o una unidad para el Vault de Stripe.
+
+**[Por verificar] que ya se puede comprobar:**
+- 16.4: el disparador está en `0000_migration.sql:47` y las publicaciones en `0010:57-58`, `0012:113`, `0037:26`, `0038:26` y `0049:29`.
+- No hay almacenamiento ni funciones de borde: `supabase/` solo contiene `config.toml` y no hay ninguna llamada a `storage` ni a `functions.invoke`.
+
+**Lo que esta revisión NO demuestra:**
+- No ejecuté nada contra Supabase, Lovable ni drizzle, ni ningún test.
+- No comprobé si `pg_dump` de `auth` conserva los hashes de contraseña ni las identidades de Google.
+- No comprobé si un Vault restaurado se puede descifrar.
+- No sé qué cron tiene Lovable configurado.
+- No leí ningún secreto.
+- La rama está en `ee2b468`; el código lo revisé en `d02114b`, que no es antecesor de esa rama.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Sin entrega todavía.
