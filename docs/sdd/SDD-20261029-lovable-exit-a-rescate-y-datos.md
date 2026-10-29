@@ -78,7 +78,7 @@ Sin cambios visibles.
 ## 10. Datos, permisos y privacidad
 - Se mueve toda la base, incluidos datos de clientes de NOKKO, usuarios y contraseñas cifradas. El volcado y cualquier informe con datos reales se guardan cifrados fuera del repositorio. A `.factory/evidence/` (ignorada por git, pero no cifrada) solo van nombres de tabla, recuentos y hashes: nunca filas, emails, nombres ni valores. Ningún dato de clientes en código, pruebas, fixtures ni logs (las pruebas usan empresas ficticias).
 - Sin tablas ni columnas nuevas. Se conserva `INTEGRATION_KEYS_SECRET` sin cambios (hoy cifra la clave de PostHog de cada empresa; rotarlo la inutiliza). Se conservan `org_id` con `current_org()`, las políticas RLS, los GRANTs y los roles por empresa tal como están.
-- Secretos: nunca en `.env`, ni en variables `VITE_`, ni en el repo, el chat o este SDD. Propuesta (Fede confirma): Fede los carga directamente como variables de entorno en el hosting y en el proyecto de datos nuevo; el agente nunca los imprime ni los guarda en archivos, y los comandos que necesitan la URL de la base con contraseña los ejecuta Fede (A-2).
+- Secretos: nunca en `.env`, ni en variables `VITE_`, ni en el repo, el chat o este SDD. Propuesta (Fede confirma): Fede los carga directamente como variables de entorno en el hosting y en el proyecto de datos nuevo; el agente nunca los imprime ni los guarda en archivos, y los comandos que necesitan la URL de la base con contraseña los ejecuta Fede (decisión 10).
 - Solo API oficial de LinkedIn; esta migración no cambia ningún acceso a LinkedIn.
 
 ## 11. Llamadas a IA
@@ -89,7 +89,7 @@ Sin cambios visibles.
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-0 | Rescate e inventario (bloqueante). Fede recarga créditos una sola vez (parada, CA-23). Con la base reactivada, el agente prepara y Fede ejecuta: un volcado único y consistente de `public`, `auth`, `vault`, `drizzle`, extensiones, publicaciones, roles y GRANTs; manifiesto de recuentos y hashes (CA-5); dos copias cifradas con sus hashes (CA-7). Inventario sin valores: secretos (nombre y si existe, incluido `INTEGRATION_KEYS_SECRET`, CA-27), tablas, archivos, funciones, estado de 0058 y 0059 en el origen, lista de herramientas MCP congelada, usuarios, empresas y usuarios con contraseña. **Parada:** si la base no se reactiva, el agente se detiene; plan B = pedir a soporte de Lovable el volcado completo, con el plazo que fije Fede (A-1); si llega parcial, no se restaura y se informa a Fede. Fede valida el informe antes de seguir y antes de tocar el origen | CA-7, CA-23, CA-27 (inventario) | `scripts/migration/verify-data.mjs --manifest` sobre un volcado de prueba (falla primero: el script no existe); el resto es operativo, con evidencia en `.factory/evidence/` |
+| U-0 | Rescate e inventario (bloqueante). Fede recarga créditos una sola vez (parada, CA-23). Con la base reactivada, el agente prepara y Fede ejecuta: un volcado único y consistente de `public`, `auth`, `vault`, `drizzle`, extensiones, publicaciones, roles y GRANTs; manifiesto de recuentos y hashes (CA-5); dos copias cifradas con sus hashes (CA-7). Inventario sin valores: secretos (nombre y si existe, incluido `INTEGRATION_KEYS_SECRET`, CA-27), tablas, archivos, funciones, estado de 0058 y 0059 en el origen, lista de herramientas MCP congelada, usuarios, empresas y usuarios con contraseña. **Parada:** si la base no se reactiva, el agente se detiene; plan B = pedir a soporte de Lovable el volcado completo, con un solo intento por el chat de Lovable (decisión 9) y sin plazo de espera; si falla o llega parcial, no se restaura y se informa a Fede. Fede valida el informe antes de seguir y antes de tocar el origen | CA-7, CA-23, CA-27 (inventario) | `scripts/migration/verify-data.mjs --manifest` sobre un volcado de prueba (falla primero: el script no existe); el resto es operativo, con evidencia en `.factory/evidence/` |
 | U-1 | Proyecto de datos propio: (1) comprobar CA-26 antes de restaurar; (2) restaurar el volcado en un proyecto vacío; (3) recrear lo que falte del catálogo con sentencias puntuales (disparador de `0000_migration.sql:47`, publicaciones de 0010, 0012, 0037, 0038 y 0049), **sin** aplicar migraciones; (4) verificar CA-5, CA-6, CA-27 y CA-28; (5) preparar una base de pruebas desechable con el mismo esquema y dos empresas ficticias para CA-6 | CA-5, CA-6, CA-26, CA-27, CA-28 | `verify-data.mjs` contra destino vacío; `check-preprod-safe.mjs`; `verify-vault.mjs`; `rls-isolation.test.ts` |
 
 Reparto: CA-23 y CA-26 (parte de datos) vienen de B con el mismo texto, porque A los necesita antes de tocar nada; B conserva los suyos para la aplicación. CA-27 de A cubre solo que los datos cifrados llegan intactos; el descifrado en la aplicación es de B.
@@ -98,7 +98,7 @@ Reparto: CA-23 y CA-26 (parte de datos) vienen de B con el mismo texto, porque A
 - Destino acordado por Fede: proyecto Supabase propio. El hosting (Vercel o mantener Cloudflare) se decide tras U-0 (decidido el 2026-10-29).
 - Volcado: una sola transacción de lectura repetible para el volcado y el manifiesto (misma instantánea); cifrado, fuera del repo, en el lugar y con la clave que Fede indique. *[Propuesta — Fede confirma]*
 - Migraciones: U-1 **no** aplica `drizzle/migrations`. 0018–0029 y 0054 están comentadas (`0027_stripe.sql:1` dice «already in the database»), así que no construyen una base vacía; encima de un volcado restaurado chocarían (`0000_migration.sql:47`); y el registro de `drizzle-kit` vive en el esquema `drizzle`, de modo que sin él intentaría aplicar todo, incluidas 0058 y 0059 (comportamiento por defecto de drizzle-kit, no ejecutado). Se restaura sobre un proyecto vacío y se recrea solo lo que falte con sentencias puntuales.
-- `drizzle.config.ts` usa `LOVABLE_DB_MIGRATION_URL`, que lleva contraseña: pasa a la URL del proyecto nuevo y solo la lee quien ejecuta (Fede, A-2); el agente no la ve.
+- `drizzle.config.ts` usa `LOVABLE_DB_MIGRATION_URL`, que lleva contraseña: pasa a la URL del proyecto nuevo y solo la lee quien ejecuta (Fede, decisión 10); el agente no la ve.
 - Mantener la regla de `AGENTS.md`: sin `as any` y errores por `errorText()`.
 
 ## 14. Riesgos y dependencias
@@ -121,10 +121,12 @@ Reparto: CA-23 y CA-26 (parte de datos) vienen de B con el mismo texto, porque A
 7. Migraciones 0058 y 0059: se restaura el volcado tal cual está en producción y se aplican en el destino **después**, solo tras su verificación y los SDD de NK-0022 y escritores; no durante la migración.
 8. Dividir el SDD en tres: decidido por Fede el 2026-10-29. Este es el SDD A. Los tres son: SDD A (`SDD-20261029-lovable-exit-a-rescate-y-datos.md`: U-0 y U-1, rescate y datos, lo urgente), SDD B (`SDD-20261029-lovable-exit-b-servicios-y-corte.md`: U-2 a U-4, U-6 y U-7) y SDD C (`SDD-20261029-lovable-exit-c-mcp.md`: U-5, `/mcp`). El SDD paraguas (`SDD-20261029-lovable-exit-migration.md`) queda como registro del conjunto.
 
-**Siguen abiertas (decide Fede; ninguna bloquea la redacción, pero A-1 y A-3 deben cerrarse antes de U-0 y U-1):**
-- **A-1.** Plazo máximo de espera a soporte de Lovable en el plan B (sin propuesta: depende de lo que cueste seguir parados).
-- **A-2.** Quién ejecuta los comandos que necesitan la URL de la base con contraseña (restaurar, `verify-*.mjs`, `drizzle-kit`). Propuesta: Fede, en su terminal; el agente prepara scripts y lee solo los informes de `.factory/evidence/`.
-- **A-3.** Método para llevar las claves de Stripe de cada empresa al destino (CA-28): re-crearlas con un script que ejecuta Fede, o que cada empresa reconecte Stripe. Se decide tras comprobar en U-0 si un Vault restaurado descifra.
+9. Plan B (A-1): un solo intento desde el chat de Lovable para obtener el volcado completo, para no gastar créditos; sin plazo de espera. Si falla, decide Fede. El mensaje exacto lo apruebas tú antes de enviarlo (CA-23: contactar con el origen es un paso con gasto).
+10. Comandos con la URL de la base (A-2): los ejecuta Fede en su terminal; el agente prepara los scripts y lee solo los informes de `.factory/evidence/`.
+11. Vault de Stripe (A-3): el método se decide tras probar en U-0 si un Vault restaurado descifra.
+
+**Siguen abiertas:**
+- **A-3.** (Decidido que se resuelve tras U-0.) Método para llevar las claves de Stripe de cada empresa al destino (CA-28): re-crearlas con un script que ejecuta Fede, o que cada empresa reconecte Stripe. Se decide tras comprobar en U-0 si un Vault restaurado descifra.
 - El runtime (Cloudflare o Vercel) sigue abierto en el SDD B y se decide tras U-0.
 
 ## 16. Pendiente de verificar
@@ -263,9 +265,9 @@ Cada objeción del gate sobre A y dónde queda. Es texto del autor, no del gate:
 |---|---|
 | U-1 restaura y aplica `drizzle/migrations` (0018–0029 y 0054 sin líneas activas; choque con `0000:47`; `drizzle-kit` reaplicaría todo, incluidas 0058 y 0059) | U-1 ya no aplica migraciones; recrea solo lo que falte del catálogo (secciones 12 y 13); 0058 y 0059 quedan fuera (15.7) |
 | Vault de Stripe y volcado de solo `public` y `auth` | Volcado completo (secciones 5 y 12); CA-28; método abierto en A-3 |
-| `drizzle.config.ts` lee la URL con contraseña; el agente la vería | Los comandos con la URL los ejecuta Fede (secciones 10 y 13); decisión A-2 abierta |
+| `drizzle.config.ts` lee la URL con contraseña; el agente la vería | Los comandos con la URL los ejecuta Fede (secciones 10 y 13); decidido (decisión 10) |
 | Evidencias sin cifrar en `.factory/evidence/` | Solo recuentos, hashes y nombres de tabla (sección 10) |
-| Plan B sin plazo ni caso parcial | Caso parcial resuelto (sección 8); plazo abierto en A-1 |
+| Plan B sin plazo ni caso parcial | Caso parcial resuelto (sección 8); un solo intento por el chat de Lovable, sin plazo (decisión 9) |
 | CA-27 (variable del hosting, no falla primero, solo PostHog) | Reformulado sobre columnas cifradas y alcance real; el descifrado pasa a B (CA-27) |
 | CA-5 (sin definir hash ni instantánea; U-0 sin destino) | CA-5 redefinido; se verifica en U-1, no en U-0 |
 | CA-7 («hasta que Fede autorice» no es testeable; hash de la 2.ª copia) | CA-7 redefinido con manifiesto de hashes del archivo cifrado; el borrado lo cubre CA-23 |
