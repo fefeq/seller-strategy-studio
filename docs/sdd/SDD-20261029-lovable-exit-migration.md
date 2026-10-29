@@ -156,7 +156,7 @@ Sin cambios visibles. Único texto a revisar: los mensajes de error que hoy dice
 | U-7 | Corte: ventana y plazo de vuelta atrás fijados por Fede, DNS, eventos entrantes, aviso a usuarios, origen en solo lectura una semana, limpieza de referencias y de `AGENTS.md` | CA-20 a CA-25 | `scripts/migration/check-no-origin.mjs` |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- Destino acordado por Fede (restricción): Vercel y proyecto Supabase propio.
+- Destino acordado por Fede: proyecto Supabase propio. El hosting (Vercel o mantener Cloudflare) se decide tras U-0 (decidido el 2026-10-29).
 - Programador de tareas: Vercel Cron llamando a `/api/public/jobs/proactive` con secreto propio; Inngest ya existe y se mantiene. *[Propuesta — Fede confirma]*
 - Volcado: cifrado, fuera del repo, en el lugar y con la clave que Fede indique. *[Propuesta — Fede confirma]*
 - `drizzle.config.ts` usa `LOVABLE_DB_MIGRATION_URL`: pasa a la URL del proyecto nuevo.
@@ -176,16 +176,17 @@ Sin cambios visibles. Único texto a revisar: los mensajes de error que hoy dice
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decididas por Fede el 2026-10-29:**
-1. Programador de tareas: Vercel Cron, con secreto propio. Depende del plan de Vercel **[Por verificar en U-0]**.
+1. Programador de tareas: Vercel Cron, con secreto propio. **Condicionado al runtime:** Vercel Cron solo funciona si el hosting es Vercel; si tras U-0 se mantiene Cloudflare, el programador será el de Cloudflare, y se confirma entonces. Depende del plan de Vercel **[Por verificar en U-0]**.
 2. Volcado: disco cifrado y una segunda copia cifrada en un almacenamiento de Fede; la clave la guarda Fede y nunca va al repo.
 3. Secretos: los carga Fede como variables de entorno del hosting y del proyecto de datos; el agente nunca los ve ni los toca.
-4. Cuenta de Vercel: la cuenta personal de Fede (no el equipo Postin, que es otro producto). **Sigue abierta la primera mitad de la pregunta:** hoy NOKKO corre como Worker de Cloudflare; ¿pasamos a Vercel (cambia el contrato de ejecución) o mantenemos Cloudflare (cambio menor)?
+4. Cuenta de Vercel: la cuenta personal de Fede (no el equipo Postin, que es otro producto). La primera mitad de la pregunta, runtime (hoy Worker de Cloudflare; pasar a Vercel cambia el contrato de ejecución), se decide tras U-0, cuando el inventario mida el coste real de cada opción.
 5. `INTEGRATION_KEYS_SECRET`: se conserva sin cambios; en U-0 se comprueba (CA-27) que los tokens descifran. Si Fede no pudiera recuperar el valor, habría que reconectar las integraciones de cada usuario.
 6. `/mcp`: se mantiene la misma dirección en nokko.ai con las mismas herramientas; el emisor OAuth pasa al Auth del proyecto nuevo, así que puede hacer falta reautorizar una vez.
 
-**Siguen abiertas:**
-7. ¿El destino incluye las migraciones 0058 y 0059, hoy marcadas como no aplicadas?
-8. ¿Se divide el SDD (al menos U-0 y U-1, y U-5 aparte) o se mantiene uno solo?
+7. Migraciones 0058 y 0059: se restaura el volcado tal cual está en producción y se aplican en el destino **después**, solo tras su verificación y los SDD de NK-0022 y escritores; no durante la migración.
+8. Dividir el SDD en tres: SDD A (U-0 y U-1: rescate y datos, lo urgente), SDD B (U-2 a U-4, U-6 y U-7) y SDD C (U-5, `/mcp`). La división se hace como paso siguiente; hasta entonces este documento contiene todas las unidades.
+
+**Siguen abiertas:** el runtime (Cloudflare o Vercel), que se decide tras U-0.
 
 ## 16. Pendiente de verificar
 1. Estado y contenido de la base tras reactivarla (usuarios, empresas, tamaño): sin dato. Lo comprueba U-0 con la base reactivada.

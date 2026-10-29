@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 23,
+  "seq": 24,
   "tickets": [
     {
       "id": "NK-0001",
@@ -522,6 +522,27 @@
         {
           "state": "LOGGED",
           "at": "2026-10-28T22:21:45.055Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0024",
+      "title": "icp-editor guarda como persona confirmada los criterios que propone la IA (países, empleados mín y máx)",
+      "kind": "bug",
+      "source": "segunda pasada del gate del SDD NK-0022 (icp-editor.tsx:78); Fede decidió ticket aparte el 2026-10-29",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-29T00:13:50.173Z",
           "by": "Claude",
           "note": ""
         }
