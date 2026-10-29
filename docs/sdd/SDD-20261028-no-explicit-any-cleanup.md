@@ -1,7 +1,7 @@
 # SDD-20261028-no-explicit-any-cleanup · [Mejora] Cero usos del tipo `any` explícito, sin cambio visible
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (la regla ya existe en `AGENTS.md` y hoy no se cumple) · **Track:** medio (un PR por unidad, sin cambios de datos)
-**Estado:** Borrador · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
+**Estado:** Aprobado (Fede, 2026-10-29; sin implementar) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
 
 ## 1. Resumen
 Tras el SDD `SDD-20261028-hooks-lint-hygiene` (fusionado en `main`, commit `90811098`), el lint reporta 14.941 problemas (14.900 errores y 41 warnings). El siguiente grupo con riesgo real son los **111 usos de `any` explícito** (regla `@typescript-eslint/no-explicit-any`, nivel error) repartidos en 45 archivos: 106 en código de producción y 5 en pruebas. Se pide sustituirlos por tipos concretos, **sin cambiar el comportamiento**, y dejar la regla en 0.
@@ -124,4 +124,6 @@ Un PR por unidad, en este orden. Cada PR deja a 0 los usos de sus archivos, no s
 - Decisión: Aceptado / Cambios pedidos / Rechazado
 
 ---
-Validación: linter OK (0 bloqueantes); auditoría independiente: Cambios menores, aplicados; pendiente el OK de Fede.
+Validación: linter OK (0 bloqueantes); auditoría independiente: Cambios menores, aplicados; aprobado por Fede el 2026-10-29.
+
+Nota (2026-10-29): desde la medición (commit `90811098`) `main` incorporó #47, #48 y #46; el recuento de 111 usos puede haber cambiado. Dani debe regenerarlo con el lint al empezar cada unidad.
