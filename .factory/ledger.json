@@ -145,19 +145,25 @@
       "title": "Editar, borrar y confirmar en campos",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador (sesión de código sin lanzar)",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261025-field-actions-edit-delete-confirm.md",
       "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/field-actions-sources-owner-delete",
+      "base_commit": "db16d403e2aabadc6a7964dc671a3d9d9893fd8d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-10-28T20:23:13.893Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T23:25:11.501Z",
+          "by": "Fede",
+          "note": "owner=coordinador (sesión de código sin lanzar)"
         }
       ]
     },
@@ -472,13 +478,13 @@
       "title": "Migración 0058: escritores automáticos con sesión de persona quedarían sellados «persona + confirmado» sin serlo (no aplicar 0058 hasta SDD aprobado)",
       "kind": "bug",
       "source": "migration-0058-plan.md (R1) y revisión de la sesión de verificación de 0058; escritores comprobados en el código el 2026-10-28",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261028-field-sources-on-tracked-writers.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/field-sources-writers",
+      "base_commit": "d02114bba8d0b60758f0759b043245318551fa01",
       "history": [
         {
           "state": "LOGGED",
@@ -491,6 +497,12 @@
           "at": "2026-10-28T22:20:33.528Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261028-field-sources-on-tracked-writers.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T22:22:29.469Z",
+          "by": "Fede",
+          "note": "owner=nokko-author"
         }
       ]
     },
