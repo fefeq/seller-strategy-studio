@@ -27,14 +27,14 @@ export const DEFAULT_STAGES: Stage[] = [
   { key: "lost", label: "Perdido", position: 101, kind: "lost", board_group: null, probability: 0 },
 ];
 
-const use = (stages: Stage[] | null | undefined) => (stages && stages.length ? stages : DEFAULT_STAGES);
+const orDefault = (stages: Stage[] | null | undefined) => (stages && stages.length ? stages : DEFAULT_STAGES);
 /** Lowercase, no accents, letters and digits only: «Negociación» and «negociacion» are the same name. */
 const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
 
 /** Open stages in order, then «Ganado», then «Perdido». */
 export function sortStages(stages?: Stage[] | null): Stage[] {
   const rank = (s: Stage) => (s.kind === "open" ? 0 : s.kind === "won" ? 1 : 2);
-  return [...use(stages)].sort((a, b) => rank(a) - rank(b) || a.position - b.position || a.label.localeCompare(b.label));
+  return [...orDefault(stages)].sort((a, b) => rank(a) - rank(b) || a.position - b.position || a.label.localeCompare(b.label));
 }
 
 export const openStages = (stages?: Stage[] | null) => sortStages(stages).filter((s) => s.kind === "open");
@@ -44,13 +44,13 @@ export const firstOpenStage = (stages?: Stage[] | null): Stage => openStages(sta
 
 export function stageLabel(key: string | null | undefined, stages?: Stage[] | null): string {
   if (!key) return "";
-  return use(stages).find((s) => s.key === key)?.label ?? DEFAULT_STAGES.find((s) => s.key === key)?.label ?? key;
+  return orDefault(stages).find((s) => s.key === key)?.label ?? DEFAULT_STAGES.find((s) => s.key === key)?.label ?? key;
 }
 
 export const stageProbability = (key: string, stages?: Stage[] | null): number | undefined =>
-  use(stages).find((s) => s.key === key)?.probability;
+  orDefault(stages).find((s) => s.key === key)?.probability;
 
-export const isStageKey = (key: string, stages?: Stage[] | null) => use(stages).some((s) => s.key === key);
+export const isStageKey = (key: string, stages?: Stage[] | null) => orDefault(stages).some((s) => s.key === key);
 
 /** Open stage keys in order followed by 'won': the path a deal walks (conversion, «advanced» in the report). */
 export const stagePath = (stages?: Stage[] | null): string[] => [...openStages(stages).map((s) => s.key), "won"];
@@ -85,7 +85,7 @@ export function newStageKey(label: string, stages?: Stage[] | null): string {
       .slice(0, 32) || "etapa";
   // The standard keys stay reserved even after a company deletes one: old webhooks, history and stage
   // criteria still mean that stage, and a new stage must not inherit them.
-  const taken = new Set([...use(stages).map((s) => s.key), ...DEFAULT_STAGES.map((s) => s.key)]);
+  const taken = new Set([...orDefault(stages).map((s) => s.key), ...DEFAULT_STAGES.map((s) => s.key)]);
   if (!taken.has(base)) return base;
   for (let i = 2; ; i++) if (!taken.has(`${base}_${i}`)) return `${base}_${i}`;
 }
@@ -117,7 +117,7 @@ export function reorderOpen(stages: Stage[], key: string, dir: -1 | 1): { key: s
  * (what list_stages gives the agent), then the label without case, accents or spaces.
  */
 export function stageByLabel(raw: string, stages?: Stage[] | null): string | null {
-  const list = use(stages);
+  const list = orDefault(stages);
   const exact = list.find((s) => s.key === raw.trim());
   if (exact) return exact.key;
   const n = norm(raw);

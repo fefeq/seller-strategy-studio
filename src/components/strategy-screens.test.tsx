@@ -139,6 +139,10 @@ describe("board: list and team view (desktop table and phone cards)", () => {
     hoisted.rows = [strategic("a"), operational("o")];
     wrap(<SuggestionBoard />);
     await screen.findAllByText("Estratégica a");
+    // the words are visible on the buttons, not only their accessible name
+    for (const word of ["Aceptar", "Más tarde", "Descartar"]) {
+      expect(screen.getAllByText(word, { selector: "button" }).length).toBeGreaterThan(0);
+    }
     expect(screen.getAllByRole("button", { name: "Aceptar" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Más tarde" }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: "Descartar" }).length).toBe(4); // two renderings (table, cards) of each row
@@ -204,6 +208,10 @@ describe("deck (Inicio and card view of Sugerencias)", () => {
     for (const name of ["Aceptar", "Más tarde", "Descartar"])
       expect(screen.getByRole("button", { name: new RegExp(name) })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Hacer/ })).toBeNull();
+    for (const word of ["Aceptar", "Más tarde", "Descartar"]) {
+      expect(screen.getByText(word, { selector: "button" })).toBeInTheDocument(); // words, not ✕ and ✓
+    }
+    expect(screen.queryByText("✓")).toBeNull();
   });
   it("CA-7: the deck holds 7 strategic cards out of 10", () => {
     const items = Array.from({ length: 10 }, (_, i) => strategic(`s${i}`));
@@ -229,6 +237,7 @@ describe("deck (Inicio and card view of Sugerencias)", () => {
   it("an operational card keeps «Hacer» and has no evidence block", () => {
     wrap(<SuggestionDeck items={[operational("o")] as unknown as Items} keyboard={false} />);
     expect(screen.getByRole("button", { name: /Hacer/ })).toBeInTheDocument();
+    expect(screen.getByText("✓")).toBeInTheDocument(); // operational cards keep the icon buttons
     expect(document.querySelector("details")).toBeNull();
     expect(screen.queryByLabelText("Motivo de tu decisión (opcional)")).toBeNull();
   });

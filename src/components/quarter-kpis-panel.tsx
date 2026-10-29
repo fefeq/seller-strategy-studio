@@ -26,7 +26,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const quarters = quartersUpTo(quarter, 4);
+  const quarters = useMemo(() => quartersUpTo(quarter, 4), [quarter]);
   const years = [...new Set(quarters.map((q) => Number(q.slice(0, 4))))];
 
   const { data } = useQuery({
@@ -43,7 +43,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
       return { segments: (s.data ?? []) as SegLike[], deals: d.data ?? [], budgets: b.data ?? [], costs: c.data ?? [] };
     },
   });
-  const kpis = useMemo(() => (data ? quarterKpis(data.segments, data.deals, data.budgets, data.costs, quarters) : []), [data, quarter]);
+  const kpis = useMemo(() => (data ? quarterKpis(data.segments, data.deals, data.budgets, data.costs, quarters) : []), [data, quarters]);
   const current = kpis[kpis.length - 1];
 
   const money0 = (n: number | null) => (n == null ? "—" : money(n));
