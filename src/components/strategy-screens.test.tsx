@@ -61,12 +61,18 @@ const ev = (n: number) =>
   }));
 const strategic = (
   id: string,
-  over: { priority?: 1 | 2 | 3; evidence?: number; sample?: number; created?: string } = {},
+  over: {
+    priority?: 1 | 2 | 3;
+    evidence?: number;
+    sample?: number;
+    created?: string;
+    action_type?: "strategy_change" | "experiment" | "commercial_action";
+  } = {},
 ) => {
   const b = buildStrategySuggestion({
     element: "icp",
     kind: "create",
-    action_type: "strategy_change",
+    action_type: over.action_type ?? "strategy_change",
     cause: id,
     priority: over.priority ?? 2,
     title: `Estratégica ${id}`,
@@ -158,6 +164,26 @@ describe("board: list and team view (desktop table and phone cards)", () => {
     await waitFor(() =>
       expect(hoisted.decide).toHaveBeenCalledWith({ data: { id: "a", decision: "approve" } }),
     );
+  });
+  it("Aceptar on an experiment or a commercial action opens the form and decides nothing until it is confirmed", async () => {
+    for (const action_type of ["experiment", "commercial_action"] as const) {
+      hoisted.decide.mockClear();
+      hoisted.rows = [strategic("a", { action_type })];
+      const { unmount } = wrap(<SuggestionBoard />);
+      await screen.findAllByText("Estratégica a");
+      fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+      expect(
+        await screen.findByRole("button", {
+          name:
+            action_type === "experiment" ? "Aceptar y crear experimento" : "Aceptar y crear tarea",
+        }),
+      ).toBeInTheDocument();
+      expect(hoisted.decide).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull());
+      expect(hoisted.decide).not.toHaveBeenCalled();
+      unmount();
+    }
   });
   it("the optional reason typed on a strategic row travels with the decision; operational rows have no reason field", async () => {
     hoisted.rows = [strategic("a"), operational("o")];

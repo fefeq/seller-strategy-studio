@@ -22,6 +22,7 @@ import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
+import { ExecuteDialog, executeKind } from "@/components/strategy-execute";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
@@ -40,6 +41,8 @@ export function SuggestionBoard() {
   const [prio, setPrio] = useState("all");
   const [grouped, setGrouped] = useState(false);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  // Accepting an experiment or a commercial action opens the form first; the decision is sent when it is confirmed (CA-35, CA-36).
+  const [executingId, setExecutingId] = useState<string | null>(null);
 
   const { data } = useQuery({
     queryKey: ["suggestions", "board", orgId, (me?.roles ?? []).join(",")],
@@ -159,7 +162,10 @@ export function SuggestionBoard() {
                 </Button>
               );
             })()}
-          <Button size="sm" onClick={() => act(s.id, "approve")}>
+          <Button
+            size="sm"
+            onClick={() => (executeKind(s) ? setExecutingId(s.id) : act(s.id, "approve"))}
+          >
             Aceptar
           </Button>
           <Button size="sm" variant="outline" onClick={() => act(s.id, "snooze")}>
@@ -259,8 +265,19 @@ export function SuggestionBoard() {
     </>
   );
 
+  const executing = executingId ? rows.find((r) => r.id === executingId) : undefined;
+
   return (
     <div className="space-y-6">
+      {executing && (
+        <ExecuteDialog
+          key={executing.id}
+          s={executing}
+          open
+          onOpenChange={(o) => !o && setExecutingId(null)}
+          reason={reasons[executing.id]}
+        />
+      )}
       <p className="text-sm text-muted-foreground">
         {leader
           ? "Todas las sugerencias de la empresa, con su responsable y estado."
