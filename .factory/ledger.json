@@ -382,7 +382,7 @@
       "title": "Tamaño de Clay y país/tamaño de la IA web se guardan sin la regla única (guion corto, texto libre)",
       "kind": "bug",
       "source": "Auditoría de escrituras tras NK-0006 (field-write-audit.md, solo lectura), pedida por Fede",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador (sesión de código sin lanzar)",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261028-field-write-paths-normalization.md",
@@ -407,6 +407,12 @@
           "at": "2026-10-28T22:21:13.504Z",
           "by": "Fede",
           "note": "owner=coordinador (sesión de código sin lanzar)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-29T19:15:53.657Z",
+          "by": "Fede",
+          "note": "sha=d05d91e393a1839049230a66a4842a90a69331fd"
         }
       ]
     },
