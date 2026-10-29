@@ -1,8 +1,9 @@
 # SDD-20261029-lovable-exit-migration · [Feature] NOKKO deja de depender de Lovable
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-29
+**Estado:** Dividido el 2026-10-29 en tres SDD (A rescate y datos, B servicios y corte, C /mcp), por decisión de Fede; este documento queda como SDD paraguas y registro del conjunto, y las unidades se aprueban, revisan y construyen en los hijos · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-29
 **PRD:** No aplica (migración de infraestructura sin cambio de producto; un PRD solo repetiría el resumen. Si prefieres PRD, añadiría los objetivos G-n y la medición de adopción, que aquí no existen.) · **Depende de:** coordinar con `SDD-20261025-connections-bring-your-own-account` (En curso) y `SDD-20261025-drive-per-company-account`: ambos tocan las llamadas a proveedores que hoy pasan por la pasarela de Lovable.
+**SDD hijos:** [A · rescate y datos](SDD-20261029-lovable-exit-a-rescate-y-datos.md) · [B · servicios y corte](SDD-20261029-lovable-exit-b-servicios-y-corte.md) · [C · /mcp](SDD-20261029-lovable-exit-c-mcp.md)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre. Los nombres marcados *(por crear)* son propuestas para el brief.
 > Nota de términos: «plataforma de origen» = Lovable (Lovable Cloud y su pasarela de conectores y de IA). Se nombra porque es el objeto del cambio, no como fuente del estado del producto (la fuente es este repo).
