@@ -94,9 +94,12 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs. El filtro es de apl
 2. **Alcance de la regla.** No se amplía ahora a otras causas del detector de precio; ticket NK-0045.
 3. **Nivel.** Se mantiene como SDD corto.
 
-**Pendientes de tu respuesta al aprobar** (con mi recomendación):
-- **P-1.** ¿El error para quien no tiene el rol es «Sugerencia no encontrada» (como una inexistente) o un aviso explícito de «no tienes acceso»? Recomiendo «no encontrada»: no confirma que exista una sugerencia de precio.
-- **P-2.** ¿La protección en la base (NK-0044) se hace después de decidir el destino de la base? Recomiendo sí: exige migración y hoy no hay ninguna sugerencia de precio.
+4. **P-1.** El error para quien no tiene el rol es «Sugerencia no encontrada» (como una inexistente), no un aviso de «no tienes acceso»: no confirma que exista una sugerencia de precio.
+5. **P-2.** La protección en la base (NK-0044) se hace después de decidir el destino de la base: exige migración y hoy no hay ninguna sugerencia de precio.
+
+(P-1 y P-2: Fede pidió el 2026-11-01 «resuelve» y se resolvieron con la recomendación del autor; Fede puede cambiarlas al aprobar.)
+
+**Siguen abiertas:** ninguna.
 
 ## 16. Pendiente de verificar
 1. Reproducir el hueco del resumen diario con una persona sin rol y Telegram vinculado: nadie lo ha hecho; solo hay lectura de código.
