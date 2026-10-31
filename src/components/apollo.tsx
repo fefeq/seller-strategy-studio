@@ -16,7 +16,14 @@ import { Field } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
-import { APOLLO_SENIORITY, APOLLO_SENIORITY_LABEL, MAX_REVEAL, PHONE_TYPE, type ApolloPhone } from "@/lib/apollo";
+import {
+  APOLLO_SENIORITY,
+  accountInsertFromApollo,
+  APOLLO_SENIORITY_LABEL,
+  MAX_REVEAL,
+  PHONE_TYPE,
+  type ApolloPhone,
+} from "@/lib/apollo";
 import { ENRICH_LABEL, enrichPatch, type EnrichChange, type EnrichField } from "@/lib/clay";
 import { apolloCompanies, apolloEnrich, apolloPeople, apolloRevealStakeholder, apolloRevealToAccount } from "@/lib/apollo.functions";
 
@@ -71,7 +78,10 @@ function ApolloProspect() {
     if (!chosen.length) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => ({ name: r.name, domain: r.domain, industry: r.industry, size: r.size, country: r.country, notes: r.description, is_target: target }))).select("id,domain");
+      const { data, error } = await supabase
+        .from("accounts")
+        .insert(chosen.map((r) => accountInsertFromApollo(r, target)))
+        .select("id,domain");
       if (error) throw error;
       await supabase.from("account_plans").insert((data ?? []).map((a) => ({ account_id: a.id })));
       const ids = new Map((data ?? []).map((a) => [a.domain, a.id]));

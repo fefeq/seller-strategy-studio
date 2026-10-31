@@ -1,6 +1,7 @@
 // Apollo.io (people search, email/phone reveal, company search and enrichment): pure rules shared by
 // the screens, the agent tools and MCP. Gateway calls live in src/lib/apollo-gateway.ts.
 import { cleanDomain } from "@/lib/leads";
+import { normalizeForSave } from "@/lib/field-normalize";
 import { englishCountry, isoFromCountry, type AccountDraft } from "@/lib/clay";
 
 export const APOLLO_SENIORITY = ["owner", "founder", "c_suite", "partner", "vp", "head", "director", "manager", "senior", "entry"] as const;
@@ -63,6 +64,21 @@ export function orgToAccount(o: ApolloOrg): AccountDraft {
     description: o.short_description?.trim() ? o.short_description.trim().slice(0, 1500) : null,
     location: [o.city, o.country].filter(Boolean).join(", ") || null,
     revenue: o.annual_revenue_printed?.trim() || null,
+  };
+}
+
+/** The accounts row for an Apollo company: size and country go through the single rule (country empty when it does not fit). */
+export function accountInsertFromApollo(d: AccountDraft, isTarget: boolean) {
+  const size = normalizeForSave("accounts", "size", d.size);
+  const country = normalizeForSave("accounts", "country", d.country);
+  return {
+    name: d.name,
+    domain: d.domain,
+    industry: d.industry,
+    size: (size.value as string | null) ?? null,
+    country: country.status === "ok" ? (country.value as string) : null,
+    notes: d.description,
+    is_target: isTarget,
   };
 }
 

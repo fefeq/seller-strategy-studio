@@ -309,10 +309,10 @@ describe("ids must belong to the caller's company", () => {
     );
   });
 
-  it("update_account takes ISO country codes only", () => {
+  it("update_account takes a country as ISO code or name; the single rule decides (see accounts.normalize.test.ts)", () => {
     const t = getTool("update_account")!;
     expect(t.input.safeParse({ account_id: ID(3), country: "mx" }).success).toBe(true);
-    expect(t.input.safeParse({ account_id: ID(3), country: "Mexico" }).success).toBe(false);
+    expect(t.input.safeParse({ account_id: ID(3), country: "Mexico" }).success).toBe(true);
   });
 });
 

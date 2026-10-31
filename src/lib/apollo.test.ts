@@ -1,5 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { apolloErrorText, apolloWebhookBase, companyParams, matchDetails, matchToContact, orgToAccount, peopleParams, phonesFromWebhook, sameSecret, searchPersonPreview, APOLLO_DEV_URL, APOLLO_PUBLISHED_URL } from "./apollo";
+import {
+  apolloErrorText,
+  apolloWebhookBase,
+  companyParams,
+  matchDetails,
+  matchToContact,
+  orgToAccount,
+  accountInsertFromApollo,
+  peopleParams,
+  phonesFromWebhook,
+  sameSecret,
+  searchPersonPreview,
+  APOLLO_DEV_URL,
+  APOLLO_PUBLISHED_URL,
+} from "./apollo";
 
 describe("apollo params", () => {
   it("searches people by the account's clean domain, titles and known seniorities", () => {
@@ -63,5 +77,35 @@ describe("apollo errors", () => {
   it("explains a plan that does not include the endpoint", () => {
     expect(apolloErrorText(403, '{"error_code":"API_INACCESSIBLE"}')).toMatch(/plan de pago/);
     expect(apolloErrorText(401, "")).toMatch(/Conexiones/);
+  });
+});
+
+describe("accountInsertFromApollo (SDD universal-field-definitions, CA-1, CA-3)", () => {
+  const draft = {
+    name: "Acme Test",
+    domain: "acme.test",
+    industry: "Software",
+    size: "51 a 200",
+    country: "España",
+    linkedin: null,
+    description: "Texto",
+    location: null,
+    revenue: null,
+  };
+  it("saves size and country through the single rule", () => {
+    expect(accountInsertFromApollo(draft, true)).toEqual({
+      name: "Acme Test",
+      domain: "acme.test",
+      industry: "Software",
+      size: "51–200 empleados",
+      country: "ES",
+      notes: "Texto",
+      is_target: true,
+    });
+  });
+  it("leaves a country that does not fit empty and keeps the rest", () => {
+    expect(
+      accountInsertFromApollo({ ...draft, size: null, country: "Narnia" }, false),
+    ).toMatchObject({ size: null, country: null, is_target: false });
   });
 });

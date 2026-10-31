@@ -2,8 +2,9 @@
 // ABM and Personas make, and the same score the Cuentas list sorts by.
 import { z } from "zod";
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
-import { COUNTRY_CODES, countryName } from "@/lib/assignment";
+import { countryName } from "@/lib/assignment";
 import { byScore, fitText, latestOf, scoreAccount } from "@/lib/scoring";
+import { normalizeForSave } from "@/lib/field-normalize";
 import { dedupePeople, normEmail, normLinkedin } from "@/lib/dedupe";
 import { HEALTH, clearable, def, defined, like, mustFind, ok, type AgentTool, type ToolCtx } from "../tool-kit";
 
@@ -11,7 +12,14 @@ const TOUCH_CHANNELS = ["web_visit", "email", "linkedin", "direct_mail", "event"
 const CRM_STAGES = ["lead", "mql", "sql", "opportunity", "customer", "disqualified"] as const;
 const SEQUENCE_STAGES = ["none", "active", "finished", "paused"] as const;
 const PLAN_FIELDS = ["current_state", "pains", "objectives", "initiatives", "whitespace", "risks", "competitors", "action_plan"] as const;
-const COUNTRY = z.string().transform((v) => v.trim().toUpperCase()).refine((v) => COUNTRY_CODES.includes(v), "País no reconocido: usa el código ISO de 2 letras (ES, MX, US…)");
+// An ISO code or a name: the single rule decides at proposal time (agent, MCP and Telegram all parse with this schema), and run checks again.
+const COUNTRY = z
+  .string()
+  .max(100)
+  .refine((v) => normalizeForSave("accounts", "country", v).status === "ok", {
+    error: (i) =>
+      `País no reconocido: «${String(i.input).trim()}». Usa el código ISO de 2 letras o el nombre (ES, España, MX, US…).`,
+  });
 const optText = z.string().max(4000).optional();
 
 async function segmentNames(c: ToolCtx) {
@@ -80,8 +88,10 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
     },
   }),
   def({
-    name: "update_account", kind: "write",
-    description: "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (ISO 2 letras), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí.",
+    name: "update_account",
+    kind: "write",
+    description:
+      "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras o nombre, p. ej. «España»), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí.",
     input: z.object({
       account_id: z.string().uuid(), name: z.string().min(1).max(200).optional(), domain: clearable(200), industry: clearable(200),
       size: clearable(100), country: COUNTRY.nullable().optional(), segment_id: z.string().uuid().nullable().optional(),
@@ -97,7 +107,29 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
       if (patch.segment_id) await mustFind(c, "segments", patch.segment_id, "ese segmento");
       const p = defined(patch);
       if (!Object.keys(p).length) throw new Error("No has indicado qué cambiar de la cuenta.");
-      return ok(await c.db.from("accounts").update(p as never).eq("org_id", c.orgId).eq("id", account_id).select("id,name").single());
+      // Size and country go through the one rule (SDD universal-field-definitions, CA-1/CA-3).
+      // A size that is not a headcount is kept as written, with a warning; an unknown country is refused before anything is written.
+      const warnings: string[] = [];
+      for (const col of ["size", "country"] as const) {
+        if (p[col] === undefined) continue;
+        const n = normalizeForSave("accounts", col, p[col]);
+        if (n.status === "unnormalized") {
+          if (col === "country")
+            throw new Error(`País no reconocido: «${n.original}». ${n.reason}`);
+          warnings.push(`Tamaño «${n.original}». ${n.reason}`);
+        }
+        p[col] = n.value as string | null;
+      }
+      const row = ok(
+        await c.db
+          .from("accounts")
+          .update(p as never)
+          .eq("org_id", c.orgId)
+          .eq("id", account_id)
+          .select("id,name")
+          .single(),
+      );
+      return warnings.length ? { ...row, mensaje: warnings.join(" ") } : row;
     },
   }),
   def({

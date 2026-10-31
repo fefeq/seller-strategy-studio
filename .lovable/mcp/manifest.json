@@ -1836,7 +1836,7 @@
       {
         "name": "update_account",
         "title": "Actualizar cuenta",
-        "description": "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (ISO 2 letras), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras o nombre, p. ej. «España»), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -1869,9 +1869,14 @@
               "maxLength": 100
             },
             "country": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "segment_id": {
