@@ -48,11 +48,18 @@ describe("SourcesStep: adding files keeps the ones already listed (CA-12)", () =
 
   it("past the limit it keeps what was listed and says what was left out", async () => {
     render(<SourcesStep depth="express" onStarted={() => {}} />);
-    const names = (from: number, n: number) => Array.from({ length: n }, (_, k) => `doc-${from + k}.pdf`);
+    const names = (from: number, n: number) =>
+      Array.from({ length: n }, (_, k) => `doc-${from + k}.pdf`);
     // The step takes 3 files per selection; four selections go past MAX_FILES (10).
-    for (const [from, n] of [[1, 3], [4, 3], [7, 3]] as const) {
+    for (const [from, n] of [
+      [1, 3],
+      [4, 3],
+      [7, 3],
+    ] as const) {
       add(...names(from, n).map(pdf));
-      await waitFor(() => expect(listed().filter((t) => /\.pdf/.test(t))).toHaveLength(from - 1 + n));
+      await waitFor(() =>
+        expect(listed().filter((t) => /\.pdf/.test(t))).toHaveLength(from - 1 + n),
+      );
     }
     add(...names(10, 3).map(pdf));
     await waitFor(() => expect(state.error).toHaveBeenCalled());
