@@ -20,28 +20,60 @@ const updates: { id: unknown; patch: Row }[] = [];
 
 /** A chainable, awaitable stand-in for a PostgREST query: filters by is(null) and in(), records update().eq("id"). */
 function query(table: string) {
-  let rows = table === "notifications" ? notifications : tables[table] ?? [];
+  let rows = table === "notifications" ? notifications : (tables[table] ?? []);
   let patch: Row | null = null;
   const q: Record<string, unknown> = {};
   const chain = () => q;
   Object.assign(q, {
-    select: chain, not: chain, order: chain, limit: chain, gte: chain,
-    is: (col: string, v: unknown) => { rows = rows.filter((r) => (r[col] ?? null) === v); return q; },
-    in: (col: string, vals: unknown[]) => { rows = rows.filter((r) => vals.includes(r[col])); return q; },
-    eq: (col: string, v: unknown) => {
-      if (patch) { updates.push({ id: v, patch }); for (const r of notifications) if (r[col] === v) Object.assign(r, patch); return q; }
-      rows = rows.filter((r) => r[col] === v); return q;
+    select: chain,
+    not: chain,
+    order: chain,
+    limit: chain,
+    gte: chain,
+    is: (col: string, v: unknown) => {
+      rows = rows.filter((r) => (r[col] ?? null) === v);
+      return q;
     },
-    update: (p: Row) => { patch = p; return q; },
+    in: (col: string, vals: unknown[]) => {
+      rows = rows.filter((r) => vals.includes(r[col]));
+      return q;
+    },
+    eq: (col: string, v: unknown) => {
+      if (patch) {
+        updates.push({ id: v, patch });
+        for (const r of notifications) if (r[col] === v) Object.assign(r, patch);
+        return q;
+      }
+      rows = rows.filter((r) => r[col] === v);
+      return q;
+    },
+    update: (p: Row) => {
+      patch = p;
+      return q;
+    },
     then: (ok: (v: { data: Row[] | null; error: { message: string } | null }) => unknown) =>
-      Promise.resolve(table === "org_members" && membersFail ? { data: null, error: { message: "connection reset" } } : { data: patch ? [] : rows, error: null }).then(ok),
+      Promise.resolve(
+        table === "org_members" && membersFail
+          ? { data: null, error: { message: "connection reset" } }
+          : { data: patch ? [] : rows, error: null },
+      ).then(ok),
   });
   return q;
 }
-const admin = { from: (t: string) => query(t) } as unknown as Parameters<typeof flushHeldNotices>[0];
+const admin = { from: (t: string) => query(t) } as unknown as Parameters<
+  typeof flushHeldNotices
+>[0];
 
 const money = (id: string, user: string): Row => ({
-  id, org_id: ORG, user_id: user, kind: "money", title: "Hay leads nuevos en SQL.", body: "Míralos en Leads.", link: "/leads?vista=lista", job_id: null, telegram_sent_at: null,
+  id,
+  org_id: ORG,
+  user_id: user,
+  kind: "money",
+  title: "Hay leads nuevos en SQL.",
+  body: "Míralos en Leads.",
+  link: "/leads?vista=lista",
+  job_id: null,
+  telegram_sent_at: null,
 });
 
 beforeEach(() => {
@@ -50,7 +82,10 @@ beforeEach(() => {
   membersFail = false;
   notifications = [money("n1", MEMBER), money("n2", FORMER)];
   tables = {
-    channel_links: [{ user_id: MEMBER, chat_id: "chat-member", channel: "telegram" }, { user_id: FORMER, chat_id: "chat-former", channel: "telegram" }],
+    channel_links: [
+      { user_id: MEMBER, chat_id: "chat-member", channel: "telegram" },
+      { user_id: FORMER, chat_id: "chat-former", channel: "telegram" },
+    ],
     notification_prefs: [
       { user_id: MEMBER, telegram: "all", quiet_from: 22, quiet_to: 8, timezone: "Europe/Madrid" },
       { user_id: FORMER, telegram: "all", quiet_from: 22, quiet_to: 8, timezone: "Europe/Madrid" },
@@ -83,5 +118,7 @@ it("N-6: if the membership query fails nothing is sent and the failure is logged
     membersFail = false; // control: same notices, healthy query
     expect(await flushHeldNotices(admin, NOW)).toBe(1);
     expect(sendText).toHaveBeenCalledTimes(1);
-  } finally { log.mockRestore(); }
+  } finally {
+    log.mockRestore();
+  }
 });

@@ -20,8 +20,16 @@ const V = {
   exA: "00000000-0000-4000-8000-0000000000a5", // used to be in A, no longer a member
   ownerC: "00000000-0000-4000-8000-0000000000c1", // owner of the company that gets archived
 };
-const LEAD = { title: "Hay leads nuevos en SQL.", body: "Míralos en Leads.", link: "/leads?vista=lista" };
-const DEAL = { title: "Hay deals nuevos como Ganados.", body: "Míralos en Pipeline.", link: "/deals" };
+const LEAD = {
+  title: "Hay leads nuevos en SQL.",
+  body: "Míralos en Leads.",
+  link: "/leads?vista=lista",
+};
+const DEAL = {
+  title: "Hay deals nuevos como Ganados.",
+  body: "Míralos en Pipeline.",
+  link: "/deals",
+};
 
 const SCHEMA = `
   alter table public.organizations add column archived_at timestamptz;
@@ -131,8 +139,17 @@ async function world(withMigration: boolean) {
   const db = await build();
   const { A, B } = await seed(db);
   await db.exec(SCHEMA);
-  const C = ((await db.query("insert into organizations (name) values ('Empresa C') returning id")).rows[0] as { id: string }).id;
-  const D = ((await db.query("insert into organizations (name) values ('Empresa D sin miembros') returning id")).rows[0] as { id: string }).id;
+  const C = (
+    (await db.query("insert into organizations (name) values ('Empresa C') returning id"))
+      .rows[0] as { id: string }
+  ).id;
+  const D = (
+    (
+      await db.query(
+        "insert into organizations (name) values ('Empresa D sin miembros') returning id",
+      )
+    ).rows[0] as { id: string }
+  ).id;
   await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${V.slA}','sales_leader'),('${A}','${V.repA}','ae'),('${C}','${V.ownerC}','owner');
     insert into profiles (id, current_org_id) values ('${V.slA}','${A}'),('${V.repA}','${A}'),('${V.exA}','${A}'),('${V.ownerC}','${C}');`);
   if (withMigration) await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
@@ -147,16 +164,35 @@ describe("U-1 harness smoke (runs without the migration)", () => {
   });
 
   it("the replica builds, stamps the SQL time as authenticated and creates the deal with the initial stage", async () => {
-    const lead = await as(db, U.ownerA, async () =>
-      (await db.query<Row>("insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql') returning sql_at, mql_at", [A])).rows[0]!);
+    const lead = await as(
+      db,
+      U.ownerA,
+      async () =>
+        (
+          await db.query<Row>(
+            "insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql') returning sql_at, mql_at",
+            [A],
+          )
+        ).rows[0]!,
+    );
     expect(lead["sql_at"]).not.toBeNull();
     expect(lead["mql_at"]).not.toBeNull();
-    await as(db, U.ownerA, async () => db.query("update leads set stage = 'opportunity' where company = 'Lead ficticio'"));
-    const deal = (await db.query<Row>("select d.stage, d.probability, d.closed_at from deals d join leads l on l.deal_id = d.id")).rows[0];
+    await as(db, U.ownerA, async () =>
+      db.query("update leads set stage = 'opportunity' where company = 'Lead ficticio'"),
+    );
+    const deal = (
+      await db.query<Row>(
+        "select d.stage, d.probability, d.closed_at from deals d join leads l on l.deal_id = d.id",
+      )
+    ).rows[0];
     expect(deal).toMatchObject({ stage: "discovery", probability: 10, closed_at: null });
     // deals_track: history carries org_id and closed_at is only stamped by an update to won
     await db.exec(`insert into deals (org_id, name, stage) values ('${A}','Deal ficticio','won')`);
-    const won = (await db.query<Row>("select closed_at, (select org_id from deal_stage_history h where h.deal_id = d.id) as hist_org from deals d where name = 'Deal ficticio'")).rows[0]!;
+    const won = (
+      await db.query<Row>(
+        "select closed_at, (select org_id from deal_stage_history h where h.deal_id = d.id) as hist_org from deals d where name = 'Deal ficticio'",
+      )
+    ).rows[0]!;
     expect(won["closed_at"]).toBeNull();
     expect(won["hist_org"]).toBe(A);
   });
@@ -166,46 +202,93 @@ describe("money notices (migration 0074)", () => {
   let db: Db;
   let A: string, B: string, C: string, D: string;
   const rows = async (sql: string, params?: unknown[]) => (await db.query<Row>(sql, params)).rows;
-  const notices = () => rows("select user_id, org_id, kind, title, body, link, dedupe_key from notifications order by user_id");
+  const notices = () =>
+    rows(
+      "select user_id, org_id, kind, title, body, link, dedupe_key from notifications order by user_id",
+    );
   const who = async () => (await notices()).map((n) => n.user_id).sort();
   const sorted = (...ids: string[]) => [...ids].sort();
   const failure = async (fn: () => Promise<unknown>) => {
-    try { await fn(); return ""; } catch (e) { return String((e as Error).message); }
+    try {
+      await fn();
+      return "";
+    } catch (e) {
+      return String((e as Error).message);
+    }
   };
   const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString();
   /** Runs a statement as a signed-in user (uid) or as service_role (null) so the trigger is exercised with the privileges of each path. */
-  const write = (uid: string | null, sql: string, params?: unknown[]) => as(db, uid, () => db.query(sql, params));
-  const newLead = (uid: string | null, stage: string, o: { org?: string | null; owner?: string | null; created?: string; company?: string } = {}) =>
-    write(uid, "insert into leads (org_id, company, stage, owner_id, created_at) values ($1,$2,$3,$4,$5) returning id", [
-      o.org === undefined ? A : o.org, o.company ?? "Lead ficticio", stage, o.owner ?? null, o.created ?? new Date().toISOString()]).then((r) => String(r.rows[0]!["id"]));
-  const newDeal = (uid: string | null, stage: string, o: { org?: string; owner?: string | null; closed?: string | null } = {}) =>
-    write(uid, "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio',$2,$3,$4) returning id", [
-      o.org ?? A, stage, o.owner ?? null, o.closed ?? null]).then((r) => String(r.rows[0]!["id"]));
+  const write = (uid: string | null, sql: string, params?: unknown[]) =>
+    as(db, uid, () => db.query(sql, params));
+  const newLead = (
+    uid: string | null,
+    stage: string,
+    o: { org?: string | null; owner?: string | null; created?: string; company?: string } = {},
+  ) =>
+    write(
+      uid,
+      "insert into leads (org_id, company, stage, owner_id, created_at) values ($1,$2,$3,$4,$5) returning id",
+      [
+        o.org === undefined ? A : o.org,
+        o.company ?? "Lead ficticio",
+        stage,
+        o.owner ?? null,
+        o.created ?? new Date().toISOString(),
+      ],
+    ).then((r) => String(r.rows[0]!["id"]));
+  const newDeal = (
+    uid: string | null,
+    stage: string,
+    o: { org?: string; owner?: string | null; closed?: string | null } = {},
+  ) =>
+    write(
+      uid,
+      "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio',$2,$3,$4) returning id",
+      [o.org ?? A, stage, o.owner ?? null, o.closed ?? null],
+    ).then((r) => String(r.rows[0]!["id"]));
   const clear = () => db.exec("delete from notifications");
 
   beforeAll(async () => {
     ({ db, A, B, C, D } = await world(true));
   });
   beforeEach(async () => {
-    await db.exec("reset role; truncate notifications, deal_stage_history, leads, deals cascade; update organizations set archived_at = null");
+    await db.exec(
+      "reset role; truncate notifications, deal_stage_history, leads, deals cascade; update organizations set archived_at = null",
+    );
   });
 
   it("CA-1: a lead entering SQL notifies Owner, Sales Leader and the responsible, as authenticated and as service_role, even with an old creation date", async () => {
     // the replica must not be more permissive than the live database: authenticated cannot insert notices by itself
-    expect(await failure(() => write(U.ownerA, "insert into notifications (org_id, user_id, kind, title) values ($1,$2,'done','x')", [A, U.ownerA]))).toMatch(/permission denied/);
+    expect(
+      await failure(() =>
+        write(
+          U.ownerA,
+          "insert into notifications (org_id, user_id, kind, title) values ($1,$2,'done','x')",
+          [A, U.ownerA],
+        ),
+      ),
+    ).toMatch(/permission denied/);
     const expected = sorted(U.ownerA, V.slA, U.aeA);
     for (const writer of [U.ownerA, null] as const) {
       for (const path of ["insert", "update"] as const) {
         await clear();
         await db.exec("truncate leads cascade");
-        if (path === "insert") await newLead(writer, "sql", { owner: U.aeA, created: "2020-01-02T03:04:05Z" });
+        if (path === "insert")
+          await newLead(writer, "sql", { owner: U.aeA, created: "2020-01-02T03:04:05Z" });
         else {
-          const id = await newLead(writer, "mql", { owner: U.aeA, created: "2020-01-02T03:04:05Z" });
+          const id = await newLead(writer, "mql", {
+            owner: U.aeA,
+            created: "2020-01-02T03:04:05Z",
+          });
           expect(await notices()).toHaveLength(0);
           await write(writer, "update leads set stage = 'sql' where id = $1", [id]);
         }
         const got = await notices();
-        expect({ writer, path, users: got.map((n) => n.user_id).sort() }).toEqual({ writer, path, users: expected });
+        expect({ writer, path, users: got.map((n) => n.user_id).sort() }).toEqual({
+          writer,
+          path,
+          users: expected,
+        });
         expect(got.every((n) => n.kind === "money" && n.org_id === A)).toBe(true);
       }
     }
@@ -216,7 +299,9 @@ describe("money notices (migration 0074)", () => {
     expect(await notices()).toHaveLength(3); // positive control
     await clear();
     await write(U.ownerA, "update leads set notes = 'otra nota' where id = $1", [id]);
-    await write(U.ownerA, "update leads set stage = 'sql', next_step = 'llamar' where id = $1", [id]);
+    await write(U.ownerA, "update leads set stage = 'sql', next_step = 'llamar' where id = $1", [
+      id,
+    ]);
     await write(U.ownerA, "update leads set stage = 'mql' where id = $1", [id]);
     await write(U.ownerA, "update leads set stage = 'contacted' where id = $1", [id]);
     expect(await notices()).toHaveLength(0);
@@ -227,7 +312,9 @@ describe("money notices (migration 0074)", () => {
     const got = await who();
     expect(got).toEqual(sorted(U.ownerA, V.slA));
     await clear();
-    await newLead(U.ownerA, "contacted", { owner: V.slA }).then((id) => write(U.ownerA, "update leads set stage = 'sql' where id = $1", [id]));
+    await newLead(U.ownerA, "contacted", { owner: V.slA }).then((id) =>
+      write(U.ownerA, "update leads set stage = 'sql' where id = $1", [id]),
+    );
     expect(await who()).toEqual(sorted(U.ownerA, V.slA));
     await clear();
     await newLead(U.ownerA, "sql", { owner: U.aeA }); // control: a distinct responsible adds a third person
@@ -250,7 +337,10 @@ describe("money notices (migration 0074)", () => {
       expect(await who()).toEqual(expected);
       await clear();
       const id2 = await newDeal(writer, "negotiation", { owner: U.aeA });
-      await write(writer, "update deals set stage = 'won', closed_at = $2 where id = $1", [id2, ago(23)]);
+      await write(writer, "update deals set stage = 'won', closed_at = $2 where id = $1", [
+        id2,
+        ago(23),
+      ]);
       expect(await who()).toEqual(expected);
     }
   });
@@ -261,11 +351,17 @@ describe("money notices (migration 0074)", () => {
     await clear();
     await write(U.ownerA, "update deals set amount = 10 where id = $1", [id]);
     await write(U.ownerA, "update deals set closed_at = $2 where id = $1", [id, ago(0.5)]);
-    await write(U.ownerA, "update deals set stage = 'won', closed_at = $2 where id = $1", [id, ago(3)]);
+    await write(U.ownerA, "update deals set stage = 'won', closed_at = $2 where id = $1", [
+      id,
+      ago(3),
+    ]);
     expect(await notices()).toHaveLength(0);
     await newDeal(U.ownerA, "won", { owner: U.aeA, closed: ago(24 * 3) }); // imported history
     const open = await newDeal(U.ownerA, "negotiation", { owner: U.aeA });
-    await write(U.ownerA, "update deals set stage = 'won', closed_at = $2 where id = $1", [open, ago(25)]);
+    await write(U.ownerA, "update deals set stage = 'won', closed_at = $2 where id = $1", [
+      open,
+      ago(25),
+    ]);
     expect(await notices()).toHaveLength(0);
     await newDeal(null, "won", { owner: U.aeA, closed: ago(24.1) }); // six minutes outside the window
     expect(await notices()).toHaveLength(0);
@@ -279,7 +375,14 @@ describe("money notices (migration 0074)", () => {
     await write(U.ownerA, "update deals set stage = 'negotiation' where id = $1", [id]);
     expect(await notices()).toHaveLength(0);
     await write(U.ownerA, "update deals set stage = 'won' where id = $1", [id]);
-    expect((await rows("select closed_at < now() - interval '48 hours' as old from deals where id = $1", [id]))[0]!.old).toBe(true);
+    expect(
+      (
+        await rows(
+          "select closed_at < now() - interval '48 hours' as old from deals where id = $1",
+          [id],
+        )
+      )[0]!.old,
+    ).toBe(true);
     expect(await who()).toEqual(sorted(U.ownerA, V.slA, U.aeA));
   });
 
@@ -287,7 +390,11 @@ describe("money notices (migration 0074)", () => {
     const call = "select public.money_notify($1, 'lead_sql', gen_random_uuid(), null)";
     expect(await failure(() => write(U.ownerA, call, [A]))).toMatch(/permission denied/);
     await db.exec("set role anon");
-    try { expect(await failure(() => db.query(call, [A]))).toMatch(/permission denied/); } finally { await db.exec("reset role"); }
+    try {
+      expect(await failure(() => db.query(call, [A]))).toMatch(/permission denied/);
+    } finally {
+      await db.exec("reset role");
+    }
     expect(await notices()).toHaveLength(0);
     await db.query(call, [A]); // control: the owner of the function can, and the notice is written
     expect(await notices()).toHaveLength(2);
@@ -295,7 +402,11 @@ describe("money notices (migration 0074)", () => {
 
   it("CA-7: at most one notice per person, type, company and hour; another hour or type creates a new one", async () => {
     const money = (org: string, kind: string, at: string) =>
-      db.query("select public.money_notify($1, $2, gen_random_uuid(), null, $3::timestamptz)", [org, kind, at]);
+      db.query("select public.money_notify($1, $2, gen_random_uuid(), null, $3::timestamptz)", [
+        org,
+        kind,
+        at,
+      ]);
     await money(A, "lead_sql", "2026-03-01T10:05:00Z");
     await money(A, "lead_sql", "2026-03-01T10:55:00Z");
     await money(A, "lead_sql", "2026-03-01T10:05:00Z");
@@ -310,19 +421,58 @@ describe("money notices (migration 0074)", () => {
   });
 
   it("CA-8: (user_id, dedupe_key) is unique, and the trigger keys by the hour of now(), not by the event date", async () => {
-    await db.exec("insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" + A + "','" + U.ownerA + "','money','t','k1')");
-    expect(await failure(() => db.exec("insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" + A + "','" + U.ownerA + "','money','t','k1')"))).toMatch(/unique|duplicate/i);
-    await db.exec("insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" + A + "','" + U.ownerA + "','money','t','k2')"); // control: another key
-    await db.exec("insert into notifications (org_id, user_id, kind, title) values ('" + A + "','" + U.ownerA + "','done','a'),('" + A + "','" + U.ownerA + "','done','b')"); // null keys never collide
+    await db.exec(
+      "insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" +
+        A +
+        "','" +
+        U.ownerA +
+        "','money','t','k1')",
+    );
+    expect(
+      await failure(() =>
+        db.exec(
+          "insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" +
+            A +
+            "','" +
+            U.ownerA +
+            "','money','t','k1')",
+        ),
+      ),
+    ).toMatch(/unique|duplicate/i);
+    await db.exec(
+      "insert into notifications (org_id, user_id, kind, title, dedupe_key) values ('" +
+        A +
+        "','" +
+        U.ownerA +
+        "','money','t','k2')",
+    ); // control: another key
+    await db.exec(
+      "insert into notifications (org_id, user_id, kind, title) values ('" +
+        A +
+        "','" +
+        U.ownerA +
+        "','done','a'),('" +
+        A +
+        "','" +
+        U.ownerA +
+        "','done','b')",
+    ); // null keys never collide
     await db.exec("delete from notifications");
     // same transaction: the close is two hours ago, so a key built from the event date would carry another hour
     await db.exec("begin");
     try {
-      await db.query("insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio','won',$2, now() - interval '2 hours')", [A, U.aeA]);
-      const got = await rows(`select dedupe_key, 'money:deal_won:' || org_id || ':' || to_char(date_trunc('hour', now() at time zone 'UTC'), 'YYYY-MM-DD"T"HH24"Z"') as expected from notifications`);
+      await db.query(
+        "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio','won',$2, now() - interval '2 hours')",
+        [A, U.aeA],
+      );
+      const got = await rows(
+        `select dedupe_key, 'money:deal_won:' || org_id || ':' || to_char(date_trunc('hour', now() at time zone 'UTC'), 'YYYY-MM-DD"T"HH24"Z"') as expected from notifications`,
+      );
       expect(got).toHaveLength(3);
       for (const g of got) expect(g.dedupe_key).toBe(g.expected);
-    } finally { await db.exec("commit"); }
+    } finally {
+      await db.exec("commit");
+    }
     expect(new Set((await notices()).map((n) => n.dedupe_key)).size).toBe(1);
   });
 
@@ -347,7 +497,9 @@ describe("money notices (migration 0074)", () => {
     const id = await newLead(null, "mql");
     const warnings: string[] = [];
     const onNotice = (n: { message?: string }) => void warnings.push(n.message ?? "");
-    await db.query("update leads set org_id = null, stage = 'sql' where id = $1", [id], { onNotice });
+    await db.query("update leads set org_id = null, stage = 'sql' where id = $1", [id], {
+      onNotice,
+    });
     expect(await notices()).toHaveLength(0);
     expect(warnings.filter((w) => w.includes("money_"))).toEqual([]); // ignored, not a failure
   });
@@ -355,12 +507,25 @@ describe("money notices (migration 0074)", () => {
   it("CA-13: a failing notice keeps the write and leaves a warning without row data; no recipients means no notice and no warning", async () => {
     const warnings: string[] = [];
     const onNotice = (n: { message?: string }) => void warnings.push(n.message ?? "");
-    await db.exec("alter table public.notifications add constraint force_fail check (false) not valid");
+    await db.exec(
+      "alter table public.notifications add constraint force_fail check (false) not valid",
+    );
     try {
       await as(db, U.ownerA, () =>
-        db.query("insert into leads (org_id, company, email, notes, contact_name, stage) values ($1,'Empresa ficticia SA','ficticio@example.test','Tel +34 600 000 000','Nombre Ficticio','sql')", [A], { onNotice }));
-      await db.query("insert into deals (org_id, name, stage, closed_at) values ($1,'Deal ficticio SA','won', now())", [A], { onNotice });
-    } finally { await db.exec("alter table public.notifications drop constraint force_fail"); }
+        db.query(
+          "insert into leads (org_id, company, email, notes, contact_name, stage) values ($1,'Empresa ficticia SA','ficticio@example.test','Tel +34 600 000 000','Nombre Ficticio','sql')",
+          [A],
+          { onNotice },
+        ),
+      );
+      await db.query(
+        "insert into deals (org_id, name, stage, closed_at) values ($1,'Deal ficticio SA','won', now())",
+        [A],
+        { onNotice },
+      );
+    } finally {
+      await db.exec("alter table public.notifications drop constraint force_fail");
+    }
     expect((await rows("select count(*)::int as n from leads"))[0]!.n).toBe(1);
     expect((await rows("select count(*)::int as n from deals"))[0]!.n).toBe(1);
     expect(await notices()).toHaveLength(0);
@@ -369,18 +534,36 @@ describe("money notices (migration 0074)", () => {
     expect(own.join(" ")).not.toMatch(/fictici[oa]|example\.test|600 000|Nombre|Empresa ficticia/i);
     // no recipients: the write goes on, no notice and no warning (it is not a failure)
     const quiet: string[] = [];
-    await db.query("insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql')", [D], { onNotice: (n: { message?: string }) => void quiet.push(n.message ?? "") });
-    await db.query("insert into deals (org_id, name, stage, closed_at) values ($1,'Deal ficticio','won', now())", [D], { onNotice: (n: { message?: string }) => void quiet.push(n.message ?? "") });
+    await db.query(
+      "insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql')",
+      [D],
+      { onNotice: (n: { message?: string }) => void quiet.push(n.message ?? "") },
+    );
+    await db.query(
+      "insert into deals (org_id, name, stage, closed_at) values ($1,'Deal ficticio','won', now())",
+      [D],
+      { onNotice: (n: { message?: string }) => void quiet.push(n.message ?? "") },
+    );
     expect(await notices()).toHaveLength(0);
     expect(quiet.filter((w) => w.includes("money_"))).toEqual([]);
-    expect((await rows("select count(*)::int as n from leads where org_id = $1", [D]))[0]!.n).toBe(1);
+    expect((await rows("select count(*)::int as n from leads where org_id = $1", [D]))[0]!.n).toBe(
+      1,
+    );
     await newLead(U.ownerA, "sql"); // control: with the constraint gone and recipients present, it notices
     expect(await notices()).toHaveLength(2);
   });
 
   it("CA-14: title, body and link come from a closed list and carry nothing of the lead or deal", async () => {
-    await write(U.ownerA, "insert into leads (org_id, company, email, notes, contact_name, owner_id, stage) values ($1,'Empresa ficticia SA','ficticio@example.test','Tel +34 600 000 000','Nombre Ficticio',$2,'sql')", [A, U.aeA]);
-    await write(U.ownerA, "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio SA','won',$2, now())", [A, U.aeA]);
+    await write(
+      U.ownerA,
+      "insert into leads (org_id, company, email, notes, contact_name, owner_id, stage) values ($1,'Empresa ficticia SA','ficticio@example.test','Tel +34 600 000 000','Nombre Ficticio',$2,'sql')",
+      [A, U.aeA],
+    );
+    await write(
+      U.ownerA,
+      "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio SA','won',$2, now())",
+      [A, U.aeA],
+    );
     const got = await notices();
     expect(got).toHaveLength(6);
     const leadRows = got.filter((n) => String(n.dedupe_key).includes(":lead_sql:"));
@@ -389,7 +572,9 @@ describe("money notices (migration 0074)", () => {
     expect(dealRows).toHaveLength(3);
     for (const n of leadRows) expect({ title: n.title, body: n.body, link: n.link }).toEqual(LEAD);
     for (const n of dealRows) expect({ title: n.title, body: n.body, link: n.link }).toEqual(DEAL);
-    expect(JSON.stringify(got)).not.toMatch(/fictici[oa]|example\.test|600 000|Nombre|Empresa ficticia/i);
+    expect(JSON.stringify(got)).not.toMatch(
+      /fictici[oa]|example\.test|600 000|Nombre|Empresa ficticia/i,
+    );
   });
 
   it("CA-15: a lead going to opportunity without stopping in SQL, and the deal it creates with a null stage, do not notify", async () => {
@@ -401,10 +586,14 @@ describe("money notices (migration 0074)", () => {
     await newLead(U.ownerA, "opportunity", { owner: U.aeA, company: "Otro lead ficticio" });
     const deals = await rows("select stage, probability, closed_at from deals order by created_at");
     expect(deals).toHaveLength(2);
-    for (const d of deals) expect(d).toMatchObject({ stage: "discovery", probability: 10, closed_at: null });
+    for (const d of deals)
+      expect(d).toMatchObject({ stage: "discovery", probability: 10, closed_at: null });
     expect(await notices()).toHaveLength(0);
     // from SQL straight to opportunity: the entry into SQL already notified (and was cleared); the exit does not
-    const sqlLead = await newLead(U.ownerA, "sql", { owner: U.aeA, company: "Tercer lead ficticio" });
+    const sqlLead = await newLead(U.ownerA, "sql", {
+      owner: U.aeA,
+      company: "Tercer lead ficticio",
+    });
     await clear();
     await write(U.ownerA, "update leads set stage = 'opportunity' where id = $1", [sqlLead]);
     expect(await notices()).toHaveLength(0);
@@ -417,8 +606,18 @@ describe("migration 0074: the CHECK rewrite is scoped to notifications.kind (N-4
     await db.exec(`alter table public.notifications rename constraint notifications_kind_check to legacy_kind_check;
       alter table public.notifications add constraint notifications_failed_needs_title check (kind <> 'failed' or length(title) > 3);`);
     const user = "00000000-0000-4000-8000-0000000000b1";
-    const insert = (kind: string, title: string) => db.exec(`insert into notifications (org_id, user_id, kind, title) values ('${A}','${user}','${kind}','${title}')`);
-    const failure = async (fn: () => Promise<unknown>) => { try { await fn(); return ""; } catch (e) { return String((e as Error).message); } };
+    const insert = (kind: string, title: string) =>
+      db.exec(
+        `insert into notifications (org_id, user_id, kind, title) values ('${A}','${user}','${kind}','${title}')`,
+      );
+    const failure = async (fn: () => Promise<unknown>) => {
+      try {
+        await fn();
+        return "";
+      } catch (e) {
+        return String((e as Error).message);
+      }
+    };
     expect(B).toBeTruthy();
     expect(await failure(() => insert("money", "aviso"))).toMatch(/kind_check|check constraint/i); // before: money is not allowed
     await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
@@ -426,7 +625,11 @@ describe("migration 0074: the CHECK rewrite is scoped to notifications.kind (N-4
     expect(await failure(() => insert("otro", "aviso"))).toMatch(/notifications_kind_check/); // the new kind CHECK still rejects unknown kinds
     expect(await failure(() => insert("failed", "no"))).toMatch(/notifications_failed_needs_title/); // the unrelated CHECK survived
     await insert("failed", "titulo largo"); // control: it still lets valid rows through
-    const names = (await db.query<Row>("select conname from pg_constraint where conrelid = 'public.notifications'::regclass and contype = 'c' order by conname")).rows.map((r) => r["conname"]);
+    const names = (
+      await db.query<Row>(
+        "select conname from pg_constraint where conrelid = 'public.notifications'::regclass and contype = 'c' order by conname",
+      )
+    ).rows.map((r) => r["conname"]);
     expect(names).not.toContain("legacy_kind_check");
     expect(names).toContain("notifications_failed_needs_title");
   });
