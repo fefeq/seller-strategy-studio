@@ -1,7 +1,16 @@
 # Migraciones 0071, 0072 y 0073: pendientes en la base de Lovable Cloud
 
-**Fecha:** 2026-11-01 · **Preparado por:** el coordinador, para que las aplique Fede, Dani o Lovable. **No se ha aplicado nada.**
+**Fecha:** 2026-11-01 · **Preparado por:** el coordinador. **Aplicadas el mismo día por el coordinador, con la autorización de Fede en el chat («hacelo vos»): 0072, 0071 y 0073, en ese orden. Resultado en la sección «Aplicación y verificación».**
 **Fuente del estado:** consultas de solo lectura, solo recuentos y metadatos, al esquema de la base de Lovable Cloud el 2026-11-01 (conector de Lovable). Código leído en `origin/main` (`6976fa8`).
+
+## Aplicación y verificación (2026-11-01)
+Aplicadas por el conector de Lovable (`query_database`), cada una con comprobación antes y después. Ninguna fila de cliente se modificó.
+- **Antes:** 0071 a 0073 sin aplicar; 27 sugerencias pendientes, 0 decisiones estratégicas registradas, 0 revisiones, 7 segmentos. La función viva `create_organization_full` coincidía con la de 0056, salvo lo que añade 0071 (comparada a mano), así que no se pisó nada distinto.
+- **0072:** tabla `strategy_reviews` creada, 2 políticas, RLS activo, `authenticated` con SELECT e INSERT, 0 filas.
+- **0071:** columna `segments.acquisition_motion` y restricción de cuatro valores creadas; la función contiene `acquisition_motion`; permisos `authenticated`, `postgres` y `service_role` (sin `anon`); los 7 segmentos existentes quedaron con la columna vacía.
+- **0073:** disparador `suggestions_strategy_guard` creado y `decide_strategy_suggestion` con el ajuste `nokko.strategy_decision`; permisos sin cambios. **Prueba del comportamiento** en un bloque que se descarta solo (acaba en error a propósito): con un usuario `authenticated` real de una empresa, un `UPDATE` directo del estado de una sugerencia estratégica fue rechazado (`42501`) y `decide_strategy_suggestion` aplazó la sugerencia con éxito.
+- **Después de la prueba:** 27 pendientes, 0 estratégicas decididas, 0 decisiones registradas, 0 revisiones, 0 segmentos con valor: nada cambió.
+- **No verificado:** el comportamiento en la aplicación (revisión estratégica con IA, decidir desde la lista o el tablero, crear una empresa desde plantilla); el `drizzle.__drizzle_migrations` de la base, si existe. No se creó ninguna empresa de prueba.
 
 ## Qué se midió
 | Migración | Qué crea | Estado en la base de Lovable Cloud |
