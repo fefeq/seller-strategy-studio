@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -42,7 +42,10 @@ export function SuggestionBoard() {
   const [grouped, setGrouped] = useState(false);
   const [reasons, setReasons] = useState<Record<string, string>>({});
   // Accepting an experiment or a commercial action opens the form first; the decision is sent when it is confirmed (CA-35, CA-36).
-  const [executingId, setExecutingId] = useState<string | null>(null);
+  // A copy of the row, not just its id: a refetch can drop the row while the form is open, and the form must keep what was typed.
+  const [executing, setExecuting] = useState<ComponentProps<typeof ExecuteDialog>["s"] | null>(
+    null,
+  );
 
   const { data } = useQuery({
     queryKey: ["suggestions", "board", orgId, (me?.roles ?? []).join(",")],
@@ -164,7 +167,7 @@ export function SuggestionBoard() {
             })()}
           <Button
             size="sm"
-            onClick={() => (executeKind(s) ? setExecutingId(s.id) : act(s.id, "approve"))}
+            onClick={() => (executeKind(s) ? setExecuting(s) : act(s.id, "approve"))}
           >
             Aceptar
           </Button>
@@ -265,8 +268,6 @@ export function SuggestionBoard() {
     </>
   );
 
-  const executing = executingId ? rows.find((r) => r.id === executingId) : undefined;
-
   return (
     <div className="space-y-6">
       {executing && (
@@ -274,7 +275,7 @@ export function SuggestionBoard() {
           key={executing.id}
           s={executing}
           open
-          onOpenChange={(o) => !o && setExecutingId(null)}
+          onOpenChange={(o) => !o && setExecuting(null)}
           reason={reasons[executing.id]}
         />
       )}
