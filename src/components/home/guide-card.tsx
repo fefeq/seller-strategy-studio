@@ -5,18 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { OrgCreateForm } from "@/components/org-create";
 import { SEARCH_JOB_KINDS, currentStep, guideKey, guideSteps, showGuide, type GuideStepId } from "@/lib/guide";
 
-/** «Primeros pasos» in Inicio: create company → onboarding → first search → Métricas. */
+/** «Primeros pasos» in Inicio: onboarding → first search → Métricas. */
 export function GuideCard() {
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
   const { data: onboarding } = useOnboarding();
   const [metricsSeen, setMetricsSeen] = useState(false);
   const [hidden, setHidden] = useState(true);
-  const [creating, setCreating] = useState(false);
 
   // Browser storage is read after hydration so server and client render the same first frame.
   useEffect(() => {
@@ -37,7 +34,7 @@ export function GuideCard() {
     },
   });
 
-  const steps = guideSteps({ hasCompany: !!orgId, onboardingStep: onboarding?.step, searched, metricsSeen });
+  const steps = guideSteps({ onboardingStep: onboarding?.step, searched, metricsSeen });
   if (!orgId || !showGuide(steps, hidden)) return null;
   const cur = currentStep(steps);
   const doneCount = steps.filter((s) => s.done).length;
@@ -50,7 +47,6 @@ export function GuideCard() {
   const action = (id: GuideStepId, primary: boolean) => {
     const variant = primary ? "default" : "ghost";
     switch (id) {
-      case "company": return <Button size="sm" variant={variant} onClick={() => setCreating(true)}>{steps[0].done ? "Crear otra" : "Crear empresa"}</Button>;
       case "onboarding": return <Button size="sm" variant={variant} asChild><Link to="/onboarding">{onboarding ? "Seguir" : "Empezar"}</Link></Button>;
       case "search": return <Button size="sm" variant={variant} asChild><Link to="/discoveries">Buscar</Link></Button>;
       case "metrics": return <Button size="sm" variant={variant} asChild><Link to="/metrics">Ver Métricas</Link></Button>;
@@ -82,18 +78,12 @@ export function GuideCard() {
                   {s.title}<span className="sr-only">{s.done ? " (hecho)" : isCur ? " (paso actual)" : ""}</span>
                 </p>
                 {!s.done && <p className="mt-0.5 text-xs text-muted-foreground">{s.body}</p>}
-                {(!s.done || s.id === "company") && <div className="mt-2">{action(s.id, isCur)}</div>}
+                {!s.done && <div className="mt-2">{action(s.id, isCur)}</div>}
               </div>
             </li>
           );
         })}
       </ol>
-      <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Nueva empresa</DialogTitle></DialogHeader>
-          <OrgCreateForm orgs={[...(me?.memberships ?? []), ...(me?.archived ?? [])]} location="guide" onDone={() => setCreating(false)} />
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
