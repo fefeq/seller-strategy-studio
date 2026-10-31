@@ -1,5 +1,4 @@
 // @vitest-environment node
-/* eslint-disable @typescript-eslint/no-explicit-any -- rows come back from SQL untyped, as in migrations.pg.test.ts */
 // SDD-20261030 money-moment-notices (NK-0030): runs migration 0074 (money notices for a lead reaching SQL and a deal turning Ganado)
 // on an in-process Postgres (PGlite) with fictional companies and people. Never touches a real database.
 // The harness (src/test/pg-harness.ts) is a replica. Everything below it is defined here, reduced to what 0074 touches:
@@ -12,6 +11,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { as, build, REPO, seed, U } from "@/test/pg-harness";
 
 type Db = Awaited<ReturnType<typeof build>>;
+type Row = Record<string, string | number | boolean | Date | null>;
 const MIGRATION = "0074_money_moment_notices.sql";
 
 const V = {
@@ -140,27 +140,32 @@ async function world(withMigration: boolean) {
 }
 
 describe("U-1 harness smoke (runs without the migration)", () => {
+  let db: Db;
+  let A: string;
+  beforeAll(async () => {
+    ({ db, A } = await world(false));
+  });
+
   it("the replica builds, stamps the SQL time as authenticated and creates the deal with the initial stage", async () => {
-    const { db, A } = await world(false);
     const lead = await as(db, U.ownerA, async () =>
-      (await db.query("insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql') returning sql_at, mql_at", [A])).rows[0] as any);
-    expect(lead.sql_at).not.toBeNull();
-    expect(lead.mql_at).not.toBeNull();
+      (await db.query<Row>("insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql') returning sql_at, mql_at", [A])).rows[0]!);
+    expect(lead["sql_at"]).not.toBeNull();
+    expect(lead["mql_at"]).not.toBeNull();
     await as(db, U.ownerA, async () => db.query("update leads set stage = 'opportunity' where company = 'Lead ficticio'"));
-    const deal = (await db.query("select d.stage, d.probability, d.closed_at from deals d join leads l on l.deal_id = d.id")).rows[0] as any;
+    const deal = (await db.query<Row>("select d.stage, d.probability, d.closed_at from deals d join leads l on l.deal_id = d.id")).rows[0];
     expect(deal).toMatchObject({ stage: "discovery", probability: 10, closed_at: null });
     // deals_track: history carries org_id and closed_at is only stamped by an update to won
     await db.exec(`insert into deals (org_id, name, stage) values ('${A}','Deal ficticio','won')`);
-    const won = (await db.query("select closed_at, (select org_id from deal_stage_history h where h.deal_id = d.id) as hist_org from deals d where name = 'Deal ficticio'")).rows[0] as any;
-    expect(won.closed_at).toBeNull();
-    expect(won.hist_org).toBe(A);
+    const won = (await db.query<Row>("select closed_at, (select org_id from deal_stage_history h where h.deal_id = d.id) as hist_org from deals d where name = 'Deal ficticio'")).rows[0]!;
+    expect(won["closed_at"]).toBeNull();
+    expect(won["hist_org"]).toBe(A);
   });
 });
 
 describe("money notices (migration 0074)", () => {
   let db: Db;
   let A: string, B: string, C: string, D: string;
-  const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Record<string, any>[];
+  const rows = async (sql: string, params?: unknown[]) => (await db.query<Row>(sql, params)).rows;
   const notices = () => rows("select user_id, org_id, kind, title, body, link, dedupe_key from notifications order by user_id");
   const who = async () => (await notices()).map((n) => n.user_id).sort();
   const sorted = (...ids: string[]) => [...ids].sort();
@@ -172,10 +177,10 @@ describe("money notices (migration 0074)", () => {
   const write = (uid: string | null, sql: string, params?: unknown[]) => as(db, uid, () => db.query(sql, params));
   const newLead = (uid: string | null, stage: string, o: { org?: string | null; owner?: string | null; created?: string; company?: string } = {}) =>
     write(uid, "insert into leads (org_id, company, stage, owner_id, created_at) values ($1,$2,$3,$4,$5) returning id", [
-      o.org === undefined ? A : o.org, o.company ?? "Lead ficticio", stage, o.owner ?? null, o.created ?? new Date().toISOString()]).then((r) => (r.rows[0] as any).id as string);
+      o.org === undefined ? A : o.org, o.company ?? "Lead ficticio", stage, o.owner ?? null, o.created ?? new Date().toISOString()]).then((r) => String(r.rows[0]!["id"]));
   const newDeal = (uid: string | null, stage: string, o: { org?: string; owner?: string | null; closed?: string | null } = {}) =>
     write(uid, "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio',$2,$3,$4) returning id", [
-      o.org ?? A, stage, o.owner ?? null, o.closed ?? null]).then((r) => (r.rows[0] as any).id as string);
+      o.org ?? A, stage, o.owner ?? null, o.closed ?? null]).then((r) => String(r.rows[0]!["id"]));
   const clear = () => db.exec("delete from notifications");
 
   beforeAll(async () => {
@@ -262,7 +267,9 @@ describe("money notices (migration 0074)", () => {
     const open = await newDeal(U.ownerA, "negotiation", { owner: U.aeA });
     await write(U.ownerA, "update deals set stage = 'won', closed_at = $2 where id = $1", [open, ago(25)]);
     expect(await notices()).toHaveLength(0);
-    await newDeal(null, "won", { owner: U.aeA, closed: ago(23) }); // just inside the window
+    await newDeal(null, "won", { owner: U.aeA, closed: ago(24.1) }); // six minutes outside the window
+    expect(await notices()).toHaveLength(0);
+    await newDeal(null, "won", { owner: U.aeA, closed: ago(23.9) }); // six minutes inside the window
     expect(await notices()).toHaveLength(3);
   });
 
@@ -274,6 +281,16 @@ describe("money notices (migration 0074)", () => {
     await write(U.ownerA, "update deals set stage = 'won' where id = $1", [id]);
     expect((await rows("select closed_at < now() - interval '48 hours' as old from deals where id = $1", [id]))[0]!.old).toBe(true);
     expect(await who()).toEqual(sorted(U.ownerA, V.slA, U.aeA));
+  });
+
+  it("money_notify cannot be executed by authenticated or anon (the revoke is what keeps callers from forging notices)", async () => {
+    const call = "select public.money_notify($1, 'lead_sql', gen_random_uuid(), null)";
+    expect(await failure(() => write(U.ownerA, call, [A]))).toMatch(/permission denied/);
+    await db.exec("set role anon");
+    try { expect(await failure(() => db.query(call, [A]))).toMatch(/permission denied/); } finally { await db.exec("reset role"); }
+    expect(await notices()).toHaveLength(0);
+    await db.query(call, [A]); // control: the owner of the function can, and the notice is written
+    expect(await notices()).toHaveLength(2);
   });
 
   it("CA-7: at most one notice per person, type, company and hour; another hour or type creates a new one", async () => {
@@ -349,7 +366,7 @@ describe("money notices (migration 0074)", () => {
     expect(await notices()).toHaveLength(0);
     const own = warnings.filter((w) => w.includes("money_"));
     expect(own).toHaveLength(2);
-    expect(own.join(" ")).not.toMatch(/ficticio|example\.test|600 000|Nombre/i);
+    expect(own.join(" ")).not.toMatch(/fictici[oa]|example\.test|600 000|Nombre|Empresa ficticia/i);
     // no recipients: the write goes on, no notice and no warning (it is not a failure)
     const quiet: string[] = [];
     await db.query("insert into leads (org_id, company, stage) values ($1,'Lead ficticio','sql')", [D], { onNotice: (n: { message?: string }) => void quiet.push(n.message ?? "") });
@@ -366,13 +383,13 @@ describe("money notices (migration 0074)", () => {
     await write(U.ownerA, "insert into deals (org_id, name, stage, owner_id, closed_at) values ($1,'Deal ficticio SA','won',$2, now())", [A, U.aeA]);
     const got = await notices();
     expect(got).toHaveLength(6);
-    const leadRows = got.filter((n) => n.dedupe_key.includes(":lead_sql:"));
-    const dealRows = got.filter((n) => n.dedupe_key.includes(":deal_won:"));
+    const leadRows = got.filter((n) => String(n.dedupe_key).includes(":lead_sql:"));
+    const dealRows = got.filter((n) => String(n.dedupe_key).includes(":deal_won:"));
     expect(leadRows).toHaveLength(3);
     expect(dealRows).toHaveLength(3);
     for (const n of leadRows) expect({ title: n.title, body: n.body, link: n.link }).toEqual(LEAD);
     for (const n of dealRows) expect({ title: n.title, body: n.body, link: n.link }).toEqual(DEAL);
-    expect(JSON.stringify(got)).not.toMatch(/ficticio|example\.test|600 000|Nombre|Empresa ficticia/i);
+    expect(JSON.stringify(got)).not.toMatch(/fictici[oa]|example\.test|600 000|Nombre|Empresa ficticia/i);
   });
 
   it("CA-15: a lead going to opportunity without stopping in SQL, and the deal it creates with a null stage, do not notify", async () => {
