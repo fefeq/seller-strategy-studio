@@ -20,10 +20,10 @@ Leído el 2026-10-31 y revisado el 2026-11-01 sobre `origin/main` (`6976fa8`); n
 - Llamadores de `decideSuggestionCore` sin borrador (informe del gate): Telegram, botón `s:<id>:approve` (`src/routes/api/public/telegram/webhook.ts:59-61`); herramienta del agente `decide_suggestion` (`src/lib/agent/tools/inbox.ts:22-32`); y `decidePending` (`src/lib/agent.functions.ts:113-157`), que confirma acciones pendientes del agente y del MCP (`src/lib/mcp/tools/agent-tools.ts:128-150` solo las encola) y escribe «Hecho: … {mensaje}».
 - Telegram ofrece el botón de aceptar sin filtrar por detector: aviso urgente de prioridad 1 y resumen diario (`src/routes/api/public/jobs/proactive.ts:104-116` y `133-140`; el aviso usa «Hecho» o «Aprobar y hacer» y el resumen «Hecho n» y «Posponer n», sin descartar). Sus `select` (líneas 111, 113 y 133) no traen `strategy`. `reviewDue` (`src/lib/experiments.ts:47-49`) genera una sugerencia de prioridad 1 y tipo `commercial_action`.
 - `src/lib/strategy-execute-core.ts` (`createExperimentFromSuggestion`, líneas ~118 y ~127; `createTaskFromSuggestion`): validan el borrador **después** de que la decisión ya está registrada.
-- `src/lib/strategy-execute.ts:126`: `experimentDraftIssues` exige título, hipótesis, métrica y fecha de revisión.
+- `src/lib/strategy-execute.ts:126`: `experimentDraftIssues` exige hipótesis, métrica y fecha de revisión (no el título; el formulario usa la misma función, `strategy-execute.tsx:99`).
 - `agent.functions.ts:257`: `execute` entra sin validar forma ni tipo; el servidor no comprueba que `execute.kind` coincida con el `action_type` de la sugerencia.
-- **Medido el 2026-11-01 en la base de Lovable Cloud** (solo lectura, por el conector de Lovable): 0 sugerencias de esos dos tipos aceptadas; 0 con ese tipo. En toda la base hay 3 sugerencias estratégicas, las tres pendientes y de tipo `data_to_complete`. **El hueco no ha afectado a nadie todavía.**
-- **Hallazgo aparte, medido el mismo día:** en esa base las migraciones 0068 y 0070 están aplicadas, pero **0072 (`strategy_reviews`) no existe y 0073 (disparador de `suggestions`) tampoco**: `suggestions` no tiene ningún disparador. Este SDD no depende de 0073.
+- **Medido el 2026-10-31 y el 2026-11-01 en la base de Lovable Cloud** (solo lectura, solo recuentos, SQL editor y conector de Lovable): 0 sugerencias de tipo `experiment` o `commercial_action` aceptadas. En toda la base hay 3 sugerencias estratégicas, las tres pendientes y de tipo `data_to_complete`, es decir, ninguna de esos dos tipos en ningún estado. **El hueco no ha afectado a nadie todavía.**
+- **Hallazgo aparte, medido el 2026-11-01:** en esa base están aplicadas 0068, 0069 y 0070, pero **no 0071 (`segments.acquisition_motion`), 0072 (`strategy_reviews`) ni 0073 (disparador de `suggestions`)**: `suggestions` no tiene ningún disparador. Este SDD solo usa la RPC de 0068 y `strategy_links` de 0070, y no depende de 0071 a 0073.
 
 ## 4. Resultado buscado
 - Aceptar una prueba o acción comercial solo se completa si se crea el experimento o la tarea (desde la app) o se rechaza y se remite a la app (desde los demás canales), y un borrador inválido no registra ninguna decisión.
@@ -47,29 +47,31 @@ Leído el 2026-10-31 y revisado el 2026-11-01 sobre `origin/main` (`6976fa8`); n
 
 ## 7. Historias y criterios de aceptación
 ### H-1: Como miembro o líder, quiero que Telegram, el asistente y el MCP no cierren una prueba o acción comercial sin crearla, para no perder una sugerencia por error.
-- **CA-1** CUANDO `decideSuggestionCore` recibe `approve` sin borrador sobre una sugerencia estratégica de tipo `experiment` o `commercial_action` aún pendiente, el sistema DEBE lanzar un error con el motivo (ver 9), NO DEBE registrar la decisión ni cambiar su estado; y los llamadores (Telegram, el agente y la confirmación de acciones) DEBEN mostrarlo como «No se ha podido hacer», no como «Hecho» · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar; uno por tipo; incluir el camino de `decidePending`)*
+- **CA-1** CUANDO `decideSuggestionCore` recibe `approve` sin borrador sobre una sugerencia estratégica de tipo `experiment` o `commercial_action` aún pendiente, el sistema DEBE lanzar un error con el motivo (ver 9) y NO DEBE registrar la decisión ni cambiar su estado; y `decidePending` DEBE devolver `status: "failed"` con el motivo en `result`, no «Hecho» (de ahí lo muestran Telegram y la app como «No se ha podido hacer») · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar; uno por tipo)* y una prueba nueva de `decidePending` con un fake que responda por tabla (`agent_pending_actions`) y el registro de herramientas
 - **CA-2** El sistema DEBE seguir aplazando y descartando esas sugerencias sin borrador, como hoy · prueba: `src/lib/decide-suggestion.test.ts` *(guarda de regresión, no falla primero)*
-- **CA-3** El sistema DEBE seguir aceptando con borrador válido (el camino del formulario) y aceptando sin borrador las sugerencias de otros tipos, como hoy · prueba: `src/lib/decide-suggestion.test.ts` *(la de «otros tipos» ya existe; la de «con borrador» pasando por `decideSuggestionCore` es nueva; ambas son guardas, no fallan primero)*
-- **CA-4** El aviso urgente y el resumen diario de Telegram NO DEBEN ofrecer el botón de aceptar («Hecho», «Aprobar y hacer», «Hecho n») para esas sugerencias; el aviso urgente DEBE ofrecer solo los de posponer y descartar que ya tiene, y el resumen solo «Posponer n»; el texto DEBE terminar con «Complétala en Sugerencias.»; el resto de sugerencias sigue igual · prueba: *(por nombrar; función pura que construya botones y texto, fuera del archivo de la ruta, probada en `src/lib/proactive.test.ts`; los `select` de `proactive.ts` deben traer `strategy`)*
-- **CA-5** La descripción de la herramienta `decide_suggestion` del agente DEBE decir que las pruebas y acciones comerciales se aceptan desde Sugerencias · prueba: `src/lib/agent-tools.test.ts` *(prueba de cadena, débil: lo dice así; `list_suggestions` no devuelve el tipo, así que el agente lo aprende por el rechazo de CA-1)*
+- **CA-3** El sistema DEBE seguir aceptando con borrador válido (el camino del formulario) y aceptando sin borrador las sugerencias de otros tipos, como hoy · prueba: `src/lib/decide-suggestion.test.ts` *(la de «otros tipos» ya existe en `decide-suggestion.test.ts:104`; la de «con borrador» pasando por `decideSuggestionCore` es nueva y necesita un fake que devuelva el `id` del insert; ambas son guardas, no fallan primero)*
+- **CA-4** El aviso urgente y el resumen diario de Telegram NO DEBEN ofrecer el botón de aceptar («Hecho», «Aprobar y hacer», «Hecho n») para esas sugerencias. El aviso urgente DEBE ofrecer solo los que ya tiene, «En 3 días» y «Descartar», y su texto terminar con «Complétala en Sugerencias.»; el resumen DEBE ofrecer solo «Posponer n» y marcar esa línea con «(se completa en Sugerencias)». El resto de sugerencias sigue igual · prueba: `src/lib/proactive.test.ts` *(por nombrar)*. Orden: primero se extrae a una función pura, fuera del archivo de la ruta, el comportamiento actual con una prueba que lo fije (guarda); después se cambia (esa prueba es la que falla primero). Los `select` de `proactive.ts` (líneas 111, 113 y 133) deben traer `strategy`, y la función pura recibe un tipo con `strategy` obligatorio para que no se pueda olvidar
+- **CA-5** La descripción de la herramienta `decide_suggestion` del agente y del MCP DEBE decir que las pruebas y acciones comerciales se aceptan desde Sugerencias · prueba: `src/lib/agent-tools.test.ts` *(prueba de cadena, débil: lo dice así)*. La descripción es lo único que el modelo tiene: `decidePending` no escribe nada para el modelo cuando la acción falla y `list_suggestions` no devuelve el tipo; el rechazo lo ve la persona. DEBE actualizarse también la copia en `.lovable/mcp/manifest.json`
 
 ### H-2: Como persona que acepta una prueba o acción comercial, quiero que un borrador inválido no deje la sugerencia aceptada, para no perder el trabajo.
-- **CA-6** CUANDO se envía `approve` con un borrador que no cumple las reglas del formulario (experimento sin título, hipótesis, métrica o fecha de revisión; tarea sin título), el sistema NO DEBE registrar la decisión y DEBE devolver el motivo · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar; uno por tipo)*
-- **CA-7** CUANDO se envía `approve` con un borrador malformado o cuyo `kind` no coincide con el `action_type` de la sugerencia, el sistema NO DEBE registrar la decisión y DEBE devolver un error comprensible · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar)*
+- **CA-6** CUANDO se envía `approve` con un borrador que no cumple las reglas del formulario (experimento sin hipótesis, métrica o fecha de revisión, como hoy; tarea sin título), el sistema NO DEBE registrar la decisión y DEBE devolver el motivo · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar; uno por tipo)*
+- **CA-7** CUANDO se envía `approve` con un borrador cuyo `kind` no coincide con el `action_type` de la sugerencia (`experiment` ↔ `kind: "experiment"`; `commercial_action` ↔ `kind: "task"`), o sobre una sugerencia de otro tipo, o con un borrador que no es un objeto o con campos que no son texto o con una fecha (`review_on`, `due_date`) que no es una fecha válida, el sistema NO DEBE registrar la decisión y DEBE devolver un error comprensible. No se comprueba si `owner_id` o `deal_id` existen: eso requiere una consulta y queda fuera (hoy fallan en la base ya después de decidir) · prueba: `src/lib/decide-suggestion.test.ts` *(ampliar)*
 
 ## 8. Casos límite y errores
 - Dos personas aceptan a la vez: la RPC deja pasar a una; la otra recibe «Ya estaba gestionada» (sin cambios).
 - Telegram: botones ya enviados antes del cambio, con «Hecho» sobre una de esas sugerencias, reciben «No se ha podido hacer» con el motivo en vez de cerrarla.
-- Confirmación de una acción pendiente (agente, MCP, Telegram `a:`): `decidePending` ya traduce un error en «No se ha podido hacer»; con CA-1 deja de escribir «Hecho».
+- Confirmación de una acción pendiente (agente, MCP, Telegram `a:`): `decidePending` guarda `failed` con el motivo (`agent.functions.ts:152-155`) y la persona lo ve como «No se ha podido hacer» (toast en la app o Telegram); con CA-1 deja de escribir «Hecho». El modelo no recibe ese motivo: solo la descripción de la herramienta.
+- El MCP solo encola: el rechazo llega cuando la persona confirma la acción en la app, no en el momento de la llamada del MCP.
 - Si el insert del experimento o de la tarea falla ya con el borrador válido, la sugerencia queda aceptada sin nada creado, como hoy. Recuperarlo es NK-0043.
 - Rol que no puede ver o decidir la sugerencia: sin cambios (`canActOnSuggestion` solo mira la asignación; la visibilidad de las de precio es NK-0042).
 - Otra empresa: toda lectura y escritura sigue filtrada por `org_id`.
 
 ## 9. Experiencia y copy
 Textos en español, «tú», sin iconos, con «qué pasó + qué hacer» (ajustados tras el gate):
-- Rechazo (CA-1), experimento: «No la he aceptado. Esta sugerencia crea un experimento y hay que revisarlo antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí.»
-- Rechazo (CA-1), tarea: «No la he aceptado. Esta sugerencia crea una tarea y hay que revisarla antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí.»
-- Telegram (CA-4): una línea al final del mensaje: «Complétala en Sugerencias.»
+- Rechazo (CA-1), experimento: «No la he aceptado. Esta sugerencia crea un experimento y hay que revisarlo antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí»
+- Rechazo (CA-1), tarea: «No la he aceptado. Esta sugerencia crea una tarea y hay que revisarla antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí»
+- Telegram (CA-4): en el aviso urgente, una línea al final: «Complétala en Sugerencias.»; en el resumen diario, esa línea del listado lleva «(se completa en Sugerencias)».
+- Los textos de rechazo no acaban en punto, porque la app y Telegram añaden uno detrás de «No se ha podido hacer. {motivo}» (`agent.tsx:173`).
 
 ## 10. Datos, permisos y privacidad
 Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs, sin lecturas nuevas de tablas. La decisión sigue registrándose con quién, cuándo y por qué. Ningún dato de clientes en pruebas: sugerencias ficticias.
@@ -83,19 +85,19 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs, sin lecturas nuevas
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | `decideSuggestionCore`: rechazo sin borrador (como error) y validación de forma, tipo y reglas antes de decidir | CA-1, CA-6, CA-7 (CA-2, CA-3 guardas) | `src/lib/decide-suggestion.test.ts` |
-| U-2 | Telegram: botones y texto para esos dos tipos (función pura fuera de la ruta); descripción de la herramienta del agente | CA-4, CA-5 | `src/lib/proactive.test.ts` *(por nombrar)* y `src/lib/agent-tools.test.ts` |
+| U-2 | Telegram: botones y texto para esos dos tipos (función pura fuera de la ruta, primero con el comportamiento actual fijado por una prueba); descripción de la herramienta del agente y su copia en `.lovable/mcp/manifest.json` | CA-4, CA-5 | `src/lib/proactive.test.ts` *(por nombrar)* y `src/lib/agent-tools.test.ts` |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- Un solo sitio decide si una sugerencia es de esos dos tipos: `parseStrategy(s.strategy)?.action_type` (`src/lib/strategy-suggestions.ts`). Hoy `executeKind` vive en un componente de cliente (`strategy-execute.tsx`); el servidor necesita su propia comprobación, sin importar el componente.
+- El tipo de una sugerencia estratégica sale de `parseStrategy(s.strategy)?.action_type` (`src/lib/strategy-suggestions.ts`). Hoy `executeKind` vive en un componente de cliente (`strategy-execute.tsx:45`); el servidor y la función pura de Telegram necesitan una comprobación común fuera del componente (un helper en `src/lib/strategy-suggestions.ts`). Con tres sitios que deciden «es una prueba o una acción comercial» (cliente, servidor, Telegram), una prueba debe asegurar que coinciden para los tres valores de `action_type`.
 - Orden en `decideSuggestionCore` (rama estratégica): si `decision === "approve"` y es de esos tipos: (1) sin `execute` → error de CA-1; (2) con `execute`: comprobar forma y `kind` (CA-7) y reglas de `experimentDraftIssues` o título de la tarea (CA-6); (3) solo entonces `decideStrategy`; (4) crear y enlazar.
-- Pruebas: el `fakeDb` de `decide-suggestion.test.ts` devuelve la propia sugerencia en cualquier consulta; para estas pruebas basta con que la RPC no se llame, pero si se necesitara otra tabla hay que hacerlo sensible a ella.
+- Pruebas: el `fakeDb` de `decide-suggestion.test.ts` devuelve la propia sugerencia en cualquier consulta y `insert().select().single()` devuelve `data: null`. Para CA-1, CA-6 y CA-7 basta con comprobar que la RPC no se llama; para CA-3 con borrador, el fake debe devolver el `id` del insert; y `decidePending` no tiene pruebas hoy: necesita un fake por tabla (`agent_pending_actions`) y el registro de herramientas.
 - Alternativas descartadas: (a) **función SQL transaccional** que decida y cree: es la única atómica, pero exige migración, y el destino de la base sigue sin decidir (Lovable en pausa); se retoma después. (b) **Crear desde un borrador por defecto en Telegram, agente o MCP**: rompe CA-35 y CA-36, que piden un borrador editable. (c) **Compensar volviendo a `pending`** como hace la rama operativa (`agent.functions.ts:340-343`): la RPC deja un registro de decisión que habría que borrar. (d) **Recuperar una sugerencia aceptada sin enlace** desde el formulario: el gate vio que no tiene entrada en la app y que puede crear duplicados; queda como NK-0043.
 
 ## 14. Riesgos y dependencias
 - Quien aceptaba desde Telegram una de esas sugerencias pasa a no tener el botón y a recibir un mensaje que le remite a la app: es el efecto buscado, pero cambia el flujo.
-- Un fallo del insert tras registrar la decisión sigue dejando la sugerencia aceptada sin nada creado (NK-0043). Los errores evitables ya no llegan a registrarla.
+- Un fallo del insert tras registrar la decisión sigue dejando la sugerencia aceptada sin nada creado (NK-0043). Los errores evitables ya no llegan a registrarla. Además, `link()` nunca comprueba su resultado (`strategy-execute-core.ts:33-34,121,130`): si el enlace falla, queda un experimento o tarea sin enlazar. Se anota para NK-0043; no se arregla aquí.
 - Depende de que NK-0040 (formulario) esté publicado: el cliente interpreta «Ya estaba gestionada».
-- Las migraciones 0072 y 0073 de `main` no están aplicadas en la base de Lovable Cloud (sección 3): no afectan a este SDD, pero el código de F4 y el disparador de seguridad de F0 dependen de ellas.
+- Las migraciones 0071, 0072 y 0073 de `main` no están aplicadas en la base de Lovable Cloud (sección 3): no afectan a este SDD. 0072 es la tabla de la revisión estratégica con IA (F4) y 0073 es el disparador de seguridad de F0.
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decididas por Fede el 2026-11-01** (todas con la recomendación del autor):
@@ -108,13 +110,13 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs, sin lecturas nuevas
 **Siguen abiertas:** ninguna.
 
 ## 16. Pendiente de verificar
-1. Reproducir el hueco en la aplicación y en Telegram: nadie lo ha hecho; solo hay lectura de código y la medición de la base (0 casos).
+1. Reproducir el hueco en la aplicación y en Telegram: nadie lo ha hecho; solo hay lectura de código y la medición de la base (0 casos). Las cifras de la sección 3 las midió el autor con consultas de solo recuentos; el gate no puede consultar la base.
 2. Barrido de rutas del servidor que usen otro cliente hacia `decideStrategy` o hacia el estado de las sugerencias, fuera de las encontradas con `git grep` (el gate no lo hizo a fondo). La edición directa de `status` desde el navegador la cerraría 0073, que no está aplicada en producción.
-3. Que el recorrido de un error de `decideSuggestionCore` por `decidePending` llega a Telegram y al agente como «No se ha podido hacer»: lo dice el código leído, sin ejecutar.
+3. Que el recorrido de un error de `decideSuggestionCore` por `decidePending` llega a Telegram y a la app como «No se ha podido hacer»: el gate lo confirmó leyendo `webhook.ts:51,57,62` y `agent.functions.ts:152-155`, sin ejecutar.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: Objeciones en la primera pasada (2026-11-01, copiada abajo); el texto se corrigió después (tabla de respuesta del autor); falta una segunda pasada.
+- Veredicto del gate: Objeciones en la primera y en la segunda pasada (2026-11-01, copiadas abajo); el texto se corrigió después de cada una (tablas de respuesta del autor); sin tercera pasada todavía.
 - Resto de campos: ver el informe copiado abajo.
 
 ### Primera pasada del gate (2026-11-01), copiada sin editar
@@ -215,6 +217,125 @@ Texto del autor, no del gate. Decisiones de Fede el 2026-11-01 (sección 15).
 | «0 aceptadas» sin comprobar por el gate | Comprobado de nuevo el 2026-11-01 por el conector de Lovable (sección 3) |
 | 0073 sin aplicar | Confirmado: 0072 y 0073 no están en la base de Lovable (secciones 3 y 14) |
 | Textos | Ajustados (sección 9) |
+
+### Segunda pasada del gate (2026-11-01), copiada sin editar
+Sobre el commit `c724978`, contrastado con `origin/main` (`6976fa8`). No ejecutó tests, `gate.mjs` ni `flake.mjs`.
+
+**Veredicto: Objeciones.** El SDD ha mejorado y 11 de las 15 filas de la tabla se cumplen de verdad en el texto. Pero las correcciones metieron dos afirmaciones falsas (CA-6 «título» y CA-5 «el agente lo aprende»), y hay cuatro defectos menores de prueba o copy que el autor debe cerrar. Sin esas dos primeras, Fede puede aprobarlo.
+
+**1. Tabla de respuesta del autor, fila por fila**
+- CA-7/CA-8 antiguos retirados: cumplida. En las secciones 1 a 16 no quedan `strategy_links`, «U-3» ni CA-8.
+- CA-7 crea duplicados; `link()` sin comprobar: **parcial.** La sección 14 no anota que el resultado de `link()` nunca se comprueba (`strategy-execute-core.ts:33-34,121,130`). Los duplicados están en 13(d).
+- CA-1 como error, con `decidePending`: cumplida en el texto. Ver 2.4 sobre qué se puede probar.
+- Borrador sin validar: CA-7 existe, pero «malformado» no está definido (ver 2.3).
+- CA-6 con fecha de revisión: cumplida, pero introduce el error de «título» (ver 2.1).
+- CA-4: función pura, `select`, resumen: cumplida en el texto. Quedan matices (ver 2.5).
+- CA-5 débil: declarada débil, pero la nota al lado es falsa (ver 2.2).
+- `fakeDb`: **parcial.** La nota de la sección 13 no sirve para CA-3 ni para `decidePending` (ver 2.4).
+- CA-3: cumplida: «otros tipos» ya existe en `decide-suggestion.test.ts:104`, «con borrador» es nueva.
+- Visibilidad (NK-0042): cumplida en las secciones 5 y 8.
+- `rememberDecision`: cumplida. El error se lanza antes, así que no se ejecuta.
+- Citas `experiments.ts` y `catch`: cumplida. `experiments.ts:47-49` es correcta y el `catch` está en `agent.functions.ts:340-343`.
+- «0 aceptadas» comprobado: no verificable por el gate. La cifra no apunta a ningún archivo ni consulta (regla 7).
+- 0072 y 0073 sin aplicar: no verificable por el gate (ver 4).
+- Textos: cumplida: «No la he aceptado», «revisarla» con «tarea» y «Complétala en Sugerencias.».
+
+**2. Objeciones nuevas**
+1. **CA-6 y la sección 3 afirman algo falso sobre el título del experimento.**
+   - La sección 3 dice que `experimentDraftIssues` exige título, hipótesis, métrica y fecha. El código (`strategy-execute.ts:126`) exige solo hipótesis, métrica y fecha de revisión.
+   - El formulario tampoco lo exige: `strategy-execute.tsx:99` usa esa misma función para el experimento. Un experimento sin título se puede crear hoy.
+   - La prueba «experimento sin título» de CA-6 pasaría sin cambios de código o forzaría una regla nueva. Si es nueva, cambia `experimentDraftIssues`, que es compartida con el formulario. Entonces el botón se desactivaría y el §5 no lo contempla.
+   - Decide entre quitar «título» del experimento o declarar la regla nueva con su efecto en el formulario.
+2. **CA-5 afirma que «el agente lo aprende por el rechazo de CA-1». Es falso.**
+   - `decidePending` solo escribe en `agent_messages` en el camino de éxito (`agent.functions.ts:142-145`). El `catch` guarda `failed` y el resultado, sin mensaje.
+   - Ningún código lee el resultado de una acción fallida para el modelo. `agent.server.ts:119` solo la crea.
+   - El rechazo lo ve la persona (toast en `agent.tsx:173` y `assistant-actions.tsx:22`, o Telegram), no el modelo. La descripción de la herramienta es lo único que el modelo tiene.
+   - El mismo problema afecta a la frase «llega al agente» de CA-1 y de §16.3.
+3. **CA-7 no define «malformado».**
+   - Fechas con formato inválido, `owner_id` o `deal_id` inexistentes, o campos que no son texto fallan hoy en la base, ya después de decidir.
+   - El §4 y el §14 prometen que «los errores evitables ya no llegan a registrarla».
+   - Hay que enumerar qué comprueba la forma.
+   - CA-7 tampoco dice el mapa de tipos: `experiment` con `kind: "experiment"` y `commercial_action` con `kind: "task"`.
+   - No dice qué pasa con un `execute` sobre un tipo que no es ninguno de los dos. El §13 paso 2 solo habla de «esos tipos».
+4. **Pruebas.**
+   - **CA-1, texto de los llamadores.** «Los llamadores DEBEN mostrarlo como "No se ha podido hacer"» no se puede probar en `decide-suggestion.test.ts`. Esa cadena vive en `webhook.ts:51,57,62` y en los toasts. Lo probable es que `decidePending` devuelva `status: "failed"` con el motivo en `result`. Reformula el CA a eso.
+   - **CA-3, con borrador.** La nota del §13 («basta con que la RPC no se llame») no vale. El `fakeDb` devuelve `data: null` en `insert().select().single()`, y `createExperimentFromSuggestion` lanzaría «No pude crear…».
+   - **Camino de `decidePending`.** No hay ningún test hoy. Necesita un fake que responda por tabla (`agent_pending_actions`) y el registro de herramientas. El §13 no lo dice.
+5. **CA-4.**
+   - **Falla primero.** Solo falla por importación de una función que no existe, el mismo reparo de la primera pasada. Para cumplir la regla 5 en espíritu, extrae primero la función con el comportamiento actual y una prueba que lo fije. Después cambia el comportamiento.
+   - **`select` sin `strategy`.** Ninguna prueba de la función pura detecta que un `select` no traiga `strategy`. Si falta, el aviso seguiría ofreciendo «Hecho». Pide un tipo con `strategy` obligatorio o una prueba estructural, como la del manifiesto en `agent-tools.test.ts:1248`.
+   - **Texto del resumen.** «El texto DEBE terminar con "Complétala en Sugerencias."» no está claro en el resumen diario. Es un solo mensaje con hasta 3 elementos y no dice cuál necesita la app.
+   - **Etiqueta del botón.** El botón de posponer del aviso urgente se llama «En 3 días» (`proactive.ts:116`), no «Posponer». Existe y descartar también, pero el CA debe usar los nombres reales.
+6. **CA-5 omite el manifiesto del MCP.**
+   - La descripción de `decide_suggestion` está copiada en `.lovable/mcp/manifest.json:3080`.
+   - `src/lib/AGENTS.md` manda regenerarlo tras cambiar herramientas.
+   - Ningún test comprueba que coincida, así que se desincronizaría sin que nada falle. Añádelo a U-2 y al brief.
+7. **«Un solo sitio decide» (§13) es inexacto.**
+   - Ya hay dos: `executeKind` en `strategy-execute.tsx:45` y el que cree el servidor. La función pura de CA-4 sería un tercero.
+   - Sin una prueba que los ate, pueden divergir. `executeKind` mapea `experiment` a un formulario de experimento y `commercial_action` a uno de tarea.
+8. **Copy.** El toast de la app es `No se ha podido hacer. ${r.result}.` (`agent.tsx:173`). Con textos que acaban en «allí.» queda «allí..». Ese punto sobra con cualquier mensaje que ya termine en punto.
+9. **Matiz de la sección 3.** «0 con ese tipo» no dice si es en cualquier estado. La redacción también mezcla «0 aceptadas» con «0 con ese tipo».
+
+**3. Lo que sí se confirma**
+- **Error hasta Telegram `s:` y `a:`.** Un error lanzado en CA-1 llega como «No se ha podido hacer».
+  - `s:` pasa por el `catch` de `webhook.ts:62` con `errorText(e)`.
+  - `a:` pasa por el `catch` de `decidePending` (`agent.functions.ts:152-155`), que guarda `failed` y el resultado. `webhook.ts:57` imprime «No se ha podido hacer. {resultado}».
+  - `executeTool` no captura nada: propaga el error (`tools.ts:42-48`).
+  - El texto de la sección 9 no lo altera `errorText`. Pasa por la regla «parece español» y ninguna regla anterior lo captura.
+- **El MCP solo encola.** El rechazo llega cuando la persona confirma en la app, con `decideAgentAction`, y lo ve como toast. No hay rechazo en el momento de la llamada del MCP.
+- **Orden de la sección 13 implementable sin migración.** `parseStrategy` es importable. Ningún otro llamador de `decideStrategy` aparte de `decideSuggestionCore`: comprobado con `git grep`.
+- **`select` de `proactive.ts`.** Las líneas 111, 113 y 133 coinciden y no traen `strategy`. `digest` es genérico (`index.ts:38`), así que acepta filas con más columnas. `src/lib/proactive.test.ts` existe y ya importa `digest`.
+- **Botones del aviso urgente.** Hoy ofrece «Hecho» o «Aprobar y hacer», «En 3 días» y «Descartar». El resumen diario ofrece «Hecho n» y «Posponer n». Las citas de líneas de la sección 3 son correctas.
+- **Padre e hijo.** Sin contradicción con CA-35 a CA-38 del padre ni con el SDD hermano. El hermano ya registra NK-0041 como el hueco del servidor.
+  - F6 del padre (CA-57, CA-58) deberá respetar que Telegram no acepta estas sugerencias.
+  - El cliente web sí interpreta «Ya estaba gestionada» en `strategy-execute.tsx` (`ALREADY_DECIDED`).
+
+**4. Migraciones 0072 y 0073.** El razonamiento es coherente con el código.
+- Este SDD solo toca la RPC (migración 0068) y `strategy_links` (0070), que el SDD da por aplicadas.
+- 0072 crea `strategy_reviews` (F4) y 0073 es el disparador de `suggestions`. La cabecera de 0073 dice «NOT applied to any real database» y exime a `service_role`.
+- La frase de §14 «el disparador de seguridad de F0 dependen de ellas» es floja: el disparador es 0073, no depende de ella.
+- El SDD no menciona 0069 ni 0071. La regla de cierre del experimento usa `close_rule` (0069), y 0071 tiene cabecera «NOT applied». No sabe si afectan.
+- No consultó la base. No puede decir que sea cierto.
+
+**5. CA sin prueba posible.** Ninguno es imposible. Estos tienen defecto, además del CA-4 ya descrito en 2.5:
+- CA-1: el segundo tramo no es probable en ese archivo (2.4).
+- CA-3: necesita un fake por tabla (2.4).
+- CA-5: prueba de cadena, correctamente declarada como débil.
+- CA-6 «sin título»: hoy no falla ni hay regla (2.1).
+- CA-7: no se puede probar sin definir «forma» (2.3).
+- CA-2 y la guarda de «otros tipos» en CA-3: pasan hoy y están bien etiquetados.
+- CA-1 (por tipo) y CA-6: fallarían hoy, porque la RPC se llama antes.
+
+**6. [Por verificar] que sigue sin comprobarse:** reproducción en la app y en Telegram (§16.1); los 0/0/3 de la sección 3 y las migraciones 0072 y 0073 (sin evidencia en el repo); barrido de llamadores en rutas fuera de `git grep` (por código solo hay uno); que `link()` falla en silencio (no se anota en el SDD); el estado de NK-0040, NK-0041 y NK-0043 en el ledger.
+
+**7. Contradicciones**
+- La sección 3 y CA-6 contradicen `strategy-execute.ts:126` en el título.
+- CA-5 y la sección 16.3 contradicen `agent.functions.ts:142-155` en lo que llega al agente.
+- La sección 13 («un solo sitio») contradice `executeKind` en el cliente.
+- La fila 2 de la tabla dice que la sección 14 anota `link()`, y no lo hace.
+- El copy de la sección 9, más el toast de la app, produce «allí..».
+
+**8. Lo que esta revisión NO demuestra:** que alguna prueba falle o pase (no ejecutó la suite, `gate.mjs`, `flake.mjs`, segunda máquina ni soak); nada contra bases reales ni en el navegador; los números de línea fuera de `origin/main` `6976fa8`; el comportamiento real de Telegram, del MCP ni de la app.
+
+### Respuesta del autor a la segunda pasada (2026-11-01)
+Texto del autor, no del gate.
+
+| Objeción | Dónde queda |
+|---|---|
+| CA-6 y §3: el título del experimento no se exige hoy | Corregido: el experimento exige hipótesis, métrica y fecha, como el formulario; el título solo en la tarea (secciones 3 y 7) |
+| CA-5 y CA-1 dicen que el agente aprende del rechazo | Corregido: lo ve la persona, el modelo solo tiene la descripción (secciones 7 y 8) |
+| «Malformado» sin definir; mapa de tipos | CA-7 lo enumera y fija `experiment`↔`experiment` y `commercial_action`↔`task` (sección 7) |
+| CA-1: el texto de los llamadores no se prueba ahí | CA-1 pide `status: "failed"` en `decidePending` y una prueba nueva con fake por tabla (secciones 7 y 13) |
+| CA-3 con borrador: el fake devuelve `null` | Nota en la sección 13 |
+| CA-4: falla solo por importar; `select` sin `strategy`; etiquetas; resumen | Primero se fija el comportamiento actual; tipo con `strategy` obligatorio; «En 3 días» y «Descartar»; el resumen marca la línea (sección 7) |
+| CA-5 omite el manifiesto del MCP | Añadido a CA-5 y a U-2 |
+| «Un solo sitio decide» | Reescrito: son tres y una prueba debe asegurar que coinciden (sección 13) |
+| Copy «allí..» | Los textos de rechazo no acaban en punto (sección 9) |
+| «0 con ese tipo» ambiguo | Aclarado (sección 3) |
+| `link()` sin comprobar no anotado en §14 | Añadido (sección 14) |
+| 0069 y 0071 no mencionados | Medido: 0069 aplicada; 0071 no (secciones 3 y 14) |
+
+Con esta respuesta no se ha repetido el gate: queda decidir si se pasa una tercera pasada o se aprueba tal cual.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Sin entrega todavía.
