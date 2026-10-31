@@ -1,7 +1,7 @@
 # SDD-20261031-suggestion-accept-needs-form-outside-ui · [Bug] Aceptar una prueba o acción comercial fuera de la app la cierra sin crear nada
 
 **Tipo:** Bug · **Prioridad propuesta:** Media (el hueco existe en `main`, pero hoy no ha afectado a nadie: ver sección 3)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01 (redactado el 2026-10-31)
+**Estado:** Aprobado (Fede, 2026-11-01) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01 (redactado el 2026-10-31)
 **PRD:** No aplica (bug) · **Depende de:** — · **Tickets:** NK-0041 y la parte evitable del segundo síntoma de NK-0040 (el NK-0040 ya entregado cubre solo el formulario del cliente). La recuperación de una sugerencia ya aceptada queda fuera: NK-0043. La visibilidad de las sugerencias de precio queda fuera: NK-0042.
 **SDD que corrige:** F3 de `SDD-20261027-strategic-suggestions-engine` (CA-35 y CA-36); sigue a `SDD-20261031-board-accept-opens-execute-form`.
 
@@ -106,6 +106,8 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs, sin lecturas nuevas
 3. **P-3.** En Telegram se quita el botón de aceptar para esos dos tipos: el aviso urgente deja posponer y descartar, el resumen solo «Posponer n».
 4. **P-4.** Los textos de la sección 9 valen; el autor corrigió la concordancia («revisarla») y añadió «No la he aceptada» y «Complétala en Sugerencias» tras el informe del gate.
 5. **Rechazo como error** (no como mensaje normal), para que el agente, Telegram y la confirmación de acciones no escriban «Hecho».
+
+**Aprobación (2026-11-01):** Fede aprueba el SDD tal como está tras dos pasadas del gate, sin tercera pasada.
 
 **Siguen abiertas:** ninguna.
 
