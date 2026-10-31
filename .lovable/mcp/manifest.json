@@ -1836,7 +1836,7 @@
       {
         "name": "update_account",
         "title": "Actualizar cuenta",
-        "description": "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (ISO 2 letras), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras o nombre, p. ej. «España»), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. Si el valor viene de un proveedor, pasa su origen en source (apollo, clay, parallel o web); sin source se guarda como ia. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
@@ -1869,9 +1869,14 @@
               "maxLength": 100
             },
             "country": {
-              "type": [
-                "string",
-                "null"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
               ]
             },
             "segment_id": {
@@ -1916,6 +1921,17 @@
             "notes": {
               "type": "string",
               "maxLength": 4000
+            },
+            "source": {
+              "description": "Origen del valor: ia (por defecto), apollo, clay, parallel o web",
+              "type": "string",
+              "enum": [
+                "ia",
+                "apollo",
+                "clay",
+                "parallel",
+                "web"
+              ]
             }
           },
           "required": [
@@ -3402,7 +3418,7 @@
       {
         "name": "clay_enrich_account",
         "title": "Completar cuenta con Clay",
-        "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
+        "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: clay (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": false,
@@ -3542,7 +3558,7 @@
       {
         "name": "apollo_enrich_account",
         "title": "Completar cuenta con Apollo",
-        "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account. Gasta 1 crédito de Apollo.",
+        "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: apollo. Gasta 1 crédito de Apollo.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": false,
@@ -4202,7 +4218,7 @@
       {
         "name": "enrich_accounts_table",
         "title": "Completar cuentas en tabla (Parallel)",
-        "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account. Gasta créditos.",
+        "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account con source: parallel. Gasta créditos.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": false,
@@ -4233,7 +4249,7 @@
       {
         "name": "complete_account",
         "title": "Completar datos de una cuenta",
-        "description": "Completa los datos de una cuenta (sector, tamaño, país, descripción) eligiendo solo los servicios conectados más baratos y cambiando a otro si uno falla. No cambia nada: para aplicarlo usa update_account. Úsala en vez de apollo_enrich_account o clay_enrich_account salvo que el usuario pida un servicio concreto.",
+        "description": "Completa los datos de una cuenta (sector, tamaño, país, descripción) eligiendo solo los servicios conectados más baratos y cambiando a otro si uno falla. No cambia nada: para aplicarlo usa update_account pasando en source el origen de cada cambio (campo source: apollo, clay o web). Úsala en vez de apollo_enrich_account o clay_enrich_account salvo que el usuario pida un servicio concreto.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
