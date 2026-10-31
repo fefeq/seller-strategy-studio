@@ -13,12 +13,13 @@ async function deliver(db: Admin, list: Notice[], now: Date) {
   if (!list.length || !telegramConfigured()) return 0;
   const users = [...new Set(list.map((n) => n.user_id))];
   const jobIds = [...new Set(list.map((n) => n.job_id).filter(Boolean))] as string[];
-  const [{ data: links }, { data: prefs }, { data: jobs }, { data: members }] = await Promise.all([
+  const [{ data: links }, { data: prefs }, { data: jobs }, { data: members, error: membersError }] = await Promise.all([
     db.from("channel_links").select("user_id,chat_id").eq("channel", "telegram").in("user_id", users).not("chat_id", "is", null),
     db.from("notification_prefs").select("user_id,telegram,quiet_from,quiet_to,timezone").in("user_id", users),
     jobIds.length ? db.from("background_jobs").select("id,kind").in("id", jobIds) : Promise.resolve({ data: [] as { id: string; kind: string }[] }),
     db.from("org_members").select("org_id,user_id").in("user_id", users),
   ]);
+  if (membersError) { console.error("telegram notices skipped: membership query failed", membersError.message); return 0; } // without membership nothing can be checked, so nothing leaves; unsent notices stay for the next run
   const chat = new Map((links ?? []).map((l) => [l.user_id, l.chat_id!]));
   const pref = new Map((prefs ?? []).map((p) => [p.user_id, p as unknown as NoticePrefs]));
   const kindOf = new Map((jobs ?? []).map((j) => [j.id, j.kind]));

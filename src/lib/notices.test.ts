@@ -14,6 +14,7 @@ const FORMER = "00000000-0000-4000-8000-0000000000a3";
 const NOW = new Date("2026-07-01T10:00:00Z"); // 12:00 in Madrid: outside the night silence
 
 let notifications: Row[];
+let membersFail = false;
 let tables: Record<string, Row[]>;
 const updates: { id: unknown; patch: Row }[] = [];
 
@@ -32,7 +33,8 @@ function query(table: string) {
       rows = rows.filter((r) => r[col] === v); return q;
     },
     update: (p: Row) => { patch = p; return q; },
-    then: (ok: (v: { data: Row[]; error: null }) => unknown) => Promise.resolve({ data: patch ? [] : rows, error: null }).then(ok),
+    then: (ok: (v: { data: Row[] | null; error: { message: string } | null }) => unknown) =>
+      Promise.resolve(table === "org_members" && membersFail ? { data: null, error: { message: "connection reset" } } : { data: patch ? [] : rows, error: null }).then(ok),
   });
   return q;
 }
@@ -45,6 +47,7 @@ const money = (id: string, user: string): Row => ({
 beforeEach(() => {
   sendText.mockClear();
   updates.length = 0;
+  membersFail = false;
   notifications = [money("n1", MEMBER), money("n2", FORMER)];
   tables = {
     channel_links: [{ user_id: MEMBER, chat_id: "chat-member", channel: "telegram" }, { user_id: FORMER, chat_id: "chat-former", channel: "telegram" }],
@@ -67,4 +70,18 @@ it("CA-11: a money notice goes out once to a current member and never to a forme
   // the next hourly run does not send it again, and the former member still gets nothing
   expect(await flushHeldNotices(admin, new Date(NOW.getTime() + 3_600_000))).toBe(0);
   expect(sendText).toHaveBeenCalledTimes(1);
+});
+
+it("N-6: if the membership query fails nothing is sent and the failure is logged; the next run sends normally", async () => {
+  const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  try {
+    membersFail = true;
+    expect(await flushHeldNotices(admin, NOW)).toBe(0);
+    expect(sendText).not.toHaveBeenCalled();
+    expect(updates).toHaveLength(0); // nothing is marked as sent, so the next hour still delivers
+    expect(log.mock.calls.some((c) => String(c.join(" ")).includes("connection reset"))).toBe(true);
+    membersFail = false; // control: same notices, healthy query
+    expect(await flushHeldNotices(admin, NOW)).toBe(1);
+    expect(sendText).toHaveBeenCalledTimes(1);
+  } finally { log.mockRestore(); }
 });
