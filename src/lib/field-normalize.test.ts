@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BINDINGS } from "./field-catalog";
-import { normalizeAmount, normalizeCountries, normalizeCountry, normalizeForSave, normalizeSize, parseEmployees } from "./field-normalize";
+import { normalizeAmount, normalizeCountries, normalizeCountry, normalizeForSave, normalizeIcpFields, normalizeSize, parseEmployees } from "./field-normalize";
 
 const ok = <T>(n: { status: string; value?: T }) => (n.status === "ok" ? n.value : n.status);
 
@@ -90,5 +90,23 @@ describe("field normalization", () => {
     expect(normalizeForSave("accounts", "size", " scale-up ")).toMatchObject({ status: "unnormalized", value: "scale-up", original: "scale-up" });
     expect(normalizeForSave("accounts", "notes", "x")).toEqual({ status: "uncatalogued", value: "x" });
     expect(normalizeForSave("leads", "source", " CSV ")).toEqual({ status: "ok", value: "CSV" });
+  });
+});
+
+describe("NK-0019: ICP countries and employee range go through the one rule", () => {
+  it("normalizes countries and the range, keeps the rest of the row", () => {
+    const r = normalizeIcpFields({ name: "ICP de prueba", countries: ["es", "uk", "ES"], min_employees: 51, max_employees: 200 });
+    expect(r.invalid).toEqual([]);
+    expect(r.row).toEqual({ name: "ICP de prueba", countries: ["ES", "GB"], min_employees: 51, max_employees: 200 });
+  });
+  it("accepts empty values and rows without those fields", () => {
+    expect(normalizeIcpFields({ countries: [], min_employees: null, max_employees: null })).toEqual({ row: { countries: [], min_employees: null, max_employees: null }, invalid: [] });
+    expect(normalizeIcpFields({ name: "x" })).toEqual({ row: { name: "x" }, invalid: [] });
+  });
+  it("reports what does not fit instead of saving it", () => {
+    const r = normalizeIcpFields({ countries: ["ES", "Atlantis"], min_employees: 12.5, max_employees: 200 });
+    expect(r.invalid).toHaveLength(2);
+    expect(r.invalid[0]).toContain("Atlantis");
+    expect(r.row.countries).toEqual(["ES", "Atlantis"]);
   });
 });

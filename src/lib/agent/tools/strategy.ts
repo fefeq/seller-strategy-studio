@@ -5,6 +5,7 @@ import { POSITIONING_FIELDS } from "@/lib/setup-schema";
 import { quarterOf } from "@/lib/metrics";
 import { loadFunnelDiagnosis } from "@/lib/funnel-diagnosis-data";
 import { ACQUISITION_MOTIONS } from "@/lib/acquisition-motion";
+import { normalizeIcpFields } from "@/lib/field-normalize";
 import type { AgentTool } from "../tool-kit";
 
 export const STRATEGY_TOOLS: AgentTool[] = [
@@ -49,7 +50,11 @@ export const STRATEGY_TOOLS: AgentTool[] = [
     description: "Crea un perfil ICP.",
     input: z.object({ name: z.string().min(1), industries: z.string().optional(), company_size: z.string().optional(), geography: z.string().optional(), why_fit: z.string().optional(), anti_icp: z.string().optional(), hiring_signals: z.string().optional(), tech_stack: z.string().optional(), pains: z.string().optional(), min_employees: z.number().int().positive().optional(), max_employees: z.number().int().positive().optional(), countries: z.array(z.string().length(2)).optional().describe("ISO de 2 letras"), search_keywords: z.array(z.string()).optional().describe("palabras clave en inglés para bases de empresas"), target_titles: z.array(z.string()).optional().describe("cargos a contactar, en inglés"), seniorities: z.array(z.enum(["founder", "c_suite", "vp", "head", "director", "manager"])).optional() }),
     summarize: (a) => `Crear el ICP «${a.name}»`,
-    run: async (c, a) => ok(await c.db.from("icp_profiles").insert({ ...a, org_id: c.orgId }).select("id").single()),
+    run: async (c, a) => {
+      const { row, invalid } = normalizeIcpFields(a);
+      if (invalid.length) throw new Error(invalid.join(" "));
+      return ok(await c.db.from("icp_profiles").insert({ ...row, org_id: c.orgId }).select("id").single());
+    },
   }),
   def({
     name: "create_pillar", kind: "write", roles: ["owner", "sales_leader", "marketing"],

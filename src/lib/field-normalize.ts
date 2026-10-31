@@ -150,3 +150,23 @@ export function normalizeForSave(table: string, column: string, raw: unknown): S
     }
   }
 }
+
+const ICP_RULED = ["countries", "min_employees", "max_employees"] as const;
+
+/**
+ * The ICP columns with a catalogued rule (countries and the employee range) through normalizeForSave (NK-0019).
+ * `row` has them normalized; a value that does not fit stays as it came and is reported in `invalid` (Spanish,
+ * «qué pasó + qué hacer»), so the caller refuses the write instead of saving it wrong.
+ */
+export function normalizeIcpFields<T extends Record<string, unknown>>(row: T): { row: T; invalid: string[] } {
+  const out: Record<string, unknown> = { ...row };
+  const invalid: string[] = [];
+  for (const col of ICP_RULED) {
+    if (!(col in row)) continue;
+    const r = normalizeForSave("icp_profiles", col, row[col]);
+    if (r.status === "unnormalized") {
+      invalid.push(col === "countries" ? `No reconozco estos países: ${(r.original as string[]).join(", ")}. Usa el código de 2 letras o el nombre.` : `${col === "min_employees" ? "Empleados desde" : "Empleados hasta"}: ${r.reason}`);
+    } else if (r.status === "ok" || r.status === "empty") out[col] = r.value;
+  }
+  return { row: out as T, invalid };
+}
