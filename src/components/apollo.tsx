@@ -218,7 +218,8 @@ function ApolloProspect() {
                           checked={picked.has(r.domain)}
                           onCheckedChange={(v) => {
                             const n = new Set(picked);
-                            v ? n.add(r.domain!) : n.delete(r.domain!);
+                            if (v) n.add(r.domain!);
+                            else n.delete(r.domain!);
                             setPicked(n);
                           }}
                         />
@@ -422,7 +423,8 @@ function ApolloPeople({ accountId, onAdded }: { accountId: string; onAdded: () =
                       checked={picked.has(p.apolloId)}
                       onCheckedChange={(v) => {
                         const n = new Set(picked);
-                        v ? n.add(p.apolloId) : n.delete(p.apolloId);
+                        if (v) n.add(p.apolloId);
+                        else n.delete(p.apolloId);
                         setPicked(n);
                       }}
                     />

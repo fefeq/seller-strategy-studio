@@ -8,6 +8,7 @@ import { canActOnSuggestion } from "@/lib/suggestion-board";
 type Q = {
   table: string;
   op: "select" | "insert" | "update" | "upsert" | "delete";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake records whatever each tool wrote
   payload?: any;
   filters: unknown[][];
   head?: boolean;
@@ -17,6 +18,7 @@ function fakeDb(reply: (q: Q) => Reply = () => undefined) {
   const log: Q[] = [];
   const from = (table: string) => {
     const q: Q = { table, op: "select", filters: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake query builder is a Proxy
     const proxy: any = new Proxy(
       {},
       {
@@ -65,6 +67,7 @@ function expectScoped(log: Q[]) {
   for (const q of log) {
     if (q.op === "insert" || q.op === "upsert")
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payloads are recorded untyped by the fake
         [q.payload].flat().every((p: any) => p.org_id === ORG),
         `${q.op} ${q.table}`,
       ).toBe(true);

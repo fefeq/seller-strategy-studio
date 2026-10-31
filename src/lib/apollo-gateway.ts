@@ -53,6 +53,7 @@ async function apollo(
   params: [string, string][],
   body?: unknown,
   retry = true,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the Apollo response is untyped JSON; callers read the fields they need
 ): Promise<any> {
   const url = new URL(`${GATEWAY_URL}${path}`);
   for (const [k, v] of params) url.searchParams.append(k, v);

@@ -309,7 +309,8 @@ export function IcpCompanies({ onDeep }: { onDeep: () => void }) {
                           checked={picked.has(r.domain)}
                           onCheckedChange={(v) => {
                             const n = new Set(picked);
-                            v ? n.add(r.domain!) : n.delete(r.domain!);
+                            if (v) n.add(r.domain!);
+                            else n.delete(r.domain!);
                             setPicked(n);
                           }}
                         />

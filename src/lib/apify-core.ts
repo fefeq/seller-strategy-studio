@@ -4,6 +4,7 @@
 import { ask } from "@/lib/ai-gateway";
 import type { AiScope } from "@/lib/ai-core";
 import type { Json } from "@/integrations/supabase/types";
+import type { Db as OrgDb } from "@/lib/org-data";
 import { runActor } from "@/lib/apify-gateway";
 import {
   ACTORS,
@@ -26,8 +27,9 @@ import { cleanDomain } from "@/lib/leads";
 import { jsonObject } from "@/lib/json";
 import { keepUnreadable, originOf, readSources, stampUnconfirmed } from "@/lib/provenance";
 
-type Db = any;
-const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
+type Db = OrgDb;
+const inOrg = <Q extends { eq: (column: string, value: string) => Q }>(q: Q, scope: AiScope): Q =>
+  scope ? q.eq("org_id", scope.orgId) : q;
 const STYLE =
   "Español neutro (tú), sin signos de exclamación ni emoji, frases cortas, empieza por la conclusión.";
 

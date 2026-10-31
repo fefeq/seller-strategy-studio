@@ -297,7 +297,8 @@ function ClayProspect() {
                           checked={picked.has(r.domain)}
                           onCheckedChange={(v) => {
                             const n = new Set(picked);
-                            v ? n.add(r.domain!) : n.delete(r.domain!);
+                            if (v) n.add(r.domain!);
+                            else n.delete(r.domain!);
                             setPicked(n);
                           }}
                         />
@@ -533,7 +534,8 @@ function ClayPeople({ accountId, onAdded }: { accountId: string; onAdded: () => 
                     checked={picked.has(i)}
                     onCheckedChange={(v) => {
                       const n = new Set(picked);
-                      v ? n.add(i) : n.delete(i);
+                      if (v) n.add(i);
+                      else n.delete(i);
                       setPicked(n);
                     }}
                   />

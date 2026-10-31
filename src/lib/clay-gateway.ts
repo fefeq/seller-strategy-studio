@@ -42,6 +42,7 @@ async function clay(
   path: string,
   init: { method: "GET" | "POST"; body?: unknown },
   retry = true,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the Clay response is untyped JSON; callers read the fields they need
 ): Promise<any> {
   const res = await fetch(`${GATEWAY_URL}${path}`, {
     method: init.method,
