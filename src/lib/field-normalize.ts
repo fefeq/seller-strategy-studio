@@ -44,7 +44,9 @@ export function parseEmployees(text: string | null | undefined): EmployeeRange |
   if (!s || MONEY.test(s)) return null;
   const rest = strip(strip(s, EMPLOYEE_WORDS), QUALIFIERS).replace(/[\d.,\-–—+<>:()\s]/g, "");
   if (/\p{L}/u.test(rest)) return null;
-  const nums = (s.replace(/(\d)[.,](?=\d{3}\b)/g, "$1").match(/\d+/g) ?? []).map(Number);
+  const grouped = s.replace(/(\d)[.,](?=\d{3}\b)/g, "$1");
+  if (/\d[.,]\d/.test(grouped)) return null; // a decimal is not a headcount (NK-0020)
+  const nums = (grouped.match(/\d+/g) ?? []).map(Number);
   if (!nums.length || nums.length > 2 || nums.some((n) => !(n > 0))) return null;
   if (nums.length === 2) return { min: Math.min(...nums), max: Math.max(...nums) };
   const n = nums[0]!;

@@ -41,6 +41,16 @@ describe("field normalization", () => {
     expect(normalizeSize("scale-up")).toMatchObject({ status: "unnormalized", original: "scale-up" });
   });
 
+  it("NK-0020: a decimal is not a headcount and never becomes a range", () => {
+    for (const v of ["12.5", "12,5", "1.5 empleados", "10.50", "12.5-20"]) {
+      expect(parseEmployees(v), v).toBeNull();
+      expect(normalizeSize(v), v).toMatchObject({ status: "unnormalized", original: v });
+    }
+    expect(parseEmployees("1.000")).toEqual({ min: 1000, max: 1000 });
+    expect(parseEmployees("12")).toEqual({ min: 12, max: 12 });
+    expect(parseEmployees("5-12")).toEqual({ min: 5, max: 12 });
+  });
+
   it("CA-3: an amount typed with Spanish, English or plain format is the same number", () => {
     for (const v of ["1.234,56", "1,234.56", "1234.56", "€ 1.234,56", "1 234,56", 1234.56]) expect(ok(normalizeAmount(v)), String(v)).toBe(1234.56);
   });
