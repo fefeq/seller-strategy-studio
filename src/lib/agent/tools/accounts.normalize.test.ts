@@ -96,10 +96,10 @@ describe("update_account normalizes size and country on save", () => {
   // Agent, MCP and Telegram all validate with this schema when they propose, so the refusal must happen here and not only on confirm.
   it("refuses an unknown country when it is proposed, and accepts an ISO code or a name", () => {
     const input = getTool("update_account")!.input;
-    for (const country of ["Narnia", "USA", "UK", "", "   "]) {
+    for (const country of ["Narnia", "USA", "Atlantis", "", "   "]) {
       expect(input.safeParse({ account_id: ID, country }).success, country).toBe(false);
     }
-    for (const country of ["España", "es", "United Kingdom"]) {
+    for (const country of ["España", "es", "United Kingdom", "UK"]) {
       expect(input.safeParse({ account_id: ID, country }).success, country).toBe(true);
     }
     expect(input.safeParse({ account_id: ID, country: null }).success).toBe(true);
