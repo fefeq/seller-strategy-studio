@@ -21,12 +21,23 @@ vi.mock("@/integrations/supabase/client", () => {
           if (p === "then")
             return (f: (v: unknown) => unknown) =>
               Promise.resolve({
-                data: table !== "icp_profiles" ? [] : mode.update ? [{ id: h.row.id }] : mode.one ? h.row : [h.row],
+                data:
+                  table !== "icp_profiles"
+                    ? []
+                    : mode.update
+                      ? [{ id: h.row.id }]
+                      : mode.one
+                        ? h.row
+                        : [h.row],
                 error: null,
               }).then(f);
           return (...args: unknown[]) => {
             if (p === "update") h.updates.push(args[0] as Record<string, unknown>);
-            return builder(table, { ...mode, update: mode.update || p === "update", one: mode.one || p === "single" });
+            return builder(table, {
+              ...mode,
+              update: mode.update || p === "update",
+              one: mode.one || p === "single",
+            });
           };
         },
       },
@@ -42,7 +53,9 @@ vi.mock("@tanstack/react-start", async (importOriginal) => ({
   useServerFn: (f: unknown) => f,
 }));
 vi.mock("@/lib/ai.functions", () => ({ structureIcp: async () => h.proposal }));
-vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), message: vi.fn() }) }));
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), message: vi.fn() }),
+}));
 
 import { IcpEditor } from "@/components/icp-editor";
 
@@ -50,7 +63,9 @@ const PROPOSAL = { countries: ["ES", "MX"], min_employees: 51, max_employees: 20
 
 async function open() {
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <IcpEditor />
     </QueryClientProvider>,
   );
@@ -113,7 +128,9 @@ describe("icp-editor origin of AI proposals (NK-0024)", () => {
   it("keeps the mark of a field the person wrote when the AI proposes the others", async () => {
     h.proposal = { countries: ["ES"] };
     await open();
-    fireEvent.change(screen.getByText("Empleados hasta").parentElement!.querySelector("input")!, { target: { value: "300" } });
+    fireEvent.change(screen.getByText("Empleados hasta").parentElement!.querySelector("input")!, {
+      target: { value: "300" },
+    });
     await propose2();
     const m = marks(await save());
     expect(m.countries).toMatchObject({ kind: "ia", confirmed: false });
