@@ -130,7 +130,7 @@ export function telegramWorthy(notice: { kind: string }, jobKind: string | null,
   if (level === "all") return true;
   if (notice.kind === "needs_decision") return true;
   if (level === "decisions") return false;
-  return notice.kind === "failed" || (!!jobKind && IMPORTANT_JOBS.has(jobKind)) || notice.kind === "autopilot";
+  return notice.kind === "failed" || (!!jobKind && IMPORTANT_JOBS.has(jobKind)) || notice.kind === "autopilot" || notice.kind === "money";
 }
 
 /** Send now, hold until the night silence ends, or never. */

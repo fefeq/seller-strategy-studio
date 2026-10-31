@@ -6,25 +6,28 @@ import { DEFAULT_PREFS, telegramDecision, telegramText, type NoticePrefs } from 
 import { SITE_URL } from "@/lib/site";
 
 type Admin = SupabaseClient<Database>;
-type Notice = { id: string; user_id: string; kind: string; title: string; body: string | null; link: string | null; job_id: string | null };
+type Notice = { id: string; org_id: string; user_id: string; kind: string; title: string; body: string | null; link: string | null; job_id: string | null };
 
 async function deliver(db: Admin, list: Notice[], now: Date) {
   const { telegramConfigured, sendText } = await import("@/lib/telegram.server");
   if (!list.length || !telegramConfigured()) return 0;
   const users = [...new Set(list.map((n) => n.user_id))];
   const jobIds = [...new Set(list.map((n) => n.job_id).filter(Boolean))] as string[];
-  const [{ data: links }, { data: prefs }, { data: jobs }] = await Promise.all([
+  const [{ data: links }, { data: prefs }, { data: jobs }, { data: members }] = await Promise.all([
     db.from("channel_links").select("user_id,chat_id").eq("channel", "telegram").in("user_id", users).not("chat_id", "is", null),
     db.from("notification_prefs").select("user_id,telegram,quiet_from,quiet_to,timezone").in("user_id", users),
     jobIds.length ? db.from("background_jobs").select("id,kind").in("id", jobIds) : Promise.resolve({ data: [] as { id: string; kind: string }[] }),
+    db.from("org_members").select("org_id,user_id").in("user_id", users),
   ]);
   const chat = new Map((links ?? []).map((l) => [l.user_id, l.chat_id!]));
   const pref = new Map((prefs ?? []).map((p) => [p.user_id, p as unknown as NoticePrefs]));
   const kindOf = new Map((jobs ?? []).map((j) => [j.id, j.kind]));
+  const member = new Set((members ?? []).map((m) => `${m.org_id}:${m.user_id}`));
   let sent = 0;
   for (const n of list) {
     const chatId = chat.get(n.user_id);
     if (!chatId) continue;
+    if (!member.has(`${n.org_id}:${n.user_id}`)) continue; // no longer in the company of the notice: nothing leaves, whatever its kind
     const decision = telegramDecision(n, n.job_id ? kindOf.get(n.job_id) ?? null : null, pref.get(n.user_id) ?? DEFAULT_PREFS, now);
     if (decision !== "send") continue;
     try {
@@ -36,7 +39,7 @@ async function deliver(db: Admin, list: Notice[], now: Date) {
   return sent;
 }
 
-const COLS = "id,user_id,kind,title,body,link,job_id";
+const COLS = "id,org_id,user_id,kind,title,body,link,job_id";
 
 /** Right after a background job ends: its notice goes to Telegram now, unless held by the night silence. */
 export async function deliverJobNotice(db: Admin, jobId: string, now = new Date()) {

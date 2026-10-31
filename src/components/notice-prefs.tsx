@@ -69,7 +69,7 @@ export function NoticePrefsCard() {
           <Pick aria-label="Silencio hasta" value={String(prefs.quiet_to)} options={HOURS} onChange={(v) => save({ quiet_to: Number(v) })} />
         </label>
       </div>
-      <p className="mt-3 text-xs text-muted-foreground">El resumen diario llega desde avisos@nokko.ai con lo que Nokko hizo solo, lo que necesita tu decisión y lo que tienes hoy, a tu hora local. «Solo lo importante» = fallos, lo que necesita tu decisión y tareas grandes (Descubiertos, debates, informes, búsquedas). Lo que llegue durante el silencio te lo mando al terminar, si no tiene más de 12 horas. Misma hora de inicio y fin = sin silencio.</p>
+      <p className="mt-3 text-xs text-muted-foreground">El resumen diario llega desde avisos@nokko.ai con lo que Nokko hizo solo, lo que necesita tu decisión y lo que tienes hoy, a tu hora local. «Solo lo importante» = fallos, lo que necesita tu decisión, tareas grandes (Descubiertos, debates, informes, búsquedas) y los avisos de dinero. Lo que llegue durante el silencio te lo mando al terminar, si no tiene más de 12 horas. Misma hora de inicio y fin = sin silencio.</p>
     </div>
   );
 }

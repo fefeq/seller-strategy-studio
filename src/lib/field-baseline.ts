@@ -55,7 +55,6 @@ const raw: Record<string, string> = {
   messaging_pillars: "created_at created_by id last_human_edit_at message org_id pain position proof title updated_at updated_by",
   mutual_action_items: "created_at created_by deal_id done due_date id org_id owner_side title updated_at updated_by",
   notification_prefs: "daily_email daily_email_hour quiet_from quiet_to telegram timezone updated_at user_id",
-  notifications: "body created_at id job_id kind link org_id read_at telegram_sent_at title user_id",
   onboarding_sessions: "completed_at created_at depth id org_id read_job_id step updated_at user_id",
   org_budgets: "monthly_limit org_id updated_at updated_by warn_pct",
   org_invites: "accepted_at created_at email id invited_by org_id role",

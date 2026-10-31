@@ -87,6 +87,19 @@ describe("Telegram", () => {
     expect(telegramWorthy({ kind: "needs_decision" }, null, "decisions")).toBe(true);
     expect(telegramWorthy({ kind: "needs_decision" }, null, "off")).toBe(false);
   });
+  it("CA-9: a money notice is worth Telegram in «Todo lo que termine» and «Solo lo importante», not in «Solo decisiones» or «Nada»", () => {
+    expect(telegramWorthy({ kind: "money" }, null, "important")).toBe(true);
+    expect(telegramWorthy({ kind: "money" }, null, "all")).toBe(true);
+    expect(telegramWorthy({ kind: "money" }, null, "decisions")).toBe(false);
+    expect(telegramWorthy({ kind: "money" }, null, "off")).toBe(false);
+    expect(telegramWorthy({ kind: "done" }, "complete_account", "important")).toBe(false); // control: routine tasks stay out
+  });
+  it("CA-10: under «Solo lo importante» a money notice in quiet hours is held, not skipped", () => {
+    const night = new Date("2026-07-01T21:30:00Z"); // 23:30 in Madrid
+    expect(telegramDecision({ kind: "money" }, null, DEFAULT_PREFS, night)).toBe("hold");
+    expect(telegramDecision({ kind: "money" }, null, DEFAULT_PREFS, new Date("2026-07-01T10:00:00Z"))).toBe("send");
+    expect(telegramDecision({ kind: "done" }, "complete_account", DEFAULT_PREFS, night)).toBe("skip");
+  });
   it("night silence wraps midnight (22 → 8)", () => {
     expect(isQuiet(23, 22, 8)).toBe(true);
     expect(isQuiet(7, 22, 8)).toBe(true);

@@ -14,7 +14,7 @@ import { unreadCount } from "@/lib/jobs";
 type Notice = { id: string; kind: string; title: string; body: string | null; link: string | null; read_at: string | null; created_at: string; job_id: string | null };
 type Running = { id: string; label: string; step: string | null; status: string; created_at: string; cancel_requested: boolean };
 
-const KIND: Record<string, string> = { done: "Hecho", failed: "Falló", needs_decision: "Decide tú", autopilot: "Lo hice solo" };
+const KIND: Record<string, string> = { done: "Hecho", failed: "Falló", needs_decision: "Decide tú", autopilot: "Lo hice solo", money: "Dinero" };
 const when = (iso: string) => new Date(iso).toLocaleString("es-ES", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 
 export function NotificationCenter({ userId, className = "" }: { userId: string | undefined; className?: string }) {
