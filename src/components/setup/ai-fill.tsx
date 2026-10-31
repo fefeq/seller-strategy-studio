@@ -407,7 +407,8 @@ export function ProposalReview({
                         onClick={() =>
                           setOff((s) => {
                             const n = new Set(s);
-                            n.has(i.key) ? n.delete(i.key) : n.add(i.key);
+                            if (n.has(i.key)) n.delete(i.key);
+                            else n.add(i.key);
                             return n;
                           })
                         }
