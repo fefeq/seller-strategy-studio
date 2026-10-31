@@ -1256,13 +1256,24 @@ describe("get_funnel_diagnosis", () => {
 
 describe("create_icp goes through the one country and size rule (NK-0019)", () => {
   it("saves countries as ISO codes, aliases included", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "icp_profiles" ? { data: { id: ID(900) } } : undefined));
-    await executeTool(ctxWith(db, ["owner"]), "create_icp", { name: "Agencias", countries: ["es", "uk"], min_employees: 10 });
-    expect(writes(log, "icp_profiles")[0]!.payload).toMatchObject({ countries: ["ES", "GB"], min_employees: 10 });
+    const { db, log } = fakeDb((q) =>
+      q.table === "icp_profiles" ? { data: { id: ID(900) } } : undefined,
+    );
+    await executeTool(ctxWith(db, ["owner"]), "create_icp", {
+      name: "Agencias",
+      countries: ["es", "uk"],
+      min_employees: 10,
+    });
+    expect(writes(log, "icp_profiles")[0]!.payload).toMatchObject({
+      countries: ["ES", "GB"],
+      min_employees: 10,
+    });
   });
   it("refuses a country it does not recognise and writes nothing", async () => {
     const { db, log } = fakeDb();
-    await expect(executeTool(ctxWith(db, ["owner"]), "create_icp", { name: "Agencias", countries: ["xx"] })).rejects.toThrow(/xx/i);
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "create_icp", { name: "Agencias", countries: ["xx"] }),
+    ).rejects.toThrow(/xx/i);
     expect(writes(log, "icp_profiles")).toEqual([]);
   });
 });

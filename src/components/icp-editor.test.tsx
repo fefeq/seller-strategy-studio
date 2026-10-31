@@ -161,7 +161,9 @@ describe("icp-editor goes through the one country and size rule (NK-0019)", () =
 
   it("does not save a country it cannot recognise and says so", async () => {
     await open();
-    fireEvent.change(screen.getByPlaceholderText("ES, MX, CO"), { target: { value: "ES, ATLANTIS" } });
+    fireEvent.change(screen.getByPlaceholderText("ES, MX, CO"), {
+      target: { value: "ES, ATLANTIS" },
+    });
     fireEvent.click(screen.getByText("Guardar ICP"));
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(h.updates).toEqual([]);
