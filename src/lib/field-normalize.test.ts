@@ -1,22 +1,40 @@
 import { describe, expect, it } from "vitest";
 import { BINDINGS } from "./field-catalog";
-import { normalizeAmount, normalizeCountries, normalizeCountry, normalizeForSave, normalizeSize, parseEmployees } from "./field-normalize";
+import {
+  normalizeAmount,
+  normalizeCountries,
+  normalizeCountry,
+  normalizeForSave,
+  normalizeIcpFields,
+  normalizeSize,
+  parseEmployees,
+} from "./field-normalize";
 
 const ok = <T>(n: { status: string; value?: T }) => (n.status === "ok" ? n.value : n.status);
 
 describe("field normalization", () => {
   it("CA-3: country written four ways saves as one ISO code", () => {
-    for (const v of ["ES", " es ", "España", "Spain"]) expect(ok(normalizeCountry(v)), v).toBe("ES");
+    for (const v of ["ES", " es ", "España", "Spain"])
+      expect(ok(normalizeCountry(v)), v).toBe("ES");
     expect(ok(normalizeCountry("Estados Unidos"))).toBe("US");
   });
 
   it("CA-3: a country list drops repeats and returns what it does not know apart", () => {
-    expect(normalizeCountries("España, spain; Francia")).toEqual({ value: ["ES", "FR"], unnormalized: [] });
-    expect(normalizeCountries(["ES", "Atlantis"])).toEqual({ value: ["ES"], unnormalized: ["Atlantis"] });
+    expect(normalizeCountries("España, spain; Francia")).toEqual({
+      value: ["ES", "FR"],
+      unnormalized: [],
+    });
+    expect(normalizeCountries(["ES", "Atlantis"])).toEqual({
+      value: ["ES"],
+      unnormalized: ["Atlantis"],
+    });
   });
 
   it("a country that does not fit is kept as the original, never turned into a code", () => {
-    expect(normalizeCountry("UK")).toMatchObject({ status: "unnormalized", original: "UK" });
+    expect(normalizeCountry("Atlantis")).toMatchObject({
+      status: "unnormalized",
+      original: "Atlantis",
+    });
     expect(normalizeCountry("  ")).toEqual({ status: "empty" });
   });
 
@@ -37,12 +55,34 @@ describe("field normalization", () => {
   });
 
   it("size refuses what is not a headcount", () => {
-    for (const v of ["scale-up", "2.000 EUR", "facturación 5M", "fundada en 2015 por tres socios", "10 a 20 a 30", "0"]) expect(parseEmployees(v), v).toBeNull();
-    expect(normalizeSize("scale-up")).toMatchObject({ status: "unnormalized", original: "scale-up" });
+    for (const v of [
+      "scale-up",
+      "2.000 EUR",
+      "facturación 5M",
+      "fundada en 2015 por tres socios",
+      "10 a 20 a 30",
+      "0",
+    ])
+      expect(parseEmployees(v), v).toBeNull();
+    expect(normalizeSize("scale-up")).toMatchObject({
+      status: "unnormalized",
+      original: "scale-up",
+    });
+  });
+
+  it("NK-0020: a decimal is not a headcount and never becomes a range", () => {
+    for (const v of ["12.5", "12,5", "1.5 empleados", "10.50", "12.5-20"]) {
+      expect(parseEmployees(v), v).toBeNull();
+      expect(normalizeSize(v), v).toMatchObject({ status: "unnormalized", original: v });
+    }
+    expect(parseEmployees("1.000")).toEqual({ min: 1000, max: 1000 });
+    expect(parseEmployees("12")).toEqual({ min: 12, max: 12 });
+    expect(parseEmployees("5-12")).toEqual({ min: 5, max: 12 });
   });
 
   it("CA-3: an amount typed with Spanish, English or plain format is the same number", () => {
-    for (const v of ["1.234,56", "1,234.56", "1234.56", "€ 1.234,56", "1 234,56", 1234.56]) expect(ok(normalizeAmount(v)), String(v)).toBe(1234.56);
+    for (const v of ["1.234,56", "1,234.56", "1234.56", "€ 1.234,56", "1 234,56", 1234.56])
+      expect(ok(normalizeAmount(v)), String(v)).toBe(1234.56);
   });
 
   it("one separator followed by three digits is thousands, otherwise decimals", () => {
@@ -57,28 +97,100 @@ describe("field normalization", () => {
     expect(ok(normalizeAmount(10.005))).toBe(10.01);
     expect(normalizeAmount("abc")).toMatchObject({ status: "unnormalized" });
     expect(normalizeAmount(Number.NaN)).toMatchObject({ status: "unnormalized" });
-    expect(normalizeAmount("-5")).toMatchObject({ status: "unnormalized", reason: "El importe no puede ser negativo." });
+    expect(normalizeAmount("-5")).toMatchObject({
+      status: "unnormalized",
+      reason: "El importe no puede ser negativo.",
+    });
     expect(ok(normalizeAmount("-5", { allowNegative: true }))).toBe(-5);
     expect(normalizeAmount("")).toEqual({ status: "empty" });
     expect(normalizeAmount(null)).toEqual({ status: "empty" });
   });
 
   it("CA-1: saving goes through the catalog, so every catalogued column has a rule", () => {
-    expect(normalizeForSave("accounts", "country", "España")).toEqual({ status: "ok", value: "ES" });
-    expect(normalizeForSave("account_assignment_rules", "country", "Mexico")).toEqual({ status: "ok", value: "MX" });
-    expect(normalizeForSave("icp_profiles", "countries", "ES, Francia")).toEqual({ status: "ok", value: ["ES", "FR"] });
-    expect(normalizeForSave("accounts", "size", "51-200")).toEqual({ status: "ok", value: "51–200 empleados" });
-    expect(normalizeForSave("icp_profiles", "min_employees", "50")).toEqual({ status: "ok", value: 50 });
-    expect(normalizeForSave("icp_profiles", "min_employees", "50,5")).toMatchObject({ status: "unnormalized" });
-    expect(normalizeForSave("deals", "amount", "1.200,50")).toEqual({ status: "ok", value: 1200.5 });
-    expect(normalizeForSave("people", "source", "cold_list")).toEqual({ status: "ok", value: "cold_list" });
-    expect(normalizeForSave("people", "source", "outbound")).toMatchObject({ status: "unnormalized" });
-    for (const b of BINDINGS) expect(normalizeForSave(b.table, b.column, null).status, `${b.table}.${b.column}`).not.toBe("uncatalogued");
+    expect(normalizeForSave("accounts", "country", "España")).toEqual({
+      status: "ok",
+      value: "ES",
+    });
+    expect(normalizeForSave("account_assignment_rules", "country", "Mexico")).toEqual({
+      status: "ok",
+      value: "MX",
+    });
+    expect(normalizeForSave("icp_profiles", "countries", "ES, Francia")).toEqual({
+      status: "ok",
+      value: ["ES", "FR"],
+    });
+    expect(normalizeForSave("accounts", "size", "51-200")).toEqual({
+      status: "ok",
+      value: "51–200 empleados",
+    });
+    expect(normalizeForSave("icp_profiles", "min_employees", "50")).toEqual({
+      status: "ok",
+      value: 50,
+    });
+    expect(normalizeForSave("icp_profiles", "min_employees", "50,5")).toMatchObject({
+      status: "unnormalized",
+    });
+    expect(normalizeForSave("deals", "amount", "1.200,50")).toEqual({
+      status: "ok",
+      value: 1200.5,
+    });
+    expect(normalizeForSave("people", "source", "cold_list")).toEqual({
+      status: "ok",
+      value: "cold_list",
+    });
+    expect(normalizeForSave("people", "source", "outbound")).toMatchObject({
+      status: "unnormalized",
+    });
+    for (const b of BINDINGS)
+      expect(normalizeForSave(b.table, b.column, null).status, `${b.table}.${b.column}`).not.toBe(
+        "uncatalogued",
+      );
   });
 
   it("an unnormalized free text stays as written; an uncatalogued column passes through", () => {
-    expect(normalizeForSave("accounts", "size", " scale-up ")).toMatchObject({ status: "unnormalized", value: "scale-up", original: "scale-up" });
-    expect(normalizeForSave("accounts", "notes", "x")).toEqual({ status: "uncatalogued", value: "x" });
+    expect(normalizeForSave("accounts", "size", " scale-up ")).toMatchObject({
+      status: "unnormalized",
+      value: "scale-up",
+      original: "scale-up",
+    });
+    expect(normalizeForSave("accounts", "notes", "x")).toEqual({
+      status: "uncatalogued",
+      value: "x",
+    });
     expect(normalizeForSave("leads", "source", " CSV ")).toEqual({ status: "ok", value: "CSV" });
+  });
+});
+
+describe("NK-0019: ICP countries and employee range go through the one rule", () => {
+  it("normalizes countries and the range, keeps the rest of the row", () => {
+    const r = normalizeIcpFields({
+      name: "ICP de prueba",
+      countries: ["es", "uk", "ES"],
+      min_employees: 51,
+      max_employees: 200,
+    });
+    expect(r.invalid).toEqual([]);
+    expect(r.row).toEqual({
+      name: "ICP de prueba",
+      countries: ["ES", "GB"],
+      min_employees: 51,
+      max_employees: 200,
+    });
+  });
+  it("accepts empty values and rows without those fields", () => {
+    expect(normalizeIcpFields({ countries: [], min_employees: null, max_employees: null })).toEqual(
+      { row: { countries: [], min_employees: null, max_employees: null }, invalid: [] },
+    );
+    expect(normalizeIcpFields({ name: "x" })).toEqual({ row: { name: "x" }, invalid: [] });
+  });
+  it("reports what does not fit instead of saving it", () => {
+    const r = normalizeIcpFields({
+      countries: ["ES", "Atlantis"],
+      min_employees: 12.5,
+      max_employees: 200,
+    });
+    expect(r.invalid).toHaveLength(2);
+    expect(r.invalid[0]).toContain("Atlantis");
+    expect(r.row.countries).toEqual(["ES", "Atlantis"]);
   });
 });

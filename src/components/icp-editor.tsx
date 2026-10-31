@@ -27,6 +27,7 @@ import {
 } from "@/lib/icp";
 import { DEFAULT_LEVELS, LEVELS } from "@/lib/orchestrator/search";
 import { isDirty } from "@/lib/field-actions";
+import { normalizeIcpFields } from "@/lib/field-normalize";
 import { DeleteElement } from "@/components/delete-element";
 import { FieldActions } from "@/components/field-actions";
 import { ConfirmBar } from "@/components/confirm-field";
@@ -179,6 +180,12 @@ export function IcpEditor() {
       field_sources: _fs,
       ...rest
     } = asIcp(sel);
+    // NK-0019: countries and the employee range save through the one rule; what does not fit is not saved.
+    const norm = normalizeIcpFields(rest);
+    if (norm.invalid.length) {
+      toast.error(norm.invalid.join(" "));
+      return false;
+    }
     try {
       // The marks are built from the row as it is now, so a confirmation made since opening it survives.
       const fresh = await confirmed(
@@ -192,9 +199,9 @@ export function IcpEditor() {
         "field_sources" in fresh
           ? icpSaveSources(
               fresh.field_sources,
-              fresh as unknown as Draft,
-              rest,
-              proposedRef.current,
+              normalizeIcpFields(fresh as unknown as Draft).row,
+              norm.row,
+              normalizeIcpFields(proposedRef.current).row,
               me?.user.id,
               new Date().toISOString(),
             )
@@ -203,7 +210,7 @@ export function IcpEditor() {
         supabase
           .from("icp_profiles")
           .update({
-            ...rest,
+            ...norm.row,
             segment_id: rest.segment_id || null,
             ...(field_sources ? { field_sources: field_sources as unknown as Json } : {}),
           })

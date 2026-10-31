@@ -57,6 +57,7 @@ vi.mock("sonner", () => ({
   toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), message: vi.fn() }),
 }));
 
+import { toast } from "sonner";
 import { IcpEditor } from "@/components/icp-editor";
 
 const PROPOSAL = { countries: ["ES", "MX"], min_employees: 51, max_employees: 200 };
@@ -144,6 +145,38 @@ describe("icp-editor origin of AI proposals (NK-0024)", () => {
     // Either it sends the persona mark itself or leaves it to trigger 0058; never an AI origin.
     expect(m.countries === undefined || m.countries.kind === "persona").toBe(true);
     expect(m.countries?.confirmed ?? true).toBe(true);
+  });
+});
+
+describe("icp-editor goes through the one country and size rule (NK-0019)", () => {
+  it("saves a lowercase AI proposal as ISO codes and keeps its ia origin", async () => {
+    h.proposal = { countries: ["es", "uk"], min_employees: 51, max_employees: 200 };
+    await open();
+    fireEvent.click(screen.getByText("Proponer criterios de búsqueda"));
+    await waitFor(() => expect(screen.getByDisplayValue("es, uk")).toBeTruthy());
+    const u = await save();
+    expect(u.countries).toEqual(["ES", "GB"]);
+    expect(marks(u).countries).toMatchObject({ kind: "ia", confirmed: false });
+  });
+
+  it("does not save a country it cannot recognise and says so", async () => {
+    await open();
+    fireEvent.change(screen.getByPlaceholderText("ES, MX, CO"), {
+      target: { value: "ES, ATLANTIS" },
+    });
+    fireEvent.click(screen.getByText("Guardar ICP"));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(h.updates).toEqual([]);
+  });
+
+  it("does not save a decimal employee range proposed by the AI", async () => {
+    h.proposal = { min_employees: 12.5 };
+    await open();
+    fireEvent.click(screen.getByText("Proponer criterios de búsqueda"));
+    await waitFor(() => expect(screen.getByDisplayValue("12.5")).toBeTruthy());
+    fireEvent.click(screen.getByText("Guardar ICP"));
+    await waitFor(() => expect(toast.error).toHaveBeenCalled());
+    expect(h.updates).toEqual([]);
   });
 });
 
