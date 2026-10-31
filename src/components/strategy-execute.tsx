@@ -38,6 +38,8 @@ import {
 } from "@/lib/strategy-execute";
 import { parseStrategy, ELEMENT_LABEL } from "@/lib/strategy-suggestions";
 
+/** What decideSuggestionCore answers when the suggestion is no longer pending; it must match the server literal. */
+const ALREADY_DECIDED = "Ya estaba gestionada";
 type Sug = { id: string; title: string; body: string | null; strategy: unknown };
 /** Which accepted suggestions open a form first (CA-35, CA-36); the rest are decided directly. */
 export const executeKind = (s: Pick<Sug, "strategy">): "experiment" | "task" | null => {
@@ -109,12 +111,17 @@ export function ExecuteDialog({
               : { kind: "task", draft: task },
         },
       });
-      toast.success(
-        kind === "experiment"
-          ? "Experimento creado como idea, enlazado a la sugerencia."
-          : "Tarea creada, enlazada a la sugerencia.",
-      );
-      void r;
+      // The server answers «Ya estaba gestionada» (no error, nothing created) when someone else decided first (NK-0040).
+      if (r.message === ALREADY_DECIDED)
+        toast(
+          `${ALREADY_DECIDED}: otra persona decidió esta sugerencia antes que tú. No he creado nada; la lista ya está al día.`,
+        );
+      else
+        toast.success(
+          kind === "experiment"
+            ? "Experimento creado como idea, enlazado a la sugerencia."
+            : "Tarea creada, enlazada a la sugerencia.",
+        );
       onOpenChange(false);
       qc.invalidateQueries();
     } catch (e) {
