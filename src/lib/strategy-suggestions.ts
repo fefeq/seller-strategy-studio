@@ -194,7 +194,8 @@ export function buildStrategySuggestion(i: StrategyInput): StrategySuggestion {
 
 const isStr = (v: unknown): v is string => typeof v === "string" && v.trim() !== "";
 
-const readChange = (v: unknown) => (parseChange(v) as import("@/lib/strategy-execute").ChangePayload | null);
+const readChange = (v: unknown) =>
+  parseChange(v) as import("@/lib/strategy-execute").ChangePayload | null;
 
 /** Reads a stored strategy value; null when anything of CA-1..CA-3 is missing or inconsistent (the database refuses the same). */
 export function parseStrategy(v: unknown): StrategyMeta | null {
@@ -230,6 +231,16 @@ export function parseStrategy(v: unknown): StrategyMeta | null {
     ...(readChange(m.change) ? { change: readChange(m.change)! } : {}),
   };
 }
+
+/**
+ * Which form accepting this suggestion needs (CA-35, CA-36): a test opens the experiment form, a commercial action the task form.
+ * The client (executeKind), the server (decideSuggestionCore) and Telegram all ask this; a test keeps the three equal.
+ */
+export const executeFormKind = (strategy: unknown): "experiment" | "task" | null => {
+  const t = parseStrategy(strategy)?.action_type;
+  return t === "experiment" ? "experiment" : t === "commercial_action" ? "task" : null;
+};
+export const needsExecuteForm = (strategy: unknown) => executeFormKind(strategy) !== null;
 
 // ---- Decisions (CA-4) ----
 
@@ -407,7 +418,11 @@ export function reconcile(
 
 /** A price suggestion (product_price with the «price:» cause) is only for roles that may see prices (CA-19, same roles as canPrice). */
 export const needsPriceAccess = (r: { detector?: string | null; dedupe_key?: string | null }) =>
-  r.detector === "strategy_product_price" && (r.dedupe_key ?? "").startsWith("strategy_product_price:price:");
+  r.detector === "strategy_product_price" &&
+  (r.dedupe_key ?? "").startsWith("strategy_product_price:price:");
 export const PRICE_ROLES = ["owner", "sales_leader", "deal_desk"] as const;
-export const canViewStrategy = <T extends { detector?: string | null; dedupe_key?: string | null }>(r: T, roles: readonly string[]): boolean =>
+export const canViewStrategy = <T extends { detector?: string | null; dedupe_key?: string | null }>(
+  r: T,
+  roles: readonly string[],
+): boolean =>
   !needsPriceAccess(r) || roles.some((x) => (PRICE_ROLES as readonly string[]).includes(x));

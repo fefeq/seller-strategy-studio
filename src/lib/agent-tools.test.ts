@@ -1277,3 +1277,15 @@ describe("create_icp goes through the one country and size rule (NK-0019)", () =
     expect(writes(log, "icp_profiles")).toEqual([]);
   });
 });
+
+describe("decide_suggestion says where a test or a commercial action is accepted (NK-0041, CA-5; string check, weak)", () => {
+  it("the agent's description and the MCP manifest say they are accepted from Sugerencias", async () => {
+    const { readFileSync } = await import("node:fs");
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const m = (manifest.mcp.tools as { name: string; description: string }[]).find(
+      (t) => t.name === "decide_suggestion",
+    );
+    for (const d of [getTool("decide_suggestion")!.description, m?.description ?? ""])
+      expect(d).toMatch(/prueba.*acción comercial.*se aceptan desde Sugerencias/);
+  });
+});

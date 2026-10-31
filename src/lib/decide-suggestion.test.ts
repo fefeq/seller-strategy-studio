@@ -193,3 +193,241 @@ describe("decideSuggestionCore: operational suggestions keep their own path", ()
     expect(calls.find((c) => c.kind === "update")!.payload).toMatchObject({ status: "dismissed" });
   });
 });
+
+// ---- SDD-20261031 suggestion-accept-needs-form-outside-ui (NK-0041): accepting a test or a commercial action needs the form ----
+import type { ExecuteInput } from "@/lib/agent.functions";
+
+type TCall = { kind: "select" | "update" | "insert" | "rpc"; table: string; payload?: unknown };
+/** Fake that answers per table (the one above answers the suggestion to every read and gives no id on insert). */
+function fakeDbByTable(
+  rows: Record<string, unknown>,
+  insertedId = "new-1",
+  rpcData: string | null = "approved",
+) {
+  const calls: TCall[] = [];
+  const from = (table: string) => {
+    const c: TCall = { kind: "select", table };
+    calls.push(c);
+    let selected = false;
+    const p: object = new Proxy(
+      {},
+      {
+        get(_t, prop: string) {
+          if (prop === "then")
+            return (f: (v: unknown) => unknown) =>
+              Promise.resolve({
+                data: c.kind === "update" && selected ? [{ id: "x" }] : null,
+                error: null,
+              }).then(f);
+          return (...a: unknown[]) => {
+            if (prop === "maybeSingle")
+              return Promise.resolve({ data: rows[table] ?? null, error: null });
+            if (prop === "single")
+              return Promise.resolve({
+                data: c.kind === "insert" ? { id: insertedId } : null,
+                error: null,
+              });
+            if (prop === "update" || prop === "insert") {
+              c.kind = prop;
+              c.payload = a[0];
+            } else if (prop === "select") selected = true;
+            return p;
+          };
+        },
+      },
+    );
+    return p;
+  };
+  const rpc = (name: string, args: unknown) => {
+    calls.push({ kind: "rpc", table: name, payload: args });
+    return Promise.resolve({ data: rpcData, error: null });
+  };
+  return { db: { from, rpc } as unknown as ToolCtx["db"], calls };
+}
+const typed = (
+  action_type: "experiment" | "commercial_action",
+  over: Record<string, unknown> = {},
+) => {
+  const m = buildStrategySuggestion({
+    element: action_type === "experiment" ? "experiment" : "pipeline",
+    kind: "validate",
+    action_type,
+    cause: "c",
+    priority: 1,
+    title: "Prueba algo",
+    body: "Texto de la sugerencia",
+    evidence: [{ table: "deals", id: "d1", label: "Deal 1" }],
+  });
+  return { ...strat(), detector: m.detector, title: m.title, strategy: m.strategy, ...over };
+};
+const expDraft = {
+  title: "Prueba",
+  hypothesis: "Si hacemos X, sube Y",
+  metric: "Tasa de respuesta",
+  review_on: "2026-12-01",
+};
+const taskDraftOk = { title: "Llamar", owner_id: ME, due_date: "2026-12-01", deal_id: null };
+const exec = (v: unknown) => v as ExecuteInput;
+const noDecision = (calls: TCall[]) => {
+  expect(calls.some((c) => c.kind === "rpc")).toBe(false);
+  expect(calls.some((c) => c.kind === "insert")).toBe(false);
+  expect(remember).not.toHaveBeenCalled();
+};
+const KINDS = [
+  ["experiment", /crea un experimento/],
+  ["commercial_action", /crea una tarea/],
+] as const;
+
+describe("decideSuggestionCore: a test or a commercial action is not accepted without its form (CA-1)", () => {
+  for (const [type, text] of KINDS)
+    it(`${type}: approve without a draft is refused with the reason and decides nothing`, async () => {
+      const { db, calls } = fakeDbByTable({ suggestions: typed(type) });
+      const e = await decideSuggestionCore(ctx(db), "s1", "approve").catch((x: Error) => x);
+      expect(e).toBeInstanceOf(Error);
+      expect((e as Error).message).toMatch(/^No la he aceptado\./);
+      expect((e as Error).message).toMatch(text);
+      expect((e as Error).message).toMatch(/Ábrela en Sugerencias/);
+      expect((e as Error).message).not.toMatch(/\.$/); // the app and Telegram add the full stop
+      noDecision(calls);
+    });
+});
+
+describe("decideSuggestionCore: snooze, dismiss and other types keep working without a draft (CA-2, CA-3 guards)", () => {
+  for (const [type] of KINDS)
+    it(`${type}: snooze and dismiss need no draft`, async () => {
+      const a = fakeDbByTable({ suggestions: typed(type) }, "n", "snoozed");
+      await decideSuggestionCore(ctx(a.db), "s1", "snooze");
+      expect(a.calls.find((c) => c.kind === "rpc")!.payload).toMatchObject({
+        p_decision: "postpone",
+      });
+      const d = fakeDbByTable({ suggestions: typed(type) }, "n", "dismissed");
+      await decideSuggestionCore(ctx(d.db), "s1", "dismiss");
+      expect(d.calls.find((c) => c.kind === "rpc")!.payload).toMatchObject({
+        p_decision: "dismiss",
+      });
+    });
+  it("approve with a valid draft decides, creates the experiment and links it", async () => {
+    const { db, calls } = fakeDbByTable({ suggestions: typed("experiment") }, "exp-1");
+    await decideSuggestionCore(ctx(db), "s1", "approve", {
+      execute: exec({ kind: "experiment", draft: expDraft }),
+    });
+    expect(calls.find((c) => c.kind === "rpc")!.payload).toMatchObject({ p_decision: "accept" });
+    expect(
+      calls.find((c) => c.table === "gtm_experiments" && c.kind === "insert")!.payload,
+    ).toMatchObject({
+      hypothesis: expDraft.hypothesis,
+    });
+    expect(
+      calls.find((c) => c.table === "strategy_links" && c.kind === "insert")!.payload,
+    ).toMatchObject({
+      kind: "experiment",
+      ref_id: "exp-1",
+    });
+  });
+  it("approve with a valid draft decides, creates the task and links it", async () => {
+    const { db, calls } = fakeDbByTable({ suggestions: typed("commercial_action") }, "task-1");
+    await decideSuggestionCore(ctx(db), "s1", "approve", {
+      execute: exec({ kind: "task", draft: taskDraftOk }),
+    });
+    expect(calls.find((c) => c.kind === "rpc")).toBeDefined();
+    expect(calls.find((c) => c.table === "tasks" && c.kind === "insert")!.payload).toMatchObject({
+      title: "Llamar",
+    });
+    expect(
+      calls.find((c) => c.table === "strategy_links" && c.kind === "insert")!.payload,
+    ).toMatchObject({
+      kind: "task",
+      ref_id: "task-1",
+    });
+  });
+  it("a data or strategy-change suggestion is still accepted without a draft", async () => {
+    const { db, calls } = fakeDbByTable({ suggestions: strat() });
+    const r = await decideSuggestionCore(ctx(db), "s1", "approve");
+    expect(r.status).toBe("approved");
+    expect(calls.some((c) => c.kind === "rpc")).toBe(true);
+  });
+});
+
+describe("decideSuggestionCore: an invalid draft decides nothing (CA-6)", () => {
+  const bad =
+    (type: "experiment" | "commercial_action", execute: unknown, msg: RegExp) => async () => {
+      const { db, calls } = fakeDbByTable({ suggestions: typed(type) });
+      await expect(
+        decideSuggestionCore(ctx(db), "s1", "approve", { execute: exec(execute) }),
+      ).rejects.toThrow(msg);
+      noDecision(calls);
+    };
+  it(
+    "experiment without hypothesis",
+    bad("experiment", { kind: "experiment", draft: { ...expDraft, hypothesis: " " } }, /hipótesis/),
+  );
+  it(
+    "experiment without metric",
+    bad("experiment", { kind: "experiment", draft: { ...expDraft, metric: "" } }, /métrica/),
+  );
+  it(
+    "experiment without review date",
+    bad(
+      "experiment",
+      { kind: "experiment", draft: { ...expDraft, review_on: "" } },
+      /fecha de revisión/,
+    ),
+  );
+  it(
+    "task without title",
+    bad("commercial_action", { kind: "task", draft: { ...taskDraftOk, title: "  " } }, /título/),
+  );
+});
+
+describe("decideSuggestionCore: a draft of the wrong shape or type decides nothing (CA-7)", () => {
+  const bad =
+    (type: "experiment" | "commercial_action" | "strategy_change", execute: unknown) =>
+    async () => {
+      const sug = type === "strategy_change" ? strat() : typed(type);
+      const { db, calls } = fakeDbByTable({ suggestions: sug });
+      await expect(
+        decideSuggestionCore(ctx(db), "s1", "approve", { execute: exec(execute) }),
+      ).rejects.toThrow(Error);
+      noDecision(calls);
+    };
+  it("a task draft on an experiment", bad("experiment", { kind: "task", draft: taskDraftOk }));
+  it(
+    "an experiment draft on a commercial action",
+    bad("commercial_action", { kind: "experiment", draft: expDraft }),
+  );
+  it(
+    "any draft on a suggestion of another type",
+    bad("strategy_change", { kind: "experiment", draft: expDraft }),
+  );
+  it("a draft that is not an object", async () => {
+    for (const draft of [null, "texto", 7, []])
+      await bad("experiment", { kind: "experiment", draft })();
+  });
+  it("an execute that is not an object", async () => {
+    for (const e of ["experiment", 3, []]) await bad("experiment", e)();
+  });
+  it("fields that are not text", async () => {
+    await bad("experiment", { kind: "experiment", draft: { ...expDraft, hypothesis: 5 } })();
+    await bad("experiment", { kind: "experiment", draft: { ...expDraft, title: null } })();
+    await bad("commercial_action", { kind: "task", draft: { ...taskDraftOk, owner_id: 3 } })();
+    await bad("commercial_action", { kind: "task", draft: { ...taskDraftOk, deal_id: 9 } })();
+  });
+  it("dates that are not dates", async () => {
+    await bad("experiment", { kind: "experiment", draft: { ...expDraft, review_on: "mañana" } })();
+    await bad("experiment", {
+      kind: "experiment",
+      draft: { ...expDraft, review_on: "2026-13-45" },
+    })();
+    await bad("commercial_action", {
+      kind: "task",
+      draft: { ...taskDraftOk, due_date: "2026-02-31" },
+    })();
+  });
+  it("a task may have no due date and no deal", async () => {
+    const { db, calls } = fakeDbByTable({ suggestions: typed("commercial_action") }, "t");
+    await decideSuggestionCore(ctx(db), "s1", "approve", {
+      execute: exec({ kind: "task", draft: { ...taskDraftOk, due_date: "" } }),
+    });
+    expect(calls.some((c) => c.kind === "rpc")).toBe(true);
+  });
+});

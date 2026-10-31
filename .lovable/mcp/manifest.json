@@ -3079,7 +3079,7 @@
       {
         "name": "decide_suggestion",
         "title": "Gestionar sugerencia",
-        "description": "Gestiona una sugerencia pendiente (ids de list_suggestions): approve ejecuta su acción si tiene una (o la marca hecha), snooze la pospone 3 días y dismiss la descarta para siempre. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Gestiona una sugerencia pendiente (ids de list_suggestions): approve ejecuta su acción si tiene una (o la marca hecha), snooze la pospone 3 días y dismiss la descarta para siempre. Las sugerencias de tipo prueba (experimento) o acción comercial (tarea) no se aceptan por aquí: se aceptan desde Sugerencias, donde la persona revisa el formulario; aquí solo se pueden posponer o descartar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
