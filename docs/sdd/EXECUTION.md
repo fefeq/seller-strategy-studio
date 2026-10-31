@@ -10,8 +10,8 @@ Eres el agente de implementación de NOKKO (repo seller-strategy-studio). Implem
 
 ## 1. Qué SDD puedes ejecutar
 - Solo los que el usuario nombre en su mensaje. Si te dice que Fede lo aprueba, cambia su Estado a «Aprobado» y registra la fecha.
-- Si un SDD tiene [Por verificar] en su sección 15 que afecte a tu código, verifícalo tú en el repo y anótalo en el SDD. Si no puedes (producción, proveedores externos, datos reales), para y lista las preguntas. No supongas.
-- No rellenes la sección 16 («Sección de Dani»).
+- Si un SDD tiene [Por verificar] en su sección 16 que afecte a tu código, verifícalo tú en el repo y anótalo en el SDD. Si no puedes (producción, proveedores externos, datos reales), para y lista las preguntas. No supongas.
+- No rellenes la sección 17 («Revisión técnica independiente»): la hace un agente `nokko-gate` con contexto fresco.
 - Si el SDD contradice el código o una decisión del README, para y avisa.
 
 ## 2. Orden y dependencias
@@ -27,7 +27,7 @@ Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 
 ## 4. Cómo implementar
 - Cada CA-n tiene al menos una prueba automática que lo nombra. Reglas en módulos puros con prueba.
-- Las «Notas técnicas [Sugerencia — Dani valida]» son sugerencias; si las cambias, explica por qué en el PR.
+- Las «Notas técnicas [Sugerencia — la revisión del gate las valida]» son sugerencias; si las cambias, explica por qué en el PR.
 - Base de datos: migraciones nuevas en `drizzle/migrations` con GRANTs, RLS por empresa (`org_id` con valor por defecto `current_org()`); respeta que solo el Owner gestiona miembros. No cambies migraciones aplicadas ni toques datos reales.
 - IA: regla determinista → caché/dato derivado → modelo barato (`effort:"low"` por `src/lib/ai-gateway.ts`, con esquema) → modelo caro solo en «A fondo». Una llamada nueva no declarada en el SDD: para y pregunta.
 - Nunca inventes ni estimes cifras, precios ni testimonios. Si falta, «Falta» o «sin dato».
@@ -40,8 +40,8 @@ Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 1. Tipos, lint y pruebas según `AGENTS.md`/`package.json`: todo en verde.
 2. Migraciones solo en entorno local o de pruebas; comprueba la RLS con dos empresas ficticias.
 3. Recorre en local los flujos de cada historia y los casos límite de la sección 8.
-4. Revisa tu diff como Dani: CA sin prueba, decisiones no justificadas, datos sensibles.
-5. Actualiza el Estado del SDD a «En curso» (a «Hecho» solo cuando Dani acepte) y añade el delta final si lo entregado difiere.
+4. Revisa tu diff como lo haría el gate: CA sin prueba, decisiones no justificadas, datos sensibles.
+5. Actualiza el Estado del SDD a «En curso» (a «Hecho» solo cuando el gate pase y Fede apruebe la entrega) y añade el delta final si lo entregado difiere.
 
 ## 6. Para y pregunta cuando
 - Un [Por verificar] que no puedas comprobar.
@@ -52,9 +52,9 @@ Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 
 ## 7. Nunca
 - Push o merge a `main`/`production`, desplegar, ni tocar producción.
-- Crear tickets, documentos en Drive o mensajes a Dani o a clientes.
+- Crear tickets, documentos en Drive o mensajes a terceros o a clientes.
 - Instalar proveedores nuevos ni contratar servicios.
 - Ampliar el alcance («No incluye»). Anota las mejoras en el PR como sugerencia.
 
 ## 8. Entrega final
-Por SDD: enlace al PR, tabla CA → prueba, migraciones, riesgos, preguntas abiertas para Dani y qué SDD puede arrancar ahora.
+Por SDD: enlace al PR, tabla CA → prueba, migraciones, riesgos, preguntas abiertas para Fede y qué SDD puede arrancar ahora.
