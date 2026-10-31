@@ -47,10 +47,18 @@ export function fieldProposalDecision(
  * What an automatic run does with the changes it found: write the empty fields, offer a different value for a
  * filled one, ignore the same value in another format. A filled field is never replaced here (CA-6).
  */
-export function splitAutoChanges<T extends { field: EnrichField; current: string | null; proposed: string; empty: boolean }>(changes: T[]): { fill: T[]; offers: T[] } {
+export function splitAutoChanges<
+  T extends { field: EnrichField; current: string | null; proposed: string; empty: boolean },
+>(changes: T[]): { fill: T[]; offers: T[] } {
   return {
-    fill: changes.filter((ch) => ch.empty && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "write"),
-    offers: changes.filter((ch) => PROPOSABLE_FIELDS.includes(ch.field) && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "propose"),
+    fill: changes.filter(
+      (ch) => ch.empty && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "write",
+    ),
+    offers: changes.filter(
+      (ch) =>
+        PROPOSABLE_FIELDS.includes(ch.field) &&
+        fieldProposalDecision(ch.field, ch.current, ch.proposed) === "propose",
+    ),
   };
 }
 

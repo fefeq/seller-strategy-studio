@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { normalizeProposed } from "../apollo";
 
-const web = (field: "size" | "country" | "industry", proposed: string) => ({ field, current: null, proposed, empty: true, source: "web", quote: "q" });
+const web = (field: "size" | "country" | "industry", proposed: string) => ({
+  field,
+  current: null,
+  proposed,
+  empty: true,
+  source: "web",
+  quote: "q",
+});
 
 describe("normalizeProposed, the web fallback and the automatic writer (SDD field-write-paths-normalization, CA-3, CA-4)", () => {
   it("CA-3: a country name becomes ISO", () => {
@@ -17,7 +24,11 @@ describe("normalizeProposed, the web fallback and the automatic writer (SDD fiel
     expect(normalizeProposed(web("size", "unos 50"))).toBeNull();
   });
   it("keeps the rest of the change and leaves other fields as they are", () => {
-    expect(normalizeProposed(web("country", "España"))).toMatchObject({ source: "web", quote: "q", empty: true });
+    expect(normalizeProposed(web("country", "España"))).toMatchObject({
+      source: "web",
+      quote: "q",
+      empty: true,
+    });
     expect(normalizeProposed(web("industry", "Software"))?.proposed).toBe("Software");
   });
 });

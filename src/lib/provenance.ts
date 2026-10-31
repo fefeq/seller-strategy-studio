@@ -15,7 +15,13 @@ export type FieldSource = {
 };
 export type FieldSources = Record<string, FieldSource>;
 
-export const SOURCE_LABEL: Record<string, string> = { apollo: "Apollo", clay: "Clay", parallel: "Parallel", web: "Web de la empresa", strategic_review: "Revisión estratégica" };
+export const SOURCE_LABEL: Record<string, string> = {
+  apollo: "Apollo",
+  clay: "Clay",
+  parallel: "Parallel",
+  web: "Web de la empresa",
+  strategic_review: "Revisión estratégica",
+};
 
 /** Origins update_account accepts: never «persona» (only a person's own edit is that). */
 export const ACCOUNT_SOURCES = ["ia", "apollo", "clay", "parallel", "web"] as const;

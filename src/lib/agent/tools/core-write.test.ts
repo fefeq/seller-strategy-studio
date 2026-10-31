@@ -7,7 +7,12 @@ import { CORE_WRITE_TOOLS } from "./core-write";
 describe("create_account input (SDD field-write-paths-normalization, CA-7)", () => {
   const tool = CORE_WRITE_TOOLS.find((t) => t.name === "create_account")!;
   it("drops size and country when parsing, without an error", () => {
-    const r = tool.input.safeParse({ name: "Acme Test", domain: "acme.test", size: "51-200", country: "España" });
+    const r = tool.input.safeParse({
+      name: "Acme Test",
+      domain: "acme.test",
+      size: "51-200",
+      country: "España",
+    });
     expect(r.success).toBe(true);
     expect(r.success && r.data).toEqual({ name: "Acme Test", domain: "acme.test" });
   });

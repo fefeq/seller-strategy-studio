@@ -1045,8 +1045,25 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
 
 describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-7, CA-9, CA-10)", () => {
   it("returns the same next step as the screen, skipping a snoozed one, and only reads its own company", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "setup_step_snoozes" ? { data: [{ step_id: "positioning", snoozed_until: "2999-01-01T23:59:59.999Z", created_at: "2026-10-26T09:00:00Z" }] } : undefined));
-    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { guia: { mensaje: { stepId: string; why: string; start: string }; pospuestos: { paso: string }[] } };
+    const { db, log } = fakeDb((q) =>
+      q.table === "setup_step_snoozes"
+        ? {
+            data: [
+              {
+                step_id: "positioning",
+                snoozed_until: "2999-01-01T23:59:59.999Z",
+                created_at: "2026-10-26T09:00:00Z",
+              },
+            ],
+          }
+        : undefined,
+    );
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as {
+      guia: {
+        mensaje: { stepId: string; why: string; start: string };
+        pospuestos: { paso: string }[];
+      };
+    };
     expect(r.guia.mensaje.stepId).toBe("icp");
     expect(r.guia.mensaje.why).toContain("priorizar");
     expect(r.guia.mensaje.start).toBe("Empezar");
@@ -1056,17 +1073,27 @@ describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-
   });
   it("recommends a step the caller's role can complete", async () => {
     const { db } = fakeDb();
-    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { guia: { mensaje: { stepId: string } } };
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as {
+      guia: { mensaje: { stepId: string } };
+    };
     expect(r.guia.mensaje.stepId).toBe("accounts");
   });
   it("CA-8: an AE's status lists only what an AE can complete as missing and says the rest is outside their role", async () => {
     const { db } = fakeDb();
-    type Est = { missing: { id: string }[]; next: { id: string } | null; fuera_de_tu_rol: string[] };
-    const ae = ((await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }).estado;
+    type Est = {
+      missing: { id: string }[];
+      next: { id: string } | null;
+      fuera_de_tu_rol: string[];
+    };
+    const ae = (
+      (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }
+    ).estado;
     expect(ae.missing.map((i) => i.id)).toEqual(["accounts", "deals"]);
     expect(ae.next?.id).toBe("accounts");
     expect(ae.fuera_de_tu_rol).toHaveLength(6);
-    const owner = ((await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }).estado;
+    const owner = (
+      (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }
+    ).estado;
     expect(owner.missing).toHaveLength(8);
     expect(owner.next?.id).toBe("positioning");
     expect(owner.fuera_de_tu_rol).toEqual([]);
@@ -1128,17 +1155,40 @@ describe("segments: acquisition motion", () => {
 });
 
 describe("get_funnel_diagnosis", () => {
-  const seg = { id: ID(5), name: "Pymes", acv_min: 0, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null, acquisition_motion: null };
+  const seg = {
+    id: ID(5),
+    name: "Pymes",
+    acv_min: 0,
+    acv_max: null,
+    win_rate_target: null,
+    cac_target: null,
+    gross_margin_pct: null,
+    payback_months: null,
+    acquisition_motion: null,
+  };
 
   it("CA-8: reads only the caller's company, writes nothing and calls no provider", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { db, log } = fakeDb((q) => (q.table === "segments" ? { data: [seg] } : undefined));
-    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" })) as { quarter: string; segments: { phases: { id: string; status: string }[] }[] };
+    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" })) as {
+      quarter: string;
+      segments: { phases: { id: string; status: string }[] }[];
+    };
     expect(r.quarter).toBe("2026-Q3");
     expect(r.segments).toHaveLength(1);
     expect(r.segments[0]!.phases.find((p) => p.id === "acquisition")!.status).toBe("sin_datos");
     expect(writes(log)).toHaveLength(0);
-    expect(new Set(log.map((q) => q.table))).toEqual(new Set(["segments", "deals", "leads", "trials", "cac_costs", "posthog_connections", "stripe_snapshots"]));
+    expect(new Set(log.map((q) => q.table))).toEqual(
+      new Set([
+        "segments",
+        "deals",
+        "leads",
+        "trials",
+        "cac_costs",
+        "posthog_connections",
+        "stripe_snapshots",
+      ]),
+    );
     expectScoped(log);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
@@ -1150,10 +1200,22 @@ describe("get_funnel_diagnosis", () => {
     for (const t of ["leads", "trials"]) {
       const q = log.find((x) => x.table === t)!;
       expect(eq(q, "org_id", ORG), t).toBe(true);
-      expect(q.filters.some(([op]) => op === "gte"), t).toBe(true);
-      expect(q.filters.some(([op]) => op === "lt"), t).toBe(true);
+      expect(
+        q.filters.some(([op]) => op === "gte"),
+        t,
+      ).toBe(true);
+      expect(
+        q.filters.some(([op]) => op === "lt"),
+        t,
+      ).toBe(true);
     }
-    expect(eq(log.find((x) => x.table === "cac_costs")!, "period", "2026-Q3")).toBe(true);
+    expect(
+      eq(
+        log.find((x) => x.table === "cac_costs")!,
+        "period",
+        "2026-Q3",
+      ),
+    ).toBe(true);
   });
 
   it("is a read tool open to every role, with a title, and rejects a quarter that is not AAAA-QN", async () => {
@@ -1162,7 +1224,9 @@ describe("get_funnel_diagnosis", () => {
     expect(t.roles).toBeUndefined();
     expect(TITLES.get_funnel_diagnosis).toBeTruthy();
     const { db } = fakeDb();
-    await expect(executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-T3" })).rejects.toThrow();
+    await expect(
+      executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-T3" }),
+    ).rejects.toThrow();
   });
 
   it("CA-8 (structure): the diagnosis code imports no provider, gateway or sync module", async () => {
@@ -1170,7 +1234,10 @@ describe("get_funnel_diagnosis", () => {
     for (const f of ["src/lib/funnel-diagnosis.ts", "src/lib/funnel-diagnosis-data.ts"]) {
       const src = readFileSync(f, "utf8");
       const imports = [...src.matchAll(/from "([^"]+)"/g)].map((m) => m[1]!);
-      for (const i of imports) expect(i, `${f} imports ${i}`).not.toMatch(/gateway|\.server|posthog|stripe|apollo|clay|firecrawl|apify|parallel|perplexity|jev|inngest|ai-core/i);
+      for (const i of imports)
+        expect(i, `${f} imports ${i}`).not.toMatch(
+          /gateway|\.server|posthog|stripe|apollo|clay|firecrawl|apify|parallel|perplexity|jev|inngest|ai-core/i,
+        );
       expect(src, f).not.toMatch(/\bfetch\(/);
     }
   });
@@ -1179,6 +1246,7 @@ describe("get_funnel_diagnosis", () => {
     const { readFileSync } = await import("node:fs");
     const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
     const tools: { name: string; annotations: { readOnlyHint: boolean } }[] = manifest.mcp.tools;
-    for (const n of ["get_funnel_diagnosis", "list_segments"]) expect(tools.find((t) => t.name === n)?.annotations.readOnlyHint, n).toBe(true);
+    for (const n of ["get_funnel_diagnosis", "list_segments"])
+      expect(tools.find((t) => t.name === n)?.annotations.readOnlyHint, n).toBe(true);
   });
 });
