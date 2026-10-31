@@ -27,7 +27,8 @@ function fail(msg) {
 function args(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i].startsWith("--")) out[argv[i].slice(2)] = argv[++i];
+    // --approved-by and --approved_by are the same flag
+    if (argv[i].startsWith("--")) out[argv[i].slice(2).replaceAll("-", "_")] = argv[++i];
     else out._.push(argv[i]);
   }
   return out;

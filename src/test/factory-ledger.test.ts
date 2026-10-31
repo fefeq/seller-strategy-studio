@@ -91,3 +91,37 @@ describe("ledger promote guard", () => {
     expect(run("doc", t, "--sdd", "docs/sdd/missing.md").code).toBe(1);
   });
 });
+
+describe("ledger ship flags", () => {
+  const SHA = "abcdef1234567890abcdef1234567890abcdef12";
+
+  function promoted() {
+    const t = id(run("log", "Fix typo in empty state", "--kind", "bug").out);
+    expect(run("promote", t, ...GO).code).toBe(0);
+    const dir = join(root, ".factory/evidence", t);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `gate-${SHA.slice(0, 12)}.json`), JSON.stringify({ verdict: "PASS" }));
+    return t;
+  }
+
+  it("ships with the documented --approved-by flag", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA, "--approved-by", "Fede");
+    expect(r.out).toMatch(/SHIPPED/);
+    expect(r.code).toBe(0);
+  });
+
+  it("still ships with the legacy --approved_by flag", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA, "--approved_by", "Fede");
+    expect(r.out).toMatch(/SHIPPED/);
+    expect(r.code).toBe(0);
+  });
+
+  it("fails with a clear message when nobody approves", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA);
+    expect(r.code).toBe(1);
+    expect(r.out).toMatch(/ship needs --approved-by/);
+  });
+});
