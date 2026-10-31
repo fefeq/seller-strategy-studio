@@ -410,3 +410,24 @@ describe("money notices (migration 0074)", () => {
     expect(await notices()).toHaveLength(0);
   });
 });
+
+describe("migration 0074: the CHECK rewrite is scoped to notifications.kind (N-4)", () => {
+  it("replaces the kind CHECK even under another name, and keeps any other CHECK that merely mentions kind", async () => {
+    const { db, A, B } = await world(false);
+    await db.exec(`alter table public.notifications rename constraint notifications_kind_check to legacy_kind_check;
+      alter table public.notifications add constraint notifications_failed_needs_title check (kind <> 'failed' or length(title) > 3);`);
+    const user = "00000000-0000-4000-8000-0000000000b1";
+    const insert = (kind: string, title: string) => db.exec(`insert into notifications (org_id, user_id, kind, title) values ('${A}','${user}','${kind}','${title}')`);
+    const failure = async (fn: () => Promise<unknown>) => { try { await fn(); return ""; } catch (e) { return String((e as Error).message); } };
+    expect(B).toBeTruthy();
+    expect(await failure(() => insert("money", "aviso"))).toMatch(/kind_check|check constraint/i); // before: money is not allowed
+    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
+    await insert("money", "aviso"); // after: money goes in
+    expect(await failure(() => insert("otro", "aviso"))).toMatch(/notifications_kind_check/); // the new kind CHECK still rejects unknown kinds
+    expect(await failure(() => insert("failed", "no"))).toMatch(/notifications_failed_needs_title/); // the unrelated CHECK survived
+    await insert("failed", "titulo largo"); // control: it still lets valid rows through
+    const names = (await db.query<Row>("select conname from pg_constraint where conrelid = 'public.notifications'::regclass and contype = 'c' order by conname")).rows.map((r) => r["conname"]);
+    expect(names).not.toContain("legacy_kind_check");
+    expect(names).toContain("notifications_failed_needs_title");
+  });
+});

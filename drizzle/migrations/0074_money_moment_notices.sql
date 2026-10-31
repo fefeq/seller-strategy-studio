@@ -1,10 +1,12 @@
 -- NK-0030 (SDD-20261030 money-moment-notices): a notice «money» when a lead enters SQL or a deal turns won, from any write path.
 -- Fixed text, one notice per person, type, company and UTC hour (dedupe_key), and a failing notice never reverts the write.
 
--- 1. kind admits 'money'. The CHECK is found by its definition, not only by name, in case another environment named it differently.
+-- 1. kind admits 'money'. Only the CHECK that constrains notifications.kind alone is replaced (found by table and column, not by name, in case
+-- another environment named it differently); any other CHECK that merely mentions kind is left as it is.
 do $$ declare c text; begin
   for c in select conname from pg_constraint
-    where conrelid = 'public.notifications'::regclass and contype = 'c' and pg_get_constraintdef(oid) ilike '%kind%'
+    where conrelid = 'public.notifications'::regclass and contype = 'c'
+      and conkey = array[(select attnum from pg_attribute where attrelid = 'public.notifications'::regclass and attname = 'kind')]
   loop
     execute format('alter table public.notifications drop constraint %I', c);
   end loop;
