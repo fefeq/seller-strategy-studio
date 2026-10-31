@@ -94,4 +94,4 @@ const raw: Record<string, string> = {
 export const BASELINE: Record<string, string[]> = Object.fromEntries(Object.entries(raw).map(([t, cs]) => [t, cs.split(" ")]));
 
 /** Upper bound of the baseline: lower it as columns get catalogued, never raise it. */
-export const BASELINE_MAX = 992;
+export const BASELINE_MAX = 981;
