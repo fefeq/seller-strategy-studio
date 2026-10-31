@@ -53,6 +53,7 @@ const PROSE = [
 ] as const;
 
 const LIST_FIELDS = ["search_keywords", "countries", "target_titles"] as const;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the draft mixes DB row fields and comma text for lists; typing it is NK-0034 debt
 type Draft = Record<string, any>;
 
 export function IcpEditor() {

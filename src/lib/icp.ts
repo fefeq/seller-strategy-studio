@@ -231,6 +231,7 @@ export const ICP_STRUCTURE_SCHEMA = {
 
 /** Parses the AI answer, keeping only sane values. */
 export function parseIcpStructure(raw: string): Partial<Icp> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped model JSON, every field is checked below; typing it is NK-0034 debt
   let o: any;
   try {
     o = JSON.parse(raw);
