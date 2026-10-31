@@ -16,6 +16,7 @@ import { Field, Pick } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
+import { accountInsertFromDraft } from "@/lib/apollo";
 import { CLAY_REVENUES, CLAY_SENIORITY, ENRICH_LABEL, SENIORITY_LABEL, enrichPatch, icpToQuery, quotaText, type ClayQuota, type EnrichChange, type EnrichField } from "@/lib/clay";
 import { clayCompanies, clayEnrich, clayIndustryList, clayPeople } from "@/lib/clay.functions";
 
@@ -93,7 +94,7 @@ function ClayProspect() {
     if (!chosen.length) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => ({ name: r.name, domain: r.domain, industry: r.industry, size: r.size, country: r.country, notes: r.description, is_target: target }))).select("id,domain");
+      const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => accountInsertFromDraft(r, target))).select("id,domain");
       if (error) throw error;
       await supabase.from("account_plans").insert((data ?? []).map((a) => ({ account_id: a.id })));
       const ids = new Map((data ?? []).map((a) => [a.domain, a.id]));

@@ -4,7 +4,7 @@ import type { ToolCtx } from "@/lib/agent/tool-kit";
 import { mustFind, ok } from "@/lib/agent/tool-kit";
 import { enrichChanges, existingByDomain, existingStakeholder, type AccountDraft, type EnrichChange } from "@/lib/clay";
 import {
-  APOLLO_PUBLISHED_URL, APOLLO_WEBHOOK_PATH, MAX_REVEAL, apolloErrorText, companyParams, matchDetails, matchToContact, orgToAccount, peopleParams, searchPersonPreview,
+  APOLLO_PUBLISHED_URL, APOLLO_WEBHOOK_PATH, MAX_REVEAL, apolloErrorText, companyParams, matchDetails, matchToContact, normalizeDraft, canonicalCurrent, orgToAccount, peopleParams, searchPersonPreview,
   type ApolloCompanyQuery, type ApolloMatch, type ApolloOrg, type ApolloPeopleQuery, type ApolloSearchPerson, type PersonPreview, type RevealedContact,
 } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
@@ -129,7 +129,7 @@ export async function findCompanies(c: ToolCtx, a: { query: ApolloCompanyQuery; 
   const { data } = await c.db.from("accounts").select("id,domain").eq("org_id", c.orgId).not("domain", "is", null).limit(5000);
   const has = existingByDomain(data ?? []);
   const totalPages = Number(r.pagination?.total_pages ?? 0);
-  return { page, hasMore: totalPages > page, rows: orgs.map((o) => { const d = orgToAccount(o); return { ...d, existingId: has(d.domain) }; }) };
+  return { page, hasMore: totalPages > page, rows: orgs.map((o) => { const d = normalizeDraft(orgToAccount(o)); return { ...d, existingId: has(d.domain) }; }) };
 }
 
 export type ApolloEnrichment = { found: boolean; company: AccountDraft | null; changes: EnrichChange[] };
@@ -140,6 +140,6 @@ export async function enrichAccount(c: ToolCtx, accountId: string): Promise<Apol
   const r = await apollo("/api/v1/organizations/bulk_enrich", [["domains[]", domain]]);
   const org = ((r.organizations ?? []) as (ApolloOrg | null)[])[0];
   if (!org) return { found: false, company: null, changes: [] };
-  const company = orgToAccount(org);
-  return { found: true, company, changes: enrichChanges(acc, company) };
+  const company = normalizeDraft(orgToAccount(org));
+  return { found: true, company, changes: enrichChanges(canonicalCurrent(acc), company) };
 }

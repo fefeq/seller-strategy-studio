@@ -19,6 +19,7 @@ import { type orchestrateIcpCompanies } from "@/lib/orchestrator.functions";
 import { icpCompanyQuery } from "@/lib/icp";
 import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
+import { accountInsertFromDraft } from "@/lib/apollo";
 import { splitList } from "@/components/orchestrator/key-people";
 
 // ---------------- «Buscar empresas por ICP» (Cuentas) ----------------
@@ -94,7 +95,7 @@ export function IcpCompanies({ onDeep }: { onDeep: () => void }) {
     if (!chosen.length) return;
     setBusy(true);
     try {
-      const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => ({ name: r.name, domain: r.domain, industry: r.industry, size: r.size, country: r.country, notes: r.description, is_target: target }))).select("id,domain");
+      const { data, error } = await supabase.from("accounts").insert(chosen.map((r) => accountInsertFromDraft(r, target))).select("id,domain");
       if (error) throw error;
       await supabase.from("account_plans").insert((data ?? []).map((a) => ({ account_id: a.id })));
       setImported(new Map([...imported, ...(data ?? []).filter((a) => a.domain).map((a) => [a.domain!, a.id] as [string, string])]));

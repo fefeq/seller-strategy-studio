@@ -2,7 +2,7 @@
 // the screens, the agent tools and MCP. Gateway calls live in src/lib/apollo-gateway.ts.
 import { cleanDomain } from "@/lib/leads";
 import { normalizeForSave } from "@/lib/field-normalize";
-import { englishCountry, isoFromCountry, type AccountDraft } from "@/lib/clay";
+import { englishCountry, isoFromCountry, type AccountDraft, type EnrichField } from "@/lib/clay";
 
 export const APOLLO_SENIORITY = ["owner", "founder", "c_suite", "partner", "vp", "head", "director", "manager", "senior", "entry"] as const;
 export const APOLLO_SENIORITY_LABEL: Record<string, string> = {
@@ -67,17 +67,55 @@ export function orgToAccount(o: ApolloOrg): AccountDraft {
   };
 }
 
-/** The accounts row for an Apollo company: size and country go through the single rule (country empty when it does not fit). */
-export function accountInsertFromApollo(d: AccountDraft, isTarget: boolean) {
+/**
+ * Size and country of a provider draft in their canonical form (SDD field-write-paths-normalization, CA-1).
+ * What does not fit is dropped (empty), not kept: a provider's size that is not a headcount is not saved.
+ * Only for proposed or inserted values, never for the value an account already has (see canonicalCurrent).
+ */
+export function normalizeDraft(d: AccountDraft): AccountDraft {
   const size = normalizeForSave("accounts", "size", d.size);
   const country = normalizeForSave("accounts", "country", d.country);
   return {
-    name: d.name,
-    domain: d.domain,
-    industry: d.industry,
-    size: (size.value as string | null) ?? null,
+    ...d,
+    size: size.status === "ok" ? (size.value as string) : null,
     country: country.status === "ok" ? (country.value as string) : null,
-    notes: d.description,
+  };
+}
+
+/**
+ * A change an automatic or web source proposes, with size and country in canonical form; null when the value
+ * does not fit (a country that is not recognised, a size that is not a headcount), so it is neither written
+ * nor offered (SDD field-write-paths-normalization, CA-3, CA-4). Other fields pass through.
+ */
+export function normalizeProposed<T extends { field: EnrichField; proposed: string }>(change: T): T | null {
+  if (change.field !== "size" && change.field !== "country") return change;
+  const n = normalizeForSave("accounts", change.field, change.proposed);
+  return n.status === "ok" ? { ...change, proposed: n.value as string } : null;
+}
+
+/**
+ * The value an account already has, size and country in canonical form, so a value that only differs in
+ * format is not proposed again (SDD field-write-paths-normalization, CA-6). What does not fit, and what is
+ * empty, stays as it is: a filled field must never look empty, or an automatic run would overwrite it.
+ */
+export function canonicalCurrent<T extends { size: string | null; country: string | null }>(account: T): T {
+  const canon = (field: "size" | "country", v: string | null) => {
+    const n = normalizeForSave("accounts", field, v);
+    return n.status === "ok" ? (n.value as string) : v;
+  };
+  return { ...account, size: canon("size", account.size), country: canon("country", account.country) };
+}
+
+/** The accounts row for a provider company (Apollo, Clay): size and country go through the single rule, empty when they do not fit. */
+export function accountInsertFromDraft(d: AccountDraft, isTarget: boolean) {
+  const n = normalizeDraft(d);
+  return {
+    name: n.name,
+    domain: n.domain,
+    industry: n.industry,
+    size: n.size,
+    country: n.country,
+    notes: n.description,
     is_target: isTarget,
   };
 }

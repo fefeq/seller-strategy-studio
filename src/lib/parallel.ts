@@ -4,6 +4,7 @@ import { icpBrief, type Icp } from "@/lib/icp";
 // table in chunks of 5, and search results as news items.
 import { cleanDomain } from "@/lib/leads";
 import { isoFromCountry } from "@/lib/clay";
+import { normalizeForSave } from "@/lib/field-normalize";
 
 // ---------------- Deep account report (Task run) ----------------
 
@@ -168,7 +169,9 @@ export function readEnrichRows(json: unknown, lookup: Map<string, string>): Enri
     if (id) seen.add(id);
     if (!id) return [];
     const src = clean(r.source_url);
-    return [{ account_id: id, industry: clean(r.industry), size: clean(r.size), country: isoFromCountry(clean(r.country)), funding: clean(r.funding), technology: clean(r.technology), source_url: src && /^https?:\/\//.test(src) ? src : null }];
+    // Size is the canonical text or nothing: a size that is not a headcount is not saved (SDD field-write-paths-normalization, CA-5).
+    const size = normalizeForSave("accounts", "size", clean(r.size));
+    return [{ account_id: id, industry: clean(r.industry), size: size.status === "ok" ? (size.value as string) : null, country: isoFromCountry(clean(r.country)), funding: clean(r.funding), technology: clean(r.technology), source_url: src && /^https?:\/\//.test(src) ? src : null }];
   });
 }
 

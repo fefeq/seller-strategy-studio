@@ -44,6 +44,12 @@ describe("enrichment table", () => {
     expect(rows.map((r) => [r.account_id, r.industry])).toEqual([["acc1", "SaaS"], ["acc2", "HR"]]);
     expect(rows[0]).toEqual({ account_id: "acc1", industry: "SaaS", size: null, country: "ES", funding: null, technology: "HubSpot", source_url: "https://x.com" });
   });
+  it("saves the size in canonical form and not a size that is not a headcount (SDD field-write-paths-normalization, CA-5)", () => {
+    const lookup = enrichLookup([{ key: "r1", name: "Typeform", domain: "typeform.com", id: "acc1" }, { key: "r2", name: "Factorial", domain: "factorialhr.com", id: "acc2" }]);
+    const rows = readEnrichRows({ rows: [{ key: "r1", size: "50-100" }, { key: "r2", size: "unos 50" }] }, lookup);
+    expect(rows[0]?.size).toBe("50–100 empleados");
+    expect(rows[1]?.size).toBeNull();
+  });
   it("fills only empty fields and adds funding and technology as a note line", () => {
     const p = enrichPatch({ industry: "Fintech", size: null, country: "", notes: "Cliente potente" }, { account_id: "a", industry: "SaaS", size: "200 empleados", country: "ES", funding: "Serie A 10 M€ (2026)", technology: null, source_url: null });
     expect(p).toEqual({ size: "200 empleados", country: "ES", notes: "Cliente potente\nFinanciación: Serie A 10 M€ (2026)" });

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { companyToAccount, enrichChanges } from "./clay";
 import {
   apolloErrorText,
   apolloWebhookBase,
@@ -6,7 +7,9 @@ import {
   matchDetails,
   matchToContact,
   orgToAccount,
-  accountInsertFromApollo,
+  accountInsertFromDraft,
+  canonicalCurrent,
+  normalizeDraft,
   peopleParams,
   phonesFromWebhook,
   sameSecret,
@@ -80,7 +83,7 @@ describe("apollo errors", () => {
   });
 });
 
-describe("accountInsertFromApollo (SDD universal-field-definitions, CA-1, CA-3)", () => {
+describe("accountInsertFromDraft (SDD universal-field-definitions, CA-1, CA-3)", () => {
   const draft = {
     name: "Acme Test",
     domain: "acme.test",
@@ -93,7 +96,7 @@ describe("accountInsertFromApollo (SDD universal-field-definitions, CA-1, CA-3)"
     revenue: null,
   };
   it("saves size and country through the single rule", () => {
-    expect(accountInsertFromApollo(draft, true)).toEqual({
+    expect(accountInsertFromDraft(draft, true)).toEqual({
       name: "Acme Test",
       domain: "acme.test",
       industry: "Software",
@@ -105,7 +108,63 @@ describe("accountInsertFromApollo (SDD universal-field-definitions, CA-1, CA-3)"
   });
   it("leaves a country that does not fit empty and keeps the rest", () => {
     expect(
-      accountInsertFromApollo({ ...draft, size: null, country: "Narnia" }, false),
+      accountInsertFromDraft({ ...draft, size: null, country: "Narnia" }, false),
     ).toMatchObject({ size: null, country: null, is_target: false });
+  });
+});
+
+describe("normalizeDraft (SDD field-write-paths-normalization, CA-1)", () => {
+  const fromClay = (size: string | null, country: string | null = "Spain") =>
+    normalizeDraft(companyToAccount({ name: "Acme Test", domain: "acme.test", size, country }));
+  it("turns Clay's size texts into the canonical text", () => {
+    expect(fromClay("51-200 employees").size).toBe("51–200 empleados");
+    expect(fromClay("10,001+ employees").size).toBe("más de 10001 empleados");
+    expect(fromClay("1001-5000 employees").size).toBe("1001–5000 empleados");
+  });
+  it("drops a size that is not a headcount", () => {
+    expect(fromClay("Self-employed").size).toBeNull();
+    expect(fromClay("0-1 employees").size).toBeNull();
+    expect(fromClay(null).size).toBeNull();
+  });
+  it("keeps a recognised country as ISO and leaves the rest of the draft alone", () => {
+    const d = fromClay("51-200 employees");
+    expect(d).toMatchObject({ name: "Acme Test", domain: "acme.test", country: "ES" });
+  });
+  it("drops a country that does not fit", () => {
+    expect(normalizeDraft({ ...fromClay(null), country: "Madrid, España" }).country).toBeNull();
+  });
+});
+
+describe("accountInsertFromDraft drops a size that is not a headcount (SDD field-write-paths-normalization, CA-2)", () => {
+  const row = { name: "Acme Test", domain: "acme.test", industry: null, size: "51-200 empleados", country: "ES", linkedin: null, description: null, location: null, revenue: null };
+  it("normalizes a row prepared with the old Clay format", () => {
+    expect(accountInsertFromDraft(row, false).size).toBe("51–200 empleados");
+  });
+  it("does not save «Self-employed empleados»", () => {
+    expect(accountInsertFromDraft({ ...row, size: "Self-employed empleados" }, false).size).toBeNull();
+  });
+});
+
+describe("canonicalCurrent (SDD field-write-paths-normalization, CA-6)", () => {
+  const acc = { industry: "Software", size: "51-200 empleados", country: "ES", notes: null };
+  it("a current size that only differs in format produces no change", () => {
+    const cur = canonicalCurrent(acc);
+    expect(cur.size).toBe("51–200 empleados");
+    expect(enrichChanges(cur, { ...normalizeDraft(companyToAccount({ name: "A", size: "51-200 employees" })) })).toEqual([]);
+  });
+  it("keeps a current country that does not fit, so the field is never seen as empty", () => {
+    const cur = canonicalCurrent({ ...acc, country: "Madrid, España" });
+    expect(cur.country).toBe("Madrid, España");
+    const ch = enrichChanges(cur, normalizeDraft(companyToAccount({ name: "A", country: "France" })));
+    expect(ch).toEqual([{ field: "country", current: "Madrid, España", proposed: "FR", empty: false }]);
+  });
+  it("keeps a current size that is not a headcount and leaves empty fields empty", () => {
+    expect(canonicalCurrent({ ...acc, size: "unos 50" }).size).toBe("unos 50");
+    const empty = canonicalCurrent({ ...acc, size: null, country: "  " });
+    expect(empty.size).toBeNull();
+    expect(empty.country).toBe("  ");
+  });
+  it("canonizes a country written as a name", () => {
+    expect(canonicalCurrent({ ...acc, country: "España" }).country).toBe("ES");
   });
 });

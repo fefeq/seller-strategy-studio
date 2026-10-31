@@ -18,7 +18,7 @@ import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
 import {
   APOLLO_SENIORITY,
-  accountInsertFromApollo,
+  accountInsertFromDraft,
   APOLLO_SENIORITY_LABEL,
   MAX_REVEAL,
   PHONE_TYPE,
@@ -80,7 +80,7 @@ function ApolloProspect() {
     try {
       const { data, error } = await supabase
         .from("accounts")
-        .insert(chosen.map((r) => accountInsertFromApollo(r, target)))
+        .insert(chosen.map((r) => accountInsertFromDraft(r, target)))
         .select("id,domain");
       if (error) throw error;
       await supabase.from("account_plans").insert((data ?? []).map((a) => ({ account_id: a.id })));

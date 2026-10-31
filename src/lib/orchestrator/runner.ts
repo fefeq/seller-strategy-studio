@@ -3,6 +3,7 @@
 // Only imported from server code (functions handlers and agent tools): gateways read secrets at call time.
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import type { Json } from "@/integrations/supabase/types";
+import { normalizeProposed } from "@/lib/apollo";
 import { enrichAccount as apolloEnrich, findCompanies as apolloCompanies, findPeople as apolloPeople, revealToAccount } from "@/lib/apollo-gateway";
 import { enrichAccount as clayEnrich, findCompanies as clayCompanies, findPeople as clayPeople } from "@/lib/clay-gateway";
 import type { AccountDraft, CompanyQuery, EnrichChange, EnrichField } from "@/lib/clay";
@@ -68,7 +69,10 @@ async function webFallback(c: ToolCtx, accountId: string, fields: EnrichField[])
   try { parsed = JSON.parse(raw); } catch { return []; }
   return fields.flatMap((f) => {
     const v = parsed[f];
-    return v?.value?.trim() && quoteFound(v.quote, site.text) ? [{ field: f, current: null, proposed: v.value.trim().slice(0, f === "notes" ? 600 : 120), empty: true, source: "web", quote: v.quote.trim().slice(0, 300) }] : [];
+    if (!(v?.value?.trim() && quoteFound(v.quote, site.text))) return [];
+    // Size and country go through the single rule: what does not fit is not proposed (SDD field-write-paths-normalization).
+    const change = normalizeProposed({ field: f, current: null, proposed: v.value.trim().slice(0, f === "notes" ? 600 : 120), empty: true, source: "web", quote: v.quote.trim().slice(0, 300) });
+    return change ? [change] : [];
   });
 }
 
@@ -117,12 +121,13 @@ export async function completeAccount(c: ToolCtx, accountId: string, trigger: Tr
 }
 
 /** Writes the empty fields an automatic run found, stamped «Automático · fuente · fecha». Returns the field names written. */
-export async function applyAutoChanges(c: ToolCtx, accountId: string, changes: SourcedChange[], at: string): Promise<EnrichField[]> {
+export async function applyAutoChanges(c: ToolCtx, accountId: string, found: SourcedChange[], at: string): Promise<EnrichField[]> {
   const { stampSources } = await import("@/lib/provenance");
-  const { fieldProposalDecision, proposalSuggestion, PROPOSABLE_FIELDS } = await import("@/lib/field-proposals");
+  const { proposalSuggestion, splitAutoChanges } = await import("@/lib/field-proposals");
+  // Size and country are canonical or not written at all, whatever source produced them.
+  const changes = found.flatMap((ch) => normalizeProposed(ch) ?? []);
   // Only an empty field is written; what a person (or an older process) left there is never replaced.
-  const fill = changes.filter((ch) => ch.empty && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "write");
-  const offers = changes.filter((ch) => PROPOSABLE_FIELDS.includes(ch.field) && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "propose");
+  const { fill, offers } = splitAutoChanges(changes);
   if (!fill.length && !offers.length) return [];
   const { data: acc } = await c.db.from("accounts").select("name,owner_id,field_sources").eq("org_id", c.orgId).eq("id", accountId).maybeSingle();
   // A different value for a filled field becomes a pending suggestion; a dismissed value never returns (same key).

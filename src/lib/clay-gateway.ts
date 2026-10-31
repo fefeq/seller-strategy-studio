@@ -6,6 +6,7 @@ import {
   MAX_PAGE, clayErrorText, companyFilters, companyToAccount, enrichChanges, existingByDomain, existingStakeholder, peopleFilters, personToStakeholder,
   type AccountDraft, type ClayCompany, type ClayPerson, type ClayQuota, type CompanyQuery, type EnrichChange, type PeopleQuery, type StakeholderDraft,
 } from "@/lib/clay";
+import { canonicalCurrent, normalizeDraft } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/clay";
@@ -64,7 +65,7 @@ export async function findCompanies(c: ToolCtx, a: { query?: CompanyQuery; searc
   const page = await search<ClayCompany>("companies", filters, a.searchId, a.limit ?? 10);
   const { data } = await c.db.from("accounts").select("id,domain").eq("org_id", c.orgId).not("domain", "is", null).limit(5000);
   const has = existingByDomain(data ?? []);
-  return { ...page, rows: page.rows.map((r) => { const d = companyToAccount(r); return { ...d, existingId: has(d.domain) }; }) };
+  return { ...page, rows: page.rows.map((r) => { const d = normalizeDraft(companyToAccount(r)); return { ...d, existingId: has(d.domain) }; }) };
 }
 
 export type PersonHit = StakeholderDraft & { existingId: string | null };
@@ -86,6 +87,6 @@ export async function enrichAccount(c: ToolCtx, accountId: string): Promise<Enri
   const page = await search<ClayCompany>("companies", { include_company_identifiers: [domain] }, undefined, 1);
   const hit = page.rows[0];
   if (!hit) return { found: false, company: null, changes: [], quota: page.quota };
-  const company = companyToAccount(hit);
-  return { found: true, company, changes: enrichChanges(acc, company), quota: page.quota };
+  const company = normalizeDraft(companyToAccount(hit));
+  return { found: true, company, changes: enrichChanges(canonicalCurrent(acc), company), quota: page.quota };
 }

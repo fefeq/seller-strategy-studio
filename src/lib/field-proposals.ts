@@ -23,6 +23,17 @@ export function fieldProposalDecision(field: EnrichField, current: string | null
   return canon(field, current!) === canon(field, proposed!) ? "same" : "propose";
 }
 
+/**
+ * What an automatic run does with the changes it found: write the empty fields, offer a different value for a
+ * filled one, ignore the same value in another format. A filled field is never replaced here (CA-6).
+ */
+export function splitAutoChanges<T extends { field: EnrichField; current: string | null; proposed: string; empty: boolean }>(changes: T[]): { fill: T[]; offers: T[] } {
+  return {
+    fill: changes.filter((ch) => ch.empty && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "write"),
+    offers: changes.filter((ch) => PROPOSABLE_FIELDS.includes(ch.field) && fieldProposalDecision(ch.field, ch.current, ch.proposed) === "propose"),
+  };
+}
+
 /** FNV-1a, so the same proposed value always has the same key and a dismissed one never comes back. */
 const hash = (s: string) => {
   let h = 0x811c9dc5;
