@@ -61,12 +61,18 @@ const ev = (n: number) =>
   }));
 const strategic = (
   id: string,
-  over: { priority?: 1 | 2 | 3; evidence?: number; sample?: number; created?: string } = {},
+  over: {
+    priority?: 1 | 2 | 3;
+    evidence?: number;
+    sample?: number;
+    created?: string;
+    action_type?: "strategy_change" | "experiment" | "commercial_action";
+  } = {},
 ) => {
   const b = buildStrategySuggestion({
     element: "icp",
     kind: "create",
-    action_type: "strategy_change",
+    action_type: over.action_type ?? "strategy_change",
     cause: id,
     priority: over.priority ?? 2,
     title: `Estratégica ${id}`,
@@ -158,6 +164,130 @@ describe("board: list and team view (desktop table and phone cards)", () => {
     await waitFor(() =>
       expect(hoisted.decide).toHaveBeenCalledWith({ data: { id: "a", decision: "approve" } }),
     );
+  });
+  it("Aceptar on an experiment or a commercial action opens the form and decides nothing until it is confirmed", async () => {
+    for (const action_type of ["experiment", "commercial_action"] as const) {
+      hoisted.decide.mockClear();
+      hoisted.rows = [strategic("a", { action_type })];
+      const { unmount } = wrap(<SuggestionBoard />);
+      await screen.findAllByText("Estratégica a");
+      fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+      expect(
+        await screen.findByRole("button", {
+          name:
+            action_type === "experiment" ? "Aceptar y crear experimento" : "Aceptar y crear tarea",
+        }),
+      ).toBeInTheDocument();
+      expect(hoisted.decide).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Cancelar" })).toBeNull());
+      expect(hoisted.decide).not.toHaveBeenCalled();
+      unmount();
+    }
+  });
+  // NK-0038 / CA-2: confirming the form sends approve with the edited draft and the reason typed on the row (coverage test, not fail-first).
+  it.each([
+    {
+      action_type: "experiment",
+      confirm: "Aceptar y crear experimento",
+      execute: (title: string) => ({
+        kind: "experiment",
+        draft: expect.objectContaining({
+          title,
+          metric: "tasa de respuesta",
+          review_on: expect.any(String),
+        }),
+      }),
+    },
+    {
+      action_type: "commercial_action",
+      confirm: "Aceptar y crear tarea",
+      execute: (title: string) => ({
+        kind: "task",
+        draft: expect.objectContaining({ title, owner_id: "u1", due_date: expect.any(String) }),
+      }),
+    },
+  ] as const)(
+    "CA-2: confirming the form for $action_type sends approve with the edited draft and the reason",
+    async ({ action_type, confirm, execute }) => {
+      hoisted.rows = [strategic("a", { action_type })];
+      wrap(<SuggestionBoard />);
+      await screen.findAllByText("Estratégica a");
+      fireEvent.change(screen.getAllByLabelText("Motivo de tu decisión (opcional)")[0]!, {
+        target: { value: "  Tras la reunión  " },
+      });
+      fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+      const dialog = await screen.findByRole("dialog");
+      fireEvent.change(within(dialog).getAllByRole("textbox")[0]!, {
+        target: { value: "Título editado" },
+      });
+      if (action_type === "experiment")
+        fireEvent.change(within(dialog).getByPlaceholderText("Ej.: tasa de respuesta"), {
+          target: { value: "tasa de respuesta" },
+        });
+      fireEvent.click(within(dialog).getByRole("button", { name: confirm }));
+      await waitFor(() => expect(hoisted.decide).toHaveBeenCalledTimes(1));
+      expect(hoisted.decide).toHaveBeenCalledWith({
+        data: {
+          id: "a",
+          decision: "approve",
+          reason: "Tras la reunión",
+          execute: execute("Título editado"),
+        },
+      });
+    },
+  );
+  // NK-0038 / copy of the row: a refetch that drops the row must not close the form or lose what was typed (fail-first).
+  it("keeps the form open and the edits when a refetch takes the row out of the list", async () => {
+    hoisted.rows = [strategic("a", { action_type: "experiment" })];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <SuggestionBoard />
+      </QueryClientProvider>,
+    );
+    await screen.findAllByText("Estratégica a");
+    fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(within(dialog).getByPlaceholderText("Ej.: tasa de respuesta"), {
+      target: { value: "tasa de respuesta" },
+    });
+    hoisted.rows = []; // another person decided it: the next fetch no longer returns the row
+    await client.refetchQueries({ queryKey: ["suggestions", "board"] });
+    await waitFor(() => expect(screen.queryAllByText("Estratégica a")).toHaveLength(0));
+    const still = screen.getByRole("dialog");
+    expect(within(still).getByPlaceholderText("Ej.: tasa de respuesta")).toHaveValue(
+      "tasa de respuesta",
+    );
+    fireEvent.click(within(still).getByRole("button", { name: "Aceptar y crear experimento" }));
+    await waitFor(() => expect(hoisted.decide).toHaveBeenCalledTimes(1));
+    expect(hoisted.decide).toHaveBeenCalledWith({
+      data: expect.objectContaining({ id: "a", decision: "approve" }),
+    });
+  });
+  // NK-0038 / CA-4: regression guards (they pass before and after the fix, so they are not fail-first).
+  it("CA-4 guard: «Marcar como hecha» on an operational suggestion sends approve directly", async () => {
+    hoisted.rows = [operational("o")];
+    wrap(<SuggestionBoard />);
+    await screen.findAllByText("Operativa o");
+    fireEvent.click(screen.getAllByRole("button", { name: "Marcar como hecha" })[0]!);
+    await waitFor(() =>
+      expect(hoisted.decide).toHaveBeenCalledWith({ data: { id: "o", decision: "approve" } }),
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+  it("CA-4 guard: Aceptar on a data_to_complete suggestion sends approve directly", async () => {
+    // buildStrategySuggestion forces data_to_complete when there is no evidence
+    const s = strategic("d", { evidence: 0 });
+    expect(JSON.stringify(s.strategy)).toContain("data_to_complete");
+    hoisted.rows = [s];
+    wrap(<SuggestionBoard />);
+    await screen.findAllByText("Estratégica d");
+    fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+    await waitFor(() =>
+      expect(hoisted.decide).toHaveBeenCalledWith({ data: { id: "d", decision: "approve" } }),
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
   it("the optional reason typed on a strategic row travels with the decision; operational rows have no reason field", async () => {
     hoisted.rows = [strategic("a"), operational("o")];
