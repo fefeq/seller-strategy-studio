@@ -21,7 +21,7 @@ export const INBOX_TOOLS: AgentTool[] = [
   }),
   def({
     name: "decide_suggestion", kind: "write",
-    description: "Gestiona una sugerencia pendiente (ids de list_suggestions): approve ejecuta su acción si tiene una (o la marca hecha), snooze la pospone 3 días y dismiss la descarta para siempre.",
+    description: "Gestiona una sugerencia pendiente (ids de list_suggestions): approve ejecuta su acción si tiene una (o la marca hecha), snooze la pospone 3 días y dismiss la descarta para siempre. Las sugerencias de tipo prueba (experimento) o acción comercial (tarea) no se aceptan por aquí: se aceptan desde Sugerencias, donde la persona revisa el formulario; aquí solo se pueden posponer o descartar.",
     input: z.object({ suggestion_id: z.string().uuid(), decision: z.enum(["approve", "snooze", "dismiss"]) }),
     summarize: (a) => ({ approve: "Aprobar la sugerencia", snooze: "Posponer la sugerencia 3 días", dismiss: "Descartar la sugerencia" })[a.decision],
     run: async (c, a) => {

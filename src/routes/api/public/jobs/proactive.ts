@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
-import { actionTool } from "@/lib/json";
+import { digestMessage, urgentMessage } from "@/lib/telegram-suggestions";
 
 const BATCH = 100;
 
@@ -108,12 +108,13 @@ async function notifyUrgent(db: Admin) {
   for (const l of links ?? []) {
     const { data: prof } = await db.from("profiles").select("current_org_id").eq("id", l.user_id).maybeSingle();
     if (!prof?.current_org_id) continue;
-    const { data: urgent } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("priority", 1).is("notified_at", null).or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(3);
+    const { data: urgent } = await db.from("suggestions").select("id,title,body,action,strategy").eq("org_id", prof.current_org_id).eq("status", "pending").eq("priority", 1).is("notified_at", null).or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(3);
     // «Te han asignado N cuentas» goes to its person too, though it is not urgent.
-    const { data: assigned } = await db.from("suggestions").select("id,title,body,action").eq("org_id", prof.current_org_id).eq("status", "pending").eq("detector", "account_assigned").eq("user_id", l.user_id).is("notified_at", null).limit(3);
+    const { data: assigned } = await db.from("suggestions").select("id,title,body,action,strategy").eq("org_id", prof.current_org_id).eq("status", "pending").eq("detector", "account_assigned").eq("user_id", l.user_id).is("notified_at", null).limit(3);
     for (const s of [...(urgent ?? []), ...(assigned ?? [])]) {
       try {
-        await sendText(l.chat_id!, `${s.title}\n${s.body}`, [[{ text: actionTool(s.action) ? "Aprobar y hacer" : "Hecho", data: `s:${s.id}:approve` }, { text: "En 3 días", data: `s:${s.id}:snooze` }, { text: "Descartar", data: `s:${s.id}:dismiss` }]]);
+        const m = urgentMessage(s);
+        await sendText(l.chat_id!, m.text, m.buttons);
         await db.from("suggestions").update({ notified_at: new Date().toISOString() }).eq("id", s.id);
       } catch (e) { console.error("notify failed", e); }
     }
@@ -130,14 +131,12 @@ async function sendDigests(db: Admin) {
   for (const l of links ?? []) {
     const { data: prof } = await db.from("profiles").select("current_org_id,full_name").eq("id", l.user_id).maybeSingle();
     if (!prof?.current_org_id) continue;
-    const { data: items } = await db.from("suggestions").select("id,title,priority,created_at").eq("org_id", prof.current_org_id).eq("status", "pending").or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(50);
+    const { data: items } = await db.from("suggestions").select("id,title,priority,created_at,strategy").eq("org_id", prof.current_org_id).eq("status", "pending").or(`user_id.is.null,user_id.eq.${l.user_id}`).limit(50);
     const top = digest(items ?? [], 3);
     const name = prof.full_name?.split(" ")[0] ?? "";
-    const text = top.length
-      ? `Buenos días${name ? `, ${name}` : ""}. 3 cosas para hoy:\n\n${top.map((t, i) => `${i + 1}. ${t.title}`).join("\n")}\n\nPulsa para gestionarlas o pregúntame lo que quieras.`
-      : `Buenos días${name ? `, ${name}` : ""}. Nada urgente hoy. ¿En qué te ayudo?`;
+    const m = digestMessage(top, name);
     try {
-      await sendText(l.chat_id!, text, top.map((t, i) => [{ text: `Hecho ${i + 1}`, data: `s:${t.id}:approve` }, { text: `Posponer ${i + 1}`, data: `s:${t.id}:snooze` }]));
+      await sendText(l.chat_id!, m.text, m.buttons);
       sent++;
     } catch (e) { console.error("digest failed", e); }
   }

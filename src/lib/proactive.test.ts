@@ -245,3 +245,112 @@ describe("product usage detectors", () => {
     expect(k.map((x) => [x.detector, x.dedupe_key, x.priority])).toEqual([["usage_drop", "usage_drop:a2:2026-10-19", 1]]);
   });
 });
+
+// ---- Telegram messages for a suggestion (NK-0041, CA-4): what the urgent notice and the daily digest offer ----
+import { digestMessage, urgentMessage } from "./telegram-suggestions";
+import { buildStrategySuggestion, STRATEGY_ACTIONS } from "./strategy-suggestions";
+
+const strategyOf = (action_type: (typeof STRATEGY_ACTIONS)[number]) =>
+  buildStrategySuggestion({
+    element: "pipeline",
+    kind: "validate",
+    action_type,
+    cause: "c",
+    priority: 1,
+    title: "t",
+    body: "b",
+    evidence: [{ table: "deals", id: "d1", label: "Deal 1" }],
+  }).strategy;
+const urgent = (o: Record<string, unknown> = {}) => ({
+  id: "s1",
+  title: "Título",
+  body: "Cuerpo",
+  action: null,
+  strategy: null as unknown,
+  ...o,
+});
+const texts = (rows: { text: string }[][]) => rows.map((r) => r.map((b) => b.text));
+
+describe("Telegram messages: suggestions that need no form (unchanged behaviour)", () => {
+  it("urgent notice: «Hecho», «En 3 días» and «Descartar», text is title and body", () => {
+    const m = urgentMessage(urgent());
+    expect(m.text).toBe("Título\nCuerpo");
+    expect(texts(m.buttons)).toEqual([["Hecho", "En 3 días", "Descartar"]]);
+    expect(m.buttons[0]!.map((b) => b.data)).toEqual([
+      "s:s1:approve",
+      "s:s1:snooze",
+      "s:s1:dismiss",
+    ]);
+  });
+  it("urgent notice with an action to run says «Aprobar y hacer»", () => {
+    const m = urgentMessage(urgent({ action: { tool: "update_task", args: {} } }));
+    expect(texts(m.buttons)).toEqual([["Aprobar y hacer", "En 3 días", "Descartar"]]);
+  });
+  it("a strategic suggestion that changes strategy or asks for data is unchanged too", () => {
+    for (const t of ["strategy_change", "data_to_complete"] as const) {
+      const m = urgentMessage(urgent({ strategy: strategyOf(t) }));
+      expect(m.text).toBe("Título\nCuerpo");
+      expect(texts(m.buttons)).toEqual([["Hecho", "En 3 días", "Descartar"]]);
+    }
+  });
+  it("digest: numbered titles and «Hecho n» + «Posponer n» per line", () => {
+    const m = digestMessage(
+      [
+        { id: "a", title: "Uno", strategy: null },
+        { id: "b", title: "Dos", strategy: strategyOf("data_to_complete") },
+      ],
+      "Ana",
+    );
+    expect(m.text).toBe(
+      "Buenos días, Ana. 3 cosas para hoy:\n\n1. Uno\n2. Dos\n\nPulsa para gestionarlas o pregúntame lo que quieras.",
+    );
+    expect(texts(m.buttons)).toEqual([
+      ["Hecho 1", "Posponer 1"],
+      ["Hecho 2", "Posponer 2"],
+    ]);
+    expect(m.buttons[1]!.map((b) => b.data)).toEqual(["s:b:approve", "s:b:snooze"]);
+  });
+  it("digest with nothing and no name", () => {
+    expect(digestMessage([], "")).toEqual({
+      text: "Buenos días. Nada urgente hoy. ¿En qué te ayudo?",
+      buttons: [],
+    });
+  });
+});
+
+describe("Telegram messages: a test or a commercial action is completed in the app (CA-4)", () => {
+  for (const t of ["experiment", "commercial_action"] as const) {
+    it(`${t}: the urgent notice offers only «En 3 días» and «Descartar» and sends to Sugerencias`, () => {
+      const m = urgentMessage(
+        urgent({ strategy: strategyOf(t), action: { tool: "update_task", args: {} } }),
+      );
+      expect(texts(m.buttons)).toEqual([["En 3 días", "Descartar"]]);
+      expect(m.buttons[0]!.some((b) => b.data.endsWith(":approve"))).toBe(false);
+      expect(m.text).toBe("Título\nCuerpo\nComplétala en Sugerencias.");
+    });
+    it(`${t}: the digest offers only «Posponer n» and marks the line`, () => {
+      const m = digestMessage(
+        [
+          { id: "a", title: "Uno", strategy: null },
+          { id: "b", title: "Dos", strategy: strategyOf(t) },
+        ],
+        "",
+      );
+      expect(m.text).toContain("1. Uno\n2. Dos (se completa en Sugerencias)\n");
+      expect(texts(m.buttons)).toEqual([["Hecho 1", "Posponer 1"], ["Posponer 2"]]);
+      expect(m.buttons.flat().filter((b) => b.data === "s:b:approve")).toEqual([]);
+    });
+  }
+});
+
+describe("the proactive route fetches strategy for the rows it sends (structure)", () => {
+  it("the three suggestion selects of notifyUrgent and sendDigests bring `strategy`", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/routes/api/public/jobs/proactive.ts", "utf8");
+    const selects = [...src.matchAll(/from\("suggestions"\)\.select\("([^"]+)"\)/g)].map(
+      (m) => m[1]!,
+    );
+    expect(selects).toHaveLength(3);
+    for (const s of selects) expect(s.split(","), s).toContain("strategy");
+  });
+});
