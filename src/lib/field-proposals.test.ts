@@ -16,9 +16,16 @@ describe("field proposals", () => {
   });
 
   it("CA-9: the proposal is a suggestion whose action updates only that field", () => {
-    const s = proposalSuggestion(acc, { field: "country", current: "ES", proposed: "FR", source: "clay" }, { country: { source: "persona", at: "2026-10-24T10:00:00Z" } });
+    const s = proposalSuggestion(
+      acc,
+      { field: "country", current: "ES", proposed: "FR", source: "clay" },
+      { country: { source: "persona", at: "2026-10-24T10:00:00Z" } },
+    );
     expect(s.detector).toBe(PROPOSAL_DETECTOR);
-    expect(s.action).toEqual({ tool: "update_account", args: { account_id: "a1", country: "FR" } });
+    expect(s.action).toEqual({
+      tool: "update_account",
+      args: { account_id: "a1", country: "FR", source: "clay" },
+    });
     expect(s.user_id).toBe("u1");
     expect(s.link).toBe("/accounts/a1");
     expect(s.title).toContain("Francia");
@@ -27,7 +34,11 @@ describe("field proposals", () => {
   });
 
   it("CA-9: a value with no mark is never described as written by a person", () => {
-    const s = proposalSuggestion(acc, { field: "industry", current: "Logística", proposed: "Fintech", source: "apollo" }, {});
+    const s = proposalSuggestion(
+      acc,
+      { field: "industry", current: "Logística", proposed: "Fintech", source: "apollo" },
+      {},
+    );
     expect(s.body).toContain("no consta quién lo escribió");
     expect(s.body).not.toContain("lo escribiste tú");
   });
@@ -65,5 +76,32 @@ describe("splitAutoChanges (SDD field-write-paths-normalization, CA-6)", () => {
   it("does not offer notes", () => {
     const n = { field: "notes" as const, current: "algo", proposed: "otra cosa", empty: false, source: "web" };
     expect(splitAutoChanges([n])).toEqual({ fill: [], offers: [] });
+  });
+});
+
+describe("field proposals carry their source (NK-0022, CA-5)", () => {
+  it("the action passes the source of the proposal to update_account", () => {
+    for (const source of ["apollo", "clay", "web", "parallel"]) {
+      const s = proposalSuggestion(
+        acc,
+        { field: "industry", current: "Logística", proposed: "Fintech", source },
+        {},
+      );
+      expect(s.action).toEqual({
+        tool: "update_account",
+        args: { account_id: "a1", industry: "Fintech", source },
+      });
+    }
+  });
+  it("a source update_account would refuse is left out, so accepting never fails on it", () => {
+    const s = proposalSuggestion(
+      acc,
+      { field: "industry", current: "Logística", proposed: "Fintech", source: "persona" },
+      {},
+    );
+    expect(s.action).toEqual({
+      tool: "update_account",
+      args: { account_id: "a1", industry: "Fintech" },
+    });
   });
 });

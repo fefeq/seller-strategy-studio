@@ -62,12 +62,12 @@ export const PARALLEL_TOOLS: AgentTool[] = [
   }),
   def({
     name: "enrich_accounts_table", kind: "read",
-    description: "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account. Gasta créditos.",
+    description: "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account con source: parallel. Gasta créditos.",
     input: z.object({ account_ids: z.array(z.string().uuid()).min(1).max(25) }),
     run: async (c, a) => {
       const { enrichTable } = await import("@/lib/parallel-core");
       const rows = await enrichTable(c.db, scope(c), a.account_ids);
-      return rows.map((r) => ({ cuenta: r.name, account_id: r.account_id, sector: r.industry, tamano: r.size, pais: r.country, financiacion: r.funding, herramientas: r.technology, fuente: r.source_url }));
+      return rows.map((r) => ({ cuenta: r.name, account_id: r.account_id, sector: r.industry, tamano: r.size, pais: r.country, financiacion: r.funding, herramientas: r.technology, fuente: r.source_url, source: "parallel" }));
     },
   }),
 ];

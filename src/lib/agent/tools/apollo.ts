@@ -33,12 +33,12 @@ export const APOLLO_TOOLS: AgentTool[] = [
   }),
   def({
     name: "apollo_enrich_account", kind: "read",
-    description: "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account. Gasta 1 crédito de Apollo.",
+    description: "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: apollo. Gasta 1 crédito de Apollo.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const r = await enrichAccount(c, a.account_id);
       if (!r.found) return { encontrada: false, mensaje: "Apollo no tiene datos de esa empresa por su dominio." };
-      return { encontrada: true, empresa: r.company, cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], columna: x.field, actual: x.current, apollo: x.field === "country" ? `${countryName(x.proposed)} (${x.proposed})` : x.proposed, vacio_en_nokko: x.empty })) };
+      return { encontrada: true, empresa: r.company, cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], columna: x.field, actual: x.current, apollo: x.field === "country" ? `${countryName(x.proposed)} (${x.proposed})` : x.proposed, vacio_en_nokko: x.empty, source: "apollo" })) };
     },
   }),
   def({

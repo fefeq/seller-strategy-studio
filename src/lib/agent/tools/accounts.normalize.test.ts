@@ -39,7 +39,14 @@ const ctx = (db: ToolCtx["db"]): ToolCtx => ({
   roles: ["ae"],
   currency: "EUR",
 });
-const patchOf = (log: Q[]) => log.find((q) => q.table === "accounts" && q.op === "update")?.payload;
+// The values written; their origin mark (field_sources) is covered in agent-tools.test.ts (NK-0022).
+const patchOf = (log: Q[]) => {
+  const sent = log.find((q) => q.table === "accounts" && q.op === "update")?.payload as
+    Record<string, unknown> | undefined;
+  if (!sent) return undefined;
+  const { field_sources: _marks, ...values } = sent;
+  return values;
+};
 
 describe("update_account normalizes size and country on save", () => {
   it("writes «51 a 200» as the canonical headcount text", async () => {

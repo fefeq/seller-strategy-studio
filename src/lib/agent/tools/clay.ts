@@ -48,14 +48,14 @@ export const CLAY_TOOLS: AgentTool[] = [
   }),
   def({
     name: "clay_enrich_account", kind: "read",
-    description: "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
+    description: "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: clay (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const r = await enrichAccount(c, a.account_id);
       if (!r.found) return { encontrada: false, mensaje: "Clay no tiene datos de esa empresa por su dominio.", cupo: quotaText(r.quota) };
       return {
         encontrada: true, cupo: quotaText(r.quota), empresa: r.company,
-        cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], columna: x.field, actual: x.current, clay: x.field === "country" ? `${countryName(x.proposed)} (${x.proposed})` : x.proposed, vacio_en_nokko: x.empty })),
+        cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], columna: x.field, actual: x.current, clay: x.field === "country" ? `${countryName(x.proposed)} (${x.proposed})` : x.proposed, vacio_en_nokko: x.empty, source: "clay" })),
       };
     },
   }),

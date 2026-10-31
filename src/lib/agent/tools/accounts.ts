@@ -5,6 +5,7 @@ import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { countryName } from "@/lib/assignment";
 import { byScore, fitText, latestOf, scoreAccount } from "@/lib/scoring";
 import { normalizeForSave } from "@/lib/field-normalize";
+import { ACCOUNT_SOURCES, keepUnreadable, stampConfirmed } from "@/lib/provenance";
 import { dedupePeople, normEmail, normLinkedin } from "@/lib/dedupe";
 import { HEALTH, clearable, def, defined, like, mustFind, ok, type AgentTool, type ToolCtx } from "../tool-kit";
 
@@ -21,6 +22,17 @@ const COUNTRY = z
       `País no reconocido: «${String(i.input).trim()}». Usa el código ISO de 2 letras o el nombre (ES, España, MX, US…).`,
   });
 const optText = z.string().max(4000).optional();
+// Columns of accounts that carry an origin mark (accounts.field_sources, migration 0058).
+const TRACKED = ["industry", "size", "country", "notes"] as const; // update_account's share of the tracked columns (linkedin_url: apify-core)
+/** The value as it would be saved, for comparing: «Spain» and «ES» are the same country, case and spaces do not count. */
+const canonical = (col: (typeof TRACKED)[number], v: unknown) => {
+  const t = typeof v === "string" ? v.trim() : "";
+  if (!t) return "";
+  const n = col === "size" || col === "country" ? normalizeForSave("accounts", col, t).value : t;
+  return String(n ?? "")
+    .trim()
+    .toLowerCase();
+};
 
 async function segmentNames(c: ToolCtx) {
   const { data } = await c.db.from("segments").select("id,name").eq("org_id", c.orgId);
@@ -91,45 +103,91 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
     name: "update_account",
     kind: "write",
     description:
-      "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras o nombre, p. ej. «España»), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí.",
+      "Actualiza datos de una cuenta: nombre, dominio, sector, tamaño, país (código ISO de 2 letras o nombre, p. ej. «España»), segmento, tier (A/B/C), tier ABM (1 = 1:1, 2 = 1:few, 3 = 1:many), salud (green/yellow/red), objetivo ABM y notas. El propietario se cambia con el reparto de cuentas, no aquí. Si el valor viene de un proveedor, pasa su origen en source (apollo, clay, parallel o web); sin source se guarda como ia.",
     input: z.object({
       account_id: z.string().uuid(), name: z.string().min(1).max(200).optional(), domain: clearable(200), industry: clearable(200),
       size: clearable(100), country: COUNTRY.nullable().optional(), segment_id: z.string().uuid().nullable().optional(),
       tier: z.enum(["A", "B", "C"]).optional(), abm_tier: z.enum(["1", "2", "3"]).optional(), health: HEALTH.optional(), is_target: z.boolean().optional(), notes: clearable(4000),
+      source: z.enum(ACCOUNT_SOURCES).optional().describe("Origen del valor: ia (por defecto), apollo, clay, parallel o web"),
     }),
     summarize: (a) => {
-      const changed = Object.keys(defined({ ...a, account_id: undefined }));
+      const changed = Object.keys(defined({ ...a, account_id: undefined, source: undefined }));
       return `Actualizar la cuenta: ${changed.join(", ") || "sin cambios"}`;
     },
     run: async (c, a) => {
-      const { account_id, ...patch } = a;
-      await mustFind(c, "accounts", account_id, "esa cuenta");
+      const { account_id, source, ...patch } = a;
+      // The current values and marks are read right before writing: the origin of what does not change is kept.
+      const cur = await mustFind<Record<string, unknown>>(
+        c,
+        "accounts",
+        account_id,
+        "esa cuenta",
+        `id,name,${TRACKED.join(",")},field_sources`,
+      );
       if (patch.segment_id) await mustFind(c, "segments", patch.segment_id, "ese segmento");
       const p = defined(patch);
       if (!Object.keys(p).length) throw new Error("No has indicado qué cambiar de la cuenta.");
       // Size and country go through the one rule (SDD universal-field-definitions, CA-1/CA-3).
       // A size that is not a headcount is kept as written, with a warning; an unknown country is refused before anything is written.
-      const warnings: string[] = [];
+      const warnings: Partial<Record<(typeof TRACKED)[number], string>> = {};
       for (const col of ["size", "country"] as const) {
         if (p[col] === undefined) continue;
         const n = normalizeForSave("accounts", col, p[col]);
         if (n.status === "unnormalized") {
           if (col === "country")
             throw new Error(`País no reconocido: «${n.original}». ${n.reason}`);
-          warnings.push(`Tamaño «${n.original}». ${n.reason}`);
+          warnings.size = `Tamaño «${n.original}». ${n.reason}`;
         }
         p[col] = n.value as string | null;
       }
+      // Origin (SDD field-sources-on-tracked-writers U-3): a tracked field whose value changes is marked with its real
+      // source, confirmed by whoever approved this action; a cleared one loses its mark; an equal value keeps its mark.
+      // Without this, trigger 0058 would stamp a signed-in caller as «persona».
+      const same = (col: (typeof TRACKED)[number]) =>
+        canonical(col, cur[col]) === canonical(col, p[col]);
+      // A filled field written again with an equal value is not written at all: the trigger would see a changed raw
+      // value («fintech» vs «Fintech») with no field_sources change and stamp «persona» over the existing mark.
+      // Its warning goes with it: a field that is not written must not say «se guarda como lo escribiste».
+      for (const col of TRACKED)
+        if (p[col] !== undefined && canonical(col, p[col]) && same(col)) {
+          delete p[col];
+          delete warnings[col];
+        }
+      // Nothing left to write: say so, the person must not be told it was saved.
+      if (!Object.keys(p).length)
+        return {
+          id: cur.id,
+          name: cur.name,
+          mensaje: "Sin cambios: la cuenta ya tenía esos valores y no se ha guardado nada.",
+        };
+      const changed = TRACKED.filter((col) => p[col] !== undefined && !same(col));
+      const cleared = changed.filter((col) => p[col] === null);
+      const at = new Date().toISOString();
+      const marks = keepUnreadable(
+        cur.field_sources,
+        stampConfirmed(
+          cur.field_sources,
+          changed
+            .filter((col) => !cleared.includes(col))
+            .map((field) => ({ field, source: source ?? "ia" })),
+          c.userId,
+          at,
+        ),
+        cleared,
+      );
+      const withMarks =
+        changed.length && JSON.stringify(marks) !== JSON.stringify(cur.field_sources ?? {});
       const row = ok(
         await c.db
           .from("accounts")
-          .update(p as never)
+          .update((withMarks ? { ...p, field_sources: marks } : p) as never)
           .eq("org_id", c.orgId)
           .eq("id", account_id)
           .select("id,name")
           .single(),
       );
-      return warnings.length ? { ...row, mensaje: warnings.join(" ") } : row;
+      const notices = Object.values(warnings);
+      return notices.length ? { ...row, mensaje: notices.join(" ") } : row;
     },
   }),
   def({

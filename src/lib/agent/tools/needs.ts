@@ -10,13 +10,13 @@ import { def, type AgentTool } from "../tool-kit";
 export const NEED_TOOLS: AgentTool[] = [
   def({
     name: "complete_account", kind: "read",
-    description: "Completa los datos de una cuenta (sector, tamaño, país, descripción) eligiendo solo los servicios conectados más baratos y cambiando a otro si uno falla. No cambia nada: para aplicarlo usa update_account. Úsala en vez de apollo_enrich_account o clay_enrich_account salvo que el usuario pida un servicio concreto.",
+    description: "Completa los datos de una cuenta (sector, tamaño, país, descripción) eligiendo solo los servicios conectados más baratos y cambiando a otro si uno falla. No cambia nada: para aplicarlo usa update_account pasando en source el origen de cada cambio (campo source: apollo, clay o web). Úsala en vez de apollo_enrich_account o clay_enrich_account salvo que el usuario pida un servicio concreto.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const r = await completeAccount(c, a.account_id, "manual");
       if (r.blocked) return { mensaje: r.blocked };
       if (!r.found) return { encontrada: false, fuentes: r.sources, mensaje: "No hay datos públicos de esa empresa por su dominio." };
-      return { encontrada: true, fuentes: r.sources, cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], campo_id: x.field, ahora: x.current, propuesto: x.field === "country" ? countryName(x.proposed) : x.proposed, vacio: x.empty })) };
+      return { encontrada: true, fuentes: r.sources, cambios: r.changes.map((x) => ({ campo: ENRICH_LABEL[x.field], campo_id: x.field, ahora: x.current, propuesto: x.field === "country" ? countryName(x.proposed) : x.proposed, vacio: x.empty, source: x.source })) };
     },
   }),
   def({

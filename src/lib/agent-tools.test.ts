@@ -599,6 +599,255 @@ describe("fixes from review", () => {
     await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "  " });
     expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
   });
+
+  describe("update_account writes field_sources with the real origin (NK-0022)", () => {
+    const AT = "2026-10-01T00:00:00Z";
+    const PERSON = {
+      source: "persona",
+      kind: "persona",
+      confirmed: true,
+      confirmedBy: OTHER,
+      at: AT,
+      confirmedAt: AT,
+    };
+    const account = (extra: Record<string, unknown> = {}) =>
+      fakeDb((q) =>
+        q.table === "accounts"
+          ? {
+              data: {
+                id: ID(3),
+                name: "Acme",
+                industry: null,
+                size: null,
+                country: null,
+                notes: null,
+                linkedin_url: null,
+                field_sources: {},
+                ...extra,
+              },
+            }
+          : undefined,
+      );
+    const sent = (log: Q[]) =>
+      writes(log, "accounts")[0]!.payload as {
+        field_sources?: Record<string, Record<string, unknown>>;
+      } & Record<string, unknown>;
+
+    it("CA-4: a valid source is stored as confirmed by whoever confirmed", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        industry: "Fintech",
+        source: "apollo",
+      });
+      const p = sent(log);
+      expect(p).not.toHaveProperty("source");
+      expect(p.field_sources?.industry).toMatchObject({
+        source: "apollo",
+        kind: "fuente",
+        confirmed: true,
+        confirmedBy: ME,
+      });
+      expect(p.field_sources?.industry?.at).toEqual(p.field_sources?.industry?.confirmedAt);
+    });
+    it("CA-4: an invalid source is refused by the tool schema, which is what validates a proposal before the pending action exists", () => {
+      const schema = getTool("update_account")!.input;
+      for (const source of ["persona", "sin_dato", "manual", "Apollo", ""])
+        expect(schema.safeParse({ account_id: ID(3), industry: "X", source }).success, source).toBe(
+          false,
+        );
+      for (const source of ["ia", "apollo", "clay", "parallel", "web"])
+        expect(schema.safeParse({ account_id: ID(3), industry: "X", source }).success, source).toBe(
+          true,
+        );
+    });
+    it("CA-4: without a source it is ia; a source that is not valid is refused and nothing is written", async () => {
+      const a = account();
+      await executeTool(ctxWith(a.db), "update_account", { account_id: ID(3), notes: "Texto" });
+      expect(sent(a.log).field_sources?.notes).toMatchObject({
+        source: "ia",
+        kind: "ia",
+        confirmed: true,
+        confirmedBy: ME,
+      });
+      for (const source of ["persona", "sin_dato", "manual", ""]) {
+        const b = account();
+        await expect(
+          executeTool(ctxWith(b.db), "update_account", {
+            account_id: ID(3),
+            industry: "X",
+            source,
+          }),
+        ).rejects.toThrow();
+        expect(writes(b.log)).toEqual([]);
+      }
+    });
+    it("CA-3: every accepted source is stored as itself, never as persona", async () => {
+      for (const source of ["ia", "apollo", "clay", "parallel", "web"]) {
+        const { db, log } = account();
+        await executeTool(ctxWith(db), "update_account", {
+          account_id: ID(3),
+          industry: "Fintech",
+          size: "51-200",
+          country: "ES",
+          notes: "n",
+          source,
+        });
+        const marks = sent(log).field_sources;
+        expect(Object.keys(marks ?? {}).sort(), source).toEqual([
+          "country",
+          "industry",
+          "notes",
+          "size",
+        ]);
+        for (const m of Object.values(marks ?? {})) {
+          expect(m.source).toBe(source);
+          expect(m.kind).not.toBe("persona");
+          expect(m.confirmedBy).toBe(ME);
+        }
+      }
+    });
+    it("CA-4: works with any client (the privileged one of Telegram too) and keeps the marks of fields that do not change", async () => {
+      const { db, log } = account({
+        field_sources: { size: { source: "clay", at: AT }, industry: PERSON },
+        industry: "Logística",
+      });
+      await executeTool({ ...ctxWith(db), userId: OTHER }, "update_account", {
+        account_id: ID(3),
+        country: "Spain",
+        source: "clay",
+      });
+      const p = sent(log);
+      expect(p.country).toBe("ES");
+      expect(p.field_sources?.country).toMatchObject({ source: "clay", confirmedBy: OTHER });
+      expect(p.field_sources?.size).toEqual({ source: "clay", at: AT });
+      expect(p.field_sources?.industry).toEqual(PERSON);
+    });
+    it("the mark is read right before writing, scoped to the company", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "Fintech" });
+      const read = log.find((q) => q.table === "accounts" && q.op === "select")!;
+      expect(eq(read, "org_id", ORG)).toBe(true);
+      expect(log.indexOf(read)).toBeLessThan(log.indexOf(writes(log, "accounts")[0]!));
+    });
+    it("a mark it cannot read (no `at`) survives the rewrite of field_sources", async () => {
+      const odd = { source: "apollo" };
+      const { db, log } = account({ field_sources: { notes: odd } });
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "Fintech" });
+      expect(sent(log).field_sources?.notes).toEqual(odd);
+      expect(sent(log).field_sources?.industry).toMatchObject({ source: "ia" });
+    });
+    it("CA-6: a cleared tracked field loses its mark, the others stay", async () => {
+      const { db, log } = account({
+        industry: "Logística",
+        field_sources: { industry: PERSON, size: { source: "clay", at: AT } },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        industry: "  ",
+        source: "apollo",
+      });
+      const p = sent(log);
+      expect(p.industry).toBeNull();
+      expect(p.field_sources).toEqual({ size: { source: "clay", at: AT } });
+    });
+    it("CA-7: the same value, also after normalizing, leaves the mark alone even if it is a person's", async () => {
+      const { db, log } = account({
+        country: "ES",
+        industry: "Fintech",
+        field_sources: { country: PERSON, industry: PERSON },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        country: "España",
+        industry: " fintech ",
+        source: "apollo",
+      });
+      // Nothing reaches the database: trigger 0058 would otherwise see the new raw text («fintech») with no
+      // field_sources change and stamp «persona» over the person's mark.
+      expect(writes(log, "accounts")).toEqual([]);
+    });
+    it("CA-7: a stored legacy size written again is not sent either, so its mark cannot be stamped", async () => {
+      const { db, log } = account({ size: "51-200", field_sources: { size: PERSON } });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "51-200",
+        source: "apollo",
+      });
+      expect(writes(log, "accounts")).toEqual([]);
+    });
+    it("CA-7: when every value is equal nothing is written and the result says so, it does not claim a save", async () => {
+      const { db, log } = account({
+        size: "Muchos",
+        industry: "Fintech",
+        field_sources: { size: PERSON },
+      });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "muchos",
+        industry: "fintech",
+        source: "apollo",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toEqual([]);
+      expect(r.mensaje ?? "").toMatch(/sin cambios/i);
+      expect(r.mensaje ?? "").toMatch(/no se ha guardado/i);
+      expect(r.mensaje ?? "").not.toMatch(/se guarda/i);
+      expect(r.mensaje).toBe(
+        "Sin cambios: la cuenta ya tenía esos valores y no se ha guardado nada.",
+      );
+    });
+    it("a real change to a size that is not a headcount still shows its warning, not «Sin cambios»", async () => {
+      const { db, log } = account({ size: "11–50 empleados" });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "Muchos",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toHaveLength(1);
+      expect(r.mensaje ?? "").toMatch(/Tamaño «Muchos»/);
+      expect(r.mensaje ?? "").not.toMatch(/sin cambios/i);
+    });
+    it("an equal unnormalizable size dropped next to a real change shows no warning for the dropped field", async () => {
+      const { db, log } = account({ size: "Muchos", industry: "Fintech" });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "muchos",
+        industry: "Retail",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toHaveLength(1);
+      expect(r.mensaje).toBeUndefined();
+    });
+    it("CA-7: with one field changed and one equal, only the changed one gets a new mark", async () => {
+      const { db, log } = account({
+        country: "ES",
+        industry: "Logística",
+        field_sources: { country: PERSON, industry: PERSON },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        country: "Spain",
+        industry: "Fintech",
+        source: "web",
+      });
+      const p = sent(log);
+      expect(p).not.toHaveProperty("country");
+      expect(p.field_sources?.country).toEqual(PERSON);
+      expect(p.field_sources?.industry).toMatchObject({ source: "web", confirmedBy: ME });
+    });
+    it("untracked columns alone do not send field_sources", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), tier: "A" });
+      expect(sent(log)).toEqual({ tier: "A" });
+    });
+    it("CA-5: the tools that hand values to update_account tell it which source to pass", () => {
+      for (const [name, hint] of [
+        ["apollo_enrich_account", "source: apollo"],
+        ["clay_enrich_account", "source: clay"],
+        ["enrich_accounts_table", "source: parallel"],
+        ["complete_account", "source"],
+      ] as const)
+        expect(getTool(name)!.description, name).toContain(hint);
+    });
+  });
 });
 
 describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)", () => {
