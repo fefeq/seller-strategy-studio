@@ -874,19 +874,31 @@
       "title": "Tablero de equipo: «Aceptar» una sugerencia de prueba o acción comercial la cierra sin crear el experimento ni la tarea",
       "kind": "bug",
       "source": "",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author (NK-0038)",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261031-board-accept-opens-execute-form.md",
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-10-31T20:07:26.492Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:22:40.178Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261031-board-accept-opens-execute-form.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T20:22:40.258Z",
+          "by": "Fede",
+          "note": "owner=nokko-author (NK-0038)"
         }
       ]
     },

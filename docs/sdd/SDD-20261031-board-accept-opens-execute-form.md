@@ -1,12 +1,12 @@
 # SDD-20261031-board-accept-opens-execute-form · [Bug] «Aceptar» en el tablero de equipo no crea el experimento ni la tarea
 
 **Tipo:** Bug · **Prioridad propuesta:** Alta (está en `main`; cada aceptación afectada cierra la sugerencia sin hacer lo que promete)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Estado:** Aprobado (Fede, 2026-10-31) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** No aplica (bug) · **Depende de:** — · **Ticket:** NK-0038
 **SDD que corrige:** F3 de `SDD-20261027-strategic-suggestions-engine` (CA-35 y CA-36), que quedó sin cumplir en una de las tres pantallas.
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.
-> Nivel elegido: SDD corto. Un bug de interfaz no exige SDD, pero lo pediste y este toca datos (una decisión que se registra y no se puede deshacer desde esta pantalla). Un PRD no añadiría nada.
+> Nivel elegido: SDD corto. Un bug de interfaz que no toca esquema, RLS ni datos no exige SDD; este se redacta porque Fede lo pidió. Un PRD no añadiría nada.
 
 ## 1. Resumen
 En la pestaña Equipo de `/inbox`, el botón «Aceptar» de una sugerencia estratégica de tipo prueba o acción comercial envía la decisión directamente. La sugerencia pasa a aceptada y desaparece de pendientes, pero no se crea el experimento ni la tarea que CA-35 y CA-36 prometen. La tarjeta individual sí abre el formulario y la baraja avisa de abrirla en la lista. Se corrige el tablero para que abra el mismo formulario.
@@ -22,18 +22,18 @@ Leído el 2026-10-31 sobre `origin/main` (`dcea201`); no lo he reproducido en la
 - `src/components/suggestion-deck.tsx:41-45`: la baraja se niega a aceptar una sugerencia así y manda a «la lista» («Ábrela en la lista para completar el experimento o la tarea antes de aceptarla.»). El enlace de la baraja lleva a `/inbox?vista=lista`, que pinta `SuggestionCard` (`inbox.tsx:48-52`) y sí abre el formulario. El tablero es la pestaña «Equipo» (`inbox.tsx:42`): el fallo está solo ahí.
 - `src/lib/agent.functions.ts:282-297`: el servidor, sin borrador `execute`, registra la decisión (`decideStrategy`) y solo llama a `proposeChange`; para un experimento o una acción comercial no crea nada y responde con éxito.
 - Origen del hallazgo: revisión del agente de Lovable el 2026-10-29 (su informe, no reproducido por mí). Yo comprobé el código citado.
-- Cuántas sugerencias se han aceptado así en producción: **sin dato**, no se ha consultado la base.
+- Cuántas sugerencias se han aceptado así en producción: **0** (medido el 2026-10-31, ver 16.2).
 
 ## 4. Resultado buscado
 - Desde el tablero, «Aceptar» una sugerencia de prueba o acción comercial ofrece crear el experimento o la tarea antes de decidir, como ya hacen la tarjeta individual y la lista. Que la creación llegue a hacerse depende del servidor (sección 14, NK-0040 y NK-0041).
-- Medición: las pruebas de CA-1 a CA-4 pasan en la rama de trabajo. Línea base de aceptaciones afectadas: **sin dato** (ver 16.2).
+- Medición: las pruebas de CA-1 a CA-4 pasan en la rama de trabajo. Línea base de aceptaciones afectadas: **0** (ver 16.2).
 
 ## 5. Alcance
 **Incluye:** el botón «Aceptar» del tablero de equipo, en la tabla (md+) y en las tarjetas del teléfono (comparten `rowActions`). Abrir `ExecuteDialog` con el motivo ya escrito en la fila.
 **No incluye** (límite que el brief copia a «Movimientos prohibidos»):
 - Cambios en `ExecuteDialog`, en la baraja, en la tarjeta individual o en `strategy-execute.ts`.
 - Tocar `drizzle/migrations` ni RLS.
-- Recuperar las sugerencias ya aceptadas sin crear nada (ver 15, P-2).
+- Recuperar sugerencias ya aceptadas sin crear nada: no hay ninguna (15.3).
 - Textos nuevos: se reutilizan los del formulario.
 - Cambiar el comportamiento de las sugerencias operativas ni de las de tipo cambio de estrategia.
 
@@ -69,7 +69,7 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni de GRANTs. La decisión sig
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-1 | El tablero abre un único `ExecuteDialog` al aceptar una prueba o acción comercial. Primero, comprobar que el diálogo se abre y se confirma en jsdom (16.4) | CA-1, CA-2, CA-3, CA-4 | `src/components/strategy-screens.test.tsx` (una prueba por tipo, `it.each`) |
+| U-1 | El tablero abre un único `ExecuteDialog` al aceptar una prueba o acción comercial. Primero, comprobar que el diálogo se abre y se confirma en jsdom (16.4) | CA-1, CA-2, CA-3, CA-4 | `src/components/strategy-screens.test.tsx` (una prueba por tipo, `it.each`). CA-1 a CA-3 fallan primero; CA-4 es guarda de regresión |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - Rama de trabajo desde `origin/main` (`dcea201`): el checkout `feat/software-factory` no contiene F3 y los números de línea no valdrían.
@@ -77,6 +77,7 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni de GRANTs. La decisión sig
 - `rowActions` es una sola función para la tabla y las tarjetas; la única entrada estratégica a `approve` es la línea 162.
 - El botón de icono (`suggestion-board.tsx:198`) con `parseStrategy(s.strategy)` es inalcanzable (solo se pinta si no es estratégica); no se toca.
 - Arnés de `strategy-screens.test.tsx`: parametrizar `action_type` en el fixture `strategic()` (hoy fijo a `strategy_change`); `metric` nace vacía (`strategy-execute.ts:125`) y el botón de crear está deshabilitado hasta escribirla; `review_on` y `due_date` salen de `new Date()` (usar `expect.any(String)` o temporizadores falsos); `supabase` está simulado con filas fijas, así que solo se prueba que `decide` no se llama.
+- Selectores del arnés (segunda pasada del gate): `Field` pinta el `<Label>` sin `htmlFor` (`fields.tsx:4-6`), así que `getByLabelText("Métrica")` no encuentra el campo; usar `getByPlaceholderText("Ej.: tasa de respuesta")`. Con el diálogo abierto Radix oculta el resto de la página: buscar los botones con `within(dialog)`. El botón de confirmar se llama «Aceptar y crear experimento» o «Aceptar y crear tarea», no «Aceptar».
 - Alternativa descartada: que el tablero se niegue a aceptar, como la baraja. Obliga a salir de la pantalla donde la persona ya está.
 
 ## 14. Riesgos y dependencias
@@ -85,31 +86,31 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni de GRANTs. La decisión sig
 | Origen | Dónde | Qué ocurre |
 |---|---|---|
 | Telegram, botón | `webhook.ts:59-61` | `s:<id>:approve` llama a `decideSuggestionCore(ctx,id,decision)` sin borrador |
-| Telegram, aviso urgente y digest | `proactive.ts:104-116`, `133-140` | Empujan pendientes sin filtrar por detector, con botón «Hecho» |
+| Telegram, aviso urgente y digest | `proactive.ts:104-116`, `133-140` | Empujan pendientes sin filtrar por detector, con botón «Hecho» (el digest, «Hecho n»). Ejemplo: `reviewDue` (`experiments.ts:48-49`) genera una sugerencia de prioridad 1 y tipo `commercial_action` |
 | Agente | `inbox.ts:23-31` | Herramienta `decide_suggestion` sin `execute` |
 | MCP | `agent-tools.ts:128-150` | La acción pendiente confirmada ejecuta la misma herramienta, sin borrador |
 
-- NK-0040: `ExecuteDialog.save` ignora la respuesta del servidor (`strategy-execute.tsx:56`): si la sugerencia ya estaba gestionada, dice «creado» y cierra. En un tablero de equipo, donde varias personas ven la misma fila, es el caso más probable. Este SDD no lo arregla; tras U-1 el tablero pasa a usar este formulario, así que el caso aparece también ahí.
+- NK-0040: `ExecuteDialog.save` ignora la respuesta del servidor (`strategy-execute.tsx:56`): si la sugerencia ya estaba gestionada, dice «creado» y cierra. En un tablero de equipo, donde varias personas ven la misma fila, es el caso más probable. Este SDD no lo arregla, y **tras U-1 es una regresión en el tablero**: hoy, la segunda persona que acepta una fila ya gestionada ve el mensaje correcto «Ya estaba gestionada»; después verá «creado» sin que se haya creado nada. Fede decidió ticket aparte (15.2) sabiendo esto.
 - Un refetch puede sacar la fila de la lista con el formulario abierto (sección 13).
-- Las sugerencias ya cerradas por este fallo siguen cerradas (15.3).
+- Ninguna sugerencia se ha cerrado por este fallo hasta hoy (16.2).
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decididas por Fede el 2026-10-31 («si» a las recomendaciones del autor):**
 1. **P-1.** El servidor no rechaza `approve` sin borrador en este SDD: es un cambio de contrato para Telegram, el agente y el MCP. Ticket aparte: NK-0041.
 2. **§8.** «Ya estaba gestionada» y el orden registrar-antes-de-crear no se tocan aquí (no se cambia `ExecuteDialog`). Ticket aparte: NK-0040.
-3. **P-2.** Las sugerencias ya aceptadas sin crear nada se miden primero con una consulta de solo lectura a producción que hace Fede (sección 16.2); después decide si se reabren.
+3. **P-2.** Las sugerencias ya aceptadas sin crear nada se miden primero con una consulta de solo lectura (sección 16.2). Resultado: ninguna; no hay nada que reabrir.
 
 **Siguen abiertas:** ninguna.
 
 ## 16. Pendiente de verificar
 1. Reproducir el fallo en la aplicación: nadie lo ha hecho; solo hay lectura de código y el informe del agente de Lovable.
-2. Cuántas sugerencias de prueba o acción comercial están aceptadas sin experimento ni tarea enlazados (CA-37): consulta de solo lectura a producción, que hace Fede.
+2. ~~Cuántas sugerencias de prueba o acción comercial están aceptadas sin experimento ni tarea enlazados~~: medido el 2026-10-31 con consultas de solo lectura (solo recuentos) en el SQL editor de Lovable Cloud: **0** aceptadas de esos tipos y **0** sin enlace. En toda la base hay 3 sugerencias estratégicas, las tres pendientes y de tipo `data_to_complete`, y 2 empresas. El fallo no ha afectado a nadie todavía. Medido por el agente a petición de Fede; la base es la única que existe hoy (no hay otro entorno que distinguir).
 3. ~~Qué llamadas a `decideSuggestionCore` sin borrador existen~~: cerrada con la tabla del gate (sección 14).
 4. Que un diálogo de Radix se abre y se confirma bajo jsdom en el arnés de `strategy-screens.test.tsx`: ningún test de `main` lo hace todavía. Lo comprueba U-1 antes de escribir el resto de pruebas.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: Objeciones (primera pasada, 2026-10-31, copiada abajo). El texto del SDD aún no se ha corregido.
+- Veredicto del gate: Objeciones en la primera pasada (atendidas) y objeciones solo editoriales en la segunda (atendidas); los dos informes están copiados abajo. Falta una tercera pasada solo si Fede la pide.
 - Resto de campos: ver el informe copiado abajo.
 
 ### Primera pasada del gate (2026-10-31), copiada sin editar
@@ -230,6 +231,54 @@ Texto del autor, no del gate. Decisiones de Fede el 2026-10-31 («si» a las rec
 | Nivel: sin U-2 el alcance sí es corto | Coherente tras retirar U-2 |
 
 Nota del ledger: NK-0039 quedó registrado como duplicado de NK-0038 por la heurística de similitud, sin serlo; el hueco del servidor es NK-0041.
+
+### Segunda pasada del gate (2026-10-31), copiada sin editar
+Sobre el texto corregido, contrastado con `origin/main` (`dcea201`). No ejecutó tests, `gate.mjs` ni `flake.mjs`.
+
+**Veredicto: Objeciones, solo editoriales.** Las 14 filas de la tabla del autor se cumplen en el texto. Las objeciones que quedan son una frase obsoleta, una columna de la sección 12 y dos imprecisiones menores. Ninguna toca el diseño ni los criterios de aceptación. Sin corregir la frase de abajo, el SDD se contradice a sí mismo. El gate no aprueba: la aprobación es de Fede.
+
+**1. Tabla de la «Respuesta del autor».** Cada fila está comprobada contra el texto actual, no solo contra la tabla.
+
+| Objeción | Resultado |
+|---|---|
+| §3 viñeta 4 | Cumplida. Ahora dice que el tablero es «Equipo» (`inbox.tsx:42`) y que la lista es `SuggestionCard` (`inbox.tsx:48-52`). |
+| §8 «Ya estaba gestionada» | Cumplida. Está como límite conocido con NK-0040; `agent.functions.ts:280`, `strategy-core.ts:68` y `strategy-execute.tsx:55-56` lo confirman. |
+| §4 promete de más | Cumplida. Ahora dice «ofrece crear… antes de decidir» y remite a NK-0040 y NK-0041. |
+| Una prueba por tipo | Cumplida: CA-1 y CA-2 dicen «una prueba por tipo» y la sección 12 dice `it.each`. |
+| Fixture, `metric`, fechas | Cumplida en la sección 13. |
+| CA-3 | Cumplida. Está reformulado a «`decide` no se llama, comprobado después de cerrar». |
+| CA-4 guarda de regresión | Cumplida, con matiz (ver Contradicciones, punto 2). |
+| CA-5 y U-2 retirados | Cumplida. Solo aparecen dentro del informe copiado y en la tabla del autor, nunca en las secciones 3 a 16. |
+| Radix Dialog en jsdom | Cumplida: figura en 16.4 y en la sección 12. |
+| §16.3 cerrada | Cumplida. |
+| Citas de línea | Verificadas: `suggestion-deck.tsx:41-45`, `agent.functions.ts:282-297` y `strategy-execute.tsx:25-28`. |
+| Un solo `ExecuteDialog` con snapshot y `key` | Cumplida en la sección 13. |
+| Aviso del checkout | Cumplida en la sección 13. |
+| Nivel sin U-2 | Cumplida solo de forma nominal: la línea 9 sigue diciendo «toca datos» (ver punto 3). |
+
+**2. Citas y afirmaciones sobre el código.**
+- Todas las citas comprobadas son ciertas: sección 3 (`suggestion-board.tsx:162`, el archivo sin importar `strategy-execute`, `suggestions.tsx:192,206`, `inbox.tsx:42,48-52`), sección 8 (`strategy-execute.tsx:55-56` y `37-38`) y sección 13 (`strategy-execute.ts:125`).
+- Notas de la sección 13: `rowActions` se llama solo en las líneas 444 (tarjetas) y 491 (tabla); la única entrada estratégica a `approve` es la 162; el icono de la línea 198 es inalcanzable para estratégicas, porque `rowActions` sale antes en la línea 147 (la cita «:198» es el `onClick`; el botón ocupa 188-201); `review_on` y `due_date` salen de `new Date()` (líneas 36-38); `metric` nace vacía y `experimentDraftIssues` la exige; para `experiment`, `hypothesis` también es obligatoria y el body «texto» del fixture la cubre.
+- Fixtures para el arnés: `buildStrategySuggestion` fuerza `data_to_complete` solo sin evidencia; con la evidencia por defecto (5 elementos), parametrizar `action_type` funciona. `Pick` es un `<select>` nativo, así que `task` no trae Radix Select. `suggestion-deck.tsx` ya importa `strategy-execute` en este mismo test, así que añadirlo al tablero no introduce una cadena de imports nueva (deducido del código, no ejecutado).
+- **Caveat de arnés que el SDD no menciona.** `Field` pinta un `<Label>` sin `htmlFor` y el `Input` va como hermano (`fields.tsx:4-6`); por tanto `getByLabelText("Métrica")` no encontrará el campo: hay que usar `getByPlaceholderText("Ej.: tasa de respuesta")` u otro selector. Con el diálogo abierto, Radix oculta el resto de la página (`aria-hidden`), así que las pruebas deben buscar los botones dentro de `within(dialog)`. El botón de confirmar se llama «Aceptar y crear experimento» o «Aceptar y crear tarea»; no coincide con el nombre exacto «Aceptar». Conviene añadirlo a la sección 13 como nota, no como CA.
+- Sección 14, fila a fila: todas las citas y comportamientos concuerdan (`webhook.ts:59-61`; `proactive.ts:104-116` y `133-140`; `inbox.ts:22-32`; `agent-tools.ts:128-150`). Confirmar una acción pendiente ejecuta `executeTool(ctx, act.tool, act.args)` (`agent.functions.ts:139`) y acaba en `decideSuggestionCore` sin `execute`. La lista de llamadores de `decideSuggestionCore` está completa: el server fn, `inbox.ts` y `webhook.ts`.
+
+**3. CA sin prueba posible.** Ninguno. Por lectura de código, sin ejecutar: CA-1 a CA-3 fallarían hoy (`act(s.id,"approve")` se dispara al instante: no hay diálogo y `decide` ya se ha llamado). CA-4 es guarda, no fail-first; está declarado así.
+
+**4. Contradicciones.**
+1. **Línea 112, obsoleta.** Dice «El texto del SDD aún no se ha corregido», pero la tabla del autor dice lo contrario y el texto sí está corregido. Cámbiala por el estado real: «primera pasada: Objeciones, atendidas; segunda pasada: ver abajo».
+2. **Sección 12, columna «Test que falla primero».** U-1 «cierra CA-4», que por definición no falla primero. Sugiero precisar «CA-1 a CA-3 fallan primero; CA-4 es guarda».
+3. **Línea 9, «toca datos».** Tras retirar U-2, el cambio solo modifica cuándo se llama a una función existente. La justificación real es que Fede lo pidió. Es defendible, pero la fila «Coherente tras retirar U-2» no cambió el texto.
+4. **Sección 14, imprecisión menor.** El digest usa «Hecho n», no «Hecho». Un ejemplo concreto que se puede añadir a esa fila: `reviewDue` (`experiments.ts:48-49`) genera una sugerencia de prioridad 1 y tipo `commercial_action`.
+5. **Sección 8, sin CA ni prueba.** «Doble clic en Aceptar» no tiene CA ni prueba. Es aceptable como caso límite, pero está afirmado sin cobertura.
+
+**5. Riesgo para Fede.** Hoy, si dos personas aceptan a la vez desde el tablero, la segunda ve el mensaje correcto «Ya estaba gestionada». Tras U-1, esa persona verá «creado» sin que se haya creado nada (NK-0040). Es el caso más probable en un tablero de equipo. La sección 14 dice «aparece también ahí», que suaviza un poco que en el tablero es una regresión de ese caso concreto. Fede ya decidió «ticket aparte»; solo asegúrate de que lo entiende así.
+
+**[Por verificar] que sigue sin comprobarse:** reproducción del fallo en la aplicación (16.1); cuántas aceptaciones afectadas hay en producción (16.2); que Radix Dialog se abre y se confirma bajo jsdom (16.4, deducido del código, no ejecutado); que las decisiones de Fede sean tal como las describe el SDD (las conoce solo por el texto). Quedan cerradas dos dudas de la primera pasada: `org-data.ts:171` no es otro camino (excluye los detectores estratégicos, `STRATEGY_DETECTOR_LIKE`) y `decidePending` ya está leído.
+
+**Lo que esta revisión NO demuestra:** que ningún test nuevo falle o pase (no existen todavía y no ejecutó suite ni `gate.mjs`); nada de producción ni del navegador; el estado de NK-0038 a NK-0041 en el ledger; segunda máquina y soak (no ejecutados); cualquier número de línea fuera de `dcea201`.
+
+**¿Puede aprobarlo Fede?** Sí, tras corregir la línea 112; los puntos 2 a 5 son recomendables pero no bloquean. El diseño, el alcance y los CA se sostienen contra `origin/main`. Los dos puntos abiertos que quedan, 16.1 y 16.2, son de verificación, no de redacción.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Sin entrega todavía.
