@@ -231,6 +231,16 @@ export function parseStrategy(v: unknown): StrategyMeta | null {
   };
 }
 
+/**
+ * Which form accepting this suggestion needs (CA-35, CA-36): a test opens the experiment form, a commercial action the task form.
+ * The client (executeKind), the server (decideSuggestionCore) and Telegram all ask this; a test keeps the three equal.
+ */
+export const executeFormKind = (strategy: unknown): "experiment" | "task" | null => {
+  const t = parseStrategy(strategy)?.action_type;
+  return t === "experiment" ? "experiment" : t === "commercial_action" ? "task" : null;
+};
+export const needsExecuteForm = (strategy: unknown) => executeFormKind(strategy) !== null;
+
 // ---- Decisions (CA-4) ----
 
 export type StrategyDecision = "accept" | "postpone" | "dismiss";

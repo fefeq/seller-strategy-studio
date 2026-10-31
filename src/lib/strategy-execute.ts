@@ -128,3 +128,44 @@ export const experimentDraftIssues = (d: ExperimentDraft) => [!d.hypothesis.trim
 export type TaskDraft = { title: string; owner_id: string; due_date: string; deal_id: string | null };
 /** CA-36: owner = the person accepting, date in a few days, the first cited deal when there is one. All editable. */
 export const taskDraft = (s: SugLike, me: string, now: Date): TaskDraft => ({ title: s.title.slice(0, 200), owner_id: me, due_date: iso(new Date(now.getTime() + DEFAULT_TASK_DAYS * DAY)), deal_id: s.strategy.evidence.find((e) => e.table === "deals")?.id ?? null });
+
+// ---- Drafts that arrive from outside the form (NK-0041): checked before the decision is logged ----
+const isText = (v: unknown): v is string => typeof v === "string";
+/** A calendar date as the form sends it (AAAA-MM-DD); «2026-02-31» is refused. */
+export const isIsoDate = (v: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const d = new Date(`${v}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
+};
+
+/**
+ * Why a draft cannot be accepted, or null when it can: its shape (an object with text fields and real dates), that its kind is the
+ * one the suggestion needs (experiment ↔ experiment, task ↔ task) and the rules of the form. Checks nothing that needs a query
+ * (owner_id, deal_id exist): the database refuses those. The messages do not end in a full stop; the callers add one.
+ */
+export function executeIssue(needs: "experiment" | "task" | null, execute: unknown): string | null {
+  if (!needs) return "Esta sugerencia no lleva formulario";
+  const e = execute as { kind?: unknown; draft?: unknown } | null;
+  if (!e || typeof e !== "object" || Array.isArray(e) || e.kind !== needs)
+    return "El formulario no corresponde a esta sugerencia. Ábrela en Sugerencias y completa el formulario allí";
+  const d = e.draft as Record<string, unknown> | null;
+  if (!d || typeof d !== "object" || Array.isArray(d))
+    return "El formulario llega vacío. Ábrela en Sugerencias y completa el formulario allí";
+  const texts =
+    needs === "experiment"
+      ? ["title", "hypothesis", "metric", "review_on"]
+      : ["title", "owner_id", "due_date"];
+  if (
+    texts.some((k) => !isText(d[k])) ||
+    (needs === "task" && d.deal_id != null && !isText(d.deal_id))
+  )
+    return "Algún campo del formulario no es texto. Ábrela en Sugerencias y completa el formulario allí";
+  const date = (needs === "experiment" ? d.review_on : d.due_date) as string;
+  if (date !== "" && !isIsoDate(date))
+    return "Hay una fecha que no es válida. Ábrela en Sugerencias y completa el formulario allí";
+  if (needs === "experiment") {
+    const issues = experimentDraftIssues(d as unknown as ExperimentDraft);
+    return issues.length ? `Antes de aceptarla, completa ${issues.join(", ")}` : null;
+  }
+  return (d.title as string).trim() ? null : "Escribe el título de la tarea";
+}

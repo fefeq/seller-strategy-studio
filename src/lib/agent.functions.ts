@@ -6,6 +6,8 @@ import { detect } from "@/lib/proactive";
 import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
+import { executeFormKind } from "@/lib/strategy-suggestions";
+import { executeIssue } from "@/lib/strategy-execute";
 
 export type ExecuteInput = { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft } | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
 
@@ -280,6 +282,20 @@ export async function decideSuggestionCore(
   if (s.status !== "pending") return { status: s.status, message: "Ya estaba gestionada" };
   // Strategic suggestions (F0): the decision is logged with who, when and why (CA-4); acting on it arrives with F3.
   if (s.detector.startsWith("strategy_")) {
+    // A test or a commercial action is only accepted with its form (CA-35, CA-36): nothing is logged until the draft is valid.
+    const needs = executeFormKind(s.strategy);
+    if (decision === "approve" && needs) {
+      if (opts.execute === undefined)
+        throw new Error(
+          needs === "experiment"
+            ? "No la he aceptado. Esta sugerencia crea un experimento y hay que revisarlo antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí"
+            : "No la he aceptado. Esta sugerencia crea una tarea y hay que revisarla antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí",
+        );
+      const issue = executeIssue(needs, opts.execute);
+      if (issue) throw new Error(`No la he aceptado. ${issue}`);
+    } else if (decision === "approve" && opts.execute !== undefined) {
+      throw new Error(`No la he aceptado. ${executeIssue(null, opts.execute)}`);
+    }
     const { decideStrategy } = await import("@/lib/strategy-core");
     const r = await decideStrategy(
       ctx,
