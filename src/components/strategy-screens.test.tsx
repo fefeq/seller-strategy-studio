@@ -4,6 +4,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { toast } from "sonner";
 import { buildStrategySuggestion } from "@/lib/strategy-suggestions";
 
 const hoisted = vi.hoisted(() => ({ rows: [] as Record<string, unknown>[], decide: vi.fn() }));
@@ -126,6 +127,8 @@ beforeEach(() => {
   hoisted.rows = [];
   hoisted.decide.mockReset();
   hoisted.decide.mockResolvedValue({ message: "ok" });
+  vi.mocked(toast).mockClear();
+  vi.mocked(toast.success).mockClear();
 });
 
 describe("board: list and team view (desktop table and phone cards)", () => {
@@ -265,6 +268,54 @@ describe("board: list and team view (desktop table and phone cards)", () => {
       data: expect.objectContaining({ id: "a", decision: "approve" }),
     });
   });
+  // NK-0040: the server answers «Ya estaba gestionada» (no error) when someone else decided first and creates nothing:
+  // the form must not say «creado». The normal answer keeps the current toast (regression guard, passes on base).
+  describe.each([
+    {
+      action_type: "experiment",
+      confirm: "Aceptar y crear experimento",
+      created: "Experimento creado como idea, enlazado a la sugerencia.",
+    },
+    {
+      action_type: "commercial_action",
+      confirm: "Aceptar y crear tarea",
+      created: "Tarea creada, enlazada a la sugerencia.",
+    },
+  ] as const)(
+    "NK-0040: ExecuteDialog answer for $action_type",
+    ({ action_type, confirm, created }) => {
+      const open = async () => {
+        hoisted.rows = [strategic("a", { action_type })];
+        wrap(<SuggestionBoard />);
+        await screen.findAllByText("Estratégica a");
+        fireEvent.click(screen.getAllByRole("button", { name: "Aceptar" })[0]!);
+        const dialog = await screen.findByRole("dialog");
+        if (action_type === "experiment")
+          fireEvent.change(within(dialog).getByPlaceholderText("Ej.: tasa de respuesta"), {
+            target: { value: "tasa de respuesta" },
+          });
+        fireEvent.click(within(dialog).getByRole("button", { name: confirm }));
+        await waitFor(() => expect(hoisted.decide).toHaveBeenCalledTimes(1));
+      };
+      it("says it was already handled, does not claim «creado», and closes the form", async () => {
+        hoisted.decide.mockResolvedValue({ status: "approved", message: "Ya estaba gestionada" });
+        await open();
+        await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+        const said = [...vi.mocked(toast).mock.calls, ...vi.mocked(toast.success).mock.calls]
+          .map((c) => String(c[0]))
+          .join("|");
+        expect(said).toContain("Ya estaba gestionada");
+        expect(said).not.toMatch(/(Experimento creado|Tarea creada)/);
+        expect(toast.success).not.toHaveBeenCalled();
+      });
+      it("guard: a normal answer still says «creado» and closes the form", async () => {
+        hoisted.decide.mockResolvedValue({ status: "approved", message: "Aceptada" });
+        await open();
+        await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+        expect(toast.success).toHaveBeenCalledWith(created);
+      });
+    },
+  );
   // NK-0038 / CA-4: regression guards (they pass before and after the fix, so they are not fail-first).
   it("CA-4 guard: «Marcar como hecha» on an operational suggestion sends approve directly", async () => {
     hoisted.rows = [operational("o")];
