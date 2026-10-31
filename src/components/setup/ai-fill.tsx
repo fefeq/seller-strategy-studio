@@ -13,6 +13,7 @@ import { applySetupItems, extractSetup, undoSetupItems } from "@/lib/agent.funct
 import type { UndoRef } from "@/lib/setup-undo";
 import { FIELD_LABELS, itemDetail, proposalItems, type ProposalItem, type SetupProposal } from "@/lib/setup-extraction";
 import { errorText, isNetworkError } from "@/lib/errors";
+import { mergeFiles } from "@/lib/onboarding-sources";
 import { AiProgress } from "@/components/ai-progress";
 import { questionSuggestions } from "@/lib/setup-questions";
 import { askConfirm } from "@/components/confirm-dialog";
@@ -22,6 +23,9 @@ import { askConfirm } from "@/components/confirm-dialog";
 // Same limit the server applies (extractSetup), shown before pasting rather than after.
 export const TEXT_LIMIT = 40_000;
 
+// extractSetup reads the first 3 files and ignores the rest, so the whole list is capped at 3, not each selection.
+const AI_FILL_MAX_FILES = 3;
+
 export function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupProposal | null; setProposal: (p: SetupProposal | null) => void; onWizard: () => void }) {
   const extract = useServerFn(extractSetup);
   const [url, setUrl] = useState("");
@@ -30,14 +34,17 @@ export function AiFill({ proposal, setProposal, onWizard }: { proposal: SetupPro
   const [busy, setBusy] = useState(false);
 
   async function onFiles(list: FileList | null) {
-    const arr = Array.from(list ?? []).slice(0, 3);
+    const arr = Array.from(list ?? []);
     const read = await Promise.all(arr.map(async (f) => {
       if (f.size > 8 * 1024 * 1024) { toast.error(`${f.name} supera 8 MB.`); return null; }
       if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) { const body = await f.text(); setText((t) => `${t}\n\n--- ${f.name} ---\n${body.slice(0, 20000)}`); return null; }
       const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
       return { filename: f.name, dataUrl };
     }));
-    setFiles(read.filter((x): x is { filename: string; dataUrl: string } => !!x));
+    // CA-12: new files join the ones already listed, never replace them.
+    const merged = mergeFiles(files, read.filter((x): x is { filename: string; dataUrl: string } => !!x), AI_FILL_MAX_FILES);
+    setFiles(merged.files);
+    if (merged.dropped.length) toast.error(`Una lectura admite hasta ${AI_FILL_MAX_FILES} documentos. Se quedan fuera: ${merged.dropped.join(", ")}.`);
   }
 
   const [expanded, setExpanded] = useState(false);
