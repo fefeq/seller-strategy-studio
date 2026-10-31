@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ComponentProps } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -22,6 +22,7 @@ import { linkTarget } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
+import { ExecuteDialog, executeKind } from "@/components/strategy-execute";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
 const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
@@ -40,6 +41,11 @@ export function SuggestionBoard() {
   const [prio, setPrio] = useState("all");
   const [grouped, setGrouped] = useState(false);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  // Accepting an experiment or a commercial action opens the form first; the decision is sent when it is confirmed (CA-35, CA-36).
+  // A copy of the row, not just its id: a refetch can drop the row while the form is open, and the form must keep what was typed.
+  const [executing, setExecuting] = useState<ComponentProps<typeof ExecuteDialog>["s"] | null>(
+    null,
+  );
 
   const { data } = useQuery({
     queryKey: ["suggestions", "board", orgId, (me?.roles ?? []).join(",")],
@@ -144,6 +150,36 @@ export function SuggestionBoard() {
     );
   const rowActions = (s: Row) => {
     const open = s.status === "pending";
+    if (open && parseStrategy(s.strategy)) {
+      // Strategic suggestions say what each button does, in words (CA-4).
+      return (
+        <div className="flex flex-wrap gap-1">
+          {s.link &&
+            (() => {
+              const t = linkTarget(s.link)!;
+              return (
+                <Button size="sm" variant="ghost" asChild aria-label="Abrir">
+                  <Link to={t.to} search={t.search}>
+                    <span aria-hidden>→</span>
+                  </Link>
+                </Button>
+              );
+            })()}
+          <Button
+            size="sm"
+            onClick={() => (executeKind(s) ? setExecuting(s) : act(s.id, "approve"))}
+          >
+            Aceptar
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => act(s.id, "snooze")}>
+            Más tarde
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => act(s.id, "dismiss")}>
+            Descartar
+          </Button>
+        </div>
+      );
+    }
     return (
       <div className="flex gap-1">
         {s.link &&
@@ -234,6 +270,15 @@ export function SuggestionBoard() {
 
   return (
     <div className="space-y-6">
+      {executing && (
+        <ExecuteDialog
+          key={executing.id}
+          s={executing}
+          open
+          onOpenChange={(o) => !o && setExecuting(null)}
+          reason={reasons[executing.id]}
+        />
+      )}
       <p className="text-sm text-muted-foreground">
         {leader
           ? "Todas las sugerencias de la empresa, con su responsable y estado."

@@ -1,6 +1,7 @@
 # SDD 2026-10-25 · UX de estrategia, onboarding y coherencia de campos
 
-Estado de todos: **Borrador** (ninguno aprobado, ninguno enviado a Dani). Rama: `sdd/ux-onboarding-coherencia-20261025`.
+Estado: el de cada SDD está en su cabecera (este índice no lo repite, para no quedarse desactualizado). Rama original: `sdd/ux-onboarding-coherencia-20261025`.
+PRD de la iniciativa: `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (objetivos G-n; cada SDD dice cuál cubre). Plantilla vigente: `docs/factory/templates/sdd.md`, 18 secciones.
 
 ## Índice y orden recomendado
 | # | SDD | Tipo | Depende de |
@@ -42,7 +43,7 @@ Orden de preferencia: regla determinista → dato derivado/caché → modelo bar
 
 ## Decisiones que siguen abiertas
 1. Productos: moneda y productos en varias monedas.
-2. Resto de [Por verificar] que depende de Dani (ver sección 15 de cada SDD).
+2. Resto de [Por verificar] que depende de producción, proveedores o datos reales (ver sección 16 de cada SDD).
 
 Decididas en la segunda ronda: coste del respaldo (se descuenta del presupuesto de la empresa), Theory U avisa a los 14 días en la misma fase, queda aparte y la guía lo sugiere, y el catálogo empieza por Origen, País, Tamaño e Importe.
 
@@ -50,4 +51,4 @@ Decididas en la segunda ronda: coste del respaldo (se descuenta del presupuesto 
 - `nokko.ai/discoveries` exige sesión: análisis hecho sobre el código de `main`, no sobre producción.
 - Agrupación de campos por nombre, no por significado.
 - Sin datos de uso: todas las líneas base figuran como «sin dato».
-- Los SDD siguen la plantilla `postin-sdd` aunque el repo tiene convención BMAD (`sdd.config.json`); Dani decide si se convierten.
+- Desde 2026-10-28 los SDD siguen la plantilla propia de NOKKO (`docs/factory/templates/sdd.md`). BMAD quedó archivado en `docs/archivado/bmad/`.

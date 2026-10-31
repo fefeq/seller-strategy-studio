@@ -398,3 +398,31 @@ describe("CA-7 on the mixed list the screen reads", () => {
     expect(kept.some((r) => r.id === "s0") && kept.some((r) => r.id === "s1")).toBe(true);
   });
 });
+
+// NK-0041: the client form, the server and Telegram must agree on which suggestions need the form.
+import { executeKind } from "@/components/strategy-execute";
+import { executeFormKind, needsExecuteForm, STRATEGY_ACTIONS } from "./strategy-suggestions";
+
+describe("executeFormKind: the same answer as the client's executeKind for every action type", () => {
+  for (const action_type of STRATEGY_ACTIONS)
+    it(action_type, () => {
+      const s = buildStrategySuggestion({
+        element: "pipeline",
+        kind: "validate",
+        action_type,
+        cause: "c",
+        priority: 2,
+        title: "t",
+        body: "b",
+        evidence: ev(1),
+      });
+      expect(executeFormKind(s.strategy)).toBe(executeKind(s));
+      expect(needsExecuteForm(s.strategy)).toBe(
+        action_type === "experiment" || action_type === "commercial_action",
+      );
+    });
+  it("a value that is not a strategy needs no form", () => {
+    expect(executeFormKind(null)).toBeNull();
+    expect(needsExecuteForm({ action_type: "experiment" })).toBe(false); // incomplete: parseStrategy refuses it, like the client
+  });
+});

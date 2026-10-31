@@ -59,10 +59,10 @@ export function NewLead({ segments }: { segments: { id: string; name: string }[]
           <div className="sm:col-span-2"><Field label="Empresa"><EntityCombobox items={accounts} value={f.company} selectedId={accountId} onChange={(t, a) => { set("company")(t); setAccountId(a?.id ?? null); }} placeholder="Busca entre tus cuentas o escribe una nueva" noun="cuenta nueva" logos autoFocus ariaLabel="Empresa" /></Field></div>
           <Field label="Contacto"><Input value={f.contact_name} onChange={(e) => set("contact_name")(e.target.value)} /></Field>
           <Field label="Email"><Input type="email" value={f.email} onChange={(e) => set("email")(e.target.value)} /></Field>
-          <Field label="Origen"><Input value={f.source} onChange={(e) => set("source")(e.target.value)} placeholder="Webinar, LinkedIn, Referido…" /></Field>
-          <Field label="Segmento"><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segments.map((s) => [s.id, s.name])) }} onChange={set("segment_id")} /></Field>
+          <Field label="Origen" why="Métricas lo usa para mostrar de dónde vienen los deals que se pierden."><Input value={f.source} onChange={(e) => set("source")(e.target.value)} placeholder="Webinar, LinkedIn, Referido…" /></Field>
+          <Field label="Segmento" why="Métricas lo usa para separar pérdidas y embudo por segmento."><Pick value={f.segment_id} options={{ "": "Sin segmento", ...Object.fromEntries(segments.map((s) => [s.id, s.name])) }} onChange={set("segment_id")} /></Field>
           <Field label="Etapa"><Pick value={f.stage} options={NEW_STAGES} onChange={set("stage")} /></Field>
-          <Field label="Próximo seguimiento"><DateField value={f.next_step_at} onChange={(iso) => set("next_step_at")(iso ?? "")} /></Field>
+          <Field label="Próximo seguimiento" why="Si pasa la fecha, Nokko te propone una tarea de seguimiento en Sugerencias."><DateField value={f.next_step_at} onChange={(iso) => set("next_step_at")(iso ?? "")} /></Field>
         </div>
         <Button className="mt-2 w-full" onClick={save}>Crear lead</Button>
       </DialogContent>

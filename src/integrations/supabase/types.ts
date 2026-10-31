@@ -4819,6 +4819,12 @@ export type Database = {
         Update: never
         Relationships: []
       }
+      strategy_reviews: {
+        Row: { cost: number; created_at: string; created_by: string | null; depth: string; id: string; input_fingerprint: string; mode: string; org_id: string; suggestions: Json }
+        Insert: { cost?: number; created_at?: string; created_by?: string | null; depth: string; id?: string; input_fingerprint: string; mode: string; org_id?: string; suggestions?: Json }
+        Update: never
+        Relationships: []
+      }
       strategy_decisions: {
         Row: {
           decided_at: string

@@ -1,8 +1,8 @@
-// App menu (UX audit 24 oct 2026): the daily places stay visible; everything else sits in two
-// collapsible groups, «Más herramientas» and «Ajustes», which open by themselves when you are inside.
+// App menu: the daily selling places stay visible; strategy/analysis and settings sit in two
+// collapsible groups, «Estrategia» and «Ajustes», which open by themselves when you are inside.
 // Pure and tested: the shell and the ⌘K palette read the same list.
 export type NavItem = { to: string; label: string; leadersOnly?: boolean; keywords?: string };
-export type NavGroup = { key: "daily" | "more" | "settings"; title: string; collapsible: boolean; items: NavItem[] };
+export type NavGroup = { key: "daily" | "strategy" | "settings"; title: string; collapsible: boolean; items: NavItem[] };
 
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -13,22 +13,22 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/leads", label: "Leads", keywords: "entrada prospectos" },
       { to: "/deals", label: "Pipeline", keywords: "deals oportunidades" },
       { to: "/people", label: "Personas", keywords: "contactos" },
-      { to: "/strategy", label: "Estrategia GTM", keywords: "icp segmentos posicionamiento" },
-      { to: "/metrics", label: "Métricas", keywords: "cac payback funnel" },
     ],
   },
   {
-    key: "more", title: "Más herramientas", collapsible: true, items: [
-      { to: "/discoveries", label: "Descubiertos" },
-      { to: "/approvals", label: "Aprobaciones" },
-      { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
+    key: "strategy", title: "Estrategia", collapsible: true, items: [
+      { to: "/strategy", label: "Estrategia GTM", keywords: "icp segmentos posicionamiento" },
+      { to: "/metrics", label: "Métricas", keywords: "cac payback funnel" },
       { to: "/cycle", label: "Ciclo GTM" },
       { to: "/debates", label: "Debates" },
-      { to: "/abm", label: "ABM y partners" },
       { to: "/theory-u", label: "Theory U" },
+      { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
+      { to: "/abm", label: "ABM y partners" },
       { to: "/products", label: "Productos" },
       { to: "/hub", label: "Conocimiento" },
       { to: "/memory", label: "Memoria" },
+      { to: "/discoveries", label: "Descubiertos" },
+      { to: "/approvals", label: "Aprobaciones" },
     ],
   },
   {
