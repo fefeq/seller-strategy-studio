@@ -9,7 +9,9 @@ import { canActOnSuggestion } from "@/lib/suggestion-board";
 import { executeFormKind } from "@/lib/strategy-suggestions";
 import { executeIssue } from "@/lib/strategy-execute";
 
-export type ExecuteInput = { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft } | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
+export type ExecuteInput =
+  | { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft }
+  | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
 
 export async function userCtx(
   supabase: Db,
@@ -251,7 +253,12 @@ export const refreshSuggestions = createServerFn({ method: "POST" })
 export const decideSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { id: string; decision: "approve" | "snooze" | "dismiss"; reason?: string; execute?: ExecuteInput }) => ({
+    (d: {
+      id: string;
+      decision: "approve" | "snooze" | "dismiss";
+      reason?: string;
+      execute?: ExecuteInput;
+    }) => ({
       id: String(d.id),
       decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as
         "approve" | "snooze" | "dismiss",
@@ -261,7 +268,10 @@ export const decideSuggestion = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    return decideSuggestionCore(ctx, data.id, data.decision, { reason: data.reason, execute: data.execute });
+    return decideSuggestionCore(ctx, data.id, data.decision, {
+      reason: data.reason,
+      execute: data.execute,
+    });
   });
 
 export async function decideSuggestionCore(
@@ -306,10 +316,17 @@ export async function decideSuggestionCore(
     let result = r;
     if (r.message !== "Ya estaba gestionada" && decision === "approve") {
       // F3: accepting acts, but only inside the guard rails of strategy-execute (a pending proposal, or a task or experiment the person edited).
-      const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } = await import("@/lib/strategy-execute-core");
-      if (opts.execute?.kind === "experiment") await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
-      else if (opts.execute?.kind === "task") await createTaskFromSuggestion(ctx, id, opts.execute.draft);
-      else if (await proposeChange(ctx, s)) result = { ...r, message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada." };
+      const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } =
+        await import("@/lib/strategy-execute-core");
+      if (opts.execute?.kind === "experiment")
+        await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
+      else if (opts.execute?.kind === "task")
+        await createTaskFromSuggestion(ctx, id, opts.execute.draft);
+      else if (await proposeChange(ctx, s))
+        result = {
+          ...r,
+          message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada.",
+        };
     }
     if (r.message !== "Ya estaba gestionada") {
       const { rememberDecision } = await import("@/lib/memory.server");
