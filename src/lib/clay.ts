@@ -41,12 +41,16 @@ export function englishCountry(iso: string): string | null {
   try { return new Intl.DisplayNames(["en"], { type: "region" }).of(c) ?? null; } catch { return null; }
 }
 
+// Common names of the United Kingdom that Intl.DisplayNames does not return (NK-0035); folded like the lookup key.
+const GB_ALIASES = ["uk", "england", "great britain", "gran bretana", "inglaterra"];
+
 /** ISO code for a country name in English or Spanish (or an ISO code), limited to the countries Nokko knows. */
 export function isoFromCountry(name: string | null | undefined): string | null {
   const v = (name ?? "").trim();
   if (!v) return null;
   if (/^[A-Za-z]{2}$/.test(v) && COUNTRY_CODES.includes(v.toUpperCase())) return v.toUpperCase();
   const k = v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  if (GB_ALIASES.includes(k) && COUNTRY_CODES.includes("GB")) return "GB";
   for (const code of COUNTRY_CODES) {
     for (const lang of ["en", "es"]) {
       let n: string | undefined;

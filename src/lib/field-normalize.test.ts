@@ -16,7 +16,7 @@ describe("field normalization", () => {
   });
 
   it("a country that does not fit is kept as the original, never turned into a code", () => {
-    expect(normalizeCountry("UK")).toMatchObject({ status: "unnormalized", original: "UK" });
+    expect(normalizeCountry("Atlantis")).toMatchObject({ status: "unnormalized", original: "Atlantis" });
     expect(normalizeCountry("  ")).toEqual({ status: "empty" });
   });
 

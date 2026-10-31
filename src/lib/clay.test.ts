@@ -30,6 +30,12 @@ describe("clay mapping", () => {
     expect(isoFromCountry("es")).toBe("ES");
     expect(isoFromCountry("Atlantis")).toBeNull();
   });
+  it("NK-0035: UK and England aliases give GB, existing GB spellings stay", () => {
+    for (const v of ["UK", "uk", "England", "england", "Great Britain", "Gran Bretaña", "Gran Bretana", "Inglaterra"]) expect(isoFromCountry(v), v).toBe("GB");
+    for (const v of ["United Kingdom", "Reino Unido", "GB", "gb"]) expect(isoFromCountry(v), v).toBe("GB");
+    expect(isoFromCountry("Atlantis")).toBeNull();
+    expect(isoFromCountry("Scotland")).toBeNull();
+  });
   it("keeps size numbers readable for the ICP rule", () => {
     expect(employeesText("51-200 employees")).toBe("51-200 empleados");
     expect(employeesText(null)).toBeNull();
