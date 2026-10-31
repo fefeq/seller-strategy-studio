@@ -1,13 +1,14 @@
 # SDD-20261028-no-explicit-any-cleanup · [Mejora] Cero usos del tipo `any` explícito, sin cambio visible
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (la regla ya existe en `AGENTS.md` y hoy no se cumple) · **Track:** medio (un PR por unidad, sin cambios de datos)
-**Estado:** Aprobado (Fede, 2026-10-29; sin implementar) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
+**Estado:** Aprobado (Fede, 2026-10-29; sin implementar) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-28
+**Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las preguntas de la sección 14 las responde Fede y la sección 16 la completa Claude Code; los títulos conservan el nombre de la plantilla.
 
 ## 1. Resumen
 Tras el SDD `SDD-20261028-hooks-lint-hygiene` (fusionado en `main`, commit `90811098`), el lint reporta 14.941 problemas (14.900 errores y 41 warnings). El siguiente grupo con riesgo real son los **111 usos de `any` explícito** (regla `@typescript-eslint/no-explicit-any`, nivel error) repartidos en 45 archivos: 106 en código de producción y 5 en pruebas. Se pide sustituirlos por tipos concretos, **sin cambiar el comportamiento**, y dejar la regla en 0.
 
 ## 2. Problema y para quién
-`AGENTS.md` dice: «No `as any`: use the generated types (Tables/TablesUpdate)… a casting gap is a narrow typed cast with a reason». El roadmap marca «6. Quitar `as any`» como hecho, pero el lint de hoy sigue reportando 111 usos de `any`. Con `any`, el verificador de tipos no detecta errores de forma en datos de Supabase, de proveedores (Apify, Apollo, Clay, Stripe, PostHog…) ni de la IA, así que un error de campo aparece en ejecución y no al compilar. Afecta a quien mantiene el código (Dani y su agente). No afecta hoy a usuarios finales (sin dato de incidencias; fuente: ninguna consultada).
+`AGENTS.md` dice: «No `as any`: use the generated types (Tables/TablesUpdate)… a casting gap is a narrow typed cast with a reason». El roadmap marca «6. Quitar `as any`» como hecho, pero el lint de hoy sigue reportando 111 usos de `any`. Con `any`, el verificador de tipos no detecta errores de forma en datos de Supabase, de proveedores (Apify, Apollo, Clay, Stripe, PostHog…) ni de la IA, así que un error de campo aparece en ejecución y no al compilar. Afecta a quien mantiene el código (Claude Code y quien revise). No afecta hoy a usuarios finales (sin dato de incidencias; fuente: ninguna consultada).
 
 ## 3. Evidencia y por qué ahora
 - Salida de `npx eslint . -f json` del 2026-10-28 sobre `main` (commit `90811098`): 111 mensajes de `no-explicit-any`, 45 archivos, 5 en pruebas (fuente: ejecución propia con dependencias instaladas por `npm` sin lockfile).
@@ -18,7 +19,7 @@ Tras el SDD `SDD-20261028-hooks-lint-hygiene` (fusionado en `main`, commit `9081
 - Por qué ahora: el SDD de hooks dejó el lint de hooks en 0; este es el siguiente grupo que puede ocultar fallos. Es apuesta de Fede por mantenimiento, sin dato de impacto en usuarios.
 
 ## 4. Resultado buscado
-- `npx eslint src --rule 'prettier/prettier: off' -f json` no devuelve ningún mensaje de `@typescript-eslint/no-explicit-any`. Fuente: salida de ese comando, medida con el `bun.lock` de Dani.
+- `npx eslint src --rule 'prettier/prettier: off' -f json` no devuelve ningún mensaje de `@typescript-eslint/no-explicit-any`. Fuente: salida de ese comando, medida con el `bun.lock` del repo.
 - Comandos de comprobación: `npx tsc --noEmit`, `npx vitest run` (incluye las `.pg.test.ts`) y `npm run build` (o `bun run build`).
 - `npx tsc --noEmit` y todas las pruebas siguen pasando, sin eliminar ni saltar ninguna (hoy pasan al 100 % en `main`, commit `90811098`, 2026-10-28; fuente: `tsc`, `vitest`, 1.080 pruebas incluidas las `.pg.test.ts`, que se ejecutaron sin base de datos externa).
 
@@ -89,18 +90,18 @@ Un PR por unidad, en este orden. Cada PR deja a 0 los usos de sus archivos, no s
 - U-3: módulos de servidor y librería (cubre H-1 en servidor; CA-9; es la de más riesgo por tocar datos de proveedores). Los archivos de pago y analítica (`stripe.functions`, `posthog.functions`) pueden revisarse aparte.
 - U-4: pruebas, y cierre de la regla (cubre CA-1 y CA-10).
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — Claude Code valida; la auditoría independiente revisa]
 - U-1: `agent.tsx` y `ai-text.tsx` repiten el mismo mapa de elementos de Markdown con `(p: any)`. Sugerencia: un único módulo compartido con los tipos de props de los elementos, que ambos usen. Reutilizar antes de crear.
 - Datos con campos de estructura libre: leer con `jsonObject` y `actionTool` y escribir con `as unknown as Json` (`AGENTS.md`, `src/lib/json.ts`).
 - Filas de Supabase: usar los tipos generados (`Tables`, `TablesUpdate`) y los ayudantes de `src/lib/json.ts`, como pide `AGENTS.md`.
 - Datos de proveedores (Apify, Apollo, Clay, Firecrawl, Stripe, PostHog, Telegram): definir tipos mínimos con los campos que el código lee realmente; `unknown` más comprobación de forma cuando el dato no se controla.
 - Cada unidad puede apoyarse en la salida del lint para listar sus usos exactos al empezar.
 - Las cifras (111, 45 archivos, 14.941) se midieron con `npm` sin lockfile porque `bun.lock` apunta a un mirror privado que el entorno de esta sesión no alcanzó; con el lock, el recuento puede variar.
-- Roadmap: el ítem «6. Quitar `as any`» figura como hecho; conviene que Dani confirme si cubría solo `as any` y no `: any`.
+- Roadmap: el ítem «6. Quitar `as any`» figura como hecho; conviene confirmar si cubría solo `as any` y no `: any`.
 
 ## 13. Riesgos y dependencias
 - Tipar bien puede destapar errores de forma ya presentes. Mitigación: CA-5 (no arreglar en silencio; anotar y abrir Bug).
-- U-3 toca módulos que llaman a proveedores de pago o de datos; sin pruebas contra los servicios reales, el riesgo se contiene con tipos mínimos y revisión de Dani.
+- U-3 toca módulos que llaman a proveedores de pago o de datos; sin pruebas contra los servicios reales, el riesgo se contiene con tipos mínimos y revisión de Fede.
 - Lovable sincroniza los commits de la rama conectada: cada PR debe mantener la rama funcional y no reescribir historia publicada (`AGENTS.md`).
 - Dependencia: ninguna con otros SDD. El SDD de hooks (`SDD-20261028-hooks-lint-hygiene`) ya está fusionado.
 
@@ -113,7 +114,7 @@ Un PR por unidad, en este orden. Cada PR deja a 0 los usos de sus archivos, no s
 
 ## 15. Pendiente de verificar
 - [Por verificar] Qué hay desplegado en `production` frente a `main`: el análisis es de `main`, sin acceso a producción.
-- [Por verificar] Que el desglose por archivo sigue vigente en la rama que use Dani (el lint cambia con cada fusión).
+- [Por verificar] Que el desglose por archivo sigue vigente en la rama de trabajo (el lint cambia con cada fusión).
 - [Por verificar] Que ninguno de los 111 usos es necesario por una restricción real de un proveedor sin tipos (CA-3 cubre esos casos).
 - [Por verificar] Qué cubren hoy las pruebas de las pantallas y módulos de las unidades U-2 y U-3: no lo he comprobado.
 
@@ -126,4 +127,4 @@ Un PR por unidad, en este orden. Cada PR deja a 0 los usos de sus archivos, no s
 ---
 Validación: linter OK (0 bloqueantes); auditoría independiente: Cambios menores, aplicados; aprobado por Fede el 2026-10-29.
 
-Nota (2026-10-29): desde la medición (commit `90811098`) `main` incorporó #47, #48 y #46; el recuento de 111 usos puede haber cambiado. Dani debe regenerarlo con el lint al empezar cada unidad.
+Nota (2026-10-29): desde la medición (commit `90811098`) `main` incorporó #47, #48 y #46; el recuento de 111 usos puede haber cambiado. Quien implemente debe regenerarlo con el lint al empezar cada unidad.
