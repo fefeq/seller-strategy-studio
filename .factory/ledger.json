@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 24,
+  "seq": 41,
   "tickets": [
     {
       "id": "NK-0001",
@@ -484,7 +484,7 @@
       "title": "Migración 0058: escritores automáticos con sesión de persona quedarían sellados «persona + confirmado» sin serlo (no aplicar 0058 hasta SDD aprobado)",
       "kind": "bug",
       "source": "migration-0058-plan.md (R1) y revisión de la sesión de verificación de 0058; escritores comprobados en el código el 2026-10-28",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261028-field-sources-on-tracked-writers.md",
@@ -509,6 +509,12 @@
           "at": "2026-10-28T22:22:29.469Z",
           "by": "Fede",
           "note": "owner=nokko-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T19:40:24.617Z",
+          "by": "Fede",
+          "note": "sha=ecf05a71ee83eddeb8738d13d83c5c9fa401162c"
         }
       ]
     },
@@ -550,6 +556,399 @@
           "state": "LOGGED",
           "at": "2026-10-29T00:13:50.173Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0025",
+      "title": "Torre de control GTM (iniciativa): objetivos, resultados clave, tareas y puertas con hilo conductor",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:05:57.431Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:10:31.950Z",
+          "by": "tracker",
+          "note": "docs: sdd=- prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0026",
+      "title": "Torre de control GTM 1: objetivos, resultados clave, tareas, puertas, torre de control y retirada de la lectura de LinkedIn por extracción automática",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "PROMOTED",
+      "owner": "Claude",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-1a-core.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": "feat/gtm-control-tower-1a",
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:05:57.482Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:35:43.104Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-1a-core.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T18:25:33.652Z",
+          "by": "Fede",
+          "note": "owner=Claude"
+        }
+      ]
+    },
+    {
+      "id": "NK-0027",
+      "title": "Torre de control GTM 1b: iniciativas, tareas, puertas, torre de control, Plan, Inicio y menú",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-1b-tasks-gates-tower.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:35:43.153Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0028",
+      "title": "Torre de control GTM 2: contexto estratégico y onboarding por bloques con nivel de confianza",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-2-context-onboarding.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:34:02.600Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0029",
+      "title": "Torre de control GTM 3: atribución por canal y público, embudos por modelo de venta y diccionario de métricas",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-3-attribution-metrics.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:34:02.655Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0030",
+      "title": "Avisos por momentos de dinero: respuesta positiva, llamada reservada o cancelada y deal ganado avisan; el resto queda en el registro sin ping",
+      "kind": "feature",
+      "source": "análisis Anfloy + auditoría de avisos (jobs.ts), sesión de Fede 2026-10-30",
+      "state": "PROMOTED",
+      "owner": "Claude",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-money-moment-notices.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:45:05.254Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:47:56.606Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-money-moment-notices.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T15:52:44.217Z",
+          "by": "Fede",
+          "note": "owner=Claude"
+        }
+      ]
+    },
+    {
+      "id": "NK-0031",
+      "title": "Aviso de deal en riesgo (stale_deal): detectar qué Sugerencia es nueva y avisar a líderes y responsable, sin tocar de golpe la función compartida",
+      "kind": "feature",
+      "source": "gate del SDD de NK-0030 (B-3), decisión de Fede 2026-10-30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:59:02.065Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0032",
+      "title": "Torre de control GTM 4: integraciones (Stripe, producto, calendario, correo, avisos, asistentes)",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:09:19.068Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:15:32.650Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0033",
+      "title": "Torre de control GTM 4b: herramientas personales y asistentes (calendario, correo, notas, avisos, servidor MCP)",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-4b-personal-tools-assistants.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:15:32.698Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0034",
+      "title": "Tipar las respuestas de Apollo y Clay y quitar los dos eslint-disable no-explicit-any añadidos en NK-0018",
+      "kind": "bug",
+      "source": "Gate de NK-0018 (observación de prioridad baja): apollo-gateway.ts:57 y clay-gateway.ts:46, con el Promise<any> ya existente en la base fc45f3a",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:40:25.609Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0035",
+      "title": "País: «UK», «uk» y «England» no se reconocen y se descartan al guardar (isoFromCountry)",
+      "kind": "bug",
+      "source": "Gate de NK-0018 (hallazgo de prioridad baja): «United Kingdom», «Reino Unido» y «GB» sí dan GB; sin alias, la IA web deja el país vacío",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:40:25.661Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0036",
+      "title": "NK-0022: menores del gate sobre ecf05a7",
+      "kind": "bug",
+      "source": "Gate NK-0022 sobre ecf05a7 (decisión de Fede 2026-10-31). Evidencia: .factory/evidence/NK-0022/ecf05a71ee83/ (gate-mutations.log, edges-compare.log). Tipo: mejora de tests, sin cambio de esquema",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:42:51.313Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0037",
+      "title": "companyLinkedin: releer con el cliente del usuario antes de escribir con el cliente admin",
+      "kind": "feature",
+      "source": "Decisión de Fede (admin) 2026-10-29; riesgo aceptado por Fede mientras tanto; origen NK-0022 (apify-core.ts, companyLinkedin exportada). Requiere SDD corto y gate propio; aprobado por Fede 2026-10-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:42:51.382Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0038",
+      "title": "Tablero de equipo: «Aceptar» una sugerencia de prueba o acción comercial la cierra sin crear el experimento ni la tarea",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:07:26.492Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0039",
+      "title": "Aceptar sin borrador desde Telegram, el agente y el MCP cierra una sugerencia de prueba o acción comercial sin crear el experimento ni la tarea",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": "NK-0038",
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:03.294Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0040",
+      "title": "ExecuteDialog dice «creado» y cierra aunque el servidor responda «Ya estaba gestionada», y decideStrategy registra la decisión antes de crear (si falla el insert queda aceptada sin nada)",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:03.373Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0041",
+      "title": "Servidor: decideSuggestionCore acepta approve sin borrador para pruebas y acciones comerciales (botón Hecho de Telegram, herramienta del agente, MCP)",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:11.547Z",
+          "by": "tracker",
           "note": ""
         }
       ]
