@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { structureIcp } from "@/lib/ai.functions";
-import { icpCompanyQuery, icpPeopleQuery, icpReadiness, icpSizeText, LEVEL_LABEL, splitList } from "@/lib/icp";
+import { ICP_TRACKED, icpCompanyQuery, icpPeopleQuery, icpSaveSources, icpReadiness, icpSizeText, LEVEL_LABEL, splitList } from "@/lib/icp";
 import { DEFAULT_LEVELS, LEVELS } from "@/lib/orchestrator/search";
 import { isDirty } from "@/lib/field-actions";
 import { DeleteElement } from "@/components/delete-element";
@@ -48,10 +48,13 @@ export function IcpEditor() {
   const [sel, setSel] = useState<Draft | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // What the AI offered in this edit (tracked fields only): saved as «ia», not confirmed, unless the person changes it (NK-0024).
+  const proposedRef = useRef<Draft>({});
   const { data: me } = useMe();
   const [toDelete, setToDelete] = useState<{ id: string; name: string; segment_id: string | null } | null>(null);
   const detailRef = useRef<HTMLDivElement>(null);
   const selId = sel?.id;
+  useEffect(() => { proposedRef.current = {}; }, [selId]);
   useEffect(() => {
     if (selId && typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) detailRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selId]);
@@ -95,8 +98,14 @@ export function IcpEditor() {
   async function save(): Promise<boolean> {
     if (!sel) return true;
     const { id, created_at, updated_at, created_by, updated_by, org_id, field_sources: _fs, ...rest } = asIcp(sel);
-    try { await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null }).eq("id", id).select("id")); }
+    try {
+      // The marks are built from the row as it is now, so a confirmation made since opening it survives.
+      const fresh = await confirmed(supabase.from("icp_profiles").select(["field_sources", ...ICP_TRACKED].join(",")).eq("id", id).single());
+      const field_sources = "field_sources" in fresh ? icpSaveSources(fresh.field_sources, fresh as unknown as Draft, rest, proposedRef.current, me?.user.id, new Date().toISOString()) : null;
+      await confirmed(supabase.from("icp_profiles").update({ ...rest, segment_id: rest.segment_id || null, ...(field_sources ? { field_sources: field_sources as unknown as Json } : {}) }).eq("id", id).select("id"));
+    }
     catch (e) { toast.error(errorText(e)); return false; }
+    proposedRef.current = {};
     toast.success("ICP guardado. Búsquedas, puntuación e IA ya lo usan.");
     qc.invalidateQueries({ queryKey: ["icp"] }); qc.invalidateQueries({ queryKey: ["setup"] }); qc.invalidateQueries({ queryKey: ["clay-icps"] }); qc.invalidateQueries({ queryKey: ["recent-changes"] });
     return true;
@@ -108,6 +117,7 @@ export function IcpEditor() {
       const r = await structure({ data: { icp: asIcp(sel), note } });
       const filled = Object.entries(r).filter(([, v]) => (Array.isArray(v) ? v.length : v != null));
       if (!filled.length) { toast.message("No hay base suficiente. Describe el cliente ideal en las notas o rellena sectores y geografía."); return; }
+      proposedRef.current = { ...proposedRef.current, ...Object.fromEntries(filled.filter(([k]) => (ICP_TRACKED as readonly string[]).includes(k))) };
       setSel((s) => s && pick({ ...asIcp(s), ...Object.fromEntries(filled) }));
       toast.success("Criterios propuestos. Revísalos y pulsa Guardar ICP.");
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }

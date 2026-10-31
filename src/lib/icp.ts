@@ -4,6 +4,7 @@
 // fields are the fallback, so old ICPs keep working. Pure and tested.
 import { icpToQuery, type CompanyQuery } from "@/lib/clay";
 import { LEVELS, type Level } from "@/lib/orchestrator/search";
+import { keepUnreadable, readSources, stampPerson, stampUnconfirmed } from "@/lib/provenance";
 
 export type Icp = {
   id?: string;
@@ -157,4 +158,39 @@ export function parseIcpStructure(raw: string): Partial<Icp> {
   };
   if (typeof o.pains === "string" && o.pains.trim()) out.pains = o.pains.trim();
   return out;
+}
+
+/** The icp_profiles columns trigger 0058 tracks: a change to one without field_sources is stamped «persona». */
+export const ICP_TRACKED = ["countries", "geography", "min_employees", "max_employees", "company_size"] as const;
+
+const canonValue = (v: unknown) => (Array.isArray(v) ? v.map((x) => String(x).trim()).join(",") : v == null ? "" : String(v).trim());
+
+/**
+ * The field_sources to save with an ICP edit (NK-0024), or null when no tracked field changed (trigger 0058 then has
+ * nothing to stamp). A changed value equal to what the AI proposed keeps its AI origin, not confirmed; any other
+ * written value is the person's, confirmed; an emptied one loses its mark. Sent whenever something changed so the
+ * trigger, which leaves a changed field_sources alone, never stamps «persona» on a value nobody wrote.
+ * `saved` and `prev` are read just before writing; `proposed` holds only what the AI offered in this edit.
+ */
+export function icpSaveSources(
+  prev: unknown,
+  saved: Record<string, unknown>,
+  next: Record<string, unknown>,
+  proposed: Record<string, unknown>,
+  by: string | undefined,
+  at: string,
+): Record<string, unknown> | null {
+  const ai: string[] = [];
+  const person: string[] = [];
+  const cleared: string[] = [];
+  for (const f of ICP_TRACKED) {
+    const now = canonValue(next[f]);
+    if (canonValue(saved[f]) === now) continue;
+    if (!now) cleared.push(f);
+    else if (f in proposed && canonValue(proposed[f]) === now) ai.push(f);
+    else person.push(f);
+  }
+  if (!ai.length && !person.length && !cleared.length) return null;
+  const marks = stampPerson(stampUnconfirmed(readSources(prev), ai.map((field) => ({ field, source: "ia" })), at), person, at, by);
+  return keepUnreadable(prev, marks, cleared);
 }
