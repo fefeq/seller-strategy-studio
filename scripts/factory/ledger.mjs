@@ -5,7 +5,9 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { FACTORY_DIR } from "./paths.mjs";
 
-const FILE = process.env.FACTORY_LEDGER ? resolve(process.env.FACTORY_LEDGER) : resolve(FACTORY_DIR, "ledger.json");
+const FILE = process.env.FACTORY_LEDGER
+  ? resolve(process.env.FACTORY_LEDGER)
+  : resolve(FACTORY_DIR, "ledger.json");
 const EVIDENCE = resolve(FACTORY_DIR, "evidence");
 const STATES = ["LOGGED", "PROMOTED", "SHIPPED", "VERIFIED"];
 const KINDS = ["bug", "feature", "alert"];
@@ -27,7 +29,8 @@ function fail(msg) {
 function args(argv) {
   const out = { _: [] };
   for (let i = 0; i < argv.length; i++) {
-    if (argv[i].startsWith("--")) out[argv[i].slice(2)] = argv[++i];
+    // --approved-by and --approved_by are the same flag
+    if (argv[i].startsWith("--")) out[argv[i].slice(2).replaceAll("-", "_")] = argv[++i];
     else out._.push(argv[i]);
   }
   return out;
@@ -67,11 +70,16 @@ const db = load();
 switch (cmd) {
   case "log": {
     const title = a._.join(" ").trim();
-    if (!title) fail('usage: log "<title>" --kind bug|feature|alert [--source <where>] [--by <name>]');
+    if (!title)
+      fail('usage: log "<title>" --kind bug|feature|alert [--source <where>] [--by <name>]');
     const kind = a.kind ?? "bug";
     if (!KINDS.includes(kind)) fail(`kind must be one of ${KINDS.join(", ")}`);
-    for (const [k, v] of [["sdd", a.sdd], ["prd", a.prd]]) {
-      if (v && !existsSync(resolve(FACTORY_DIR, "..", v))) fail(`${k} file not found in the main checkout: ${v}`);
+    for (const [k, v] of [
+      ["sdd", a.sdd],
+      ["prd", a.prd],
+    ]) {
+      if (v && !existsSync(resolve(FACTORY_DIR, "..", v)))
+        fail(`${k} file not found in the main checkout: ${v}`);
     }
     const dup = db.tickets
       .filter((t) => !t.duplicate_of)
@@ -108,13 +116,22 @@ switch (cmd) {
     if (!a.owner) fail("promote needs --owner <session or person>");
     if (t.duplicate_of) fail(`${t.id} is a duplicate of ${t.duplicate_of}; promote the original`);
     if (t.state !== "LOGGED") fail(`${t.id} is ${t.state}, expected LOGGED`);
-    if (t.kind === "feature" && !t.sdd) fail(`${t.id} is a feature and needs an approved SDD: run nokko-shape, then \`doc ${t.id} --sdd <path>\``);
-    for (const [k, v] of [["SDD", t.sdd], ["PRD", t.prd]]) {
+    if (t.kind === "feature" && !t.sdd)
+      fail(
+        `${t.id} is a feature and needs an approved SDD: run nokko-shape, then \`doc ${t.id} --sdd <path>\``,
+      );
+    for (const [k, v] of [
+      ["SDD", t.sdd],
+      ["PRD", t.prd],
+    ]) {
       if (!v) continue;
       const file = resolve(FACTORY_DIR, "..", v);
       if (!existsSync(file)) fail(`${k} file not found in the main checkout: ${v}`);
-      const estado = /^\*\*Estado:\*\*\s*([^\s·(]+(?: curso)?)/m.exec(readFileSync(file, "utf8"))?.[1];
-      if (!APPROVED.includes(estado ?? "")) fail(`${k} ${v} is "${estado ?? "no Estado"}", needs Aprobado before promote`);
+      const estado = /^\*\*Estado:\*\*\s*([^\s·(]+(?: curso)?)/m.exec(
+        readFileSync(file, "utf8"),
+      )?.[1];
+      if (!APPROVED.includes(estado ?? ""))
+        fail(`${k} ${v} is "${estado ?? "no Estado"}", needs Aprobado before promote`);
     }
     t.owner = a.owner;
     t.branch = a.branch ?? null;
@@ -129,7 +146,8 @@ switch (cmd) {
     if (t.state !== "PROMOTED") fail(`${t.id} is ${t.state}, expected PROMOTED`);
     if (!a.sha) fail("ship needs --sha <commit the gate passed>");
     const gateFile = resolve(EVIDENCE, t.id, `gate-${a.sha.slice(0, 12)}.json`);
-    if (!existsSync(gateFile)) fail(`no gate evidence at ${gateFile}; run scripts/factory/gate.mjs first`);
+    if (!existsSync(gateFile))
+      fail(`no gate evidence at ${gateFile}; run scripts/factory/gate.mjs first`);
     const gate = JSON.parse(readFileSync(gateFile, "utf8"));
     if (gate.verdict !== "PASS") fail(`gate verdict for ${a.sha} is ${gate.verdict}, not PASS`);
     if (!a.approved_by) fail("ship needs --approved-by <human>: only a human approves the ship");
@@ -150,12 +168,21 @@ switch (cmd) {
   case "doc": {
     const t = find(db, a._[0]);
     if (!a.sdd && !a.prd) fail("usage: doc NK-xxxx [--sdd <path>] [--prd <path>]");
-    for (const [k, v] of [["sdd", a.sdd], ["prd", a.prd]]) {
+    for (const [k, v] of [
+      ["sdd", a.sdd],
+      ["prd", a.prd],
+    ]) {
       if (!v) continue;
-      if (!existsSync(resolve(FACTORY_DIR, "..", v))) fail(`${k} file not found in the main checkout: ${v} (commit or copy it there first)`);
+      if (!existsSync(resolve(FACTORY_DIR, "..", v)))
+        fail(`${k} file not found in the main checkout: ${v} (commit or copy it there first)`);
       t[k] = v;
     }
-    t.history.push({ state: t.state, at: now(), by: a.by ?? "tracker", note: `docs: sdd=${t.sdd ?? "-"} prd=${t.prd ?? "-"}` });
+    t.history.push({
+      state: t.state,
+      at: now(),
+      by: a.by ?? "tracker",
+      note: `docs: sdd=${t.sdd ?? "-"} prd=${t.prd ?? "-"}`,
+    });
     save(db);
     console.log(`${t.id} docs linked (sdd ${t.sdd ?? "-"}, prd ${t.prd ?? "-"})`);
     break;
@@ -164,7 +191,12 @@ switch (cmd) {
     const t = find(db, a._[0]);
     const to = find(db, a._[1]);
     t.duplicate_of = to.id;
-    t.history.push({ state: t.state, at: now(), by: a.by ?? "tracker", note: `linked to ${to.id}` });
+    t.history.push({
+      state: t.state,
+      at: now(),
+      by: a.by ?? "tracker",
+      note: `linked to ${to.id}`,
+    });
     save(db);
     console.log(`${t.id} linked to ${to.id}`);
     break;
@@ -177,7 +209,9 @@ switch (cmd) {
     const state = a.state;
     if (state && !STATES.includes(state)) fail(`state must be one of ${STATES.join(", ")}`);
     for (const t of db.tickets.filter((x) => !state || x.state === state)) {
-      console.log(`${t.id}\t${t.state}\t${t.kind}\t${t.owner ?? "-"}\t${t.duplicate_of ? `dup:${t.duplicate_of}` : ""}\t${t.title}`);
+      console.log(
+        `${t.id}\t${t.state}\t${t.kind}\t${t.owner ?? "-"}\t${t.duplicate_of ? `dup:${t.duplicate_of}` : ""}\t${t.title}`,
+      );
     }
     break;
   }

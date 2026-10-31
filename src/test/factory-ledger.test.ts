@@ -50,7 +50,9 @@ describe("ledger promote guard", () => {
 
   it("blocks a feature whose SDD is still a draft", () => {
     doc("docs/sdd/SDD-a.md", "Borrador");
-    const t = id(run("log", "Add saved views", "--kind", "feature", "--sdd", "docs/sdd/SDD-a.md").out);
+    const t = id(
+      run("log", "Add saved views", "--kind", "feature", "--sdd", "docs/sdd/SDD-a.md").out,
+    );
     const r = run("promote", t, ...GO);
     expect(r.code).toBe(1);
     expect(r.out).toMatch(/Borrador/);
@@ -58,7 +60,9 @@ describe("ledger promote guard", () => {
 
   it("promotes a feature once its SDD is approved", () => {
     doc("docs/sdd/SDD-a.md", "Aprobado (Fede, 2026-10-28)");
-    const t = id(run("log", "Add saved views", "--kind", "feature", "--sdd", "docs/sdd/SDD-a.md").out);
+    const t = id(
+      run("log", "Add saved views", "--kind", "feature", "--sdd", "docs/sdd/SDD-a.md").out,
+    );
     expect(run("promote", t, ...GO).code).toBe(0);
   });
 
@@ -66,7 +70,16 @@ describe("ledger promote guard", () => {
     doc("docs/sdd/SDD-a.md", "Aprobado");
     doc("docs/prd/PRD-a.md", "Borrador");
     const t = id(
-      run("log", "Add saved views", "--kind", "feature", "--sdd", "docs/sdd/SDD-a.md", "--prd", "docs/prd/PRD-a.md").out,
+      run(
+        "log",
+        "Add saved views",
+        "--kind",
+        "feature",
+        "--sdd",
+        "docs/sdd/SDD-a.md",
+        "--prd",
+        "docs/prd/PRD-a.md",
+      ).out,
     );
     const r = run("promote", t, ...GO);
     expect(r.code).toBe(1);
@@ -75,7 +88,9 @@ describe("ledger promote guard", () => {
 
   it("checks a bug's SDD only when one is linked", () => {
     doc("docs/sdd/SDD-b.md", "Borrador");
-    const t = id(run("log", "Fix RLS gap on leads", "--kind", "bug", "--sdd", "docs/sdd/SDD-b.md").out);
+    const t = id(
+      run("log", "Fix RLS gap on leads", "--kind", "bug", "--sdd", "docs/sdd/SDD-b.md").out,
+    );
     expect(run("promote", t, ...GO).code).toBe(1);
   });
 
@@ -89,5 +104,39 @@ describe("ledger promote guard", () => {
   it("rejects a link to a file that does not exist", () => {
     const t = id(run("log", "Add saved views", "--kind", "feature").out);
     expect(run("doc", t, "--sdd", "docs/sdd/missing.md").code).toBe(1);
+  });
+});
+
+describe("ledger ship flags", () => {
+  const SHA = "abcdef1234567890abcdef1234567890abcdef12";
+
+  function promoted() {
+    const t = id(run("log", "Fix typo in empty state", "--kind", "bug").out);
+    expect(run("promote", t, ...GO).code).toBe(0);
+    const dir = join(root, ".factory/evidence", t);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `gate-${SHA.slice(0, 12)}.json`), JSON.stringify({ verdict: "PASS" }));
+    return t;
+  }
+
+  it("ships with the documented --approved-by flag", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA, "--approved-by", "Fede");
+    expect(r.out).toMatch(/SHIPPED/);
+    expect(r.code).toBe(0);
+  });
+
+  it("still ships with the legacy --approved_by flag", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA, "--approved_by", "Fede");
+    expect(r.out).toMatch(/SHIPPED/);
+    expect(r.code).toBe(0);
+  });
+
+  it("fails with a clear message when nobody approves", () => {
+    const t = promoted();
+    const r = run("ship", t, "--sha", SHA);
+    expect(r.code).toBe(1);
+    expect(r.out).toMatch(/ship needs --approved-by/);
   });
 });
