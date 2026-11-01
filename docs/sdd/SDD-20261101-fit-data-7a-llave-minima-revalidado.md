@@ -1,7 +1,7 @@
 # SDD-20261101-fit-data-7a-llave-minima-revalidado · [Mejora] Llave mínima comprobada en un solo sitio y completado asistido del dominio (NK-0012)
 
 **Tipo:** Mejora (el original era «Feature»; revalidado, lo que cabe hoy es acotado y sin esquema) · **Prioridad propuesta:** Media
-**Estado:** Borrador (dos pasadas del gate respondidas; decide Fede) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede (2026-11-01) (dos pasadas del gate respondidas; decide Fede) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **PRD:** `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-5) · **Depende de:** `SDD-20261025-universal-field-definitions` (U-1 a U-4 hechas; 0058 sin aplicar en producción hasta donde consta, ver §16) y `SDD-20261025-field-actions-edit-delete-confirm` (U-1 a U-5 hechas)
 **Ticket:** NK-0012 (`LOGGED`). Este SDD **sustituye el alcance** de `SDD-20261025-fit-data-7a-llave-minima-y-completado` y **no lo reescribe**: el original solo se toca (cabecera «Sustituido por…») con aprobación de Fede.
 
@@ -215,6 +215,11 @@ Orden: U-1a → U-1b → (U-2, U-3); U-2 y U-3 consumen U-1b y son independiente
 **P-10. (Cambio de alcance de la segunda pasada.) ¿`webFallback` (`runner.ts:141`) y el filtro del autopilot (`autopilot.ts:11`) usan `missingKey` para que un dominio de correo personal no se investigue?** Mi recomendación: **sí.** Porque si no, CA-5 («un dominio personal es falta de llave») se contradice en dos caminos que gastan: hoy `completeAccount` lee la web de `gmail.com` con solo Firecrawl conectado y el autopilot investiga la cuenta, falla y la marca como investigada sin reintento (`autopilot.server.ts:24-26,37-47`). Es un cambio pequeño (dos condiciones) pero toca dos archivos más y el comportamiento de lo automático. Si dices que no, CA-5 se limita a `missingKey` y la fila de la tabla de CA-3 se queda como estaba.
 
 **P-11. ¿Nombre + dominio de correo personal deja de bastar para identificar a una persona en Apollo (`matchDetails`)?** Mi recomendación: **sí.** Porque Apollo no puede identificar a nadie por `gmail.com` y hoy la petición se gasta o falla en el proveedor (`apollo.ts:253-278`); la regla unificada lo evita antes. Es un cambio no pedido en el original, y `apollo.test.ts:98` y `:104` siguen verdes.
+
+**Decisiones de Fede (2026-11-01, en el chat):**
+- P-1 a P-11: aceptadas con la recomendación del SDD. P-5 cambia lo que 7b (`:71`) y 7c (`:69`) daban por hecho («rechazar»): esos SDD se retocan al revalidarlos. P-10 y P-11 amplían el alcance de la segunda pasada del gate y quedan dentro de este SDD.
+- P-7: la medición de §16 es solo lectura y cada ejecución requiere orden explícita de Fede en el chat para esa acción; M-1 a M-4 se informan sobre empresas no archivadas, sin excluir internas (no hay lista de ids).
+- La aprobación es del SDD. El GO para construir se pide aparte.
 
 ## 16. Pendiente de verificar
 **Consultas de solo lectura para la línea base (no ejecutadas; Lovable Cloud, editor SQL; solo recuentos, sin valores ni nombres).** Dominio normalizado: `d = split_part(split_part(split_part(regexp_replace(lower(btrim(domain)), '^(https?://)?(www\.)?', ''), '/', 1), '?', 1), '#', 1)` (`cleanDomain` también corta en espacios; diferencia menor) (Descubiertos y `update_account` guardan el dominio sin normalizar: `discoveries.functions.ts:49`, `agent/tools/accounts.ts:219`). Lista personal **de 23**: `gmail.com, googlemail.com, hotmail.com, hotmail.es, outlook.com, outlook.es, live.com, msn.com, yahoo.com, yahoo.es, icloud.com, me.com, mac.com, aol.com, proton.me, protonmail.com, gmx.com, gmx.es, mail.com, yandex.com, zoho.com, telefonica.net, terra.es`. Filtro de empresas excluidas, que **conserva** las filas con `org_id` nulo (`accounts.org_id` admite nulo, `types.ts:262`): `where org_id is null or org_id <> all(:excluidas)`.
