@@ -156,6 +156,18 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
+  useEffect(() => {
+    // Published builds: Vite fires this when a hashed chunk from an older deploy is gone.
+    const onPreloadError = (event: Event) => {
+      const payload = (event as Event & { payload?: unknown }).payload;
+      if (reloadOnceForStaleModule(payload ?? new Error("Failed to fetch dynamically imported module"))) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />
