@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useSetup } from "@/hooks/use-setup";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { loadSetupGuideExtras, loadSetupSnoozes } from "@/lib/org-data";
 import { errorText } from "@/lib/errors";
 import { canCompleteStep, guideState, nextFor, nextMessage, nudgeDue, parseSnoozeDate, reopenedSteps, reopenedText, type GuideMember, type Snooze } from "@/lib/setup-guide";
@@ -79,7 +80,7 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
   // Last known state stays on screen when a refresh fails; the caller says so.
   const stale = (setup.isError || extras.isError) && !!guide;
 
-  const refresh = useCallback(() => Promise.all([qc.invalidateQueries({ queryKey: ["setup"] }), qc.invalidateQueries({ queryKey: ["setup-guide"] })]), [qc]);
+  const refresh = useCallback(() => invalidateSetup(qc), [qc]);
 
   /** CA-7: postpone a step until a day the person picks. Only a role that can complete the step may postpone it. created_at is rewritten on every postponement: it is the time of the person's last act on the step, which the nudge counts as activity (M-1). */
   const snooze = useCallback(async (stepId: string, day: string) => {

@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -142,7 +143,7 @@ export function IcpListButton(props: { open?: boolean; onOpenChange?: (v: boolea
     const { error } = await supabase.from("accounts").insert(rows);
     if (error) return toast.error(errorText(error));
     toast.success(`${rows.length} ${rows.length === 1 ? "cuenta importada" : "cuentas importadas"}.`);
-    setPicked({}); qc.invalidateQueries({ queryKey: ["accounts"] }); qc.invalidateQueries({ queryKey: key });
+    setPicked({}); qc.invalidateQueries({ queryKey: ["accounts"] }); invalidateSetup(qc); qc.invalidateQueries({ queryKey: key });
   }
   const icpLabel = (i: { industries: string | null; company_size: string | null; geography: string | null }) => [i.industries, i.company_size, i.geography].filter(Boolean).join(" · ") || "ICP sin datos";
   return <>

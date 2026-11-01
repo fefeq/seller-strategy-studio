@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { SwipeDeck } from "@/components/swipe-deck";
@@ -49,6 +50,7 @@ export function SuggestionDeck({ items, keyboard = true }: { items: S[]; keyboar
           });
           if (dir === "right") toast.success(r.message);
           qc.invalidateQueries({ queryKey: ["suggestions"] });
+          invalidateSetup(qc); // «Hacer» on create_account runs on the server and adds an account
         } catch (e) {
           toast.error(errorText(e));
           throw e;

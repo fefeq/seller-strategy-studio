@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AccountQuickActions } from "@/components/quick-actions";
 import { CompanyLogo } from "@/components/company-logo";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { createAccount } from "@/lib/create-account";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useTeam } from "@/hooks/use-team";
 import { canApproveAssignment } from "@/lib/assignment";
@@ -34,6 +35,7 @@ export const Route = createFileRoute("/_authenticated/accounts/")({
 function Accounts() {
   const { money: eur } = useCurrency();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: me } = useMe();
   const { data: team = [] } = useTeam();
   const ownerName = (id: string | null) => (id ? team.find((m) => m.user_id === id)?.name ?? "Ex-miembro" : null);
@@ -61,10 +63,9 @@ function Accounts() {
   const dup = name.trim() || domain.trim() ? duplicateOf({ name, domain }, data.map((a) => ({ id: a.id, name: a.name, domain: a.domain }))) : null;
   async function create() {
     if (dup?.kind === "same" && !(await askConfirm(`Ya existe «${dup.item.name}»${dup.item.domain ? ` (${dup.item.domain})` : ""}`, { body: "¿Crear otra cuenta igualmente?", confirmLabel: "Crear igualmente" }))) return;
-    const { data: a, error } = await supabase.from("accounts").insert({ name, domain }).select().single();
+    const { id, error } = await createAccount(supabase, qc, { name, domain });
     if (error) return toast.error(errorText(error));
-    await supabase.from("account_plans").insert({ account_id: a.id });
-    navigate({ to: "/accounts/$id", params: { id: a.id } });
+    navigate({ to: "/accounts/$id", params: { id } });
   }
   const filtered = data.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const list = byName ? filtered : [...filtered].sort(byScore((a) => scores.get(a.id)!));

@@ -19,6 +19,7 @@ import { FinancePanel } from "@/components/metrics/finance-panel";
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
+import { saveQuota } from "@/lib/save-quota";
 import { metricsHeadline } from "@/lib/headlines";
 import { formatRatio, quarterCoverage } from "@/lib/coverage";
 import { openStages, stageLabel, stagePath } from "@/lib/stages";
@@ -111,9 +112,8 @@ function Metrics() {
   }, [data, quarter, stages]);
 
   async function setQuota(userId: string, amount: number) {
-    const { error } = await supabase.from("quotas").upsert({ org_id: orgId!, user_id: userId, period: quarter, amount }, { onConflict: "org_id,user_id,period" });
+    const error = await saveQuota(supabase, qc, { orgId: orgId!, userId, period: quarter, amount });
     if (error) return toast.error(errorText(error));
-    qc.invalidateQueries({ queryKey: ["metrics"] });
   }
 
   const quarters = Array.from({ length: 6 }, (_, i) => { const d = new Date(); d.setMonth(d.getMonth() + (i - 2) * 3); return quarterOf(d); });
