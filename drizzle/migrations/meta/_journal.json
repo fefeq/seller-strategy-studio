@@ -512,6 +512,20 @@
       "when": 1793749600000,
       "tag": "0072_strategy_reviews",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1793749600001,
+      "tag": "0073_platform_admins",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1793749600002,
+      "tag": "0074_platform_admins_skip_creator",
+      "breakpoints": true
     }
   ]
 }
