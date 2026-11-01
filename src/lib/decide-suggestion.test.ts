@@ -431,3 +431,99 @@ describe("decideSuggestionCore: a draft of the wrong shape or type decides nothi
     expect(calls.some((c) => c.kind === "rpc")).toBe(true);
   });
 });
+
+// ---- SDD-20261101 price-suggestions-visibility-server (NK-0042): who may decide a price suggestion, and the memory it leaves ----
+const priceSug = (over: Record<string, unknown> = {}) => {
+  const p = buildStrategySuggestion({
+    element: "product_price",
+    kind: "change",
+    action_type: "strategy_change",
+    cause: "price:discount:p1",
+    priority: 3,
+    title: "Un producto se repite con descuento",
+    body: "t",
+    evidence: [{ table: "products", id: "p1", label: "Producto 1" }],
+  });
+  return {
+    ...strat(),
+    id: "p1s",
+    detector: p.detector,
+    dedupe_key: p.dedupe_key,
+    title: p.title,
+    strategy: p.strategy,
+    ...over,
+  };
+};
+const DECISIONS = ["approve", "snooze", "dismiss"] as const;
+
+describe("decideSuggestionCore: a price suggestion is only for roles that may see prices (CA-1)", () => {
+  for (const decision of DECISIONS)
+    it(`${decision} by a member without those roles is «no encontrada» and logs nothing`, async () => {
+      const { db, calls } = fakeDb(priceSug());
+      await expect(decideSuggestionCore(ctx(db, ["ae"]), "p1s", decision)).rejects.toThrow(
+        "Sugerencia no encontrada",
+      );
+      expect(rpcCall(calls)).toBeUndefined();
+      expect(calls.some((c) => c.kind === "update")).toBe(false);
+      expect(remember).not.toHaveBeenCalled();
+    });
+  for (const status of ["approved", "dismissed", "snoozed", "resolved"])
+    it(`an already ${status} price suggestion is «no encontrada» too, not «Ya estaba gestionada»`, async () => {
+      const { db, calls } = fakeDb(priceSug({ status }));
+      await expect(decideSuggestionCore(ctx(db, ["ae"]), "p1s", "approve")).rejects.toThrow(
+        "Sugerencia no encontrada",
+      );
+      expect(rpcCall(calls)).toBeUndefined();
+    });
+  it("a member with no roles at all is refused too", async () => {
+    const { db } = fakeDb(priceSug());
+    await expect(decideSuggestionCore(ctx(db, []), "p1s", "dismiss")).rejects.toThrow(
+      /no encontrada/,
+    );
+  });
+  it("guard: another strategic cause of the same detector is not covered here (NK-0045)", async () => {
+    const { db, calls } = fakeDb(
+      priceSug({ dedupe_key: "strategy_product_price:review:abc" }),
+      "approved",
+    );
+    await decideSuggestionCore(ctx(db, ["ae"]), "p1s", "approve");
+    expect(rpcCall(calls)).toBeDefined();
+  });
+});
+
+describe("decideSuggestionCore: roles that may see prices decide as before (CA-2, guards)", () => {
+  for (const role of ["owner", "sales_leader", "deal_desk"])
+    it(`${role} decides a price suggestion`, async () => {
+      const { db, calls } = fakeDb(priceSug(), "approved");
+      const r = await decideSuggestionCore(ctx(db, [role]), "p1s", "approve");
+      expect(r.status).toBe("approved");
+      expect(rpcCall(calls)!.payload).toMatchObject({ p_decision: "accept" });
+    });
+  it("an already decided price suggestion answers «Ya estaba gestionada» to those roles", async () => {
+    const { db } = fakeDb(priceSug({ status: "dismissed" }));
+    expect(await decideSuggestionCore(ctx(db, ["owner"]), "p1s", "approve")).toEqual({
+      status: "dismissed",
+      message: "Ya estaba gestionada",
+    });
+  });
+});
+
+describe("decideSuggestionCore: deciding a price suggestion leaves no company memory (CA-5)", () => {
+  for (const decision of ["approve", "dismiss"] as const)
+    it(`${decision} with the role decides but does not remember`, async () => {
+      const { db, calls } = fakeDb(priceSug(), decision === "approve" ? "approved" : "dismissed");
+      await decideSuggestionCore(ctx(db, ["sales_leader"]), "p1s", decision);
+      expect(rpcCall(calls)).toBeDefined();
+      expect(remember).not.toHaveBeenCalled();
+    });
+  it("guard: dismissing an operational suggestion still remembers", async () => {
+    const { db } = fakeDb(operational());
+    await decideSuggestionCore(ctx(db), "o1", "dismiss");
+    expect(remember).toHaveBeenCalledWith(expect.anything(), expect.anything(), "dismiss");
+  });
+  it("guard: approving a non-price strategic suggestion still remembers", async () => {
+    const { db } = fakeDb(strat(), "approved");
+    await decideSuggestionCore(ctx(db), "s1", "approve");
+    expect(remember).toHaveBeenCalledWith(expect.anything(), expect.anything(), "approve");
+  });
+});

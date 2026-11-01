@@ -719,3 +719,28 @@ describe("the proactive route fetches strategy for the rows it sends (structure)
     for (const s of selects) expect(s.split(","), s).toContain("strategy");
   });
 });
+
+// ---- NK-0042: the price filter goes in the query, before limit, in the two queries that can carry a price suggestion ----
+describe("the proactive route hides price suggestions in the query (structure)", () => {
+  it("the urgent query and the digest query apply the visibility filter before `.limit(`; the assigned one does not need it", async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/routes/api/public/jobs/proactive.ts", "utf8").replace(/\s+/g, "");
+    const queries = [
+      ...src.matchAll(
+        /(applyPriceVisibility\()?db\.from\("suggestions"\)\.select\("[^"]+"\)(.*?)\.limit\(\d+\)/g,
+      ),
+    ];
+    expect(queries).toHaveLength(3);
+    expect(queries.filter((q) => q[1]).length).toBe(2);
+    for (const q of queries) {
+      if (q[0]!.includes("account_assigned")) continue; // that query already filters by detector
+      expect(q[0], q[0]).toMatch(/^applyPriceVisibility\(.*,canSee,?\)\.limit\(/);
+    }
+  });
+  it('roles are read once per run with `.in("user_id"` and crossed by organisation and person, not through channelCtx', async () => {
+    const { readFileSync } = await import("node:fs");
+    const src = readFileSync("src/routes/api/public/jobs/proactive.ts", "utf8");
+    expect(src).toContain("loadMemberRoles(");
+    expect(src).not.toContain("channelCtx");
+  });
+});

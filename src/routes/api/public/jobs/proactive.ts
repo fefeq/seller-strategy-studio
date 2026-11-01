@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
+import { canSeePrices } from "@/lib/strategy-suggestions";
+import { applyPriceVisibility, loadMemberRoles, rolesOf } from "@/lib/telegram-roles";
 import { digestMessage, urgentMessage } from "@/lib/telegram-suggestions";
 
 const BATCH = 100;
@@ -182,6 +184,10 @@ async function notifyUrgent(db: Admin) {
     .select("user_id,chat_id")
     .eq("channel", "telegram")
     .not("chat_id", "is", null);
+  const roles = await loadMemberRoles(
+    db,
+    (links ?? []).map((l) => l.user_id),
+  );
   for (const l of links ?? []) {
     const { data: prof } = await db
       .from("profiles")
@@ -189,15 +195,18 @@ async function notifyUrgent(db: Admin) {
       .eq("id", l.user_id)
       .maybeSingle();
     if (!prof?.current_org_id) continue;
-    const { data: urgent } = await db
-      .from("suggestions")
-      .select("id,title,body,action,strategy")
-      .eq("org_id", prof.current_org_id)
-      .eq("status", "pending")
-      .eq("priority", 1)
-      .is("notified_at", null)
-      .or(`user_id.is.null,user_id.eq.${l.user_id}`)
-      .limit(3);
+    const canSee = canSeePrices(rolesOf(roles, prof.current_org_id, l.user_id));
+    const { data: urgent } = await applyPriceVisibility(
+      db
+        .from("suggestions")
+        .select("id,title,body,action,strategy")
+        .eq("org_id", prof.current_org_id)
+        .eq("status", "pending")
+        .eq("priority", 1)
+        .is("notified_at", null)
+        .or(`user_id.is.null,user_id.eq.${l.user_id}`),
+      canSee,
+    ).limit(3);
     // «Te han asignado N cuentas» goes to its person too, though it is not urgent.
     const { data: assigned } = await db
       .from("suggestions")
@@ -234,6 +243,10 @@ async function sendDigests(db: Admin) {
     .eq("channel", "telegram")
     .eq("daily_digest", true)
     .not("chat_id", "is", null);
+  const roles = await loadMemberRoles(
+    db,
+    (links ?? []).map((l) => l.user_id),
+  );
   let sent = 0;
   for (const l of links ?? []) {
     const { data: prof } = await db
@@ -242,13 +255,16 @@ async function sendDigests(db: Admin) {
       .eq("id", l.user_id)
       .maybeSingle();
     if (!prof?.current_org_id) continue;
-    const { data: items } = await db
-      .from("suggestions")
-      .select("id,title,priority,created_at,strategy")
-      .eq("org_id", prof.current_org_id)
-      .eq("status", "pending")
-      .or(`user_id.is.null,user_id.eq.${l.user_id}`)
-      .limit(50);
+    const canSee = canSeePrices(rolesOf(roles, prof.current_org_id, l.user_id));
+    const { data: items } = await applyPriceVisibility(
+      db
+        .from("suggestions")
+        .select("id,title,priority,created_at,strategy")
+        .eq("org_id", prof.current_org_id)
+        .eq("status", "pending")
+        .or(`user_id.is.null,user_id.eq.${l.user_id}`),
+      canSee,
+    ).limit(50);
     const top = digest(items ?? [], 3);
     const name = prof.full_name?.split(" ")[0] ?? "";
     const m = digestMessage(top, name);

@@ -417,12 +417,17 @@ export function reconcile(
 }
 
 /** A price suggestion (product_price with the «price:» cause) is only for roles that may see prices (CA-19, same roles as canPrice). */
+export const PRICE_DETECTOR = "strategy_product_price";
+/** The cause of a price suggestion; the detector builds its dedupe_key from it. */
+export const PRICE_CAUSE_PREFIX = "price:";
+/** Where the price rule is written once: the dedupe_key prefix of a price suggestion (also what Telegram queries filter on). */
+export const PRICE_DEDUPE_PREFIX = `${PRICE_DETECTOR}:${PRICE_CAUSE_PREFIX}`;
 export const needsPriceAccess = (r: { detector?: string | null; dedupe_key?: string | null }) =>
-  r.detector === "strategy_product_price" &&
-  (r.dedupe_key ?? "").startsWith("strategy_product_price:price:");
+  r.detector === PRICE_DETECTOR && (r.dedupe_key ?? "").startsWith(PRICE_DEDUPE_PREFIX);
 export const PRICE_ROLES = ["owner", "sales_leader", "deal_desk"] as const;
+export const canSeePrices = (roles: readonly string[]) =>
+  roles.some((x) => (PRICE_ROLES as readonly string[]).includes(x));
 export const canViewStrategy = <T extends { detector?: string | null; dedupe_key?: string | null }>(
   r: T,
   roles: readonly string[],
-): boolean =>
-  !needsPriceAccess(r) || roles.some((x) => (PRICE_ROLES as readonly string[]).includes(x));
+): boolean => !needsPriceAccess(r) || canSeePrices(roles);
