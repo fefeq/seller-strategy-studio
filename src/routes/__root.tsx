@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { reloadOnceForStaleModule } from "@/lib/stale-module";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
@@ -46,6 +47,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    // A stale lazy chunk (server restart / new deploy) heals with one reload.
+    if (reloadOnceForStaleModule(error)) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
