@@ -16,8 +16,10 @@ import {
   type SignalKind,
 } from "@/lib/web-research";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- same untyped client as ai-core.ts: typing it as SupabaseClient<Database> needs org_id null handling here, a logic change out of scope for NK-0012
 type Db = any;
-const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
+const inOrg = <Q extends { eq(column: "org_id", value: string): Q }>(q: Q, scope: AiScope): Q =>
+  scope ? q.eq("org_id", scope.orgId) : q;
 const STYLE =
   "Español neutro (tú), sin signos de exclamación ni emoji, frases cortas, empieza por la conclusión.";
 

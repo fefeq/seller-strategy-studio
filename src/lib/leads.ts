@@ -578,6 +578,45 @@ function textValue(v: unknown): string | null {
   return s || null;
 }
 
+/** The webhook shapes `flattenPayload` reads (Typeform, Tally, Webflow, CRM objects): every field is optional and checked before use. */
+type Webhook = {
+  leads?: unknown;
+  records?: unknown;
+  form_response?: {
+    answers?: {
+      field?: { id?: string; ref?: string };
+      type: string;
+      text?: unknown;
+      email?: unknown;
+      [k: string]: unknown;
+    }[];
+    definition?: { fields?: { id: string; title?: string; ref?: string }[] };
+    token?: unknown;
+    submitted_at?: unknown;
+    hidden?: Record<string, unknown>;
+  };
+  data?: {
+    fields?: {
+      value?: unknown;
+      options?: { id: string; text?: string }[];
+      label?: string;
+      key?: string;
+    }[];
+    submissionId?: unknown;
+    responseId?: unknown;
+    createdAt?: unknown;
+  } & Record<string, unknown>;
+  createdAt?: unknown;
+  payload?: { data?: unknown; id?: unknown; submittedAt?: unknown };
+  name?: unknown;
+  site?: unknown;
+  d?: unknown;
+  _id?: unknown;
+  id?: unknown;
+  objectId?: unknown;
+  properties?: unknown;
+};
+
 /**
  * Splits a request body into flat key→value records, one per lead. Understands a plain object,
  * arrays, `{ leads: [...] }`, CRM-style `properties`, Typeform, Tally and Webflow webhooks.
@@ -585,14 +624,14 @@ function textValue(v: unknown): string | null {
 export function flattenPayload(body: unknown): Record<string, unknown>[] {
   if (body == null || typeof body !== "object") return [];
   if (Array.isArray(body)) return body.flatMap(flattenPayload);
-  const b = body as Record<string, any>;
+  const b = body as Webhook;
   if (Array.isArray(b.leads)) return b.leads.flatMap(flattenPayload);
   if (Array.isArray(b.records)) return b.records.flatMap(flattenPayload);
 
   // Typeform
   if (b.form_response?.answers) {
-    const titles: Record<string, string> = Object.fromEntries(
-      (b.form_response.definition?.fields ?? []).map((f: any) => [f.id, f.title ?? f.ref]),
+    const titles: Record<string, string | undefined> = Object.fromEntries(
+      (b.form_response.definition?.fields ?? []).map((f) => [f.id, f.title ?? f.ref]),
     );
     const out: Record<string, unknown> = {
       response_id: b.form_response.token,
@@ -600,9 +639,10 @@ export function flattenPayload(body: unknown): Record<string, unknown>[] {
       ...(b.form_response.hidden ?? {}),
     };
     for (const a of b.form_response.answers) {
-      const key = titles[a.field?.id] ?? a.field?.ref ?? a.field?.id;
-      const v = a[a.type] ?? a.text ?? a.email;
-      out[key] = a.type === "choice" ? v?.label : a.type === "choices" ? v?.labels : v;
+      const key = titles[String(a.field?.id)] ?? a.field?.ref ?? a.field?.id;
+      const v = (a[a.type] ?? a.text ?? a.email) as
+        { label?: unknown; labels?: unknown } | undefined;
+      out[String(key)] = a.type === "choice" ? v?.label : a.type === "choices" ? v?.labels : v;
     }
     return [out];
   }
@@ -615,8 +655,8 @@ export function flattenPayload(body: unknown): Record<string, unknown>[] {
     for (const f of b.data.fields) {
       let v = f.value;
       if (Array.isArray(f.options) && Array.isArray(v))
-        v = v.map((id: string) => f.options.find((o: any) => o.id === id)?.text ?? id);
-      out[f.label ?? f.key] = v;
+        v = v.map((id: string) => f.options?.find((o) => o.id === id)?.text ?? id);
+      out[String(f.label ?? f.key)] = v;
     }
     return [out];
   }
@@ -630,7 +670,7 @@ export function flattenPayload(body: unknown): Record<string, unknown>[] {
   // CRM-style objects keep fields under `properties`.
   if (b.properties && typeof b.properties === "object") {
     const props = Object.fromEntries(
-      Object.entries(b.properties).map(([k, v]: [string, any]) => [
+      Object.entries(b.properties).map(([k, v]: [string, unknown]) => [
         k,
         v && typeof v === "object" && "value" in v ? v.value : v,
       ]),
