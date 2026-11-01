@@ -1,5 +1,6 @@
 // A lazy route chunk can fail to load when the dev server restarts or a new
-// version is published while the tab is open. A single full reload fixes it.
+// version is published while the tab is open. A full reload fixes it, rate-limited
+// (and skipped when the mark cannot be stored) so a persistent failure cannot loop.
 const PATTERNS = [
   /Failed to fetch dynamically imported module/i,
   /error loading dynamically imported module/i,
