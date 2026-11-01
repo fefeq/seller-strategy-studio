@@ -12,8 +12,7 @@ export const STALE_RELOAD_KEY = "nokko-stale-reload-at";
 const RELOAD_WINDOW_MS = 30_000;
 
 export function isStaleModuleError(error: unknown): boolean {
-  const message =
-    error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
   return PATTERNS.some((p) => p.test(message));
 }
 

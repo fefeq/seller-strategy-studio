@@ -96,7 +96,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "format-detection", content: "telephone=no" },
       { title: "Nokko — el sistema operativo comercial de tu equipo" },
-      { name: "description", content: "Conocimiento, cuentas, deals y personas en un solo lugar para todo el equipo de ventas." },
+      {
+        name: "description",
+        content:
+          "Conocimiento, cuentas, deals y personas en un solo lugar para todo el equipo de ventas.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: SITE_NAME },
       { property: "og:locale", content: "es_ES" },
