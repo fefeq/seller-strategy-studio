@@ -1,7 +1,7 @@
 # SDD-20261101-price-suggestions-visibility-server · [Bug] Las sugerencias de precio llegan por el resumen de Telegram, se pueden decidir sin el rol y dejan una memoria visible
 
 **Tipo:** Bug · **Prioridad propuesta:** Media (toca permisos; hoy hay 0 sugerencias de precio en la base: ver sección 3)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado (Fede, 2026-11-01) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **PRD:** No aplica (bug) · **Depende de:** — · **Ticket:** NK-0042. Quedan fuera: protección en la base de datos, que incluye leer y decidir desde el navegador (NK-0044, necesita migración), y ampliar la regla a otras causas del detector de precio (NK-0045).
 **SDD que corrige:** CA-57 y CA-58 de `SDD-20261027-strategic-suggestions-engine` (lo que no puedes ver en pantalla no te llega por Telegram); CA-19 ya figura como «Hecho» para la pantalla.
 
@@ -98,6 +98,8 @@ Sin tablas ni columnas nuevas, sin cambios de RLS ni GRANTs. El filtro es de apl
 5. **P-2.** La protección en la base (NK-0044) se hace después de decidir el destino de la base: exige migración y hoy no hay ninguna sugerencia de precio.
 
 (P-1 y P-2: Fede pidió el 2026-11-01 «resuelve» y se resolvieron con la recomendación del autor; Fede puede cambiarlas al aprobar.)
+
+**Aprobación (2026-11-01):** Fede aprueba el SDD tal como está tras dos pasadas del gate, sin tercera pasada, con P-1 y P-2 resueltas con la recomendación del autor.
 
 **Siguen abiertas:** ninguna.
 
