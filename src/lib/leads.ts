@@ -3,6 +3,7 @@
 import { DEAL_STAGES } from "@/lib/roles";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
 import { openStages, type Stage } from "@/lib/stages";
+import { FREE_MAIL_DOMAINS } from "./free-mail";
 
 export type DealStage = (typeof DEAL_STAGES)[number]["id"];
 /** Stages before an opportunity exists: the lead stays on the Leads screen, no deal yet. */
@@ -41,8 +42,6 @@ export type NormalizedLead = {
 };
 
 export const STAGE_PROBABILITY: Record<DealStage, number> = { discovery: 10, qualified: 25, demo: 40, proposal: 60, negotiation: 80, won: 100, lost: 0 };
-
-const FREEMAIL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com", "outlook.es", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "msn.com"]);
 
 /** "¿Nombre de tu Empresa?" → "nombre_de_tu_empresa" */
 export function normKey(k: string) {
@@ -213,7 +212,7 @@ export function cleanDomain(raw: unknown): string | null {
 
 export function domainFromEmail(email: string | null) {
   const d = email?.split("@")[1]?.toLowerCase();
-  return d && !FREEMAIL.has(d) ? d : null;
+  return d && !FREE_MAIL_DOMAINS.has(d) ? d : null;
 }
 
 function companyFromDomain(domain: string) {

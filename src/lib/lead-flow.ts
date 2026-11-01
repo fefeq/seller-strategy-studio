@@ -1,6 +1,8 @@
 // Automatic flow a new lead goes through (pure, tested): its account is found or created, completed with data
 // (Apollo → Clay via the orchestrator), key people are searched, and the AI proposes the next stage.
 // The server side (inngest/tasks.server.ts runLeadFlow) records each step here in leads.flow.
+import { FREE_MAIL_DOMAINS } from "./free-mail";
+
 
 export const FLOW_STEPS = [
   { id: "account", label: "Cuenta" },
@@ -53,10 +55,9 @@ export function pickKeyPeople(rows: FlowPerson[], contactName: string | null, ma
 }
 
 /** Lead → account match key: corporate email domain, else nothing (personal emails never create accounts by domain). */
-const PERSONAL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "msn.com", "hotmail.es"]);
 export function corporateDomain(email: string | null | undefined): string | null {
   const d = email?.split("@")[1]?.trim().toLowerCase().replace(/^www\./, "");
-  if (!d || !d.includes(".") || PERSONAL.has(d)) return null;
+  if (!d || !d.includes(".") || FREE_MAIL_DOMAINS.has(d)) return null;
   return d;
 }
 

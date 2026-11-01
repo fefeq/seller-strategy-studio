@@ -2,6 +2,7 @@
 // runs, how their rows become trials (self-service funnel) and usage per company domain, the account
 // match, the trend, and the thresholds of the product-led suggestions.
 import { cleanDomain } from "@/lib/leads";
+import { FREE_MAIL_DOMAINS } from "./free-mail";
 
 export const POSTHOG_HOSTS = { eu: "https://eu.posthog.com", us: "https://us.posthog.com" } as const;
 
@@ -28,13 +29,10 @@ export function checkPosthogKey(raw: string): { ok: true; key: string } | { ok: 
 export const projectIdOk = (raw: string) => /^[0-9]{1,12}$/.test(raw.trim());
 export const domainPropertyOk = (raw: string) => /^[A-Za-z0-9_$]{1,80}$/.test(raw.trim());
 
-/** Webmail domains never identify a company. */
-export const FREE_EMAIL_DOMAINS = new Set(["gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com", "outlook.es", "live.com", "msn.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com", "gmx.com", "gmx.es", "yandex.com", "zoho.com", "mail.com", "telefonica.net", "terra.es"]);
-
 export function companyDomain(raw: string | null | undefined): string | null {
   const s = String(raw ?? "").trim().toLowerCase();
   const d = cleanDomain(s.includes("@") ? s.split("@").pop()! : s);
-  return d && d.includes(".") && !FREE_EMAIL_DOMAINS.has(d) ? d : null;
+  return d && d.includes(".") && !FREE_MAIL_DOMAINS.has(d) ? d : null;
 }
 
 export type HogQL = { query: string; values: Record<string, string> };

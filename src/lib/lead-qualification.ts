@@ -1,4 +1,5 @@
 import { employeesText } from "@/lib/icp";
+import { FREE_MAIL_DOMAINS } from "./free-mail";
 // Lead qualification with Jev (TypeSafe System One): the model only gives typed judgments (ICP fit, buying
 // intent, decision power, flags, segment); the weights, thresholds and the proposed stage are code here, so a
 // company can change its weights without spending AI again. Pure and tested; the call lives in
@@ -25,13 +26,12 @@ export type QualPositioning = { product_name: string | null; category: string | 
 
 export type QualContext = { lead: QualLead; account: QualAccount; icps: QualIcp[]; segments: QualSegment[]; positioning: QualPositioning };
 
-const FREE_MAIL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "gmx.com", "aol.com", "msn.com"]);
 const clip = (s: string | null | undefined, n: number) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n) || null;
 const compact = <T extends Record<string, unknown>>(o: T) => Object.fromEntries(Object.entries(o).filter(([, v]) => v != null && v !== "")) as Partial<T>;
 
 export function emailDomainOf(email: string | null | undefined): { domain: string | null; personal: boolean } {
   const d = (email ?? "").toLowerCase().split("@")[1]?.trim() || null;
-  return { domain: d, personal: !!d && FREE_MAIL.has(d) };
+  return { domain: d, personal: !!d && FREE_MAIL_DOMAINS.has(d) };
 }
 
 /** Option ids for the segment Choice: stable per request, mapped back to segment ids by code. */
