@@ -100,3 +100,69 @@ describe("reloadOnceForStaleModule fails closed", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("reloadOnceForStaleModule guards", () => {
+  it("reloads only once inside the window", () => {
+    const storage = memoryStorage();
+    const reload = stubWindow(storage);
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads again once the window has passed", () => {
+    const reload = stubWindow(memoryStorage(String(NOW - 30_001)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reload exactly at the 30 second boundary", () => {
+    expect(shouldReloadForStaleModule(NOW - 30_000, NOW)).toBe(false);
+    expect(shouldReloadForStaleModule(NOW - 30_001, NOW)).toBe(true);
+    const reload = stubWindow(memoryStorage(String(NOW - 30_000)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does not reload for 29 seconds", () => {
+    const reload = stubWindow(memoryStorage(String(NOW - 29_000)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it.each(["NaN", "", "abc"])("treats the stored mark %j as no mark", (raw) => {
+    const reload = stubWindow(memoryStorage(raw));
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores errors that are not stale modules", () => {
+    const reload = stubWindow(memoryStorage());
+    expect(reloadOnceForStaleModule(new Error("boom"))).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does nothing without a window", () => {
+    vi.stubGlobal("window", undefined);
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+  });
+});
+
+describe("isStaleModuleError patterns", () => {
+  it.each([
+    ["Chrome", "Failed to fetch dynamically imported module: https://x/a.js"],
+    ["Firefox", "error loading dynamically imported module: https://x/a.js"],
+    ["Safari", "Importing a module script failed."],
+    ["CSS", "Unable to preload CSS for /assets/a.css"],
+  ])("recognises the %s message", (_browser, message) => {
+    expect(isStaleModuleError(new TypeError(message))).toBe(true);
+    expect(isStaleModuleError(message)).toBe(true);
+  });
+
+  it("ignores non-error values", () => {
+    expect(isStaleModuleError(undefined)).toBe(false);
+    expect(isStaleModuleError({ message: "Failed to fetch dynamically imported module" })).toBe(
+      false,
+    );
+  });
+});
