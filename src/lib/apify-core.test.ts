@@ -248,6 +248,40 @@ describe("companyLinkedin when the read or the save fails (NK-0022 gate)", () =>
     expect(f.update()).toBeUndefined();
   });
 
+  it.each([
+    ["null", null],
+    ["bogus", "bogus"],
+    ["empty", ""],
+  ])(
+    "a source persona mark with an invalid kind (%s) and no `at` still protects the value",
+    async (_n, kind) => {
+      const f = fakeDb({
+        linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+        field_sources: { linkedin_url: { source: "persona", kind } },
+      });
+      await companyLinkedin(f.db, {
+        ...ACC,
+        linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+      });
+      expect(f.update()).toBeUndefined();
+    },
+  );
+
+  it.each(["ia", "fuente", "supuesto"])(
+    "a mark of kind %s without `at` does not protect the value, even with source persona",
+    async (kind) => {
+      const f = fakeDb({
+        linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+        field_sources: { linkedin_url: { source: "persona", kind } },
+      });
+      await companyLinkedin(f.db, {
+        ...ACC,
+        linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+      });
+      expect(f.update()).toBeDefined();
+    },
+  );
+
   it("accountPostsCore does not hide a failed save: the screen shows the error", async () => {
     const user = fakeDb({ ...ACC, field_sources: {} });
     fakeDb({ ...ACC, field_sources: {} }, { message: "boom" }); // the admin client that fails the save
