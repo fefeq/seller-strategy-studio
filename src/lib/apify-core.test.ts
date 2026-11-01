@@ -282,7 +282,9 @@ describe("companyLinkedin when the read or the save fails (NK-0022 gate)", () =>
     },
   );
 
-  it("accountPostsCore does not hide a failed save: the screen shows the error", async () => {
+  // Fails without the LinkedinSaveError throw (the save error is lost) and also if accountPostsCore reads through
+  // linkedinForReading (the screen would get the page and no error): the only test that pins that second path.
+  it("accountPostsCore propagates a failed save instead of reading past it: the screen shows the error", async () => {
     const user = fakeDb({ ...ACC, field_sources: {} });
     fakeDb({ ...ACC, field_sources: {} }, { message: "boom" }); // the admin client that fails the save
     await expect(accountPostsCore(user.db, ACC.id)).rejects.toThrow("boom");
