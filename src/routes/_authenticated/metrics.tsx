@@ -144,7 +144,7 @@ function Metrics() {
         .reduce((s, d) => s + Number(d.amount ?? 0), 0) +
       wonQ.reduce((s, d) => s + Number(d.amount ?? 0), 0);
     const actual = wonQ.reduce((s, d) => s + Number(d.amount ?? 0), 0);
-    const group = (key: (d: any) => string) => {
+    const group = (key: (d: NonNullable<typeof data>["deals"][number]) => string) => {
       const g: Record<string, { won: number; lost: number }> = {};
       for (const d of data.deals.filter((x) => x.stage === "won" || x.stage === "lost")) {
         const k = key(d);

@@ -41,7 +41,7 @@ type Run = {
   kind: string;
   label: string;
   status: string;
-  result: any;
+  result: { report?: unknown; entities?: unknown[] } | null;
   error: string | null;
   created_at: string;
   finished_at: string | null;
@@ -478,10 +478,10 @@ export function EnrichTableButton() {
   });
   const missing = useMemo(() => accs.filter((a) => !a.industry || !a.size || !a.country), [accs]);
   // Preselect only when the dialog opens (or the candidate list size changes), never over a manual selection.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (open && !Object.keys(sel).length)
       setSel(Object.fromEntries(missing.slice(0, 10).map((a) => [a.id, true])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, missing.length]);
   const chosen = Object.entries(sel)
     .filter(([, v]) => v)
