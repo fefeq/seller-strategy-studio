@@ -79,7 +79,7 @@ function Shell() {
           </button>
         </div>
       )}
-      {me && hasOrg && <OrgSwitcher current={me.currentOrg} />}
+      {me && hasOrg && <OrgSwitcher memberships={me.memberships} archived={me.archived} current={me.currentOrg} userId={me.user.id} />}
       <nav className="flex-1 overflow-y-auto overscroll-contain px-3 py-2" aria-label="Secciones">
         {hasOrg && NAV_GROUPS.map((g) => {
           const items = visibleItems(g, leader);
@@ -177,7 +177,7 @@ function Shell() {
       )}
       <main className="min-w-0 flex-1">
         {hasOrg && <TopBar onSearch={() => setPaletteOpen(true)} userId={me?.user.id} />}
-        {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} />}
+        {!me ? null : hasOrg ? <Outlet key={me.currentOrg?.org_id} /> : <OrgOnboarding memberships={me.memberships} archived={me.archived} />}
       </main>
       {hasOrg && <BottomBar />}
       {hasOrg && <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />}
