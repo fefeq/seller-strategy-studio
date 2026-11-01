@@ -25,7 +25,13 @@ import {
 import { companyName, type NewsItem } from "@/lib/web-research";
 import { cleanDomain } from "@/lib/leads";
 import { jsonObject } from "@/lib/json";
-import { keepUnreadable, originOf, readSources, stampUnconfirmed } from "@/lib/provenance";
+import {
+  keepUnreadable,
+  originOf,
+  readSources,
+  stampUnconfirmed,
+  type OriginKind,
+} from "@/lib/provenance";
 
 type Db = OrgDb;
 const inOrg = <Q extends { eq: (column: string, value: string) => Q }>(q: Q, scope: AiScope): Q =>
@@ -108,10 +114,13 @@ export async function companyLinkedin(_db: Db, acc: Acc): Promise<string | null>
     );
   const marks = readSources(cur.field_sources);
   // A person's value is never replaced. Read from the raw mark: readSources drops one with no `at`, and that must still protect.
+  // A mark with source persona and a kind that is missing or invalid reads as persona too (originOf falls back to the source).
   const rawMark = jsonObject(jsonObject(cur.field_sources)?.linkedin_url);
   const byPerson =
     rawMark?.kind === "persona" ||
-    (rawMark?.kind === undefined && rawMark?.source === "persona") ||
+    (rawMark?.source === "persona" &&
+      originOf({ source: "persona", at: "", kind: rawMark.kind as OriginKind })?.kind ===
+        "persona") ||
     originOf(marks.linkedin_url)?.kind === "persona";
   if (cur.linkedin_url?.trim() && byPerson) return url;
   const { data, error } = await db
