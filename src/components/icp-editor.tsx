@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import type { Json } from "@/integrations/supabase/types";
 import { Empty } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
@@ -465,6 +466,7 @@ export function IcpEditor() {
             onDone={() => {
               setSel(null);
               qc.invalidateQueries({ queryKey: ["icp"] });
+              invalidateSetup(qc);
             }}
           />
         </div>

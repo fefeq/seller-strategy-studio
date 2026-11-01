@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -131,6 +132,7 @@ function ApolloProspect() {
       );
       setPicked(new Set());
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      invalidateSetup(qc);
       toast.success(`${data?.length ?? 0} cuentas añadidas desde Apollo.`);
     } catch (e) {
       toast.error(errorText(e));

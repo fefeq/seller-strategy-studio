@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -182,6 +183,7 @@ export function IcpCompanies({ onDeep }: { onDeep: () => void }) {
       );
       setPicked(new Set());
       qc.invalidateQueries({ queryKey: ["accounts"] });
+      invalidateSetup(qc);
       toast.success(`${data?.length ?? 0} cuentas añadidas.`);
     } catch (e) {
       toast.error(errorText(e));
