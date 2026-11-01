@@ -3,6 +3,7 @@ import { cleanDomain } from "@/lib/leads";
 import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { missingKey } from "@/lib/fit-key";
 
 type Admin = SupabaseClient<Database>;
 const HOURS = 3_600_000;
@@ -60,7 +61,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
 
   // 2 · Company data through the orchestrator (budget-aware; fills only empty fields).
   if (!acc) flow.steps.complete = { status: "skipped", note: "Sin cuenta." };
-  else if (!acc.domain) flow.steps.complete = { status: "skipped", note: "Sin dominio (email personal o vacío): añade la web de la empresa y repite." };
+  else if (missingKey("lead", { account: acc }).length) flow.steps.complete = { status: "skipped", note: "Sin dominio (email personal o vacío): añade la web de la empresa y repite." };
   else if (trigger === "automatic" && (await db.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data?.auto_enrich === false)
     flow.steps.complete = { status: "skipped", note: "Completado automático desactivado en esta empresa: pulsa «Repetir el flujo» para hacerlo a mano." };
   else {
@@ -86,7 +87,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
   }
 
   // 3 · Key people (search only: revealing contacts costs credits and stays a person's decision).
-  if (!acc?.domain) flow.steps.people = { status: "skipped", note: "Sin dominio de empresa." };
+  if (!acc || missingKey("lead", { account: acc }).length) flow.steps.people = { status: "skipped", note: "Sin dominio de empresa." };
   else {
     try {
       const { findKeyPeople } = await import("@/lib/orchestrator/runner");

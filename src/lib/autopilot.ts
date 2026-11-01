@@ -1,14 +1,15 @@
 // Autopilot (pure, tested): which accounts Nokko researches on its own, which meetings it prepares the day
 // before and which accounts are cooling down. The work itself is in autopilot.server.ts.
+import { missingKey } from "@/lib/fit-key";
 
 const DAY = 86_400_000;
 export const AUTOPILOT_LIMITS = { research: 2, prep: 5, cooling: 3 };
 export const COOLING_DEFAULT_DAYS = 21;
 
-/** New accounts (last 14 days) with a domain that Nokko has not researched yet, newest first. */
+/** New accounts (last 14 days) with a corporate domain (personal mail is not one) that Nokko has not researched yet, newest first. */
 export function accountsToResearch(accounts: { id: string; domain: string | null; created_at: string; auto_researched_at: string | null }[], now = new Date(), max = AUTOPILOT_LIMITS.research) {
   return accounts
-    .filter((a) => !a.auto_researched_at && (a.domain ?? "").trim() && now.getTime() - new Date(a.created_at).getTime() <= 14 * DAY)
+    .filter((a) => !a.auto_researched_at && !missingKey("cuenta", a, "research_account").length && now.getTime() - new Date(a.created_at).getTime() <= 14 * DAY)
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .slice(0, max);
 }

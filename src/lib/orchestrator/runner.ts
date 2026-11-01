@@ -25,6 +25,7 @@ import {
   type Service,
 } from "./planner";
 import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
+import { missingKey } from "@/lib/fit-key";
 
 const ENV: Partial<Record<Service, string[]>> = {
   apollo: ["APOLLO_API_KEY"],
@@ -134,17 +135,17 @@ async function webFallback(
 ): Promise<SourcedChange[]> {
   const { data: acc } = await c.db
     .from("accounts")
-    .select("domain")
+    .select("name,domain")
     .eq("org_id", c.orgId)
     .eq("id", accountId)
     .maybeSingle();
-  if (!acc?.domain) return [];
+  if (!acc || missingKey("cuenta", acc, "research_account").length) return [];
   const [{ readCompanySite }, { ask }, { quoteFound }] = await Promise.all([
     import("@/lib/web-research-core"),
     import("@/lib/ai-gateway"),
     import("@/lib/provenance"),
   ]);
-  const site = await readCompanySite(acc.domain, 20_000);
+  const site = await readCompanySite(acc.domain!, 20_000); // missingKey above guarantees a corporate domain
   const raw = await ask(
     "Extraes datos de empresa SOLO de su web. Para cada campo copia literalmente la frase que lo demuestra. Si la web no lo dice, deja valor y cita vacíos. Nunca deduzcas ni inventes. industry = sector en español; size = nº de empleados o rango; country = país de la sede; notes = qué hace la empresa en 1-2 frases en español.",
     site.text,

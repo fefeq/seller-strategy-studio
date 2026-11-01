@@ -9,8 +9,23 @@ export type Need =
   | "news_signals" | "icp_companies" | "case_studies" | "competitors" | "read_document";
 
 export type NeedKey = { entity: KeyEntity; need?: KeyNeed } | null;
-// STUB (red commit): compiles and declares nothing, so the new test fails by assertion.
-export const NEED_KEYS: Record<Need, NeedKey> = {} as Record<Need, NeedKey>;
+/**
+ * The key each need asks fit-key for before any provider is called (exhaustive by type). Account needs need the
+ * account domain; contact needs, an identifiable person; the rest search by topic or read a file and need none.
+ */
+export const NEED_KEYS: Record<Need, NeedKey> = {
+  research_account: { entity: "cuenta", need: "research_account" },
+  find_stakeholders: { entity: "cuenta", need: "find_stakeholders" },
+  enrich_account: { entity: "cuenta", need: "enrich_account" },
+  enrich_contact: { entity: "persona" },
+  find_email: { entity: "persona" },
+  find_phone: { entity: "persona" },
+  news_signals: null,
+  icp_companies: null,
+  case_studies: null,
+  competitors: null,
+  read_document: null,
+};
 
 export type Option = { service: Service; cost: number; speed: 1 | 2 | 3; quality: 1 | 2 | 3 };
 

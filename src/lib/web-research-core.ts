@@ -5,6 +5,7 @@ import { accountContext, type AiScope } from "@/lib/ai-core";
 import { mapSite, scrapeMarkdown } from "@/lib/firecrawl";
 import { searchBoth } from "@/lib/web-search";
 import { cleanDomain } from "@/lib/leads";
+import { requireKey } from "@/lib/fit-key";
 import { SIGNAL_KINDS, companyName, pickPages, publicUrl, signalQueries, type NewsItem, type SignalKind } from "@/lib/web-research";
 
 type Db = any;
@@ -40,8 +41,8 @@ const RESEARCH_SCHEMA = {
 export async function researchAccountCore(db: Db, accountId: string, scope: AiScope = null): Promise<AccountResearch> {
   const { data: acc } = await inOrg(db.from("accounts").select("id,name,domain").eq("id", accountId), scope).maybeSingle();
   if (!acc) throw new Error("No encuentro esa cuenta en esta empresa.");
-  const domain = cleanDomain(acc.domain);
-  if (!domain) throw new Error("La cuenta no tiene dominio. Añádelo (empresa.com) para investigarla en la web.");
+  requireKey("cuenta", acc, "research_account");
+  const domain = cleanDomain(acc.domain)!;
   let siteError: Error | null = null;
   const [site, news] = await Promise.all([
     readCompanySite(domain, 18_000).catch((e: Error) => { siteError = e; return { text: "", pages: [] as string[] }; }),

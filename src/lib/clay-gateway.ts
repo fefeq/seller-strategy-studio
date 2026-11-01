@@ -23,6 +23,7 @@ import {
 } from "@/lib/clay";
 import { canonicalCurrent, normalizeDraft } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
+import { requireKey } from "@/lib/fit-key";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/clay";
 
@@ -155,6 +156,7 @@ export async function findPeople(
         "esa cuenta",
         "id,name,domain",
       );
+  if (!a.searchId) requireKey("cuenta", acc, "find_stakeholders");
   const filters = a.searchId ? null : peopleFilters(acc.domain, a.query ?? {});
   const page = await search<ClayPerson>("people", filters, a.searchId, a.limit ?? 10);
   const { data } = acc.id
@@ -184,15 +186,15 @@ export type Enrichment = {
 export async function enrichAccount(c: ToolCtx, accountId: string): Promise<Enrichment> {
   const acc = await mustFind<{
     id: string;
+    name: string;
     domain: string | null;
     industry: string | null;
     size: string | null;
     country: string | null;
     notes: string | null;
-  }>(c, "accounts", accountId, "esa cuenta", "id,domain,industry,size,country,notes");
-  const domain = cleanDomain(acc.domain);
-  if (!domain)
-    throw new Error("La cuenta no tiene dominio. Añádelo (empresa.com) para completarla con Clay.");
+  }>(c, "accounts", accountId, "esa cuenta", "id,name,domain,industry,size,country,notes");
+  requireKey("cuenta", acc, "enrich_account");
+  const domain = cleanDomain(acc.domain)!;
   const page = await search<ClayCompany>(
     "companies",
     { include_company_identifiers: [domain] },
