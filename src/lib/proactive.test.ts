@@ -788,8 +788,10 @@ describe("domain proposal (NK-0012 CA-7)", () => {
   });
   it("counts one person once even when they are in people, stakeholders and leads, and ignores other accounts' contacts", () => {
     const out = found(snap(fit([acc("a1"), acc("a2")], {}, [["a1", "ana@acme.com"], ["a1", "ANA@acme.com"], ["a1", "ana@acme.com"], ["a1", "b@otra.com"], ["a1", "c@otra.com"], ["a2", "d@acme.com"], ["a2", "e@acme.com"], ["a2", "f@acme.com"]])));
-    expect(out).toHaveLength(1);
-    expect(out[0]!.action).toMatchObject({ args: { account_id: "a1", domain: "otra.com" } });
+    const a1 = out.filter((x) => x.dedupe_key.startsWith("missing_domain:a1:"));
+    expect(a1).toHaveLength(1);
+    expect(a1[0]!.action).toMatchObject({ args: { account_id: "a1", domain: "otra.com" } });
+    expect(out.find((x) => x.dedupe_key.startsWith("missing_domain:a2:"))!.action).toMatchObject({ args: { domain: "acme.com" } });
   });
   it("goes to the account owner, else the Owner of the company, else nobody", () => {
     const contacts: [string, string][] = [["a1", "ana@acme.com"]];

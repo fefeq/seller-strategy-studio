@@ -34,6 +34,13 @@ describe("fit-key entry points", () => {
     expect((read("src/lib/apollo.ts").match(/no tiene dominio/g) ?? []).length).toBe(1);
     expect((read("src/lib/clay.ts").match(/no tiene dominio/g) ?? []).length).toBe(1);
   });
+  it("the domain-proposal data is read per company, paged, and skipped by the per-lead follow-up (CA-7)", () => {
+    const org = code(read("src/lib/org-data.ts"));
+    const fn = org.slice(org.indexOf("async function loadFitKeyData"), org.indexOf("const REOPENABLE"));
+    expect(fn).toMatch(/fetchAll/);
+    for (const table of ["accounts", "people", "stakeholders", "leads"]) expect(fn, table).toMatch(new RegExp(`from\\("${table}"\\)[^\\n]*\\.eq\\("org_id", orgId\\)`));
+    expect(code(read("src/lib/inngest/lead-tasks.server.ts"))).toMatch(/loadSnapshot\(db, orgId, now, \{ fitKey: false \}\)/);
+  });
   it("the account key message still says «dominio» for the loops that cut on /dominio/i", () => {
     expect(read("src/lib/orchestrator/runner.ts").match(/\/dominio\/i\.test\(/g)?.length).toBe(3);
   });

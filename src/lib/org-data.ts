@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { quarterOf } from "@/lib/metrics";
 import type { SetupData } from "@/lib/setup-schema";
-import type { Snapshot } from "@/lib/proactive/types";
+import type { FitKeyData, Snapshot } from "@/lib/proactive/types";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
@@ -94,7 +94,8 @@ export const loadSetupSnoozes = async (db: Db, orgId: string): Promise<Snooze[]>
 /** Snoozes plus the latest activity (eight queries): for the inactivity nudge and the proactive snapshot. */
 export const loadSetupGuideExtras = (db: Db, orgId: string) => readSetupGuide(db, orgId, true);
 
-export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
+/** `fitKey: false` skips the domain-proposal data (extra queries) for callers that never use it, like the per-lead follow-up. */
+export async function loadSnapshot(db: Db, orgId: string, now = new Date(), opts: { fitKey?: boolean } = {}): Promise<Snapshot> {
   const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage, guide] = await Promise.all([
     loadSetupData(db, orgId),
     fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
@@ -113,8 +114,9 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     loadSetupGuideExtras(db, orgId),
   ]);
   const strategy = await loadStrategyData(db, orgId);
+  const fitKey = opts.fitKey === false ? undefined : await loadFitKeyData(db, orgId);
   return {
-    now, orgId, setup, strategy, setupSnoozes: guide.snoozes, setupActivityAt: guide.activityAt,
+    now, orgId, setup, strategy, ...(fitKey ? { fitKey } : {}), setupSnoozes: guide.snoozes, setupActivityAt: guide.activityAt,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
     deals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     meetings: meetings.data ?? [],
@@ -132,6 +134,18 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
     signals: signals.data ?? [],
     usage: usage.data ?? [],
   };
+}
+
+/** Account domains and the emails of contacts linked to an account (people, stakeholders, open leads), paged and always by company. */
+async function loadFitKeyData(db: Db, orgId: string): Promise<FitKeyData> {
+  const [accounts, people, stakeholders, leads] = await Promise.all([
+    fetchAll((a, b) => db.from("accounts").select("id,domain").eq("org_id", orgId).order("id").range(a, b)),
+    fetchAll((a, b) => db.from("people").select("id,account_id,email").eq("org_id", orgId).not("account_id", "is", null).not("email", "is", null).order("id").range(a, b)),
+    fetchAll((a, b) => db.from("stakeholders").select("id,account_id,email").eq("org_id", orgId).not("email", "is", null).order("id").range(a, b)),
+    fetchAll((a, b) => db.from("leads").select("id,account_id,email").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).not("account_id", "is", null).not("email", "is", null).order("id").range(a, b)),
+  ]);
+  const contacts = [...people.rows, ...stakeholders.rows, ...leads.rows].flatMap((c) => (c.account_id ? [{ account_id: c.account_id, email: c.email }] : []));
+  return { accounts: accounts.rows, contacts };
 }
 
 /** Detectors whose suggestion reopens when it is found again after the system closed it as «resolved». */

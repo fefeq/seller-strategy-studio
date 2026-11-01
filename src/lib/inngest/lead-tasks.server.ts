@@ -146,7 +146,7 @@ export async function enrichLead(db: Admin, orgId: string, leadId: string, now =
 export async function followupStep(db: Admin, orgId: string, leadId: string, now = new Date()) {
   const { loadSnapshot } = await import("@/lib/org-data");
   const { followupSequence } = await import("@/lib/proactive/detectors/followup-sequence");
-  const snap = await loadSnapshot(db, orgId, now);
+  const snap = await loadSnapshot(db, orgId, now, { fitKey: false });
   const lead = (snap.leads ?? []).find((l) => l.id === leadId);
   if (!lead || lead.stage !== "contacted") return { stop: true as const };
   const found = followupSequence({ ...snap, leads: [lead] });
