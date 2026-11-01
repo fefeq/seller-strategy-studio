@@ -52,3 +52,6 @@
 - [ ] Fase 2b Finanzas completa: previsión de caja, cierres mensuales, agente/MCP
 - [ ] Fase 3 CRM: actividades, ofertas, plantillas, calendario, Deal Coach, equipos
 - [ ] Fase 4 importar datos reales — espera CSV del usuario
+
+## Empresas
+- [x] Cualquier persona con sesión puede crear empresas (formulario «Nueva empresa», selector y paso de la guía)
