@@ -236,6 +236,18 @@ describe("companyLinkedin when the read or the save fails (NK-0022 gate)", () =>
     expect(f.update()).toBeUndefined();
   });
 
+  it("a legacy mark {source: persona} with no kind and no `at` still protects the value", async () => {
+    const f = fakeDb({
+      linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+      field_sources: { linkedin_url: { source: "persona" } },
+    });
+    await companyLinkedin(f.db, {
+      ...ACC,
+      linkedin_url: "https://www.linkedin.com/in/someone-demo/",
+    });
+    expect(f.update()).toBeUndefined();
+  });
+
   it("accountPostsCore does not hide a failed save: the screen shows the error", async () => {
     const user = fakeDb({ ...ACC, field_sources: {} });
     fakeDb({ ...ACC, field_sources: {} }, { message: "boom" }); // the admin client that fails the save
