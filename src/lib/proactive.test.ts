@@ -746,18 +746,41 @@ describe("the proactive route hides price suggestions in the query (structure)",
 });
 
 describe("domain proposal (NK-0012 CA-7)", () => {
-  const acc = (id: string, o: Partial<Snapshot["accounts"][number]> = {}) => ({ id, name: `Cuenta ${id}`, is_target: false, owner_id: null, created_at: `2026-10-0${id.slice(1)}T00:00:00Z`, ...o });
-  const fit = (accounts: Snapshot["accounts"], domains: Record<string, string | null>, contacts: [string, string | null][]): Partial<Snapshot> => ({
+  const acc = (id: string, o: Partial<Snapshot["accounts"][number]> = {}) => ({
+    id,
+    name: `Cuenta ${id}`,
+    is_target: false,
+    owner_id: null,
+    created_at: `2026-10-0${id.slice(1)}T00:00:00Z`,
+    ...o,
+  });
+  const fit = (
+    accounts: Snapshot["accounts"],
+    domains: Record<string, string | null>,
+    contacts: [string, string | null][],
+  ): Partial<Snapshot> => ({
     accounts,
-    fitKey: { accounts: accounts.map((a) => ({ id: a.id, domain: domains[a.id] ?? null })), contacts: contacts.map(([account_id, email]) => ({ account_id, email })) },
+    fitKey: {
+      accounts: accounts.map((a) => ({ id: a.id, domain: domains[a.id] ?? null })),
+      contacts: contacts.map(([account_id, email]) => ({ account_id, email })),
+    },
   });
   const found = (s: Snapshot) => detect(s).filter((x) => x.detector === "account_missing_key");
   const sixAccounts = ["a1", "a2", "a3", "a4", "a5", "a6"].map((id) => acc(id));
-  const mailFor = (ids: string[]): [string, string][] => ids.map((id) => [id, `ana@${id}.example.com`]);
+  const mailFor = (ids: string[]): [string, string][] =>
+    ids.map((id) => [id, `ana@${id}.example.com`]);
 
   it("proposes the corporate domain of the contacts, as an update_account the person confirms", () => {
     const a = acc("a1", { owner_id: "ae1" });
-    const [s] = found(snap(fit([a], {}, [["a1", "ana@acme.com"], ["a1", "luis@Acme.com"], ["a1", "eva@gmail.com"]])));
+    const [s] = found(
+      snap(
+        fit([a], {}, [
+          ["a1", "ana@acme.com"],
+          ["a1", "luis@Acme.com"],
+          ["a1", "eva@gmail.com"],
+        ]),
+      ),
+    );
     expect(s).toMatchObject({
       detector: "account_missing_key",
       title: "Propuesta de dominio",
@@ -780,24 +803,64 @@ describe("domain proposal (NK-0012 CA-7)", () => {
   it("does not fire without the fitKey block, with a corporate domain already set, or without a proposal", () => {
     expect(found(snap({ accounts: [acc("a1")] }))).toEqual([]);
     expect(found(snap(fit([acc("a1")], { a1: "acme.com" }, [["a1", "ana@otra.com"]])))).toEqual([]);
-    expect(found(snap(fit([acc("a1")], {}, [["a1", "ana@gmail.com"], ["a1", null]])))).toEqual([]);
-    expect(found(snap(fit([acc("a1")], {}, [["a1", "ana@acme.com"], ["a1", "eva@filial.com"]])))).toEqual([]);
+    expect(
+      found(
+        snap(
+          fit([acc("a1")], {}, [
+            ["a1", "ana@gmail.com"],
+            ["a1", null],
+          ]),
+        ),
+      ),
+    ).toEqual([]);
+    expect(
+      found(
+        snap(
+          fit([acc("a1")], {}, [
+            ["a1", "ana@acme.com"],
+            ["a1", "eva@filial.com"],
+          ]),
+        ),
+      ),
+    ).toEqual([]);
   });
   it("a personal-mail domain counts as missing and is proposed a corporate one", () => {
-    expect(found(snap(fit([acc("a1")], { a1: "gmail.com" }, [["a1", "ana@acme.com"]])))).toHaveLength(1);
+    expect(
+      found(snap(fit([acc("a1")], { a1: "gmail.com" }, [["a1", "ana@acme.com"]]))),
+    ).toHaveLength(1);
   });
   it("counts one person once even when they are in people, stakeholders and leads, and ignores other accounts' contacts", () => {
-    const out = found(snap(fit([acc("a1"), acc("a2")], {}, [["a1", "ana@acme.com"], ["a1", "ANA@acme.com"], ["a1", "ana@acme.com"], ["a1", "b@otra.com"], ["a1", "c@otra.com"], ["a2", "d@acme.com"], ["a2", "e@acme.com"], ["a2", "f@acme.com"]])));
+    const out = found(
+      snap(
+        fit([acc("a1"), acc("a2")], {}, [
+          ["a1", "ana@acme.com"],
+          ["a1", "ANA@acme.com"],
+          ["a1", "ana@acme.com"],
+          ["a1", "b@otra.com"],
+          ["a1", "c@otra.com"],
+          ["a2", "d@acme.com"],
+          ["a2", "e@acme.com"],
+          ["a2", "f@acme.com"],
+        ]),
+      ),
+    );
     const a1 = out.filter((x) => x.dedupe_key.startsWith("missing_domain:a1:"));
     expect(a1).toHaveLength(1);
     expect(a1[0]!.action).toMatchObject({ args: { account_id: "a1", domain: "otra.com" } });
-    expect(out.find((x) => x.dedupe_key.startsWith("missing_domain:a2:"))!.action).toMatchObject({ args: { domain: "acme.com" } });
+    expect(out.find((x) => x.dedupe_key.startsWith("missing_domain:a2:"))!.action).toMatchObject({
+      args: { domain: "acme.com" },
+    });
   });
   it("goes to the account owner, else the Owner of the company, else nobody", () => {
     const contacts: [string, string][] = [["a1", "ana@acme.com"]];
-    const members = [{ user_id: "ae1", role: "ae" }, { user_id: "own", role: "owner" }];
+    const members = [
+      { user_id: "ae1", role: "ae" },
+      { user_id: "own", role: "owner" },
+    ];
     const to = (s: Snapshot) => found(s).map((x) => x.user_id);
-    expect(to(snap({ ...fit([acc("a1", { owner_id: "ae1" })], {}, contacts), members }))).toEqual(["ae1"]);
+    expect(to(snap({ ...fit([acc("a1", { owner_id: "ae1" })], {}, contacts), members }))).toEqual([
+      "ae1",
+    ]);
     expect(to(snap({ ...fit([acc("a1")], {}, contacts), members }))).toEqual(["own"]);
     expect(to(snap(fit([acc("a1")], {}, contacts)))).toEqual([null]);
   });
@@ -805,7 +868,12 @@ describe("domain proposal (NK-0012 CA-7)", () => {
     const accounts = [acc("a1"), acc("a2", { name: "Acme" })];
     const out = found(snap(fit(accounts, { a2: "Acme.com" }, [["a1", "ana@acme.com"]])));
     expect(out).toHaveLength(1);
-    expect(out[0]).toMatchObject({ dedupe_key: "missing_domain_dup:a1:a2", action: null, link: "/accounts/a2", priority: 3 });
+    expect(out[0]).toMatchObject({
+      dedupe_key: "missing_domain_dup:a1:a2",
+      action: null,
+      link: "/accounts/a2",
+      priority: 3,
+    });
     expect(out[0]!.body).toContain("Acme");
     expect(out[0]!.body).toMatch(/duplicado/);
   });
@@ -816,27 +884,50 @@ describe("domain proposal (NK-0012 CA-7)", () => {
     expect(out[0]!.action).toMatchObject({ tool: "update_account" });
   });
   it("shows at most 5 per pass, the oldest accounts first", () => {
-    const out = found(snap(fit([...sixAccounts].reverse(), {}, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]))));
+    const out = found(
+      snap(fit([...sixAccounts].reverse(), {}, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]))),
+    );
     expect(out.map((x) => x.dedupe_key.split(":")[1])).toEqual(["a1", "a2", "a3", "a4", "a5"]);
   });
   it("duplicate warnings count towards the cap", () => {
-    const accounts = [...sixAccounts, acc("a7", { name: "Dueña", created_at: "2026-09-01T00:00:00Z" })];
-    const out = found(snap(fit(accounts, { a7: "a1.example.com" }, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]))));
+    const accounts = [
+      ...sixAccounts,
+      acc("a7", { name: "Dueña", created_at: "2026-09-01T00:00:00Z" }),
+    ];
+    const out = found(
+      snap(fit(accounts, { a7: "a1.example.com" }, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]))),
+    );
     expect(out).toHaveLength(5);
     expect(out.filter((x) => x.dedupe_key.startsWith("missing_domain_dup:"))).toHaveLength(1);
   });
   it("a new account arrives and the sixth does not close the fifth: the shown five keep their keys", () => {
     const five = sixAccounts.slice(0, 5);
-    const before = found(snap(fit(five, {}, mailFor(["a1", "a2", "a3", "a4", "a5"])))).map((x) => x.dedupe_key);
-    const after = found(snap(fit([...five, acc("a6")], {}, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"])))).map((x) => x.dedupe_key);
+    const before = found(snap(fit(five, {}, mailFor(["a1", "a2", "a3", "a4", "a5"])))).map(
+      (x) => x.dedupe_key,
+    );
+    const after = found(
+      snap(fit([...five, acc("a6")], {}, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]))),
+    ).map((x) => x.dedupe_key);
     expect(before).toHaveLength(5);
     expect(after).toEqual(before);
     // Once one is decided (its domain is set), the waiting one enters.
-    const later = found(snap(fit([...five, acc("a6")], { a1: "a1.example.com" }, mailFor(["a1", "a2", "a3", "a4", "a5", "a6"])))).map((x) => x.dedupe_key.split(":")[1]);
+    const later = found(
+      snap(
+        fit(
+          [...five, acc("a6")],
+          { a1: "a1.example.com" },
+          mailFor(["a1", "a2", "a3", "a4", "a5", "a6"]),
+        ),
+      ),
+    ).map((x) => x.dedupe_key.split(":")[1]);
     expect(later).toEqual(["a2", "a3", "a4", "a5", "a6"]);
   });
   it("orders equal creation dates by id, so the order is stable", () => {
     const same = ["a3", "a1", "a2"].map((id) => acc(id, { created_at: "2026-10-01T00:00:00Z" }));
-    expect(found(snap(fit(same, {}, mailFor(["a1", "a2", "a3"])))).map((x) => x.dedupe_key.split(":")[1])).toEqual(["a1", "a2", "a3"]);
+    expect(
+      found(snap(fit(same, {}, mailFor(["a1", "a2", "a3"])))).map(
+        (x) => x.dedupe_key.split(":")[1],
+      ),
+    ).toEqual(["a1", "a2", "a3"]);
   });
 });

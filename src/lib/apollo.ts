@@ -271,7 +271,13 @@ export function matchDetails(p: {
   if (p.linkedin_url?.trim()) d.linkedin_url = p.linkedin_url.trim();
   const dom = cleanDomain(p.domain);
   if (dom) d.domain = dom;
-  requireKey("persona", { id: d.id, name: d.name, email: d.email, linkedin_url: d.linkedin_url, domain: d.domain });
+  requireKey("persona", {
+    id: d.id,
+    name: d.name,
+    email: d.email,
+    linkedin_url: d.linkedin_url,
+    domain: d.domain,
+  });
   return d;
 }
 

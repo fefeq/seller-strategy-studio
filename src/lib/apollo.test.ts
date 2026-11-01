@@ -105,7 +105,9 @@ describe("apollo mapping", () => {
   });
   it("name plus a personal-mail domain no longer identifies a person, but an email still does", () => {
     expect(() => matchDetails({ name: "Ana García", domain: "gmail.com" })).toThrow(/identificar/);
-    expect(matchDetails({ name: "Ana", domain: "gmail.com", email: "ana@acme.com" })).toMatchObject({ email: "ana@acme.com" });
+    expect(matchDetails({ name: "Ana", domain: "gmail.com", email: "ana@acme.com" })).toMatchObject(
+      { email: "ana@acme.com" },
+    );
   });
 });
 

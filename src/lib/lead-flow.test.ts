@@ -24,11 +24,21 @@ describe("lead flow", () => {
       { name: "Marta Gil", title: "VP Sales", linkedin: null },
       { name: "Juan Sol", title: "Head of Growth", linkedin: null },
     ];
-    expect(pickKeyPeople(rows, "Juan Sol", 3).map((p) => p.name)).toEqual(["Ana Ruiz", "Marta Gil", "Luis Pérez"]);
+    expect(pickKeyPeople(rows, "Juan Sol", 3).map((p) => p.name)).toEqual([
+      "Ana Ruiz",
+      "Marta Gil",
+      "Luis Pérez",
+    ]);
   });
   it("summarises steps in flow order and reads old rows", () => {
     expect(readFlow(null)).toBeNull();
-    const f = readFlow({ at: "x", steps: { proposal: { status: "done", note: "SQL" }, account: { status: "done", note: "Creada" } } })!;
+    const f = readFlow({
+      at: "x",
+      steps: {
+        proposal: { status: "done", note: "SQL" },
+        account: { status: "done", note: "Creada" },
+      },
+    })!;
     expect(flowLines(f)).toEqual(["Cuenta: Creada", "Propuesta de IA: SQL"]);
   });
 });
