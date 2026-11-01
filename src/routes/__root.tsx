@@ -96,7 +96,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "format-detection", content: "telephone=no" },
       { title: "Nokko — el sistema operativo comercial de tu equipo" },
-      { name: "description", content: "Conocimiento, cuentas, deals y personas en un solo lugar para todo el equipo de ventas." },
+      {
+        name: "description",
+        content:
+          "Conocimiento, cuentas, deals y personas en un solo lugar para todo el equipo de ventas.",
+      },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: SITE_NAME },
       { property: "og:locale", content: "es_ES" },
@@ -155,18 +159,6 @@ function RootComponent() {
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
-
-  useEffect(() => {
-    // Published builds: Vite fires this when a hashed chunk from an older deploy is gone.
-    const onPreloadError = (event: Event) => {
-      const payload = (event as Event & { payload?: unknown }).payload;
-      if (reloadOnceForStaleModule(payload ?? new Error("Failed to fetch dynamically imported module"))) {
-        event.preventDefault();
-      }
-    };
-    window.addEventListener("vite:preloadError", onPreloadError);
-    return () => window.removeEventListener("vite:preloadError", onPreloadError);
-  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

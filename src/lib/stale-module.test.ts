@@ -1,5 +1,40 @@
-import { describe, expect, it } from "vitest";
-import { isStaleModuleError, shouldReloadForStaleModule } from "./stale-module";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  isStaleModuleError,
+  reloadOnceForStaleModule,
+  shouldReloadForStaleModule,
+  STALE_RELOAD_KEY,
+} from "./stale-module";
+
+const NOW = 1_000_000;
+const STALE = new TypeError("Failed to fetch dynamically imported module: https://x/a.js");
+
+type FakeStorage = Pick<Storage, "getItem" | "setItem">;
+
+function stubWindow(sessionStorage: FakeStorage) {
+  const reload = vi.fn();
+  vi.stubGlobal("window", { sessionStorage, location: { reload } });
+  return reload;
+}
+
+function memoryStorage(initial?: string): FakeStorage & { data: Map<string, string> } {
+  const data = new Map<string, string>();
+  if (initial !== undefined) data.set(STALE_RELOAD_KEY, initial);
+  return {
+    data,
+    getItem: (k) => data.get(k) ?? null,
+    setItem: (k, v) => void data.set(k, v),
+  };
+}
+
+beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(NOW);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("stale module recovery", () => {
   it("recognises a failed lazy route chunk", () => {
@@ -20,5 +55,114 @@ describe("stale module recovery", () => {
     expect(shouldReloadForStaleModule(null, 100_000)).toBe(true);
     expect(shouldReloadForStaleModule(100_000, 110_000)).toBe(false);
     expect(shouldReloadForStaleModule(100_000, 131_000)).toBe(true);
+  });
+});
+
+describe("reloadOnceForStaleModule fails closed", () => {
+  it("reloads and stores the mark when storage works", () => {
+    const storage = memoryStorage();
+    const reload = stubWindow(storage);
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(storage.data.get(STALE_RELOAD_KEY)).toBe(String(NOW));
+  });
+
+  it("does not reload when getItem and setItem both throw", () => {
+    const boom = () => {
+      throw new Error("blocked");
+    };
+    const reload = stubWindow({ getItem: boom, setItem: boom });
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does not reload when only setItem throws", () => {
+    const reload = stubWindow({
+      getItem: () => null,
+      setItem: () => {
+        throw new Error("quota");
+      },
+    });
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does not reload when setItem silently does not persist", () => {
+    const reload = stubWindow({ getItem: () => null, setItem: () => undefined });
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("treats a mark in the future as expired", () => {
+    expect(shouldReloadForStaleModule(NOW + 60_000, NOW)).toBe(true);
+    const reload = stubWindow(memoryStorage(String(NOW + 60_000)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("reloadOnceForStaleModule guards", () => {
+  it("reloads only once inside the window", () => {
+    const storage = memoryStorage();
+    const reload = stubWindow(storage);
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("reloads again once the window has passed", () => {
+    const reload = stubWindow(memoryStorage(String(NOW - 30_001)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reload exactly at the 30 second boundary", () => {
+    expect(shouldReloadForStaleModule(NOW - 30_000, NOW)).toBe(false);
+    expect(shouldReloadForStaleModule(NOW - 30_001, NOW)).toBe(true);
+    const reload = stubWindow(memoryStorage(String(NOW - 30_000)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does not reload for 29 seconds", () => {
+    const reload = stubWindow(memoryStorage(String(NOW - 29_000)));
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it.each(["NaN", "", "abc"])("treats the stored mark %j as no mark", (raw) => {
+    const reload = stubWindow(memoryStorage(raw));
+    expect(reloadOnceForStaleModule(STALE)).toBe(true);
+    expect(reload).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores errors that are not stale modules", () => {
+    const reload = stubWindow(memoryStorage());
+    expect(reloadOnceForStaleModule(new Error("boom"))).toBe(false);
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("does nothing without a window", () => {
+    vi.stubGlobal("window", undefined);
+    expect(reloadOnceForStaleModule(STALE)).toBe(false);
+  });
+});
+
+describe("isStaleModuleError patterns", () => {
+  it.each([
+    ["Chrome", "Failed to fetch dynamically imported module: https://x/a.js"],
+    ["Firefox", "error loading dynamically imported module: https://x/a.js"],
+    ["Safari", "Importing a module script failed."],
+    ["CSS", "Unable to preload CSS for /assets/a.css"],
+  ])("recognises the %s message", (_browser, message) => {
+    expect(isStaleModuleError(new TypeError(message))).toBe(true);
+    expect(isStaleModuleError(message)).toBe(true);
+  });
+
+  it("ignores non-error values", () => {
+    expect(isStaleModuleError(undefined)).toBe(false);
+    expect(isStaleModuleError({ message: "Failed to fetch dynamically imported module" })).toBe(
+      false,
+    );
   });
 });
