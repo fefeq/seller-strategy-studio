@@ -79,6 +79,45 @@ function fakeDb(
   };
 }
 
+type StoreRow = Row & { id: string; org_id: string };
+/** A fake store that honours the eq filters: a select or update only sees rows matching every filter. */
+function fakeStore(rows: StoreRow[]) {
+  const updates: { payload: unknown; filters: Record<string, unknown> }[] = [];
+  const from = (table: string) => {
+    expect(table).toBe("accounts");
+    const filters: Record<string, unknown> = {};
+    let payload: unknown;
+    const match = () =>
+      rows.filter((r) => Object.entries(filters).every(([k, v]) => r[k as keyof StoreRow] === v));
+    const proxy: object = new Proxy(
+      {},
+      {
+        get(_t, prop: string) {
+          if (prop === "then") {
+            let res: { data: unknown; error: null };
+            if (payload === undefined) res = { data: match()[0] ?? null, error: null };
+            else {
+              updates.push({ payload, filters: { ...filters } });
+              res = { data: match().map((r) => ({ id: r.id })), error: null };
+            }
+            return (a: (v: unknown) => unknown, b: (e: unknown) => unknown) =>
+              Promise.resolve(res).then(a, b);
+          }
+          return (...args: unknown[]) => {
+            if (prop === "update") payload = args[0];
+            else if (prop === "eq") filters[args[0] as string] = args[1];
+            return proxy;
+          };
+        },
+      },
+    );
+    return proxy;
+  };
+  const db = { from } as unknown as Db;
+  admin.current = db;
+  return { db, updates };
+}
+
 beforeEach(() => {
   found.items = [
     { title: "Acme Demo | LinkedIn", url: URL, snippet: "", date: null, source: "web" },
@@ -288,5 +327,50 @@ describe("companyLinkedin when the read or the save fails (NK-0022 gate)", () =>
     const user = fakeDb({ ...ACC, field_sources: {} });
     fakeDb({ ...ACC, field_sources: {} }, { message: "boom" }); // the admin client that fails the save
     await expect(accountPostsCore(user.db, ACC.id)).rejects.toThrow("boom");
+  });
+});
+
+describe("companyLinkedin admin read (NK-0036 d)", () => {
+  it("never reads or writes an account of another organization, even with its id", async () => {
+    const other = {
+      ...ACC,
+      id: "acc-b",
+      org_id: "org-2",
+      linkedin_url: null,
+      field_sources: {},
+    };
+    const store = fakeStore([
+      { ...ACC, id: "acc-a", linkedin_url: null, field_sources: {} },
+      other,
+    ]);
+    await expect(companyLinkedin(store.db, { ...ACC, id: "acc-b" })).rejects.toThrow(
+      "ya no está en esta empresa",
+    );
+    expect(store.updates).toEqual([]);
+  });
+
+  it("an account of the own organization is saved through the same store", async () => {
+    const store = fakeStore([
+      { ...ACC, id: "acc-a", linkedin_url: null, field_sources: {} },
+      { ...ACC, id: "acc-b", org_id: "org-2", linkedin_url: null, field_sources: {} },
+    ]);
+    expect(await companyLinkedin(store.db, { ...ACC, id: "acc-a" })).toBe(URL);
+    expect(store.updates.map((u) => u.filters)).toEqual([{ org_id: ORG, id: "acc-a" }]);
+  });
+
+  it("a saved value of only spaces counts as empty: filled from the web, never kept as a person's", async () => {
+    const person = { source: "persona", kind: "persona", confirmed: true, at: AT };
+    const f = fakeDb({ linkedin_url: "   ", field_sources: { linkedin_url: person } });
+    await companyLinkedin(f.db, ACC);
+    const payload = f.update()!.payload as {
+      linkedin_url: string;
+      field_sources: Record<string, unknown>;
+    };
+    expect(payload.linkedin_url).toBe(URL);
+    expect(payload.field_sources.linkedin_url).toMatchObject({
+      source: "web",
+      kind: "fuente",
+      confirmed: false,
+    });
   });
 });
