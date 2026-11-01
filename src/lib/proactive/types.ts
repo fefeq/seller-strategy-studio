@@ -32,6 +32,17 @@ export type Snapshot = {
   /** Extra data for the strategic rules (SDD-20261027 F1). Optional so older snapshots still work; without it no strategic rule fires. */
   strategy?: StrategyData;
   usage?: { domain: string; account_id: string | null; active_users_7d: number; active_users_prev_7d: number }[];
+  /**
+   * What the domain proposal needs (NK-0012 CA-7): every account's domain and the emails of the contacts linked to an account
+   * (people, stakeholders and open leads). Optional so older snapshots still work; without it the rule does not fire. Loaded only when
+   * asked for (`loadSnapshot` option `fitKey`), so the per-lead follow-up does not pay for it.
+   */
+  fitKey?: FitKeyData;
+};
+
+export type FitKeyData = {
+  accounts: { id: string; domain: string | null }[];
+  contacts: { account_id: string; email: string | null }[];
 };
 
 export type StrategyData = {
