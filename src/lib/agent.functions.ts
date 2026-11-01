@@ -6,7 +6,7 @@ import { detect } from "@/lib/proactive";
 import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
-import { executeFormKind } from "@/lib/strategy-suggestions";
+import { canViewStrategy, executeFormKind, needsPriceAccess } from "@/lib/strategy-suggestions";
 import { executeIssue } from "@/lib/strategy-execute";
 
 export type ExecuteInput =
@@ -287,7 +287,8 @@ export async function decideSuggestionCore(
     .eq("org_id", ctx.orgId)
     .maybeSingle();
   // Telegram runs this with the privileged client: the visibility rule RLS applies in the app is checked here.
-  if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles))
+  // A price suggestion is only for roles that may see prices (CA-19, CA-58): checked before «ya gestionada», so its existence is not revealed.
+  if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles) || !canViewStrategy(s, ctx.roles))
     throw new Error("Sugerencia no encontrada");
   if (s.status !== "pending") return { status: s.status, message: "Ya estaba gestionada" };
   // Strategic suggestions (F0): the decision is logged with who, when and why (CA-4); acting on it arrives with F3.
@@ -330,7 +331,8 @@ export async function decideSuggestionCore(
     }
     if (r.message !== "Ya estaba gestionada") {
       const { rememberDecision } = await import("@/lib/memory.server");
-      if (decision !== "snooze") await rememberDecision(ctx, s, decision);
+      // The memory is read by every member and by the agent: a price suggestion leaves none.
+      if (decision !== "snooze" && !needsPriceAccess(s)) await rememberDecision(ctx, s, decision);
     }
     return result;
   }

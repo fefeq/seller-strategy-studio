@@ -1,10 +1,9 @@
 // F1 · Product and price rules: CA-18 repeated discount or free line, CA-20 active product never sold. No AI (CA-24).
 // CA-19: price suggestions carry the cause prefix «price:», which only roles that may see prices read (see canViewStrategy).
-import { buildStrategySuggestion } from "@/lib/strategy-suggestions";
+import { PRICE_CAUSE_PREFIX, buildStrategySuggestion } from "@/lib/strategy-suggestions";
 import { DAY, type Detector } from "../types";
 
 export const MIN_REPEATS = 3;
-export const PRICE_CAUSE_PREFIX = "price:";
 export const UNSOLD_DAYS = 365;
 
 export const productRepeatedDiscount: Detector = (s) => {
