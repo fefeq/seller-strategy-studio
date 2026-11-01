@@ -9,7 +9,8 @@ import { describe, expect, it } from "vitest";
 const root = path.resolve(__dirname, "../..");
 const read = (f: string) => readFileSync(path.join(root, f), "utf8");
 /** Comments out of the way: a call named in a comment is not a call. */
-const code = (src: string) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+const code = (src: string) =>
+  src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
 
 const ENTRY_POINTS = [
   "src/lib/apollo-gateway.ts",
@@ -26,20 +27,35 @@ describe("fit-key entry points", () => {
     expect(code(read(f))).toMatch(/\b(requireKey|missingKey)\(/);
   });
   it("the three provider entry points use requireKey, which throws the typed error", () => {
-    for (const f of ["src/lib/apollo-gateway.ts", "src/lib/clay-gateway.ts", "src/lib/web-research-core.ts"]) expect(code(read(f)), f).toMatch(/\brequireKey\(/);
+    for (const f of [
+      "src/lib/apollo-gateway.ts",
+      "src/lib/clay-gateway.ts",
+      "src/lib/web-research-core.ts",
+    ])
+      expect(code(read(f)), f).toMatch(/\brequireKey\(/);
   });
   it("only the two pure functions with their own tests keep the literal «no tiene dominio»", () => {
-    const withLiteral = [...ENTRY_POINTS, "src/lib/clay.ts"].filter((f) => /no tiene dominio/.test(read(f)));
+    const withLiteral = [...ENTRY_POINTS, "src/lib/clay.ts"].filter((f) =>
+      /no tiene dominio/.test(read(f)),
+    );
     expect(withLiteral.sort()).toEqual(["src/lib/apollo.ts", "src/lib/clay.ts"]);
     expect((read("src/lib/apollo.ts").match(/no tiene dominio/g) ?? []).length).toBe(1);
     expect((read("src/lib/clay.ts").match(/no tiene dominio/g) ?? []).length).toBe(1);
   });
   it("the domain-proposal data is read per company, paged, and skipped by the per-lead follow-up (CA-7)", () => {
     const org = code(read("src/lib/org-data.ts"));
-    const fn = org.slice(org.indexOf("async function loadFitKeyData"), org.indexOf("const REOPENABLE"));
+    const fn = org.slice(
+      org.indexOf("async function loadFitKeyData"),
+      org.indexOf("const REOPENABLE"),
+    );
     expect(fn).toMatch(/fetchAll/);
-    for (const table of ["accounts", "people", "stakeholders", "leads"]) expect(fn, table).toMatch(new RegExp(`from\\("${table}"\\)[^\\n]*\\.eq\\("org_id", orgId\\)`));
-    expect(code(read("src/lib/inngest/lead-tasks.server.ts"))).toMatch(/loadSnapshot\(db, orgId, now, \{ fitKey: false \}\)/);
+    for (const table of ["accounts", "people", "stakeholders", "leads"])
+      expect(fn, table).toMatch(
+        new RegExp(`from\\("${table}"\\)[^\\n]*\\.eq\\("org_id", orgId\\)`),
+      );
+    expect(code(read("src/lib/inngest/lead-tasks.server.ts"))).toMatch(
+      /loadSnapshot\(db, orgId, now, \{ fitKey: false \}\)/,
+    );
   });
   it("the account key message still says «dominio» for the loops that cut on /dominio/i", () => {
     expect(read("src/lib/orchestrator/runner.ts").match(/\/dominio\/i\.test\(/g)?.length).toBe(3);

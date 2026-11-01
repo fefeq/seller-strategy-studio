@@ -5,7 +5,31 @@ import { emailDomainOf } from "./lead-qualification";
 import { domainFromEmail } from "./leads";
 import { companyDomain } from "./product-usage";
 
-const ALL = ["gmail.com", "googlemail.com", "hotmail.com", "hotmail.es", "outlook.com", "outlook.es", "live.com", "msn.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "mac.com", "aol.com", "proton.me", "protonmail.com", "gmx.com", "gmx.es", "yandex.com", "zoho.com", "mail.com", "telefonica.net", "terra.es"];
+const ALL = [
+  "gmail.com",
+  "googlemail.com",
+  "hotmail.com",
+  "hotmail.es",
+  "outlook.com",
+  "outlook.es",
+  "live.com",
+  "msn.com",
+  "yahoo.com",
+  "yahoo.es",
+  "icloud.com",
+  "me.com",
+  "mac.com",
+  "aol.com",
+  "proton.me",
+  "protonmail.com",
+  "gmx.com",
+  "gmx.es",
+  "yandex.com",
+  "zoho.com",
+  "mail.com",
+  "telefonica.net",
+  "terra.es",
+];
 
 describe("free mail list", () => {
   it("has the 23 consumer domains, once", () => {

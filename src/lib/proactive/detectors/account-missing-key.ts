@@ -18,17 +18,32 @@ export const accountMissingKey: Detector = (s) => {
   if (!fk) return [];
   const domainOf = new Map(fk.accounts.map((a) => [a.id, a.domain]));
   const emails = new Map<string, { email: string | null }[]>();
-  for (const c of fk.contacts) emails.set(c.account_id, [...(emails.get(c.account_id) ?? []), { email: c.email }]);
+  for (const c of fk.contacts)
+    emails.set(c.account_id, [...(emails.get(c.account_id) ?? []), { email: c.email }]);
   const owner = (s.members ?? []).find((m) => m.role === "owner")?.user_id ?? null;
-  const withDomain = s.accounts.map((a) => ({ id: a.id, name: a.name, domain: domainOf.get(a.id) ?? null })).filter((a) => !!a.domain);
+  const withDomain = s.accounts
+    .map((a) => ({ id: a.id, name: a.name, domain: domainOf.get(a.id) ?? null }))
+    .filter((a) => !!a.domain);
   const out: Suggestion[] = [];
-  const oldestFirst = [...s.accounts].sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "") || a.id.localeCompare(b.id));
+  const oldestFirst = [...s.accounts].sort(
+    (a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? "") || a.id.localeCompare(b.id),
+  );
   for (const a of oldestFirst) {
     if (out.length >= CAP) break;
-    if (!missingKey("cuenta", { name: a.name, domain: domainOf.get(a.id) ?? null }, "research_account").length) continue;
+    if (
+      !missingKey(
+        "cuenta",
+        { name: a.name, domain: domainOf.get(a.id) ?? null },
+        "research_account",
+      ).length
+    )
+      continue;
     const domain = proposeDomain(emails.get(a.id) ?? []);
     if (!domain) continue;
-    const same = duplicateOf({ domain }, withDomain.filter((o) => o.id !== a.id));
+    const same = duplicateOf(
+      { domain },
+      withDomain.filter((o) => o.id !== a.id),
+    );
     const user_id = a.owner_id ?? owner;
     if (same?.kind === "same") {
       out.push({
