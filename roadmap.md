@@ -55,3 +55,4 @@
 
 ## Empresas
 - [x] Cualquier persona con sesión puede crear empresas (formulario «Nueva empresa», selector y paso de la guía)
+- [x] Superadmin (cosentinofede@gmail.com) Owner de todas las empresas; Veta-i borrada
