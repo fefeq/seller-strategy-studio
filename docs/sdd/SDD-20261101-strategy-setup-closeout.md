@@ -1,7 +1,7 @@
 # SDD-20261101-strategy-setup-closeout · [Mejora] Cierre de «Configura tu estrategia» que guía al siguiente paso (NK-0008)
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (lo grande ya está entregado; faltan un hueco de CA-5, la línea base y las firmas)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede (2026-11-01) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **PRD:** `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-3) · **Depende de:** `SDD-20261025-strategy-setup-guided-next-step` (este SDD lo **extiende** y no lo reescribe; solo se tocan su cabecera, su §4, su §13 y su §16, y solo con aprobación de Fede)
 **Ticket:** NK-0008 (hoy `LOGGED` en el ledger; el código del SDD original ya está en `origin/main`)
 
@@ -136,6 +136,11 @@ Orden: U-1 y U-2 en la misma rama (U-2 depende de U-1); U-3 en paralelo; U-4 al 
 5. **P-5 · ¿Quitamos del original la dependencia dura del «SDD universal de campos (definición única de completo)»?** Recomiendo **sí**: el universal no entregó esa regla y `setup-schema.ts:49-66` es hoy la única definición de «completo» de los 8 pasos; NK-0008 la consume tal cual. La regla universal para ICP, posicionamiento y empresa se reabre en el ticket del SDD universal si Fede lo quiere. Dejar la dependencia escrita bloquearía NK-0008 por algo que no va a llegar.
 6. **P-6 · ¿Cómo se excluyen de M-1 las empresas internas, de demo y de prueba?** «No archivada» las incluye. Recomiendo que me des la lista de ids (o un criterio) y que M-1 se informe **con y sin** ellas; no la invento. Sin lista, M-1 sale solo «sobre no archivadas» y lo dice.
 7. **Para la revisión técnica:** resuelto en CA-1/CA-2: una prueba de guarda por lectura de fuentes más pruebas de comportamiento para cuota y cuenta. ¿Falta alguna prueba por escritor (Apollo, Clay, Parallel, ICP) o la guarda basta para esos cuatro?
+
+**Decisiones de Fede (2026-11-01, en el chat):**
+- P-1 a P-5: aceptadas con la recomendación del SDD.
+- P-6: no hay lista de empresas internas, de demo o de prueba; M-1 se informa solo sobre «no archivadas» y lo dice.
+- La aprobación es del SDD. El GO para construir (U-1 a U-2), la medición de producción de U-3 y la edición del SDD original de U-5 se piden aparte.
 
 ## 16. Pendiente de verificar
 Consultas **propuestas, no ejecutadas** (solo lectura, recuentos, sin datos de clientes; SQL editor de Lovable Cloud; el rol del editor ve todas las empresas, el cliente de la app con RLS solo vería la actual):
