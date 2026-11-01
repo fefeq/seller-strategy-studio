@@ -18,7 +18,8 @@ export function isStaleModuleError(error: unknown): boolean {
 
 /** Reload only if we have not already reloaded for this reason recently (avoids loops). */
 export function shouldReloadForStaleModule(lastReloadAt: number | null, now: number): boolean {
-  return lastReloadAt === null || now - lastReloadAt > RELOAD_WINDOW_MS;
+  if (lastReloadAt === null || lastReloadAt > now) return true;
+  return now - lastReloadAt > RELOAD_WINDOW_MS;
 }
 
 export function reloadOnceForStaleModule(error: unknown): boolean {
@@ -32,10 +33,12 @@ export function reloadOnceForStaleModule(error: unknown): boolean {
   }
   const now = Date.now();
   if (!shouldReloadForStaleModule(Number.isFinite(last) ? last : null, now)) return false;
+  // Fail closed: persist the mark first and read it back; without it we cannot bound reloads.
   try {
     window.sessionStorage.setItem(STALE_RELOAD_KEY, String(now));
+    if (window.sessionStorage.getItem(STALE_RELOAD_KEY) !== String(now)) return false;
   } catch {
-    // sessionStorage unavailable: still reload once.
+    return false;
   }
   window.location.reload();
   return true;
