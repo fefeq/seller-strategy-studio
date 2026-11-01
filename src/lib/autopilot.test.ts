@@ -14,6 +14,15 @@ describe("autopilot", () => {
     ], NOW);
     expect(r.map((a) => a.id)).toEqual(["new"]);
   });
+  it("does not research an account whose domain is personal mail, so it is not marked as researched", () => {
+    const r = accountsToResearch([
+      { id: "gmail", domain: "gmail.com", created_at: ago(1), auto_researched_at: null },
+      { id: "outlook", domain: " Outlook.ES ", created_at: ago(1), auto_researched_at: null },
+      { id: "blank", domain: "  ", created_at: ago(1), auto_researched_at: null },
+      { id: "corp", domain: "WWW.Acme.com", created_at: ago(2), auto_researched_at: null },
+    ], NOW);
+    expect(r.map((a) => a.id)).toEqual(["corp"]);
+  });
   it("prepares meetings of the next 36 hours that have no prep", () => {
     const at = (h: number) => new Date(NOW.getTime() + h * 3_600_000).toISOString();
     const r = meetingsToPrep([

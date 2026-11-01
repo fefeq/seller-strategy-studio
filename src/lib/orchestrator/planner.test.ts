@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetState, planFor, sourcesLine } from "./planner";
+import { CAPABILITIES, NEED_KEYS, budgetState, planFor, sourcesLine, type Need } from "./planner";
 
 const open = { remaining: 100, automatic: false, paused: false };
 
@@ -31,4 +31,18 @@ describe("budgetState", () => {
 
 it("sourcesLine names services and total", () => {
   expect(sourcesLine([{ service: "parallel", cost: 0.3 }, { service: "firecrawl", cost: 0.1 }])).toBe("Fuentes: Parallel, Firecrawl · coste aprox. 0,40 €");
+});
+
+describe("NEED_KEYS", () => {
+  it("declares a key for every need, and only for needs that exist", () => {
+    expect(Object.keys(NEED_KEYS).sort()).toEqual(Object.keys(CAPABILITIES).sort());
+  });
+  it("account needs require the account key for that same need; contact needs require the person key", () => {
+    for (const n of ["research_account", "find_stakeholders", "enrich_account"] as const) expect(NEED_KEYS[n]).toEqual({ entity: "cuenta", need: n });
+    for (const n of ["enrich_contact", "find_email", "find_phone"] as const) expect(NEED_KEYS[n]).toEqual({ entity: "persona" });
+  });
+  it("needs that search by topic or read a file declare no key", () => {
+    const none: Need[] = ["news_signals", "icp_companies", "case_studies", "competitors", "read_document"];
+    for (const n of none) expect(NEED_KEYS[n]).toBeNull();
+  });
 });

@@ -1,10 +1,16 @@
 // Orchestrator: the user asks for a need, Nokko picks the services. Pure (tested in planner.test.ts).
 // Catalogue of needs → services with rough cost (EUR), speed and quality; the planner orders them.
 
+import type { KeyEntity, KeyNeed } from "@/lib/fit-key";
+
 export type Service = "apollo" | "clay" | "parallel" | "firecrawl" | "perplexity" | "apify" | "drive" | "posthog" | "stripe" | "ai";
 export type Need =
   | "research_account" | "find_stakeholders" | "enrich_account" | "enrich_contact" | "find_email" | "find_phone"
   | "news_signals" | "icp_companies" | "case_studies" | "competitors" | "read_document";
+
+export type NeedKey = { entity: KeyEntity; need?: KeyNeed } | null;
+// STUB (red commit): compiles and declares nothing, so the new test fails by assertion.
+export const NEED_KEYS: Record<Need, NeedKey> = {} as Record<Need, NeedKey>;
 
 export type Option = { service: Service; cost: number; speed: 1 | 2 | 3; quality: 1 | 2 | 3 };
 
