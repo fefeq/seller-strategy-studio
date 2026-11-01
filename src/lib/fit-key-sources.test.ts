@@ -44,17 +44,15 @@ describe("fit-key entry points", () => {
   });
   it("the domain-proposal data is read per company, paged, and skipped by the per-lead follow-up (CA-7)", () => {
     const org = code(read("src/lib/org-data.ts"));
-    const fn = org.slice(
-      org.indexOf("async function loadFitKeyData"),
-      org.indexOf("const REOPENABLE"),
-    );
+    // Whitespace out of the way, so the check does not depend on how prettier wraps the query chains.
+    const fn = org
+      .slice(org.indexOf("async function loadFitKeyData"), org.indexOf("const REOPENABLE"))
+      .replace(/\s+/g, "");
     expect(fn).toMatch(/fetchAll/);
     for (const table of ["accounts", "people", "stakeholders", "leads"])
-      expect(fn, table).toMatch(
-        new RegExp(`from\\("${table}"\\)[^\\n]*\\.eq\\("org_id", orgId\\)`),
-      );
-    expect(code(read("src/lib/inngest/lead-tasks.server.ts"))).toMatch(
-      /loadSnapshot\(db, orgId, now, \{ fitKey: false \}\)/,
+      expect(fn, table).toMatch(new RegExp(`from\\("${table}"\\).*?\\.eq\\("org_id",orgId\\)`));
+    expect(code(read("src/lib/inngest/lead-tasks.server.ts")).replace(/\s+/g, "")).toMatch(
+      /loadSnapshot\(db,orgId,now,\{fitKey:false\}\)/,
     );
   });
   it("the account key message still says «dominio» for the loops that cut on /dominio/i", () => {
