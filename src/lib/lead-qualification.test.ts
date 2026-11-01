@@ -25,6 +25,15 @@ describe("request", () => {
   });
 });
 
+describe("personal mail", () => {
+  const domainSent = (email: string | null) => (buildQualificationRequest({ ...ctx, lead: { ...ctx.lead, email } }).state as { lead: { dominio_email?: string } }).lead.dominio_email;
+  it("marks every consumer mailbox, including hotmail.es and outlook.es, and leaves corporate domains alone", () => {
+    for (const d of ["gmail.com", "hotmail.es", "outlook.es", "zoho.com", "terra.es"]) expect(domainSent(`ana@${d}`)).toBe(`${d} (correo personal)`);
+    expect(domainSent("ana@acme.com")).toBe("acme.com");
+    expect(domainSent(null)).toBeUndefined();
+  });
+});
+
 describe("proposal", () => {
   it("weights 50/35/15 by default: a perfect lead scores 100 and goes to SQL", () => {
     const v = qualificationView(q(), DEFAULT_QUAL_SETTINGS, "new");

@@ -23,6 +23,11 @@ describe("each lead becomes an account with stage and date", () => {
     expect(l.domain).toBe("acme-logistics.com");
     expect(l.company).toBe("Acme-logistics");
   });
+  it("guard: a corporate email still links by exact domain and creates the company without asking", () => {
+    const l = lead({ email: "ana@acme-logistics.com", company: "Acme" });
+    expect(l.domain).toBe("acme-logistics.com");
+    expect(l.company).toBe("Acme");
+  });
   it("rejects a lead with no way to identify the company", () => {
     expect("error" in normalizeLead({ email: "ana@gmail.com" })).toBe(true);
   });

@@ -14,6 +14,9 @@ describe("lead flow", () => {
     expect(corporateDomain("ana@gmail.com")).toBeNull();
     expect(corporateDomain(null)).toBeNull();
   });
+  it("outlook.es is a personal mailbox, so it never becomes a company domain", () => {
+    expect(corporateDomain("ana@outlook.es")).toBeNull();
+  });
   it("shows the most senior people first, without the lead's own contact", () => {
     const rows = [
       { name: "Luis Pérez", title: "Sales Manager", linkedin: null },
