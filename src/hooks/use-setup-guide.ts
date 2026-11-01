@@ -153,18 +153,16 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
         toast.error("Elige una fecha futura.");
         return false;
       }
-      const { error } = await supabase
-        .from("setup_step_snoozes")
-        .upsert(
-          {
-            org_id: orgId,
-            step_id: stepId,
-            snoozed_until: until,
-            snoozed_by: userId,
-            created_at: new Date().toISOString(),
-          },
-          { onConflict: "org_id,step_id" },
-        );
+      const { error } = await supabase.from("setup_step_snoozes").upsert(
+        {
+          org_id: orgId,
+          step_id: stepId,
+          snoozed_until: until,
+          snoozed_by: userId,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "org_id,step_id" },
+      );
       if (error) {
         toast.error(errorText(error));
         return false;
