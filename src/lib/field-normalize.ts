@@ -6,37 +6,76 @@ import { isoFromCountry } from "@/lib/clay";
 import { allowedValues, bindingOf, conceptById } from "@/lib/field-catalog";
 import { employeesText, splitList } from "@/lib/icp";
 
-export type Normalized<T> = { status: "ok"; value: T } | { status: "empty" } | { status: "unnormalized"; original: string; reason: string };
+export type Normalized<T> =
+  | { status: "ok"; value: T }
+  | { status: "empty" }
+  | { status: "unnormalized"; original: string; reason: string };
 
-const unfit = (original: unknown, reason: string): Normalized<never> => ({ status: "unnormalized", original: String(original), reason });
+const unfit = (original: unknown, reason: string): Normalized<never> => ({
+  status: "unnormalized",
+  original: String(original),
+  reason,
+});
 
 /** País: ISO 3166-1 alpha-2 from a code or a Spanish/English name, limited to the countries Nokko offers. */
 export function normalizeCountry(raw: string | null | undefined): Normalized<string> {
   const v = (raw ?? "").trim();
   if (!v) return { status: "empty" };
   const iso = isoFromCountry(v);
-  return iso ? { status: "ok", value: iso } : unfit(v, "No reconozco ese país. Elige uno de la lista.");
+  return iso
+    ? { status: "ok", value: iso }
+    : unfit(v, "No reconozco ese país. Elige uno de la lista.");
 }
 
 /** Países: each element as País, without repeats; what does not fit comes back apart. */
-export function normalizeCountries(raw: string[] | string | null | undefined): { value: string[]; unnormalized: string[] } {
-  const items = typeof raw === "string" ? splitList(raw) : (raw ?? []).map((x) => x.trim()).filter(Boolean);
+export function normalizeCountries(raw: string[] | string | null | undefined): {
+  value: string[];
+  unnormalized: string[];
+} {
+  const items =
+    typeof raw === "string" ? splitList(raw) : (raw ?? []).map((x) => x.trim()).filter(Boolean);
   const value: string[] = [];
   const unnormalized: string[] = [];
   for (const item of items) {
     const n = normalizeCountry(item);
-    if (n.status === "ok") { if (!value.includes(n.value)) value.push(n.value); } else unnormalized.push(item);
+    if (n.status === "ok") {
+      if (!value.includes(n.value)) value.push(n.value);
+    } else unnormalized.push(item);
   }
   return { value, unnormalized };
 }
 
 export type EmployeeRange = { min: number | null; max: number | null };
 
-const EMPLOYEE_WORDS = ["empleados", "empleado", "employees", "employee", "personas", "people", "trabajadores"];
-const QUALIFIERS = ["más de", "menos de", "al menos", "up to", "more than", "over", "under", "hasta", "desde", "a", "to", "y", "de"];
-const MONEY = /[€$£]|(?<![\p{L}])(eur|usd|gbp|euros?|d[oó]lares?|millones?|facturaci[oó]n|ingresos|revenue|arr|mrr)(?![\p{L}])|\d\s*[mk](?![\p{L}])/iu;
+const EMPLOYEE_WORDS = [
+  "empleados",
+  "empleado",
+  "employees",
+  "employee",
+  "personas",
+  "people",
+  "trabajadores",
+];
+const QUALIFIERS = [
+  "más de",
+  "menos de",
+  "al menos",
+  "up to",
+  "more than",
+  "over",
+  "under",
+  "hasta",
+  "desde",
+  "a",
+  "to",
+  "y",
+  "de",
+];
+const MONEY =
+  /[€$£]|(?<![\p{L}])(eur|usd|gbp|euros?|d[oó]lares?|millones?|facturaci[oó]n|ingresos|revenue|arr|mrr)(?![\p{L}])|\d\s*[mk](?![\p{L}])/iu;
 
-const strip = (s: string, words: string[]) => words.reduce((acc, w) => acc.replace(new RegExp(`(?<![\\p{L}])${w}(?![\\p{L}])`, "giu"), " "), s);
+const strip = (s: string, words: string[]) =>
+  words.reduce((acc, w) => acc.replace(new RegExp(`(?<![\\p{L}])${w}(?![\\p{L}])`, "giu"), " "), s);
 
 /** «51-200 empleados», «123 empleados», «más de 500», «hasta 50» → a range. Null when the text is not only a headcount. */
 export function parseEmployees(text: string | null | undefined): EmployeeRange | null {
@@ -44,7 +83,9 @@ export function parseEmployees(text: string | null | undefined): EmployeeRange |
   if (!s || MONEY.test(s)) return null;
   const rest = strip(strip(s, EMPLOYEE_WORDS), QUALIFIERS).replace(/[\d.,\-–—+<>:()\s]/g, "");
   if (/\p{L}/u.test(rest)) return null;
-  const nums = (s.replace(/(\d)[.,](?=\d{3}\b)/g, "$1").match(/\d+/g) ?? []).map(Number);
+  const grouped = s.replace(/(\d)[.,](?=\d{3}\b)/g, "$1");
+  if (/\d[.,]\d/.test(grouped)) return null; // a decimal is not a headcount (NK-0020)
+  const nums = (grouped.match(/\d+/g) ?? []).map(Number);
   if (!nums.length || nums.length > 2 || nums.some((n) => !(n > 0))) return null;
   if (nums.length === 2) return { min: Math.min(...nums), max: Math.max(...nums) };
   const n = nums[0]!;
@@ -65,7 +106,9 @@ export function normalizeSize(raw: string | null | undefined): Normalized<string
   if (!v) return { status: "empty" };
   const range = parseEmployees(v);
   const label = range ? employeesLabel(range) : null;
-  return label ? { status: "ok", value: label } : unfit(v, "No es un número de empleados: se guarda como lo escribiste.");
+  return label
+    ? { status: "ok", value: label }
+    : unfit(v, "No es un número de empleados: se guarda como lo escribiste.");
 }
 
 /**
@@ -73,14 +116,19 @@ export function normalizeSize(raw: string | null | undefined): Normalized<string
  * One separator followed by exactly three digits is thousands («1.234» = 1234); anything else is decimals.
  * Negatives are refused unless the caller allows them.
  */
-export function normalizeAmount(raw: number | string | null | undefined, opts: { allowNegative?: boolean } = {}): Normalized<number> {
+export function normalizeAmount(
+  raw: number | string | null | undefined,
+  opts: { allowNegative?: boolean } = {},
+): Normalized<number> {
   if (raw === null || raw === undefined) return { status: "empty" };
   let n: number;
   if (typeof raw === "number") {
     if (!Number.isFinite(raw)) return unfit(raw, "El importe no es un número.");
     n = raw;
   } else {
-    let s = raw.replace(/[\s\u00a0]/g, "").replace(/[€$£]|(?<![\p{L}])(eur|usd|gbp|euros?)(?![\p{L}])/giu, "");
+    let s = raw
+      .replace(/[\s\u00a0]/g, "")
+      .replace(/[€$£]|(?<![\p{L}])(eur|usd|gbp|euros?)(?![\p{L}])/giu, "");
     if (!s) return { status: "empty" };
     const negative = /^[-−]/.test(s) || /^\(.*\)$/.test(s);
     s = s.replace(/^[-−(]+|\)$/g, "");
@@ -96,7 +144,11 @@ export function normalizeAmount(raw: number | string | null | undefined, opts: {
     } else if (dots || commas) {
       const sep = dots ? "." : ",";
       const parts = s.split(sep);
-      const grouped = parts.slice(1).every((p) => p.length === 3) && parts[0]!.length >= 1 && parts[0]!.length <= 3 && !/^0/.test(parts[0]!);
+      const grouped =
+        parts.slice(1).every((p) => p.length === 3) &&
+        parts[0]!.length >= 1 &&
+        parts[0]!.length <= 3 &&
+        !/^0/.test(parts[0]!);
       if (parts.length > 2 && !grouped) return unfit(raw, "El importe no es un número.");
       digits = grouped ? parts.join("") : parts.join(".");
     } else digits = s;
@@ -117,34 +169,92 @@ export type SaveResult = {
 };
 
 const fromNormalized = <T>(n: Normalized<T>, raw: unknown): SaveResult =>
-  n.status === "ok" ? { status: "ok", value: n.value } : n.status === "empty" ? { status: "empty", value: null } : { status: "unnormalized", value: typeof raw === "string" ? raw.trim() : raw, original: n.original, reason: n.reason };
+  n.status === "ok"
+    ? { status: "ok", value: n.value }
+    : n.status === "empty"
+      ? { status: "empty", value: null }
+      : {
+          status: "unnormalized",
+          value: typeof raw === "string" ? raw.trim() : raw,
+          original: n.original,
+          reason: n.reason,
+        };
 
 /** The one entry point for saves: finds the concept of a column in the catalog and applies its rule (CA-3). */
 export function normalizeForSave(table: string, column: string, raw: unknown): SaveResult {
   const b = bindingOf(table, column);
   if (!b) return { status: "uncatalogued", value: raw };
   switch (b.concept) {
-    case "pais": return fromNormalized(normalizeCountry(raw as string | null), raw);
+    case "pais":
+      return fromNormalized(normalizeCountry(raw as string | null), raw);
     case "paises": {
       const r = normalizeCountries(raw as string[] | string | null);
-      if (r.unnormalized.length) return { status: "unnormalized", value: r.value, original: r.unnormalized, reason: "Hay países que no reconozco. Elige de la lista." };
+      if (r.unnormalized.length)
+        return {
+          status: "unnormalized",
+          value: r.value,
+          original: r.unnormalized,
+          reason: "Hay países que no reconozco. Elige de la lista.",
+        };
       return r.value.length ? { status: "ok", value: r.value } : { status: "empty", value: [] };
     }
     case "tamano_empleados": {
       if (column === "size") return fromNormalized(normalizeSize(raw as string | null), raw);
       const n = normalizeAmount(raw as number | string | null);
       if (n.status !== "ok") return fromNormalized(n, raw);
-      return Number.isInteger(n.value) && n.value > 0 ? { status: "ok", value: n.value } : { status: "unnormalized", value: raw, original: String(raw), reason: "Los empleados son un número entero mayor que 0." };
+      return Number.isInteger(n.value) && n.value > 0
+        ? { status: "ok", value: n.value }
+        : {
+            status: "unnormalized",
+            value: raw,
+            original: String(raw),
+            reason: "Los empleados son un número entero mayor que 0.",
+          };
     }
-    case "importe": return fromNormalized(normalizeAmount(raw as number | string | null), raw);
-    case "origen_valor": return { status: "ok", value: raw };
+    case "importe":
+      return fromNormalized(normalizeAmount(raw as number | string | null), raw);
+    case "origen_valor":
+      return { status: "ok", value: raw };
     default: {
-      if (typeof raw !== "string") return raw == null ? { status: "empty", value: null } : { status: "ok", value: raw };
+      if (typeof raw !== "string")
+        return raw == null ? { status: "empty", value: null } : { status: "ok", value: raw };
       const v = raw.trim();
       if (!v) return { status: "empty", value: null };
       const allowed = allowedValues(table, column);
-      if (allowed && !allowed.includes(v)) return { status: "unnormalized", value: v, original: v, reason: `${conceptById(b.concept).label}: valor fuera de la lista.` };
+      if (allowed && !allowed.includes(v))
+        return {
+          status: "unnormalized",
+          value: v,
+          original: v,
+          reason: `${conceptById(b.concept).label}: valor fuera de la lista.`,
+        };
       return { status: "ok", value: v };
     }
   }
+}
+
+const ICP_RULED = ["countries", "min_employees", "max_employees"] as const;
+
+/**
+ * The ICP columns with a catalogued rule (countries and the employee range) through normalizeForSave (NK-0019).
+ * `row` has them normalized; a value that does not fit stays as it came and is reported in `invalid` (Spanish,
+ * «qué pasó + qué hacer»), so the caller refuses the write instead of saving it wrong.
+ */
+export function normalizeIcpFields<T extends Record<string, unknown>>(
+  row: T,
+): { row: T; invalid: string[] } {
+  const out: Record<string, unknown> = { ...row };
+  const invalid: string[] = [];
+  for (const col of ICP_RULED) {
+    if (!(col in row)) continue;
+    const r = normalizeForSave("icp_profiles", col, row[col]);
+    if (r.status === "unnormalized") {
+      invalid.push(
+        col === "countries"
+          ? `No reconozco estos países: ${(r.original as string[]).join(", ")}. Usa el código de 2 letras o el nombre.`
+          : `${col === "min_employees" ? "Empleados desde" : "Empleados hasta"}: ${r.reason}`,
+      );
+    } else if (r.status === "ok" || r.status === "empty") out[col] = r.value;
+  }
+  return { row: out as T, invalid };
 }

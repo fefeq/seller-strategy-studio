@@ -6,8 +6,12 @@ import { detect } from "@/lib/proactive";
 import { isUndoRef, undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import { errorText } from "@/lib/errors";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
+import { canViewStrategy, executeFormKind, needsPriceAccess } from "@/lib/strategy-suggestions";
+import { executeIssue } from "@/lib/strategy-execute";
 
-export type ExecuteInput = { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft } | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
+export type ExecuteInput =
+  | { kind: "experiment"; draft: import("@/lib/strategy-execute").ExperimentDraft }
+  | { kind: "task"; draft: import("@/lib/strategy-execute").TaskDraft };
 
 export async function userCtx(
   supabase: Db,
@@ -249,7 +253,12 @@ export const refreshSuggestions = createServerFn({ method: "POST" })
 export const decideSuggestion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
-    (d: { id: string; decision: "approve" | "snooze" | "dismiss"; reason?: string; execute?: ExecuteInput }) => ({
+    (d: {
+      id: string;
+      decision: "approve" | "snooze" | "dismiss";
+      reason?: string;
+      execute?: ExecuteInput;
+    }) => ({
       id: String(d.id),
       decision: (["approve", "snooze", "dismiss"].includes(d.decision) ? d.decision : "dismiss") as
         "approve" | "snooze" | "dismiss",
@@ -259,7 +268,10 @@ export const decideSuggestion = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    return decideSuggestionCore(ctx, data.id, data.decision, { reason: data.reason, execute: data.execute });
+    return decideSuggestionCore(ctx, data.id, data.decision, {
+      reason: data.reason,
+      execute: data.execute,
+    });
   });
 
 export async function decideSuggestionCore(
@@ -275,11 +287,26 @@ export async function decideSuggestionCore(
     .eq("org_id", ctx.orgId)
     .maybeSingle();
   // Telegram runs this with the privileged client: the visibility rule RLS applies in the app is checked here.
-  if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles))
+  // A price suggestion is only for roles that may see prices (CA-19, CA-58): checked before «ya gestionada», so its existence is not revealed.
+  if (!s || !canActOnSuggestion(s, ctx.userId, ctx.roles) || !canViewStrategy(s, ctx.roles))
     throw new Error("Sugerencia no encontrada");
   if (s.status !== "pending") return { status: s.status, message: "Ya estaba gestionada" };
   // Strategic suggestions (F0): the decision is logged with who, when and why (CA-4); acting on it arrives with F3.
   if (s.detector.startsWith("strategy_")) {
+    // A test or a commercial action is only accepted with its form (CA-35, CA-36): nothing is logged until the draft is valid.
+    const needs = executeFormKind(s.strategy);
+    if (decision === "approve" && needs) {
+      if (opts.execute === undefined)
+        throw new Error(
+          needs === "experiment"
+            ? "No la he aceptado. Esta sugerencia crea un experimento y hay que revisarlo antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí"
+            : "No la he aceptado. Esta sugerencia crea una tarea y hay que revisarla antes de aceptarla. Ábrela en Sugerencias, completa el formulario y acéptala allí",
+        );
+      const issue = executeIssue(needs, opts.execute);
+      if (issue) throw new Error(`No la he aceptado. ${issue}`);
+    } else if (decision === "approve" && opts.execute !== undefined) {
+      throw new Error(`No la he aceptado. ${executeIssue(null, opts.execute)}`);
+    }
     const { decideStrategy } = await import("@/lib/strategy-core");
     const r = await decideStrategy(
       ctx,
@@ -290,14 +317,22 @@ export async function decideSuggestionCore(
     let result = r;
     if (r.message !== "Ya estaba gestionada" && decision === "approve") {
       // F3: accepting acts, but only inside the guard rails of strategy-execute (a pending proposal, or a task or experiment the person edited).
-      const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } = await import("@/lib/strategy-execute-core");
-      if (opts.execute?.kind === "experiment") await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
-      else if (opts.execute?.kind === "task") await createTaskFromSuggestion(ctx, id, opts.execute.draft);
-      else if (await proposeChange(ctx, s)) result = { ...r, message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada." };
+      const { proposeChange, createExperimentFromSuggestion, createTaskFromSuggestion } =
+        await import("@/lib/strategy-execute-core");
+      if (opts.execute?.kind === "experiment")
+        await createExperimentFromSuggestion(ctx, id, opts.execute.draft);
+      else if (opts.execute?.kind === "task")
+        await createTaskFromSuggestion(ctx, id, opts.execute.draft);
+      else if (await proposeChange(ctx, s))
+        result = {
+          ...r,
+          message: "Aceptada. Queda como propuesta pendiente de confirmar; no he cambiado nada.",
+        };
     }
     if (r.message !== "Ya estaba gestionada") {
       const { rememberDecision } = await import("@/lib/memory.server");
-      if (decision !== "snooze") await rememberDecision(ctx, s, decision);
+      // The memory is read by every member and by the agent: a price suggestion leaves none.
+      if (decision !== "snooze" && !needsPriceAccess(s)) await rememberDecision(ctx, s, decision);
     }
     return result;
   }

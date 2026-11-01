@@ -8,6 +8,7 @@ import { canActOnSuggestion } from "@/lib/suggestion-board";
 type Q = {
   table: string;
   op: "select" | "insert" | "update" | "upsert" | "delete";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake records whatever each tool wrote
   payload?: any;
   filters: unknown[][];
   head?: boolean;
@@ -17,6 +18,7 @@ function fakeDb(reply: (q: Q) => Reply = () => undefined) {
   const log: Q[] = [];
   const from = (table: string) => {
     const q: Q = { table, op: "select", filters: [] };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake query builder is a Proxy
     const proxy: any = new Proxy(
       {},
       {
@@ -65,6 +67,7 @@ function expectScoped(log: Q[]) {
   for (const q of log) {
     if (q.op === "insert" || q.op === "upsert")
       expect(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payloads are recorded untyped by the fake
         [q.payload].flat().every((p: any) => p.org_id === ORG),
         `${q.op} ${q.table}`,
       ).toBe(true);
@@ -309,10 +312,10 @@ describe("ids must belong to the caller's company", () => {
     );
   });
 
-  it("update_account takes ISO country codes only", () => {
+  it("update_account takes a country as ISO code or name; the single rule decides (see accounts.normalize.test.ts)", () => {
     const t = getTool("update_account")!;
     expect(t.input.safeParse({ account_id: ID(3), country: "mx" }).success).toBe(true);
-    expect(t.input.safeParse({ account_id: ID(3), country: "Mexico" }).success).toBe(false);
+    expect(t.input.safeParse({ account_id: ID(3), country: "Mexico" }).success).toBe(true);
   });
 });
 
@@ -599,6 +602,255 @@ describe("fixes from review", () => {
     await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "  " });
     expect(writes(log, "accounts")[0].payload).toEqual({ industry: null });
   });
+
+  describe("update_account writes field_sources with the real origin (NK-0022)", () => {
+    const AT = "2026-10-01T00:00:00Z";
+    const PERSON = {
+      source: "persona",
+      kind: "persona",
+      confirmed: true,
+      confirmedBy: OTHER,
+      at: AT,
+      confirmedAt: AT,
+    };
+    const account = (extra: Record<string, unknown> = {}) =>
+      fakeDb((q) =>
+        q.table === "accounts"
+          ? {
+              data: {
+                id: ID(3),
+                name: "Acme",
+                industry: null,
+                size: null,
+                country: null,
+                notes: null,
+                linkedin_url: null,
+                field_sources: {},
+                ...extra,
+              },
+            }
+          : undefined,
+      );
+    const sent = (log: Q[]) =>
+      writes(log, "accounts")[0]!.payload as {
+        field_sources?: Record<string, Record<string, unknown>>;
+      } & Record<string, unknown>;
+
+    it("CA-4: a valid source is stored as confirmed by whoever confirmed", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        industry: "Fintech",
+        source: "apollo",
+      });
+      const p = sent(log);
+      expect(p).not.toHaveProperty("source");
+      expect(p.field_sources?.industry).toMatchObject({
+        source: "apollo",
+        kind: "fuente",
+        confirmed: true,
+        confirmedBy: ME,
+      });
+      expect(p.field_sources?.industry?.at).toEqual(p.field_sources?.industry?.confirmedAt);
+    });
+    it("CA-4: an invalid source is refused by the tool schema, which is what validates a proposal before the pending action exists", () => {
+      const schema = getTool("update_account")!.input;
+      for (const source of ["persona", "sin_dato", "manual", "Apollo", ""])
+        expect(schema.safeParse({ account_id: ID(3), industry: "X", source }).success, source).toBe(
+          false,
+        );
+      for (const source of ["ia", "apollo", "clay", "parallel", "web"])
+        expect(schema.safeParse({ account_id: ID(3), industry: "X", source }).success, source).toBe(
+          true,
+        );
+    });
+    it("CA-4: without a source it is ia; a source that is not valid is refused and nothing is written", async () => {
+      const a = account();
+      await executeTool(ctxWith(a.db), "update_account", { account_id: ID(3), notes: "Texto" });
+      expect(sent(a.log).field_sources?.notes).toMatchObject({
+        source: "ia",
+        kind: "ia",
+        confirmed: true,
+        confirmedBy: ME,
+      });
+      for (const source of ["persona", "sin_dato", "manual", ""]) {
+        const b = account();
+        await expect(
+          executeTool(ctxWith(b.db), "update_account", {
+            account_id: ID(3),
+            industry: "X",
+            source,
+          }),
+        ).rejects.toThrow();
+        expect(writes(b.log)).toEqual([]);
+      }
+    });
+    it("CA-3: every accepted source is stored as itself, never as persona", async () => {
+      for (const source of ["ia", "apollo", "clay", "parallel", "web"]) {
+        const { db, log } = account();
+        await executeTool(ctxWith(db), "update_account", {
+          account_id: ID(3),
+          industry: "Fintech",
+          size: "51-200",
+          country: "ES",
+          notes: "n",
+          source,
+        });
+        const marks = sent(log).field_sources;
+        expect(Object.keys(marks ?? {}).sort(), source).toEqual([
+          "country",
+          "industry",
+          "notes",
+          "size",
+        ]);
+        for (const m of Object.values(marks ?? {})) {
+          expect(m.source).toBe(source);
+          expect(m.kind).not.toBe("persona");
+          expect(m.confirmedBy).toBe(ME);
+        }
+      }
+    });
+    it("CA-4: works with any client (the privileged one of Telegram too) and keeps the marks of fields that do not change", async () => {
+      const { db, log } = account({
+        field_sources: { size: { source: "clay", at: AT }, industry: PERSON },
+        industry: "Logística",
+      });
+      await executeTool({ ...ctxWith(db), userId: OTHER }, "update_account", {
+        account_id: ID(3),
+        country: "Spain",
+        source: "clay",
+      });
+      const p = sent(log);
+      expect(p.country).toBe("ES");
+      expect(p.field_sources?.country).toMatchObject({ source: "clay", confirmedBy: OTHER });
+      expect(p.field_sources?.size).toEqual({ source: "clay", at: AT });
+      expect(p.field_sources?.industry).toEqual(PERSON);
+    });
+    it("the mark is read right before writing, scoped to the company", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "Fintech" });
+      const read = log.find((q) => q.table === "accounts" && q.op === "select")!;
+      expect(eq(read, "org_id", ORG)).toBe(true);
+      expect(log.indexOf(read)).toBeLessThan(log.indexOf(writes(log, "accounts")[0]!));
+    });
+    it("a mark it cannot read (no `at`) survives the rewrite of field_sources", async () => {
+      const odd = { source: "apollo" };
+      const { db, log } = account({ field_sources: { notes: odd } });
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), industry: "Fintech" });
+      expect(sent(log).field_sources?.notes).toEqual(odd);
+      expect(sent(log).field_sources?.industry).toMatchObject({ source: "ia" });
+    });
+    it("CA-6: a cleared tracked field loses its mark, the others stay", async () => {
+      const { db, log } = account({
+        industry: "Logística",
+        field_sources: { industry: PERSON, size: { source: "clay", at: AT } },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        industry: "  ",
+        source: "apollo",
+      });
+      const p = sent(log);
+      expect(p.industry).toBeNull();
+      expect(p.field_sources).toEqual({ size: { source: "clay", at: AT } });
+    });
+    it("CA-7: the same value, also after normalizing, leaves the mark alone even if it is a person's", async () => {
+      const { db, log } = account({
+        country: "ES",
+        industry: "Fintech",
+        field_sources: { country: PERSON, industry: PERSON },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        country: "España",
+        industry: " fintech ",
+        source: "apollo",
+      });
+      // Nothing reaches the database: trigger 0058 would otherwise see the new raw text («fintech») with no
+      // field_sources change and stamp «persona» over the person's mark.
+      expect(writes(log, "accounts")).toEqual([]);
+    });
+    it("CA-7: a stored legacy size written again is not sent either, so its mark cannot be stamped", async () => {
+      const { db, log } = account({ size: "51-200", field_sources: { size: PERSON } });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "51-200",
+        source: "apollo",
+      });
+      expect(writes(log, "accounts")).toEqual([]);
+    });
+    it("CA-7: when every value is equal nothing is written and the result says so, it does not claim a save", async () => {
+      const { db, log } = account({
+        size: "Muchos",
+        industry: "Fintech",
+        field_sources: { size: PERSON },
+      });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "muchos",
+        industry: "fintech",
+        source: "apollo",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toEqual([]);
+      expect(r.mensaje ?? "").toMatch(/sin cambios/i);
+      expect(r.mensaje ?? "").toMatch(/no se ha guardado/i);
+      expect(r.mensaje ?? "").not.toMatch(/se guarda/i);
+      expect(r.mensaje).toBe(
+        "Sin cambios: la cuenta ya tenía esos valores y no se ha guardado nada.",
+      );
+    });
+    it("a real change to a size that is not a headcount still shows its warning, not «Sin cambios»", async () => {
+      const { db, log } = account({ size: "11–50 empleados" });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "Muchos",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toHaveLength(1);
+      expect(r.mensaje ?? "").toMatch(/Tamaño «Muchos»/);
+      expect(r.mensaje ?? "").not.toMatch(/sin cambios/i);
+    });
+    it("an equal unnormalizable size dropped next to a real change shows no warning for the dropped field", async () => {
+      const { db, log } = account({ size: "Muchos", industry: "Fintech" });
+      const r = (await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        size: "muchos",
+        industry: "Retail",
+      })) as { mensaje?: string };
+      expect(writes(log, "accounts")).toHaveLength(1);
+      expect(r.mensaje).toBeUndefined();
+    });
+    it("CA-7: with one field changed and one equal, only the changed one gets a new mark", async () => {
+      const { db, log } = account({
+        country: "ES",
+        industry: "Logística",
+        field_sources: { country: PERSON, industry: PERSON },
+      });
+      await executeTool(ctxWith(db), "update_account", {
+        account_id: ID(3),
+        country: "Spain",
+        industry: "Fintech",
+        source: "web",
+      });
+      const p = sent(log);
+      expect(p).not.toHaveProperty("country");
+      expect(p.field_sources?.country).toEqual(PERSON);
+      expect(p.field_sources?.industry).toMatchObject({ source: "web", confirmedBy: ME });
+    });
+    it("untracked columns alone do not send field_sources", async () => {
+      const { db, log } = account();
+      await executeTool(ctxWith(db), "update_account", { account_id: ID(3), tier: "A" });
+      expect(sent(log)).toEqual({ tier: "A" });
+    });
+    it("CA-5: the tools that hand values to update_account tell it which source to pass", () => {
+      for (const [name, hint] of [
+        ["apollo_enrich_account", "source: apollo"],
+        ["clay_enrich_account", "source: clay"],
+        ["enrich_accounts_table", "source: parallel"],
+        ["complete_account", "source"],
+      ] as const)
+        expect(getTool(name)!.description, name).toContain(hint);
+    });
+  });
 });
 
 describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)", () => {
@@ -796,8 +1048,25 @@ describe("edit, delete, confirm and undo from the agent (SDD field-actions U-5)"
 
 describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-7, CA-9, CA-10)", () => {
   it("returns the same next step as the screen, skipping a snoozed one, and only reads its own company", async () => {
-    const { db, log } = fakeDb((q) => (q.table === "setup_step_snoozes" ? { data: [{ step_id: "positioning", snoozed_until: "2999-01-01T23:59:59.999Z", created_at: "2026-10-26T09:00:00Z" }] } : undefined));
-    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { guia: { mensaje: { stepId: string; why: string; start: string }; pospuestos: { paso: string }[] } };
+    const { db, log } = fakeDb((q) =>
+      q.table === "setup_step_snoozes"
+        ? {
+            data: [
+              {
+                step_id: "positioning",
+                snoozed_until: "2999-01-01T23:59:59.999Z",
+                created_at: "2026-10-26T09:00:00Z",
+              },
+            ],
+          }
+        : undefined,
+    );
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as {
+      guia: {
+        mensaje: { stepId: string; why: string; start: string };
+        pospuestos: { paso: string }[];
+      };
+    };
     expect(r.guia.mensaje.stepId).toBe("icp");
     expect(r.guia.mensaje.why).toContain("priorizar");
     expect(r.guia.mensaje.start).toBe("Empezar");
@@ -807,17 +1076,27 @@ describe("get_setup_status guide (SDD strategy-setup-guided-next-step, CA-3, CA-
   });
   it("recommends a step the caller's role can complete", async () => {
     const { db } = fakeDb();
-    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { guia: { mensaje: { stepId: string } } };
+    const r = (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as {
+      guia: { mensaje: { stepId: string } };
+    };
     expect(r.guia.mensaje.stepId).toBe("accounts");
   });
   it("CA-8: an AE's status lists only what an AE can complete as missing and says the rest is outside their role", async () => {
     const { db } = fakeDb();
-    type Est = { missing: { id: string }[]; next: { id: string } | null; fuera_de_tu_rol: string[] };
-    const ae = ((await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }).estado;
+    type Est = {
+      missing: { id: string }[];
+      next: { id: string } | null;
+      fuera_de_tu_rol: string[];
+    };
+    const ae = (
+      (await getTool("get_setup_status")!.run(ctxWith(db, ["ae"]), {})) as { estado: Est }
+    ).estado;
     expect(ae.missing.map((i) => i.id)).toEqual(["accounts", "deals"]);
     expect(ae.next?.id).toBe("accounts");
     expect(ae.fuera_de_tu_rol).toHaveLength(6);
-    const owner = ((await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }).estado;
+    const owner = (
+      (await getTool("get_setup_status")!.run(ctxWith(db, ["owner"]), {})) as { estado: Est }
+    ).estado;
     expect(owner.missing).toHaveLength(8);
     expect(owner.next?.id).toBe("positioning");
     expect(owner.fuera_de_tu_rol).toEqual([]);
@@ -879,17 +1158,40 @@ describe("segments: acquisition motion", () => {
 });
 
 describe("get_funnel_diagnosis", () => {
-  const seg = { id: ID(5), name: "Pymes", acv_min: 0, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null, acquisition_motion: null };
+  const seg = {
+    id: ID(5),
+    name: "Pymes",
+    acv_min: 0,
+    acv_max: null,
+    win_rate_target: null,
+    cac_target: null,
+    gross_margin_pct: null,
+    payback_months: null,
+    acquisition_motion: null,
+  };
 
   it("CA-8: reads only the caller's company, writes nothing and calls no provider", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const { db, log } = fakeDb((q) => (q.table === "segments" ? { data: [seg] } : undefined));
-    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" })) as { quarter: string; segments: { phases: { id: string; status: string }[] }[] };
+    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" })) as {
+      quarter: string;
+      segments: { phases: { id: string; status: string }[] }[];
+    };
     expect(r.quarter).toBe("2026-Q3");
     expect(r.segments).toHaveLength(1);
     expect(r.segments[0]!.phases.find((p) => p.id === "acquisition")!.status).toBe("sin_datos");
     expect(writes(log)).toHaveLength(0);
-    expect(new Set(log.map((q) => q.table))).toEqual(new Set(["segments", "deals", "leads", "trials", "cac_costs", "posthog_connections", "stripe_snapshots"]));
+    expect(new Set(log.map((q) => q.table))).toEqual(
+      new Set([
+        "segments",
+        "deals",
+        "leads",
+        "trials",
+        "cac_costs",
+        "posthog_connections",
+        "stripe_snapshots",
+      ]),
+    );
     expectScoped(log);
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
@@ -901,10 +1203,22 @@ describe("get_funnel_diagnosis", () => {
     for (const t of ["leads", "trials"]) {
       const q = log.find((x) => x.table === t)!;
       expect(eq(q, "org_id", ORG), t).toBe(true);
-      expect(q.filters.some(([op]) => op === "gte"), t).toBe(true);
-      expect(q.filters.some(([op]) => op === "lt"), t).toBe(true);
+      expect(
+        q.filters.some(([op]) => op === "gte"),
+        t,
+      ).toBe(true);
+      expect(
+        q.filters.some(([op]) => op === "lt"),
+        t,
+      ).toBe(true);
     }
-    expect(eq(log.find((x) => x.table === "cac_costs")!, "period", "2026-Q3")).toBe(true);
+    expect(
+      eq(
+        log.find((x) => x.table === "cac_costs")!,
+        "period",
+        "2026-Q3",
+      ),
+    ).toBe(true);
   });
 
   it("is a read tool open to every role, with a title, and rejects a quarter that is not AAAA-QN", async () => {
@@ -913,7 +1227,9 @@ describe("get_funnel_diagnosis", () => {
     expect(t.roles).toBeUndefined();
     expect(TITLES.get_funnel_diagnosis).toBeTruthy();
     const { db } = fakeDb();
-    await expect(executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-T3" })).rejects.toThrow();
+    await expect(
+      executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-T3" }),
+    ).rejects.toThrow();
   });
 
   it("CA-8 (structure): the diagnosis code imports no provider, gateway or sync module", async () => {
@@ -921,7 +1237,10 @@ describe("get_funnel_diagnosis", () => {
     for (const f of ["src/lib/funnel-diagnosis.ts", "src/lib/funnel-diagnosis-data.ts"]) {
       const src = readFileSync(f, "utf8");
       const imports = [...src.matchAll(/from "([^"]+)"/g)].map((m) => m[1]!);
-      for (const i of imports) expect(i, `${f} imports ${i}`).not.toMatch(/gateway|\.server|posthog|stripe|apollo|clay|firecrawl|apify|parallel|perplexity|jev|inngest|ai-core/i);
+      for (const i of imports)
+        expect(i, `${f} imports ${i}`).not.toMatch(
+          /gateway|\.server|posthog|stripe|apollo|clay|firecrawl|apify|parallel|perplexity|jev|inngest|ai-core/i,
+        );
       expect(src, f).not.toMatch(/\bfetch\(/);
     }
   });
@@ -930,6 +1249,43 @@ describe("get_funnel_diagnosis", () => {
     const { readFileSync } = await import("node:fs");
     const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
     const tools: { name: string; annotations: { readOnlyHint: boolean } }[] = manifest.mcp.tools;
-    for (const n of ["get_funnel_diagnosis", "list_segments"]) expect(tools.find((t) => t.name === n)?.annotations.readOnlyHint, n).toBe(true);
+    for (const n of ["get_funnel_diagnosis", "list_segments"])
+      expect(tools.find((t) => t.name === n)?.annotations.readOnlyHint, n).toBe(true);
+  });
+});
+
+describe("create_icp goes through the one country and size rule (NK-0019)", () => {
+  it("saves countries as ISO codes, aliases included", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "icp_profiles" ? { data: { id: ID(900) } } : undefined,
+    );
+    await executeTool(ctxWith(db, ["owner"]), "create_icp", {
+      name: "Agencias",
+      countries: ["es", "uk"],
+      min_employees: 10,
+    });
+    expect(writes(log, "icp_profiles")[0]!.payload).toMatchObject({
+      countries: ["ES", "GB"],
+      min_employees: 10,
+    });
+  });
+  it("refuses a country it does not recognise and writes nothing", async () => {
+    const { db, log } = fakeDb();
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "create_icp", { name: "Agencias", countries: ["xx"] }),
+    ).rejects.toThrow(/xx/i);
+    expect(writes(log, "icp_profiles")).toEqual([]);
+  });
+});
+
+describe("decide_suggestion says where a test or a commercial action is accepted (NK-0041, CA-5; string check, weak)", () => {
+  it("the agent's description and the MCP manifest say they are accepted from Sugerencias", async () => {
+    const { readFileSync } = await import("node:fs");
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const m = (manifest.mcp.tools as { name: string; description: string }[]).find(
+      (t) => t.name === "decide_suggestion",
+    );
+    for (const d of [getTool("decide_suggestion")!.description, m?.description ?? ""])
+      expect(d).toMatch(/prueba.*acción comercial.*se aceptan desde Sugerencias/);
   });
 });

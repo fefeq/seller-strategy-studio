@@ -255,6 +255,7 @@ export type Database = {
           id: string
           industry: string | null
           is_target: boolean
+          last_human_edit_at: string | null
           linkedin_url: string | null
           name: string
           notes: string | null
@@ -264,7 +265,6 @@ export type Database = {
           signals_checked_at: string | null
           size: string | null
           tier: string | null
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -280,6 +280,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target?: boolean
+          last_human_edit_at?: string | null
           linkedin_url?: string | null
           name: string
           notes?: string | null
@@ -289,7 +290,6 @@ export type Database = {
           signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -305,6 +305,7 @@ export type Database = {
           id?: string
           industry?: string | null
           is_target?: boolean
+          last_human_edit_at?: string | null
           linkedin_url?: string | null
           name?: string
           notes?: string | null
@@ -314,7 +315,6 @@ export type Database = {
           signals_checked_at?: string | null
           size?: string | null
           tier?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1337,6 +1337,7 @@ export type Database = {
           gross_margin: number | null
           health: string | null
           id: string
+          last_human_edit_at: string | null
           lead_source_id: string | null
           lost_competitor: string | null
           lost_reason: string | null
@@ -1352,7 +1353,6 @@ export type Database = {
           slip_count: number
           source: string | null
           stage: string
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1368,6 +1368,7 @@ export type Database = {
           gross_margin?: number | null
           health?: string | null
           id?: string
+          last_human_edit_at?: string | null
           lead_source_id?: string | null
           lost_competitor?: string | null
           lost_reason?: string | null
@@ -1383,7 +1384,6 @@ export type Database = {
           slip_count?: number
           source?: string | null
           stage: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1399,6 +1399,7 @@ export type Database = {
           gross_margin?: number | null
           health?: string | null
           id?: string
+          last_human_edit_at?: string | null
           lead_source_id?: string | null
           lost_competitor?: string | null
           lost_reason?: string | null
@@ -1414,7 +1415,6 @@ export type Database = {
           slip_count?: number
           source?: string | null
           stage?: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -2169,8 +2169,14 @@ export type Database = {
       gtm_experiments: {
         Row: {
           audience: string
+          change_element: string | null
+          change_note: string
+          close_rule: string
           created_at: string
           created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
           ends_on: string | null
           hypothesis: string
           id: string
@@ -2180,25 +2186,25 @@ export type Database = {
           org_id: string | null
           prototype: string
           result: string
+          review_on: string | null
           starts_on: string | null
           status: string
+          success_threshold: string
           target: string
           title: string
           updated_at: string
           updated_by: string | null
-          success_threshold: string
-          close_rule: string
-          review_on: string | null
-          decision: string | null
-          decided_at: string | null
-          decided_by: string | null
-          change_element: string | null
-          change_note: string
         }
         Insert: {
           audience?: string
+          change_element?: string | null
+          change_note?: string
+          close_rule?: string
           created_at?: string
           created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
           ends_on?: string | null
           hypothesis?: string
           id?: string
@@ -2208,25 +2214,25 @@ export type Database = {
           org_id?: string | null
           prototype?: string
           result?: string
+          review_on?: string | null
           starts_on?: string | null
           status?: string
+          success_threshold?: string
           target?: string
           title?: string
           updated_at?: string
           updated_by?: string | null
-          success_threshold?: string
-          close_rule?: string
-          review_on?: string | null
-          decision?: string | null
-          decided_at?: string | null
-          decided_by?: string | null
-          change_element?: string | null
-          change_note?: string
         }
         Update: {
           audience?: string
+          change_element?: string | null
+          change_note?: string
+          close_rule?: string
           created_at?: string
           created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
           ends_on?: string | null
           hypothesis?: string
           id?: string
@@ -2236,20 +2242,14 @@ export type Database = {
           org_id?: string | null
           prototype?: string
           result?: string
+          review_on?: string | null
           starts_on?: string | null
           status?: string
+          success_threshold?: string
           target?: string
           title?: string
           updated_at?: string
           updated_by?: string | null
-          success_threshold?: string
-          close_rule?: string
-          review_on?: string | null
-          decision?: string | null
-          decided_at?: string | null
-          decided_by?: string | null
-          change_element?: string | null
-          change_note?: string
         }
         Relationships: [
           {
@@ -2283,6 +2283,7 @@ export type Database = {
           hiring_signals: string | null
           id: string
           industries: string | null
+          last_human_edit_at: string | null
           max_employees: number | null
           min_employees: number | null
           name: string
@@ -2293,7 +2294,6 @@ export type Database = {
           seniorities: string[]
           target_titles: string[]
           tech_stack: string | null
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           why_fit: string | null
@@ -2312,6 +2312,7 @@ export type Database = {
           hiring_signals?: string | null
           id?: string
           industries?: string | null
+          last_human_edit_at?: string | null
           max_employees?: number | null
           min_employees?: number | null
           name: string
@@ -2322,7 +2323,6 @@ export type Database = {
           seniorities?: string[]
           target_titles?: string[]
           tech_stack?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           why_fit?: string | null
@@ -2341,6 +2341,7 @@ export type Database = {
           hiring_signals?: string | null
           id?: string
           industries?: string | null
+          last_human_edit_at?: string | null
           max_employees?: number | null
           min_employees?: number | null
           name?: string
@@ -2351,7 +2352,6 @@ export type Database = {
           seniorities?: string[]
           target_titles?: string[]
           tech_stack?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           why_fit?: string | null
@@ -3196,13 +3196,13 @@ export type Database = {
           created_by: string | null
           field_sources: Json
           id: string
+          last_human_edit_at: string | null
           message: string | null
           org_id: string | null
           pain: string | null
           position: number
           proof: string | null
           title: string
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -3211,13 +3211,13 @@ export type Database = {
           created_by?: string | null
           field_sources?: Json
           id?: string
+          last_human_edit_at?: string | null
           message?: string | null
           org_id?: string | null
           pain?: string | null
           position?: number
           proof?: string | null
           title: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3226,13 +3226,13 @@ export type Database = {
           created_by?: string | null
           field_sources?: Json
           id?: string
+          last_human_edit_at?: string | null
           message?: string | null
           org_id?: string | null
           pain?: string | null
           position?: number
           proof?: string | null
           title?: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -3797,6 +3797,7 @@ export type Database = {
           field_sources: Json
           id: string
           key_benefit: string | null
+          last_human_edit_at: string | null
           need: string | null
           one_liner: string | null
           org_id: string | null
@@ -3805,7 +3806,6 @@ export type Database = {
           tagline: string | null
           target_customer: string | null
           trend: string | null
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           value: string | null
@@ -3824,6 +3824,7 @@ export type Database = {
           field_sources?: Json
           id?: string
           key_benefit?: string | null
+          last_human_edit_at?: string | null
           need?: string | null
           one_liner?: string | null
           org_id?: string | null
@@ -3832,7 +3833,6 @@ export type Database = {
           tagline?: string | null
           target_customer?: string | null
           trend?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           value?: string | null
@@ -3851,6 +3851,7 @@ export type Database = {
           field_sources?: Json
           id?: string
           key_benefit?: string | null
+          last_human_edit_at?: string | null
           need?: string | null
           one_liner?: string | null
           org_id?: string | null
@@ -3859,7 +3860,6 @@ export type Database = {
           tagline?: string | null
           target_customer?: string | null
           trend?: string | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           value?: string | null
@@ -4084,9 +4084,9 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          last_human_edit_at: string | null
           org_id: string | null
           period: string
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           user_id: string
@@ -4096,9 +4096,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          last_human_edit_at?: string | null
           org_id?: string | null
           period: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id: string
@@ -4108,9 +4108,9 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          last_human_edit_at?: string | null
           org_id?: string | null
           period?: string
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           user_id?: string
@@ -4388,6 +4388,7 @@ export type Database = {
           field_sources: Json
           gross_margin_pct: number | null
           id: string
+          last_human_edit_at: string | null
           motion: string
           name: string
           notes: string | null
@@ -4395,7 +4396,6 @@ export type Database = {
           payback_months: number | null
           priority: number | null
           sdr_per_ae: number | null
-          last_human_edit_at: string | null
           updated_at: string
           updated_by: string | null
           win_rate_target: number | null
@@ -4413,6 +4413,7 @@ export type Database = {
           field_sources?: Json
           gross_margin_pct?: number | null
           id?: string
+          last_human_edit_at?: string | null
           motion?: string
           name: string
           notes?: string | null
@@ -4420,7 +4421,6 @@ export type Database = {
           payback_months?: number | null
           priority?: number | null
           sdr_per_ae?: number | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           win_rate_target?: number | null
@@ -4438,6 +4438,7 @@ export type Database = {
           field_sources?: Json
           gross_margin_pct?: number | null
           id?: string
+          last_human_edit_at?: string | null
           motion?: string
           name?: string
           notes?: string | null
@@ -4445,7 +4446,6 @@ export type Database = {
           payback_months?: number | null
           priority?: number | null
           sdr_per_ae?: number | null
-          last_human_edit_at?: string | null
           updated_at?: string
           updated_by?: string | null
           win_rate_target?: number | null
@@ -4653,6 +4653,221 @@ export type Database = {
           },
         ]
       }
+      strategy_changes: {
+        Row: {
+          applied_at: string | null
+          base: Json
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decided_by: string | null
+          element: string
+          id: string
+          op: string
+          org_id: string
+          previous: Json | null
+          status: string
+          suggestion_id: string
+          target_id: string | null
+          target_table: string | null
+          undo_until: string | null
+          values: Json
+        }
+        Insert: {
+          applied_at?: string | null
+          base?: Json
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          element: string
+          id?: string
+          op: string
+          org_id?: string
+          previous?: Json | null
+          status?: string
+          suggestion_id: string
+          target_id?: string | null
+          target_table?: string | null
+          undo_until?: string | null
+          values?: Json
+        }
+        Update: {
+          applied_at?: string | null
+          base?: Json
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          element?: string
+          id?: string
+          op?: string
+          org_id?: string
+          previous?: Json | null
+          status?: string
+          suggestion_id?: string
+          target_id?: string | null
+          target_table?: string | null
+          undo_until?: string | null
+          values?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_changes_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_changes_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: true
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_decisions: {
+        Row: {
+          decided_at: string
+          decided_by: string
+          decision: string
+          evidence_fingerprint: string
+          id: string
+          org_id: string
+          reason: string | null
+          remind_at: string | null
+          suggestion_id: string
+        }
+        Insert: {
+          decided_at?: string
+          decided_by?: string
+          decision: string
+          evidence_fingerprint: string
+          id?: string
+          org_id?: string
+          reason?: string | null
+          remind_at?: string | null
+          suggestion_id: string
+        }
+        Update: {
+          decided_at?: string
+          decided_by?: string
+          decision?: string
+          evidence_fingerprint?: string
+          id?: string
+          org_id?: string
+          reason?: string | null
+          remind_at?: string | null
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_decisions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_decisions_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: string
+          org_id: string
+          ref_id: string
+          suggestion_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: string
+          org_id?: string
+          ref_id: string
+          suggestion_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: string
+          org_id?: string
+          ref_id?: string
+          suggestion_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_links_suggestion_id_fkey"
+            columns: ["suggestion_id"]
+            isOneToOne: false
+            referencedRelation: "suggestions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_reviews: {
+        Row: {
+          cost: number
+          created_at: string
+          created_by: string | null
+          depth: string
+          id: string
+          input_fingerprint: string
+          mode: string
+          org_id: string
+          suggestions: Json
+        }
+        Insert: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          depth: string
+          id?: string
+          input_fingerprint: string
+          mode: string
+          org_id?: string
+          suggestions?: Json
+        }
+        Update: {
+          cost?: number
+          created_at?: string
+          created_by?: string | null
+          depth?: string
+          id?: string
+          input_fingerprint?: string
+          mode?: string
+          org_id?: string
+          suggestions?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_reviews_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stripe_connections: {
         Row: {
           account_name: string | null
@@ -4761,120 +4976,6 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      strategy_changes: {
-        Row: {
-          applied_at: string | null
-          base: Json
-          created_at: string
-          created_by: string | null
-          decided_at: string | null
-          decided_by: string | null
-          element: string
-          id: string
-          op: string
-          org_id: string
-          previous: Json | null
-          status: string
-          suggestion_id: string
-          target_id: string | null
-          target_table: string | null
-          undo_until: string | null
-          values: Json
-        }
-        Insert: {
-          applied_at?: string | null
-          base?: Json
-          created_at?: string
-          created_by?: string | null
-          decided_at?: string | null
-          decided_by?: string | null
-          element: string
-          id?: string
-          op: string
-          org_id?: string
-          previous?: Json | null
-          status?: string
-          suggestion_id: string
-          target_id?: string | null
-          target_table?: string | null
-          undo_until?: string | null
-          values?: Json
-        }
-        Update: {
-          applied_at?: string | null
-          base?: Json
-          decided_at?: string | null
-          decided_by?: string | null
-          previous?: Json | null
-          status?: string
-          target_id?: string | null
-          undo_until?: string | null
-        }
-        Relationships: []
-      }
-      strategy_links: {
-        Row: { created_at: string; created_by: string | null; id: string; kind: string; org_id: string; ref_id: string; suggestion_id: string }
-        Insert: { created_at?: string; created_by?: string | null; id?: string; kind: string; org_id?: string; ref_id: string; suggestion_id: string }
-        Update: never
-        Relationships: []
-      }
-      strategy_reviews: {
-        Row: { cost: number; created_at: string; created_by: string | null; depth: string; id: string; input_fingerprint: string; mode: string; org_id: string; suggestions: Json }
-        Insert: { cost?: number; created_at?: string; created_by?: string | null; depth: string; id?: string; input_fingerprint: string; mode: string; org_id?: string; suggestions?: Json }
-        Update: never
-        Relationships: []
-      }
-      strategy_decisions: {
-        Row: {
-          decided_at: string
-          decided_by: string
-          decision: string
-          evidence_fingerprint: string
-          id: string
-          org_id: string
-          reason: string | null
-          remind_at: string | null
-          suggestion_id: string
-        }
-        Insert: {
-          decided_at?: string
-          decided_by?: string
-          decision: string
-          evidence_fingerprint: string
-          id?: string
-          org_id?: string
-          reason?: string | null
-          remind_at?: string | null
-          suggestion_id: string
-        }
-        Update: {
-          decided_at?: string
-          decided_by?: string
-          decision?: string
-          evidence_fingerprint?: string
-          id?: string
-          org_id?: string
-          reason?: string | null
-          remind_at?: string | null
-          suggestion_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "strategy_decisions_org_id_fkey"
-            columns: ["org_id"]
-            isOneToOne: false
-            referencedRelation: "organizations"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "strategy_decisions_suggestion_id_fkey"
-            columns: ["suggestion_id"]
-            isOneToOne: false
-            referencedRelation: "suggestions"
             referencedColumns: ["id"]
           },
         ]
@@ -5333,6 +5434,7 @@ export type Database = {
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
       set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }
+      strategy_meta_valid: { Args: { m: Json }; Returns: boolean }
       stripe_key_for: { Args: { _org: string }; Returns: string }
       undo_field_edit: { Args: { _log: string }; Returns: undefined }
     }

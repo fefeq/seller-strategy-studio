@@ -1,7 +1,8 @@
 # SDD-20261028-hooks-lint-hygiene · [Mejora] Cero avisos de reglas de hooks, con una corrección en el Hub
 
 **Tipo:** Mejora · **Prioridad propuesta:** Baja (higiene; solo la fila 9 es un fallo latente) · **Track:** medio (un solo PR, sin Unidades de Trabajo independientes)
-**Estado:** En curso (Aprobado por Fede, 2026-10-28; implementado en el PR #50, pendiente de aceptación de Dani) · **Pide:** Fede · **Para:** Dani · **Fecha:** 2026-10-28
+**Estado:** En curso (Aprobado por Fede, 2026-10-28; implementado en el PR #50, pendiente de aceptación de Fede) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-28
+**Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las preguntas de la sección 14 las responde Fede y la sección 16 la completa Claude Code; los títulos conservan el nombre de la plantilla.
 
 ## Decisiones de Fede (2026-10-28)
 - Repo destino: `fefeq/seller-strategy-studio` (Nokko), base `main`.
@@ -13,7 +14,7 @@
 El análisis estático del repo (`npx eslint .`, 2026-10-28) reporta 15 avisos de hooks repartidos en 8 archivos: 6 de `rules-of-hooks` (nivel error) y 9 de `exhaustive-deps` (nivel warning). Tras revisarlos uno a uno en el código, ninguno produce hoy un fallo visible. Se pide dejar ambas reglas en 0 avisos **sin cambiar el comportamiento visible**, con una excepción decidida por Fede: la fila 9 (Hub) es un fallo latente real, que se corrige aquí (H-3), para que un aviso nuevo y real no quede tapado por ruido.
 
 ## 2. Problema y para quién
-Quien mantiene el código (Dani y su agente de código) no puede fiarse del aviso de hooks: 15 avisos de hooks conviven con otros ~14.900 de otras reglas, así que uno real pasaría desapercibido. No afecta a usuarios finales hoy.
+Quien mantiene el código (Claude Code y quien revise) no puede fiarse del aviso de hooks: 15 avisos de hooks conviven con otros ~14.900 de otras reglas, así que uno real pasaría desapercibido. No afecta a usuarios finales hoy.
 
 ## 3. Evidencia y por qué ahora
 - Ejecución de lint del 2026-10-28 sobre la rama `claude/magical-tesla-0z6n1x`, commit `ce848f2`: 6 + 9 = 15 avisos de estas dos reglas (fuente: salida de `eslint` en JSON). Se midió con dependencias instaladas por `npm` sin lockfile (ver sección 12).
@@ -21,13 +22,13 @@ Quien mantiene el código (Dani y su agente de código) no puede fiarse del avis
 - Por qué ahora: es apuesta de Fede por mantenimiento; sin dato de impacto en usuarios (sin dato).
 
 ## 4. Resultado buscado
-- `npx eslint src --rule 'prettier/prettier: off' -f json` no devuelve ningún mensaje de `react-hooks/rules-of-hooks` ni de `react-hooks/exhaustive-deps` (fuente: salida de ese comando, medida con el `bun.lock` de Dani).
+- `npx eslint src --rule 'prettier/prettier: off' -f json` no devuelve ningún mensaje de `react-hooks/rules-of-hooks` ni de `react-hooks/exhaustive-deps` (fuente: salida de ese comando, medida con el `bun.lock` del repo).
 - Todas las pruebas pasan, ninguna eliminada ni saltada, y `npx tsc --noEmit` termina sin errores (ambos hoy pasan al 100 %; fuente: `vitest`, `tsc`).
 
 ## 5. Alcance
 **Incluye:**
 - Los 15 avisos listados en la sección 6.
-- Una prueba de regresión por cada CA de la sección 7 que hoy no tenga prueba (Dani indica cuáles existen; ver pregunta 6).
+- Una prueba de regresión por cada CA de la sección 7 que hoy no tenga prueba (Claude Code indica cuáles existen; ver pregunta 6).
 - Subir `react-hooks/exhaustive-deps` de warning a error una vez en 0, para que uno nuevo rompa el lint (CA-8).
 
 **No incluye:**
@@ -40,7 +41,7 @@ Quien mantiene el código (Dani y su agente de código) no puede fiarse del avis
 **Modificado:** estructura interna (comportamiento idéntico) y una excepción en el Hub: antes, al crear, borrar o importar un documento con `?doc=` en la URL, la selección volvía al documento de la URL y pisaba el que la persona estaba mirando; después, el documento de la URL se abre una sola vez y la selección posterior no se mueve.
 **Eliminado:** los 15 avisos.
 
-Las valoraciones son hipótesis por lectura de código; Dani las valida.
+Las valoraciones son hipótesis por lectura de código; Fede las valida en la revisión.
 
 | # | Archivo (línea) | Aviso (nivel) | Dependencia que falta o problema | Hipótesis |
 |---|---|---|---|---|
@@ -98,7 +99,7 @@ Mejora de track medio: se entrega en un solo PR en borrador. Orden sugerido dent
 3. Efectos de `parallel.tsx` y `hub.tsx` (filas 3, 4, 9), con pruebas CA-6 y CA-10, y CA-11 a CA-14 para el Hub.
 4. Subir la regla a error (CA-8) solo cuando todo lo anterior esté en 0.
 
-## 12. Notas técnicas [Sugerencia — Dani valida]
+## 12. Notas técnicas [Sugerencia — Claude Code valida; la auditoría independiente revisa]
 - Fila 1: renombrar `use` a un nombre que no empiece por `use` (por ejemplo `orDefault`). Ya existe `src/lib/stages.test.ts`, que cubre CA-7.
 - Fila 2: calcular `goOn` dentro del efecto o envolverlo para que las dependencias sean explícitas.
 - Filas 6 y 7: derivar `quarters` una sola vez y usarla como dependencia directa, o memoizarla por el valor del trimestre.
@@ -107,7 +108,7 @@ Mejora de track medio: se entrega en un solo PR en borrador. Orden sugerido dent
 - Fila 9: abrir el documento de la URL solo cuando cambie el valor del parámetro o cuando el documento llegue por primera vez (por ejemplo, recordando el último id abierto desde la URL); el efecto no debe depender del número de documentos.
 - Fila 5: usar `range` en las dependencias o derivarlo dentro del `useMemo`.
 - Comando único de comprobación (CA-1, CA-2): `npx eslint src --rule 'prettier/prettier: off' -f json`, filtrando los mensajes `react-hooks/rules-of-hooks` y `react-hooks/exhaustive-deps`; debe dar 0 y sin errores de ejecución.
-- Las cifras (15 avisos, tests, tsc) se midieron con `npm` sin lockfile porque `bun.lock` apunta a un mirror privado que el entorno de esta sesión no alcanzó. Con el `bun.lock`, el recuento puede variar por la versión del plugin de hooks; el 0 de CA-1 y CA-2 se mide con el lock de Dani.
+- Las cifras (15 avisos, tests, tsc) se midieron con `npm` sin lockfile porque `bun.lock` apunta a un mirror privado que el entorno de esta sesión no alcanzó. Con el `bun.lock`, el recuento puede variar por la versión del plugin de hooks; el 0 de CA-1 y CA-2 se mide con el lock del repo.
 - Pruebas existentes relacionadas (por nombre de archivo): `src/lib/stages.test.ts`, `src/lib/cac.test.ts`, `src/lib/oauth-return-path.test.ts`. No he comprobado qué cubren de las pantallas de Deals ganados, Payback, KPIs, acceso, `parallel` y Hub.
 
 ## 13. Riesgos y dependencias
@@ -129,7 +130,7 @@ Mejora de track medio: se entrega en un solo PR en borrador. Orden sugerido dent
 - [Por verificar] Que el fallo de la fila 9 se reproduce en el navegador: está deducido de leer el código (`docs.length` en las dependencias), no ejecutado.
 - [Por verificar] Las hipótesis de la sección 6 salen de leer el código, no de ejecutarlo en el navegador.
 - [Por verificar] El texto exacto del aviso al fallar la comprobación de un informe (sección 8).
-- [Por verificar] Que los números de línea siguen vigentes en la rama que use Dani.
+- [Por verificar] Que los números de línea siguen vigentes en la rama de trabajo.
 
 ## 16. Sección de Dani (la completa él)
 - Diseño técnico:
@@ -140,4 +141,4 @@ Mejora de track medio: se entrega en un solo PR en borrador. Orden sugerido dent
 ---
 Validación: linter OK; aprobado por Fede el 2026-10-28.
 
-Entrega (2026-10-28): 15 avisos a 0 (1 silenciado con comentario, fila 4); `exhaustive-deps` en error; H-3 corregida con `useOpenDocFromUrl` y pruebas CA-11 a CA-14. Sin prueba automática nueva: CA-4, CA-5, CA-6, CA-9 y CA-10 (cubiertos solo por las pruebas existentes y por `tsc`; la validación en navegador queda para Dani).
+Entrega (2026-10-28): 15 avisos a 0 (1 silenciado con comentario, fila 4); `exhaustive-deps` en error; H-3 corregida con `useOpenDocFromUrl` y pruebas CA-11 a CA-14. Sin prueba automática nueva: CA-4, CA-5, CA-6, CA-9 y CA-10 (cubiertos solo por las pruebas existentes y por `tsc`; la validación en navegador queda para Fede).
