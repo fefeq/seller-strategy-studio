@@ -31,6 +31,7 @@ import {
   type RevealedContact,
 } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
+import { requireKey } from "@/lib/fit-key";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
@@ -139,6 +140,7 @@ export async function findPeople(
       "esa cuenta",
       "id,name,domain",
     ));
+  requireKey("cuenta", acc, "find_stakeholders");
   const page = a.page ?? 1;
   const r = await apollo(
     "/api/v1/mixed_people/api_search",
@@ -352,17 +354,15 @@ export type ApolloEnrichment = {
 export async function enrichAccount(c: ToolCtx, accountId: string): Promise<ApolloEnrichment> {
   const acc = await mustFind<{
     id: string;
+    name: string;
     domain: string | null;
     industry: string | null;
     size: string | null;
     country: string | null;
     notes: string | null;
-  }>(c, "accounts", accountId, "esa cuenta", "id,domain,industry,size,country,notes");
-  const domain = cleanDomain(acc.domain);
-  if (!domain)
-    throw new Error(
-      "La cuenta no tiene dominio. Añádelo (empresa.com) para completarla con Apollo.",
-    );
+  }>(c, "accounts", accountId, "esa cuenta", "id,name,domain,industry,size,country,notes");
+  requireKey("cuenta", acc, "enrich_account");
+  const domain = cleanDomain(acc.domain)!;
   const r = await apollo("/api/v1/organizations/bulk_enrich", [["domains[]", domain]]);
   const org = ((r.organizations ?? []) as (ApolloOrg | null)[])[0];
   if (!org) return { found: false, company: null, changes: [] };

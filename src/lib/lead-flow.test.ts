@@ -14,6 +14,9 @@ describe("lead flow", () => {
     expect(corporateDomain("ana@gmail.com")).toBeNull();
     expect(corporateDomain(null)).toBeNull();
   });
+  it("outlook.es is a personal mailbox, so it never becomes a company domain", () => {
+    expect(corporateDomain("ana@outlook.es")).toBeNull();
+  });
   it("shows the most senior people first, without the lead's own contact", () => {
     const rows = [
       { name: "Luis Pérez", title: "Sales Manager", linkedin: null },
@@ -21,11 +24,21 @@ describe("lead flow", () => {
       { name: "Marta Gil", title: "VP Sales", linkedin: null },
       { name: "Juan Sol", title: "Head of Growth", linkedin: null },
     ];
-    expect(pickKeyPeople(rows, "Juan Sol", 3).map((p) => p.name)).toEqual(["Ana Ruiz", "Marta Gil", "Luis Pérez"]);
+    expect(pickKeyPeople(rows, "Juan Sol", 3).map((p) => p.name)).toEqual([
+      "Ana Ruiz",
+      "Marta Gil",
+      "Luis Pérez",
+    ]);
   });
   it("summarises steps in flow order and reads old rows", () => {
     expect(readFlow(null)).toBeNull();
-    const f = readFlow({ at: "x", steps: { proposal: { status: "done", note: "SQL" }, account: { status: "done", note: "Creada" } } })!;
+    const f = readFlow({
+      at: "x",
+      steps: {
+        proposal: { status: "done", note: "SQL" },
+        account: { status: "done", note: "Creada" },
+      },
+    })!;
     expect(flowLines(f)).toEqual(["Cuenta: Creada", "Propuesta de IA: SQL"]);
   });
 });

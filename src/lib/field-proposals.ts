@@ -63,7 +63,7 @@ export function splitAutoChanges<
 }
 
 /** FNV-1a, so the same proposed value always has the same key and a dismissed one never comes back. */
-const hash = (s: string) => {
+export const hash = (s: string) => {
   let h = 0x811c9dc5;
   for (let i = 0; i < s.length; i++) {
     h ^= s.charCodeAt(i);

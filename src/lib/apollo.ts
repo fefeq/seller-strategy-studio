@@ -1,6 +1,7 @@
 // Apollo.io (people search, email/phone reveal, company search and enrichment): pure rules shared by
 // the screens, the agent tools and MCP. Gateway calls live in src/lib/apollo-gateway.ts.
 import { cleanDomain } from "@/lib/leads";
+import { requireKey } from "@/lib/fit-key";
 import { normalizeForSave } from "@/lib/field-normalize";
 import { englishCountry, isoFromCountry, type AccountDraft, type EnrichField } from "@/lib/clay";
 
@@ -270,10 +271,13 @@ export function matchDetails(p: {
   if (p.linkedin_url?.trim()) d.linkedin_url = p.linkedin_url.trim();
   const dom = cleanDomain(p.domain);
   if (dom) d.domain = dom;
-  if (!d.id && !d.email && !d.linkedin_url && !(d.name && d.domain))
-    throw new Error(
-      "Faltan datos para identificar a la persona: hace falta su LinkedIn, su email o su nombre y el dominio de la cuenta.",
-    );
+  requireKey("persona", {
+    id: d.id,
+    name: d.name,
+    email: d.email,
+    linkedin_url: d.linkedin_url,
+    domain: d.domain,
+  });
   return d;
 }
 

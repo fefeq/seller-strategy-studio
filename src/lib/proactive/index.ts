@@ -14,19 +14,60 @@ import { meetingNoNotes } from "./detectors/meeting-no-notes";
 import { unassignedAccounts } from "./detectors/unassigned-accounts";
 import { accountSignal } from "./detectors/account-signal";
 import { icpIdle, icpUncoveredWins } from "./detectors/strategy-icp";
-import { dealsWithoutSegment, segmentCostsMissing, segmentLowCoverage } from "./detectors/strategy-segments";
+import {
+  dealsWithoutSegment,
+  segmentCostsMissing,
+  segmentLowCoverage,
+} from "./detectors/strategy-segments";
 import { stageBottleneck } from "./detectors/strategy-pipeline";
 import { productRepeatedDiscount, productUnsold } from "./detectors/strategy-product";
 import { positioningMissing } from "./detectors/strategy-positioning";
 import { repeatedLoss } from "./detectors/strategy-losses";
-import { experimentCloseRule, experimentOverdue, experimentReview } from "./detectors/strategy-experiments";
+import {
+  experimentCloseRule,
+  experimentOverdue,
+  experimentReview,
+} from "./detectors/strategy-experiments";
+import { accountMissingKey } from "./detectors/account-missing-key";
 import { productQualified, usageDrop } from "./detectors/product-usage";
 
 /** Adding a rule = adding a file in ./detectors and listing it here. */
-export const DETECTORS: Detector[] = [staleDeal, pastCloseDate, lowCoverage, meddpiccGaps, meetingNoPrep, noDecisionMaker, trialConversion, setupIncomplete, registrationExpiring, lateLeads, followupSequence, meetingNoNotes, unassignedAccounts, accountSignal, productQualified, usageDrop];
+export const DETECTORS: Detector[] = [
+  staleDeal,
+  pastCloseDate,
+  lowCoverage,
+  meddpiccGaps,
+  meetingNoPrep,
+  noDecisionMaker,
+  trialConversion,
+  setupIncomplete,
+  registrationExpiring,
+  lateLeads,
+  followupSequence,
+  meetingNoNotes,
+  unassignedAccounts,
+  accountMissingKey,
+  accountSignal,
+  productQualified,
+  usageDrop,
+];
 
 /** Strategic rules of F1 (fixed rules, no AI). They only fire when the snapshot carries `strategy` data. */
-export const STRATEGY_DETECTORS: Detector[] = [icpUncoveredWins, icpIdle, segmentCostsMissing, segmentLowCoverage, dealsWithoutSegment, stageBottleneck, productRepeatedDiscount, productUnsold, positioningMissing, repeatedLoss, experimentCloseRule, experimentReview, experimentOverdue];
+export const STRATEGY_DETECTORS: Detector[] = [
+  icpUncoveredWins,
+  icpIdle,
+  segmentCostsMissing,
+  segmentLowCoverage,
+  dealsWithoutSegment,
+  stageBottleneck,
+  productRepeatedDiscount,
+  productUnsold,
+  positioningMissing,
+  repeatedLoss,
+  experimentCloseRule,
+  experimentReview,
+  experimentOverdue,
+];
 
 export function detect(s: Snapshot): Suggestion[] {
   const out = [...DETECTORS, ...STRATEGY_DETECTORS].flatMap((d) => d(s));
@@ -36,7 +77,9 @@ export function detect(s: Snapshot): Suggestion[] {
 
 /** Top N suggestions for the daily digest: priority first, then newest. */
 export function digest<T extends { priority: number; created_at: string }>(items: T[], n = 3): T[] {
-  return [...items].sort((a, b) => a.priority - b.priority || b.created_at.localeCompare(a.created_at)).slice(0, n);
+  return [...items]
+    .sort((a, b) => a.priority - b.priority || b.created_at.localeCompare(a.created_at))
+    .slice(0, n);
 }
 
 export type { Snapshot, Suggestion } from "./types";

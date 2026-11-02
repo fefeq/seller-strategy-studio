@@ -1,6 +1,7 @@
 // Automatic flow a new lead goes through (pure, tested): its account is found or created, completed with data
 // (Apollo → Clay via the orchestrator), key people are searched, and the AI proposes the next stage.
 // The server side (inngest/tasks.server.ts runLeadFlow) records each step here in leads.flow.
+import { FREE_MAIL_DOMAINS } from "./free-mail";
 
 export const FLOW_STEPS = [
   { id: "account", label: "Cuenta" },
@@ -13,15 +14,28 @@ export type FlowStepId = (typeof FLOW_STEPS)[number]["id"];
 export type FlowStatus = "done" | "skipped" | "failed" | "blocked";
 export type FlowStep = { status: FlowStatus; note: string };
 export type FlowPerson = { name: string; title: string | null; linkedin: string | null };
-export type LeadFlow = { at: string; steps: Partial<Record<FlowStepId, FlowStep>>; people: FlowPerson[] };
+export type LeadFlow = {
+  at: string;
+  steps: Partial<Record<FlowStepId, FlowStep>>;
+  people: FlowPerson[];
+};
 
-export const STATUS_WORD: Record<FlowStatus, string> = { done: "Hecho", skipped: "No aplica", failed: "Falló", blocked: "En pausa" };
+export const STATUS_WORD: Record<FlowStatus, string> = {
+  done: "Hecho",
+  skipped: "No aplica",
+  failed: "Falló",
+  blocked: "En pausa",
+};
 
 /** Reads leads.flow defensively (old rows have null). */
 export function readFlow(raw: unknown): LeadFlow | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Partial<LeadFlow>;
-  return { at: typeof r.at === "string" ? r.at : "", steps: r.steps && typeof r.steps === "object" ? r.steps : {}, people: Array.isArray(r.people) ? r.people : [] };
+  return {
+    at: typeof r.at === "string" ? r.at : "",
+    steps: r.steps && typeof r.steps === "object" ? r.steps : {},
+    people: Array.isArray(r.people) ? r.people : [],
+  };
 }
 
 /** Business words that rank a person as a decision maker for the lead (higher = earlier). */
@@ -39,13 +53,22 @@ export function seniorityRank(title: string | null | undefined): number {
 }
 
 /** The few people worth showing: most senior first, the lead's own contact left out, deduped by name. */
-export function pickKeyPeople(rows: FlowPerson[], contactName: string | null, max = 5): FlowPerson[] {
+export function pickKeyPeople(
+  rows: FlowPerson[],
+  contactName: string | null,
+  max = 5,
+): FlowPerson[] {
   const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
   const contact = contactName ? norm(contactName) : null;
   const seen = new Set<string>();
   return rows
     .filter((p) => p.name?.trim())
-    .filter((p) => { const k = norm(p.name); if (k === contact || seen.has(k)) return false; seen.add(k); return true; })
+    .filter((p) => {
+      const k = norm(p.name);
+      if (k === contact || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
     .map((p, i) => ({ p, i, r: seniorityRank(p.title) }))
     .sort((a, b) => b.r - a.r || a.i - b.i)
     .slice(0, max)
@@ -53,20 +76,29 @@ export function pickKeyPeople(rows: FlowPerson[], contactName: string | null, ma
 }
 
 /** Lead → account match key: corporate email domain, else nothing (personal emails never create accounts by domain). */
-const PERSONAL = new Set(["gmail.com", "googlemail.com", "hotmail.com", "outlook.com", "live.com", "yahoo.com", "yahoo.es", "icloud.com", "me.com", "proton.me", "protonmail.com", "aol.com", "gmx.com", "msn.com", "hotmail.es"]);
 export function corporateDomain(email: string | null | undefined): string | null {
-  const d = email?.split("@")[1]?.trim().toLowerCase().replace(/^www\./, "");
-  if (!d || !d.includes(".") || PERSONAL.has(d)) return null;
+  const d = email
+    ?.split("@")[1]
+    ?.trim()
+    .toLowerCase()
+    .replace(/^www\./, "");
+  if (!d || !d.includes(".") || FREE_MAIL_DOMAINS.has(d)) return null;
   return d;
 }
 
 /** Whether the flow should run for this lead now (new and never run, or forced by a person). */
-export function shouldRunFlow(lead: { enriched_at: string | null; stage: string }, force = false): boolean {
+export function shouldRunFlow(
+  lead: { enriched_at: string | null; stage: string },
+  force = false,
+): boolean {
   if (force) return lead.stage !== "opportunity";
   return !lead.enriched_at && lead.stage !== "opportunity" && lead.stage !== "disqualified";
 }
 
 /** One line per step for the suggestion body, in flow order. */
 export function flowLines(flow: LeadFlow): string[] {
-  return FLOW_STEPS.flatMap((s) => { const st = flow.steps[s.id]; return st ? [`${s.label}: ${st.note}`] : []; });
+  return FLOW_STEPS.flatMap((s) => {
+    const st = flow.steps[s.id];
+    return st ? [`${s.label}: ${st.note}`] : [];
+  });
 }

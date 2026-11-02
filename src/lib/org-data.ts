@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { quarterOf } from "@/lib/metrics";
 import type { SetupData } from "@/lib/setup-schema";
-import type { Snapshot } from "@/lib/proactive/types";
+import type { FitKeyData, Snapshot } from "@/lib/proactive/types";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
@@ -28,12 +28,17 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
   ]);
   // A failed query is not an empty table: with empty data every step would read as pending and the guide would tell the person to redo
   // work they did. Throwing lets the screen keep the last known state (useSetup) and the agent say it could not read.
-  for (const r of [org, seg, icp, pos, pil, quo, acc, deals]) if (r.error) throw new Error(r.error.message);
+  for (const r of [org, seg, icp, pos, pil, quo, acc, deals])
+    if (r.error) throw new Error(r.error.message);
   return {
     currency: org.data?.currency ?? null,
     segments: (seg.data ?? []) as SetupData["segments"],
     icps: icp.data ?? [],
-    positioning: pos.data ? (({ copy_status: _copy, field_sources: _fs, last_human_edit_at: _edit, ...p }) => p)(pos.data) : null,
+    positioning: pos.data
+      ? (({ copy_status: _copy, field_sources: _fs, last_human_edit_at: _edit, ...p }) => p)(
+          pos.data,
+        )
+      : null,
     pillars: pil.data ?? [],
     quotas: (quo.data ?? []).map((q) => ({ period: q.period, amount: Number(q.amount) })),
     accounts: acc.count ?? 0,
@@ -43,23 +48,80 @@ export async function loadSetupData(db: Db, orgId: string): Promise<SetupData> {
 }
 
 /** Extra reads for the strategic rules (F1). A failed read leaves its list empty: a rule never fires on data it could not read. */
-async function loadStrategyData(db: Db, orgId: string): Promise<import("@/lib/proactive/types").StrategyData> {
-  const [icps, accounts, deals, history, products, lines, costs, budgets, experiments] = await Promise.all([
-    db.from("icp_profiles").select("id,name,industries,company_size,geography,countries,anti_icp,segment_id,created_at").eq("org_id", orgId),
-    fetchAll((a, b) => db.from("accounts").select("id,name,industry,size,country,segment_id,tier").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
-    fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,account_id,segment_id,close_date,created_at,closed_at,updated_at,lost_reason,lost_competitor").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
-    fetchAll((a, b) => db.from("deal_stage_history").select("deal_id,from_stage,to_stage,changed_at").eq("org_id", orgId).order("changed_at").range(a, b)).then((r) => ({ data: r.rows })),
-    db.from("products").select("id,name,active,created_at").eq("org_id", orgId),
-    fetchAll((a, b) => db.from("deal_lines").select("id,deal_id,product_id,name,discount_pct,unit_price,created_at").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows })),
-    db.from("cac_costs").select("segment_id,period").eq("org_id", orgId),
-    db.from("segment_budget_quarters").select("segment_id,period,plan_revenue").eq("org_id", orgId),
-    db.from("gtm_experiments").select("id,title,status,hypothesis,metric,target,result,learning,success_threshold,close_rule,review_on,ends_on,decision").eq("org_id", orgId).eq("status", "running"),
-  ]);
+async function loadStrategyData(
+  db: Db,
+  orgId: string,
+): Promise<import("@/lib/proactive/types").StrategyData> {
+  const [icps, accounts, deals, history, products, lines, costs, budgets, experiments] =
+    await Promise.all([
+      db
+        .from("icp_profiles")
+        .select(
+          "id,name,industries,company_size,geography,countries,anti_icp,segment_id,created_at",
+        )
+        .eq("org_id", orgId),
+      fetchAll((a, b) =>
+        db
+          .from("accounts")
+          .select("id,name,industry,size,country,segment_id,tier")
+          .eq("org_id", orgId)
+          .order("id")
+          .range(a, b),
+      ).then((r) => ({ data: r.rows })),
+      fetchAll((a, b) =>
+        db
+          .from("deals")
+          .select(
+            "id,name,stage,amount,account_id,segment_id,close_date,created_at,closed_at,updated_at,lost_reason,lost_competitor",
+          )
+          .eq("org_id", orgId)
+          .order("id")
+          .range(a, b),
+      ).then((r) => ({ data: r.rows })),
+      fetchAll((a, b) =>
+        db
+          .from("deal_stage_history")
+          .select("deal_id,from_stage,to_stage,changed_at")
+          .eq("org_id", orgId)
+          .order("changed_at")
+          .range(a, b),
+      ).then((r) => ({ data: r.rows })),
+      db.from("products").select("id,name,active,created_at").eq("org_id", orgId),
+      fetchAll((a, b) =>
+        db
+          .from("deal_lines")
+          .select("id,deal_id,product_id,name,discount_pct,unit_price,created_at")
+          .eq("org_id", orgId)
+          .order("id")
+          .range(a, b),
+      ).then((r) => ({ data: r.rows })),
+      db.from("cac_costs").select("segment_id,period").eq("org_id", orgId),
+      db
+        .from("segment_budget_quarters")
+        .select("segment_id,period,plan_revenue")
+        .eq("org_id", orgId),
+      db
+        .from("gtm_experiments")
+        .select(
+          "id,title,status,hypothesis,metric,target,result,learning,success_threshold,close_rule,review_on,ends_on,decision",
+        )
+        .eq("org_id", orgId)
+        .eq("status", "running"),
+    ]);
   return {
     icps: (icps.data ?? []).map((i) => ({ ...i, countries: i.countries ?? [] })),
-    accounts: accounts.data ?? [], deals: deals.data ?? [], history: history.data ?? [], products: products.data ?? [],
-    lines: (lines.data ?? []).map((l) => ({ ...l, discount_pct: Number(l.discount_pct), unit_price: Number(l.unit_price) })),
-    costs: costs.data ?? [], budgets: budgets.data ?? [], experiments: experiments.data ?? [],
+    accounts: accounts.data ?? [],
+    deals: deals.data ?? [],
+    history: history.data ?? [],
+    products: products.data ?? [],
+    lines: (lines.data ?? []).map((l) => ({
+      ...l,
+      discount_pct: Number(l.discount_pct),
+      unit_price: Number(l.unit_price),
+    })),
+    costs: costs.data ?? [],
+    budgets: budgets.data ?? [],
+    experiments: experiments.data ?? [],
   };
 }
 
@@ -67,17 +129,56 @@ async function loadStrategyData(db: Db, orgId: string): Promise<import("@/lib/pr
  * Snoozed setup steps of the company and, only when asked, the latest change a person made in the data the setup steps read
  * (SDD strategy-setup-guided-next-step). The activity needs one query per table, so screens that don't nudge leave it out.
  */
-async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
+async function readSetupGuide(
+  db: Db,
+  orgId: string,
+  withActivity: boolean,
+): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
   // Only changes a signed-in person made (migration 0064): enrichments, syncs and triggers do not move last_human_edit_at. Empty = unknown.
-  const newest = (table: "positioning" | "segments" | "quotas" | "accounts" | "deals" | "icp_profiles" | "messaging_pillars") =>
-    db.from(table).select("last_human_edit_at").eq("org_id", orgId).not("last_human_edit_at", "is", null).order("last_human_edit_at", { ascending: false }).limit(1).maybeSingle().then((r) => { if (r.error) throw new Error(r.error.message); return r.data?.last_human_edit_at ?? null; });
+  const newest = (
+    table:
+      | "positioning"
+      | "segments"
+      | "quotas"
+      | "accounts"
+      | "deals"
+      | "icp_profiles"
+      | "messaging_pillars",
+  ) =>
+    db
+      .from(table)
+      .select("last_human_edit_at")
+      .eq("org_id", orgId)
+      .not("last_human_edit_at", "is", null)
+      .order("last_human_edit_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then((r) => {
+        if (r.error) throw new Error(r.error.message);
+        return r.data?.last_human_edit_at ?? null;
+      });
   const [snoozes, ...stamps] = await Promise.all([
     db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
-    ...(withActivity ? [
-      db.from("organizations").select("created_at").eq("id", orgId).maybeSingle().then((r) => { if (r.error) throw new Error(r.error.message); return r.data?.created_at ?? null; }),
-      newest("positioning"), newest("segments"), newest("quotas"), newest("accounts"),
-      newest("deals"), newest("icp_profiles"), newest("messaging_pillars"),
-    ] : []),
+    ...(withActivity
+      ? [
+          db
+            .from("organizations")
+            .select("created_at")
+            .eq("id", orgId)
+            .maybeSingle()
+            .then((r) => {
+              if (r.error) throw new Error(r.error.message);
+              return r.data?.created_at ?? null;
+            }),
+          newest("positioning"),
+          newest("segments"),
+          newest("quotas"),
+          newest("accounts"),
+          newest("deals"),
+          newest("icp_profiles"),
+          newest("messaging_pillars"),
+        ]
+      : []),
   ]);
   if (snoozes.error) throw new Error(snoozes.error.message); // a failed read is not «nothing postponed»
   const rows = snoozes.data ?? [];
@@ -85,36 +186,120 @@ async function readSetupGuide(db: Db, orgId: string, withActivity: boolean): Pro
   // stamps[0] is the company's sign-up date: the fallback when no person ever edited anything the steps read (existing rows have no
   // last_human_edit_at until someone edits them), so a company that never came back still gets the nudge.
   const [signedUp, ...edits] = stamps;
-  const activityAt = withActivity ? latestActivity([...edits, ...rows.map((r) => r.created_at)]) ?? signedUp ?? null : null;
-  return { snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })), activityAt };
+  const activityAt = withActivity
+    ? (latestActivity([...edits, ...rows.map((r) => r.created_at)]) ?? signedUp ?? null)
+    : null;
+  return {
+    snoozes: rows.map((r) => ({ step_id: r.step_id, snoozed_until: r.snoozed_until })),
+    activityAt,
+  };
 }
 
 /** Just the snoozes: one query. Enough to pick the next step. */
-export const loadSetupSnoozes = async (db: Db, orgId: string): Promise<Snooze[]> => (await readSetupGuide(db, orgId, false)).snoozes;
+export const loadSetupSnoozes = async (db: Db, orgId: string): Promise<Snooze[]> =>
+  (await readSetupGuide(db, orgId, false)).snoozes;
 /** Snoozes plus the latest activity (eight queries): for the inactivity nudge and the proactive snapshot. */
 export const loadSetupGuideExtras = (db: Db, orgId: string) => readSetupGuide(db, orgId, true);
 
-export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Promise<Snapshot> {
-  const [setup, deals, meetings, accounts, sh, regs, trials, segs, leads, leadSettings, stages, members, signals, usage, guide] = await Promise.all([
+/** `fitKey: false` skips the domain-proposal data (extra queries) for callers that never use it, like the per-lead follow-up. */
+export async function loadSnapshot(
+  db: Db,
+  orgId: string,
+  now = new Date(),
+  opts: { fitKey?: boolean } = {},
+): Promise<Snapshot> {
+  const [
+    setup,
+    deals,
+    meetings,
+    accounts,
+    sh,
+    regs,
+    trials,
+    segs,
+    leads,
+    leadSettings,
+    stages,
+    members,
+    signals,
+    usage,
+    guide,
+  ] = await Promise.all([
     loadSetupData(db, orgId),
-    fetchAll((a, b) => db.from("deals").select("id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
-    db.from("meetings").select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes").eq("org_id", orgId).gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
-    fetchAll((a, b) => db.from("accounts").select("id,name,is_target,owner_id,created_at").eq("org_id", orgId).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
+    fetchAll((a, b) =>
+      db
+        .from("deals")
+        .select(
+          "id,name,stage,amount,close_date,updated_at,created_at,closed_at,segment_id,owner_id,meddpicc,account_id",
+        )
+        .eq("org_id", orgId)
+        .order("id")
+        .range(a, b),
+    ).then((r) => ({ data: r.rows, error: null })),
+    db
+      .from("meetings")
+      .select("id,title,scheduled_at,ai_brief,account_id,created_by,notes,call_notes")
+      .eq("org_id", orgId)
+      .gte("scheduled_at", new Date(now.getTime() - NOTES_UNTIL_MS).toISOString()),
+    fetchAll((a, b) =>
+      db
+        .from("accounts")
+        .select("id,name,is_target,owner_id,created_at")
+        .eq("org_id", orgId)
+        .order("id")
+        .range(a, b),
+    ).then((r) => ({ data: r.rows, error: null })),
     db.from("stakeholders").select("account_id,buying_role").eq("org_id", orgId),
     db.from("deal_registrations").select("id,account_name,status,expires_at").eq("org_id", orgId),
-    db.from("trials").select("segment_id,signed_up_at,activated_at,converted_at,mrr").eq("org_id", orgId),
-    db.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").eq("org_id", orgId),
-    fetchAll((a, b) => db.from("leads").select("id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name").eq("org_id", orgId).in("stage", ["new", "contacted", "mql", "sql"]).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null })),
+    db
+      .from("trials")
+      .select("segment_id,signed_up_at,activated_at,converted_at,mrr")
+      .eq("org_id", orgId),
+    db
+      .from("segments")
+      .select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months")
+      .eq("org_id", orgId),
+    fetchAll((a, b) =>
+      db
+        .from("leads")
+        .select(
+          "id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name",
+        )
+        .eq("org_id", orgId)
+        .in("stage", ["new", "contacted", "mql", "sql"])
+        .order("id")
+        .range(a, b),
+    ).then((r) => ({ data: r.rows, error: null })),
     db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
-    db.from("deal_stages").select("key,label,position,kind,board_group,probability").eq("org_id", orgId),
+    db
+      .from("deal_stages")
+      .select("key,label,position,kind,board_group,probability")
+      .eq("org_id", orgId),
     db.from("org_members").select("user_id,role").eq("org_id", orgId),
-    db.from("account_signals").select("id,account_id,title,kind,summary,relevance,url,found_at").eq("org_id", orgId).gte("found_at", new Date(now.getTime() - 14 * 86_400_000).toISOString()).limit(200),
-    db.from("product_usage").select("domain,account_id,active_users_7d,active_users_prev_7d").eq("org_id", orgId).order("active_users_7d", { ascending: false }).limit(500),
+    db
+      .from("account_signals")
+      .select("id,account_id,title,kind,summary,relevance,url,found_at")
+      .eq("org_id", orgId)
+      .gte("found_at", new Date(now.getTime() - 14 * 86_400_000).toISOString())
+      .limit(200),
+    db
+      .from("product_usage")
+      .select("domain,account_id,active_users_7d,active_users_prev_7d")
+      .eq("org_id", orgId)
+      .order("active_users_7d", { ascending: false })
+      .limit(500),
     loadSetupGuideExtras(db, orgId),
   ]);
   const strategy = await loadStrategyData(db, orgId);
+  const fitKey = opts.fitKey === false ? undefined : await loadFitKeyData(db, orgId);
   return {
-    now, orgId, setup, strategy, setupSnoozes: guide.snoozes, setupActivityAt: guide.activityAt,
+    now,
+    orgId,
+    setup,
+    strategy,
+    ...(fitKey ? { fitKey } : {}),
+    setupSnoozes: guide.snoozes,
+    setupActivityAt: guide.activityAt,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
     deals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     meetings: meetings.data ?? [],
@@ -134,6 +319,49 @@ export async function loadSnapshot(db: Db, orgId: string, now = new Date()): Pro
   };
 }
 
+/** Account domains and the emails of contacts linked to an account (people, stakeholders, open leads), paged and always by company. */
+async function loadFitKeyData(db: Db, orgId: string): Promise<FitKeyData> {
+  const [accounts, people, stakeholders, leads] = await Promise.all([
+    fetchAll((a, b) =>
+      db.from("accounts").select("id,domain").eq("org_id", orgId).order("id").range(a, b),
+    ),
+    fetchAll((a, b) =>
+      db
+        .from("people")
+        .select("id,account_id,email")
+        .eq("org_id", orgId)
+        .not("account_id", "is", null)
+        .not("email", "is", null)
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAll((a, b) =>
+      db
+        .from("stakeholders")
+        .select("id,account_id,email")
+        .eq("org_id", orgId)
+        .not("email", "is", null)
+        .order("id")
+        .range(a, b),
+    ),
+    fetchAll((a, b) =>
+      db
+        .from("leads")
+        .select("id,account_id,email")
+        .eq("org_id", orgId)
+        .in("stage", ["new", "contacted", "mql", "sql"])
+        .not("account_id", "is", null)
+        .not("email", "is", null)
+        .order("id")
+        .range(a, b),
+    ),
+  ]);
+  const contacts = [...people.rows, ...stakeholders.rows, ...leads.rows].flatMap((c) =>
+    c.account_id ? [{ account_id: c.account_id, email: c.email }] : [],
+  );
+  return { accounts: accounts.rows, contacts };
+}
+
 /** Detectors whose suggestion reopens when it is found again after the system closed it as «resolved». */
 const REOPENABLE = new Set(["setup_incomplete"]);
 
@@ -142,10 +370,16 @@ const REOPENABLE = new Set(["setup_incomplete"]);
  * on with «Resolver» (touched) closes as done by the user ("approved"); the rest close as "resolved"
  * (solved on its own), so the metrics can tell them apart.
  */
-export async function syncSuggestions(db: Db, orgId: string, found: import("@/lib/proactive/types").Suggestion[], touched: string[] = []) {
+export async function syncSuggestions(
+  db: Db,
+  orgId: string,
+  found: import("@/lib/proactive/types").Suggestion[],
+  touched: string[] = [],
+) {
   // Strategic suggestions (strategy_* detectors) carry evidence and keep their own decisions: they are written, reopened and
   // left alone by syncStrategySuggestions (CA-5, CA-6) and never auto-closed here.
-  const { isStrategySuggestion, syncStrategySuggestions, STRATEGY_DETECTOR_LIKE } = await import("@/lib/strategy-core");
+  const { isStrategySuggestion, syncStrategySuggestions, STRATEGY_DETECTOR_LIKE } =
+    await import("@/lib/strategy-core");
   const strategic = found.filter(isStrategySuggestion);
   found = found.filter((f) => !isStrategySuggestion(f));
   await syncStrategySuggestions(db, orgId, strategic);
@@ -160,26 +394,66 @@ export async function syncSuggestions(db: Db, orgId: string, found: import("@/li
   // again and the unique (company, key) would keep the row we closed as «resolved» closed forever. Reopen those. A dismissed one stays
   // dismissed: the person said no, and a postponement that ended already produces a key of its own.
   const again = found.filter((f) => REOPENABLE.has(f.detector)).map((f) => f.dedupe_key);
-  if (again.length) await db.from("suggestions").update({ status: "pending", snoozed_until: null, notified_at: null, updated_at: new Date().toISOString() }).eq("org_id", orgId).in("dedupe_key", again).eq("status", "resolved");
+  if (again.length)
+    await db
+      .from("suggestions")
+      .update({
+        status: "pending",
+        snoozed_until: null,
+        notified_at: null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("org_id", orgId)
+      .in("dedupe_key", again)
+      .eq("status", "resolved");
   // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
-  const { data: open } = await db.from("suggestions").select("id,dedupe_key,status,title,body").eq("org_id", orgId).in("status", ["pending", "snoozed"]).not("detector", "in", "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)").not("detector", "like", STRATEGY_DETECTOR_LIKE);
+  const { data: open } = await db
+    .from("suggestions")
+    .select("id,dedupe_key,status,title,body")
+    .eq("org_id", orgId)
+    .in("status", ["pending", "snoozed"])
+    .not(
+      "detector",
+      "in",
+      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)",
+    )
+    .not("detector", "like", STRATEGY_DETECTOR_LIKE);
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
   // never contradicts the screen it links to.
-  for (const u of staleTexts(open ?? [], found)) await db.from("suggestions").update({ title: u.title, body: u.body ?? "" }).eq("id", u.id);
-  const { done, resolved } = splitClosed((open ?? []).filter((o) => !keys.has(o.dedupe_key)), touched);
+  for (const u of staleTexts(open ?? [], found))
+    await db
+      .from("suggestions")
+      .update({ title: u.title, body: u.body ?? "" })
+      .eq("id", u.id);
+  const { done, resolved } = splitClosed(
+    (open ?? []).filter((o) => !keys.has(o.dedupe_key)),
+    touched,
+  );
   const at = new Date().toISOString();
-  if (done.length) await db.from("suggestions").update({ status: "approved", updated_at: at }).in("id", done);
-  if (resolved.length) await db.from("suggestions").update({ status: "resolved", updated_at: at }).in("id", resolved);
+  if (done.length)
+    await db.from("suggestions").update({ status: "approved", updated_at: at }).in("id", done);
+  if (resolved.length)
+    await db.from("suggestions").update({ status: "resolved", updated_at: at }).in("id", resolved);
   // Wake up snoozed ones whose time has come.
-  await db.from("suggestions").update({ status: "pending", snoozed_until: null }).eq("org_id", orgId).eq("status", "snoozed").lte("snoozed_until", new Date().toISOString());
+  await db
+    .from("suggestions")
+    .update({ status: "pending", snoozed_until: null })
+    .eq("org_id", orgId)
+    .eq("status", "snoozed")
+    .lte("snoozed_until", new Date().toISOString());
 }
 
 /** Open suggestions whose detector now says something different (same key, new title or body). */
-export function staleTexts(open: { id: string; dedupe_key: string; title: string | null; body: string | null }[], found: { dedupe_key: string; title: string; body: string | null }[]) {
+export function staleTexts(
+  open: { id: string; dedupe_key: string; title: string | null; body: string | null }[],
+  found: { dedupe_key: string; title: string; body: string | null }[],
+) {
   const byKey = new Map(found.map((f) => [f.dedupe_key, f]));
   return open.flatMap((o) => {
     const f = byKey.get(o.dedupe_key);
-    return f && (f.title !== o.title || (f.body ?? null) !== (o.body ?? null)) ? [{ id: o.id, title: f.title, body: f.body ?? null }] : [];
+    return f && (f.title !== o.title || (f.body ?? null) !== (o.body ?? null))
+      ? [{ id: o.id, title: f.title, body: f.body ?? null }]
+      : [];
   });
 }
 
