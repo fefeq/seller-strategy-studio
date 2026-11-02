@@ -25,6 +25,8 @@ import { ScoreBadge } from "@/components/score";
 import { QualSettingsDialog, QualTag, QualifyPending, leadQualView } from "@/components/leads/lead-qualification";
 import { pct } from "@/lib/money";
 import { prepareLeads } from "@/hooks/screen-queries";
+import { BoardDnd, DragCard, DropColumn } from "@/components/board-dnd";
+import { MOVE_COPY, UNDO_MS, canMoveLead, isReversibleMove, undoLead } from "@/lib/board-move";
 
 export const Route = createFileRoute("/_authenticated/leads/")({
   validateSearch: (s: Record<string, unknown>): { lead?: string; late?: true; orden?: "fecha"; vista?: "lista" } => ({
@@ -80,13 +82,27 @@ function LeadsPage() {
   async function move(id: string, stage: string) {
     const lead = data?.leads.find((l) => l.id === id);
     if (!lead || lead.stage === stage) return;
-    if (lead.stage === "opportunity") return toast.info("Este lead ya es una oportunidad: síguelo desde Pipeline.");
+    if (!canMoveLead(lead.stage)) return toast.info(MOVE_COPY.leadIsOpportunity);
     const { data: saved, error } = await supabase.from("leads").update({ stage }).eq("id", id).select("deal_id").single();
     if (error) return toast.error(errorText(error));
     touchLead(id);
     if (stage === "opportunity" && saved?.deal_id) toast.success(`${lead.company} ya es una oportunidad en el pipeline.`, { action: { label: "Ver en Pipeline", onClick: () => go({ to: "/deals", search: { deal: saved.deal_id! } }) } });
     qc.invalidateQueries({ queryKey: ["leads"] });
     qc.invalidateQueries({ queryKey: ["deals"] });
+    if (stage === "opportunity") return;
+    // Every other move says where the lead went; the reversible ones offer «Deshacer» for a few seconds.
+    const label = leadStageLabel(stage);
+    if (!isReversibleMove({ entity: "lead", from: lead.stage, to: stage })) return void toast.info(MOVE_COPY.moved(label), { id: `move-${id}` });
+    toast(MOVE_COPY.moved(label), { id: `move-${id}`, duration: UNDO_MS, action: { label: MOVE_COPY.undo, onClick: () => void undoMove(id, lead.stage, stage) } });
+  }
+  async function undoMove(id: string, prevStage: string, movedTo: string) {
+    const plan = undoLead({ prevStage, movedTo });
+    const { data: rows, error } = await supabase.from("leads").update(plan.patch).eq("id", id).eq("stage", plan.onlyIfStage).select("id");
+    if (error) return void toast.error(errorText(error));
+    if (!rows?.length) return void toast.info(MOVE_COPY.changedMeanwhile, { id: `move-${id}` });
+    touchLead(id);
+    qc.invalidateQueries({ queryKey: ["leads"] });
+    toast.success(MOVE_COPY.undone(leadStageLabel(prevStage)), { id: `move-${id}` });
   }
 
   const selected = data?.leads.find((l) => l.id === search.lead);
@@ -162,6 +178,7 @@ function LeadsPage() {
                 </div>
               );
             })() : (
+              <BoardDnd cardLabel={(id) => data.leads.find((l) => l.id === id)?.company ?? ""} columnLabel={leadStageLabel} onMove={(id, stageId) => void move(id, stageId)}>
               <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
                 {COLUMNS.map((st) => {
                   const all = data.leads.filter((l) => l.stage === st.id);
@@ -169,9 +186,7 @@ function LeadsPage() {
                   const lateN = all.filter((l) => view.delays.get(l.id)?.late).length;
                   const capped = st.id === "opportunity" || st.id === "disqualified" ? col.slice(0, 25) : col;
                   return (
-                    <div key={st.id} className={`w-[80vw] max-w-72 shrink-0 snap-start rounded-lg p-2 md:w-auto md:min-w-40 md:max-w-none md:flex-1 ${st.id === "disqualified" ? "bg-muted/30" : "bg-muted/60"}`}
-                      onDragOver={(e) => e.preventDefault()}
-                      onDrop={(e) => move(e.dataTransfer.getData("id"), st.id)}>
+                    <DropColumn key={st.id} id={st.id} className={`w-[80vw] max-w-72 shrink-0 snap-start rounded-lg p-2 md:w-auto md:min-w-40 md:max-w-none md:flex-1 ${st.id === "disqualified" ? "bg-muted/30" : "bg-muted/60"}`}>
                       <div className="flex items-center justify-between gap-2 px-2 py-2">
                         <span className="eyebrow">{st.label}</span>
                         <span className="shrink-0 font-mono text-xs">{all.length}{lateN ? <span className="ml-1 text-signal">· {lateN} tarde</span> : null}</span>
@@ -180,10 +195,11 @@ function LeadsPage() {
                         {capped.map((l) => {
                           const d = view.delays.get(l.id)!;
                           return (
-                            <div key={l.id} className="relative">
-                            <button draggable onDragStart={(e) => e.dataTransfer.setData("id", l.id)}
+                            <DragCard key={l.id} id={l.id} column={st.id}>{({ dragging, ...drag }) => (
+                            <div className="relative">
+                            <button {...drag}
                               onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
-                              className={`block w-full rounded-md border bg-card p-3 pb-7 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
+                              className={`block w-full rounded-md border bg-card p-3 pb-9 text-left text-sm hover:border-signal ${dragging ? "opacity-40" : ""} ${d.late ? "border-signal/60" : ""}`}>
                               <span className="flex items-start justify-between gap-2"><span className="break-words font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
                               <span className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
@@ -197,16 +213,18 @@ function LeadsPage() {
                             </button>
                             <span className="absolute bottom-2 right-3"><LeadQuickActions lead={l} onMove={move} /></span>
                             </div>
+                            )}</DragCard>
                           );
                         })}
                         {capped.length < col.length && <p className="px-2 text-xs text-muted-foreground">+{col.length - capped.length} más</p>}
                       </div>
-                    </div>
+                    </DropColumn>
                   );
                 })}
               </div>
+              </BoardDnd>
             )}
-            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué y la calificación con IA (encaje, intención y cargo) con la etapa que propone. Arrastra un lead o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
+            <p className="text-xs text-muted-foreground"><span className="md:hidden">Desliza para ver todas las etapas. </span>La puntuación es el encaje con el ICP (70 %) más la actividad reciente (30 %); ábrelo para ver por qué y la calificación con IA (encaje, intención y cargo) con la etapa que propone. Arrastra un lead, usa «Mover a…» en su menú de acciones o ábrelo para cambiar su etapa. Al pasarlo a Oportunidad se crea su deal en la primera etapa del pipeline.</p>
           </section>
 
           <section className="rounded-lg border bg-card p-5">

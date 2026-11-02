@@ -10,8 +10,10 @@ import { errorText } from "@/lib/errors";
 import { useMe } from "@/hooks/use-me";
 import { useLeadTouched } from "@/components/background";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub,
+  DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MOVE_COPY, canMoveLead, leadMoveOptions } from "@/lib/board-move";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
 import { askText } from "@/components/confirm-dialog";
 
@@ -118,6 +120,18 @@ export function LeadQuickActions({ lead, onMove }: { lead: QuickLead; onMove: (i
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>{lead.company}</DropdownMenuLabel>
         {!closed && next && <DropdownMenuItem onSelect={() => onMove(lead.id, next.id)}>Pasar a {next.label}</DropdownMenuItem>}
+        {canMoveLead(lead.stage) && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="min-h-11 md:min-h-0">{MOVE_COPY.menu}</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {leadMoveOptions(lead.stage).map((o) => (
+                <DropdownMenuItem key={o.key} disabled={o.current} className="min-h-11 md:min-h-0" onSelect={() => onMove(lead.id, o.key)}>
+                  {o.label}{o.current ? " · actual" : ""}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
         {!closed && <DropdownMenuItem onSelect={() => run({ kind: "qualify_leads", input: { ids: [lead.id] } }, "Calificar con IA")}>Calificar con IA</DropdownMenuItem>}
         {!closed && <DropdownMenuSeparator />}
         {!closed && <DropdownMenuItem onSelect={() => update({ next_step_at: isoInDays(1) }, "Seguimiento para mañana.")}>Seguimiento mañana</DropdownMenuItem>}
