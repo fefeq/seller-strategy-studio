@@ -22,8 +22,9 @@ function tagEnd(s: string, i: number) {
   let q: string | null = null;
   for (let j = i; j < s.length; j++) {
     const c = s[j];
-    if (q) { if (c === q && s[j - 1] !== "\\") q = null; }
-    else if (c === '"' || c === "'" || c === "`") q = c;
+    if (q) {
+      if (c === q && s[j - 1] !== "\\") q = null;
+    } else if (c === '"' || c === "'" || c === "`") q = c;
     else if (c === "{") depth++;
     else if (c === "}") depth--;
     else if (c === ">" && depth === 0 && s[j - 1] !== "=") return j;
@@ -34,18 +35,24 @@ const files = walk("src");
 
 describe("CA-5 un único control de selección", () => {
   it("ningún selector nativo fuera del control compartido", () => {
-    const offenders = files.filter((f) => f !== "src/components/native-select.tsx" && /<select(?=[\s>])/.test(readFileSync(join(ROOT, f), "utf8")));
+    const offenders = files.filter(
+      (f) =>
+        f !== "src/components/native-select.tsx" &&
+        /<select(?=[\s>])/.test(readFileSync(join(ROOT, f), "utf8")),
+    );
     expect(offenders).toEqual([]);
   });
   it("los usos del control solo pasan clases de disposición, nunca de aspecto", () => {
-    const VISUAL = /^(h-\d+|md:h-\d+|h-auto|md:h-auto|rounded(-\w+)?|border(-\w+)?|bg-[\w-]+|px-\d+|md:px-\d+|text-(xs|sm|base)|md:text-(xs|sm|base))$/;
+    const VISUAL =
+      /^(h-\d+|md:h-\d+|h-auto|md:h-auto|rounded(-\w+)?|border(-\w+)?|bg-[\w-]+|px-\d+|md:px-\d+|text-(xs|sm|base)|md:text-(xs|sm|base))$/;
     const bad: string[] = [];
     for (const f of files) {
       const s = readFileSync(join(ROOT, f), "utf8");
       for (const m of s.matchAll(/<NativeSelect(?=[\s>])/g)) {
         const tag = s.slice(m.index!, tagEnd(s, m.index!) + 1);
         const cls = tag.match(/className="([^"]*)"/)?.[1] ?? "";
-        for (const t of cls.split(/\s+/).filter(Boolean)) if (VISUAL.test(t)) bad.push(`${f}: ${t}`);
+        for (const t of cls.split(/\s+/).filter(Boolean))
+          if (VISUAL.test(t)) bad.push(`${f}: ${t}`);
       }
     }
     expect(bad).toEqual([]);
@@ -53,7 +60,14 @@ describe("CA-5 un único control de selección", () => {
 });
 
 describe("CA-6 dos densidades", () => {
-  const html = (density?: "normal" | "compact") => renderToStaticMarkup(createElement(NativeSelect, { "aria-label": "x", density }, createElement("option", { value: "a" }, "A")));
+  const html = (density?: "normal" | "compact") =>
+    renderToStaticMarkup(
+      createElement(
+        NativeSelect,
+        { "aria-label": "x", density },
+        createElement("option", { value: "a" }, "A"),
+      ),
+    );
   it("normal conserva la altura de Pick: 40 px en móvil y 36 px en escritorio", () => {
     const h = html();
     expect(h).toContain("h-10");
@@ -74,7 +88,8 @@ describe("CA-7 etiqueta accesible", () => {
       const s = readFileSync(join(ROOT, f), "utf8");
       for (const m of s.matchAll(/<NativeSelect(?=[\s>])/g)) {
         const tag = s.slice(m.index!, tagEnd(s, m.index!) + 1);
-        if (!/aria-label(?:ledby)?=/.test(tag)) bad.push(`${f}:${s.slice(0, m.index!).split("\n").length}`);
+        if (!/aria-label(?:ledby)?=/.test(tag))
+          bad.push(`${f}:${s.slice(0, m.index!).split("\n").length}`);
       }
     }
     expect(bad).toEqual([]);

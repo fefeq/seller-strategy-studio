@@ -1,8 +1,22 @@
 // «Mover a…» on every Pipeline card: move a deal to any stage with a tap or the keyboard, no dragging (SDD-20261031-ux-move-without-drag).
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { MOVE_COPY, type MoveOption } from "@/lib/board-move";
 
-export function MoveMenu({ itemLabel, options, onMove }: { itemLabel: string; options: MoveOption[]; onMove: (stageKey: string) => void }) {
+export function MoveMenu({
+  itemLabel,
+  options,
+  onMove,
+}: {
+  itemLabel: string;
+  options: MoveOption[];
+  onMove: (stageKey: string) => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -15,7 +29,12 @@ export function MoveMenu({ itemLabel, options, onMove }: { itemLabel: string; op
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>{MOVE_COPY.menu}</DropdownMenuLabel>
         {options.map((o) => (
-          <DropdownMenuItem key={o.key} disabled={o.current} className="min-h-11 md:min-h-0" onSelect={() => onMove(o.key)}>
+          <DropdownMenuItem
+            key={o.key}
+            disabled={o.current}
+            className="min-h-11 md:min-h-0"
+            onSelect={() => onMove(o.key)}
+          >
             {o.label}
             {o.current ? " · actual" : ""}
           </DropdownMenuItem>

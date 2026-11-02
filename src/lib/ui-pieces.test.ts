@@ -19,13 +19,20 @@ function walk(dir: string, out: string[] = []) {
 
 describe("CA-9 sin copias locales", () => {
   it("ninguna pantalla ni componente define su propio Kpi, Stat o Panel", () => {
-    const offenders = walk("src").filter((f) => f !== "src/components/page.tsx" && /^(?:export )?function (Kpi|Stat|Panel)\(/m.test(readFileSync(join(ROOT, f), "utf8")));
+    const offenders = walk("src").filter(
+      (f) =>
+        f !== "src/components/page.tsx" &&
+        /^(?:export )?function (Kpi|Stat|Panel)\(/m.test(readFileSync(join(ROOT, f), "utf8")),
+    );
     expect(offenders).toEqual([]);
   });
 });
 
 describe("CA-10 densidades de la tarjeta de cifra", () => {
-  const render = (props: Record<string, unknown>) => renderToStaticMarkup(createElement(Kpi, { label: "Etiqueta", value: "1.234", ...props } as never));
+  const render = (props: Record<string, unknown>) =>
+    renderToStaticMarkup(
+      createElement(Kpi, { label: "Etiqueta", value: "1.234", ...props } as never),
+    );
   it("hero: la cifra grande de Inicio y Pipeline", () => {
     const h = render({ size: "hero" });
     expect(h).toContain("text-4xl");
@@ -59,7 +66,13 @@ describe("CA-10 densidades de la tarjeta de cifra", () => {
 
 describe("Panel", () => {
   it("pinta título, acción y contenido", () => {
-    const h = renderToStaticMarkup(createElement(Panel, { title: "Título", action: createElement("a", { href: "#" }, "Ver"), children: "Cuerpo" }));
+    const h = renderToStaticMarkup(
+      createElement(Panel, {
+        title: "Título",
+        action: createElement("a", { href: "#" }, "Ver"),
+        children: "Cuerpo",
+      }),
+    );
     expect(h).toContain("Título");
     expect(h).toContain("Ver");
     expect(h).toContain("Cuerpo");

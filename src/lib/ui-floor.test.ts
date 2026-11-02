@@ -9,7 +9,8 @@ function walk(dir: string, out: string[] = []) {
   for (const f of readdirSync(join(ROOT, dir))) {
     const rel = join(dir, f);
     if (statSync(join(ROOT, rel)).isDirectory()) walk(rel, out);
-    else if (/\.(tsx?|css)$/.test(f) && !/\.test\.tsx?$/.test(f) && !f.endsWith(".gen.ts")) out.push(rel);
+    else if (/\.(tsx?|css)$/.test(f) && !/\.test\.tsx?$/.test(f) && !f.endsWith(".gen.ts"))
+      out.push(rel);
   }
   return out;
 }

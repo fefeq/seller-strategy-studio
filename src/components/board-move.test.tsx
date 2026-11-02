@@ -17,9 +17,13 @@ describe("CA-4 «Mover a…» menu", () => {
     trigger.focus();
     fireEvent.keyDown(trigger, { key: "Enter" });
     const items = await screen.findAllByRole("menuitem");
-    expect(items.map((i) => i.textContent?.replace(" · actual", ""))).toEqual(opts.map((o) => o.label));
+    expect(items.map((i) => i.textContent?.replace(" · actual", ""))).toEqual(
+      opts.map((o) => o.label),
+    );
     const current = items.find((i) => i.textContent?.includes("· actual"))!;
-    expect(current.getAttribute("aria-disabled") ?? current.getAttribute("data-disabled")).not.toBeNull();
+    expect(
+      current.getAttribute("aria-disabled") ?? current.getAttribute("data-disabled"),
+    ).not.toBeNull();
     fireEvent.click(items.find((i) => i.textContent === "Ganado")!);
     expect(onMove).toHaveBeenCalledWith("won");
   });
@@ -27,7 +31,18 @@ describe("CA-4 «Mover a…» menu", () => {
 
 const COLS = ["a", "b", "c"] as const;
 const NAMES: Record<string, string> = { a: "Uno", b: "Dos", c: "Tres" };
-const rect = (left: number, top: number, width: number, height: number) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top, toJSON() {} }) as DOMRect;
+const rect = (left: number, top: number, width: number, height: number) =>
+  ({
+    left,
+    top,
+    width,
+    height,
+    right: left + width,
+    bottom: top + height,
+    x: left,
+    y: top,
+    toJSON() {},
+  }) as DOMRect;
 
 function Board({ onMove }: { onMove: (id: string, to: string) => void }) {
   return (
@@ -35,7 +50,11 @@ function Board({ onMove }: { onMove: (id: string, to: string) => void }) {
       {COLS.map((id) => (
         <DropColumn key={id} id={id}>
           <h3>{NAMES[id]}</h3>
-          {id === "a" && <DragCard id="card1" column="a">{(p) => <button {...p}>Acme</button>}</DragCard>}
+          {id === "a" && (
+            <DragCard id="card1" column="a">
+              {(p) => <button {...p}>Acme</button>}
+            </DragCard>
+          )}
         </DropColumn>
       ))}
     </BoardDnd>
@@ -44,7 +63,9 @@ function Board({ onMove }: { onMove: (id: string, to: string) => void }) {
 
 describe("CA-10 / CA-12 keyboard drag", () => {
   beforeEach(() => {
-    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (this: Element) {
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(function (
+      this: Element,
+    ) {
       const col = this.getAttribute?.("data-column");
       if (col) return rect(COLS.indexOf(col as never) * 100, 0, 100, 300);
       if (this.tagName === "BUTTON") return rect(10, 10, 80, 30);
@@ -59,7 +80,9 @@ describe("CA-10 / CA-12 keyboard drag", () => {
     const card = screen.getByRole("button", { name: /Acme/ });
     card.focus();
     fireEvent.keyDown(card, { code: "Space", key: " " });
-    await waitFor(() => expect(document.body.textContent).toContain("Has levantado «Acme», que está en Uno"));
+    await waitFor(() =>
+      expect(document.body.textContent).toContain("Has levantado «Acme», que está en Uno"),
+    );
     fireEvent.keyDown(document, { code: "ArrowRight", key: "ArrowRight" });
     await waitFor(() => expect(document.body.textContent).toContain("«Acme» está sobre Dos"));
     fireEvent.keyDown(document, { code: "Space", key: " " });

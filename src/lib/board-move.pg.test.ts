@@ -15,32 +15,78 @@ beforeAll(async () => {
     create table public.leads (id uuid primary key default gen_random_uuid(), org_id uuid, stage text not null);`);
 }, 60_000);
 
-async function undo(table: "deals" | "leads", id: string, plan: { patch: Record<string, unknown>; onlyIfStage: string }) {
+async function undo(
+  table: "deals" | "leads",
+  id: string,
+  plan: { patch: Record<string, unknown>; onlyIfStage: string },
+) {
   const keys = Object.keys(plan.patch);
   const sets = keys.map((k, i) => `${k} = $${i + 3}`).join(", ");
-  return (await db.query(`update public.${table} set ${sets} where id = $1 and stage = $2 returning id`, [id, plan.onlyIfStage, ...keys.map((k) => plan.patch[k])])).rows;
+  return (
+    await db.query(`update public.${table} set ${sets} where id = $1 and stage = $2 returning id`, [
+      id,
+      plan.onlyIfStage,
+      ...keys.map((k) => plan.patch[k]),
+    ])
+  ).rows;
 }
 
 describe("CA-16 deal", () => {
   it("restores stage and the hand-edited probability when nobody touched it", async () => {
-    const id = ((await db.query("insert into deals (org_id, stage, probability) values ($1,'proposal',25) returning id", [A])).rows[0] as { id: string }).id;
-    const rows = await undo("deals", id, undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" }));
+    const id = (
+      (
+        await db.query(
+          "insert into deals (org_id, stage, probability) values ($1,'proposal',25) returning id",
+          [A],
+        )
+      ).rows[0] as { id: string }
+    ).id;
+    const rows = await undo(
+      "deals",
+      id,
+      undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" }),
+    );
     expect(rows).toHaveLength(1);
-    expect((await db.query("select stage, probability from deals where id = $1", [id])).rows[0]).toEqual({ stage: "qualified", probability: 37 });
+    expect(
+      (await db.query("select stage, probability from deals where id = $1", [id])).rows[0],
+    ).toEqual({ stage: "qualified", probability: 37 });
   });
   it("does nothing if someone moved it again meanwhile", async () => {
-    const id = ((await db.query("insert into deals (org_id, stage, probability) values ($1,'negotiation',60) returning id", [A])).rows[0] as { id: string }).id;
-    const rows = await undo("deals", id, undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" }));
+    const id = (
+      (
+        await db.query(
+          "insert into deals (org_id, stage, probability) values ($1,'negotiation',60) returning id",
+          [A],
+        )
+      ).rows[0] as { id: string }
+    ).id;
+    const rows = await undo(
+      "deals",
+      id,
+      undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" }),
+    );
     expect(rows).toHaveLength(0);
-    expect((await db.query("select stage, probability from deals where id = $1", [id])).rows[0]).toEqual({ stage: "negotiation", probability: 60 });
+    expect(
+      (await db.query("select stage, probability from deals where id = $1", [id])).rows[0],
+    ).toEqual({ stage: "negotiation", probability: 60 });
   });
 });
 
 describe("CA-16 lead", () => {
   it("restores the previous stage only if it is still the moved one", async () => {
-    const id = ((await db.query("insert into leads (org_id, stage) values ($1,'mql') returning id", [A])).rows[0] as { id: string }).id;
-    expect(await undo("leads", id, undoLead({ prevStage: "contacted", movedTo: "sql" }))).toHaveLength(0);
-    expect(await undo("leads", id, undoLead({ prevStage: "contacted", movedTo: "mql" }))).toHaveLength(1);
-    expect(((await db.query("select stage from leads where id = $1", [id])).rows[0] as { stage: string }).stage).toBe("contacted");
+    const id = (
+      (await db.query("insert into leads (org_id, stage) values ($1,'mql') returning id", [A]))
+        .rows[0] as { id: string }
+    ).id;
+    expect(
+      await undo("leads", id, undoLead({ prevStage: "contacted", movedTo: "sql" })),
+    ).toHaveLength(0);
+    expect(
+      await undo("leads", id, undoLead({ prevStage: "contacted", movedTo: "mql" })),
+    ).toHaveLength(1);
+    expect(
+      ((await db.query("select stage from leads where id = $1", [id])).rows[0] as { stage: string })
+        .stage,
+    ).toBe("contacted");
   });
 });

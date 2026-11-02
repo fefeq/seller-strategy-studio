@@ -11,15 +11,19 @@ type Props = Omit<React.ComponentProps<"select">, "size"> & {
  * type size everywhere. Pass layout classes only (width, margins); the look comes from `density`.
  * A select without a visible label must carry `aria-label` (checked in `src/lib/ui-select.test.ts`).
  */
-export const NativeSelect = React.forwardRef<HTMLSelectElement, Props>(({ density = "normal", className, ...props }, ref) => (
-  <select
-    ref={ref}
-    className={cn(
-      "rounded-md border bg-background px-2 disabled:opacity-60",
-      density === "compact" ? "h-10 text-sm md:h-8 md:text-xs" : "h-10 text-base md:h-9 md:text-sm",
-      className,
-    )}
-    {...props}
-  />
-));
+export const NativeSelect = React.forwardRef<HTMLSelectElement, Props>(
+  ({ density = "normal", className, ...props }, ref) => (
+    <select
+      ref={ref}
+      className={cn(
+        "rounded-md border bg-background px-2 disabled:opacity-60",
+        density === "compact"
+          ? "h-10 text-sm md:h-8 md:text-xs"
+          : "h-10 text-base md:h-9 md:text-sm",
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 NativeSelect.displayName = "NativeSelect";

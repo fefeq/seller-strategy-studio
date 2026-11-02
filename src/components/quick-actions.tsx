@@ -10,8 +10,15 @@ import { errorText } from "@/lib/errors";
 import { useMe } from "@/hooks/use-me";
 import { useLeadTouched } from "@/components/background";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub,
-  DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MOVE_COPY, canMoveLead, leadMoveOptions } from "@/lib/board-move";
 import { LEAD_STAGES } from "@/lib/lead-funnel";
@@ -25,7 +32,9 @@ function useStart() {
   return (data: JobData, what: string) => {
     toast.success(`${what}: en marcha. Te aviso cuando termine.`);
     start({ data })
-      .then((r) => { if (r?.reused) toast.message("Ya estaba en marcha: sigo con esa."); })
+      .then((r) => {
+        if (r?.reused) toast.message("Ya estaba en marcha: sigo con esa.");
+      })
       .catch((e) => toast.error(errorText(e)))
       .finally(() => qc.invalidateQueries({ queryKey: ["jobs-running"] }));
   };
@@ -49,7 +58,13 @@ function Trigger({ label }: { label: string }) {
   );
 }
 
-export type QuickAccount = { id: string; name: string; domain: string | null; owner_id: string | null; is_target?: boolean | null };
+export type QuickAccount = {
+  id: string;
+  name: string;
+  domain: string | null;
+  owner_id: string | null;
+  is_target?: boolean | null;
+};
 
 export function AccountQuickActions({ account }: { account: QuickAccount }) {
   const navigate = useNavigate();
@@ -65,39 +80,122 @@ export function AccountQuickActions({ account }: { account: QuickAccount }) {
     refresh();
   }
   async function addTask() {
-    const title = await askText(`Nueva tarea para ${account.name}`, { placeholder: "Qué hay que hacer", confirmLabel: "Crear tarea" });
+    const title = await askText(`Nueva tarea para ${account.name}`, {
+      placeholder: "Qué hay que hacer",
+      confirmLabel: "Crear tarea",
+    });
     if (!title) return;
-    const { error } = await supabase.from("tasks").insert({ title, account_id: account.id, owner_id: me?.user.id ?? null, due_date: isoInDays(1) });
+    const { error } = await supabase.from("tasks").insert({
+      title,
+      account_id: account.id,
+      owner_id: me?.user.id ?? null,
+      due_date: isoInDays(1),
+    });
     if (error) return toast.error(errorText(error));
     toast.success("Tarea creada para mañana.");
   }
-  const noDomain = () => toast.error("Añade el dominio de la cuenta primero: lo necesito para buscar.");
+  const noDomain = () =>
+    toast.error("Añade el dominio de la cuenta primero: lo necesito para buscar.");
 
   return (
     <DropdownMenu>
       <Trigger label={`Acciones de ${account.name}`} />
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>{account.name}</DropdownMenuLabel>
-        <DropdownMenuItem onSelect={() => run({ kind: "complete_account", input: { accountId: account.id } }, "Completar datos")}>Completar datos</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => (account.domain ? run({ kind: "key_people", input: { accountId: account.id, titles: [], levels: [] } }, "Buscar personas clave") : noDomain())}>Buscar personas clave</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => (account.domain ? run({ kind: "account_research", input: { accountId: account.id } }, "Investigar en la web") : noDomain())}>Investigar en la web</DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            run({ kind: "complete_account", input: { accountId: account.id } }, "Completar datos")
+          }
+        >
+          Completar datos
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            account.domain
+              ? run(
+                  { kind: "key_people", input: { accountId: account.id, titles: [], levels: [] } },
+                  "Buscar personas clave",
+                )
+              : noDomain()
+          }
+        >
+          Buscar personas clave
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            account.domain
+              ? run(
+                  { kind: "account_research", input: { accountId: account.id } },
+                  "Investigar en la web",
+                )
+              : noDomain()
+          }
+        >
+          Investigar en la web
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={addTask}>Nueva tarea…</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: account.id }, search: { tab: "meetings" } })}>Planificar reunión</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: account.id }, search: { tab: "deals" } })}>Nuevo deal</DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            navigate({
+              to: "/accounts/$id",
+              params: { id: account.id },
+              search: { tab: "meetings" },
+            })
+          }
+        >
+          Planificar reunión
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() =>
+            navigate({ to: "/accounts/$id", params: { id: account.id }, search: { tab: "deals" } })
+          }
+        >
+          Nuevo deal
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
-        {me?.user.id && account.owner_id !== me.user.id && <DropdownMenuItem onSelect={() => update({ owner_id: me.user.id }, "Ahora eres responsable de la cuenta.")}>Asignármela</DropdownMenuItem>}
-        <DropdownMenuItem onSelect={() => update({ is_target: !account.is_target }, account.is_target ? "Ya no es cuenta objetivo." : "Marcada como cuenta objetivo.")}>{account.is_target ? "Quitar de objetivo" : "Marcar como objetivo"}</DropdownMenuItem>
+        {me?.user.id && account.owner_id !== me.user.id && (
+          <DropdownMenuItem
+            onSelect={() =>
+              update({ owner_id: me.user.id }, "Ahora eres responsable de la cuenta.")
+            }
+          >
+            Asignármela
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onSelect={() =>
+            update(
+              { is_target: !account.is_target },
+              account.is_target ? "Ya no es cuenta objetivo." : "Marcada como cuenta objetivo.",
+            )
+          }
+        >
+          {account.is_target ? "Quitar de objetivo" : "Marcar como objetivo"}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-export type QuickLead = { id: string; company: string; stage: string; email: string | null; owner_id: string | null; account_id: string | null };
+export type QuickLead = {
+  id: string;
+  company: string;
+  stage: string;
+  email: string | null;
+  owner_id: string | null;
+  account_id: string | null;
+};
 
 const OPEN_ORDER = LEAD_STAGES.map((s) => s.id);
 
-export function LeadQuickActions({ lead, onMove }: { lead: QuickLead; onMove: (id: string, stage: string) => void }) {
+export function LeadQuickActions({
+  lead,
+  onMove,
+}: {
+  lead: QuickLead;
+  onMove: (id: string, stage: string) => void;
+}) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: me } = useMe();
@@ -119,34 +217,97 @@ export function LeadQuickActions({ lead, onMove }: { lead: QuickLead; onMove: (i
       <Trigger label={`Acciones de ${lead.company}`} />
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>{lead.company}</DropdownMenuLabel>
-        {!closed && next && <DropdownMenuItem onSelect={() => onMove(lead.id, next.id)}>Pasar a {next.label}</DropdownMenuItem>}
+        {!closed && next && (
+          <DropdownMenuItem onSelect={() => onMove(lead.id, next.id)}>
+            Pasar a {next.label}
+          </DropdownMenuItem>
+        )}
         {canMoveLead(lead.stage) && (
           <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="min-h-11 md:min-h-0">{MOVE_COPY.menu}</DropdownMenuSubTrigger>
+            <DropdownMenuSubTrigger className="min-h-11 md:min-h-0">
+              {MOVE_COPY.menu}
+            </DropdownMenuSubTrigger>
             <DropdownMenuSubContent>
               {leadMoveOptions(lead.stage).map((o) => (
-                <DropdownMenuItem key={o.key} disabled={o.current} className="min-h-11 md:min-h-0" onSelect={() => onMove(lead.id, o.key)}>
-                  {o.label}{o.current ? " · actual" : ""}
+                <DropdownMenuItem
+                  key={o.key}
+                  disabled={o.current}
+                  className="min-h-11 md:min-h-0"
+                  onSelect={() => onMove(lead.id, o.key)}
+                >
+                  {o.label}
+                  {o.current ? " · actual" : ""}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         )}
-        {!closed && <DropdownMenuItem onSelect={() => run({ kind: "qualify_leads", input: { ids: [lead.id] } }, "Calificar con IA")}>Calificar con IA</DropdownMenuItem>}
+        {!closed && (
+          <DropdownMenuItem
+            onSelect={() =>
+              run({ kind: "qualify_leads", input: { ids: [lead.id] } }, "Calificar con IA")
+            }
+          >
+            Calificar con IA
+          </DropdownMenuItem>
+        )}
         {!closed && <DropdownMenuSeparator />}
-        {!closed && <DropdownMenuItem onSelect={() => update({ next_step_at: isoInDays(1) }, "Seguimiento para mañana.")}>Seguimiento mañana</DropdownMenuItem>}
-        {!closed && <DropdownMenuItem onSelect={() => update({ next_step_at: isoInDays(7) }, "Seguimiento en una semana.")}>Seguimiento en una semana</DropdownMenuItem>}
-        {lead.email && <DropdownMenuItem onSelect={() => { window.location.href = `mailto:${lead.email}`; }}>Escribir email</DropdownMenuItem>}
-        {me?.user.id && lead.owner_id !== me.user.id && <DropdownMenuItem onSelect={() => update({ owner_id: me.user.id }, "Ahora eres responsable del lead.")}>Asignármelo</DropdownMenuItem>}
-        {lead.account_id && <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: lead.account_id! } })}>Abrir cuenta</DropdownMenuItem>}
+        {!closed && (
+          <DropdownMenuItem
+            onSelect={() => update({ next_step_at: isoInDays(1) }, "Seguimiento para mañana.")}
+          >
+            Seguimiento mañana
+          </DropdownMenuItem>
+        )}
+        {!closed && (
+          <DropdownMenuItem
+            onSelect={() => update({ next_step_at: isoInDays(7) }, "Seguimiento en una semana.")}
+          >
+            Seguimiento en una semana
+          </DropdownMenuItem>
+        )}
+        {lead.email && (
+          <DropdownMenuItem
+            onSelect={() => {
+              window.location.href = `mailto:${lead.email}`;
+            }}
+          >
+            Escribir email
+          </DropdownMenuItem>
+        )}
+        {me?.user.id && lead.owner_id !== me.user.id && (
+          <DropdownMenuItem
+            onSelect={() => update({ owner_id: me.user.id }, "Ahora eres responsable del lead.")}
+          >
+            Asignármelo
+          </DropdownMenuItem>
+        )}
+        {lead.account_id && (
+          <DropdownMenuItem
+            onSelect={() => navigate({ to: "/accounts/$id", params: { id: lead.account_id! } })}
+          >
+            Abrir cuenta
+          </DropdownMenuItem>
+        )}
         {!closed && <DropdownMenuSeparator />}
-        {!closed && <DropdownMenuItem onSelect={() => onMove(lead.id, "disqualified")}>Descartar</DropdownMenuItem>}
+        {!closed && (
+          <DropdownMenuItem onSelect={() => onMove(lead.id, "disqualified")}>
+            Descartar
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-export type QuickPerson = { id: string; full_name: string | null; email: string | null; linkedin_url: string | null; account_id: string | null; tier: string | null };
+export type QuickPerson = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  linkedin_url: string | null;
+  account_id: string | null;
+  tier: string | null;
+};
 
 export function PersonQuickActions({ person }: { person: QuickPerson }) {
   const navigate = useNavigate();
@@ -161,9 +322,17 @@ export function PersonQuickActions({ person }: { person: QuickPerson }) {
     qc.invalidateQueries({ queryKey: ["people"] });
   }
   async function addTask() {
-    const title = await askText(`Nueva tarea sobre ${name}`, { placeholder: "Qué hay que hacer", confirmLabel: "Crear tarea" });
+    const title = await askText(`Nueva tarea sobre ${name}`, {
+      placeholder: "Qué hay que hacer",
+      confirmLabel: "Crear tarea",
+    });
     if (!title) return;
-    const { error } = await supabase.from("tasks").insert({ title, account_id: person.account_id, owner_id: me?.user.id ?? null, due_date: isoInDays(1) });
+    const { error } = await supabase.from("tasks").insert({
+      title,
+      account_id: person.account_id,
+      owner_id: me?.user.id ?? null,
+      due_date: isoInDays(1),
+    });
     if (error) return toast.error(errorText(error));
     toast.success("Tarea creada para mañana.");
   }
@@ -173,15 +342,59 @@ export function PersonQuickActions({ person }: { person: QuickPerson }) {
       <Trigger label={`Acciones de ${name}`} />
       <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
         <DropdownMenuLabel>{name}</DropdownMenuLabel>
-        {person.email && <DropdownMenuItem onSelect={() => { window.location.href = `mailto:${person.email}`; }}>Escribir email</DropdownMenuItem>}
-        {person.linkedin_url && <DropdownMenuItem onSelect={() => window.open(person.linkedin_url!, "_blank", "noopener")}>Abrir LinkedIn</DropdownMenuItem>}
+        {person.email && (
+          <DropdownMenuItem
+            onSelect={() => {
+              window.location.href = `mailto:${person.email}`;
+            }}
+          >
+            Escribir email
+          </DropdownMenuItem>
+        )}
+        {person.linkedin_url && (
+          <DropdownMenuItem
+            onSelect={() => window.open(person.linkedin_url!, "_blank", "noopener")}
+          >
+            Abrir LinkedIn
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={addTask}>Nueva tarea…</DropdownMenuItem>
-        {person.account_id && <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: person.account_id! } })}>Abrir cuenta</DropdownMenuItem>}
-        {person.account_id && <DropdownMenuItem onSelect={() => navigate({ to: "/accounts/$id", params: { id: person.account_id! }, search: { tab: "meetings" } })}>Planificar reunión</DropdownMenuItem>}
+        {person.account_id && (
+          <DropdownMenuItem
+            onSelect={() => navigate({ to: "/accounts/$id", params: { id: person.account_id! } })}
+          >
+            Abrir cuenta
+          </DropdownMenuItem>
+        )}
+        {person.account_id && (
+          <DropdownMenuItem
+            onSelect={() =>
+              navigate({
+                to: "/accounts/$id",
+                params: { id: person.account_id! },
+                search: { tab: "meetings" },
+              })
+            }
+          >
+            Planificar reunión
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
-        {person.tier !== "A" && <DropdownMenuItem onSelect={() => update({ tier: "A" }, "Marcada como Tier A.")}>Marcar Tier A</DropdownMenuItem>}
-        <DropdownMenuItem onSelect={() => update({ sequence_stage: "active" }, "Puesta en secuencia.")}>Poner en secuencia</DropdownMenuItem>
-        <DropdownMenuItem onSelect={() => update({ sequence_stage: "paused" }, "Secuencia pausada.")}>Pausar secuencia</DropdownMenuItem>
+        {person.tier !== "A" && (
+          <DropdownMenuItem onSelect={() => update({ tier: "A" }, "Marcada como Tier A.")}>
+            Marcar Tier A
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem
+          onSelect={() => update({ sequence_stage: "active" }, "Puesta en secuencia.")}
+        >
+          Poner en secuencia
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onSelect={() => update({ sequence_stage: "paused" }, "Secuencia pausada.")}
+        >
+          Pausar secuencia
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,7 +1,19 @@
 // SDD-20261031-ux-move-without-drag: CA-1, 2, 6, 7, 13, 14, 15 (pure rules; the gestures are in src/components/board-move.test.tsx).
 import { describe, expect, it } from "vitest";
 import { DEFAULT_STAGES } from "@/lib/stages";
-import { MOVE_COPY, UNDO_MS, adjacentColumn, boardAnnouncements, canMoveLead, columnAt, dealMoveOptions, isReversibleMove, leadMoveOptions, undoDeal, undoLead } from "@/lib/board-move";
+import {
+  MOVE_COPY,
+  UNDO_MS,
+  adjacentColumn,
+  boardAnnouncements,
+  canMoveLead,
+  columnAt,
+  dealMoveOptions,
+  isReversibleMove,
+  leadMoveOptions,
+  undoDeal,
+  undoLead,
+} from "@/lib/board-move";
 
 const stages = DEFAULT_STAGES;
 const open = stages.filter((s) => s.kind === "open").map((s) => s.key);
@@ -16,7 +28,24 @@ describe("CA-1 deal menu lists every stage and marks the current one", () => {
     expect(opts.filter((o) => o.current).map((o) => o.key)).toEqual([open[1]]);
   });
   it("uses the company's own stages, not a fixed list", () => {
-    const custom = [{ key: "a", label: "Alfa", position: 1, kind: "open", board_group: "opportunity", probability: 10 }, { key: "won", label: "Ganado", position: 9, kind: "won", board_group: "closed", probability: 100 }] as never;
+    const custom = [
+      {
+        key: "a",
+        label: "Alfa",
+        position: 1,
+        kind: "open",
+        board_group: "opportunity",
+        probability: 10,
+      },
+      {
+        key: "won",
+        label: "Ganado",
+        position: 9,
+        kind: "won",
+        board_group: "closed",
+        probability: 100,
+      },
+    ] as never;
     expect(dealMoveOptions(custom, "a").map((o) => o.key)).toEqual(["a", "won"]);
   });
 });
@@ -24,7 +53,14 @@ describe("CA-1 deal menu lists every stage and marks the current one", () => {
 describe("CA-6 / CA-7 lead menu", () => {
   it("offers every stage, earlier ones and Descartado included, and marks the current one", () => {
     const o = leadMoveOptions("mql");
-    expect(o.map((x) => x.key)).toEqual(["new", "contacted", "mql", "sql", "opportunity", "disqualified"]);
+    expect(o.map((x) => x.key)).toEqual([
+      "new",
+      "contacted",
+      "mql",
+      "sql",
+      "opportunity",
+      "disqualified",
+    ]);
     expect(o.filter((x) => x.current).map((x) => x.key)).toEqual(["mql"]);
   });
   it("a lead that already is an opportunity cannot be moved from the lead board", () => {
@@ -61,15 +97,25 @@ describe("CA-14 / CA-15 which moves can be undone", () => {
 
 describe("undo writes the values saved just before the move", () => {
   it("deal: previous stage and previous probability (even a hand-edited one), only if the stage is still the moved one", () => {
-    expect(undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" })).toEqual({ patch: { stage: "qualified", probability: 37 }, onlyIfStage: "proposal" });
+    expect(undoDeal({ prevStage: "qualified", prevProbability: 37, movedTo: "proposal" })).toEqual({
+      patch: { stage: "qualified", probability: 37 },
+      onlyIfStage: "proposal",
+    });
   });
   it("lead: previous stage, only if still the moved one", () => {
-    expect(undoLead({ prevStage: "new", movedTo: "mql" })).toEqual({ patch: { stage: "new" }, onlyIfStage: "mql" });
+    expect(undoLead({ prevStage: "new", movedTo: "mql" })).toEqual({
+      patch: { stage: "new" },
+      onlyIfStage: "mql",
+    });
   });
 });
 
 describe("keyboard walks between columns", () => {
-  const cols = [{ id: "c", left: 200, width: 100 }, { id: "a", left: 0, width: 100 }, { id: "b", left: 100, width: 100 }];
+  const cols = [
+    { id: "c", left: 200, width: 100 },
+    { id: "a", left: 0, width: 100 },
+    { id: "b", left: 100, width: 100 },
+  ];
   it("moves to the neighbour and stops at the ends", () => {
     expect(adjacentColumn(cols, "a", 1)).toBe("b");
     expect(adjacentColumn(cols, "b", 1)).toBe("c");
@@ -84,7 +130,10 @@ describe("keyboard walks between columns", () => {
 });
 
 describe("CA-12 screen reader messages", () => {
-  const a = boardAnnouncements((id) => (id === "d1" ? "Acme" : id), (id) => ({ c1: "Cualificado", c2: "Propuesta" })[id] ?? id);
+  const a = boardAnnouncements(
+    (id) => (id === "d1" ? "Acme" : id),
+    (id) => ({ c1: "Cualificado", c2: "Propuesta" })[id] ?? id,
+  );
   const active = { id: "d1", data: { current: { column: "c1" } } };
   it("lifting says where the card is and how to move it", () => {
     const m = a.onDragStart({ active });
@@ -96,7 +145,9 @@ describe("CA-12 screen reader messages", () => {
     expect(a.onDragOver({ active, over: { id: "c2" } })).toContain("Propuesta");
     expect(a.onDragOver({ active, over: { id: "c1" } })).toBeUndefined();
     expect(a.onDragOver({ active, over: null })).toContain("ninguna etapa");
-    expect(a.onDragEnd({ active, over: { id: "c2" } })).toContain("Has soltado «Acme» en Propuesta");
+    expect(a.onDragEnd({ active, over: { id: "c2" } })).toContain(
+      "Has soltado «Acme» en Propuesta",
+    );
     expect(a.onDragEnd({ active, over: { id: "c1" } })).toContain("no cambia nada");
     expect(a.onDragCancel({ active })).toContain("Cancelado");
   });
