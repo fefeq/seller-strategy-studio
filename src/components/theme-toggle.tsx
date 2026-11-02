@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
 const KEY = "nokko-theme";
-// Color of the top band (paper-edge) per theme, for the browser/status bar.
-const BAND: Record<Theme, string> = { light: "#f3f2ee", dark: "#262320" };
+// Color of the top band (page background) per theme, for the browser/status bar.
+const BAND: Record<Theme, string> = { light: "#f6f6f4", dark: "#101216" };
 
 /**
  * Runs in <head> before first paint: the saved choice, else the system preference.

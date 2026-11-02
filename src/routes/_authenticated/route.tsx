@@ -99,7 +99,7 @@ function Shell() {
                 <Link
                   key={n.to}
                   to={n.to as never}
-                  className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime data-[status=active]:font-semibold data-[status=active]:text-lime-foreground md:py-1.5 md:text-sm"
+                  className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime-soft data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
                 >
                   {n.label}
                 </Link>

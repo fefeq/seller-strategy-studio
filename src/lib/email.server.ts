@@ -16,11 +16,11 @@ const escape = (s: string) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": 
 /** Plain text in a readable column; the text version is the same content. */
 export function textToHtml(title: string, text: string, link?: { href: string; label: string }, footer = "Nokko te envía este informe cada lunes. Puedes desactivarlo desde la configuración de Telegram y avisos de la app.") {
   const body = escape(text).split("\n").map((l) => (l.trim() === "" ? "<br>" : `<p style="margin:0 0 4px">${l}</p>`)).join("");
-  return `<div style="font-family:ui-sans-serif,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#1a1a1a;font-size:15px;line-height:1.5">
+  return `<div style="font-family:ui-sans-serif,system-ui,sans-serif;max-width:560px;margin:0 auto;padding:24px;color:#14161a;font-size:15px;line-height:1.5">
 <h1 style="font-size:22px;font-weight:500;margin:0 0 16px">${escape(title)}</h1>
 ${body}
-${link ? `<p style="margin:20px 0 0"><a href="${escape(link.href)}" style="color:#1a1a1a">${escape(link.label)} →</a></p>` : ""}
-<p style="margin:28px 0 0;font-size:12px;color:#777">${escape(footer)}</p>
+${link ? `<p style="margin:20px 0 0"><a href="${escape(link.href)}" style="color:#14161a">${escape(link.label)} →</a></p>` : ""}
+<p style="margin:28px 0 0;font-size:12px;color:#646a74">${escape(footer)}</p>
 </div>`;
 }
 

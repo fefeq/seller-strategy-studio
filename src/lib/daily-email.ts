@@ -46,15 +46,15 @@ export function dailyEmailBody(c: DailyContent, base: string): { text: string; h
   const prefs = `${base}/team#avisos`;
   const foot = `Te llega cada día a las ${String(c.hour).padStart(2, "0")}:00. Cambia la hora o desactívalo en Equipo → Avisos: ${prefs}`;
   const text = [hello, "", ...blocks.flatMap((b) => [b.title.toUpperCase(), ...(b.items.length ? b.items.map((i) => `· ${i.text}`) : [b.empty]), ""]), `Abrir Nokko: ${base}/home`, "", foot].join("\n");
-  const ink = "#1a1a1a", grey = "#6b6b6b", red = "#c8102e";
-  const html = `<div style="background:#fafaf7;padding:32px 0"><div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:0 24px;color:${ink};font-size:15px;line-height:1.55">
-<p style="margin:0 0 4px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${red}">Nokko · ${esc(c.orgName)}</p>
+  const ink = "#14161a", grey = "#646a74", accent = "#3b45d6";
+  const html = `<div style="background:#f6f6f4;padding:32px 0"><div style="font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:0 24px;color:${ink};font-size:15px;line-height:1.55">
+<p style="margin:0 0 4px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:${accent}">Nokko · ${esc(c.orgName)}</p>
 <h1 style="margin:0 0 20px;font-size:26px;font-weight:500;line-height:1.2">${esc(hello)}</h1>
 ${blocks.map((b) => `<div style="border-top:1px solid ${ink};padding-top:10px;margin-top:22px">
 <p style="margin:0 0 8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${grey}">${esc(b.title)}</p>
 ${b.items.length ? b.items.map((i) => `<p style="margin:0 0 6px">${i.link ? `<a href="${esc(i.link)}" style="color:${ink};text-decoration:underline">${esc(i.text)}</a>` : esc(i.text)}</p>`).join("") : `<p style="margin:0;color:${grey}">${esc(b.empty)}</p>`}
 </div>`).join("")}
-<p style="margin:28px 0 0"><a href="${esc(`${base}/home`)}" style="display:inline-block;background:${ink};color:#fafaf7;padding:10px 16px;text-decoration:none">Abrir Nokko</a></p>
+<p style="margin:28px 0 0"><a href="${esc(`${base}/home`)}" style="display:inline-block;background:${ink};color:#f6f6f4;padding:10px 16px;text-decoration:none">Abrir Nokko</a></p>
 <p style="margin:28px 0 0;font-size:12px;color:${grey}">Te llega cada día a las ${String(c.hour).padStart(2, "0")}:00. <a href="${esc(prefs)}" style="color:${grey}">Cambia la hora o desactívalo</a> en Equipo → Avisos.</p>
 </div></div>`;
   return { text, html };

@@ -114,34 +114,34 @@
 :root {
   --radius: 10px;
 
-  --paper: #fafaf7;
+  --paper: #f6f6f4;
   --paper-raised: #ffffff;
-  --paper-sunk: #f1f1ec;
-  --paper-edge: #f5f5f1;
+  --paper-sunk: #ebebe7;
+  --paper-edge: #f1f1ee;
   --paper-alarm: #fdecec;
-  --ink: #0f1115;
-  --ink-mid: #5b5f6a;
-  --ink-faint: #868a94;
+  --ink: #14161a;
+  --ink-mid: #4b5058;
+  --ink-faint: #646a74;
   --ink-reverse: #ffffff;
-  --hairline: #e4e4de;
+  --hairline: #dddcd6;
   --hairline-firm: #c9cac3;
-  --lime: #c6f432;
-  --lime-foreground: #0f1115;
-  --lime-soft: #eefbc4;
-  --blue: #2b59ff;
-  /* «red» = acento de texto (antetítulos, marcas activas): azul legible, nunca lima sobre claro. */
-  --red: #2b59ff;
-  --red-display: #c6f432;
-  --red-tint: #e3e9ff;
-  --focus: #2b59ff;
-  --state-ok: #13804b;
-  --state-watch: #a35f00;
-  --state-alarm: #d92d20;
-  --series-1: #0f1115;
-  --series-2: #2b59ff;
-  --series-3: #8fbf00;
-  --series-4: #ff8a3d;
-  --series-5: #9aa1ad;
+  --lime: #3b45d6;
+  --lime-foreground: #ffffff;
+  --lime-soft: #e8eaff;
+  --blue: #3b45d6;
+  /* «red» = acento de texto (antetítulos, marcas activas): índigo legible sobre claro y oscuro. */
+  --red: #3b45d6;
+  --red-display: #8e97ff;
+  --red-tint: #e8eaff;
+  --focus: #3b45d6;
+  --state-ok: #0f7a46;
+  --state-watch: #8f5200;
+  --state-alarm: #c4261b;
+  --series-1: #14161a;
+  --series-2: #3b45d6;
+  --series-3: #0e7490;
+  --series-4: #c2410c;
+  --series-5: #7a7f89;
   --series-rest: #c9cac3;
 
   --background: var(--paper);
@@ -185,33 +185,35 @@
 /* Tema oscuro */
 .dark {
   color-scheme: dark;
-  --paper: #0f1115;
+  --paper: #101216;
   --paper-raised: #171a20;
-  --paper-sunk: #0a0c0f;
+  --paper-sunk: #0b0c0f;
   --paper-edge: #1d2027;
   --paper-alarm: #3a1412;
-  --ink: #f2f3f5;
-  --ink-mid: #a3a8b3;
-  --ink-faint: #737985;
-  --ink-reverse: #0f1115;
-  --hairline: #262a32;
+  --ink: #eef0f3;
+  --ink-mid: #aab0bb;
+  --ink-faint: #8b919c;
+  --ink-reverse: #101216;
+  --hairline: #272b33;
   --hairline-firm: #3b404b;
-  --lime: #c6f432;
-  --lime-foreground: #0f1115;
-  --lime-soft: #26300b;
-  --blue: #7d9bff;
-  --red: #c6f432;
-  --red-display: #c6f432;
-  --red-tint: #26300b;
-  --focus: #7d9bff;
+  --lime: #8e97ff;
+  --lime-foreground: #101216;
+  --lime-soft: #232852;
+  --blue: #8e97ff;
+  --red: #8e97ff;
+  --red-display: #8e97ff;
+  --red-tint: #232852;
+  --focus: #8e97ff;
   --state-ok: #4ade80;
   --state-watch: #fbbf24;
   --state-alarm: #f87171;
-  --series-1: #f2f3f5;
-  --series-2: #7d9bff;
-  --series-3: #c6f432;
-  --series-4: #ff9f5a;
-  --series-5: #737985;
+  /* Blanco sobre #f87171 da 2,77:1; la tinta oscura da más de 4,5:1. */
+  --destructive-foreground: #101216;
+  --series-1: #eef0f3;
+  --series-2: #8e97ff;
+  --series-3: #22d3ee;
+  --series-4: #fb923c;
+  --series-5: #8b919c;
   --series-rest: #3b404b;
   --sidebar: #12151a;
   --primary: var(--ink);
@@ -254,7 +256,7 @@
     font-style: italic;
   }
   ::selection {
-    background: var(--lime);
+    background: var(--lime-soft);
     color: var(--ink);
   }
   /* Foco de teclado: 2px sólido en focus, con 2px de separación. */

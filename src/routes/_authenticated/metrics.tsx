@@ -220,7 +220,7 @@ function Metrics() {
             key={x.id}
             to="/metrics"
             search={x.id === "resumen" ? {} : { seccion: x.id }}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime text-lime-foreground" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime-soft text-ink font-medium" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}
           >
             {x.label}
           </Link>
