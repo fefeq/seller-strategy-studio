@@ -31,6 +31,11 @@ import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
 import { LossDialog, LossSection } from "@/components/loss-reason";
 import { needsLossPrompt, type LossPatch } from "@/lib/loss-reasons";
+import { WON_COPY, blockedByPendingWon, fetchPendingStageChanges, pendingStageChanges, pendingWonDealIds, requestWonApproval } from "@/lib/won-approval";
+
+// The generated client is typed per table; the approvals helpers only need these two calls.
+type ApprovalsDb = Parameters<typeof fetchPendingStageChanges>[0] & Parameters<typeof requestWonApproval>[0];
+const approvalsDb = supabase as unknown as ApprovalsDb;
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -77,6 +82,10 @@ function Deals() {
   );
   const canEditStale = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { stages } = useStages();
+  // Deals waiting for approval to become «Ganado»: marked on their card and not movable meanwhile.
+  const { data: pendingRows = [] } = useQuery({ queryKey: ["approvals", "pending-stage-change"], queryFn: () => fetchPendingStageChanges(approvalsDb) });
+  const pendingWon = pendingWonDealIds(pendingRows);
+  const toApprovals = { label: "Aprobaciones", onClick: () => navigate({ to: "/approvals" }) };
 
   // Moving a deal into «Perdido» first asks why (CA-8); the deal only moves when the person saves, skips or the dialog closes with a choice.
   const [losing, setLosing] = useState<string | null>(null);
@@ -84,6 +93,11 @@ function Deals() {
 
   async function move(id: string, stage: string, loss?: LossPatch | null) {
     const deal = deals.find((d) => d.id === id);
+    const pendingNow = await fetchPendingStageChanges(approvalsDb).catch(() => pendingRows);
+    if (blockedByPendingWon(pendingStageChanges(pendingNow, id).length, stage)) {
+      toast.warning(WON_COPY.blockedByPending, { action: toApprovals });
+      return;
+    }
     if (deal && loss === undefined && needsLossPrompt(stage, deal.stage)) {
       setLosing(id);
       return;
@@ -104,14 +118,15 @@ function Deals() {
         );
     }
     if (stage === "won") {
-      await supabase
-        .from("approvals")
-        .insert({
-          kind: "stage_change",
-          title: `Marcar como Ganado: ${deals.find((d) => d.id === id)?.name}`,
-          evidence: JSON.stringify({ deal_id: id, stage }),
-        });
-      toast.info("Enviado a Aprobaciones: mover a Ganado requiere aprobación.");
+      const r = await requestWonApproval(approvalsDb, { dealId: id, dealName: deal?.name ?? "", dealStage: deal?.stage, wonKey: stage, pending: pendingNow });
+      if (r.result === "error") {
+        toast.error(errorText(r.error));
+        return;
+      }
+      toast.dismiss(`move-${id}`);
+      if (r.result === "created") toast.info(WON_COPY.sent);
+      else if (r.result === "already-pending") toast.info(WON_COPY.alreadyPending, { action: toApprovals });
+      else toast.info(WON_COPY.alreadyWon);
       qc.invalidateQueries();
       return;
     }
@@ -120,6 +135,8 @@ function Deals() {
       .update({ stage, probability: stageProbability(stage, stages), ...(loss ?? {}) })
       .eq("id", id);
     qc.invalidateQueries({ queryKey: ["deals"] });
+    const pending = await fetchPendingStageChanges(approvalsDb).catch(() => [] as typeof pendingRows);
+    if (pendingStageChanges(pending, id).length) return void toast.warning(WON_COPY.blockedByPending, { id: `move-${id}`, action: toApprovals });
   }
 
   return (

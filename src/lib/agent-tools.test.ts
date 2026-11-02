@@ -111,7 +111,7 @@ describe("update_deal behaves like the Pipeline screen", () => {
       q.table === "deals" && q.op === "select"
         ? { data: deal }
         : q.table === "approvals"
-          ? { data: { id: ID(9) } }
+          ? { data: q.op === "select" ? [] : { id: ID(9) } }
           : undefined,
     );
     const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "won" })) as {
@@ -123,6 +123,41 @@ describe("update_deal behaves like the Pipeline screen", () => {
     expect(writes(log, "deals")).toHaveLength(0);
     expect(r.mensaje).toContain("Aprobaciones");
     expectScoped(log);
+  });
+
+  const pendingWon = { id: ID(8), kind: "stage_change", status: "pending", evidence: JSON.stringify({ deal_id: ID(1), stage: "won" }) };
+
+  it("does not create a second Ganado request while one is pending (SDD deal-won-duplicate-approvals CA-2)", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals" && q.op === "select" ? { data: deal } : q.table === "approvals" ? { data: q.op === "select" ? [pendingWon] : { id: ID(9) } } : undefined,
+    );
+    const r = (await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "won" })) as { mensaje: string };
+    expect(writes(log, "approvals")).toHaveLength(0);
+    expect(writes(log, "deals")).toHaveLength(0);
+    expect(r.mensaje).toContain("Ya está pendiente de aprobación");
+  });
+
+  it("refuses any other stage while a Ganado request is pending (CA-6)", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals" ? { data: q.op === "select" ? deal : { id: ID(1), name: "Acme", stage: "proposal" } } : q.table === "approvals" ? { data: q.op === "select" ? [pendingWon] : { id: ID(9) } } : undefined,
+    );
+    await expect(executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), stage: "Propuesta" })).rejects.toThrow(/solicitud pendiente/);
+    expect(writes(log, "deals")).toHaveLength(0);
+  });
+
+  it("still lets the agent edit other fields of a deal with a pending Ganado request", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "deals"
+        ? { data: q.op === "select" ? deal : { id: ID(1), name: "Acme", stage: "proposal" } }
+        : q.table === "approvals"
+          ? { data: q.op === "select" ? [pendingWon] : { id: ID(9) } }
+          : q.table === "deal_lines"
+            ? { count: 0 }
+            : undefined,
+    );
+    await executeTool(ctxWith(db), "update_deal", { deal_id: ID(1), close_date: "2026-12-01" });
+    expect(writes(log, "deals")).toHaveLength(1);
+    expect(writes(log, "approvals")).toHaveLength(0);
   });
 
   it("moves to an open stage with its probability and warns about missing MEDDPICC", async () => {
