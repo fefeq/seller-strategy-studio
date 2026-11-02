@@ -1,7 +1,7 @@
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -73,12 +73,20 @@ const STATUS: Record<string, string> = {
 
 // Wide markdown tables scroll inside their own box instead of widening the sheet.
 const MD_COMPONENTS = {
-  table: ({ node: _node, ...p }: any) => (
+  table: ({ node: _node, ...p }: ComponentProps<"table"> & { node?: unknown }) => (
     <div className="max-w-full overflow-x-auto">
       <table {...p} />
     </div>
   ),
 };
+
+type ArtSources = {
+  documentos_aprobados?: string[];
+  obligatorios?: string[];
+  conocimiento?: string[];
+};
+/** The `meta` jsonb of a draft: only the keys this page reads. */
+type ArtMeta = { from_version?: number; sources?: ArtSources } | null;
 
 type Art = {
   id: string;
@@ -89,7 +97,7 @@ type Art = {
   content: string;
   persona: string | null;
   updated_at: string;
-  meta: any;
+  meta: ArtMeta;
 };
 
 function CyclePage() {
@@ -611,10 +619,8 @@ function ArtifactSheet({
 }
 
 /** What a draft was built from (saved by the drafting core in meta.sources). Older drafts have none. */
-function Sources({ meta }: { meta: any }) {
-  const src = meta?.sources as
-    | { documentos_aprobados?: string[]; obligatorios?: string[]; conocimiento?: string[] }
-    | undefined;
+function Sources({ meta }: { meta: ArtMeta }) {
+  const src = meta?.sources;
   if (!src) return null;
   const rows: [string, string[] | undefined][] = [
     ["Reglas de obligado cumplimiento", src.obligatorios],

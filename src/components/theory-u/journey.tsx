@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { Empty } from "@/components/page";
 import { Field } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -107,13 +108,15 @@ function JourneyEditor({
   journey,
   counts,
 }: {
-  journey: any;
+  journey: Tables<"u_journeys">;
   counts?: { notes: number; experiments: number };
 }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState(journey.title);
   const [intention, setIntention] = useState(journey.intention);
-  const [answers, setAnswers] = useState<Record<string, string>>(journey.answers ?? {});
+  const [answers, setAnswers] = useState<Record<string, string>>(
+    (journey.answers ?? {}) as Record<string, string>,
+  );
   const [view, setView] = useState<string>(journey.phase);
   const [busy, setBusy] = useState(false);
   const phaseRef = useRef<HTMLDivElement>(null);

@@ -261,9 +261,8 @@ export function PosthogConnect() {
                     }),
                   (r) => {
                     setEvents(null);
-                    r.ok
-                      ? toast.success(syncText(r))
-                      : toast.error(r.error ?? "PostHog no ha respondido.");
+                    if (r.ok) toast.success(syncText(r));
+                    else toast.error(r.error ?? "PostHog no ha respondido.");
                   },
                 )
               }

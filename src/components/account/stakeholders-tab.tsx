@@ -21,6 +21,9 @@ import { errorText } from "@/lib/errors";
 import { KeyPeopleButton } from "@/components/orchestrator";
 import { ApolloReveal } from "@/components/apollo";
 import { askConfirm } from "@/components/confirm-dialog";
+import type { Tables } from "@/integrations/supabase/types";
+
+type Stakeholder = Tables<"stakeholders">;
 
 export function StakeholdersTab({
   accountId,
@@ -30,10 +33,10 @@ export function StakeholdersTab({
 }: {
   accountId: string;
   hasDomain: boolean;
-  list: any[];
+  list: Stakeholder[];
   onChange: () => void;
 }) {
-  const [sel, setSel] = useState<any | null>(null);
+  const [sel, setSel] = useState<Stakeholder | null>(null);
   const detailRef = useRevealOnMobile(sel?.id);
   const stakeJob = useJob("stakeholder_research", {
     targetId: sel?.id ?? null,
@@ -42,7 +45,7 @@ export function StakeholdersTab({
       const { data } = id
         ? await supabase.from("stakeholders").select("research").eq("id", id).maybeSingle()
         : { data: null };
-      if (data) setSel((cur: any) => (cur?.id === id ? { ...cur, research: data.research } : cur));
+      if (data) setSel((cur) => (cur && cur.id === id ? { ...cur, research: data.research } : cur));
       onChange();
     },
   });
@@ -68,6 +71,7 @@ export function StakeholdersTab({
     onChange();
   }
   async function save() {
+    if (!sel) return;
     const {
       id,
       name,
@@ -100,7 +104,7 @@ export function StakeholdersTab({
   }
   const roots = list.filter((s) => !s.reports_to || !list.find((x) => x.id === s.reports_to));
   const children = (pid: string) => list.filter((s) => s.reports_to === pid);
-  const Node = ({ s }: { s: any }) => (
+  const Node = ({ s }: { s: Stakeholder }) => (
     <li className="ml-2 border-l pl-2 sm:ml-4 sm:pl-4">
       <button
         onClick={() => setSel(s)}
@@ -110,12 +114,12 @@ export function StakeholdersTab({
         <span className="text-muted-foreground">· {s.title}</span>
         <span className="mt-1 flex flex-wrap gap-1.5 font-mono text-xs uppercase">
           <span className="rounded bg-accent px-1">
-            {BUYING_ROLES[s.buying_role] ?? s.buying_role}
+            {BUYING_ROLES[s.buying_role ?? ""] ?? s.buying_role}
           </span>
           <span
             className={`rounded px-1 ${s.support === "advocate" ? "bg-success/15 text-success" : s.support === "opponent" || s.support === "skeptic" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}
           >
-            {SUPPORT[s.support] ?? s.support}
+            {SUPPORT[s.support ?? ""] ?? s.support}
           </span>
         </span>
       </button>
@@ -183,14 +187,14 @@ export function StakeholdersTab({
             </Field>
             <Field label="Rol en la compra">
               <Pick
-                value={sel.buying_role}
+                value={sel.buying_role ?? ""}
                 options={BUYING_ROLES}
                 onChange={(v) => setSel({ ...sel, buying_role: v })}
               />
             </Field>
             <Field label="Nivel de apoyo">
               <Pick
-                value={sel.support}
+                value={sel.support ?? ""}
                 options={SUPPORT}
                 onChange={(v) => setSel({ ...sel, support: v })}
               />
@@ -215,11 +219,13 @@ export function StakeholdersTab({
                 .eq("id", sel.id)
                 .single();
               if (fresh)
-                setSel((cur: any) =>
-                  cur?.id === sel.id
+                setSel((cur) =>
+                  cur && cur.id === sel.id
                     ? {
                         ...cur,
-                        ...Object.fromEntries(Object.entries(fresh).filter(([k]) => !cur[k])),
+                        ...Object.fromEntries(
+                          Object.entries(fresh).filter(([k]) => !cur[k as keyof Stakeholder]),
+                        ),
                       }
                     : cur,
                 );
@@ -274,14 +280,14 @@ export function AddStakeholder({
   onAdd,
   onOpen,
 }: {
-  list: any[];
+  list: Stakeholder[];
   onAdd: (p: {
     name: string;
     title?: string | null;
     email?: string | null;
     linkedin_url?: string | null;
   }) => Promise<unknown>;
-  onOpen: (s: any) => void;
+  onOpen: (s: Stakeholder) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
@@ -298,7 +304,8 @@ export function AddStakeholder({
     const n = name.trim();
     if (!n) return;
     if (pickedId?.startsWith("s:")) {
-      onOpen(list.find((s) => `s:${s.id}` === pickedId));
+      const hit = list.find((s) => `s:${s.id}` === pickedId);
+      if (hit) onOpen(hit);
       setOpen(false);
       return;
     }

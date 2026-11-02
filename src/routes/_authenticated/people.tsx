@@ -352,7 +352,7 @@ function AddPerson({
   const { data: accounts = [] } = useAccountOptions(open);
   async function save() {
     const same = existing.find(
-      (p: any) =>
+      (p) =>
         normName(p.full_name) === normName(f.full_name) &&
         normName(p.company) === normName(f.company),
     );

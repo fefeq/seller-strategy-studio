@@ -52,6 +52,9 @@ export const HIERARCHY = [
   ["elevator_pitch", "Elevator pitch (30–60 s)", 5],
 ] as const;
 
+/** The editable copy of the positioning row: every field the form shows is text. */
+type Form = Record<string, string | null | undefined>;
+
 export function Positioning() {
   const qc = useQueryClient();
   const { data: me } = useMe();
@@ -62,13 +65,14 @@ export function Positioning() {
       (await supabase.from("positioning").select("*").order("created_at").limit(1).maybeSingle())
         .data,
   });
-  const [f, setF] = useState<Record<string, any>>({});
+  const [f, setF] = useState<Form>({});
   // A refresh (after approving a text, or another person's save) keeps what the person is typing.
-  const prevRow = useRef<Record<string, any> | null>(null);
+  const prevRow = useRef<Form | null>(null);
   useEffect(() => {
     if (!row) return;
-    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, row) : row));
-    prevRow.current = row;
+    const next = row as unknown as Form; // the form shows the text columns of the row
+    setF((cur) => (prevRow.current ? mergeServerEdits(cur, prevRow.current, next) : next));
+    prevRow.current = next;
   }, [row]);
   const copyStatus = (row?.copy_status ?? {}) as CopyStatus;
   // Confirmation lives in positioning.field_sources (migration 0061, not applied yet): offered only once the row has it.

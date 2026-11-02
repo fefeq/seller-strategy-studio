@@ -29,6 +29,7 @@ import { StageSettings, useStages } from "@/components/stage-settings";
 import { stageLabel, stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
+import type { Tables } from "@/integrations/supabase/types";
 import { LossDialog, LossSection } from "@/components/loss-reason";
 import { needsLossPrompt, type LossPatch } from "@/lib/loss-reasons";
 import { BoardDnd, DragCard, DropColumn } from "@/components/board-dnd";
@@ -47,6 +48,9 @@ import {
 type ApprovalsDb = Parameters<typeof fetchPendingStageChanges>[0] &
   Parameters<typeof requestWonApproval>[0];
 const approvalsDb = supabase as unknown as ApprovalsDb;
+
+/** A row of the board query: the deal plus the account columns it selects. */
+type Deal = Tables<"deals"> & { accounts: { name: string; domain: string | null } | null };
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -391,7 +395,7 @@ function DealDetail({
   onMove,
   onSaved,
 }: {
-  deal: any;
+  deal: Deal;
   onMove: (stage: string) => Promise<void>;
   onSaved: () => void;
 }) {
@@ -404,9 +408,9 @@ function DealDetail({
     const prev = server.current;
     server.current = deal;
     if (prev === deal) return;
-    setD((cur: any) => (prev.id !== deal.id ? deal : mergeServerEdits(cur, prev, deal)));
+    setD((cur) => (prev.id !== deal.id ? deal : mergeServerEdits(cur, prev, deal)));
   }, [deal]);
-  const m: Record<string, { score: number; note: string }> = d.meddpicc ?? {};
+  const m = (d.meddpicc ?? {}) as Record<string, { score: number; note: string }>;
   const qc = useQueryClient();
   const { data: items = [] } = useQuery({
     queryKey: ["map", deal.id],
@@ -532,7 +536,7 @@ function DealDetail({
         </Field>
         <Field label="Salud">
           <Pick
-            value={d.health}
+            value={d.health ?? ""}
             options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }}
             onChange={(v) => setD({ ...d, health: v })}
           />

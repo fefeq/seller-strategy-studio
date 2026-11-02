@@ -313,14 +313,16 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
           .from("trials")
           .update({ ...row, ...(signed ? { signed_up_at: signed } : {}) })
           .eq("id", existing);
-        error ? skipped++ : updated++;
+        if (error) skipped++;
+        else updated++;
       } else {
         if (!signed) {
           skipped++;
           continue;
         }
         const { error } = await supabase.from("trials").insert({ ...row, signed_up_at: signed });
-        error ? skipped++ : inserted++;
+        if (error) skipped++;
+        else inserted++;
         if (!error && email) byEmail.set(email, "pending");
       }
     }
