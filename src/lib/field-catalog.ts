@@ -37,7 +37,9 @@ export type ConceptId =
   | "detalle_perdida"
   | "competidor_perdida"
   | "regla_experimento" | "fecha_revision" | "decision_experimento" | "elemento_cambio" | "registro_decision"
-  | "motion_adquisicion";
+  | "motion_adquisicion"
+  | "clave_usuario"
+  | "alta_sistema";
 
 export type Concept = {
   id: ConceptId;
@@ -199,6 +201,23 @@ export const CONCEPTS: Concept[] = [
     format: "Valor cerrado; vacío = sin definir",
     allowed: ACQUISITION_MOTIONS,
     display: "Etiqueta en español (ACQUISITION_MOTION_LABEL)",
+  },
+  {
+    id: "clave_usuario",
+    label: "Usuario (clave)",
+    meaning:
+      "Identificador de la persona a la que se refiere un registro de sistema; no se escribe a mano.",
+    kind: "text",
+    format: "Identificador de perfil (uuid)",
+    display: "No se muestra en pantalla",
+  },
+  {
+    id: "alta_sistema",
+    label: "Fecha de alta (sistema)",
+    meaning: "Momento en que el sistema creó el registro; no se edita.",
+    kind: "text",
+    format: "Fecha y hora con zona horaria",
+    display: "No se muestra en pantalla",
   },
 ];
 
@@ -430,6 +449,20 @@ export const BINDINGS: Binding[] = [
     persistence: saved,
     note: "Migration 0071; not tracked in field_sources",
   },
+  {
+    table: "platform_admins",
+    column: "user_id",
+    concept: "clave_usuario",
+    persistence: saved,
+    note: "Migration 0075; rows are written by the platform, not from a screen",
+  },
+  {
+    table: "platform_admins",
+    column: "created_at",
+    concept: "alta_sistema",
+    persistence: saved,
+    note: "Migration 0075; set by the database default",
+  },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
@@ -534,6 +567,8 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   elemento_cambio: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
   registro_decision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments-core.ts"],
   motion_adquisicion: ["src/components/strategy/motions.tsx"],
+  clave_usuario: ["src/integrations/supabase/types.ts"],
+  alta_sistema: ["src/integrations/supabase/types.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */
