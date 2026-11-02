@@ -160,7 +160,7 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p
-            className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
+            className={`font-mono text-xs uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
           >
             {PRIO[s.priority]}
             {strategy ? ` · ${strategyHeading(strategy)}` : ""}

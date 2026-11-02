@@ -193,12 +193,12 @@ function TopBar({ onSearch, userId }: { onSearch: () => void; userId: string | u
     <div className="sticky top-0 z-30 hidden h-14 items-center gap-3 border-b border-hairline bg-background/85 px-6 backdrop-blur md:flex lg:px-10">
       <button onClick={onSearch} className="flex h-9 w-full max-w-md items-center justify-between rounded-lg border border-hairline bg-card px-3 text-sm text-ink-faint shadow-xs hover:border-hairline-firm">
         Buscar cuentas, leads, pantallas…
-        <kbd className="rounded-md bg-paper-sunk px-1.5 py-0.5 text-[11px] font-medium text-ink-mid">⌘K</kbd>
+        <kbd className="rounded-md bg-paper-sunk px-1.5 py-0.5 text-xs font-medium text-ink-mid">⌘K</kbd>
       </button>
       <div className="ml-auto flex items-center gap-4">
         <NotificationCenter userId={userId} />
         <button onClick={() => open()} className="flex h-9 items-center gap-2 rounded-lg bg-ink px-3 text-sm font-semibold text-ink-reverse hover:bg-ink/85" aria-label="Abrir agente GTM">
-          Agente <kbd className="rounded bg-ink-reverse/15 px-1.5 text-[11px]">⌘J</kbd>
+          Agente <kbd className="rounded bg-ink-reverse/15 px-1.5 text-xs">⌘J</kbd>
         </button>
       </div>
     </div>
@@ -248,7 +248,7 @@ function BottomBar() {
     { to: "/leads", label: "Leads" },
     { to: "/deals", label: "Pipeline" },
   ] as const;
-  const item = "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 text-[11px] leading-tight text-ink-mid";
+  const item = "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 pt-1.5 text-xs leading-tight text-ink-mid";
   return (
     <nav
       aria-label="Accesos rápidos"

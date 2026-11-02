@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -58,7 +59,7 @@ function Integrations() {
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {WORKING.map((w) => (
             <Link key={w.name} to={w.to} hash={w.hash} className="block rounded-lg border bg-card p-4 hover:border-signal">
-              <span className="flex items-start justify-between gap-3"><span className="min-w-0 break-words font-medium">{w.name}</span><span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${w.pending ? "bg-warning/25" : "bg-success/15 text-success"}`}>{w.pending ? "Falta un paso" : "Disponible"}</span></span>
+              <span className="flex items-start justify-between gap-3"><span className="min-w-0 break-words font-medium">{w.name}</span><span className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${w.pending ? "bg-warning/25" : "bg-success/15 text-success"}`}>{w.pending ? "Falta un paso" : "Disponible"}</span></span>
               <span className="mt-1 block text-sm text-muted-foreground">{w.what}</span>
               {w.pending && <span className="mt-1 block text-xs text-muted-foreground">{w.pending}.</span>}
             </Link>
@@ -79,13 +80,13 @@ function Integrations() {
                 {data.filter((i) => i.category === c).map((i) => (
                   <div key={i.id} className="rounded-lg border bg-card p-4">
                     <div className="flex items-center justify-between gap-3"><span className="min-w-0 break-words font-medium">{i.name}</span>
-                      <span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${i.status === "connected" ? "bg-muted text-foreground" : i.status === "in_progress" ? "bg-warning/25" : "bg-muted text-muted-foreground"}`}>{STATUS[i.status]}</span>
+                      <span className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${i.status === "connected" ? "bg-muted text-foreground" : i.status === "in_progress" ? "bg-warning/25" : "bg-muted text-muted-foreground"}`}>{STATUS[i.status]}</span>
                     </div>
                     <p className="mt-1 text-sm text-muted-foreground">{i.purpose}</p>
                     {isOwner && (
-                      <select aria-label={`Estado de ${i.name} en el plan`} className="mt-3 h-10 w-full rounded border bg-background px-2 text-xs md:h-8" value={i.status} onChange={(e) => set(i.id, e.target.value)}>
+                      <NativeSelect density="compact" aria-label={`Estado de ${i.name} en el plan`} className="mt-3 w-full" value={i.status} onChange={(e) => set(i.id, e.target.value)}>
                         {Object.entries(STATUS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                      </select>
+                      </NativeSelect>
                     )}
                   </div>
                 ))}

@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -80,9 +81,9 @@ function Team() {
                   <td className="block basis-full md:table-cell md:px-4 md:py-3"><p className="break-words font-medium">{m.profile?.full_name}</p><p className="break-all text-xs text-muted-foreground">{m.profile?.email}</p></td>
                   <td className="block min-w-0 flex-1 md:table-cell md:px-4 md:py-3">
                     {isOwner ? (
-                      <select className="h-10 w-full max-w-xs rounded border bg-background px-2 md:h-8 md:w-auto md:max-w-none" value={m.role} onChange={(e) => setMemberRole(m.id, m.user_id, e.target.value as Role)}>
+                      <NativeSelect aria-label="Rol del miembro" density="compact" className="w-full max-w-xs md:w-auto md:max-w-none" value={m.role} onChange={(e) => setMemberRole(m.id, m.user_id, e.target.value as Role)}>
                         {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
-                      </select>
+                      </NativeSelect>
                     ) : ROLES[m.role as Role]?.label}
                   </td>
                   <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">{ROLES[m.role as Role]?.focus}</td>
@@ -97,9 +98,9 @@ function Team() {
             <div className="space-y-3 rounded-lg border bg-card p-5">
               <h3 className="text-2xl">Invitar a esta empresa</h3>
               <Input type="email" placeholder="email@empresa.com" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <select className="h-10 w-full rounded-md border bg-background px-2 text-sm md:h-9" value={role} onChange={(e) => setRole(e.target.value as Role)}>
+              <NativeSelect aria-label="Rol de la invitación" className="w-full" value={role} onChange={(e) => setRole(e.target.value as Role)}>
                 {ROLE_OPTS.map((o) => <option key={o.k} value={o.k}>{o.label}</option>)}
-              </select>
+              </NativeSelect>
               <Button disabled={!email.includes("@")} onClick={invite}>Invitar</Button>
               <p className="text-xs text-muted-foreground">La persona se une al registrarse o entrar con ese email. Un consultor puede pertenecer a varias empresas con un rol distinto en cada una.</p>
             </div>

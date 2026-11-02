@@ -226,7 +226,7 @@ function Registrations() {
             <div key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg border bg-card p-3 text-sm">
               <div className="min-w-0 break-words"><p className="font-medium">{r.account_name}</p><p className="text-xs text-muted-foreground">{r.partners?.name} · caduca {r.expires_at}</p></div>
               <div className="flex flex-wrap items-center gap-2">
-                <span className="rounded bg-muted px-1.5 font-mono text-[10px] uppercase">{expired ? "Caducado" : REG_STATUS[r.status]}</span>
+                <span className="rounded bg-muted px-1.5 font-mono text-xs uppercase">{expired ? "Caducado" : REG_STATUS[r.status]}</span>
                 {canDecide && r.status === "pending" && <><Button size="sm" onClick={() => decide(r.id, "approved")}>Aprobar</Button><Button size="sm" variant="outline" onClick={() => decide(r.id, "rejected")}>Rechazar</Button></>}
               </div>
             </div>

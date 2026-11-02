@@ -104,7 +104,7 @@ export function Positioning() {
             <Field key={k} label={l}>
               <Input value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
               <ConfirmMark field={k} value={(row as Record<string, unknown> | null | undefined)?.[k] as string | null | undefined} marks={marks} roles={roles} userId={me?.user.id} enabled={hasMarks} onConfirm={confirmFields} />
-              <p className="text-[11px] text-muted-foreground">{STATEMENT_SLOTS[k].before} <span className="text-foreground">[{l.toLowerCase()}]</span> {STATEMENT_SLOTS[k].after}</p>
+              <p className="text-xs text-muted-foreground">{STATEMENT_SLOTS[k].before} <span className="text-foreground">[{l.toLowerCase()}]</span> {STATEMENT_SLOTS[k].after}</p>
             </Field>
           ))}
         </div>
@@ -122,7 +122,7 @@ export function Positioning() {
               <Field key={k} label={l}>
                 <Textarea rows={rows} value={f[k] ?? ""} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
                 <ConfirmMark field={k} value={(row as Record<string, unknown> | null | undefined)?.[k] as string | null | undefined} marks={marks} roles={roles} userId={me?.user.id} enabled={hasMarks} onConfirm={confirmFields} />
-                <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                <div className="flex flex-wrap items-center gap-2 text-xs">
                   <span className={`rounded px-1.5 py-0.5 font-mono uppercase ${st ? "bg-success/15 text-success" : "bg-muted text-muted-foreground"}`}>{st ? "Aprobado para uso externo" : "Borrador interno"}</span>
                   {st && <span className="text-muted-foreground">{new Date(st.at).toLocaleDateString("es-ES")}</span>}
                   {canApprove && row && (f[k] ?? "").trim() && <button type="button" className="underline-offset-2 hover:underline" onClick={() => setApproval(k, !st)}>{st ? "Retirar aprobación" : "Aprobar para uso externo"}</button>}

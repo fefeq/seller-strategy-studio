@@ -96,7 +96,7 @@ export function Cell({ c, target, money }: { c: QuarterPayback; target: number |
     return (
       <td className="px-3 py-3 text-right">
         <p className="font-mono text-xs text-muted-foreground">—</p>
-        <p className="text-[11px] text-muted-foreground">{c.status === "no_wins" ? `${money(c.cost)} · 0 ganados` : "sin costes"}</p>
+        <p className="text-xs text-muted-foreground">{c.status === "no_wins" ? `${money(c.cost)} · 0 ganados` : "sin costes"}</p>
       </td>
     );
   }
@@ -105,7 +105,7 @@ export function Cell({ c, target, money }: { c: QuarterPayback; target: number |
   return (
     <td className="px-3 py-3 text-right">
       <p className={`font-display text-[22px] leading-7 ${tone}`}>{fmt1(c.payback)} m</p>
-      <p className="text-[11px] text-muted-foreground">
+      <p className="text-xs text-muted-foreground">
         CAC {money(Math.round(c.cac ?? 0))} · {c.customers} {c.customers === 1 ? "ganado" : "ganados"}
         {diff != null && <span className={tone}> · {diff > 0 ? "+" : ""}{fmt1(diff)} m</span>}
       </p>

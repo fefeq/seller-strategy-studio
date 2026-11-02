@@ -45,7 +45,7 @@ export function StakeholdersTab({ accountId, hasDomain, list, onChange }: { acco
     <li className="ml-2 border-l pl-2 sm:ml-4 sm:pl-4">
       <button onClick={() => setSel(s)} className={`my-1 max-w-full break-words rounded-md border bg-card px-3 py-2 text-left text-sm ${sel?.id === s.id ? "border-signal" : ""}`}>
         <span className="font-medium">{s.name}</span> <span className="text-muted-foreground">· {s.title}</span>
-        <span className="mt-1 flex flex-wrap gap-1.5 font-mono text-[10px] uppercase">
+        <span className="mt-1 flex flex-wrap gap-1.5 font-mono text-xs uppercase">
           <span className="rounded bg-accent px-1">{BUYING_ROLES[s.buying_role] ?? s.buying_role}</span>
           <span className={`rounded px-1 ${s.support === "advocate" ? "bg-success/15 text-success" : s.support === "opponent" || s.support === "skeptic" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>{SUPPORT[s.support] ?? s.support}</span>
         </span>

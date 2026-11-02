@@ -44,7 +44,7 @@ export function LeadFlowPanel({ lead }: { lead: Lead }) {
             return (
               <li key={s.id} className="grid grid-cols-[1.25rem_8.5rem_1fr] gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
-                <span className="font-medium">{s.label}<span className={`block text-[11px] uppercase tracking-wide ${st?.status === "failed" ? "text-signal" : "text-muted-foreground"}`}>{st ? STATUS_WORD[st.status] : "Pendiente"}</span></span>
+                <span className="font-medium">{s.label}<span className={`block text-xs uppercase tracking-wide ${st?.status === "failed" ? "text-signal" : "text-muted-foreground"}`}>{st ? STATUS_WORD[st.status] : "Pendiente"}</span></span>
                 <span className="break-words text-muted-foreground">{st?.note ?? "—"}</span>
               </li>
             );

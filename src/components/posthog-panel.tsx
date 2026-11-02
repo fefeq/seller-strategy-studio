@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 // The company's own PostHog: connect it (Owner), choose which events mean sign-up, activation and payment,
 // and see product usage per account. Data reads run on the server (posthog.functions.ts).
 import { JobProgress, useJob } from "@/components/background";
@@ -62,7 +63,7 @@ export function PosthogConnect() {
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <span className="font-medium">PostHog (tu producto)</span>
-        <span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${!c ? "bg-muted text-muted-foreground" : c.status === "ok" ? "bg-success/15 text-success" : c.status === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/25"}`}>
+        <span className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${!c ? "bg-muted text-muted-foreground" : c.status === "ok" ? "bg-success/15 text-success" : c.status === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/25"}`}>
           {!c ? "Sin conectar" : c.status === "ok" ? "Conectado" : c.status === "error" ? "Con error" : "Conectando"}
         </span>
       </div>
@@ -110,9 +111,9 @@ export function PosthogConnect() {
             <li>Copia la clave (empieza por phx_) y el ID del proyecto (el número en la dirección: /project/12345).</li>
           </ol>
           <div className="mt-2 grid gap-2 sm:grid-cols-[8rem_1fr]">
-            <select aria-label="Región de PostHog" className="h-9 rounded-md border bg-background px-2 text-sm" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
+            <NativeSelect aria-label="Región de PostHog" value={form.region} onChange={(e) => setForm({ ...form, region: e.target.value })}>
               <option value="eu">PostHog EU</option><option value="us">PostHog US</option><option value="custom">Propio</option>
-            </select>
+            </NativeSelect>
             {form.region === "custom"
               ? <Input placeholder="https://posthog.tuempresa.com" value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })} />
               : <Input inputMode="numeric" placeholder="ID del proyecto (12345)" value={form.projectId} onChange={(e) => setForm({ ...form, projectId: e.target.value })} />}
@@ -120,7 +121,7 @@ export function PosthogConnect() {
             <Input className="sm:col-start-2" type="password" autoComplete="off" aria-label="Clave personal de PostHog" placeholder="phx_…" value={form.key} onChange={(e) => setForm({ ...form, key: e.target.value })} />
           </div>
           <Button className="mt-2" disabled={busy || !form.key.trim() || !form.projectId.trim()} onClick={() => run(() => connect({ data: { host, projectId: form.projectId, key: form.key } }), (r) => { setForm({ ...form, key: "" }); toast.success("PostHog conectado. Ahora elige qué evento es el alta."); openConfig(r.events); })}>{busy ? "Comprobando…" : "Conectar"}</Button>
-          <p className="mt-1 text-[11px] text-muted-foreground">La clave se guarda cifrada en el servidor. Nadie puede volver a verla desde la app: solo se usa para leer PostHog.</p>
+          <p className="mt-1 text-xs text-muted-foreground">La clave se guarda cifrada en el servidor. Nadie puede volver a verla desde la app: solo se usa para leer PostHog.</p>
         </details>
       )}
       {!isOwner && !c && <p className="mt-3 text-xs text-muted-foreground">El Owner de la empresa puede conectarlo desde aquí.</p>}

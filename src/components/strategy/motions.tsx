@@ -137,7 +137,7 @@ export function Motions() {
       const suggested = recommendMotion(Number(s.acv_min ?? 0));
       return <>
         <Pick value={s.motion} options={MOTION_OPTS} onChange={(v) => upd(s.id, { motion: v })} />
-        {s.motion !== suggested && <p className="mt-1 text-[11px] text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
+        {s.motion !== suggested && <p className="mt-1 text-xs text-muted-foreground">Referencia de mercado: {MOTIONS[suggested].label}</p>}
       </>;
     }
     if (k === "acquisition_motion") {
@@ -148,7 +148,7 @@ export function Motions() {
     return <>
       {/* Text with a decimal keyboard, not type=number: a number field hands back "" for «97,5» in some browsers, which read as «empty» and wiped the value. */}
       <Input type="text" inputMode="decimal" aria-invalid={!!error} title={error} defaultValue={(s)[k] ?? ""} onFocus={(e) => e.currentTarget.select()} onBlur={(e) => updNumber(s, k, e.currentTarget)} />
-      {error && <p className="mt-1 text-[11px] text-destructive md:hidden">{error}</p>}
+      {error && <p className="mt-1 text-xs text-destructive md:hidden">{error}</p>}
     </>;
   };
 
@@ -189,7 +189,7 @@ export function Motions() {
               <dt className="text-muted-foreground">Payback objetivo</dt><dd>{seg.payback_months ? `${seg.payback_months} meses` : "—"}</dd>
             </dl>
             <div className="mt-4 overflow-hidden rounded-md border text-sm">
-              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-muted/50 px-3 py-1.5"><span className="eyebrow text-[10px]">Real vs objetivo · {seg.name}</span><span className="eyebrow text-[10px]">Real (12 meses)</span><span className="eyebrow text-[10px]">Objetivo</span></div>
+              <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-muted/50 px-3 py-1.5"><span className="eyebrow text-xs">Real vs objetivo · {seg.name}</span><span className="eyebrow text-xs">Real (12 meses)</span><span className="eyebrow text-xs">Objetivo</span></div>
               {[
                 ["ACV", segReal?.acv != null ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}` : "—", seg.acv_min != null ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}` : "—"],
                 ["Win rate", segReal?.winRate != null ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}` : "—", pct(seg.win_rate_target)],
@@ -213,7 +213,7 @@ export function Motions() {
                 ["Oportunidades por AE / mes", fmt1(plan.oppsPerMonth)],
                 [basis === "real" && segCac?.cac != null ? "Payback real" : "Payback estimado", plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—"],
               ].map(([l, v]) => (
-                <div key={l} className="rounded-md bg-muted/50 p-3"><p className="eyebrow text-[10px]">{l}</p><p className="font-display text-2xl">{v}</p></div>
+                <div key={l} className="rounded-md bg-muted/50 p-3"><p className="eyebrow text-xs">{l}</p><p className="font-display text-2xl">{v}</p></div>
               ))}
             </div>
             {plan.paybackMonths != null && seg.payback_months && (
@@ -253,9 +253,9 @@ export function Motions() {
                 ))}
               </div>
               <dl className="grid grid-cols-3 gap-2 bg-signal/5 px-2 py-2 text-sm">
-                <div className="min-w-0"><dt className="eyebrow text-[10px]">ACV real</dt><dd className="break-words">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</dd></div>
-                <div className="min-w-0"><dt className="eyebrow text-[10px]">Win rate real</dt><dd>{pct(real.bySegment[s.id]?.winRate)}</dd></div>
-                <div className="min-w-0"><dt className="eyebrow text-[10px]">Ciclo real</dt><dd>{days(real.bySegment[s.id]?.cycleDays)}</dd></div>
+                <div className="min-w-0"><dt className="eyebrow text-xs">ACV real</dt><dd className="break-words">{real.bySegment[s.id]?.acv != null ? money(Math.round(real.bySegment[s.id].acv!), true) : "—"}</dd></div>
+                <div className="min-w-0"><dt className="eyebrow text-xs">Win rate real</dt><dd>{pct(real.bySegment[s.id]?.winRate)}</dd></div>
+                <div className="min-w-0"><dt className="eyebrow text-xs">Ciclo real</dt><dd>{days(real.bySegment[s.id]?.cycleDays)}</dd></div>
               </dl>
               {isOwner && <Button variant="ghost" size="sm" className="text-destructive" onClick={() => setToDelete({ id: s.id, name: s.name })}>Eliminar segmento</Button>}
             </div>

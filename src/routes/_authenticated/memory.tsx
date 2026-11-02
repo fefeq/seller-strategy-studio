@@ -109,7 +109,7 @@ function MemoryRow({ r, editable, onChange }: { r: Row; editable: boolean; onCha
       ) : (
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <p>{r.pinned && <span className="mr-2 font-mono text-[10px] uppercase">Fijado</span>}{r.content}</p>
+            <p>{r.pinned && <span className="mr-2 font-mono text-xs uppercase">Fijado</span>}{r.content}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {KIND_LABEL[r.kind]}
               {r.account_id && r.accounts && <> · <Link to="/accounts/$id" params={{ id: r.account_id }} className="underline">{r.accounts.name}</Link></>}

@@ -51,7 +51,7 @@ export function dailyEmailBody(c: DailyContent, base: string): { text: string; h
 <p style="margin:0 0 4px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:${accent}">Nokko · ${esc(c.orgName)}</p>
 <h1 style="margin:0 0 20px;font-size:26px;font-weight:500;line-height:1.2">${esc(hello)}</h1>
 ${blocks.map((b) => `<div style="border-top:1px solid ${ink};padding-top:10px;margin-top:22px">
-<p style="margin:0 0 8px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:${grey}">${esc(b.title)}</p>
+<p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:${grey}">${esc(b.title)}</p>
 ${b.items.length ? b.items.map((i) => `<p style="margin:0 0 6px">${i.link ? `<a href="${esc(i.link)}" style="color:${ink};text-decoration:underline">${esc(i.text)}</a>` : esc(i.text)}</p>`).join("") : `<p style="margin:0;color:${grey}">${esc(b.empty)}</p>`}
 </div>`).join("")}
 <p style="margin:28px 0 0"><a href="${esc(`${base}/home`)}" style="display:inline-block;background:${ink};color:#f6f6f4;padding:10px 16px;text-decoration:none">Abrir Nokko</a></p>

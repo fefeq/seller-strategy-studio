@@ -46,10 +46,10 @@ export function IcpPanel({ icps, tally, selected, onSelect }: {
           return (
             <li key={icp.id} className="border-t py-4">
               <button type="button" onClick={() => onSelect(on ? null : icp.id)} className="w-full text-left" aria-pressed={on}>
-                <p className="text-lg font-medium">{icp.name}{on && <span className="ml-2 font-mono text-[11px] text-muted-foreground">FILTRANDO</span>}</p>
+                <p className="text-lg font-medium">{icp.name}{on && <span className="ml-2 font-mono text-xs text-muted-foreground">FILTRANDO</span>}</p>
                 <p className="break-words text-sm text-muted-foreground">{facts.join(" · ") || "Sin sector, tamaño ni países todavía"}</p>
                 <p className="mt-1 text-sm">Contactos: {titles.length ? titles.slice(0, 4).join(", ") : levels.length ? levels.join(", ") : "niveles de decisión por defecto"}</p>
-                <p className="mt-2 font-mono text-[11px] text-muted-foreground">
+                <p className="mt-2 font-mono text-xs text-muted-foreground">
                   POR REVISAR · {t.company} {t.company === 1 ? "empresa" : "empresas"} · {t.contact} {t.contact === 1 ? "contacto" : "contactos"}
                 </p>
               </button>

@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -10,7 +11,6 @@ import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDeal
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
 
-const SELECT = "h-10 rounded-md border bg-background px-2 text-xs md:h-8";
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
 
 /** Won deals of the quarter with close date, value and segment: the deals the real CAC divides by. */
@@ -113,12 +113,12 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
     <tr className="border-b border-dashed align-top">
       <td className="max-w-36 break-words py-2 pr-3 sm:max-w-none">
         <p className="font-medium">{d.name}</p>
-        {account && <p className="text-[11px] text-muted-foreground">{account}</p>}
+        {account && <p className="text-xs text-muted-foreground">{account}</p>}
       </td>
       <td className="px-2 py-1.5">
         <DateField aria-label={`Fecha de cierre · ${d.name}`} className="h-10 w-40 text-xs md:h-8" value={r.closedOn}
           onChange={(iso) => { if (iso) onUpdate({ closed_at: closedAtFromDay(iso), close_date: iso }); }} />
-        {r.dateSource === "estimada" && r.closedOn && <button type="button" className="mt-0.5 text-[11px] text-signal underline-offset-2 hover:underline" onClick={() => onUpdate({ closed_at: closedAtFromDay(r.closedOn!), close_date: r.closedOn! })}>Estimada · confirmar esta fecha</button>}
+        {r.dateSource === "estimada" && r.closedOn && <button type="button" className="mt-0.5 text-xs text-signal underline-offset-2 hover:underline" onClick={() => onUpdate({ closed_at: closedAtFromDay(r.closedOn!), close_date: r.closedOn! })}>Estimada · confirmar esta fecha</button>}
       </td>
       <td className="px-2 py-1.5 text-right">
         {((d as { deal_lines?: { count: number }[] }).deal_lines?.[0]?.count ?? 0) > 0 ? (
@@ -131,12 +131,12 @@ function WonRow({ r, account, segments, segName, onUpdate }: {
           }} />}
       </td>
       <td className="px-2 py-1.5">
-        <select aria-label={`Segmento · ${d.name}`} className={SELECT} value={r.segmentSource === "manual" ? d.segment_id ?? "" : ""} onChange={(e) => onUpdate({ segment_id: e.target.value || null })}>
+        <NativeSelect density="compact" aria-label={`Segmento · ${d.name}`} value={r.segmentSource === "manual" ? d.segment_id ?? "" : ""} onChange={(e) => onUpdate({ segment_id: e.target.value || null })}>
           <option value="">{r.segmentSource === "importe" ? `Automático (${segName(r.segmentId)})` : "Automático por valor"}</option>
           {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        </NativeSelect>
       </td>
-      <td className="px-2 py-2 text-[11px] text-signal">
+      <td className="px-2 py-2 text-xs text-signal">
         {r.issues.length ? r.issues.map((i) => <p key={i}>{WON_ISSUE_LABEL[i]}</p>) : <span className="text-success">Correcto</span>}
       </td>
     </tr>
@@ -185,10 +185,10 @@ function AddWon({ quarter, segments, openDeals, onDone }: {
     <form onSubmit={save} className="mb-5 grid gap-3 rounded-md border border-dashed p-4 md:grid-cols-[1.4fr_1fr_1fr_1fr_auto] md:items-end">
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Deal</span>
-        <select className={`${SELECT} w-full`} value={dealId} onChange={(e) => pick(e.target.value)} aria-label="Deal abierto o nuevo">
+        <NativeSelect density="compact" className="w-full" value={dealId} onChange={(e) => pick(e.target.value)} aria-label="Deal abierto o nuevo">
           <option value="">Nuevo deal (no está en Pipeline)</option>
           {openDeals.map((d) => <option key={d.id} value={d.id}>Ganado: {d.name}</option>)}
-        </select>
+        </NativeSelect>
         {!dealId && <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nombre del deal o cliente" className="h-10 text-xs md:h-8" aria-label="Nombre del deal" />}
       </label>
       <label className="space-y-1 text-xs">
@@ -201,10 +201,10 @@ function AddWon({ quarter, segments, openDeals, onDone }: {
       </label>
       <label className="space-y-1 text-xs">
         <span className="text-muted-foreground">Segmento</span>
-        <select className={`${SELECT} w-full`} value={segment} onChange={(e) => setSegment(e.target.value)} aria-label="Segmento del nuevo deal">
+        <NativeSelect density="compact" className="w-full" value={segment} onChange={(e) => setSegment(e.target.value)} aria-label="Segmento del nuevo deal">
           <option value="">Automático por valor</option>
           {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-        </select>
+        </NativeSelect>
       </label>
       <Button type="submit" size="sm" disabled={saving}>{dealId ? "Marcar ganado" : "Guardar"}</Button>
     </form>

@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -101,7 +102,7 @@ function CyclePage() {
                 const list = arts.filter((a) => a.kind === k);
                 return (
                   <div key={k} className="mt-4">
-                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 break-words text-sm font-medium">{ARTIFACTS[k].label}</p><span className="shrink-0 text-[10px] text-muted-foreground">{getPersona(PERSONA_FOR[k])?.name}</span></div>
+                    <div className="flex items-center justify-between gap-3"><p className="min-w-0 break-words text-sm font-medium">{ARTIFACTS[k].label}</p><span className="shrink-0 text-xs text-muted-foreground">{getPersona(PERSONA_FOR[k])?.name}</span></div>
                     <div className="mt-1.5 space-y-1">
                       {list.slice(0, k === "winloss" ? 5 : 3).map((a) => (
                         <button key={a.id} onClick={() => setSelected(a.id)} className="flex min-h-10 w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-xs hover:bg-accent md:min-h-0">
@@ -147,10 +148,10 @@ function NewDraft({ kind, onClose, onStart }: { kind: ArtifactKind | null; onClo
         <DialogHeader><DialogTitle>{ARTIFACTS[kind].label} con {p?.name}</DialogTitle></DialogHeader>
         <p className="text-sm text-muted-foreground">{p?.name} usará el contexto de empresa y los documentos aprobados. Secciones: {ARTIFACTS[kind].sections.join(" · ")}.</p>
         {kind === "winloss" && (
-          <select className="h-10 rounded-md border bg-background px-2 text-sm md:h-9" value={dealId} onChange={(e) => setDealId(e.target.value)}>
+          <NativeSelect aria-label="Deal cerrado" value={dealId} onChange={(e) => setDealId(e.target.value)}>
             <option value="">Elige un deal cerrado…</option>
             {closed.map((d) => <option key={d.id} value={d.id}>{d.name} ({d.stage === "won" ? "Ganado" : "Perdido"})</option>)}
-          </select>
+          </NativeSelect>
         )}
         <Textarea rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas o foco opcional (p. ej. «priorizamos mid-market en España este trimestre»)" />
         <Button onClick={go}>Crear borrador</Button>
@@ -232,9 +233,9 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
             <Button size="sm" variant="ghost" onClick={withdraw}>Retirar aprobación</Button>
           </>}
           <span className="flex w-full items-center gap-1.5 sm:ml-auto sm:w-auto">
-            <select className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-xs sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
+            <NativeSelect aria-label="Método de revisión" density="compact" className="min-w-0 flex-1 sm:flex-none" value={method} onChange={(e) => setMethod(e.target.value)}>
               {METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </select>
+            </NativeSelect>
             <Button size="sm" variant="outline" className="shrink-0" onClick={runReview} disabled={busy}>{busy ? "Revisando…" : "Revisión profunda"}</Button>
           </span>
           <SaveToDriveButton size="sm" title={`${art.title} · v${art.version}`} markdown={`# ${art.title} · v${art.version}\n\n${art.content}`} />
@@ -245,7 +246,7 @@ function ArtifactSheet({ art, all, leader, onClose, onSelect }: { art: Art | nul
           <div className="mt-4 rounded-lg border bg-accent/40 p-4">
             <p className="text-sm font-medium">{result.summary}</p>
             <ul className="mt-2 space-y-2 text-sm">
-              {result.findings.map((f, i) => <li key={i}><span className={`mr-2 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${f.severity === "alta" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>{f.severity}</span>{f.issue} <span className="text-muted-foreground">→ {f.fix}</span></li>)}
+              {result.findings.map((f, i) => <li key={i}><span className={`mr-2 rounded px-1.5 py-0.5 font-mono text-xs uppercase ${f.severity === "alta" ? "bg-destructive/15 text-destructive" : "bg-muted"}`}>{f.severity}</span>{f.issue} <span className="text-muted-foreground">→ {f.fix}</span></li>)}
             </ul>
             <div className="mt-3 flex flex-wrap gap-2"><Button size="sm" onClick={applyRevision}>Aceptar cambios (nueva versión)</Button><Button size="sm" variant="ghost" onClick={() => setResult(null)}>Descartar</Button></div>
           </div>

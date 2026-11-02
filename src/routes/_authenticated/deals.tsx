@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CompanyLogo } from "@/components/company-logo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { Page, HealthDot } from "@/components/page";
+import { Page, HealthDot, Kpi } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,7 +26,7 @@ import { DateField } from "@/components/date-field";
 import { NewDealButton } from "@/components/new-deal";
 import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
-import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
+import { stageLabel, stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
 import { LossDialog, LossSection } from "@/components/loss-reason";
@@ -118,7 +119,6 @@ function Deals() {
       .from("deals")
       .update({ stage, probability: stageProbability(stage, stages), ...(loss ?? {}) })
       .eq("id", id);
-    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["deals"] });
   }
 
@@ -151,19 +151,19 @@ function Deals() {
       }
     >
       <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <Kpi
+        <Kpi size="hero"
           label="Pipeline abierto"
-          v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
+          value={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
         />
-        <Kpi
+        <Kpi size="hero"
           label="Forecast ponderado"
-          v={eur(
+          value={eur(
             open.reduce((s, d) => s + (Number(d.amount ?? 0) * (d.probability ?? 0)) / 100, 0),
           )}
         />
-        <Kpi
+        <Kpi size="hero"
           label="Ganado"
-          v={eur(
+          value={eur(
             deals.filter((d) => d.stage === "won").reduce((s, d) => s + Number(d.amount ?? 0), 0),
           )}
         />
@@ -220,7 +220,7 @@ function Deals() {
                         </span>
                       )}
                     {cold.get(d.id)?.stale && (
-                      <span className="mt-1 block text-[11px] text-signal">
+                      <span className="mt-1 block text-xs text-signal">
                         Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral{" "}
                         {cold.get(d.id)!.threshold.days})
                       </span>
@@ -264,15 +264,6 @@ function Deals() {
         </SheetContent>
       </Sheet>
     </Page>
-  );
-}
-
-function Kpi({ label, v }: { label: string; v: string }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 font-display text-4xl">{v}</p>
-    </div>
   );
 }
 
@@ -565,14 +556,13 @@ function DealDetail({
             value={due || null}
             onChange={(iso) => setDue(iso ?? "")}
           />
-          <select
-            className="h-10 rounded-md border bg-background px-2 text-base md:h-auto md:text-sm"
+          <NativeSelect aria-label="Lado del hito"
             value={side}
             onChange={(e) => setSide(e.target.value)}
           >
             <option value="nosotros">Nosotros</option>
             <option value="cliente">Cliente</option>
-          </select>
+          </NativeSelect>
           <Button disabled={!newItem} onClick={addItem}>
             +
           </Button>

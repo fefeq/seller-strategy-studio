@@ -40,7 +40,7 @@ function Trigger({ label }: { label: string }) {
     <DropdownMenuTrigger
       aria-label={label}
       onClick={(e) => e.stopPropagation()}
-      className="font-mono text-[11px] uppercase tracking-wide text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      className="font-mono text-xs uppercase tracking-wide text-muted-foreground underline-offset-4 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
     >
       Acciones
     </DropdownMenuTrigger>

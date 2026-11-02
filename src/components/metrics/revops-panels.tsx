@@ -101,8 +101,8 @@ export function RevopsTrends({ deals }: { deals: RDeal[] }) {
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={w}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 11, fill: "var(--color-ink-mid)" }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: "var(--color-ink-mid)" }} width={28} />
+            <XAxis dataKey="label" tick={{ fontSize: 12, fill: "var(--color-ink-mid)" }} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 12, fill: "var(--color-ink-mid)" }} width={28} />
             <Tooltip contentStyle={{ background: "var(--color-card)", border: "1px solid var(--color-border)", borderRadius: 8 }} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey="created" name="Creados" fill="var(--color-ink-faint)" radius={[4, 4, 0, 0]} />

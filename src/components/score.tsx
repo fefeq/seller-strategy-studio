@@ -11,7 +11,7 @@ const TONE: Record<Score["band"], string> = {
 export function ScoreBadge({ score, className = "" }: { score: Score; className?: string }) {
   const title = `${BAND_LABEL[score.band]} · encaje ${score.fit.score ?? "—"} · actividad ${score.activity}`;
   return (
-    <span title={title} className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[11px] ${TONE[score.band]} ${className}`}>
+    <span title={title} className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-xs ${TONE[score.band]} ${className}`}>
       {score.total == null ? "—" : score.total}
     </span>
   );

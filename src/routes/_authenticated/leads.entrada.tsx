@@ -94,7 +94,7 @@ function Sources({ canManage, isLeader, isOwner }: { canManage: boolean; isLeade
           {sources.map((s) => (
             <div key={s.id} className="flex flex-wrap items-end gap-3 p-3 text-sm">
               <div className="min-w-40 flex-1">
-                <p className="font-medium">{s.name} <span className="font-mono text-[10px] uppercase text-muted-foreground">· {KIND[s.kind] ?? s.kind}</span></p>
+                <p className="font-medium">{s.name} <span className="font-mono text-xs uppercase text-muted-foreground">· {KIND[s.kind] ?? s.kind}</span></p>
                 <p className="text-xs text-muted-foreground">Clave …{s.token_hint} · {s.received_count} recibidos{s.last_received_at ? ` · último ${new Date(s.last_received_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}` : " · aún sin envíos"}</p>
                 {!s.active && s.paused_reason && <p className="text-xs text-destructive">Pausada: {s.paused_reason}</p>}
               </div>
@@ -304,7 +304,7 @@ function Events() {
                   <tr key={e.id} className="border-b last:border-0">
                     <td className="whitespace-nowrap px-3 py-2 text-muted-foreground">{new Date(e.received_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</td>
                     <td className="px-3 py-2">{e.channel === "csv" ? "CSV" : (e.lead_sources as { name: string } | null)?.name ?? "Enlace"}</td>
-                    <td className="px-3 py-2"><span className={`rounded px-1.5 py-0.5 font-mono text-[10px] uppercase ${tone}`}>{label}</span></td>
+                    <td className="px-3 py-2"><span className={`rounded px-1.5 py-0.5 font-mono text-xs uppercase ${tone}`}>{label}</span></td>
                     <td className="px-3 py-2">{e.account_id ? <Link to="/accounts/$id" params={{ id: e.account_id }} className="underline-offset-2 hover:underline">{e.summary}</Link> : e.summary}</td>
                     <td className="px-3 py-2 text-xs text-muted-foreground">{e.error}</td>
                   </tr>

@@ -119,7 +119,7 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
             const state = i < current ? "done" : i === current ? "current" : "todo";
             return (
               <button key={p.key} onClick={() => { setView(p.key); revealOnMobile(phaseRef.current); }} className={`${DEPTH[i]} w-[42vw] max-w-48 shrink-0 snap-start break-words rounded-lg border p-3 text-left sm:w-auto sm:min-w-0 sm:max-w-none transition-colors ${view === p.key ? "border-signal bg-signal/5" : "bg-background hover:border-foreground/30"}`}>
-                <span className={`font-mono text-[10px] uppercase ${state === "current" ? "text-signal" : "text-muted-foreground"}`}>{i + 1} · {state === "done" ? "Hecho" : state === "current" ? "Ahora" : "Pendiente"}</span>
+                <span className={`font-mono text-xs uppercase ${state === "current" ? "text-signal" : "text-muted-foreground"}`}>{i + 1} · {state === "done" ? "Hecho" : state === "current" ? "Ahora" : "Pendiente"}</span>
                 <span className="mt-1 block text-[15px] font-semibold leading-tight">{p.label}</span>
                 <span className="block text-xs text-muted-foreground">{p.tagline}</span>
               </button>

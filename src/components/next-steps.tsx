@@ -25,7 +25,7 @@ export function NextSteps() {
         {PHASES.map((p, i) => (
           <div key={p.id} className="min-w-0 flex-1">
             <div className={`h-1.5 rounded ${i < idx ? "bg-primary" : i === idx ? "bg-signal" : "bg-muted"}`} />
-            <p className={`mt-1 truncate text-[11px] ${i === idx ? "font-medium" : "hidden text-muted-foreground sm:block"}`}>{p.label}</p>
+            <p className={`mt-1 truncate text-xs ${i === idx ? "font-medium" : "hidden text-muted-foreground sm:block"}`}>{p.label}</p>
           </div>
         ))}
       </div>

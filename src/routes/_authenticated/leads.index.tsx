@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LeadQuickActions } from "@/components/quick-actions";
 import { CompanyLogo } from "@/components/company-logo";
@@ -8,7 +9,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useLeads, type Lead } from "@/hooks/use-leads";
-import { Page, Empty } from "@/components/page";
+import { Page, Empty, Kpi, Panel } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -110,10 +111,10 @@ function LeadsPage() {
       {!view || !data ? <p className="text-sm text-muted-foreground">Cargando leads…</p> : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Kpi label="Leads abiertos" v={String(view.open.length)} hint="Nuevo, Contactado, MQL y SQL" />
-            <Kpi label="Retrasados" v={String(view.late.length)} hint={view.open.length ? `${pct(view.late.length / view.open.length)} de los abiertos` : "Sin leads abiertos"} tone={view.late.length ? "bad" : undefined} />
-            <Kpi label={`Lead → Oportunidad ${view.quarter}`} v={view.funnel.total ? pct(view.funnel.steps[4].fromStart) : "—"} hint={view.funnel.medianDays.opportunity != null ? `Mediana ${view.funnel.medianDays.opportunity.toFixed(1)} días hasta oportunidad` : `${view.funnel.total} leads este trimestre`} />
-            <Kpi label={`Lead → Ganado ${view.quarter}`} v={view.funnel.total ? pct(view.funnel.steps[5].fromStart) : "—"} hint={`${view.funnel.steps[5].count} ganados de ${view.funnel.total} leads`} />
+            <Kpi size="compact" label="Leads abiertos" value={String(view.open.length)} hint="Nuevo, Contactado, MQL y SQL" />
+            <Kpi size="compact" label="Retrasados" value={String(view.late.length)} hint={view.open.length ? `${pct(view.late.length / view.open.length)} de los abiertos` : "Sin leads abiertos"} hintTone={view.late.length ? "alarm" : undefined} />
+            <Kpi size="compact" label={`Lead → Oportunidad ${view.quarter}`} value={view.funnel.total ? pct(view.funnel.steps[4].fromStart) : "—"} hint={view.funnel.medianDays.opportunity != null ? `Mediana ${view.funnel.medianDays.opportunity.toFixed(1)} días hasta oportunidad` : `${view.funnel.total} leads este trimestre`} />
+            <Kpi size="compact" label={`Lead → Ganado ${view.quarter}`} value={view.funnel.total ? pct(view.funnel.steps[5].fromStart) : "—"} hint={`${view.funnel.steps[5].count} ganados de ${view.funnel.total} leads`} />
           </div>
 
           <section>
@@ -144,9 +145,9 @@ function LeadsPage() {
                             <td className="px-3 py-2"><span className="font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span>{segName(l.segment_id) && <span className="block text-xs text-muted-foreground">{segName(l.segment_id)}</span>}</td>
                             <td className="px-3 py-2 text-xs">{l.contact_name ?? "—"}{l.email && <span className="block text-muted-foreground">{l.email}</span>}</td>
                             <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                              <select aria-label="Etapa" className="h-8 rounded border bg-background px-1 text-xs" value={l.stage} onChange={(e) => move(l.id, e.target.value)}>
+                              <NativeSelect density="compact" aria-label="Etapa" value={l.stage} onChange={(e) => move(l.id, e.target.value)}>
                                 {COLUMNS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-                              </select>
+                              </NativeSelect>
                             </td>
                             <td className="px-3 py-2"><ScoreBadge score={view.scores.get(l.id)!} /></td>
                             <td className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}>{closed ? "—" : `${Math.floor(d.daysInStage)} d${d.late ? " · tarde" : ""}`}</td>
@@ -185,14 +186,14 @@ function LeadsPage() {
                               className={`block w-full rounded-md border bg-card p-3 pb-7 text-left text-sm hover:border-signal ${d.late ? "border-signal/60" : ""}`}>
                               <span className="flex items-start justify-between gap-2"><span className="break-words font-medium"><CompanyLogo domain={l.email} size={16} className="mr-1.5 -mt-0.5" />{l.company}</span><ScoreBadge score={view.scores.get(l.id)!} /></span>
                               {(l.contact_name || l.email) && <span className="block truncate text-xs text-muted-foreground">{l.contact_name ?? l.email}</span>}
-                              <span className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+                              <span className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                                 {l.source && <span className="rounded bg-muted px-1.5 py-0.5">{l.source}</span>}
                                 {segName(l.segment_id) && <span className="rounded bg-muted px-1.5 py-0.5">{segName(l.segment_id)}</span>}
                                 {st.id !== "opportunity" && st.id !== "disqualified" && <span className="font-mono">{Math.floor(d.daysInStage)} d</span>}
                               </span>
                               {st.id !== "opportunity" && st.id !== "disqualified" && view.quals.get(l.id)?.move && <span className="mt-1.5 block"><QualTag view={view.quals.get(l.id)!} /></span>}
-                              {d.late && <span className="mt-2 flex items-start gap-1 text-[11px] text-signal">{delayText(d)}</span>}
-                              {!d.late && l.next_step_at && st.id !== "opportunity" && st.id !== "disqualified" && <span className="mt-1 block text-[11px] text-muted-foreground">Seguimiento {l.next_step_at}</span>}
+                              {d.late && <span className="mt-2 flex items-start gap-1 text-xs text-signal">{delayText(d)}</span>}
+                              {!d.late && l.next_step_at && st.id !== "opportunity" && st.id !== "disqualified" && <span className="mt-1 block text-xs text-muted-foreground">Seguimiento {l.next_step_at}</span>}
                             </button>
                             <span className="absolute bottom-2 right-3"><LeadQuickActions lead={l} onMove={move} /></span>
                             </div>
@@ -255,12 +256,6 @@ function LeadsPage() {
   );
 }
 
-function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
-  return <div className="rounded-lg border bg-card px-4 py-3"><p className="eyebrow">{label}</p><p className="mt-1 font-display text-2xl">{v}</p><p className={`text-xs ${tone === "bad" ? "text-state-alarm" : "text-muted-foreground"}`}>{hint}</p></div>;
-}
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return <div className="rounded-lg border bg-card p-5"><h3 className="mb-3 text-2xl">{title}</h3>{children}</div>;
-}
 function Muted({ children }: { children: React.ReactNode }) {
   return <p className="text-sm text-muted-foreground">{children}</p>;
 }

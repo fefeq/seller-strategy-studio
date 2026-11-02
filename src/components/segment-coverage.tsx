@@ -90,11 +90,11 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="break-words font-medium">{r.segment.name}</p>
-          <p className="text-[11px] text-muted-foreground">ACV {money(r.acv)} · {ACV_SOURCE[r.acvSource]}</p>
+          <p className="text-xs text-muted-foreground">ACV {money(r.acv)} · {ACV_SOURCE[r.acvSource]}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className={`font-display text-3xl ${tone}`}>{cov ? `${cov.ratio.toFixed(1)}x` : "—"}</p>
-          <p className={`text-[11px] ${tone}`}>{!cov ? "Sin objetivo" : cov.status === "low" ? "Baja (<3x)" : cov.status === "healthy" ? "Sana (3–4x)" : "Alta (>4x)"}</p>
+          <p className={`text-xs ${tone}`}>{!cov ? "Sin objetivo" : cov.status === "low" ? "Baja (<3x)" : cov.status === "healthy" ? "Sana (3–4x)" : "Alta (>4x)"}</p>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 text-sm">
@@ -125,11 +125,11 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
         {(() => {
           const s = r.segment as SegLike & { margin_source?: MarginSource | null };
           return s.margin_source && s.gross_margin_pct != null
-            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? " · apunta ingresos y coste de servir en «Presupuesto por segmento»" : ""}</p>
+            ? <p className="text-xs text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? " · apunta ingresos y coste de servir en «Presupuesto por segmento»" : ""}</p>
             : null;
         })()}
         {r.payback.source !== "real" && (
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-xs text-muted-foreground">
             {r.cac.cost > 0 && r.cac.customers === 0
               ? "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
               : r.payback.source === "objetivo"
@@ -147,7 +147,7 @@ function Metric({ label, real, target, progress, hint }: { label: string; real: 
     <div className="text-sm">
       <div className="flex flex-wrap justify-between gap-x-2"><span className="min-w-0">{label}</span><span className="ml-auto font-mono text-xs">{real}<span className="text-muted-foreground"> / {target ?? "—"}</span></span></div>
       <div className="mt-1 h-1.5 rounded bg-muted"><div className={`h-full rounded ${progress != null && progress >= 1 ? "bg-success" : "bg-primary"}`} style={{ width: `${progress != null ? Math.min(100, Math.round(progress * 100)) : 0}%` }} /></div>
-      {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export function leadQualView(lead: Lead, settings: QualSettings): QualView | nul
 export function QualTag({ view }: { view: QualView | null }) {
   if (!view?.move) return null;
   return (
-    <span className={`font-mono text-[11px] ${view.move === "disqualified" ? "text-muted-foreground" : "text-ink"}`} title={view.reason}>
+    <span className={`font-mono text-xs ${view.move === "disqualified" ? "text-muted-foreground" : "text-ink"}`} title={view.reason}>
       IA: {view.move === "disqualified" ? "descartar" : `pasar a ${PROPOSAL_LABEL[view.move]}`} · {view.total}{view.review ? " · revisar" : ""}
     </span>
   );
@@ -90,7 +90,7 @@ export function QualificationPanel({ lead, data }: { lead: Lead; data: LeadsData
         {proposedSeg && <Button size="sm" variant="outline" onClick={() => apply({ segment_id: view.segmentId }, `Segmento ${proposedSeg} asignado.`)}>Asignar segmento {proposedSeg}</Button>}
         <Button size="sm" variant="ghost" disabled={busy} onClick={() => go([lead.id])}>{busy ? "Calificando…" : "Volver a calificar"}</Button>
       </div>
-      <p className="mt-2 text-[11px] text-muted-foreground">Calificado el {new Date(lead.qualified_at ?? "").toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}. Vuelve a calificar si cambias sus notas, su cargo o los datos de la empresa.</p>
+      <p className="mt-2 text-xs text-muted-foreground">Calificado el {new Date(lead.qualified_at ?? "").toLocaleDateString("es-ES", { day: "2-digit", month: "short" })}. Vuelve a calificar si cambias sus notas, su cargo o los datos de la empresa.</p>
     </div>
   );
 }

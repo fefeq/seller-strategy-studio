@@ -275,7 +275,7 @@
 /* —— Tipografía de la edición —— */
 @utility smallcaps {
   font-family: var(--font-sans);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 14px;
   font-weight: 600;
   letter-spacing: 0.14em;

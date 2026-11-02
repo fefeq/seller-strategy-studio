@@ -66,7 +66,7 @@ export function StripeConnect() {
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
         <span className="font-medium">Stripe</span>
-        <span className={`shrink-0 rounded px-1.5 font-mono text-[10px] uppercase ${!c ? "bg-muted text-muted-foreground" : c.status === "ok" ? "bg-success/15 text-success" : c.status === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/25"}`}>
+        <span className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${!c ? "bg-muted text-muted-foreground" : c.status === "ok" ? "bg-success/15 text-success" : c.status === "error" ? "bg-destructive/15 text-destructive" : "bg-warning/25"}`}>
           {!c ? "Sin conectar" : c.status === "ok" ? "Conectado" : c.status === "error" ? "Con error" : "Conectando"}
         </span>
       </div>
@@ -102,7 +102,7 @@ export function StripeConnect() {
               {busy ? "Conectando…" : "Conectar"}
             </Button>
           </div>
-          <p className="mt-1 text-[11px] text-muted-foreground">La clave se guarda cifrada en el servidor. Nadie puede volver a verla desde la app, tampoco tú: solo se usa para leer Stripe.</p>
+          <p className="mt-1 text-xs text-muted-foreground">La clave se guarda cifrada en el servidor. Nadie puede volver a verla desde la app, tampoco tú: solo se usa para leer Stripe.</p>
         </details>
       )}
       {!isOwner && !c && <p className="mt-3 text-xs text-muted-foreground">El Owner de la empresa puede conectarlo desde aquí.</p>}

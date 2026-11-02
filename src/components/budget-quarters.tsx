@@ -1,3 +1,4 @@
+import { Kpi } from "@/components/page";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -69,7 +70,7 @@ export function BudgetQuarters() {
 
   const cell = (col: (typeof cols)[number], field: BudgetField, value: number | null, label: string) =>
     col.editable
-      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-10 w-24 px-1 text-right md:h-7 md:w-[4.75rem] md:text-[11px] [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
+      ? <Input type="number" min={0} aria-label={`${label} · ${col.key}`} className="ml-auto h-10 w-24 px-1 text-right md:h-7 md:w-[4.75rem] md:text-xs [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none" key={`${sel}-${col.key}-${field}-${value ?? ""}`} defaultValue={value ?? ""} placeholder="—" onBlur={(e) => save(col.key, field, e.target.value, value)} />
       : <span className="font-mono text-xs">{value == null ? "—" : field === "plan_new_customers" ? String(value) : money(value)}</span>;
   const val = (v: string, strong = false) => <span className={`font-mono text-xs ${strong ? "font-medium" : ""}`}>{v}</span>;
   const pb = (n: number | null, ok: boolean | null) => (n == null ? val("—") : <span className={`font-mono text-xs font-medium ${ok === false ? "text-signal" : ok ? "text-success" : ""}`}>{fmt1(n)} m</span>);
@@ -110,10 +111,10 @@ export function BudgetQuarters() {
         <>
           {yr && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <Kpi label={`Ingresos ${y}`} v={`${money(yr.actual.revenue ?? 0)}`} sub={<>de {money(yr.plan.revenue ?? 0)}<Deviation prefix=" · " real={yr.actual.revenue} plan={yr.plan.revenue} /></>} />
-              <Kpi label="Margen bruto" v={pct(yr.actual.margin)} sub={<>presupuesto {pct(yr.plan.margin)}<Deviation prefix=" · " real={yr.actual.margin} plan={yr.plan.margin} points /></>} />
-              <Kpi label="Gasto de captación" v={money(yr.actual.acquisition)} sub={<>de {money(yr.plan.acquisition ?? 0)}<Deviation prefix=" · " real={yr.actual.acquisition || null} plan={yr.plan.acquisition} lowerIsBetter /></>} />
-              <Kpi label="Payback" v={yr.actual.payback != null ? `${fmt1(yr.actual.payback)} m` : "—"} sub={<>presupuesto {yr.plan.payback != null ? `${fmt1(yr.plan.payback)} m` : "—"} · objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}</>} />
+              <Kpi size="compact" label={`Ingresos ${y}`} value={`${money(yr.actual.revenue ?? 0)}`} hint={<>de {money(yr.plan.revenue ?? 0)}<Deviation prefix=" · " real={yr.actual.revenue} plan={yr.plan.revenue} /></>} />
+              <Kpi size="compact" label="Margen bruto" value={pct(yr.actual.margin)} hint={<>presupuesto {pct(yr.plan.margin)}<Deviation prefix=" · " real={yr.actual.margin} plan={yr.plan.margin} points /></>} />
+              <Kpi size="compact" label="Gasto de captación" value={money(yr.actual.acquisition)} hint={<>de {money(yr.plan.acquisition ?? 0)}<Deviation prefix=" · " real={yr.actual.acquisition || null} plan={yr.plan.acquisition} lowerIsBetter /></>} />
+              <Kpi size="compact" label="Payback" value={yr.actual.payback != null ? `${fmt1(yr.actual.payback)} m` : "—"} hint={<>presupuesto {yr.plan.payback != null ? `${fmt1(yr.plan.payback)} m` : "—"} · objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}</>} />
             </div>
           )}
           <div className="flex flex-wrap gap-1.5 md:hidden" role="group" aria-label="Trimestre visible">
@@ -128,7 +129,7 @@ export function BudgetQuarters() {
                   <th className="sticky left-0 z-10 bg-background px-3 py-2 text-left font-normal" rowSpan={2}>Concepto</th>
                   {cols.map((c) => <th key={c.key} colSpan={2} className={`px-2 pt-2 text-center font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50 text-foreground" : ""}`}>{c.label}</th>)}
                 </tr>
-                <tr className="border-b text-[11px] text-muted-foreground">
+                <tr className="border-b text-xs text-muted-foreground">
                   {cols.map((c) => [
                     <th key={`${c.key}-p`} className={`px-1 pb-2 text-right font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>Presup.</th>,
                     <th key={`${c.key}-r`} className={`px-1 pb-2 text-right font-normal ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>Real</th>,
@@ -143,7 +144,7 @@ export function BudgetQuarters() {
                       <td key={`${c.key}-p`} className={`px-1 py-1.5 text-right align-top ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>{c.r && l.plan(c)}</td>,
                       <td key={`${c.key}-r`} className={`px-1 py-1.5 text-right align-top ${onlyMd(c)} ${c.key === "year" ? "bg-muted/50" : ""}`}>
                         {c.r && l.real(c)}
-                        <div className="mt-0.5 font-mono text-[10px]">{c.r && l.dev(c.r)}</div>
+                        <div className="mt-0.5 font-mono text-xs">{c.r && l.dev(c.r)}</div>
                       </td>,
                     ])}
                   </tr>
@@ -162,12 +163,3 @@ export function BudgetQuarters() {
   );
 }
 
-function Kpi({ label, v, sub }: { label: string; v: string; sub: ReactNode }) {
-  return (
-    <div className="rounded-md border bg-card p-3">
-      <p className="eyebrow text-[10px]">{label}</p>
-      <p className="font-display text-2xl">{v}</p>
-      <p className="text-[11px] text-muted-foreground">{sub}</p>
-    </div>
-  );
-}

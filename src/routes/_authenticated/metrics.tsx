@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   RevopsCohorts,
@@ -11,7 +12,7 @@ import { guideKey } from "@/lib/guide";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { Page } from "@/components/page";
+import { Page, Kpi, Panel } from "@/components/page";
 import { Input } from "@/components/ui/input";
 import {
   daysInStage,
@@ -197,9 +198,9 @@ function Metrics() {
           : "Métricas"
       }
       actions={
-        <select
+        <NativeSelect
           aria-label="Trimestre"
-          className="h-10 rounded-md border bg-card px-3 text-sm md:h-9"
+
           value={quarter}
           onChange={(e) => setQuarter(e.target.value)}
         >
@@ -208,7 +209,7 @@ function Metrics() {
               {q}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       }
     >
       <nav
@@ -250,33 +251,37 @@ function Metrics() {
             <>
               <div className="grid gap-4 md:grid-cols-4">
                 <Kpi
+                  size="normal"
                   label="Cobertura de pipeline"
-                  v={m.quota ? formatRatio(m.cov.ratio) : "—"}
+                  value={m.quota ? formatRatio(m.cov.ratio) : "—"}
                   hint={
                     m.quota
                       ? `${m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${m.cov.undated.count ? ` · ${m.cov.undated.count} ${m.cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${eur(m.cov.undated.amount)}) no cuentan` : ""}`
                       : "Define cuotas abajo"
                   }
-                  tone={m.cov.status === "low" && m.quota ? "bad" : undefined}
+                  hintTone={m.cov.status === "low" && m.quota ? "signal" : undefined}
                 />
                 <Kpi
+                  size="normal"
                   label="Pipeline que cierra este trimestre"
-                  v={eur(m.openPipe)}
+                  value={eur(m.openPipe)}
                   hint={`Cuota total ${eur(m.quota)}`}
                 />
                 <Kpi
+                  size="normal"
                   label="Forecast comprometido vs real"
-                  v={`${eur(m.actual)} / ${eur(m.commit)}`}
+                  value={`${eur(m.actual)} / ${eur(m.commit)}`}
                   hint={
                     m.commit
                       ? `${m.acc.diff >= 0 ? "+" : ""}${pct(m.acc.diff)} · ${m.acc.accurate ? "dentro del 10%" : "fuera del 10%"}`
                       : "Marca deals como Commit"
                   }
-                  tone={m.commit && !m.acc.accurate ? "bad" : undefined}
+                  hintTone={m.commit && !m.acc.accurate ? "signal" : undefined}
                 />
                 <Kpi
+                  size="normal"
                   label="Win rate global"
-                  v={pct(m.overall)}
+                  value={pct(m.overall)}
                   hint={`${m.created} deals creados este trimestre`}
                 />
               </div>
@@ -422,25 +427,6 @@ function Metrics() {
   );
 }
 
-function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
-  return (
-    <div className="min-w-0 rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 break-words font-display text-3xl">{v}</p>
-      <p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>
-        {hint}
-      </p>
-    </div>
-  );
-}
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <h3 className="mb-3 text-2xl">{title}</h3>
-      {children}
-    </div>
-  );
-}
 function Bar({ label, value, right }: { label: string; value: number; right: string }) {
   return (
     <div className="py-1.5 text-sm">

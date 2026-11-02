@@ -82,7 +82,7 @@ export function Sensing() {
           <div key={n.id} className="space-y-2 rounded-lg border bg-card p-4 text-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="min-w-0 break-words font-medium">{n.interviewee || "Sin nombre"}{n.accounts?.name ? <span className="text-muted-foreground"> · {n.accounts.name}</span> : null}</p>
-              <span className="font-mono text-[10px] uppercase text-muted-foreground">{SENSING_KINDS[n.kind]} · {new Date(n.occurred_on).toLocaleDateString("es-ES")}{n.listening_level ? ` · Escucha ${LISTENING_LEVELS[n.listening_level as 1].label}` : ""}</span>
+              <span className="font-mono text-xs uppercase text-muted-foreground">{SENSING_KINDS[n.kind]} · {new Date(n.occurred_on).toLocaleDateString("es-ES")}{n.listening_level ? ` · Escucha ${LISTENING_LEVELS[n.listening_level as 1].label}` : ""}</span>
             </div>
             {n.heard && <p><span className="eyebrow mr-1">Escuché</span>{n.heard}</p>}
             {n.surprised && <p><span className="eyebrow mr-1">Sorpresa</span>{n.surprised}</p>}

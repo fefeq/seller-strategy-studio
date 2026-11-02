@@ -31,7 +31,7 @@ function MeasureRow({ m }: { m: Measure }) {
         </span>
       </div>
       {m.status !== "ok" && m.missing && <p className="mt-1 text-xs text-muted-foreground">{m.status === "no_medido" ? m.missing : `Falta: ${m.missing}`}</p>}
-      <p className="mt-0.5 break-words text-[11px] text-muted-foreground">Fuente: {m.source}</p>
+      <p className="mt-0.5 break-words text-xs text-muted-foreground">Fuente: {m.source}</p>
     </div>
   );
 }
@@ -40,9 +40,9 @@ function PhaseBlock({ p }: { p: Phase }) {
   return (
     <div className="overflow-hidden rounded-md border">
       <div className="flex items-center justify-between bg-muted/50 px-3 py-1.5">
-        <span className="eyebrow text-[10px]">{p.label}</span>
-        {p.status === "no_medido" && <span className="text-[11px] text-muted-foreground">no medido</span>}
-        {p.status === "sin_datos" && <span className="text-[11px] text-muted-foreground">sin datos</span>}
+        <span className="eyebrow text-xs">{p.label}</span>
+        {p.status === "no_medido" && <span className="text-xs text-muted-foreground">no medido</span>}
+        {p.status === "sin_datos" && <span className="text-xs text-muted-foreground">sin datos</span>}
       </div>
       {p.measures.map((m) => <MeasureRow key={m.id} m={m} />)}
     </div>

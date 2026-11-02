@@ -135,7 +135,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
             );
           })}
           <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/50 p-3 text-sm">
-            <div><p className="text-xs text-muted-foreground">Importe (ACV)</p><p className="font-mono">{money(t.amount)}</p>{t.oneOff > 0 && <p className="text-[11px] text-muted-foreground">+ {money(t.oneOff)} pago único</p>}</div>
+            <div><p className="text-xs text-muted-foreground">Importe (ACV)</p><p className="font-mono">{money(t.amount)}</p>{t.oneOff > 0 && <p className="text-xs text-muted-foreground">+ {money(t.oneOff)} pago único</p>}</div>
             <div><p className="text-xs text-muted-foreground">Margen</p><p className="font-mono">{t.margin == null ? "—" : money(t.margin)}</p></div>
             <div><p className="text-xs text-muted-foreground">Margen %</p><p className="font-mono">{t.marginPct == null ? "—" : `${Math.round(t.marginPct)} %`}</p></div>
           </div>

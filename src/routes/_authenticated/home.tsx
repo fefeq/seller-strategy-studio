@@ -15,7 +15,7 @@ import { useSuggestions } from "@/components/suggestions";
 import { SuggestionDeck } from "@/components/suggestion-deck";
 import { showRoadmapCard } from "@/lib/onboarding";
 import { Button } from "@/components/ui/button";
-import { Page, HealthDot } from "@/components/page";
+import { Page, HealthDot, Kpi, Panel } from "@/components/page";
 import { ROLES, type Role } from "@/lib/roles";
 import { stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
@@ -72,15 +72,15 @@ function HomePage() {
       {leader && <RoadmapCard />}
       {!hideSetup && <GuideOffer scope="home" onlyWhenDue orgId={me?.currentOrg?.org_id} wrap={(b) => <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs"><p className="eyebrow mb-2">Llevas más de un día sin avanzar</p>{b}</section>} />}
       <div className="grid gap-4 md:grid-cols-4">
-        <Stat label="Pipeline abierto" value={fmt(pipeline)} />
-        <Stat label="Forecast ponderado" value={fmt(weighted)} />
-        <Stat label="Deals en riesgo" value={String(risk.length)} tone={risk.length ? "signal" : undefined} />
-        <Stat label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
+        <Kpi size="hero" label="Pipeline abierto" value={fmt(pipeline)} />
+        <Kpi size="hero" label="Forecast ponderado" value={fmt(weighted)} />
+        <Kpi size="hero" label="Deals en riesgo" value={String(risk.length)} tone={risk.length ? "signal" : undefined} />
+        <Kpi size="hero" label="Aprobaciones pendientes" value={String(data?.approvals.length ?? 0)} />
       </div>
       <div className="mt-8"><PaybackCard /></div>
       <div className="mt-8"><NextSteps /></div>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <Panel title="Próximas reuniones" link={{ to: "/accounts", label: "Ver cuentas" }}>
+        <Panel title="Próximas reuniones" action={<Link to="/accounts" className="shrink-0 py-2 text-xs text-signal md:py-0">Ver cuentas →</Link>}>
           {(data?.meetings ?? []).length === 0 && <p className="text-sm text-muted-foreground">Sin reuniones planificadas. Planifica una desde una cuenta.</p>}
           {data?.meetings.map((m) => (
             <Link key={m.id} to="/accounts/$id" params={{ id: m.account_id ?? "" }} className="flex justify-between gap-3 border-b py-2.5 text-sm last:border-0 hover:text-signal">
@@ -88,7 +88,7 @@ function HomePage() {
             </Link>
           ))}
         </Panel>
-        <Panel title={role === "sales_leader" || role === "owner" ? "Deals en riesgo" : "Mis deals"} link={{ to: "/deals", label: "Ver pipeline" }}>
+        <Panel title={role === "sales_leader" || role === "owner" ? "Deals en riesgo" : "Mis deals"} action={<Link to="/deals" search={{ deal: undefined }} className="shrink-0 py-2 text-xs text-signal md:py-0">Ver pipeline →</Link>}>
           {((role === "sales_leader" || role === "owner") ? risk : mine).slice(0, 6).map((d) => (
             <div key={d.id} className="flex items-center justify-between gap-3 border-b py-2.5 text-sm last:border-0">
               <span className="min-w-0 break-words">{d.name}</span>
@@ -97,10 +97,10 @@ function HomePage() {
           ))}
           {((role === "sales_leader" || role === "owner") ? risk : mine).length === 0 && <p className="text-sm text-muted-foreground">Nada por aquí todavía.</p>}
         </Panel>
-        <Panel title="Base de personas" link={{ to: "/people", label: "Abrir" }}>
+        <Panel title="Base de personas" action={<Link to="/people" className="shrink-0 py-2 text-xs text-signal md:py-0">Abrir →</Link>}>
           <p className="text-sm">{data?.people.length ?? 0} personas · {data?.people.filter((p) => p.tier === "A").length ?? 0} tier A</p>
         </Panel>
-        <Panel title="Cuentas" link={{ to: "/accounts", label: "Abrir" }}>
+        <Panel title="Cuentas" action={<Link to="/accounts" className="shrink-0 py-2 text-xs text-signal md:py-0">Abrir →</Link>}>
           <p className="text-sm">{data?.accounts.length ?? 0} cuentas · {data?.accounts.filter((a) => a.health === "red").length ?? 0} en riesgo</p>
         </Panel>
       </div>
@@ -108,20 +108,3 @@ function HomePage() {
   );
 }
 
-function Stat({ label, value, tone }: { label: string; value: string; tone?: "signal" }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className={`mt-2 font-display text-4xl ${tone === "signal" ? "text-signal" : ""}`}>{value}</p>
-    </div>
-  );
-}
-
-function Panel({ title, link, children }: { title: string; link: { to: "/accounts" | "/deals" | "/people"; label: string }; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <div className="mb-3 flex items-center justify-between gap-3"><h3 className="min-w-0 text-2xl">{title}</h3><Link to={link.to} className="shrink-0 py-2 text-xs text-signal md:py-0">{link.label} →</Link></div>
-      {children}
-    </div>
-  );
-}

@@ -46,7 +46,7 @@ export function PaybackCard() {
                       return (
                         <td key={q} className="px-2 py-2.5 text-right">
                           {c.status === "real" && c.payback != null
-                            ? <><span className={`font-mono ${tone}`} title={`CAC real · ${c.customers} ganados`}>{fmt1(c.payback)} m</span><span className="block text-[10px] text-muted-foreground md:hidden">{c.customers} {c.customers === 1 ? "ganado" : "ganados"}</span></>
+                            ? <><span className={`font-mono ${tone}`} title={`CAC real · ${c.customers} ganados`}>{fmt1(c.payback)} m</span><span className="block text-xs text-muted-foreground md:hidden">{c.customers} {c.customers === 1 ? "ganado" : "ganados"}</span></>
                             : <span className="font-mono text-xs text-muted-foreground" title={c.status === "no_wins" ? "Hay costes pero ningún deal ganado" : "Sin costes apuntados"}>—</span>}
                         </td>
                       );
@@ -62,7 +62,7 @@ export function PaybackCard() {
             </tbody>
           </table>
           </div>
-          <p className="mt-3 text-[11px] text-muted-foreground">Verde = dentro del objetivo · rojo = fuera · — = sin costes o sin deals ganados en ese trimestre. Tendencia frente al trimestre anterior con datos (bajar es mejor).</p>
+          <p className="mt-3 text-xs text-muted-foreground">Verde = dentro del objetivo · rojo = fuera · — = sin costes o sin deals ganados en ese trimestre. Tendencia frente al trimestre anterior con datos (bajar es mejor).</p>
         </div>
       )}
     </div>

@@ -39,7 +39,7 @@ export function OrgSwitcher({ memberships, archived, current, userId }: { member
           <button className="mx-3 mb-4 flex w-[calc(100%-1.5rem)] items-center justify-between rounded-md border border-sidebar-border bg-sidebar-accent px-3 py-2 text-left">
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium text-sidebar-accent-foreground">{current?.name ?? "Elige empresa"}</span>
-              <span className="block truncate text-[11px] text-sidebar-foreground/60">{current ? ROLES[current.role as Role]?.label : ""}</span>
+              <span className="block truncate text-xs text-sidebar-foreground/60">{current ? ROLES[current.role as Role]?.label : ""}</span>
             </span>
           </button>
         </PopoverTrigger>
@@ -47,7 +47,7 @@ export function OrgSwitcher({ memberships, archived, current, userId }: { member
           <p className="eyebrow px-2 py-1.5">Tus empresas</p>
           {memberships.map((m) => (
             <button key={m.org_id} onClick={() => switchTo(m.org_id)} className="flex w-full items-center justify-between gap-2 rounded px-2 py-2.5 text-left text-sm hover:bg-muted md:py-1.5">
-              <span className="min-w-0"><span className="block truncate">{m.name}</span><span className="block text-[11px] text-muted-foreground">{ROLES[m.role as Role]?.label}</span></span>
+              <span className="min-w-0"><span className="block truncate">{m.name}</span><span className="block text-xs text-muted-foreground">{ROLES[m.role as Role]?.label}</span></span>
               {m.org_id === current?.org_id && <span className="shrink-0 text-signal" aria-label="actual">✓</span>}
             </button>
           ))}

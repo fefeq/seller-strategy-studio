@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
 import { normName } from "@/lib/match";
@@ -128,12 +129,12 @@ function ResultLogger({ campaigns, onLog }: { campaigns: { id: string; name: str
   if (!campaigns.length) return <span className="text-xs text-muted-foreground">Crea una campaña</span>;
   return (
     <div className="grid grid-cols-2 gap-2 md:flex md:gap-1">
-      <select aria-label="Campaña" className="h-10 min-w-0 rounded border bg-background px-1 text-xs md:h-8" value={c} onChange={(e) => setC(e.target.value)}>
+      <NativeSelect density="compact" aria-label="Campaña" className="min-w-0" value={c} onChange={(e) => setC(e.target.value)}>
         <option value="">Campaña…</option>{campaigns.map((x) => <option key={x.id} value={x.id}>{x.name}</option>)}
-      </select>
-      <select aria-label="Resultado" className="h-10 min-w-0 rounded border bg-background px-1 text-xs md:h-8" disabled={!c} value="" onChange={(e) => e.target.value && onLog(c, e.target.value)}>
+      </NativeSelect>
+      <NativeSelect density="compact" aria-label="Resultado" className="min-w-0" disabled={!c} value="" onChange={(e) => e.target.value && onLog(c, e.target.value)}>
         <option value="">Resultado…</option>{Object.entries(CAMPAIGN_RESULTS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-      </select>
+      </NativeSelect>
     </div>
   );
 }

@@ -72,7 +72,7 @@ function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLi
           </tr>
         </tbody>
       </table>
-      <p className="mt-2 text-[11px] text-muted-foreground">La calculadora de Estrategia GTM usa los 4 últimos trimestres para su CAC y payback reales; la cobertura usa el trimestre seleccionado.</p>
+      <p className="mt-2 text-xs text-muted-foreground">La calculadora de Estrategia GTM usa los 4 últimos trimestres para su CAC y payback reales; la cobertura usa el trimestre seleccionado.</p>
     </div>
   );
 }

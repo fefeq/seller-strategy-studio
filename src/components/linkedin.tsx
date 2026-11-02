@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 // Apify on the screens: open job offers of an account and battlecards written from competitors' G2 reviews.
 import { useState } from "react";
 import { BackgroundButton } from "@/components/background";
@@ -74,9 +75,9 @@ export function BattlecardFromReviews({ onSaved }: { onSaved: (docId: string) =>
         </DialogHeader>
         <form className="flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); if (competitor.trim().length >= 2) go(); }}>
           <Input className="min-w-0 flex-1" placeholder="Competidor (p. ej. Pipedrive) o su enlace de G2" value={competitor} onChange={(e) => setCompetitor(e.target.value)} />
-          <select aria-label="Reseñas a leer" className="h-9 rounded-md border bg-background px-2 text-sm" value={max} onChange={(e) => setMax(Number(e.target.value))}>
+          <NativeSelect aria-label="Reseñas a leer" value={max} onChange={(e) => setMax(Number(e.target.value))}>
             {[10, 20, 40].map((n) => <option key={n} value={n}>{n} reseñas</option>)}
-          </select>
+          </NativeSelect>
           <Button type="submit" disabled={busy || competitor.trim().length < 2}>{busy ? "Leyendo reseñas…" : "Leer y redactar"}</Button>
           <BackgroundButton disabled={busy || competitor.trim().length < 2} label="En segundo plano (se guarda sola)" job={() => ({ kind: "battlecard", input: { competitor: competitor.trim(), max }, label: `Battlecard de ${competitor.trim()}` })} onStarted={() => { setOpen(false); setCompetitor(""); }} />
         </form>

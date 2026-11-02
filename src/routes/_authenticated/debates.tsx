@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -98,7 +99,7 @@ function DebatesPage() {
           {debates.length === 0 && <p className="text-sm text-muted-foreground">Aún no hay debates.</p>}
           {debates.map((d) => (
             <button key={d.id} onClick={() => { setSelected(d.id); setCreating(false); revealOnMobile(mainRef.current); }} className={`w-full min-w-0 break-words rounded-md border p-2.5 text-left text-sm hover:bg-accent ${selected === d.id ? "border-primary" : ""}`}>
-              <span className="font-mono text-[10px] uppercase text-muted-foreground">{DEBATE_LEVELS[d.level as DebateLevel]?.label} · {new Date(d.created_at).toLocaleDateString("es-ES")}</span>
+              <span className="font-mono text-xs uppercase text-muted-foreground">{DEBATE_LEVELS[d.level as DebateLevel]?.label} · {new Date(d.created_at).toLocaleDateString("es-ES")}</span>
               <p className="line-clamp-2">{d.topic}</p>
             </button>
           ))}
@@ -114,8 +115,8 @@ function DebatesPage() {
                     return (
                       <button key={l} disabled={!allowed} onClick={() => setLevel(l)} title={allowed ? "" : "Solo Owner o Sales Leader"} className={`rounded-md border p-3 text-left disabled:opacity-40 ${level === l ? "border-primary bg-accent" : "hover:bg-accent"}`}>
                         <p className="text-sm font-medium">{DEBATE_LEVELS[l].label}</p>
-                        <p className="mt-1 text-[11px] text-muted-foreground">{DEBATE_LEVELS[l].purpose}</p>
-                        {!allowed && <p className="mt-1 text-[11px] font-medium md:hidden">Solo Owner o Sales Leader</p>}
+                        <p className="mt-1 text-xs text-muted-foreground">{DEBATE_LEVELS[l].purpose}</p>
+                        {!allowed && <p className="mt-1 text-xs font-medium md:hidden">Solo Owner o Sales Leader</p>}
                       </button>
                     );
                   })}
@@ -134,12 +135,12 @@ function DebatesPage() {
               <div>
                 <p className="eyebrow mb-2">3. Tema</p>
                 <Textarea rows={3} value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="P. ej. «¿Entramos en el segmento enterprise este año?» o «Cómo desatascar este deal»" />
-                <select className="mt-2 h-10 w-full md:h-9 rounded-md border bg-background px-2 text-sm" value={subject} onChange={(e) => setSubject(e.target.value)}>
+                <NativeSelect aria-label="Sujeto del debate" className="mt-2 w-full" value={subject} onChange={(e) => setSubject(e.target.value)}>
                   <option value="">Sin sujeto concreto (pregunta libre)</option>
                   {subjects?.deals.length ? <optgroup label="Deals">{subjects.deals.map((d) => <option key={d.id} value={`deal:${d.id}`}>{d.name}</option>)}</optgroup> : null}
                   {subjects?.accounts.length ? <optgroup label="Cuentas">{subjects.accounts.map((d) => <option key={d.id} value={`account:${d.id}`}>{d.name}</option>)}</optgroup> : null}
                   {subjects?.artifacts.length ? <optgroup label="Documentos">{subjects.artifacts.map((d) => <option key={d.id} value={`artifact:${d.id}`}>{d.title} v{d.version}</option>)}</optgroup> : null}
-                </select>
+                </NativeSelect>
               </div>
               <Button className="h-auto min-h-10 whitespace-normal py-2 text-center md:min-h-0 md:whitespace-nowrap" onClick={start} disabled={busy || participants.length < 2}>{busy ? <>Debatiendo en segundo plano · {debateJob.job?.step ?? "en cola"}</> : <>Empezar debate</>}</Button>
               {busy && <p className="text-xs text-muted-foreground">Puedes salir de aquí: te aviso cuando termine. <button type="button" className="underline" onClick={debateJob.cancel}>Cancelar</button></p>}

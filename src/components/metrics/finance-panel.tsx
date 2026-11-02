@@ -1,3 +1,5 @@
+import { Kpi } from "@/components/page";
+import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -62,11 +64,11 @@ export function FinancePanel({ quarter }: { quarter: string }) {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-        <Kpi label="Presupuesto de gasto" v={money0(cur.budget.spend)} hint={cur.budget.spend == null ? <Link to="/metrics" search={{ seccion: "economia" }} className="underline">Defínelo en CAC y presupuesto</Link> : "captación + coste de servir"} />
-        <Kpi label="Gasto real" v={money(cur.actual.spend)} hint={dev(cur.spendDeviation) ?? `${money(cur.actual.acquisition)} captación · ${money(cur.actual.operating)} operativos`} />
-        <Kpi label="Ingresos" v={money0(cur.actual.revenue)} hint={cur.actual.revenueSource ? <>{SOURCE_TEXT[cur.actual.revenueSource]}{cur.revenueDeviation && <> · {dev(cur.revenueDeviation)}</>}</> : "Añade facturas abajo"} />
-        <Kpi label="Margen" v={money0(cur.actual.margin)} hint={cur.actual.marginPct != null ? `${pct(cur.actual.marginPct)} de los ingresos` : "Ingresos − gasto real"} tone={cur.actual.margin != null && cur.actual.margin < 0 ? "bad" : undefined} />
-        <Kpi label="ROI" v={ratio(cur.actual.roi)} hint={cur.budget.roi != null ? `Presupuestado ${formatRatio(cur.budget.roi)} · ingresos ÷ gasto` : "Ingresos ÷ gasto total"} tone={cur.actual.roi != null && cur.actual.roi < 1 ? "bad" : undefined} />
+        <Kpi size="normal" label="Presupuesto de gasto" value={money0(cur.budget.spend)} hint={cur.budget.spend == null ? <Link to="/metrics" search={{ seccion: "economia" }} className="underline">Defínelo en CAC y presupuesto</Link> : "captación + coste de servir"} />
+        <Kpi size="normal" label="Gasto real" value={money(cur.actual.spend)} hint={dev(cur.spendDeviation) ?? `${money(cur.actual.acquisition)} captación · ${money(cur.actual.operating)} operativos`} />
+        <Kpi size="normal" label="Ingresos" value={money0(cur.actual.revenue)} hint={cur.actual.revenueSource ? <>{SOURCE_TEXT[cur.actual.revenueSource]}{cur.revenueDeviation && <> · {dev(cur.revenueDeviation)}</>}</> : "Añade facturas abajo"} />
+        <Kpi size="normal" label="Margen" value={money0(cur.actual.margin)} hint={cur.actual.marginPct != null ? `${pct(cur.actual.marginPct)} de los ingresos` : "Ingresos − gasto real"} tone={cur.actual.margin != null && cur.actual.margin < 0 ? "signal" : undefined} />
+        <Kpi size="normal" label="ROI" value={ratio(cur.actual.roi)} hint={cur.budget.roi != null ? `Presupuestado ${formatRatio(cur.budget.roi)} · ingresos ÷ gasto` : "Ingresos ÷ gasto total"} tone={cur.actual.roi != null && cur.actual.roi < 1 ? "signal" : undefined} />
       </div>
 
       <section className="rounded-lg border bg-card p-5">
@@ -162,9 +164,9 @@ function CostLines({ quarter, lines }: { quarter: string; lines: { id: string; n
       <p className="mt-1 text-xs text-muted-foreground">Gastos que se repiten cada mes (equipo, software, oficina…). La captación de clientes va en «CAC y presupuesto» para no contarla dos veces.</p>
       <form onSubmit={add} className="mt-4 grid gap-2 sm:grid-cols-2">
         <Input aria-label="Concepto" placeholder="Concepto (p. ej. Salarios)" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} className="sm:col-span-2" />
-        <select aria-label="Categoría" className="h-10 rounded-md border bg-card px-3 text-sm" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
+        <NativeSelect aria-label="Categoría" value={f.category} onChange={(e) => setF({ ...f, category: e.target.value })}>
           {Object.entries(COST_CATEGORIES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-        </select>
+        </NativeSelect>
         <Input aria-label="Importe mensual" type="number" min="0" step="any" placeholder="Importe al mes" value={f.amount} onChange={(e) => setF({ ...f, amount: e.target.value })} />
         <label className="text-xs text-muted-foreground">Desde<Input type="date" value={f.starts_on} onChange={(e) => setF({ ...f, starts_on: e.target.value })} /></label>
         <label className="text-xs text-muted-foreground">Hasta (opcional)<Input type="date" value={f.ends_on} onChange={(e) => setF({ ...f, ends_on: e.target.value })} /></label>
@@ -263,16 +265,6 @@ function Invoices({ invoices }: { invoices: { id: string; number: string; amount
         </>
       )}
     </section>
-  );
-}
-
-function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: React.ReactNode; tone?: "bad" }) {
-  return (
-    <div className="min-w-0 rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className={`mt-2 break-words font-display text-3xl ${tone === "bad" ? "text-signal" : ""}`}>{v}</p>
-      <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
-    </div>
   );
 }
 

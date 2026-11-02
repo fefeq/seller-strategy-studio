@@ -75,7 +75,7 @@ export function BudgetPanel({ year }: { year: number }) {
               <tr key={r.segment.id} className="border-b border-dashed align-top">
                 <td className="sticky left-0 z-10 max-w-40 bg-background py-2 pr-3 sm:max-w-none">
                   <p className="font-medium">{r.segment.name}</p>
-                  <p className="text-[11px] text-muted-foreground">margen en el payback: {pct(r.margin.pct)} {r.margin.source === "real" ? "(real)" : r.margin.source === "plan" ? "(presupuestado)" : r.margin.source === "objetivo" ? "(objetivo)" : ""}</p>
+                  <p className="text-xs text-muted-foreground">margen en el payback: {pct(r.margin.pct)} {r.margin.source === "real" ? "(real)" : r.margin.source === "plan" ? "(presupuestado)" : r.margin.source === "objetivo" ? "(objetivo)" : ""}</p>
                 </td>
                 <Cmp real={r.actual.revenue != null ? money(r.actual.revenue) : "—"} plan={r.plan.revenue != null ? money(r.plan.revenue) : "—"} dev={<Deviation real={r.actual.revenue} plan={r.plan.revenue} />} />
                 <Cmp real={pct(r.actual.margin)} plan={pct(r.plan.margin)} dev={<Deviation real={r.actual.margin} plan={r.plan.margin} points />} />
@@ -100,8 +100,8 @@ function Cmp({ real, plan, dev, tone = "" }: { real: string; plan: string; dev: 
   return (
     <td className="px-2 py-2 text-right">
       <p className={`font-mono text-xs ${tone}`}>{real}</p>
-      <p className="text-[11px] text-muted-foreground">presup. {plan}</p>
-      <p className="font-mono text-[10px]">{dev}</p>
+      <p className="text-xs text-muted-foreground">presup. {plan}</p>
+      <p className="font-mono text-xs">{dev}</p>
     </td>
   );
 }

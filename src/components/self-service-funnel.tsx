@@ -1,3 +1,5 @@
+import { Kpi } from "@/components/page";
+import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -66,10 +68,10 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
       {t && (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi label="Activación" v={t.signups ? pct(t.activationRate) : "—"} hint={`${t.activated} de ${t.signups} registros`} />
-            <Kpi label="Prueba → pago" v={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
-            <Kpi label="Tiempo hasta la compra" v={dd(t.medianDaysToPurchase)} hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`} />
-            <Kpi label="MRR nuevo self-service" v={money(t.newMrr)} hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"} />
+            <Kpi size="normal" label="Activación" value={t.signups ? pct(t.activationRate) : "—"} hint={`${t.activated} de ${t.signups} registros`} />
+            <Kpi size="normal" label="Prueba → pago" value={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
+            <Kpi size="normal" label="Tiempo hasta la compra" value={dd(t.medianDaysToPurchase)} hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`} />
+            <Kpi size="normal" label="MRR nuevo self-service" value={money(t.newMrr)} hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"} />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
@@ -134,10 +136,6 @@ function Step({ label, n, ratio, note }: { label: string; n: number; ratio: numb
       <div className="mt-1 h-7 rounded bg-muted"><div className="h-full rounded bg-primary transition-all" style={{ width: `${Math.max(n ? 2 : 0, Math.round(ratio * 100))}%` }} /></div>
     </div>
   );
-}
-
-function Kpi({ label, v, hint }: { label: string; v: string; hint: string }) {
-  return <div className="min-w-0 rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 break-words font-display text-2xl md:text-3xl">{v}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>;
 }
 
 type TrialRow = { id: string; email: string; company: string; segment_id: string | null; source: string; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null };
@@ -219,10 +217,10 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
             <div className="grid gap-2 sm:grid-cols-4">
               <Input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
               <Input placeholder="Empresa" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-              <select className="h-10 rounded-md border bg-card px-2 text-sm md:h-9" value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}>
+              <NativeSelect aria-label="Segmento del registro" value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}>
                 <option value="">Sin segmento</option>
                 {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
+              </NativeSelect>
               <SpanishDate aria-label="Fecha de alta" value={form.signed_up_at || null} onChange={(iso) => setForm({ ...form, signed_up_at: iso ?? "" })} />
             </div>
             <Button size="sm" onClick={add}>Añadir</Button>
@@ -241,10 +239,10 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
               <div key={t.id} className="grid grid-cols-2 items-end gap-2 border-b py-2 text-sm sm:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto] sm:items-center">
                 <div className="col-span-2 min-w-0 sm:col-span-1">
                   <p className="truncate">{t.company || t.email || "Sin nombre"}</p>
-                  <select className="mt-1 h-10 w-full rounded border bg-card px-1 text-xs md:h-7" value={t.segment_id ?? ""} onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}>
+                  <NativeSelect aria-label="Segmento del registro" density="compact" className="mt-1 w-full" value={t.segment_id ?? ""} onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}>
                     <option value="">Sin segmento</option>
                     {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                  </NativeSelect>
                 </div>
                 <DateField label="Alta" value={t.signed_up_at} onSave={(v) => v && patch(t.id, { signed_up_at: v })} />
                 <DateField label="Activación" value={t.activated_at} onSave={(v) => patch(t.id, { activated_at: v })} />

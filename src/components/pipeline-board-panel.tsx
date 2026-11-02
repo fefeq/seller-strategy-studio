@@ -1,3 +1,4 @@
+import { Kpi } from "@/components/page";
 import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -81,16 +82,16 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       </div>
 
       <div className="mt-5 grid gap-3 rounded-md border bg-muted/30 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Gasto de captación del trimestre" value={view.cost ? money(view.cost) : "—"} hint={view.cost ? "costes de «CAC real»" : "Apúntalo en «CAC real», más abajo"} />
-        <Stat label="CAC real" value={view.eco.realCac != null ? money(view.eco.realCac) : "—"} hint={`${view.won} ${view.won === 1 ? "deal ganado" : "deals ganados"} en ${quarter}`} />
-        <Stat
+        <Kpi size="inline" label="Gasto de captación del trimestre" value={view.cost ? money(view.cost) : "—"} hint={view.cost ? "costes de «CAC real»" : "Apúntalo en «CAC real», más abajo"} />
+        <Kpi size="inline" label="CAC real" value={view.eco.realCac != null ? money(view.eco.realCac) : "—"} hint={`${view.won} ${view.won === 1 ? "deal ganado" : "deals ganados"} en ${quarter}`} />
+        <Kpi size="inline"
           label="CAC proyectado"
           value={view.eco.projectedCac != null ? money(view.eco.projectedCac) : "—"}
           hint={view.real.winRate != null
             ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate ≈ ${fmt1(view.eco.expectedWins)} clientes`
             : "Sin deals cerrados no hay win rate real"}
         />
-        <Stat
+        <Kpi size="inline"
           label="Payback real → proyectado"
           value={`${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`}
           hint={view.real.acv != null && view.margin != null ? `ACV real ${money(view.real.acv)} · margen ${fmt1(view.margin)}%` : "Falta ACV o margen"}
@@ -149,12 +150,3 @@ function Column({ c, money, owner, hideLabel }: { c: BoardColumn; money: (n: num
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div>
-      <p className="eyebrow">{label}</p>
-      <p className="mt-1 font-mono text-lg">{value}</p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
-    </div>
-  );
-}

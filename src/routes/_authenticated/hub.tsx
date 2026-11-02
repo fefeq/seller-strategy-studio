@@ -125,8 +125,8 @@ function Hub() {
           {list.map((d) => (
             <button key={d.id} onClick={() => { setSelected(d); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}>
               <span className="font-medium">{d.title}</span>
-              {d.scope === "personal" && <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">personal</span>}
-              {d.scope === "team" && (d.mandatory || d.section === "rules") && <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">obligatorio</span>}
+              {d.scope === "personal" && <span className="ml-2 rounded bg-accent px-1.5 font-mono text-xs uppercase">personal</span>}
+              {d.scope === "team" && (d.mandatory || d.section === "rules") && <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">obligatorio</span>}
             </button>
           ))}
           {list.length === 0 && <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>}

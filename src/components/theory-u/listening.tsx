@@ -19,7 +19,7 @@ export function LevelPicker({ value, onChange }: { value: number | null | undefi
           onClick={() => onChange(value === l ? null : l)}
           className={`min-h-10 rounded-md border px-2 py-1.5 text-left text-xs md:min-h-0 ${value === l ? "border-signal bg-signal/10" : "hover:border-foreground/30"}`}
         >
-          <span className="font-mono text-[10px] text-muted-foreground">{l}</span> <span className="font-medium">{LISTENING_LEVELS[l].label}</span>
+          <span className="font-mono text-xs text-muted-foreground">{l}</span> <span className="font-medium">{LISTENING_LEVELS[l].label}</span>
         </button>
       ))}
     </div>
@@ -79,7 +79,7 @@ export function Listening() {
                 {m.listening_coaching ? " · con coaching IA" : ""}
               </p>
             </div>
-            <span className="shrink-0 rounded bg-muted px-2 py-0.5 font-mono text-[10px] uppercase">{m.listening_level} · {LISTENING_LEVELS[m.listening_level as ListeningLevel]?.label}</span>
+            <span className="shrink-0 rounded bg-muted px-2 py-0.5 font-mono text-xs uppercase">{m.listening_level} · {LISTENING_LEVELS[m.listening_level as ListeningLevel]?.label}</span>
           </div>
         ))}
       </div>
