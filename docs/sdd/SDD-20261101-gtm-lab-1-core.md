@@ -692,4 +692,11 @@ Total aprobable: $1 (piloto) + $1,50 (referencia) + $2 (completa).
 - **§16:** cuatro comprobaciones nuevas para el piloto.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-{…}
+**Estado: En curso** (2026-11-02). U-1 a U-6 construidas en `feat/gtm-lab-1-core` @ `eb36b88`, sin push. U-7 a U-9 pendientes del OK de Fede. Paquete de resultado: `.factory/evidence/NK-0048/result.md`.
+- **CA-3:** la regla «nada de `src/` fuera de los tests importa `core/node.ts`» va en `src/lib/gtm-lab/node-entry.test.ts`, para no tocar `boundaries.test.ts` más allá de los 7 cambios de CA-2.
+- **Módulos puros añadidos a los de §5:** `eval/anthropic-http.ts` (cabeceras, versión, `PRICES`, `costUsd`), `eval/cases.ts` (fixtures con `?raw`, `CALIBRATION`, modelo fijado, nombre de esquema `suggestion`) y `eval/report.ts` (umbral de `criterio.md` §5 y comparación de CA-19, donde «pasan» son las comprobaciones automáticas).
+- **`costUsd`:** devuelve `null` para un modelo sin precio, en lugar de lanzar un error como el original, así que la pasada queda en «sin dato».
+- **`record-cost`:** usa `GTM_LAB_EVAL_COST_USD`, `_SOURCE`, `_APPROVED_BY` y `_DATE` (por defecto, hoy).
+- **Claves:** `.env.local` del worktree desde el que se lanza, o el entorno.
+- **Gate:** FAIL solo por 2 fallos que ya están en la base `9910511`, en `migrations-journal` (0073 duplicada) y `field-coverage` (`platform_admins`). No se añaden a los fallos conocidos sin decisión.
+- **§16, fixtures:** «VeriDoc API» coincide con VeriDoc Global. No se cambia sin decisión.
