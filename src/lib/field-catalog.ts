@@ -36,8 +36,14 @@ export type ConceptId =
   | "motivo_perdida"
   | "detalle_perdida"
   | "competidor_perdida"
-  | "regla_experimento" | "fecha_revision" | "decision_experimento" | "elemento_cambio" | "registro_decision"
-  | "motion_adquisicion";
+  | "regla_experimento"
+  | "fecha_revision"
+  | "decision_experimento"
+  | "elemento_cambio"
+  | "registro_decision"
+  | "motion_adquisicion"
+  | "clave_usuario"
+  | "alta_sistema";
 
 export type Concept = {
   id: ConceptId;
@@ -177,11 +183,49 @@ export const CONCEPTS: Concept[] = [
     format: "Texto libre de hasta 200 caracteres; mayúsculas y espacios no distinguen al contar",
     display: "Tal cual se escribió",
   },
-  { id: "regla_experimento", label: "Criterio del experimento", meaning: "Umbral de éxito, regla de cierre o nota del cambio propuesto de un experimento; vacío es «sin definir».", kind: "text", format: "Texto libre de hasta 500 caracteres", display: "Tal cual se escribió" },
-  { id: "fecha_revision", label: "Fecha de revisión", meaning: "Día en que un experimento en marcha se revisa para decidir.", kind: "text", format: "Fecha AAAA-MM-DD; vacía si no se ha puesto", display: "Fecha en formato local" },
-  { id: "decision_experimento", label: "Decisión del experimento", meaning: "Qué se decidió al revisarlo; vacío es «pendiente».", kind: "enum", format: "Valor de una lista cerrada (Escalar, Ajustar, Cerrar)", allowed: ["scale", "adjust", "close"], display: "Etiqueta en español (DECISION_LABEL)" },
-  { id: "elemento_cambio", label: "Elemento del cambio propuesto", meaning: "Sobre qué parte de la estrategia propone un cambio un experimento decidido.", kind: "enum", format: "Valor de una lista cerrada (ICP, Segmento, Posicionamiento, Producto y precio)", allowed: ["icp", "segment", "positioning", "product_price"], display: "Etiqueta en español (CHANGE_LABEL)" },
-  { id: "registro_decision", label: "Quién y cuándo decidió", meaning: "Persona y momento en que se registró la decisión; los pone el sistema, no se editan.", kind: "text", format: "Identificador de la persona y fecha y hora", display: "Nombre de la persona y fecha" },
+  {
+    id: "regla_experimento",
+    label: "Criterio del experimento",
+    meaning:
+      "Umbral de éxito, regla de cierre o nota del cambio propuesto de un experimento; vacío es «sin definir».",
+    kind: "text",
+    format: "Texto libre de hasta 500 caracteres",
+    display: "Tal cual se escribió",
+  },
+  {
+    id: "fecha_revision",
+    label: "Fecha de revisión",
+    meaning: "Día en que un experimento en marcha se revisa para decidir.",
+    kind: "text",
+    format: "Fecha AAAA-MM-DD; vacía si no se ha puesto",
+    display: "Fecha en formato local",
+  },
+  {
+    id: "decision_experimento",
+    label: "Decisión del experimento",
+    meaning: "Qué se decidió al revisarlo; vacío es «pendiente».",
+    kind: "enum",
+    format: "Valor de una lista cerrada (Escalar, Ajustar, Cerrar)",
+    allowed: ["scale", "adjust", "close"],
+    display: "Etiqueta en español (DECISION_LABEL)",
+  },
+  {
+    id: "elemento_cambio",
+    label: "Elemento del cambio propuesto",
+    meaning: "Sobre qué parte de la estrategia propone un cambio un experimento decidido.",
+    kind: "enum",
+    format: "Valor de una lista cerrada (ICP, Segmento, Posicionamiento, Producto y precio)",
+    allowed: ["icp", "segment", "positioning", "product_price"],
+    display: "Etiqueta en español (CHANGE_LABEL)",
+  },
+  {
+    id: "registro_decision",
+    label: "Quién y cuándo decidió",
+    meaning: "Persona y momento en que se registró la decisión; los pone el sistema, no se editan.",
+    kind: "text",
+    format: "Identificador de la persona y fecha y hora",
+    display: "Nombre de la persona y fecha",
+  },
   {
     id: "fuente_citada",
     label: "Fuente citada",
@@ -199,6 +243,23 @@ export const CONCEPTS: Concept[] = [
     format: "Valor cerrado; vacío = sin definir",
     allowed: ACQUISITION_MOTIONS,
     display: "Etiqueta en español (ACQUISITION_MOTION_LABEL)",
+  },
+  {
+    id: "clave_usuario",
+    label: "Usuario (clave)",
+    meaning:
+      "Identificador de la persona a la que se refiere un registro de sistema; no se escribe a mano.",
+    kind: "text",
+    format: "Identificador de perfil (uuid)",
+    display: "No se muestra en pantalla",
+  },
+  {
+    id: "alta_sistema",
+    label: "Fecha de alta (sistema)",
+    meaning: "Momento en que el sistema creó el registro; no se edita.",
+    kind: "text",
+    format: "Fecha y hora con zona horaria",
+    display: "No se muestra en pantalla",
   },
 ];
 
@@ -249,14 +310,51 @@ export const BINDINGS: Binding[] = [
     note: "Proposed from the MEDDPICC Competition note; the person edits it",
   },
   // Experimentos con criterio de cierre (SDD estrategia F2)
-  { table: "gtm_experiments", column: "success_threshold", concept: "regla_experimento", persistence: saved },
-  { table: "gtm_experiments", column: "close_rule", concept: "regla_experimento", persistence: saved },
-  { table: "gtm_experiments", column: "change_note", concept: "regla_experimento", persistence: saved },
+  {
+    table: "gtm_experiments",
+    column: "success_threshold",
+    concept: "regla_experimento",
+    persistence: saved,
+  },
+  {
+    table: "gtm_experiments",
+    column: "close_rule",
+    concept: "regla_experimento",
+    persistence: saved,
+  },
+  {
+    table: "gtm_experiments",
+    column: "change_note",
+    concept: "regla_experimento",
+    persistence: saved,
+  },
   { table: "gtm_experiments", column: "review_on", concept: "fecha_revision", persistence: saved },
-  { table: "gtm_experiments", column: "decision", concept: "decision_experimento", persistence: saved },
-  { table: "gtm_experiments", column: "change_element", concept: "elemento_cambio", persistence: saved },
-  { table: "gtm_experiments", column: "decided_at", concept: "registro_decision", persistence: saved, note: "Set by the system when the decision is saved" },
-  { table: "gtm_experiments", column: "decided_by", concept: "registro_decision", persistence: saved, note: "Set by the system when the decision is saved" },
+  {
+    table: "gtm_experiments",
+    column: "decision",
+    concept: "decision_experimento",
+    persistence: saved,
+  },
+  {
+    table: "gtm_experiments",
+    column: "change_element",
+    concept: "elemento_cambio",
+    persistence: saved,
+  },
+  {
+    table: "gtm_experiments",
+    column: "decided_at",
+    concept: "registro_decision",
+    persistence: saved,
+    note: "Set by the system when the decision is saved",
+  },
+  {
+    table: "gtm_experiments",
+    column: "decided_by",
+    concept: "registro_decision",
+    persistence: saved,
+    note: "Set by the system when the decision is saved",
+  },
   // País
   {
     table: "accounts",
@@ -430,6 +528,20 @@ export const BINDINGS: Binding[] = [
     persistence: saved,
     note: "Migration 0071; not tracked in field_sources",
   },
+  {
+    table: "platform_admins",
+    column: "user_id",
+    concept: "clave_usuario",
+    persistence: saved,
+    note: "Migration 0075; rows are written by the platform, not from a screen",
+  },
+  {
+    table: "platform_admins",
+    column: "created_at",
+    concept: "alta_sistema",
+    persistence: saved,
+    note: "Migration 0075; set by the database default",
+  },
   { table: "deals", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "people", column: "source", concept: "canal_de_entrada", persistence: saved },
   { table: "tasks", column: "source", concept: "creado_por", persistence: saved },
@@ -534,6 +646,8 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   elemento_cambio: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments.ts"],
   registro_decision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments-core.ts"],
   motion_adquisicion: ["src/components/strategy/motions.tsx"],
+  clave_usuario: ["src/integrations/supabase/types.ts"],
+  alta_sistema: ["src/integrations/supabase/types.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */
