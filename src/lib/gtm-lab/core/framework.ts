@@ -51,7 +51,9 @@ const frameworkSchema = z.object({
   // Strategy document structure (SDD documento): sections and the deliverables each one shows.
   document: z
     .object({
-      sections: z.array(z.object({ id: idSchema, title: z.string().min(1), deliverables: z.array(idSchema) })),
+      sections: z.array(
+        z.object({ id: idSchema, title: z.string().min(1), deliverables: z.array(idSchema) }),
+      ),
     })
     .default({ sections: [] }),
 });
@@ -70,7 +72,9 @@ export function parseFramework(text: string): Framework {
   } catch (error) {
     if (error instanceof YAMLParseError) {
       const line = error.linePos?.[0]?.line ?? "?";
-      throw new FrameworkError(`YAML inválido en la línea ${line}: ${error.message.split("\n")[0]}`);
+      throw new FrameworkError(
+        `YAML inválido en la línea ${line}: ${error.message.split("\n")[0]}`,
+      );
     }
     throw error;
   }
@@ -122,7 +126,9 @@ function validate(framework: Framework): void {
     const both = step.uses.find((u) => step.requires.includes(u));
     if (both) throw new FrameworkError(`"${step.id}" tiene "${both}" en requires y en uses`);
     if (step.uses.includes(step.deliverable)) {
-      throw new FrameworkError(`"${step.id}" no puede leer su propio entregable "${step.deliverable}"`);
+      throw new FrameworkError(
+        `"${step.id}" no puede leer su propio entregable "${step.deliverable}"`,
+      );
     }
   }
 
@@ -142,13 +148,17 @@ function validate(framework: Framework): void {
   ];
   for (const { from, ref, via } of references) {
     if (!deliverables.has(ref)) {
-      throw new FrameworkError(`"${from}" ${via ?? "requiere"} "${ref}", que no es ningún entregable`);
+      throw new FrameworkError(
+        `"${from}" ${via ?? "requiere"} "${ref}", que no es ningún entregable`,
+      );
     }
   }
 
   for (const ref of framework.output.requires) {
     if (producers.get(ref)?.optional) {
-      throw new FrameworkError(`El documento final no puede exigir un entregable opcional: "${ref}"`);
+      throw new FrameworkError(
+        `El documento final no puede exigir un entregable opcional: "${ref}"`,
+      );
     }
   }
 

@@ -74,28 +74,41 @@ output: { id: doc, title: Doc, requires: [da] }
       .filter((s) => !s.optional)
       .map((s) => s.deliverable);
     expect(strategyDocReady(framework, new Set(["project-profile", ...mandatory]))).toBe(true);
-    expect(
-      strategyDocReady(framework, new Set(["project-profile", ...mandatory.slice(1)])),
-    ).toBe(false);
+    expect(strategyDocReady(framework, new Set(["project-profile", ...mandatory.slice(1)]))).toBe(
+      false,
+    );
   });
 });
 
 describe("in-progress deliverables (CA-4)", () => {
   it("a draft does not count as done and shows as in progress", () => {
-    const progress = projectProgress(framework, new Set(["project-profile"]), new Set(["end-goal"]));
+    const progress = projectProgress(
+      framework,
+      new Set(["project-profile"]),
+      new Set(["end-goal"]),
+    );
     expect(progress.steps.find((s) => s.id === "end-goal")?.status).toBe("in_progress");
     expect(progress.steps.find((s) => s.id === "north-metric")?.status).toBe("blocked");
   });
 
   it("the profile can be in progress too", () => {
-    expect(projectProgress(framework, new Set(), new Set(["project-profile"])).profile).toBe("in_progress");
+    expect(projectProgress(framework, new Set(), new Set(["project-profile"])).profile).toBe(
+      "in_progress",
+    );
   });
 });
 
 describe("a draft never bypasses its prerequisites (review finding 1)", () => {
   it("a step with a draft whose prerequisite was reopened is blocked again", () => {
-    const progress = projectProgress(framework, new Set(["project-profile"]), new Set(["end-goal", "north-metric"]));
-    expect(progress.steps.find((s) => s.id === "north-metric")).toMatchObject({ status: "blocked", missing: ["end-goal"] });
+    const progress = projectProgress(
+      framework,
+      new Set(["project-profile"]),
+      new Set(["end-goal", "north-metric"]),
+    );
+    expect(progress.steps.find((s) => s.id === "north-metric")).toMatchObject({
+      status: "blocked",
+      missing: ["end-goal"],
+    });
     expect(progress.steps.find((s) => s.id === "end-goal")?.status).toBe("in_progress"); // control
   });
 });

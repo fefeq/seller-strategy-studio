@@ -20,7 +20,18 @@ export interface Experiment {
   createdAt?: string;
 }
 
-const FIELDS = new Set(["id", "title", "learning", "impact", "confidence", "ease", "status", "result", "source", "createdAt"]);
+const FIELDS = new Set([
+  "id",
+  "title",
+  "learning",
+  "impact",
+  "confidence",
+  "ease",
+  "status",
+  "result",
+  "source",
+  "createdAt",
+]);
 const SCORES = [
   ["impact", "Impacto"],
   ["confidence", "Confianza"],
@@ -34,12 +45,16 @@ const PLAN = { deliverable: "experiments", list: "experiments" } as const;
 /** Rules for saving an experiment from the backlog screen. Names the field that fails. */
 export function validateExperiment(experiment: Experiment): FieldError[] {
   const errors: FieldError[] = [];
-  const add = (field: string, label: string, message: string) => errors.push({ field, label, message });
+  const add = (field: string, label: string, message: string) =>
+    errors.push({ field, label, message });
   const record = experiment as unknown as Record<string, unknown>;
 
-  for (const key of Object.keys(record)) if (!FIELDS.has(key)) add(key, key, `Campo desconocido: "${key}"`);
-  if (typeof experiment.title !== "string" || !experiment.title.trim()) add("title", "Experimento", "Obligatorio");
-  else if (experiment.title.length > MAX_TITLE) add("title", "Experimento", `Máximo ${MAX_TITLE} caracteres`);
+  for (const key of Object.keys(record))
+    if (!FIELDS.has(key)) add(key, key, `Campo desconocido: "${key}"`);
+  if (typeof experiment.title !== "string" || !experiment.title.trim())
+    add("title", "Experimento", "Obligatorio");
+  else if (experiment.title.length > MAX_TITLE)
+    add("title", "Experimento", `Máximo ${MAX_TITLE} caracteres`);
   for (const [field, label] of SCORES) {
     const value = experiment[field];
     if (!Number.isInteger(value) || (value as number) < 1 || (value as number) > 10) {
@@ -47,9 +62,13 @@ export function validateExperiment(experiment: Experiment): FieldError[] {
     }
   }
   if (!EXPERIMENT_STATUSES.includes(experiment.status)) add("status", "Estado", "Estado no válido");
-  for (const [field, label] of [["learning", "Qué quieres aprender"], ["result", "Resultado"]] as const) {
+  for (const [field, label] of [
+    ["learning", "Qué quieres aprender"],
+    ["result", "Resultado"],
+  ] as const) {
     const value = experiment[field];
-    if (value != null && (typeof value !== "string" || value.length > MAX_TEXT)) add(field, label, `Máximo ${MAX_TEXT} caracteres`);
+    if (value != null && (typeof value !== "string" || value.length > MAX_TEXT))
+      add(field, label, `Máximo ${MAX_TEXT} caracteres`);
   }
   return errors;
 }
@@ -63,8 +82,12 @@ export interface BacklogEntry {
 const scored = (e: Experiment) => e.impact !== null && e.confidence !== null && e.ease !== null;
 
 /** Open experiments by ICE (ties: oldest first), unscored ones last; closed ones apart, oldest first. */
-export function orderBacklog(experiments: readonly Experiment[]): { open: BacklogEntry[]; closed: BacklogEntry[] } {
-  const byDate = (a: Experiment, b: Experiment) => Date.parse(a.createdAt ?? "") - Date.parse(b.createdAt ?? "");
+export function orderBacklog(experiments: readonly Experiment[]): {
+  open: BacklogEntry[];
+  closed: BacklogEntry[];
+} {
+  const byDate = (a: Experiment, b: Experiment) =>
+    Date.parse(a.createdAt ?? "") - Date.parse(b.createdAt ?? "");
   const open = experiments.filter((e) => OPEN.has(e.status));
   const ranked = rankBacklog(
     open.filter(scored).map((e) => ({
@@ -106,14 +129,28 @@ export function planToBacklog(
   const fresh: Experiment[] = [];
   for (const raw of list as Record<string, unknown>[]) {
     // Trim again after cutting: the app stores titles trimmed, and a trailing space would never match.
-    const title = String(raw.assumption ?? "").trim().slice(0, MAX_TITLE).trimEnd();
+    const title = String(raw.assumption ?? "")
+      .trim()
+      .slice(0, MAX_TITLE)
+      .trimEnd();
     if (!title || titles.has(title)) continue;
     titles.add(title);
-    const learning = [raw.method && `Cómo: ${String(raw.method)}`, raw.success && `Lo confirma: ${String(raw.success)}`]
+    const learning = [
+      raw.method && `Cómo: ${String(raw.method)}`,
+      raw.success && `Lo confirma: ${String(raw.success)}`,
+    ]
       .filter(Boolean)
       .join("\n")
       .slice(0, MAX_TEXT);
-    fresh.push({ title, learning, impact: null, confidence: null, ease: null, status: "idea", source: "plan" });
+    fresh.push({
+      title,
+      learning,
+      impact: null,
+      confidence: null,
+      ease: null,
+      status: "idea",
+      source: "plan",
+    });
   }
   return fresh;
 }

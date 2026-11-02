@@ -19,7 +19,11 @@ const PORTED = [
   "tools.test.ts",
 ];
 
-const TEST_FILES = import.meta.glob("./*.test.ts", { query: "?raw", import: "default", eager: true });
+const TEST_FILES = import.meta.glob("./*.test.ts", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
 
 function ported(): [string, string][] {
   return Object.entries(TEST_FILES)
@@ -29,7 +33,11 @@ function ported(): [string, string][] {
 
 describe("ported core tests (NK-0048 CA-2)", () => {
   it("are exactly the 14 files of packages/core/src@44f385b", () => {
-    expect(ported().map(([name]) => name).sort()).toEqual(PORTED);
+    expect(
+      ported()
+        .map(([name]) => name)
+        .sort(),
+    ).toEqual(PORTED);
   });
 
   it("keep 174 literal it/test calls and 12 it.each", () => {

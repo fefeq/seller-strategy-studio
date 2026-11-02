@@ -1,7 +1,13 @@
 // From gtm-lab@44f385b packages/core/src/document.test.ts
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { allSteps, buildStrategyDoc, parseFramework, renderMarkdown, type Experiment } from "./index";
+import {
+  allSteps,
+  buildStrategyDoc,
+  parseFramework,
+  renderMarkdown,
+  type Experiment,
+} from "./index";
 import { loadFrameworkFile } from "./node";
 
 const framework = loadFrameworkFile(new URL("../methodology/framework.yaml", import.meta.url));
@@ -10,31 +16,119 @@ const project = { name: "Proyecto demo" };
 const AT = "2026-10-31T12:00:00Z";
 
 const fullScores = { pain: 5, budget: 4, access: 3, fit: 4 };
-const complete = new Map<string, { status: "done" | "in_progress"; data: Record<string, unknown> }>([
-  ["project-profile", done({ product: "Citas para talleres", problem: "Pierden llamadas", candidates: "Talleres", today: "Papel", edge: "WhatsApp", proof: "sin dato", goal: "20 talleres" })],
-  ["end-goal", done({ goal: "20 talleres de pago", horizon: "12 meses" })],
-  ["north-metric", done({ metric: "Citas confirmadas", definition: "Citas por semana" })],
-  ["segment-list", done({ segments: [{ name: "Talleres", who: "Pequeños", problem: "Llamadas" }, { name: "Motos", who: "Moteros", problem: "Picos" }] })],
-  ["segment-scores", done({ rows: [{ item: "Talleres", scores: { pain: 2, budget: 2, access: 2, fit: 2 } }, { item: "Motos", scores: fullScores }] })],
-  ["competitor-map", done({ alternatives: [{ name: "Papel", kind: "No hacer nada" }] })],
-  ["entry-segment", done({ segment: "Motos", why: "Más dolor" })],
-  ["assumption-map", done({ rows: [{ item: "Pagan", scores: { importance: 5, evidence: 1 } }, { item: "Usan WhatsApp", scores: { importance: 2, evidence: 4 } }, { item: "Llaman", scores: { importance: 3, evidence: 3 } }] })],
-  ["experiments", done({ experiments: [{ assumption: "Pagan", method: "Landing", success: "10 reservas" }] })],
-  ["customer-profile", done({ role: "Dueño", company_type: "Taller", company_size: "1-3", pains: [{ pain: "Llamadas perdidas" }], trigger: "Temporada alta" })],
-  ["value-proposition", done({ for_whom: "Talleres de motos", problem: "Llamadas", how: "WhatsApp", result: "Agenda llena" })],
-  ["differentiators", done({ items: [{ differentiator: "Sin app nueva", proof: "Usa WhatsApp" }] })],
-  ["core-message", done({ headline: "Tu agenda, sin llamadas perdidas", message: "Dos frases." })],
-]);
+const complete = new Map<string, { status: "done" | "in_progress"; data: Record<string, unknown> }>(
+  [
+    [
+      "project-profile",
+      done({
+        product: "Citas para talleres",
+        problem: "Pierden llamadas",
+        candidates: "Talleres",
+        today: "Papel",
+        edge: "WhatsApp",
+        proof: "sin dato",
+        goal: "20 talleres",
+      }),
+    ],
+    ["end-goal", done({ goal: "20 talleres de pago", horizon: "12 meses" })],
+    ["north-metric", done({ metric: "Citas confirmadas", definition: "Citas por semana" })],
+    [
+      "segment-list",
+      done({
+        segments: [
+          { name: "Talleres", who: "Pequeños", problem: "Llamadas" },
+          { name: "Motos", who: "Moteros", problem: "Picos" },
+        ],
+      }),
+    ],
+    [
+      "segment-scores",
+      done({
+        rows: [
+          { item: "Talleres", scores: { pain: 2, budget: 2, access: 2, fit: 2 } },
+          { item: "Motos", scores: fullScores },
+        ],
+      }),
+    ],
+    ["competitor-map", done({ alternatives: [{ name: "Papel", kind: "No hacer nada" }] })],
+    ["entry-segment", done({ segment: "Motos", why: "Más dolor" })],
+    [
+      "assumption-map",
+      done({
+        rows: [
+          { item: "Pagan", scores: { importance: 5, evidence: 1 } },
+          { item: "Usan WhatsApp", scores: { importance: 2, evidence: 4 } },
+          { item: "Llaman", scores: { importance: 3, evidence: 3 } },
+        ],
+      }),
+    ],
+    [
+      "experiments",
+      done({ experiments: [{ assumption: "Pagan", method: "Landing", success: "10 reservas" }] }),
+    ],
+    [
+      "customer-profile",
+      done({
+        role: "Dueño",
+        company_type: "Taller",
+        company_size: "1-3",
+        pains: [{ pain: "Llamadas perdidas" }],
+        trigger: "Temporada alta",
+      }),
+    ],
+    [
+      "value-proposition",
+      done({
+        for_whom: "Talleres de motos",
+        problem: "Llamadas",
+        how: "WhatsApp",
+        result: "Agenda llena",
+      }),
+    ],
+    [
+      "differentiators",
+      done({ items: [{ differentiator: "Sin app nueva", proof: "Usa WhatsApp" }] }),
+    ],
+    [
+      "core-message",
+      done({ headline: "Tu agenda, sin llamadas perdidas", message: "Dos frases." }),
+    ],
+  ],
+);
 const experiments: Experiment[] = [
-  { title: "Landing", impact: 8, confidence: 6, ease: 9, status: "idea", createdAt: "2026-10-01T00:00:00Z" },
-  { title: "Entrevistas", impact: 9, confidence: 9, ease: 9, status: "running", createdAt: "2026-10-02T00:00:00Z" },
-  { title: "Encuesta", impact: 4, confidence: 8, ease: 10, status: "done", result: "8 de 10 usan WhatsApp", createdAt: "2026-10-03T00:00:00Z" },
+  {
+    title: "Landing",
+    impact: 8,
+    confidence: 6,
+    ease: 9,
+    status: "idea",
+    createdAt: "2026-10-01T00:00:00Z",
+  },
+  {
+    title: "Entrevistas",
+    impact: 9,
+    confidence: 9,
+    ease: 9,
+    status: "running",
+    createdAt: "2026-10-02T00:00:00Z",
+  },
+  {
+    title: "Encuesta",
+    impact: 4,
+    confidence: 8,
+    ease: 10,
+    status: "done",
+    result: "8 de 10 usan WhatsApp",
+    createdAt: "2026-10-03T00:00:00Z",
+  },
 ];
 
 describe("document structure in the framework (CA-1)", () => {
   it("covers the profile and the 23 step deliverables, in the agreed section order", () => {
     const ids = framework.document.sections.flatMap((s) => s.deliverables);
-    expect(ids.sort()).toEqual(["project-profile", ...allSteps(framework).map((s) => s.deliverable)].sort());
+    expect(ids.sort()).toEqual(
+      ["project-profile", ...allSteps(framework).map((s) => s.deliverable)].sort(),
+    );
     expect(framework.document.sections.map((s) => s.title)).toEqual([
       "Contexto del proyecto",
       "Rumbo",
@@ -67,8 +161,16 @@ document:
   });
   it.each([
     ["an unknown deliverable", base.replace("deliverables: [da]", "deliverables: [zz]"), /"zz"/],
-    ["a deliverable in two sections", base.replace("deliverables: [da]", "deliverables: [project-profile]"), /"project-profile".*dos secciones/],
-    ["an empty section", base.replace("deliverables: [da]", "deliverables: []"), /"s2".*sin entregables/],
+    [
+      "a deliverable in two sections",
+      base.replace("deliverables: [da]", "deliverables: [project-profile]"),
+      /"project-profile".*dos secciones/,
+    ],
+    [
+      "an empty section",
+      base.replace("deliverables: [da]", "deliverables: []"),
+      /"s2".*sin entregables/,
+    ],
   ])("rejects %s, naming the id", (_case, text, error) => {
     expect(() => parseFramework(text)).toThrow(error);
   });
@@ -81,15 +183,28 @@ describe("buildStrategyDoc, complete project (CA-2)", () => {
   it("is complete, with every section in order and nothing pending", () => {
     expect(doc.complete).toBe(true);
     expect(doc.pending).toEqual([]);
-    expect(doc.sections.map((s) => s.title)).toEqual(["Contexto del proyecto", "Rumbo", "Mercado", "Cliente", "Precio", "Canales", "Propuesta y mensaje", "Plan de 90 días"]);
+    expect(doc.sections.map((s) => s.title)).toEqual([
+      "Contexto del proyecto",
+      "Rumbo",
+      "Mercado",
+      "Cliente",
+      "Precio",
+      "Canales",
+      "Propuesta y mensaje",
+      "Plan de 90 días",
+    ]);
   });
 
   it("shows each answer with its field label, lists numbered and rankings ordered", () => {
     expect(md).toContain("**Qué quieres conseguir**\n\n20 talleres de pago");
     expect(md).toContain("**¿Qué hace tu producto, en una frase?**\n\nCitas para talleres");
-    expect(md).toMatch(/\*\*Segmentos\*\*\n\n1\. Nombre: Talleres · Quiénes son: Pequeños · Qué problema tienen: Llamadas\n2\. Nombre: Motos/);
+    expect(md).toMatch(
+      /\*\*Segmentos\*\*\n\n1\. Nombre: Talleres · Quiénes son: Pequeños · Qué problema tienen: Llamadas\n2\. Nombre: Motos/,
+    );
     expect(md).toContain("1. Motos — Total: 16 de 20\n2. Talleres — Total: 8 de 20");
-    expect(md).toContain("1. Pagan — Riesgo: 25 de 25\n2. Llaman — Riesgo: 9 de 25\n3. Usan WhatsApp — Riesgo: 4 de 25");
+    expect(md).toContain(
+      "1. Pagan — Riesgo: 25 de 25\n2. Llaman — Riesgo: 9 de 25\n3. Usan WhatsApp — Riesgo: 4 de 25",
+    );
   });
 
   it("includes the backlog: open by ICE, closed with their result", () => {
@@ -110,7 +225,10 @@ describe("buildStrategyDoc, complete project (CA-2)", () => {
 
 describe("buildStrategyDoc, unfinished project (CA-3)", () => {
   const partial = new Map(complete);
-  partial.set("core-message", { status: "in_progress", data: { headline: "Borrador del titular" } });
+  partial.set("core-message", {
+    status: "in_progress",
+    data: { headline: "Borrador del titular" },
+  });
   partial.delete("value-proposition");
   partial.delete("buying-group");
   partial.set("segment-list", done({ segments: [{ name: "Talleres" }, { name: "Nuevo" }] }));
@@ -130,11 +248,16 @@ describe("buildStrategyDoc, unfinished project (CA-3)", () => {
 
   it("a calculator marked done without scores says so", () => {
     const legacy = new Map(complete).set("segment-scores", done({}));
-    expect(renderMarkdown(buildStrategyDoc(framework, legacy, [], project, AT))).toContain("_Hecho, sin puntuaciones._");
+    expect(renderMarkdown(buildStrategyDoc(framework, legacy, [], project, AT))).toContain(
+      "_Hecho, sin puntuaciones._",
+    );
   });
 
   it("a profile only in progress keeps the document incomplete", () => {
-    const draftProfile = new Map(complete).set("project-profile", { status: "in_progress", data: {} });
+    const draftProfile = new Map(complete).set("project-profile", {
+      status: "in_progress",
+      data: {},
+    });
     const doc = buildStrategyDoc(framework, draftProfile, [], project, AT);
     expect(doc.complete).toBe(false);
     expect(doc.pending[0]).toBe("Perfil del proyecto");
@@ -148,7 +271,15 @@ describe("buildStrategyDoc, unfinished project (CA-3)", () => {
 describe("renderMarkdown (CA-4)", () => {
   it("is deterministic and dated", () => {
     const a = renderMarkdown(buildStrategyDoc(framework, complete, experiments, project, AT));
-    const b = renderMarkdown(buildStrategyDoc(framework, new Map([...complete].reverse()), [...experiments].reverse(), project, AT));
+    const b = renderMarkdown(
+      buildStrategyDoc(
+        framework,
+        new Map([...complete].reverse()),
+        [...experiments].reverse(),
+        project,
+        AT,
+      ),
+    );
     expect(a).toBe(b);
     expect(a).toContain("# Documento de estrategia GTM: Proyecto demo");
     expect(a).toContain("_Generado el 31/10/2026._");
@@ -157,7 +288,9 @@ describe("renderMarkdown (CA-4)", () => {
 
   it("an incomplete document starts with the draft mark", () => {
     const md = renderMarkdown(buildStrategyDoc(framework, new Map(), [], project, AT));
-    expect(md.split("\n").slice(0, 6).join("\n")).toContain("> Borrador: faltan pasos por completar.");
+    expect(md.split("\n").slice(0, 6).join("\n")).toContain(
+      "> Borrador: faltan pasos por completar.",
+    );
     expect(md).toContain("## 10. Pendiente");
   });
 
@@ -173,13 +306,30 @@ describe("renderMarkdown (CA-4)", () => {
     ["a backslash", "C:\\ruta", "C:\\\\ruta"],
   ])("neutralises %s in a field", (_case, input, expected) => {
     const tricky = new Map(complete).set("end-goal", done({ goal: input, horizon: "12 meses" }));
-    expect(renderMarkdown(buildStrategyDoc(framework, tricky, [], project, AT))).toContain(expected);
+    expect(renderMarkdown(buildStrategyDoc(framework, tricky, [], project, AT))).toContain(
+      expected,
+    );
   });
 
   it("escapes the project name, list items and backlog entries, and keeps list items on one line", () => {
-    const tricky = new Map(complete).set("customer-profile", done({ role: "R", company_type: "T", company_size: "S", pains: [{ pain: "# uno\n\ndos" }], trigger: "x" }));
+    const tricky = new Map(complete).set(
+      "customer-profile",
+      done({
+        role: "R",
+        company_type: "T",
+        company_size: "S",
+        pains: [{ pain: "# uno\n\ndos" }],
+        trigger: "x",
+      }),
+    );
     const md = renderMarkdown(
-      buildStrategyDoc(framework, tricky, [{ title: "*Exp*", impact: 5, confidence: 5, ease: 5, status: "done", result: "[r](x)" }], { name: "Mi *proyecto*" }, AT),
+      buildStrategyDoc(
+        framework,
+        tricky,
+        [{ title: "*Exp*", impact: 5, confidence: 5, ease: 5, status: "done", result: "[r](x)" }],
+        { name: "Mi *proyecto*" },
+        AT,
+      ),
     );
     expect(md).toContain("# Documento de estrategia GTM: Mi \\*proyecto\\*");
     expect(md).toContain("1. \\# uno dos");
@@ -187,7 +337,10 @@ describe("renderMarkdown (CA-4)", () => {
   });
 
   it("escapes Markdown written by the founder", () => {
-    const tricky = new Map(complete).set("end-goal", done({ goal: "# Título *falso* [link](x)\n- no es lista", horizon: "12 meses" }));
+    const tricky = new Map(complete).set(
+      "end-goal",
+      done({ goal: "# Título *falso* [link](x)\n- no es lista", horizon: "12 meses" }),
+    );
     const md = renderMarkdown(buildStrategyDoc(framework, tricky, [], project, AT));
     expect(md).toContain("\\# Título \\*falso\\* \\[link\\](x)\n\n\\- no es lista");
   });

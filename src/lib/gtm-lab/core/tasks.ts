@@ -4,8 +4,25 @@ import { z } from "zod";
 import { allSteps, type Framework } from "./framework";
 
 export const TASK_STAGES = ["before", "launch", "after"] as const;
-export const TASK_KINDS = ["decision", "workshop", "framework", "guide", "habit", "campaign", "analysis", "quick"] as const;
-export const TASK_DURATIONS = ["hour", "hours", "day", "days", "weeks", "month", "ongoing"] as const;
+export const TASK_KINDS = [
+  "decision",
+  "workshop",
+  "framework",
+  "guide",
+  "habit",
+  "campaign",
+  "analysis",
+  "quick",
+] as const;
+export const TASK_DURATIONS = [
+  "hour",
+  "hours",
+  "day",
+  "days",
+  "weeks",
+  "month",
+  "ongoing",
+] as const;
 /** Statuses a founder can save. A task with no saved row is pending with no date. */
 export const SAVED_TASK_STATUSES = ["pending", "in_progress", "done", "dropped"] as const;
 
@@ -96,13 +113,21 @@ export function parseTasks(text: string): TaskCatalog {
     if (!task.title.trim()) throw new TasksError(`La tarea "${task.id}" no tiene título`);
     if (!task.summary.trim()) throw new TasksError(`La tarea "${task.id}" no tiene resumen`);
     const title = task.title.trim();
-    if (titles.has(title)) throw new TasksError(`La tarea "${task.id}" repite el título de "${titles.get(title)}"`);
+    if (titles.has(title))
+      throw new TasksError(`La tarea "${task.id}" repite el título de "${titles.get(title)}"`);
     titles.set(title, task.id);
-    if (!oneOf(TASK_STAGES, task.stage)) throw new TasksError(`La tarea "${task.id}" tiene una etapa desconocida: "${task.stage}"`);
-    if (!categoryIds.has(task.category)) throw new TasksError(`La tarea "${task.id}" usa la categoría "${task.category}", que no existe`);
-    if (!oneOf(TASK_KINDS, task.kind)) throw new TasksError(`La tarea "${task.id}" tiene un tipo desconocido: "${task.kind}"`);
+    if (!oneOf(TASK_STAGES, task.stage))
+      throw new TasksError(`La tarea "${task.id}" tiene una etapa desconocida: "${task.stage}"`);
+    if (!categoryIds.has(task.category))
+      throw new TasksError(
+        `La tarea "${task.id}" usa la categoría "${task.category}", que no existe`,
+      );
+    if (!oneOf(TASK_KINDS, task.kind))
+      throw new TasksError(`La tarea "${task.id}" tiene un tipo desconocido: "${task.kind}"`);
     if (task.duration !== undefined && !oneOf(TASK_DURATIONS, task.duration)) {
-      throw new TasksError(`La tarea "${task.id}" tiene una duración desconocida: "${task.duration}"`);
+      throw new TasksError(
+        `La tarea "${task.id}" tiene una duración desconocida: "${task.duration}"`,
+      );
     }
   }
 
@@ -112,11 +137,16 @@ export function parseTasks(text: string): TaskCatalog {
 /** Checks that every link points at something the framework has. Returns a message naming the task and the id, or null. */
 export function tasksProblem(catalog: TaskCatalog, framework: Framework): string | null {
   const steps = new Set(allSteps(framework).map((s) => s.id));
-  const deliverables = new Set([framework.profile.id, ...allSteps(framework).map((s) => s.deliverable)]);
+  const deliverables = new Set([
+    framework.profile.id,
+    ...allSteps(framework).map((s) => s.deliverable),
+  ]);
   for (const task of catalog.tasks) {
-    if (task.step !== undefined && !steps.has(task.step)) return `La tarea "${task.id}" usa el paso "${task.step}", que no existe`;
+    if (task.step !== undefined && !steps.has(task.step))
+      return `La tarea "${task.id}" usa el paso "${task.step}", que no existe`;
     for (const id of task.needs) {
-      if (!deliverables.has(id)) return `La tarea "${task.id}" necesita "${id}", que no es ningún entregable`;
+      if (!deliverables.has(id))
+        return `La tarea "${task.id}" necesita "${id}", que no es ningún entregable`;
     }
   }
   return null;
@@ -153,7 +183,13 @@ export interface TasksSummary extends TaskCounts {
   byCategory: Record<string, TaskCounts>;
 }
 
-const emptyCounts = (): TaskCounts => ({ done: 0, inProgress: 0, pending: 0, dropped: 0, total: 0 });
+const emptyCounts = (): TaskCounts => ({
+  done: 0,
+  inProgress: 0,
+  pending: 0,
+  dropped: 0,
+  total: 0,
+});
 
 function count(counts: TaskCounts, status: TaskStatus): void {
   if (status === "done") counts.done += 1;
@@ -164,7 +200,10 @@ function count(counts: TaskCounts, status: TaskStatus): void {
 }
 
 /** `statuses` maps task id to status; a task missing from it counts as pending. */
-export function summarizeTasks(catalog: TaskCatalog, statuses: ReadonlyMap<string, TaskStatus>): TasksSummary {
+export function summarizeTasks(
+  catalog: TaskCatalog,
+  statuses: ReadonlyMap<string, TaskStatus>,
+): TasksSummary {
   const summary: TasksSummary = {
     ...emptyCounts(),
     byStage: { before: emptyCounts(), launch: emptyCounts(), after: emptyCounts() },

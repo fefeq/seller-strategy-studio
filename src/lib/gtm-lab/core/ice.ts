@@ -26,6 +26,8 @@ export function iceScore(input: IceInput): number {
 export function rankBacklog<T extends BacklogItem>(items: readonly T[]): T[] {
   return items
     .map((item) => ({ item, score: iceScore(item) }))
-    .sort((a, b) => b.score - a.score || Date.parse(a.item.createdAt) - Date.parse(b.item.createdAt))
+    .sort(
+      (a, b) => b.score - a.score || Date.parse(a.item.createdAt) - Date.parse(b.item.createdAt),
+    )
     .map(({ item }) => item);
 }

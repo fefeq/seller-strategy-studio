@@ -52,7 +52,10 @@ function scalarSchema(field: ScalarField): JsonSchema {
 
 function fieldSchema(field: Field): JsonSchema {
   if (field.type !== "list") return scalarSchema(field);
-  const limits = [field.min ? `Mínimo ${field.min} elementos.` : "", field.max ? `Máximo ${field.max} elementos.` : ""];
+  const limits = [
+    field.min ? `Mínimo ${field.min} elementos.` : "",
+    field.max ? `Máximo ${field.max} elementos.` : "",
+  ];
   return {
     type: "array",
     description: [`${field.label}.`, ...limits].filter(Boolean).join(" "),
@@ -114,11 +117,14 @@ function render(
   const tool = toolFor(framework, deliverableId);
   if (tool) {
     // An out-of-date ranking would mislead the model more than no ranking.
-    if (toolIsStale(framework, deliverableId, saved)) return "- (puntuaciones desactualizadas: la lista cambió después de puntuar)";
+    if (toolIsStale(framework, deliverableId, saved))
+      return "- (puntuaciones desactualizadas: la lista cambió después de puntuar)";
     const rows = Array.isArray(data.rows) ? (data.rows as ToolRow[]) : [];
     const ranked = scoreTool(tool.spec, rows);
     return ranked.length
-      ? ranked.map((r, i) => `${i + 1}. ${r.item} — ${formatToolTotal(tool.spec, r.total)}`).join("\n")
+      ? ranked
+          .map((r, i) => `${i + 1}. ${r.item} — ${formatToolTotal(tool.spec, r.total)}`)
+          .join("\n")
       : "- (sin puntuaciones)";
   }
   const lines: string[] = [];
@@ -150,7 +156,9 @@ export function buildAiRequest(
 
   const context = prerequisites(framework, deliverableId)
     .filter((id) => saved.get(id)?.status === "done")
-    .map((id) => `## ${titleOf(framework, id)}\n${render(framework, id, saved.get(id)!.data, saved)}`);
+    .map(
+      (id) => `## ${titleOf(framework, id)}\n${render(framework, id, saved.get(id)!.data, saved)}`,
+    );
 
   const draft = saved.get(deliverableId);
   const user = [

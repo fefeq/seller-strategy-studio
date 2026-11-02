@@ -19,26 +19,91 @@ const PLAN = ["okr", "action-plan", "plan-review"];
 const done = (data: Record<string, unknown>) => ({ status: "done" as const, data });
 
 const base = new Map<string, { status: "done" | "in_progress"; data: Record<string, unknown> }>([
-  ["project-profile", done({ product: "Citas", problem: "Llamadas", candidates: "Talleres", today: "Papel", edge: "WhatsApp", proof: "sin dato", goal: "20 talleres" })],
+  [
+    "project-profile",
+    done({
+      product: "Citas",
+      problem: "Llamadas",
+      candidates: "Talleres",
+      today: "Papel",
+      edge: "WhatsApp",
+      proof: "sin dato",
+      goal: "20 talleres",
+    }),
+  ],
   ["end-goal", done({ goal: "20 talleres", horizon: "12 meses" })],
   ["north-metric", done({ metric: "Citas", definition: "Por semana" })],
-  ["segment-list", done({ segments: [{ name: "Talleres", who: "Pequeños", problem: "Llamadas" }, { name: "Motos", who: "Moteros", problem: "Picos" }] })],
-  ["segment-scores", done({ rows: [{ item: "Talleres", scores: { pain: 2, budget: 2, access: 2, fit: 2 } }, { item: "Motos", scores: { pain: 5, budget: 4, access: 3, fit: 4 } }] })],
+  [
+    "segment-list",
+    done({
+      segments: [
+        { name: "Talleres", who: "Pequeños", problem: "Llamadas" },
+        { name: "Motos", who: "Moteros", problem: "Picos" },
+      ],
+    }),
+  ],
+  [
+    "segment-scores",
+    done({
+      rows: [
+        { item: "Talleres", scores: { pain: 2, budget: 2, access: 2, fit: 2 } },
+        { item: "Motos", scores: { pain: 5, budget: 4, access: 3, fit: 4 } },
+      ],
+    }),
+  ],
   ["competitor-map", done({ alternatives: [{ name: "Papel", kind: "No hacer nada" }] })],
   ["entry-segment", done({ segment: "Motos", why: "Más dolor" })],
-  ["assumption-map", done({ rows: [{ item: "A", scores: { importance: 5, evidence: 1 } }, { item: "B", scores: { importance: 2, evidence: 4 } }, { item: "C", scores: { importance: 3, evidence: 3 } }] })],
-  ["experiments", done({ experiments: [{ assumption: "Pagan", method: "Landing", success: "10 reservas" }] })],
-  ["customer-profile", done({ role: "Dueño", company_type: "Taller", company_size: "1-3", pains: [{ pain: "Llamadas" }], trigger: "Temporada" })],
-  ["value-proposition", done({ for_whom: "Talleres", problem: "Llamadas", how: "WhatsApp", result: "Agenda llena" })],
+  [
+    "assumption-map",
+    done({
+      rows: [
+        { item: "A", scores: { importance: 5, evidence: 1 } },
+        { item: "B", scores: { importance: 2, evidence: 4 } },
+        { item: "C", scores: { importance: 3, evidence: 3 } },
+      ],
+    }),
+  ],
+  [
+    "experiments",
+    done({ experiments: [{ assumption: "Pagan", method: "Landing", success: "10 reservas" }] }),
+  ],
+  [
+    "customer-profile",
+    done({
+      role: "Dueño",
+      company_type: "Taller",
+      company_size: "1-3",
+      pains: [{ pain: "Llamadas" }],
+      trigger: "Temporada",
+    }),
+  ],
+  [
+    "value-proposition",
+    done({ for_whom: "Talleres", problem: "Llamadas", how: "WhatsApp", result: "Agenda llena" }),
+  ],
   ["differentiators", done({ items: [{ differentiator: "Sin app", proof: "WhatsApp" }] })],
   ["core-message", done({ headline: "Titular", message: "Dos frases." })],
 ]);
-const okr = { objective: "Cerrar los primeros talleres de pago", key_results: [{ result: "Talleres de pago", measure: "Cobros en Stripe", target: "[propuesta: 5 talleres]" }, { result: "Demos hechas", measure: "Agenda", target: "sin dato" }] };
+const okr = {
+  objective: "Cerrar los primeros talleres de pago",
+  key_results: [
+    { result: "Talleres de pago", measure: "Cobros en Stripe", target: "[propuesta: 5 talleres]" },
+    { result: "Demos hechas", measure: "Agenda", target: "sin dato" },
+  ],
+};
 const action = { action: "Visitar a diez talleres", when: "Semanas 1 a 4", owner: "tú" };
 
 describe("plan phase in the framework (CA-1)", () => {
   it("is the last phase, after Propuesta y mensaje, with its three steps", () => {
-    expect(real.phases.map((p) => p.id)).toEqual(["direction", "market", "customer", "pricing", "channels", "message", "plan"]);
+    expect(real.phases.map((p) => p.id)).toEqual([
+      "direction",
+      "market",
+      "customer",
+      "pricing",
+      "channels",
+      "message",
+      "plan",
+    ]);
     const plan = real.phases.find((p) => p.id === "plan");
     expect(plan?.title).toBe("Plan");
     expect(plan?.steps.map((s) => [s.id, s.deliverable, s.requires, s.uses])).toEqual([
@@ -49,12 +114,14 @@ describe("plan phase in the framework (CA-1)", () => {
   });
 
   it("is optional, so the strategy document does not require it", () => {
-    for (const step of allSteps(real).filter((s) => PLAN.includes(s.deliverable))) expect(step.optional, step.id).toBe(true);
+    for (const step of allSteps(real).filter((s) => PLAN.includes(s.deliverable)))
+      expect(step.optional, step.id).toBe(true);
   });
 });
 
 describe("uses does not block (CA-4)", () => {
-  const status = (doneIds: string[], id: string) => projectProgress(real, new Set(doneIds)).steps.find((s) => s.id === id);
+  const status = (doneIds: string[], id: string) =>
+    projectProgress(real, new Set(doneIds)).steps.find((s) => s.id === id);
 
   it("action-plan is available once okr is done, without channel-choice or experiments", () => {
     expect(status(["okr"], "action-plan")?.status).toBe("available");
@@ -69,37 +136,86 @@ describe("uses does not block (CA-4)", () => {
 });
 
 describe("plan forms (CA-5)", () => {
-  const review = { cadence: "Cada semana", reviewer: "tú", change_rule: "Si no hay ninguna demo en tres semanas" };
+  const review = {
+    cadence: "Cada semana",
+    reviewer: "tú",
+    change_rule: "Si no hay ninguna demo en tres semanas",
+  };
 
   it("accepts a complete answer for each (positive control)", () => {
     expect(validateDeliverable(real, "okr", okr, "done")).toEqual([]);
-    expect(validateDeliverable(real, "action-plan", { actions: Array(3).fill(action) }, "done")).toEqual([]);
+    expect(
+      validateDeliverable(real, "action-plan", { actions: Array(3).fill(action) }, "done"),
+    ).toEqual([]);
     expect(validateDeliverable(real, "plan-review", review, "done")).toEqual([]);
   });
 
   it("selects only admit their options", () => {
-    expect(formFor(real, "plan-review")?.find((f) => f.id === "cadence")).toMatchObject({ type: "select", options: ["Cada semana", "Cada dos semanas", "Cada mes"] });
-    expect(validateDeliverable(real, "plan-review", { ...review, cadence: "A veces" }, "done")).not.toEqual([]);
+    expect(formFor(real, "plan-review")?.find((f) => f.id === "cadence")).toMatchObject({
+      type: "select",
+      options: ["Cada semana", "Cada dos semanas", "Cada mes"],
+    });
+    expect(
+      validateDeliverable(real, "plan-review", { ...review, cadence: "A veces" }, "done"),
+    ).not.toEqual([]);
     const list = formFor(real, "action-plan")?.find((f) => f.id === "actions");
     const when = list && "fields" in list ? list.fields.find((f) => f.id === "when") : undefined;
-    expect(when).toMatchObject({ type: "select", options: ["Semanas 1 a 4", "Semanas 5 a 8", "Semanas 9 a 13"] });
-    expect(validateDeliverable(real, "action-plan", { actions: Array(3).fill({ ...action, when: "Pronto" }) }, "done")).not.toEqual([]);
+    expect(when).toMatchObject({
+      type: "select",
+      options: ["Semanas 1 a 4", "Semanas 5 a 8", "Semanas 9 a 13"],
+    });
+    expect(
+      validateDeliverable(
+        real,
+        "action-plan",
+        { actions: Array(3).fill({ ...action, when: "Pronto" }) },
+        "done",
+      ),
+    ).not.toEqual([]);
   });
 
   it("okr admits 2 to 4 key results and requires the objective", () => {
     const [first] = okr.key_results;
-    expect(validateDeliverable(real, "okr", { ...okr, key_results: [first] }, "done")).not.toEqual([]);
-    expect(validateDeliverable(real, "okr", { ...okr, key_results: Array(5).fill(first) }, "done")).not.toEqual([]);
-    expect(validateDeliverable(real, "okr", { ...okr, key_results: Array(4).fill(first) }, "done")).toEqual([]);
-    expect(validateDeliverable(real, "okr", { key_results: okr.key_results }, "done")).not.toEqual([]);
-    expect(validateDeliverable(real, "okr", { ...okr, key_results: [first, { ...first, target: "" }] }, "done")).not.toEqual([]);
+    expect(validateDeliverable(real, "okr", { ...okr, key_results: [first] }, "done")).not.toEqual(
+      [],
+    );
+    expect(
+      validateDeliverable(real, "okr", { ...okr, key_results: Array(5).fill(first) }, "done"),
+    ).not.toEqual([]);
+    expect(
+      validateDeliverable(real, "okr", { ...okr, key_results: Array(4).fill(first) }, "done"),
+    ).toEqual([]);
+    expect(validateDeliverable(real, "okr", { key_results: okr.key_results }, "done")).not.toEqual(
+      [],
+    );
+    expect(
+      validateDeliverable(
+        real,
+        "okr",
+        { ...okr, key_results: [first, { ...first, target: "" }] },
+        "done",
+      ),
+    ).not.toEqual([]);
   });
 
   it("action-plan admits 3 to 10 actions and requires owner", () => {
-    expect(validateDeliverable(real, "action-plan", { actions: Array(2).fill(action) }, "done")).not.toEqual([]);
-    expect(validateDeliverable(real, "action-plan", { actions: Array(10).fill(action) }, "done")).toEqual([]);
-    expect(validateDeliverable(real, "action-plan", { actions: Array(11).fill(action) }, "done")).not.toEqual([]);
-    expect(validateDeliverable(real, "action-plan", { actions: Array(3).fill({ ...action, owner: "" }) }, "done")).not.toEqual([]);
+    expect(
+      validateDeliverable(real, "action-plan", { actions: Array(2).fill(action) }, "done"),
+    ).not.toEqual([]);
+    expect(
+      validateDeliverable(real, "action-plan", { actions: Array(10).fill(action) }, "done"),
+    ).toEqual([]);
+    expect(
+      validateDeliverable(real, "action-plan", { actions: Array(11).fill(action) }, "done"),
+    ).not.toEqual([]);
+    expect(
+      validateDeliverable(
+        real,
+        "action-plan",
+        { actions: Array(3).fill({ ...action, owner: "" }) },
+        "done",
+      ),
+    ).not.toEqual([]);
   });
 });
 
@@ -123,8 +239,23 @@ describe("plan in the strategy document (CA-6)", () => {
 describe("AI context and instructions for the plan (CA-3 and CA-7)", () => {
   const saved = new Map(base)
     .set("okr", done(okr))
-    .set("channel-choice", done({ choices: [{ channel: "Visitas a talleres", why: "Cercano", first_test: "Diez visitas" }, { channel: "Anuncios locales", why: "Barato", first_test: "Una campaña" }] }))
-    .set("channel-scores", done({ rows: [{ item: "Visitas a talleres", scores: { closeness: 5, cost: 5, speed: 5, repeat: 5 } }] }));
+    .set(
+      "channel-choice",
+      done({
+        choices: [
+          { channel: "Visitas a talleres", why: "Cercano", first_test: "Diez visitas" },
+          { channel: "Anuncios locales", why: "Barato", first_test: "Una campaña" },
+        ],
+      }),
+    )
+    .set(
+      "channel-scores",
+      done({
+        rows: [
+          { item: "Visitas a talleres", scores: { closeness: 5, cost: 5, speed: 5, repeat: 5 } },
+        ],
+      }),
+    );
   const text = (id: string, from = saved) => buildAiRequest(real, id, from).user;
 
   it("action-plan reads the chosen channels and the validation plan when they are done", () => {
@@ -135,7 +266,10 @@ describe("AI context and instructions for the plan (CA-3 and CA-7)", () => {
   });
 
   it("action-plan does not read the chain behind the channels, nor unrelated steps", () => {
-    const withGroup = new Map(saved).set("buying-group", done({ people: [{ role: "Contable externo", part: "Influye" }] }));
+    const withGroup = new Map(saved).set(
+      "buying-group",
+      done({ people: [{ role: "Contable externo", part: "Influye" }] }),
+    );
     const user = text("action-plan", withGroup);
     expect(user).not.toContain("## Puntúa los canales");
     expect(user).not.toContain("Contable externo");
@@ -150,8 +284,12 @@ describe("AI context and instructions for the plan (CA-3 and CA-7)", () => {
     expect(text("okr")).toMatch(/de 2 a 4 resultados clave medibles/);
     expect(text("okr")).toMatch(/Cada meta numérica va como \[propuesta: …\]/);
     expect(text("action-plan")).toMatch(/entre 4 y 8 acciones/);
-    expect(text("action-plan")).toMatch(/El responsable es «tú» salvo que el contexto nombre a otras personas/);
+    expect(text("action-plan")).toMatch(
+      /El responsable es «tú» salvo que el contexto nombre a otras personas/,
+    );
     expect(text("plan-review")).toMatch(/qué señal te haría cambiarlo/);
-    expect(text("plan-review")).toMatch(/Una frase por campo; las cifras van como \[propuesta: …\]/);
+    expect(text("plan-review")).toMatch(
+      /Una frase por campo; las cifras van como \[propuesta: …\]/,
+    );
   });
 });

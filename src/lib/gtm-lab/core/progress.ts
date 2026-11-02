@@ -32,7 +32,11 @@ export function projectProgress(
       // A draft never bypasses its prerequisites: if one was reopened, the step is blocked again (answers are kept).
       const missing = step.requires.filter((required) => !done.has(required));
       if (missing.length) return { id: step.id, status: "blocked", missing };
-      return { id: step.id, status: inProgress.has(step.deliverable) ? "in_progress" : "available", missing };
+      return {
+        id: step.id,
+        status: inProgress.has(step.deliverable) ? "in_progress" : "available",
+        missing,
+      };
     }),
   };
 }
@@ -46,5 +50,7 @@ export function strategyDocReady(framework: Framework, done: ReadonlySet<string>
   const mandatory = allSteps(framework)
     .filter((step) => !step.optional)
     .map((step) => step.deliverable);
-  return [framework.profile.id, ...mandatory, ...framework.output.requires].every((id) => done.has(id));
+  return [framework.profile.id, ...mandatory, ...framework.output.requires].every((id) =>
+    done.has(id),
+  );
 }

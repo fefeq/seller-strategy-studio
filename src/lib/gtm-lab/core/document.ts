@@ -49,7 +49,8 @@ export function documentProblem(framework: Framework): string | null {
   for (const section of framework.document.sections) {
     if (section.deliverables.length === 0) return `Sección "${section.id}" sin entregables`;
     for (const id of section.deliverables) {
-      if (!known.has(id)) return `La sección "${section.id}" usa "${id}", que no es ningún entregable`;
+      if (!known.has(id))
+        return `La sección "${section.id}" usa "${id}", que no es ningún entregable`;
       if (seen.has(id)) return `"${id}" aparece en dos secciones del documento`;
       seen.add(id);
     }
@@ -101,14 +102,25 @@ function partFor(framework: Framework, deliverableId: string, saved: Saved): Doc
   const tool = toolFor(framework, deliverableId);
   if (tool) {
     if (toolIsStale(framework, deliverableId, saved)) {
-      return { deliverableId, title, blocks: [{ kind: "note", text: "Puntuaciones desactualizadas: vuelve a puntuar." }] };
+      return {
+        deliverableId,
+        title,
+        blocks: [{ kind: "note", text: "Puntuaciones desactualizadas: vuelve a puntuar." }],
+      };
     }
     const rows = Array.isArray(own.data.rows) ? (own.data.rows as ToolRow[]) : [];
-    if (rows.length === 0) return { deliverableId, title, blocks: [{ kind: "note", text: "Hecho, sin puntuaciones." }] };
-    const items = scoreTool(tool.spec, rows).map((r) => `${r.item} — ${formatToolTotal(tool.spec, r.total)}`);
+    if (rows.length === 0)
+      return { deliverableId, title, blocks: [{ kind: "note", text: "Hecho, sin puntuaciones." }] };
+    const items = scoreTool(tool.spec, rows).map(
+      (r) => `${r.item} — ${formatToolTotal(tool.spec, r.total)}`,
+    );
     return { deliverableId, title, blocks: [{ kind: "ranking", items }] };
   }
-  return { deliverableId, title, blocks: formBlocks(formFor(framework, deliverableId) ?? [], own.data) };
+  return {
+    deliverableId,
+    title,
+    blocks: formBlocks(formFor(framework, deliverableId) ?? [], own.data),
+  };
 }
 
 /** The strategy document, built only from the data it is given (one project), deterministically. */
@@ -137,7 +149,9 @@ export function buildStrategyDoc(
     backlog: {
       open: open.map(({ experiment, ice }) => `${experiment.title} — ${formatIce(ice)}`),
       closed: closed.map(({ experiment }) =>
-        [`${experiment.title} — ${STATUS_LABEL[experiment.status]}`, text(experiment.result)].filter(Boolean).join(": "),
+        [`${experiment.title} — ${STATUS_LABEL[experiment.status]}`, text(experiment.result)]
+          .filter(Boolean)
+          .join(": "),
       ),
     },
     pending: mandatory.filter((s) => !done.has(s.deliverable)).map((s) => s.title),
@@ -173,7 +187,11 @@ const formatDate = (iso: string) => {
 };
 
 export function renderMarkdown(doc: StrategyDoc): string {
-  const out: string[] = [`# Documento de estrategia GTM: ${escapeMd(doc.projectName)}`, "", `_Generado el ${formatDate(doc.generatedAt)}._`];
+  const out: string[] = [
+    `# Documento de estrategia GTM: ${escapeMd(doc.projectName)}`,
+    "",
+    `_Generado el ${formatDate(doc.generatedAt)}._`,
+  ];
   if (!doc.complete) out.push("", "> Borrador: faltan pasos por completar.");
 
   doc.sections.forEach((section, i) => {
@@ -183,8 +201,15 @@ export function renderMarkdown(doc: StrategyDoc): string {
       out.push("", `### ${part.title}`);
       for (const block of part.blocks) {
         if (block.kind === "field") out.push("", `**${block.label}**`, "", paragraphs(block.text));
-        if (block.kind === "list") out.push("", `**${block.label}**`, "", block.items.map((it, n) => `${n + 1}. ${oneLine(it)}`).join("\n"));
-        if (block.kind === "ranking") out.push("", block.items.map((it, n) => `${n + 1}. ${oneLine(it)}`).join("\n"));
+        if (block.kind === "list")
+          out.push(
+            "",
+            `**${block.label}**`,
+            "",
+            block.items.map((it, n) => `${n + 1}. ${oneLine(it)}`).join("\n"),
+          );
+        if (block.kind === "ranking")
+          out.push("", block.items.map((it, n) => `${n + 1}. ${oneLine(it)}`).join("\n"));
         if (block.kind === "note") out.push("", `_${block.text}_`);
       }
     }
@@ -195,10 +220,31 @@ export function renderMarkdown(doc: StrategyDoc): string {
   if (doc.backlog.open.length === 0 && doc.backlog.closed.length === 0) {
     out.push("", "Todavía no hay experimentos en el backlog.");
   } else {
-    out.push("", "### Abiertos (por ICE)", "", doc.backlog.open.length ? doc.backlog.open.map((it, i) => `${i + 1}. ${oneLine(it)}`).join("\n") : "_Ninguno._");
-    out.push("", "### Cerrados", "", doc.backlog.closed.length ? doc.backlog.closed.map((it) => `- ${oneLine(it)}`).join("\n") : "_Ninguno._");
+    out.push(
+      "",
+      "### Abiertos (por ICE)",
+      "",
+      doc.backlog.open.length
+        ? doc.backlog.open.map((it, i) => `${i + 1}. ${oneLine(it)}`).join("\n")
+        : "_Ninguno._",
+    );
+    out.push(
+      "",
+      "### Cerrados",
+      "",
+      doc.backlog.closed.length
+        ? doc.backlog.closed.map((it) => `- ${oneLine(it)}`).join("\n")
+        : "_Ninguno._",
+    );
   }
 
-  out.push("", `## ${n + 2}. Pendiente`, "", doc.pending.length ? doc.pending.map((t) => `- ${t}`).join("\n") : "Nada pendiente: todos los pasos obligatorios están hechos.");
+  out.push(
+    "",
+    `## ${n + 2}. Pendiente`,
+    "",
+    doc.pending.length
+      ? doc.pending.map((t) => `- ${t}`).join("\n")
+      : "Nada pendiente: todos los pasos obligatorios están hechos.",
+  );
   return `${out.join("\n")}\n`;
 }

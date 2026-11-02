@@ -65,7 +65,14 @@ describe("core boundaries (CA-6)", () => {
       'import { x } from "./progress";',
     ].join("\n");
     expect(forbidden(importsOf(sample)).sort()).toEqual(
-      ["../../../apps/web/src/app", "@supabase/supabase-js", "lodash", "next/router", "react", "react-dom"].sort(),
+      [
+        "../../../apps/web/src/app",
+        "@supabase/supabase-js",
+        "lodash",
+        "next/router",
+        "react",
+        "react-dom",
+      ].sort(),
     );
   });
 });

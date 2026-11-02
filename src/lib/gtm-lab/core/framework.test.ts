@@ -95,7 +95,10 @@ describe("parseFramework validation (CA-2)", () => {
 describe("uses (SDD plan, CA-2)", () => {
   // Step c reads da without depending on it.
   const withUses = (uses: string, requires = "[db]") =>
-    valid.replace("output:", `      - { id: c, title: Paso C, deliverable: dc, requires: ${requires}, uses: ${uses} }\noutput:`);
+    valid.replace(
+      "output:",
+      `      - { id: c, title: Paso C, deliverable: dc, requires: ${requires}, uses: ${uses} }\noutput:`,
+    );
 
   it("accepts a valid uses (positive control)", () => {
     const framework = parseFramework(withUses("[da]"));

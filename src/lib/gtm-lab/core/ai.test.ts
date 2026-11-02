@@ -1,18 +1,35 @@
 // From gtm-lab@44f385b packages/core/src/ai.test.ts
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { aiInstructionFor, allSteps, buildAiRequest, formFor, formJsonSchema, parseFramework, validateDeliverable } from "./index";
+import {
+  aiInstructionFor,
+  allSteps,
+  buildAiRequest,
+  formFor,
+  formJsonSchema,
+  parseFramework,
+  validateDeliverable,
+} from "./index";
 import { loadFrameworkFile } from "./node";
 
 const real = loadFrameworkFile(new URL("../methodology/framework.yaml", import.meta.url));
 const formSteps = allSteps(real).filter((s) => formFor(real, s.deliverable));
 
-type Schema = { type: string; properties?: Record<string, Schema>; items?: Schema; enum?: string[]; required?: string[]; additionalProperties?: boolean };
+type Schema = {
+  type: string;
+  properties?: Record<string, Schema>;
+  items?: Schema;
+  enum?: string[];
+  required?: string[];
+  additionalProperties?: boolean;
+};
 
 // Builds the smallest object that satisfies a schema, the way a well-behaved model answer would.
 function sample(schema: Schema): unknown {
   if (schema.type === "object") {
-    return Object.fromEntries(Object.entries(schema.properties ?? {}).map(([k, v]) => [k, sample(v)]));
+    return Object.fromEntries(
+      Object.entries(schema.properties ?? {}).map(([k, v]) => [k, sample(v)]),
+    );
   }
   if (schema.type === "array") return [sample(schema.items!)];
   return schema.enum ? schema.enum[0] : "Texto";
@@ -20,7 +37,8 @@ function sample(schema: Schema): unknown {
 
 describe("AI instructions in the framework", () => {
   it("every step with a form has its own AI instruction, and the profile has none", () => {
-    for (const step of formSteps) expect(aiInstructionFor(real, step.deliverable), step.id).toBeTruthy();
+    for (const step of formSteps)
+      expect(aiInstructionFor(real, step.deliverable), step.id).toBeTruthy();
     expect(aiInstructionFor(real, "project-profile")).toBeUndefined();
   });
 
@@ -46,10 +64,15 @@ ai:
 });
 
 describe("formJsonSchema (CA-1)", () => {
-  it.each(formSteps.map((s) => s.deliverable))("%s: a schema-valid answer passes draft validation", (id) => {
-    const schema = formJsonSchema(real, id) as Schema;
-    expect(validateDeliverable(real, id, sample(schema) as Record<string, unknown>, "draft")).toEqual([]);
-  });
+  it.each(formSteps.map((s) => s.deliverable))(
+    "%s: a schema-valid answer passes draft validation",
+    (id) => {
+      const schema = formJsonSchema(real, id) as Schema;
+      expect(
+        validateDeliverable(real, id, sample(schema) as Record<string, unknown>, "draft"),
+      ).toEqual([]);
+    },
+  );
 
   it("closes every object, lists the select options and names the limits the API cannot enforce", () => {
     const schema = formJsonSchema(real, "competitor-map") as Schema;
@@ -57,14 +80,25 @@ describe("formJsonSchema (CA-1)", () => {
     expect(schema.required).toEqual(["alternatives"]);
     const item = schema.properties!.alternatives!.items!;
     expect(item.additionalProperties).toBe(false);
-    expect(item.properties!.kind!.enum).toEqual(["Competidor directo", "Otra forma de resolverlo", "No hacer nada"]);
+    expect(item.properties!.kind!.enum).toEqual([
+      "Competidor directo",
+      "Otra forma de resolverlo",
+      "No hacer nada",
+    ]);
     expect(JSON.stringify(schema.properties!.alternatives)).toMatch(/Máximo 10 elementos/);
     // Unsupported by structured outputs: must not be sent.
     expect(JSON.stringify(schema)).not.toMatch(/maxLength|minLength|maxItems|minItems/);
   });
 
   it("an answer with an unknown field or option still fails core validation (control)", () => {
-    expect(validateDeliverable(real, "competitor-map", { alternatives: [{ name: "X", kind: "Otra" }] }, "draft")).not.toEqual([]);
+    expect(
+      validateDeliverable(
+        real,
+        "competitor-map",
+        { alternatives: [{ name: "X", kind: "Otra" }] },
+        "draft",
+      ),
+    ).not.toEqual([]);
   });
 
   it("throws for a deliverable without form", () => {
@@ -82,10 +116,16 @@ describe("buildAiRequest (CA-2)", () => {
   ]);
 
   it("includes the profile, done prerequisites (direct and indirect) and the current draft", () => {
-    const withDraft = new Map(saved).set("entry-segment", { status: "in_progress", data: { segment: "Segmento-del-borrador-7Q" } });
+    const withDraft = new Map(saved).set("entry-segment", {
+      status: "in_progress",
+      data: { segment: "Segmento-del-borrador-7Q" },
+    });
     // entry-segment requires segment-scores and competitor-map; segment-scores requires segment-list.
     withDraft.set("segment-scores", { status: "done", data: {} });
-    withDraft.set("competitor-map", { status: "done", data: { alternatives: [{ name: "Papel" }] } });
+    withDraft.set("competitor-map", {
+      status: "done",
+      data: { alternatives: [{ name: "Papel" }] },
+    });
     const { user } = buildAiRequest(real, "entry-segment", withDraft);
     expect(user).toContain("Agenda para talleres"); // profile
     expect(user).toContain("Papel"); // direct prerequisite
@@ -97,7 +137,10 @@ describe("buildAiRequest (CA-2)", () => {
 
   it("renders a calculator prerequisite as its ranking", () => {
     const withScores = new Map(saved)
-      .set("segment-list", { status: "done", data: { segments: [{ name: "Talleres" }, { name: "Motos" }] } })
+      .set("segment-list", {
+        status: "done",
+        data: { segments: [{ name: "Talleres" }, { name: "Motos" }] },
+      })
       .set("competitor-map", { status: "done", data: { alternatives: [{ name: "Papel" }] } })
       .set("segment-scores", {
         status: "done",
@@ -116,7 +159,10 @@ describe("buildAiRequest (CA-2)", () => {
   it("flags a calculator ranking that no longer matches its source list", () => {
     const stale = new Map(saved)
       .set("competitor-map", { status: "done", data: { alternatives: [{ name: "Papel" }] } })
-      .set("segment-scores", { status: "done", data: { rows: [{ item: "Viejo", scores: { pain: 5, budget: 5, access: 5, fit: 5 } }] } });
+      .set("segment-scores", {
+        status: "done",
+        data: { rows: [{ item: "Viejo", scores: { pain: 5, budget: 5, access: 5, fit: 5 } }] },
+      });
     const { user } = buildAiRequest(real, "entry-segment", stale);
     expect(user).not.toContain("Viejo");
     expect(user).toContain("(puntuaciones desactualizadas");
@@ -161,7 +207,9 @@ describe("writing rules for suggestions (SDD instrucciones-ia)", () => {
   });
 
   it("no longer forbids every new number: proposed figures are allowed when marked (CA-1)", () => {
-    expect(system).not.toMatch(/si hace falta un número que no está en el contexto, escribe «sin dato»/);
+    expect(system).not.toMatch(
+      /si hace falta un número que no está en el contexto, escribe «sin dato»/,
+    );
     expect(system).toMatch(/cifras que propongas tú .*\[propuesta: …\]/);
   });
 
@@ -173,7 +221,9 @@ describe("writing rules for suggestions (SDD instrucciones-ia)", () => {
   });
 
   it("each field says how long the suggestion should be, and keeps the form maximum (CA-2)", () => {
-    const schema = formJsonSchema(real, "value-proposition") as { properties: Record<string, { description: string }> };
+    const schema = formJsonSchema(real, "value-proposition") as {
+      properties: Record<string, { description: string }>;
+    };
     expect(schema.properties.for_whom!.description).toMatch(/150 caracteres/);
     expect(schema.properties.for_whom!.description).toMatch(/Máximo 200 caracteres/);
     expect(schema.properties.problem!.description).toMatch(/300 caracteres/);
@@ -204,7 +254,9 @@ describe("step instructions do not contradict the system prompt (review of SDD i
 
   it("the core of rule 5 stays: no plausible but unsupported details about customers, product or market", () => {
     const { system } = buildAiRequest(real, "end-goal", new Map());
-    expect(system).toMatch(/No añadas detalles sobre los clientes, el producto o el mercado que no estén en él/);
+    expect(system).toMatch(
+      /No añadas detalles sobre los clientes, el producto o el mercado que no estén en él/,
+    );
   });
 });
 
@@ -253,7 +305,10 @@ ai:
 
   it("leaves out a used deliverable that is missing or only in progress", () => {
     expect(buildAiRequest(small, "dc", base).user).not.toContain("## Paso Z");
-    const draft = new Map(base).set("dz", { status: "in_progress" as const, data: { x: "borrador-z" } });
+    const draft = new Map(base).set("dz", {
+      status: "in_progress" as const,
+      data: { x: "borrador-z" },
+    });
     expect(buildAiRequest(small, "dc", draft).user).not.toContain("borrador-z");
   });
 
@@ -267,7 +322,10 @@ ai:
 describe("steps without uses keep their context (SDD plan, CA-3)", () => {
   // Every deliverable done: each step without uses must see exactly the transitive closure of its requires, as before.
   const all = new Map(
-    [real.profile.id, ...allSteps(real).map((s) => s.deliverable)].map((id) => [id, { status: "done" as const, data: {} }]),
+    [real.profile.id, ...allSteps(real).map((s) => s.deliverable)].map((id) => [
+      id,
+      { status: "done" as const, data: {} },
+    ]),
   );
   const closure = (id: string): Set<string> => {
     const found = new Set<string>();
@@ -284,14 +342,21 @@ describe("steps without uses keep their context (SDD plan, CA-3)", () => {
   };
   const sections = (user: string) => [...user.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
   const titleOfDeliverable = (id: string) =>
-    id === real.profile.id ? "Perfil del proyecto" : allSteps(real).find((s) => s.deliverable === id)!.title;
+    id === real.profile.id
+      ? "Perfil del proyecto"
+      : allSteps(real).find((s) => s.deliverable === id)!.title;
 
-  it.each(allSteps(real).filter((s) => aiInstructionFor(real, s.deliverable) && s.uses.length === 0).map((s) => s.deliverable))(
-    "%s sees exactly the closure of its requires",
-    (id) => {
-      const expected = [...closure(id)].map(titleOfDeliverable).sort();
-      const { user } = buildAiRequest(real, id, all);
-      expect(sections(user).filter((t) => t !== `Paso: ${titleOfDeliverable(id)}`).sort()).toEqual(expected);
-    },
-  );
+  it.each(
+    allSteps(real)
+      .filter((s) => aiInstructionFor(real, s.deliverable) && s.uses.length === 0)
+      .map((s) => s.deliverable),
+  )("%s sees exactly the closure of its requires", (id) => {
+    const expected = [...closure(id)].map(titleOfDeliverable).sort();
+    const { user } = buildAiRequest(real, id, all);
+    expect(
+      sections(user)
+        .filter((t) => t !== `Paso: ${titleOfDeliverable(id)}`)
+        .sort(),
+    ).toEqual(expected);
+  });
 });

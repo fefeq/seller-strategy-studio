@@ -6,7 +6,14 @@ import { loadFrameworkFile } from "./node";
 
 const framework = loadFrameworkFile(new URL("../methodology/framework.yaml", import.meta.url));
 
-const valid: Experiment = { title: "Landing con precio", learning: "Si pagan", impact: 8, confidence: 6, ease: 9, status: "idea" };
+const valid: Experiment = {
+  title: "Landing con precio",
+  learning: "Si pagan",
+  impact: 8,
+  confidence: 6,
+  ease: 9,
+  status: "idea",
+};
 
 describe("validateExperiment (CA-1)", () => {
   it("accepts a complete experiment, with a title of exactly 200 characters", () => {
@@ -33,7 +40,12 @@ describe("validateExperiment (CA-1)", () => {
 
 describe("orderBacklog (CA-2)", () => {
   const at = (day: number) => `2026-10-${String(day).padStart(2, "0")}T10:00:00Z`;
-  const e = (title: string, scores: [number, number, number] | null, status: Experiment["status"], day: number): Experiment => ({
+  const e = (
+    title: string,
+    scores: [number, number, number] | null,
+    status: Experiment["status"],
+    day: number,
+  ): Experiment => ({
     title,
     impact: scores?.[0] ?? null,
     confidence: scores?.[1] ?? null,
@@ -76,7 +88,11 @@ describe("planToBacklog (CA-3)", () => {
         status: "done" as const,
         data: {
           experiments: [
-            { assumption: "Pagarían 30 € al mes", method: "Landing con precio", success: "10 reservas" },
+            {
+              assumption: "Pagarían 30 € al mes",
+              method: "Landing con precio",
+              success: "10 reservas",
+            },
             { assumption: "Usan WhatsApp", method: "Encuesta", success: "70 % sí" },
           ],
         },
@@ -86,8 +102,24 @@ describe("planToBacklog (CA-3)", () => {
 
   it("creates one unscored idea per planned experiment, marked as coming from the plan", () => {
     expect(planToBacklog(framework, plan, [])).toEqual([
-      { title: "Pagarían 30 € al mes", learning: "Cómo: Landing con precio\nLo confirma: 10 reservas", impact: null, confidence: null, ease: null, status: "idea", source: "plan" },
-      { title: "Usan WhatsApp", learning: "Cómo: Encuesta\nLo confirma: 70 % sí", impact: null, confidence: null, ease: null, status: "idea", source: "plan" },
+      {
+        title: "Pagarían 30 € al mes",
+        learning: "Cómo: Landing con precio\nLo confirma: 10 reservas",
+        impact: null,
+        confidence: null,
+        ease: null,
+        status: "idea",
+        source: "plan",
+      },
+      {
+        title: "Usan WhatsApp",
+        learning: "Cómo: Encuesta\nLo confirma: 70 % sí",
+        impact: null,
+        confidence: null,
+        ease: null,
+        status: "idea",
+        source: "plan",
+      },
     ]);
   });
 
@@ -97,27 +129,77 @@ describe("planToBacklog (CA-3)", () => {
   });
 
   it("cuts long assumptions to the 200-character title limit", () => {
-    const long = new Map([["experiments", { status: "done" as const, data: { experiments: [{ assumption: "a".repeat(300), method: "m", success: "s" }] } }]]);
+    const long = new Map([
+      [
+        "experiments",
+        {
+          status: "done" as const,
+          data: { experiments: [{ assumption: "a".repeat(300), method: "m", success: "s" }] },
+        },
+      ],
+    ]);
     expect(planToBacklog(framework, long, [])[0]!.title).toHaveLength(200);
   });
 
   it("a title cut at a space has no trailing space, so a second import adds nothing (review finding 1)", () => {
     const assumption = "a".repeat(199) + " b";
-    const first = planToBacklog(framework, new Map([["experiments", { status: "done" as const, data: { experiments: [{ assumption, method: "m", success: "s" }] } }]]), []);
+    const first = planToBacklog(
+      framework,
+      new Map([
+        [
+          "experiments",
+          {
+            status: "done" as const,
+            data: { experiments: [{ assumption, method: "m", success: "s" }] },
+          },
+        ],
+      ]),
+      [],
+    );
     expect(first[0]!.title).toBe("a".repeat(199));
-    const again = planToBacklog(framework, new Map([["experiments", { status: "done" as const, data: { experiments: [{ assumption, method: "m", success: "s" }] } }]]), [{ ...valid, title: first[0]!.title }]);
+    const again = planToBacklog(
+      framework,
+      new Map([
+        [
+          "experiments",
+          {
+            status: "done" as const,
+            data: { experiments: [{ assumption, method: "m", success: "s" }] },
+          },
+        ],
+      ]),
+      [{ ...valid, title: first[0]!.title }],
+    );
     expect(again).toEqual([]);
   });
 
   it("caps «what you want to learn» at 4000 characters, so the import never breaks the database limit (finding 2)", () => {
-    const long = new Map([["experiments", { status: "done" as const, data: { experiments: [{ assumption: "A", method: "m".repeat(4000), success: "s".repeat(4000) }] } }]]);
+    const long = new Map([
+      [
+        "experiments",
+        {
+          status: "done" as const,
+          data: {
+            experiments: [{ assumption: "A", method: "m".repeat(4000), success: "s".repeat(4000) }],
+          },
+        },
+      ],
+    ]);
     const [row] = planToBacklog(framework, long, []);
     expect(row!.learning!.length).toBe(4000);
     expect(validateExperiment({ ...row!, impact: 1, confidence: 1, ease: 1 })).toEqual([]);
   });
 
   it("the same assumption twice in the plan is imported once", () => {
-    const twice = new Map([["experiments", { status: "done" as const, data: { experiments: [{ assumption: "A" }, { assumption: "A" }] } }]]);
+    const twice = new Map([
+      [
+        "experiments",
+        {
+          status: "done" as const,
+          data: { experiments: [{ assumption: "A" }, { assumption: "A" }] },
+        },
+      ],
+    ]);
     expect(planToBacklog(framework, twice, [])).toHaveLength(1);
   });
 

@@ -41,7 +41,8 @@ describe("forms in the framework (CA-1)", () => {
   it("the real methodology loads with a form for the profile and every non-tool step", () => {
     const withoutTool = allSteps(real).filter((s) => !s.tool);
     expect(withoutTool).toHaveLength(20);
-    for (const step of withoutTool) expect(formFor(real, step.deliverable)?.length, step.id).toBeGreaterThan(0);
+    for (const step of withoutTool)
+      expect(formFor(real, step.deliverable)?.length, step.id).toBeGreaterThan(0);
     expect(formFor(real, "project-profile")).toHaveLength(7);
     expect(formFor(real, "segment-scores")).toBeUndefined();
   });
@@ -52,14 +53,44 @@ describe("forms in the framework (CA-1)", () => {
 
   it.each([
     ["an unknown field type", base.replace("type: long_text", "type: rich"), /"why".*tipo/],
-    ["a select without options", base.replace(', options: ["6 meses", "12 meses"]', ""), /"term".*opciones/],
+    [
+      "a select without options",
+      base.replace(', options: ["6 meses", "12 meses"]', ""),
+      /"term".*opciones/,
+    ],
     ["duplicated field ids", base.replace("id: why", "id: name"), /"name".*duplicad/],
     ["a list with min > max", base.replace("min: 1", "min: 3"), /"items".*min/],
-    ["a form for a deliverable that does not exist", base.replace("forms:\n  da:", "forms:\n  zz:"), /"zz"/],
-    ["a form for a tool deliverable", base.replace("forms:\n  da:", "forms:\n  db:"), /"db".*herramienta/],
-    ["a list inside a list", base.replace("- { id: kind, type: select, label: \"Tipo\", options: [\"x\", \"y\"] }", "- { id: kind, type: list, label: \"Tipo\", fields: [{ id: z, type: text, label: Z }] }"), /"kind".*lista/],
-    ["a list without subfields", base.replace("      fields:\n        - { id: title, type: text, label: \"Título\", required: true }\n        - { id: kind, type: select, label: \"Tipo\", options: [\"x\", \"y\"] }", "      fields: []"), /"items".*subcampos/],
-    ["an empty form", base.replace(/forms:\n {2}da:\n[\s\S]*$/, "forms:\n  da: []\n"), /"da".*campos/],
+    [
+      "a form for a deliverable that does not exist",
+      base.replace("forms:\n  da:", "forms:\n  zz:"),
+      /"zz"/,
+    ],
+    [
+      "a form for a tool deliverable",
+      base.replace("forms:\n  da:", "forms:\n  db:"),
+      /"db".*herramienta/,
+    ],
+    [
+      "a list inside a list",
+      base.replace(
+        '- { id: kind, type: select, label: "Tipo", options: ["x", "y"] }',
+        '- { id: kind, type: list, label: "Tipo", fields: [{ id: z, type: text, label: Z }] }',
+      ),
+      /"kind".*lista/,
+    ],
+    [
+      "a list without subfields",
+      base.replace(
+        '      fields:\n        - { id: title, type: text, label: "Título", required: true }\n        - { id: kind, type: select, label: "Tipo", options: ["x", "y"] }',
+        "      fields: []",
+      ),
+      /"items".*subcampos/,
+    ],
+    [
+      "an empty form",
+      base.replace(/forms:\n {2}da:\n[\s\S]*$/, "forms:\n  da: []\n"),
+      /"da".*campos/,
+    ],
     ["a field without label", base.replace('label: "Por qué"', 'label: ""'), /"why"/],
   ])("rejects %s, naming the id", (_case, text, error) => {
     expect(() => parseFramework(text)).toThrow(error);
@@ -70,7 +101,9 @@ describe("validateDeliverable draft (CA-2)", () => {
   it("accepts an empty or partial draft, including lists below their minimum", () => {
     expect(validateDeliverable(small, "da", {}, "draft")).toEqual([]);
     expect(validateDeliverable(small, "da", { items: [] }, "draft")).toEqual([]);
-    expect(validateDeliverable(small, "da", { name: "Algo", items: [{ title: "" }] }, "draft")).toEqual([]);
+    expect(
+      validateDeliverable(small, "da", { name: "Algo", items: [{ title: "" }] }, "draft"),
+    ).toEqual([]);
   });
 
   it.each([
@@ -93,9 +126,9 @@ describe("validateDeliverable draft (CA-2)", () => {
 
   it("validates the profile from its questions", () => {
     expect(validateDeliverable(small, "project-profile", { product: "P" }, "draft")).toEqual([]);
-    expect(validateDeliverable(small, "project-profile", { product: "P" }, "done").map((e) => e.label)).toEqual([
-      "Objetivo",
-    ]);
+    expect(
+      validateDeliverable(small, "project-profile", { product: "P" }, "done").map((e) => e.label),
+    ).toEqual(["Objetivo"]);
   });
 });
 
@@ -113,11 +146,18 @@ describe("validateDeliverable done (CA-3)", () => {
 
   it("requires a required list even when its key is missing", () => {
     const { items: _omit, ...withoutList } = complete;
-    expect(validateDeliverable(small, "da", withoutList, "done").map((e) => e.label)).toEqual(["Elementos"]);
+    expect(validateDeliverable(small, "da", withoutList, "done").map((e) => e.label)).toEqual([
+      "Elementos",
+    ]);
   });
 
   it("rejects a list item with an empty required subfield, naming list and subfield", () => {
-    const errors = validateDeliverable(small, "da", { ...complete, items: [{ title: " " }] }, "done");
+    const errors = validateDeliverable(
+      small,
+      "da",
+      { ...complete, items: [{ title: " " }] },
+      "done",
+    );
     expect(errors).toHaveLength(1);
     expect(errors[0]!.label).toBe("Elementos › Título");
   });
@@ -129,7 +169,11 @@ describe("validateDeliverable done (CA-3)", () => {
 
 describe("pruneDeliverable", () => {
   it("drops fields that no longer exist in the form and reports them", () => {
-    const { data, dropped } = pruneDeliverable(small, "da", { name: "A", gone: "x", items: [{ title: "t", old: 1 }] });
+    const { data, dropped } = pruneDeliverable(small, "da", {
+      name: "A",
+      gone: "x",
+      items: [{ title: "t", old: 1 }],
+    });
     expect(data).toEqual({ name: "A", items: [{ title: "t" }] });
     expect(dropped).toEqual(["gone", "items.old"]);
   });
@@ -146,7 +190,9 @@ describe("total size (review finding 2)", () => {
   });
 
   it("accepts a full but small list (control)", () => {
-    const data = { segments: [1, 2].map((i) => ({ name: `S${i}`, who: "Quiénes", problem: "Problema" })) };
+    const data = {
+      segments: [1, 2].map((i) => ({ name: `S${i}`, who: "Quiénes", problem: "Problema" })),
+    };
     expect(validateDeliverable(real, "segment-list", data, "done")).toEqual([]);
   });
 });

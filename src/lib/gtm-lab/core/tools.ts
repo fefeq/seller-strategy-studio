@@ -14,7 +14,9 @@ export interface ToolSpec {
   formula: Formula;
   /** Rows come from a list field of a prerequisite deliverable, or are written by the founder (free). */
   /** `label` is the column title shown to people; `item` (list rows) is the subfield that names each row. */
-  rows: { from: string; list: string; item: string; label: string } | { free: true; label: string; min?: number; max?: number };
+  rows:
+    | { from: string; list: string; item: string; label: string }
+    | { free: true; label: string; min?: number; max?: number };
   criteria: Criterion[];
   help?: string;
 }
@@ -42,7 +44,10 @@ const MAX_DATA_BYTES = 65536;
 type Saved = ReadonlyMap<string, { status: string; data: Record<string, unknown> }>;
 
 /** The tool behind a step's deliverable, if any. */
-export function toolFor(framework: Framework, deliverableId: string): { id: string; spec: ToolSpec } | undefined {
+export function toolFor(
+  framework: Framework,
+  deliverableId: string,
+): { id: string; spec: ToolSpec } | undefined {
   const step = allSteps(framework).find((s) => s.deliverable === deliverableId);
   const spec = step?.tool ? (framework.tools[step.tool] as ToolSpec | undefined) : undefined;
   return step?.tool && spec ? { id: step.tool, spec } : undefined;
@@ -51,16 +56,21 @@ export function toolFor(framework: Framework, deliverableId: string): { id: stri
 /** Checks the `tools` section; returns a message naming the id at fault, or null. */
 export function toolsProblem(framework: Framework): string | null {
   const steps = allSteps(framework);
-  const tools = framework.tools as Record<string, { formula?: unknown; criteria?: Criterion[]; rows?: Record<string, unknown> }>;
+  const tools = framework.tools as Record<
+    string,
+    { formula?: unknown; criteria?: Criterion[]; rows?: Record<string, unknown> }
+  >;
 
   for (const step of steps) {
     // "ice" belongs to the cross-cutting experiment backlog (its own SDD), not to a step calculator.
-    if (step.tool && step.tool !== "ice" && !tools[step.tool]) return `Herramienta "${step.tool}" sin definición en tools`;
+    if (step.tool && step.tool !== "ice" && !tools[step.tool])
+      return `Herramienta "${step.tool}" sin definición en tools`;
   }
   for (const [id, spec] of Object.entries(tools)) {
     const users = steps.filter((s) => s.tool === id);
     if (users.length === 0) return `Herramienta "${id}": ningún paso la usa`;
-    if (!FORMULAS.has(spec.formula as Formula)) return `Herramienta "${id}": fórmula desconocida "${String(spec.formula)}"`;
+    if (!FORMULAS.has(spec.formula as Formula))
+      return `Herramienta "${id}": fórmula desconocida "${String(spec.formula)}"`;
 
     const criteria = Array.isArray(spec.criteria) ? spec.criteria : [];
     if (criteria.length === 0) return `Herramienta "${id}": sin criterios`;
@@ -75,22 +85,27 @@ export function toolsProblem(framework: Framework): string | null {
     }
 
     const rows: Record<string, unknown> = spec.rows ?? {};
-    if (typeof rows.label !== "string" || !rows.label) return `Herramienta "${id}": rows necesita label`;
+    if (typeof rows.label !== "string" || !rows.label)
+      return `Herramienta "${id}": rows necesita label`;
     if (rows.free) {
       const min = (rows.min as number | undefined) ?? 0;
       const max = rows.max as number | undefined;
-      if (max !== undefined && min > max) return `Herramienta "${id}": min (${min}) es mayor que max (${max})`;
+      if (max !== undefined && min > max)
+        return `Herramienta "${id}": min (${min}) es mayor que max (${max})`;
       continue;
     }
     const from = String(rows.from);
     for (const step of users) {
-      if (!step.requires.includes(from)) return `"${from}" no es un requisito del paso "${step.id}" que usa "${id}"`;
+      if (!step.requires.includes(from))
+        return `"${from}" no es un requisito del paso "${step.id}" que usa "${id}"`;
     }
-    const field = (framework.forms[from] as { id: string; type: string; fields?: { id: string }[] }[] | undefined)?.find(
-      (f) => f.id === rows.list,
-    );
-    if (!field || field.type !== "list") return `"${String(rows.list)}" no es un campo lista de "${from}"`;
-    if (!field.fields?.some((f) => f.id === rows.item)) return `"${String(rows.item)}" no es un subcampo de "${from}.${String(rows.list)}"`;
+    const field = (
+      framework.forms[from] as { id: string; type: string; fields?: { id: string }[] }[] | undefined
+    )?.find((f) => f.id === rows.list);
+    if (!field || field.type !== "list")
+      return `"${String(rows.list)}" no es un campo lista de "${from}"`;
+    if (!field.fields?.some((f) => f.id === rows.item))
+      return `"${String(rows.item)}" no es un subcampo de "${from}.${String(rows.list)}"`;
   }
   return null;
 }
@@ -105,7 +120,8 @@ export function formatToolTotal(spec: ToolSpec, total: number | null): string {
 function rowTotal(spec: ToolSpec, row: ToolRow): number | null {
   const values = spec.criteria.map((c) => row.scores[c.id]);
   if (values.some((v) => typeof v !== "number")) return null;
-  if (spec.formula === "risk") return row.scores.importance! * (SCALE.max + 1 - row.scores.evidence!);
+  if (spec.formula === "risk")
+    return row.scores.importance! * (SCALE.max + 1 - row.scores.evidence!);
   return (values as number[]).reduce((a, b) => a + b, 0);
 }
 
@@ -114,7 +130,8 @@ export function scoreTool(spec: ToolSpec, rows: readonly ToolRow[]): RankedRow[]
   return rows
     .map((row, index) => ({ ...row, index, total: rowTotal(spec, row) }))
     .sort((a, b) => {
-      if (a.total === null || b.total === null) return a.total === null ? (b.total === null ? a.index - b.index : 1) : -1;
+      if (a.total === null || b.total === null)
+        return a.total === null ? (b.total === null ? a.index - b.index : 1) : -1;
       if (b.total !== a.total) return b.total - a.total;
       if (spec.formula === "risk") {
         const byImportance = (b.scores.importance ?? 0) - (a.scores.importance ?? 0);
@@ -128,7 +145,9 @@ function sourceItems(spec: ToolSpec, saved: Saved): string[] {
   if (!("from" in spec.rows)) return [];
   const list = saved.get(spec.rows.from)?.data[spec.rows.list];
   const key = spec.rows.item;
-  return Array.isArray(list) ? list.map((item) => String((item as Record<string, unknown>)[key] ?? "").trim()) : [];
+  return Array.isArray(list)
+    ? list.map((item) => String((item as Record<string, unknown>)[key] ?? "").trim())
+    : [];
 }
 
 /**
@@ -157,7 +176,8 @@ export function toolRows(
     if (match) reused++;
     return match ?? { item, scores: {} };
   });
-  const changed = savedRows.length > 0 && (reused !== savedRows.length || rows.length !== savedRows.length);
+  const changed =
+    savedRows.length > 0 && (reused !== savedRows.length || rows.length !== savedRows.length);
   return { rows, changed, duplicates };
 }
 
@@ -178,11 +198,13 @@ export function validateToolData(
   if (!tool) throw new Error(`"${deliverableId}" no es una herramienta`);
   const { spec } = tool;
   const errors: FieldError[] = [];
-  const add = (field: string, label: string, message: string) => errors.push({ field, label, message });
+  const add = (field: string, label: string, message: string) =>
+    errors.push({ field, label, message });
   const criteria = new Map(spec.criteria.map((c) => [c.id, c]));
   const free = "free" in spec.rows;
 
-  for (const key of Object.keys(data)) if (key !== "rows") add(key, key, `Campo desconocido: "${key}"`);
+  for (const key of Object.keys(data))
+    if (key !== "rows") add(key, key, `Campo desconocido: "${key}"`);
   const rows = data.rows ?? [];
   if (!Array.isArray(rows)) {
     add("rows", spec.rows.label, "Debe ser una lista");
@@ -196,33 +218,55 @@ export function validateToolData(
 
   rows.forEach((raw, i) => {
     const row = raw as Record<string, unknown>;
-    const name = typeof row?.item === "string" && row.item.trim() ? row.item.trim() : `Fila ${i + 1}`;
-    if (typeof row !== "object" || row === null || Array.isArray(row)) return add("rows", name, "Fila no válida");
+    const name =
+      typeof row?.item === "string" && row.item.trim() ? row.item.trim() : `Fila ${i + 1}`;
+    if (typeof row !== "object" || row === null || Array.isArray(row))
+      return add("rows", name, "Fila no válida");
     for (const key of Object.keys(row)) {
-      if (!["item", "scores", "note"].includes(key)) add("rows", name, `Campo desconocido: "${key}"`);
+      if (!["item", "scores", "note"].includes(key))
+        add("rows", name, `Campo desconocido: "${key}"`);
     }
-    if (typeof row.item !== "string" || row.item.length > MAX_ITEM) add("rows", name, "Texto no válido");
-    else if (mode === "done" && free && !row.item.trim()) add("rows", `${spec.rows.label} ${i + 1}`, "Obligatorio");
-    if (row.note !== undefined && (typeof row.note !== "string" || row.note.length > MAX_NOTE)) add("rows", name, "Nota no válida");
+    if (typeof row.item !== "string" || row.item.length > MAX_ITEM)
+      add("rows", name, "Texto no válido");
+    else if (mode === "done" && free && !row.item.trim())
+      add("rows", `${spec.rows.label} ${i + 1}`, "Obligatorio");
+    if (row.note !== undefined && (typeof row.note !== "string" || row.note.length > MAX_NOTE))
+      add("rows", name, "Nota no válida");
 
-    if (row.scores !== undefined && (row.scores === null || typeof row.scores !== "object" || Array.isArray(row.scores))) {
+    if (
+      row.scores !== undefined &&
+      (row.scores === null || typeof row.scores !== "object" || Array.isArray(row.scores))
+    ) {
       return add("rows", name, "Puntuaciones no válidas");
     }
     const scores = (row.scores ?? {}) as Record<string, unknown>;
     for (const [key, value] of Object.entries(scores)) {
       const criterion = criteria.get(key);
       if (!criterion) add("rows", name, `Criterio desconocido: "${key}"`);
-      else if (!Number.isInteger(value) || (value as number) < SCALE.min || (value as number) > SCALE.max) {
-        add("rows", `${name} › ${criterion.label}`, `Debe ser un entero entre ${SCALE.min} y ${SCALE.max}`);
+      else if (
+        !Number.isInteger(value) ||
+        (value as number) < SCALE.min ||
+        (value as number) > SCALE.max
+      ) {
+        add(
+          "rows",
+          `${name} › ${criterion.label}`,
+          `Debe ser un entero entre ${SCALE.min} y ${SCALE.max}`,
+        );
       }
     }
     if (mode === "done") {
-      for (const c of spec.criteria) if (scores[c.id] === undefined) add("rows", `${name} › ${c.label}`, "Sin puntuar");
+      for (const c of spec.criteria)
+        if (scores[c.id] === undefined) add("rows", `${name} › ${c.label}`, "Sin puntuar");
     }
   });
 
   if (new TextEncoder().encode(JSON.stringify(data)).length > MAX_DATA_BYTES) {
-    add("", "Tamaño total", "Tus respuestas superan el tamaño máximo (64 KB). Acorta algún texto largo y vuelve a guardar.");
+    add(
+      "",
+      "Tamaño total",
+      "Tus respuestas superan el tamaño máximo (64 KB). Acorta algún texto largo y vuelve a guardar.",
+    );
   }
   return errors;
 }
