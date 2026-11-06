@@ -1,7 +1,7 @@
 # SDD-20261106-plays-library-core · [Feature] Librería de Plays GTM: catálogo de 28 plays, puertas con motivo y activación
 
 **Tipo:** Feature · **Prioridad propuesta:** Media
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado (2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** `docs/prd/PRD-20261106-plays-gtm.md` (iniciativa; este es el SDD 1 de 9) · **Depende de:** — (usa lo ya fusionado en `main`)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) tiene una prueba automática que lo nombra y cita el objetivo G-n del PRD.
