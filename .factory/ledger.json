@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 66,
+  "seq": 67,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1809,6 +1809,27 @@
         {
           "state": "LOGGED",
           "at": "2026-11-06T21:32:50.522Z",
+          "by": "phase0-decisions",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0067",
+      "title": "Buscar en Conocimiento: búsqueda por texto en /hub y contrato de URL con la sección de Drive",
+      "kind": "feature",
+      "source": "SDD-20261106-hub-search (Sprint 1, rama docs/sprint1-sdd); roadmap E-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:55.435Z",
           "by": "phase0-decisions",
           "note": ""
         }
