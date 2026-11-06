@@ -18,6 +18,7 @@ Eres el agente de implementación de NOKKO (repo seller-strategy-studio). Implem
 1. SDD 1 universal-field-definitions.
 2. SDD 2 field-actions-edit-delete-confirm, SDD 3 strategy-setup-guided-next-step, SDD 10 connections-bring-your-own-account (con SDD 5 drive-per-company-account), SDD 6 discoveries-scoped-manual-search.
 3. SDD 7a, 7b, 7c (fit-data), SDD 8 products, SDD 9 theory-u, SDD 4 onboarding (épica: dos entregas).
+4. Tanda 2026-11-06, en este orden y de uno en uno: `frontal-rules-integration` U-1; `signal-freshness`; `proven-findings`; `frontal-rules-integration` U-3 y después U-4. La U-2 de `frontal-rules-integration` está sustituida por `signal-freshness`: no la implementes. Antes de abrir el PR de cada unidad, `bun install`, y si el SDD lo pide, la consulta de solo lectura de conteos agregados en preproducción.
 Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 
 ## 3. Git

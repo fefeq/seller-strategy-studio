@@ -20,6 +20,17 @@ PRD de la iniciativa: `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (objet
 | 10 | `SDD-20261025-connections-bring-your-own-account` | Feature | 1; incluye el SDD 5 como primer caso |
 | 11 | `SDD-20261027-strategic-suggestions-engine` | Feature (maestro, 8 fases) | 1, 2, 7b; usa 9 |
 
+## Tanda 2026-11-06 · señales, hallazgos y reglas de outreach
+Orden de ejecución (uno tras otro: comparten `proactive.test.ts` y `agent-tools.test.ts`). Los tres necesitan la aprobación explícita de Fede.
+| # | SDD | Tipo | Depende de |
+|---|---|---|---|
+| 12 | `SDD-20261106-frontal-rules-integration`, solo U-1 (`draft-rules`) | Mejora | — |
+| 13 | `SDD-20261106-signal-freshness` (sustituye a la U-2 del anterior) | Mejora | — |
+| 14 | `SDD-20261106-proven-findings` | Mejora | — |
+| 15 | `SDD-20261106-frontal-rules-integration`, U-3 (reactivación) y luego U-4 (jugadas) | Mejora | 12, 13 (U-4 también 14) |
+Ramas: `feat/draft-rules`, `feat/signal-freshness`, `feat/proven-findings`, `feat/closed-lost-revival`, `feat/playbook-base-plays`. Ninguno tiene migración.
+Decisiones de Fede (2026-11-06): una sola regla de vigencia de señales (`signal-freshness`); tope de 5 sugerencias de señal por ejecución y empresa; ventanas por tipo aceptadas como valores por defecto; seguimiento unificado en 60 palabras; mínimo de 3 pérdidas para un patrón, con experimentos descartados incluidos; tope de reactivaciones por empresa; «toque» = mensaje saliente, llamada o reunión registrada (el score de actividad sigue fuera de v1).
+
 Anexo: `annex/field-inventory-20261025.md` (inventario determinista del esquema: 84 tablas, 1043 columnas, 35 jsonb, 48 estados en texto).
 
 ## Principio de uso de LLM (aplica a los diez)
