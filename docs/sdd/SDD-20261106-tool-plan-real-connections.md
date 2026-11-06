@@ -270,4 +270,5 @@ Implementado el 2026-11-06 en `feat/tool-plan-real-connections` (base `a43200d0b
 - **CA-8:** la parte estática también exige la palabra «rollback» en la cabecera de la migración.
 - **Formato:** los archivos nuevos se formatearon con prettier; `integrations.tsx` no (deuda previa).
 - **CA-5:** además del selector sin deshabilitar, una segunda prueba comprueba que el Owner puede marcar «Ya lo usamos» en una herramienta sin conexión.
+- **Tras el gate (2026-11-06):** la prueba PGlite se hizo independiente del orden y se ampliaron sus casos: (e) update en una empresa que no es la activa, (f) mover una fila a otra empresa, borrado sin cambios y rollback de la cabecera ejecutado en PGlite. Lint: `gate.mjs` falla por la deuda previa de prettier de `integrations.tsx`; pendiente de decisión de Fede.
 - **Sin verificar visualmente** (móvil y escritorio, claro y oscuro) ni en la base real; ver el paquete de resultado.

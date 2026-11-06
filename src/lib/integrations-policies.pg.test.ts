@@ -5,7 +5,7 @@
 // (0002_multitenant_organizations.sql:119-123), then runs a control block BEFORE the migration (so the old behaviour is asserted,
 // not assumed) and the same cases AFTER it. The migration is found by name pattern, never by number.
 import { readdirSync, readFileSync } from "node:fs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { as, build, REPO, seed, U } from "@/test/pg-harness";
 
 type Db = Awaited<ReturnType<typeof build>>;
@@ -49,6 +49,15 @@ const count = async (name: string) =>
   );
 const RLS = /row-level security/i;
 
+// The two write policies exactly as 0002 gives them (0002_multitenant_organizations.sql:121-122). Applying them puts the table
+// in its «before» state, so each control case sets it up itself and does not depend on running before the migration.
+const POLICIES_0002 = `
+  drop policy if exists "org insert" on public.integrations;
+  drop policy if exists "org update" on public.integrations;
+  create policy "org insert" on public.integrations for insert to authenticated with check (public.is_org_member(org_id));
+  create policy "org update" on public.integrations for update to authenticated using (org_id = public.current_org() and public.is_org_member(org_id)) with check (public.is_org_member(org_id));
+`;
+
 beforeAll(async () => {
   db = await build();
   ({ A, B } = await seed(db));
@@ -63,10 +72,9 @@ beforeAll(async () => {
     grant all on public.integrations to service_role;
     create trigger integrations_audit before insert or update on public.integrations for each row execute function public.set_audit();
     create policy "org read" on public.integrations for select to authenticated using (org_id = public.current_org() and public.is_org_member(org_id));
-    create policy "org insert" on public.integrations for insert to authenticated with check (public.is_org_member(org_id));
-    create policy "org update" on public.integrations for update to authenticated using (org_id = public.current_org() and public.is_org_member(org_id)) with check (public.is_org_member(org_id));
     create policy "org delete owner" on public.integrations for delete to authenticated using (org_id = public.current_org() and public.has_org_role(org_id, 'owner'));
   `);
+  await db.exec(POLICIES_0002);
   // ownerA is Owner of company A (active) and also of company B, where they are not the active one: case (d).
   await db.exec(
     `insert into org_members (org_id, user_id, role) values ('${B}', '${U.ownerA}', 'owner')`,
@@ -76,6 +84,9 @@ beforeAll(async () => {
 }, 60_000);
 
 describe("control, before the migration: any member of the company can write (the behaviour this ticket removes)", () => {
+  beforeEach(async () => {
+    await db.exec(POLICIES_0002);
+  });
   it("aeA, a member who is not the Owner, updates and inserts", async () => {
     expect(await as(db, U.aeA, () => setStatus(rowA))).toHaveLength(1);
     const made = await as(db, U.aeA, () => insertFor(A, "Control A"));
@@ -89,15 +100,28 @@ describe("control, before the migration: any member of the company can write (th
   });
 });
 
+const MIGRATION = () => {
+  const files = readdirSync(`${REPO}/drizzle/migrations`).filter((f) =>
+    f.endsWith("_integrations_owner_write.sql"),
+  );
+  expect(files, "exactly one *_integrations_owner_write.sql in drizzle/migrations").toHaveLength(1);
+  return readFileSync(`${REPO}/drizzle/migrations/${files[0]}`, "utf8");
+};
+// The rollback is written in the migration's header as «--   <sql>» lines.
+const rollbackSql = (sql: string) =>
+  sql
+    .split("\n")
+    .filter((l) => l.startsWith("--   "))
+    .map((l) => l.slice(5))
+    .join("\n");
+
 describe("the migration that limits the plan to the Owner", () => {
-  beforeAll(async () => {
-    const files = readdirSync(`${REPO}/drizzle/migrations`).filter((f) =>
-      f.endsWith("_integrations_owner_write.sql"),
+  // Every case starts from the same state (migration applied, rows reset), so none depends on another or on the order they run in.
+  beforeEach(async () => {
+    await db.exec(MIGRATION());
+    await as(db, null, () =>
+      db.query("delete from integrations where id not in ($1, $2)", [rowA, rowB]),
     );
-    expect(files, "exactly one *_integrations_owner_write.sql in drizzle/migrations").toHaveLength(
-      1,
-    );
-    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${files[0]}`, "utf8"));
     await as(db, null, () => db.query("update integrations set status = 'planned'"));
   });
 
@@ -108,7 +132,7 @@ describe("the migration that limits the plan to the Owner", () => {
     expect(await as(db, U.aeA, () => setStatus(rowA))).toHaveLength(0);
     expect(
       await as(db, null, () => rows("select status from integrations where id = $1", [rowA])),
-    ).toEqual([{ status: "connected" }]);
+    ).toEqual([{ status: "planned" }]);
     expect(await as(db, U.aeA, () => throws(() => insertFor(A, "Nuevo")))).toMatch(RLS);
   });
   it("(c) the Owner of another company cannot touch this company's rows", async () => {
@@ -118,6 +142,24 @@ describe("the migration that limits the plan to the Owner", () => {
     expect(await as(db, U.ownerA, () => throws(() => insertQuiet(B, "Otra empresa")))).toMatch(RLS);
     expect(await count("Otra empresa")).toBe(0);
   });
+  it("(e) an Owner cannot update a row of a company that is not their active one", async () => {
+    expect(await as(db, U.ownerA, () => setStatus(rowB))).toHaveLength(0);
+  });
+  it("(f) an Owner cannot move a row of their company to another company", async () => {
+    const moved = await as(db, U.ownerA, () =>
+      throws(() => db.query("update integrations set org_id = $1 where id = $2", [B, rowA])),
+    );
+    expect(moved).toMatch(RLS);
+    expect(
+      await as(db, null, () => rows("select id from integrations where org_id = $1", [A])),
+    ).toEqual([{ id: rowA }]);
+  });
+  it("deleting is unchanged: the Owner deletes, a member who is not the Owner does not", async () => {
+    const [extra] = await as(db, null, () => insertFor(A, "Para borrar"));
+    const del = (id: string) => rows("delete from integrations where id = $1 returning id", [id]);
+    expect(await as(db, U.aeA, () => del(extra!.id))).toHaveLength(0);
+    expect(await as(db, U.ownerA, () => del(extra!.id))).toHaveLength(1);
+  });
   it("members still read the plan of their active company, and only that one", async () => {
     expect(
       (await as(db, U.aeA, () => rows("select id from integrations"))).map((r: Row) => r.id),
@@ -125,5 +167,22 @@ describe("the migration that limits the plan to the Owner", () => {
     expect(
       (await as(db, U.ownerB, () => rows("select id from integrations"))).map((r: Row) => r.id),
     ).toEqual([rowB]);
+  });
+});
+
+describe("the rollback written in the migration's header", () => {
+  it("restores the 0002 behaviour (a member who is not the Owner writes again) and the migration can be applied again", async () => {
+    const sql = MIGRATION();
+    const undo = rollbackSql(sql);
+    expect(undo).toContain('create policy "org insert"');
+    expect(undo).toContain('create policy "org update"');
+    await db.exec(sql);
+    expect(await as(db, U.aeA, () => throws(() => insertFor(A, "Con migración")))).toMatch(RLS);
+    await db.exec(undo);
+    expect(await as(db, U.aeA, () => setStatus(rowA))).toHaveLength(1);
+    expect(await as(db, U.aeA, () => insertFor(A, "Tras rollback"))).toHaveLength(1);
+    await as(db, null, () => db.query("delete from integrations where name = 'Tras rollback'"));
+    await db.exec(sql);
+    expect(await as(db, U.aeA, () => throws(() => insertFor(A, "Otra vez")))).toMatch(RLS);
   });
 });
