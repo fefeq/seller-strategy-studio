@@ -130,7 +130,16 @@ export function openRun(
 ): { ok: true; run: Run } | { ok: false; message: string } {
   const lock = takeLock(dir, pass, pid, now());
   if (!lock.ok) return lock;
-  const ledger = loadLedger(dir, pass);
+  let ledger: SpendLedger;
+  try {
+    ledger = loadLedger(dir, pass);
+  } catch {
+    lock.release();
+    return {
+      ok: false,
+      message: `No se puede leer el registro de gasto de la pasada «${pass}» (${ledgerPath(dir, pass)}). Revísalo o restáuralo a mano antes de seguir.`,
+    };
+  }
   if (ledger.noData) {
     lock.release();
     return {
