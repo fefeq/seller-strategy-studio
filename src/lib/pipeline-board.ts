@@ -83,6 +83,28 @@ export function closingIn(deals: BoardDeal[], range: { start: Date; end: Date })
   return deals.filter((d) => d.stage !== "won" && d.stage !== "lost" && !!d.close_date && inRange(new Date(`${d.close_date}T12:00:00Z`).getTime(), range));
 }
 
+export type BoardMarginSource = "real" | "deals" | "plan" | "media_objetivos" | null;
+
+/**
+ * Margin of the board's payback: real margin of the books → won deals with product lines → plan → unweighted
+ * mean of the segment target margins (the chain the panel used, same pct), plus which one it was and whether it
+ * is 0 % or negative (then the payback is Infinity or negative and the screen shows «Sin dato»).
+ */
+export function boardMargin(
+  k: { actual: { margin: number | null }; plan: { margin: number | null } },
+  wonAll: { pct: number } | null | undefined,
+  segments: { gross_margin_pct: number | string | null }[],
+): { pct: number | null; source: BoardMarginSource; marginNonPositive: boolean } {
+  const segMargins = segments.map((s) => s.gross_margin_pct).filter((x): x is number | string => x != null).map(Number);
+  const [pct, source]: [number | null, BoardMarginSource] =
+    k.actual.margin != null ? [k.actual.margin, "real"]
+      : wonAll?.pct != null ? [wonAll.pct, "deals"]
+        : k.plan.margin != null ? [k.plan.margin, "plan"]
+          : segMargins.length ? [segMargins.reduce((a, b) => a + b, 0) / segMargins.length, "media_objetivos"]
+            : [null, null];
+  return { pct, source, marginNonPositive: pct != null && pct <= 0 };
+}
+
 /**
  * Real CAC = acquisition cost of the quarter / deals won in it. Projected CAC adds the open deals closing
  * in the quarter at the real win rate. Payback = CAC / (ACV × margin / 12); null without ACV or margin.

@@ -116,3 +116,60 @@ describe("annual margin", () => {
     expect(marginFor(mid, y).pct).toBeCloseTo(63.64, 1);
   });
 });
+
+// SDD-20261106-metrics-honest-data U-3 · CA-5 to CA-8: new top-level fields of each budget row (segmentBudget and quarterlyBudget).
+describe("budget row labels (CA-5 to CA-8)", () => {
+  const seg = (o: Partial<SegLike> & { id: string }): SegLike => ({ name: o.id, acv_min: null, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null, ...o });
+  const dl = (o: Partial<DealLike>): DealLike => ({ segment_id: null, amount: null, stage: "discovery", close_date: null, closed_at: null, updated_at: "2026-05-10", created_at: "2026-03-01", ...o });
+  const qb = (o: Partial<QuarterBudgetLike> & { segment_id: string; period: string }): QuarterBudgetLike => ({ plan_revenue: null, plan_cost_to_serve: null, plan_acquisition: null, plan_new_customers: null, actual_revenue: null, actual_cost_to_serve: null, ...o });
+
+  it("CA-5 / CA-6: wonInQuarter, inferredWon, acvSource and acvRangeBasis of the period", () => {
+    const a = seg({ id: "a", acv_min: 0, acv_max: 10000 });
+    const deals = [
+      dl({ segment_id: "a", amount: 5000, stage: "won", closed_at: "2026-05-10" }),
+      dl({ amount: 4000, stage: "won", closed_at: "2026-08-10" }),
+      dl({ segment_id: "borrado", amount: 3000, stage: "won", closed_at: "2026-11-10" }),
+      dl({ amount: 3000, stage: "won", closed_at: "2025-11-10" }),
+    ];
+    const [y] = segmentBudget([a], deals, [], [], 2026);
+    expect(y).toMatchObject({ wonInQuarter: 3, inferredWon: 2, acvSource: "ganados", acvRangeBasis: null });
+    expect(y.wonInQuarter).toBe(y.actual.newCustomers);
+    const q = quarterlyBudget([a], deals, [], [], 2026);
+    expect(q.byQuarter["2026-Q3"][0]).toMatchObject({ wonInQuarter: 1, inferredWon: 1 });
+    expect(q.byQuarter["2026-Q1"][0]).toMatchObject({ wonInQuarter: 0, inferredWon: 0 });
+    const [r] = segmentBudget([seg({ id: "r", acv_min: 1000, acv_max: 3000 })], [], [], [], 2026);
+    expect(r).toMatchObject({ acvSource: "rango", acvRangeBasis: "punto_medio" });
+    const [s] = segmentBudget([seg({ id: "s" })], [], [], [], 2026);
+    expect(s).toMatchObject({ acvSource: "rango", acvRangeBasis: "sin_rango" });
+  });
+
+  it("CA-7 paybackMarginBasis { plan, actual }", () => {
+    const deal = (id: string) => dl({ segment_id: id, amount: 12000, stage: "won", closed_at: "2026-05-10" });
+    const costs = ["falta", "neg", "dato"].map((id) => ({ segment_id: id, channel: "Eventos", amount: 6000, period: "2026-Q2" }));
+    const rows = [
+      qb({ segment_id: "falta", period: "2026-Q2", plan_acquisition: 3000, plan_new_customers: 1 }),
+      qb({ segment_id: "neg", period: "2026-Q2", plan_acquisition: 3000, plan_new_customers: 1, plan_revenue: 100, plan_cost_to_serve: 150, actual_revenue: 100, actual_cost_to_serve: 120 }),
+      qb({ segment_id: "dato", period: "2026-Q2", plan_acquisition: 3000, plan_new_customers: 1, plan_revenue: 100, plan_cost_to_serve: 50 }),
+    ];
+    const segs = [seg({ id: "falta", acv_min: 0 }), seg({ id: "neg", acv_min: 0 }), seg({ id: "dato", acv_min: 0, gross_margin_pct: 40 }), seg({ id: "vacio", acv_min: 0 })];
+    const q2 = quarterlyBudget(segs, ["falta", "neg", "dato"].map(deal), rows, costs, 2026).byQuarter["2026-Q2"];
+    const by = Object.fromEntries(q2.map((r) => [r.segment.id, r]));
+    expect(by.falta.paybackMarginBasis).toEqual({ plan: "supuesto_100", actual: "supuesto_100" });
+    expect(by.falta.actual.payback).toBe(6);
+    expect(by.neg.paybackMarginBasis).toEqual({ plan: "no_positivo", actual: "no_positivo" });
+    expect(by.neg.actual.payback).toBeLessThan(0);
+    expect(by.dato.paybackMarginBasis).toEqual({ plan: "dato", actual: "dato" });
+    expect(by.vacio.paybackMarginBasis).toEqual({ plan: null, actual: null });
+    expect(Object.keys(by.dato.payback).sort()).toEqual(["planOk", "realOk", "target"]);
+  });
+
+  it("CA-8 sharedSplit of the period", () => {
+    const segs = [seg({ id: "a", acv_min: 0, acv_max: 10000 }), seg({ id: "b", acv_min: 10001 })];
+    const costs = [{ segment_id: null, channel: "Paid media", amount: 1000, period: "2026-Q1" }, { segment_id: null, channel: "Paid media", amount: 800, period: "2026-Q2" }];
+    const q = quarterlyBudget(segs, [dl({ segment_id: "a", amount: 500, stage: "won", closed_at: "2026-02-10" })], [], costs, 2026);
+    expect(q.byQuarter["2026-Q1"].map((r) => r.sharedSplit)).toEqual(["clientes", "clientes"]);
+    expect(q.byQuarter["2026-Q2"].map((r) => r.sharedSplit)).toEqual(["partes_iguales", "partes_iguales"]);
+    expect(q.byQuarter["2026-Q3"].map((r) => r.sharedSplit)).toEqual([null, null]);
+    expect(q.year.map((r) => r.sharedSplit)).toEqual(["clientes", "clientes"]);
+  });
+});

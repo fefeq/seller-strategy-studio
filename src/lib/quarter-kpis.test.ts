@@ -54,3 +54,39 @@ describe("quarterKpis", () => {
     expect(out[1].actual.revenue).toBe(30000);
   });
 });
+
+// SDD-20261106-metrics-honest-data U-3 · CA-7: paybackBasis over the segments that enter the weighted payback.
+describe("quarterKpis paybackBasis (CA-7)", () => {
+  const seg = (o: Partial<SegLike> & { id: string }): SegLike => ({ name: o.id, acv_min: null, acv_max: null, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null, ...o });
+  const cost = (segment_id: string, period = "2026-Q2") => ({ segment_id, channel: "Eventos", amount: 6000, period });
+  const plan = (segment_id: string) => budget(segment_id, "2026-Q2", { plan_acquisition: 3000, plan_new_customers: 1 });
+
+  it("dato when every weighted segment has a real margin and a real ACV", () => {
+    const s = seg({ id: "a", acv_min: 0, gross_margin_pct: 50 });
+    const [k] = quarterKpis([s], [won(12000, "2026-05-10", "a")], [plan("a")], [cost("a")], ["2026-Q2"]);
+    expect(k.paybackBasis).toEqual({ plan: "dato", actual: "dato" });
+  });
+  it("estimado when a weighted segment assumes the margin (100 %)", () => {
+    const s = seg({ id: "a", acv_min: 0 });
+    const [k] = quarterKpis([s], [won(12000, "2026-05-10", "a")], [plan("a")], [cost("a")], ["2026-Q2"]);
+    expect(k.paybackBasis).toEqual({ plan: "estimado", actual: "estimado" });
+  });
+  it("estimado when a weighted segment takes its ACV from the range (plan side)", () => {
+    const s = seg({ id: "a", acv_min: 10000, acv_max: 14000, gross_margin_pct: 50 });
+    const [k] = quarterKpis([s], [], [plan("a")], [], ["2026-Q2"]);
+    expect(k.paybackBasis.plan).toBe("estimado");
+    expect(k.paybackBasis.actual).toBeNull();
+  });
+  it("sin_dato when a weighted segment has margin 0 % or negative, even if the weighted value looks fine", () => {
+    const good = seg({ id: "a", acv_min: 0, acv_max: 50000, gross_margin_pct: 50 });
+    const bad = seg({ id: "b", acv_min: 50001, gross_margin_pct: -5 });
+    const deals = [won(12000, "2026-05-10", "a"), won(60000, "2026-05-11", "b")];
+    const [k] = quarterKpis([good, bad], deals, [plan("a"), plan("b")], [cost("a"), cost("b")], ["2026-Q2"]);
+    expect(k.paybackBasis).toEqual({ plan: "sin_dato", actual: "sin_dato" });
+  });
+  it("null when no segment enters the weighted payback; a segment without customers is left out", () => {
+    const s = seg({ id: "a", acv_min: 0, gross_margin_pct: -5 });
+    const [k] = quarterKpis([s], [], [], [], ["2026-Q2"]);
+    expect(k.paybackBasis).toEqual({ plan: null, actual: null });
+  });
+});

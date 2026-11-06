@@ -33,6 +33,17 @@ export function segmentCac(costs: CostLike[], customersBySegment: Record<string,
   return out;
 }
 
+/**
+ * How segmentCac split the shared cost, with its same rule: "clientes" (by customers won), "partes_iguales"
+ * (nobody won) or null (no shared cost or no segments). Labels the split; segmentCac is unchanged.
+ */
+export function sharedSplitBasis(costs: CostLike[], customersBySegment: Record<string, number>, segmentIds: string[]): "clientes" | "partes_iguales" | null {
+  const sharedTotal = costs.filter((c) => !c.segment_id).reduce((s, c) => s + Number(c.amount || 0), 0);
+  if (!segmentIds.length || !sharedTotal) return null;
+  const totalCustomers = segmentIds.reduce((s, id) => s + (customersBySegment[id] ?? 0), 0);
+  return totalCustomers ? "clientes" : "partes_iguales";
+}
+
 /** Cost per channel (all segments + shared), largest first, with its share of the total. */
 export function costByChannel(costs: CostLike[]) {
   const map = new Map<string, number>();
