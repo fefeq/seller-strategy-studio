@@ -1,0 +1,1680 @@
+{
+  "version": 1,
+  "seq": 64,
+  "tickets": [
+    {
+      "id": "NK-0001",
+      "title": "Enforce RLS policies on all tables",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.350Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0002",
+      "title": "Refactor client queries to rely on RLS",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.403Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0003",
+      "title": "Migrate useEffect data fetching to React Query",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.462Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0004",
+      "title": "Verify server-side AI execution",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.516Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0005",
+      "title": "Enforce utility-first styling",
+      "kind": "feature",
+      "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:00:36.568Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0006",
+      "title": "Definiciones universales de campos",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "SHIPPED",
+      "owner": "coordinador (sesión de código sin lanzar)",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-universal-field-definitions.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": "feat/universal-field-normalization",
+      "base_commit": "b0beff9743b69055ad23cef58dac470ddc39147c",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.829Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T20:44:09.164Z",
+          "by": "Fede",
+          "note": "owner=coordinador (sesión de código sin lanzar)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-28T22:21:27.744Z",
+          "by": "Fede",
+          "note": "sha=d02114bba8d0b60758f0759b043245318551fa01"
+        }
+      ]
+    },
+    {
+      "id": "NK-0007",
+      "title": "Editar, borrar y confirmar en campos",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "SHIPPED",
+      "owner": "coordinador (sesión de código sin lanzar)",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-field-actions-edit-delete-confirm.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": "feat/field-actions-sources-owner-delete",
+      "base_commit": "db16d403e2aabadc6a7964dc671a3d9d9893fd8d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.893Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T23:25:11.501Z",
+          "by": "Fede",
+          "note": "owner=coordinador (sesión de código sin lanzar)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:08:38.460Z",
+          "by": "Fede",
+          "note": "sha=05da3beca726d404b3e49f331d00851207716ecf"
+        }
+      ]
+    },
+    {
+      "id": "NK-0008",
+      "title": "Configura tu estrategia que guía al siguiente paso",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "SHIPPED",
+      "owner": "nk-0008-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261101-strategy-setup-closeout.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": "feat/setup-guide-invalidation",
+      "base_commit": "47e5704cf80c781cf02ddac09d8f167ad4166e32",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.940Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T16:26:44.951Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261101-strategy-setup-closeout.md prd=docs/prd/PRD-20261028-ux-onboarding-coherencia.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T16:26:45.019Z",
+          "by": "Fede",
+          "note": "owner=nk-0008-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-01T16:37:59.466Z",
+          "by": "Fede",
+          "note": "sha=eaa115dd08d0"
+        }
+      ]
+    },
+    {
+      "id": "NK-0009",
+      "title": "Onboarding completo y proactivo",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-onboarding-flow-end-to-end.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:13.987Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0010",
+      "title": "Google Drive de una cuenta distinta al email de acceso",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-drive-per-company-account.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.036Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0011",
+      "title": "Descubiertos: alcance y búsqueda manual acotada",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-discoveries-scoped-manual-search.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.081Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0012",
+      "title": "Datos de encaje 7a: llave mínima y completado asistido",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "SHIPPED",
+      "owner": "nk-0012-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261101-fit-data-7a-llave-minima-revalidado.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": "feat/fit-key-free-mail",
+      "base_commit": "5d34b6289440583a8ba3278303279c1a85eab9a8",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.126Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T20:43:28.368Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261101-fit-data-7a-llave-minima-revalidado.md prd=docs/prd/PRD-20261028-ux-onboarding-coherencia.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T20:43:28.429Z",
+          "by": "Fede",
+          "note": "owner=nk-0012-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-02T14:45:18.006Z",
+          "by": "Fede",
+          "note": "sha=f0c4916c7475"
+        }
+      ]
+    },
+    {
+      "id": "NK-0013",
+      "title": "Datos de encaje 7b: competidores como entidad",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-fit-data-7b-competitors-entity.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.170Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0014",
+      "title": "Datos de encaje 7c: identidad de persona y resultados de terceros",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-fit-data-7c-person-identity-and-third-party-results.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.216Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0015",
+      "title": "Productos en el onboarding y autocompletado desde la web",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-products-in-onboarding-autofill.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.260Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0016",
+      "title": "Theory U con IA proactiva para decidir",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-theory-u-proactive-decision-support.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.305Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0017",
+      "title": "Conexiones: conecta tus propias cuentas",
+      "kind": "feature",
+      "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261025-connections-bring-your-own-account.md",
+      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T20:23:14.352Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0018",
+      "title": "Tamaño de Clay y país/tamaño de la IA web se guardan sin la regla única (guion corto, texto libre)",
+      "kind": "bug",
+      "source": "Auditoría de escrituras tras NK-0006 (field-write-audit.md, solo lectura), pedida por Fede",
+      "state": "SHIPPED",
+      "owner": "coordinador (sesión de código sin lanzar)",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261028-field-write-paths-normalization.md",
+      "prd": null,
+      "branch": "feat/field-write-paths-normalization",
+      "base_commit": "fc45f3a7e1353bace009550b0e1f75fc3f0e6a90",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T21:00:25.124Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T22:20:33.478Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261028-field-write-paths-normalization.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T22:21:13.504Z",
+          "by": "Fede",
+          "note": "owner=coordinador (sesión de código sin lanzar)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-29T19:15:53.657Z",
+          "by": "Fede",
+          "note": "sha=d05d91e393a1839049230a66a4842a90a69331fd"
+        }
+      ]
+    },
+    {
+      "id": "NK-0019",
+      "title": "ICP: países y rango de empleados se guardan sin pasar por la regla única (código inválido, minúsculas)",
+      "kind": "bug",
+      "source": "Auditoría de escrituras tras NK-0006 (hallazgos 15-17, riesgo bajo); separado de NK-0018 por decisión de Fede",
+      "state": "SHIPPED",
+      "owner": "country-size-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "b3567db3c788ae2626b98b80e2af55559230a33a",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T21:09:58.334Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:41:16.108Z",
+          "by": "Fede",
+          "note": "owner=country-size-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:51:32.690Z",
+          "by": "Fede",
+          "note": "sha=7f0bf811b30b9db69cdf9a0a752c4c7b61592bf5"
+        }
+      ]
+    },
+    {
+      "id": "NK-0020",
+      "title": "Un tamaño decimal («12.5») se guarda como «5–12 empleados» en parseEmployees",
+      "kind": "bug",
+      "source": "Informe del gate de NK-0006 (.factory/evidence/NK-0006/fb8cdeca3abb/, no presente en este worktree); pedido por Fede",
+      "state": "SHIPPED",
+      "owner": "country-size-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "b3567db3c788ae2626b98b80e2af55559230a33a",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T21:21:08.733Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:41:16.174Z",
+          "by": "Fede",
+          "note": "owner=country-size-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:51:32.748Z",
+          "by": "Fede",
+          "note": "sha=7f0bf811b30b9db69cdf9a0a752c4c7b61592bf5"
+        }
+      ]
+    },
+    {
+      "id": "NK-0021",
+      "title": "Deuda de formato: prettier marca apollo.tsx, accounts.ts, apollo.ts y apollo.test.ts (archivo entero; cifra de errores por medir)",
+      "kind": "bug",
+      "source": "Gate de NK-0006 (mensaje de la sesión de revisión); lint medido por delta, excepción aprobada por Fede el 2026-10-28",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T21:29:48.486Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0022",
+      "title": "Migración 0058: escritores automáticos con sesión de persona quedarían sellados «persona + confirmado» sin serlo (no aplicar 0058 hasta SDD aprobado)",
+      "kind": "bug",
+      "source": "migration-0058-plan.md (R1) y revisión de la sesión de verificación de 0058; escritores comprobados en el código el 2026-10-28",
+      "state": "SHIPPED",
+      "owner": "nokko-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261028-field-sources-on-tracked-writers.md",
+      "prd": null,
+      "branch": "feat/field-sources-writers",
+      "base_commit": "d02114bba8d0b60758f0759b043245318551fa01",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T21:34:40.432Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T22:20:33.528Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261028-field-sources-on-tracked-writers.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-28T22:22:29.469Z",
+          "by": "Fede",
+          "note": "owner=nokko-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T19:40:24.617Z",
+          "by": "Fede",
+          "note": "sha=ecf05a71ee83eddeb8738d13d83c5c9fa401162c"
+        }
+      ]
+    },
+    {
+      "id": "NK-0023",
+      "title": "El flag --approved-by de ledger ship no funciona como documenta el README",
+      "kind": "bug",
+      "source": "descubierto al cerrar NK-0006: el script lee approved_by y el parser deja approved-by; README y nokko-release documentan la forma con guion",
+      "state": "SHIPPED",
+      "owner": "nk-0023-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "1e4682aeb7eb42051d9186ad021813d97ab89d31",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-28T22:21:45.055Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:13:19.037Z",
+          "by": "Fede",
+          "note": "owner=nk-0023-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:36:23.374Z",
+          "by": "Fede",
+          "note": "sha=14b40a5234e4cc800b40be829f22b91024a059d4"
+        }
+      ]
+    },
+    {
+      "id": "NK-0024",
+      "title": "icp-editor guarda como persona confirmada los criterios que propone la IA (países, empleados mín y máx)",
+      "kind": "bug",
+      "source": "segunda pasada del gate del SDD NK-0022 (icp-editor.tsx:78); Fede decidió ticket aparte el 2026-10-29",
+      "state": "SHIPPED",
+      "owner": "nk-0024-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "1e4682aeb7eb42051d9186ad021813d97ab89d31",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-29T00:13:50.173Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:13:18.982Z",
+          "by": "Fede",
+          "note": "owner=nk-0024-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:36:34.026Z",
+          "by": "Fede",
+          "note": "sha=ab12c5dd4b3111a140e4ce125215d9c9a69feb40"
+        }
+      ]
+    },
+    {
+      "id": "NK-0025",
+      "title": "Torre de control GTM (iniciativa): objetivos, resultados clave, tareas y puertas con hilo conductor",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:05:57.431Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:10:31.950Z",
+          "by": "tracker",
+          "note": "docs: sdd=- prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0026",
+      "title": "Torre de control GTM 1: objetivos, resultados clave, tareas, puertas, torre de control y retirada de la lectura de LinkedIn por extracción automática",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "PROMOTED",
+      "owner": "Claude",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-1a-core.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": "feat/gtm-control-tower-1a",
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:05:57.482Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:35:43.104Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-1a-core.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T18:25:33.652Z",
+          "by": "Fede",
+          "note": "owner=Claude"
+        }
+      ]
+    },
+    {
+      "id": "NK-0027",
+      "title": "Torre de control GTM 1b: iniciativas, tareas, puertas, torre de control, Plan, Inicio y menú",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-1b-tasks-gates-tower.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T20:35:43.153Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0028",
+      "title": "Torre de control GTM 2: contexto estratégico y onboarding por bloques con nivel de confianza",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-2-context-onboarding.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:34:02.600Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0029",
+      "title": "Torre de control GTM 3: atribución por canal y público, embudos por modelo de venta y diccionario de métricas",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-3-attribution-metrics.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:34:02.655Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0030",
+      "title": "Avisos por momentos de dinero: respuesta positiva, llamada reservada o cancelada y deal ganado avisan; el resto queda en el registro sin ping",
+      "kind": "feature",
+      "source": "análisis Anfloy + auditoría de avisos (jobs.ts), sesión de Fede 2026-10-30",
+      "state": "PROMOTED",
+      "owner": "Claude",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-money-moment-notices.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:45:05.254Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:47:56.606Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-money-moment-notices.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T15:52:44.217Z",
+          "by": "Fede",
+          "note": "owner=Claude"
+        }
+      ]
+    },
+    {
+      "id": "NK-0031",
+      "title": "Aviso de deal en riesgo (stale_deal): detectar qué Sugerencia es nueva y avisar a líderes y responsable, sin tocar de golpe la función compartida",
+      "kind": "feature",
+      "source": "gate del SDD de NK-0030 (B-3), decisión de Fede 2026-10-30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T21:59:02.065Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0032",
+      "title": "Torre de control GTM 4: integraciones (Stripe, producto, calendario, correo, avisos, asistentes)",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:09:19.068Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:15:32.650Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0033",
+      "title": "Torre de control GTM 4b: herramientas personales y asistentes (calendario, correo, notas, avisos, servidor MCP)",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-29 y 30",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-4b-personal-tools-assistants.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-30T22:15:32.698Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0034",
+      "title": "Tipar las respuestas de Apollo y Clay y quitar los dos eslint-disable no-explicit-any añadidos en NK-0018",
+      "kind": "bug",
+      "source": "Gate de NK-0018 (observación de prioridad baja): apollo-gateway.ts:57 y clay-gateway.ts:46, con el Promise<any> ya existente en la base fc45f3a",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:40:25.609Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0035",
+      "title": "País: «UK», «uk» y «England» no se reconocen y se descartan al guardar (isoFromCountry)",
+      "kind": "bug",
+      "source": "Gate de NK-0018 (hallazgo de prioridad baja): «United Kingdom», «Reino Unido» y «GB» sí dan GB; sin alias, la IA web deja el país vacío",
+      "state": "SHIPPED",
+      "owner": "country-size-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "b3567db3c788ae2626b98b80e2af55559230a33a",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:40:25.661Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:41:16.264Z",
+          "by": "Fede",
+          "note": "owner=country-size-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:51:32.800Z",
+          "by": "Fede",
+          "note": "sha=7f0bf811b30b9db69cdf9a0a752c4c7b61592bf5"
+        }
+      ]
+    },
+    {
+      "id": "NK-0036",
+      "title": "NK-0022: menores del gate sobre ecf05a7",
+      "kind": "bug",
+      "source": "Gate NK-0022 sobre ecf05a7 (decisión de Fede 2026-10-31). Evidencia: .factory/evidence/NK-0022/ecf05a71ee83/ (gate-mutations.log, edges-compare.log). Tipo: mejora de tests, sin cambio de esquema",
+      "state": "SHIPPED",
+      "owner": "nk-0036-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "b1ab55cfd590d483101d064de845de004c6501fc",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:42:51.313Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T01:13:41.348Z",
+          "by": "Fede",
+          "note": "owner=nk-0036-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-01T08:21:24.467Z",
+          "by": "Fede",
+          "note": "sha=11e9b53fa2ed81fde0a47024c22179f6cc99bdf1"
+        }
+      ]
+    },
+    {
+      "id": "NK-0037",
+      "title": "companyLinkedin: releer con el cliente del usuario antes de escribir con el cliente admin",
+      "kind": "feature",
+      "source": "Decisión de Fede (admin) 2026-10-29; riesgo aceptado por Fede mientras tanto; origen NK-0022 (apify-core.ts, companyLinkedin exportada). Requiere SDD corto y gate propio; aprobado por Fede 2026-10-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T19:42:51.382Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0038",
+      "title": "Tablero de equipo: «Aceptar» una sugerencia de prueba o acción comercial la cierra sin crear el experimento ni la tarea",
+      "kind": "bug",
+      "source": "",
+      "state": "SHIPPED",
+      "owner": "nokko-author (NK-0038)",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261031-board-accept-opens-execute-form.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": "dcea201e1ffe56051dcd1c23d4682d204e36c9de",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:07:26.492Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:22:40.178Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261031-board-accept-opens-execute-form.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T20:22:40.258Z",
+          "by": "Fede",
+          "note": "owner=nokko-author (NK-0038)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T20:28:59.054Z",
+          "by": "Fede",
+          "note": "sha=2b64cc3cb74621aa530e94925ed6d4b34fd93f30"
+        }
+      ]
+    },
+    {
+      "id": "NK-0039",
+      "title": "Aceptar sin borrador desde Telegram, el agente y el MCP cierra una sugerencia de prueba o acción comercial sin crear el experimento ni la tarea",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": "NK-0038",
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:03.294Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0040",
+      "title": "ExecuteDialog dice «creado» y cierra aunque el servidor responda «Ya estaba gestionada», y decideStrategy registra la decisión antes de crear (si falla el insert queda aceptada sin nada)",
+      "kind": "bug",
+      "source": "",
+      "state": "SHIPPED",
+      "owner": "nk-0040-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "1e4682aeb7eb42051d9186ad021813d97ab89d31",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:03.373Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T22:13:18.927Z",
+          "by": "Fede",
+          "note": "owner=nk-0040-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T22:36:28.877Z",
+          "by": "Fede",
+          "note": "sha=193f8398d532dfaa79990f51bbab6e9a7fd19f0a"
+        }
+      ]
+    },
+    {
+      "id": "NK-0041",
+      "title": "Servidor: decideSuggestionCore acepta approve sin borrador para pruebas y acciones comerciales (botón Hecho de Telegram, herramienta del agente, MCP)",
+      "kind": "bug",
+      "source": "",
+      "state": "SHIPPED",
+      "owner": "nk-0041-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261031-suggestion-accept-needs-form-outside-ui.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": "6976fa82cb5d0a738dc047856effde82eca4e8c2",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T20:14:11.547Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T23:15:43.135Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261031-suggestion-accept-needs-form-outside-ui.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-10-31T23:15:43.203Z",
+          "by": "Fede",
+          "note": "owner=nk-0041-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-10-31T23:34:17.748Z",
+          "by": "Fede",
+          "note": "sha=b92b38e641a51f700e48b4aa20e665fad3acd0e3"
+        }
+      ]
+    },
+    {
+      "id": "NK-0042",
+      "title": "Sugerencias de precio: canViewStrategy no se aplica en decideSuggestionCore ni en los avisos de Telegram (notifyUrgent y resumen), solo en la lista y el correo diario",
+      "kind": "bug",
+      "source": "",
+      "state": "SHIPPED",
+      "owner": "nk-0042-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261101-price-suggestions-visibility-server.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": "a930805b7d36a0426d2620b4b0ef8be776cf2cc2",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T23:02:12.637Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T00:02:10.480Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261101-price-suggestions-visibility-server.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T00:02:12.042Z",
+          "by": "Fede",
+          "note": "owner=nk-0042-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-01T01:08:10.884Z",
+          "by": "Fede",
+          "note": "sha=a32f62922b193346f241032547be63f4b699f414"
+        }
+      ]
+    },
+    {
+      "id": "NK-0043",
+      "title": "Recuperar una sugerencia de prueba o acción comercial aceptada sin experimento ni tarea enlazados (entrada en la app y comprobación del enlace)",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T23:03:48.040Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0044",
+      "title": "Sugerencias de precio: la base de datos deja leerlas a cualquier miembro (RLS de suggestions); el filtro por rol es solo de interfaz y servidor. Requiere migración",
+      "kind": "bug",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T23:40:49.153Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0045",
+      "title": "Regla de precio: solo cubre las sugerencias con causa «price:»; decidir si se amplía a las propuestas de la revisión con IA y de experimentos sobre el precio del producto (strategy_product_price con otras causas)",
+      "kind": "feature",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-10-31T23:46:23.417Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0046",
+      "title": "Cuatro commits del agente de Lovable en main sin pasar por la fábrica: recarga automática ante error de carga de un trozo y tipos de Supabase regenerados",
+      "kind": "bug",
+      "source": "",
+      "state": "SHIPPED",
+      "owner": "nk-0046-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": "d76ae7a519fd14c18df08cc8f7809862df453a0d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T08:43:18.666Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T08:50:29.718Z",
+          "by": "Fede",
+          "note": "owner=nk-0046-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-01T08:56:52.316Z",
+          "by": "Fede",
+          "note": "sha=b8bdebdf446b"
+        }
+      ]
+    },
+    {
+      "id": "NK-0047",
+      "title": "El gate de lint falla al tocar src/integrations/supabase/types.ts (archivo generado por Lovable sin punto y coma): eslint debe ignorarlo",
+      "kind": "bug",
+      "source": "gate NK-0030 2026-11-01",
+      "state": "PROMOTED",
+      "owner": "nk-0047-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": "fix/eslint-ignore-generated-types",
+      "base_commit": "11bc3981b3ec9f97cf9355a3e687608fd331044e",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T17:33:12.398Z",
+          "by": "coordinadora",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-01T17:33:25.529Z",
+          "by": "Fede",
+          "note": "owner=nk-0047-author"
+        }
+      ]
+    },
+    {
+      "id": "NK-0048",
+      "title": "GTM Lab en NOKKO, SDD 1: núcleo, metodología y evals de GTM Lab en src/lib/gtm-lab (sin base de datos)",
+      "kind": "feature",
+      "source": "PRD-20261101-gtm-lab-en-nokko §8 paso 1, rama docs/prd-gtm-lab-en-nokko (Fede, 2026-11-01)",
+      "state": "PROMOTED",
+      "owner": "nk-0048-author",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261101-gtm-lab-1-core.md",
+      "prd": "docs/prd/PRD-20261101-gtm-lab-en-nokko.md",
+      "branch": "feat/gtm-lab-1-core",
+      "base_commit": "991051192db6304e048ab984398a0b0905e8ca0b",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-01T21:53:12.686Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T15:10:58.402Z",
+          "by": "Claude",
+          "note": "docs: sdd=docs/sdd/SDD-20261101-gtm-lab-1-core.md prd=docs/prd/PRD-20261101-gtm-lab-en-nokko.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-02T15:11:04.054Z",
+          "by": "Fede",
+          "note": "owner=nk-0048-author"
+        }
+      ]
+    },
+    {
+      "id": "NK-0049",
+      "title": "Main roto por 7 commits del agente de Lovable: migraciones 0073/0074 duplicadas en el journal, campos nuevos sin catalogar y creación de empresas reactivada",
+      "kind": "bug",
+      "source": "verificación de main tras NK-0012, 2026-11-02",
+      "state": "SHIPPED",
+      "owner": "nk-0049-author",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": "fix/main-lovable-migrations",
+      "base_commit": "991051192db6304e048ab984398a0b0905e8ca0b",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T20:54:14.429Z",
+          "by": "coordinadora",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-02T20:54:59.552Z",
+          "by": "Fede",
+          "note": "owner=nk-0049-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-02T21:04:56.740Z",
+          "by": "Fede",
+          "note": "sha=2328e3234921"
+        }
+      ]
+    },
+    {
+      "id": "NK-0050",
+      "title": "main en rojo: migración 0073 duplicada (platform_admins) y columnas de platform_admins sin catalogar",
+      "kind": "bug",
+      "source": "gate de NK-0048 sobre la base 9910511; origen en el commit de Lovable e609ede (2026-11-01)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": "NK-0049",
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T20:54:28.849Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T20:54:39.231Z",
+          "by": "nk-0048-author",
+          "note": "linked to NK-0049"
+        }
+      ]
+    },
+    {
+      "id": "NK-0051",
+      "title": "UX 2026-10-31: paleta Grafito e índigo, legibilidad y contraste, duplicados de «Ganado» y mover sin arrastrar (4 SDD, 8 commits sobre 47ec72c)",
+      "kind": "feature",
+      "source": "",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T23:44:52.757Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0052",
+      "title": "Torre de control GTM 8: conexión a las vistas agregadas de Postin (credencial, lector y fuente de Activa y Publicó, lado Nokko)",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-31 y 2026-11-02",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261031-gtm-control-tower-8-postin-views-nokko.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T23:47:57.260Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0053",
+      "title": "Torre de control GTM 5a: agente único con modos, conversaciones privadas, memoria, propuestas y autonomía",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T23:48:23.541Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0054",
+      "title": "Torre de control GTM 5b: resumen diario, avisos críticos por email y Telegram y check-in semanal",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-5b-notices-checkin.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T23:48:23.617Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0055",
+      "title": "Torre de control GTM 5c: servidor para asistentes con las mismas reglas del agente y Telegram",
+      "kind": "feature",
+      "source": "Entrevista con Fede, 2026-10-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-5c-assistant-server.md",
+      "prd": "docs/prd/PRD-20261030-gtm-control-tower.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-02T23:48:23.679Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0056",
+      "title": "Eval GTM Lab: el registro de gasto acepta costes NaN o negativos y desactiva el tope por pasada",
+      "kind": "bug",
+      "source": "Gate independiente de NK-0048 (2026-11-06), objeción 1; src/lib/gtm-lab/eval/budget.ts record() y anthropic-http.ts costUsd()",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": "NK-0048",
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T15:41:33.371Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T15:56:46.262Z",
+          "by": "Fede",
+          "note": "linked to NK-0048"
+        }
+      ]
+    },
+    {
+      "id": "NK-0057",
+      "title": "Salida de Lovable A: rescate y datos verificables",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261029-lovable-exit-a-rescate-y-datos.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.508Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0058",
+      "title": "Salida de Lovable B: servicios y corte",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261029-lovable-exit-b-servicios-y-corte.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.563Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0059",
+      "title": "Salida de Lovable C: servidor MCP propio",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261029-lovable-exit-c-mcp.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.616Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0060",
+      "title": "Torre de control GTM 5d: plan con IA y herramientas de estrategia",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-5d-plan-strategy-tools.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.668Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0061",
+      "title": "Vistas agregadas de Nokko del lado Postin (para Dani): recuentos por día y canal",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; decisiones de Fede cerradas 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261031-nokko-aggregate-views.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.717Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0062",
+      "title": "Cero any explícito en el código (45 archivos)",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; SDD solo en otro worktree (SDD-20261028-no-explicit-any-cleanup)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.768Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0063",
+      "title": "Plays GTM 1: catálogo de 28 plays, puertas, estado y pantalla /plays",
+      "kind": "feature",
+      "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; SDD y PRD en PR #75, código en PR #76 (SDD-20261106-plays-library-core)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:02:40.817Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0064",
+      "title": "Plan de herramientas: enlazar cada fila con su conexión real y avisar/bloquear «Ya lo usamos» sin conexión nativa; gate de owner solo en UI (RLS permite update a cualquier miembro)",
+      "kind": "feature",
+      "source": "Análisis de Fede en sesión Claude Code, 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-tool-plan-real-connections.md",
+      "prd": "docs/prd/PRD-20261106-tool-plan-real-connections.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:06:45.773Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:11:56.761Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-tool-plan-real-connections.md prd=docs/prd/PRD-20261106-tool-plan-real-connections.md"
+        }
+      ]
+    }
+  ]
+}
