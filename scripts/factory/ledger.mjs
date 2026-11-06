@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Single-writer ledger for the NOKKO software factory.
-// States: LOGGED -> PROMOTED -> SHIPPED -> VERIFIED. Logging never assigns an owner; only `promote` (human GO) does.
+// States: LOGGED -> PROMOTED -> SHIPPED -> VERIFIED, or LOGGED -> REJECTED (a human decides the report is invalid).
+// Logging never assigns an owner; only `promote` (human GO) does.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { FACTORY_DIR } from "./paths.mjs";
@@ -9,7 +10,7 @@ const FILE = process.env.FACTORY_LEDGER
   ? resolve(process.env.FACTORY_LEDGER)
   : resolve(FACTORY_DIR, "ledger.json");
 const EVIDENCE = resolve(FACTORY_DIR, "evidence");
-const STATES = ["LOGGED", "PROMOTED", "SHIPPED", "VERIFIED"];
+const STATES = ["LOGGED", "PROMOTED", "SHIPPED", "VERIFIED", "REJECTED"];
 const KINDS = ["bug", "feature", "alert"];
 // Estado values of a PRD/SDD that Fede has approved (see docs/factory/templates).
 const APPROVED = ["Aprobado", "En curso", "Hecho"];
@@ -165,6 +166,16 @@ switch (cmd) {
     console.log(`${t.id} VERIFIED`);
     break;
   }
+  case "reject": {
+    const t = find(db, a._[0]);
+    if (!a.by) fail("reject needs --by <human>: only a human decides a report is invalid");
+    if (!a.note) fail("reject needs --note <why it is not valid, with evidence>");
+    if (t.state !== "LOGGED") fail(`${t.id} is ${t.state}, expected LOGGED`);
+    move(t, "REJECTED", a.by, a.note);
+    save(db);
+    console.log(`${t.id} REJECTED (decided by ${a.by})`);
+    break;
+  }
   case "doc": {
     const t = find(db, a._[0]);
     if (!a.sdd && !a.prd) fail("usage: doc NK-xxxx [--sdd <path>] [--prd <path>]");
@@ -216,6 +227,6 @@ switch (cmd) {
     break;
   }
   default:
-    console.error("usage: ledger.mjs log|promote|ship|verify|doc|link|show|list ...");
+    console.error("usage: ledger.mjs log|promote|ship|verify|reject|doc|link|show|list ...");
     process.exit(2);
 }

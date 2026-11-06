@@ -114,7 +114,7 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 ## 15. Preguntas para Fede y para la revisión técnica
 1. **Decidido por Fede (2026-11-06): `maxRules = 12`, `maxChars = 12 000`.** ~~Tope del agente:~~ propuesta original: `maxRules = 12` y `maxChars = 12 000` en total (BMAD sigue con 12 × 4000 sin tope total). ¿Te vale?
 2. **Quién escribe reglas:** ¿limitamos la sección Reglas y la marca «obligatorio» a Owner y Sales Leader (otro SDD)?
-3. **Retractado (2026-11-06):** el «hallazgo» de la primera pasada sobre `search_knowledge` era falso: `core-read.ts:236-237` ya filtra en memoria `scope = team` o `created_by = userId`, con un comentario sobre Telegram, y lo prueba `agent-tools.test.ts:584-596`. Se registró como NK-0066 con tu OK antes de comprobarlo. **Propuesta: cerrar NK-0066 como «no es un bug»** (necesita tu OK).
+3. **Retractado (2026-11-06):** el «hallazgo» de la primera pasada sobre `search_knowledge` era falso: `core-read.ts:236-237` ya filtra en memoria `scope = team` o `created_by = userId`, con un comentario sobre Telegram, y lo prueba `agent-tools.test.ts:584-596`. Se registró como NK-0066 con tu OK antes de comprobarlo. **NK-0066 cerrado como `REJECTED` por orden de Fede (2026-11-06).**
 4. **`ai-core.ts`, playbooks y MCP:** ¿SDD aparte, después de este?
 5. **Enmiendas aprobadas por Fede (2026-11-06) y aplicadas** en `PRD-20261101-gtm-lab-en-nokko.md` (§6.2, §6.3 A-3, §7, §8 piezas 2 y 8) y en `SDD-20261030-gtm-control-tower-5a-agent-memory.md` (CA-38):
    - PRD de GTM Lab, §6.3 A-3: «Bloqueado hasta que `SDD-20261106-agent-rules-reader` esté entregado y verificado: hoy Ciclo GTM es el único sitio que trata las Reglas de Conocimiento como obligatorias (decisión de Fede, 2026-11-06).»

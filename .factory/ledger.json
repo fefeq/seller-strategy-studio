@@ -1708,7 +1708,7 @@
       "title": "Agente: la búsqueda en Conocimiento no filtra documentos personales; en Telegram devuelve los de otros miembros",
       "kind": "bug",
       "source": "Gate de docs/sdd/SDD-20261106-agent-rules-reader.md (§14), 2026-11-06",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -1721,6 +1721,12 @@
           "at": "2026-11-06T21:20:03.271Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-06T21:36:56.504Z",
+          "by": "Fede",
+          "note": "No es un bug: src/lib/agent/tools/core-read.ts:236-237 ya filtra en memoria scope = team o created_by = userId tras la consulta (comentario sobre Telegram en :235), probado en src/lib/agent-tools.test.ts:584-596. El hallazgo vino de la primera pasada del gate de SDD-20261106-agent-rules-reader y lo refutó la segunda."
         }
       ]
     }
