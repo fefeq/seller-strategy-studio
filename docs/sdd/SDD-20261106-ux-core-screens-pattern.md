@@ -1,92 +1,75 @@
-# SDD-20261106-ux-core-screens-pattern · [Mejora] NK-0051 ampliado: un mismo patrón de pantalla en Métricas, Theory U y Conocimiento
+# SDD-20261106-ux-core-screens-pattern · [Mejora] NK-0051 ampliado, C1: estados, URL, vacíos y pistas en Conocimiento y Theory U
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación decidida por Fede: no se abre ticket aparte)
-**PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** `SDD-20261031-ux-palette-graphite` y `SDD-20261031-ux-legibility-contrast` (tokens, `Kpi`/`Panel` compartidos y suelo de 12 px: este SDD los usa, no los redefine); `SDD-20261106-metrics-honest-data` (SDD-A) y `SDD-20261106-hub-search` (SDD-B) se integran **antes** · **Coordinar con:** PR #76 de Plays (toca `src/lib/headlines.ts` y `src/lib/nav.ts`), `SDD-20261025-theory-u-proactive-decision-support`
+**Estado:** Borrador (v2, partido tras el gate: este es C1; C2 está en `SDD-20261106-ux-metrics-data-state.md`) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación decidida por Fede: no se abre ticket aparte)
+**PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** `SDD-20261106-hub-search` (SDD-B) se integra antes · **Coordinar con:** los otros SDD de NK-0051 según el ledger (`.factory/ledger.json`, «4 SDD»): `SDD-20261031-ux-palette-graphite`, `SDD-20261031-ux-legibility-contrast` (su §13 permite poner `Kpi`/`Panel` en `src/components/page.tsx`, el mismo archivo que `ScreenState`), `SDD-20261031-ux-move-without-drag`, `SDD-20261031-deal-won-duplicate-approvals`; `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`: C1 va antes, por ser más pequeño); PR #76 de Plays (`headlines.ts`, `nav.ts`, que no se tocan)
 
 > Sprint 1 de mejoras en pantallas core, bloque C. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
-> **Base de NK-0051:** la rama local `feat/ux-graphite-legibility-move` no está en el remoto (comprobado el 2026-11-06 con `git ls-remote`). Este SDD parte de `main` @ `f76f639`; si esa rama aparece, el brief tendrá que rebasar sobre ella.
+> **Base:** la rama local de NK-0051 (`feat/ux-graphite-legibility-move`, «8 commits sobre 47ec72c» según el ledger) no está en el remoto (`git ls-remote`, 2026-11-06). C1 parte de `main` @ `f76f639` y no depende de ella.
+
+**Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** A cambia datos y textos de datos de `/metrics`; B, la búsqueda de `/hub`; C1, estados de pantalla (carga, error, vacío), sección en la URL, vacíos y pistas de `/hub` y `/theory-u`; C2, el plegado de explicaciones en las tres pantallas y la forma del estado de un dato en `/metrics`. Orden de integración: A → B → C1 → C2.
 
 ## 1. Resumen
-Los tres SDD de NK-0051 arreglan piezas transversales (paleta, contraste, piezas compartidas, mover sin arrastrar). Este cuarto SDD aplica, a nivel de pantalla, un mismo patrón en `/metrics`, `/theory-u` y `/hub`: la sección vive en la URL, no se muestra «vacío» mientras se carga, cada vacío dice qué hacer, las pistas son enlaces, las explicaciones largas se pliegan y el estado de un dato («Sin dato», «Estimado») tiene siempre la misma forma. No cambia ningún cálculo ni ningún dato.
+En Conocimiento y Theory U, la pantalla dice «vacío» mientras carga, se traga los errores, pierde la pestaña al volver atrás o compartir el enlace, y alguna pista nombra un sitio sin llevar a él. C1 añade un estado de pantalla común (carga, error, vacío), pone la sección en la URL, da a cada vacío una acción y convierte las pistas en enlaces. No cambia datos.
 
 ## 2. Problema y para quién
-Cualquier persona que usa estas tres pantallas: ve «Sin documentos todavía» cuando sí los hay, pierde la pestaña al volver atrás o al compartir un enlace, y lee párrafos de tres líneas antes de llegar a la cifra.
+Cualquier persona del equipo que usa Conocimiento o Theory U: ve «Sin notas todavía» cuando sí las hay, o no ve nada cuando algo falla.
 
 ## 3. Evidencia y por qué ahora
-Leído en `main` @ `f76f639`:
+Leído en `main` @ `f76f639` y revisado por el gate (§17).
 
 | # | Problema | Dónde |
 |---|---|---|
-| E-1 | Vacío falso mientras carga: la consulta usa `[]` por defecto y el vacío se pinta antes de tener datos | `src/routes/_authenticated/hub.tsx:58` + `:132`; `src/components/theory-u/journey.tsx:30` + `:69`. [Por verificar] el resto de pestañas de Theory U (`sensing.tsx:80`, `listening.tsx:71`, `prototypes.tsx:133`) |
-| E-2 | Pantalla en blanco mientras carga | `src/routes/_authenticated/metrics.tsx:229` (`{m && data && …}` sin estado de carga) |
-| E-3 | Sección fuera de la URL: volver atrás o compartir pierde la pestaña | `theory-u.tsx:21` (`Tabs defaultValue`), `hub.tsx:53` (`useState("company")`). `/metrics` ya lo hace con `?seccion=` (`metrics.tsx:94`, `:219-226`): es el modelo |
-| E-4 | Pista sin enlace | `src/components/theory-u/listening.tsx:71` («Cuentas → Planificador de reuniones»). Las de `/metrics` las corrige SDD-A (CA-10) |
-| E-5 | Explicaciones largas fijas (párrafos de más de 200 caracteres de código en texto secundario) | `self-service-funnel.tsx` 4, `segment-coverage.tsx` 3, `metrics/finance-panel.tsx` 2, `cac-panel.tsx` 1, `quarter-kpis-panel.tsx` 1, `budget-panel.tsx` 1 (recuento con `awk 'length>200'` sobre líneas con `muted-foreground` o `<Muted`; es una aproximación, el test de U-4 fija la lista) |
-| E-6 | Estado de dato sin forma común: hoy «—» (`cac-panel.tsx:203-207`, `segment-coverage.tsx:121-122`), «estimado» (`segment-coverage.tsx:119`) y textos libres; SDD-A añade «Sin dato · …» y «estimado: …» | `/metrics` |
-| E-7 | Vacíos que informan sin orientar | `metrics/revops-panels.tsx:53`, `:87`; `theory-u/case-clinic.tsx:89` |
+| E-1 | Vacío falso mientras carga (por defecto `[]` y vacío pintado antes de responder) | `hub.tsx:58` + `:132`, y los contadores de `:112` (0 mientras carga); `theory-u/journey.tsx:30` + `:69`; `sensing.tsx:36` + `:80`; `listening.tsx:43` + `:71`; `prototypes.tsx:50` + `:133` (sin selección) |
+| E-1b | Falta vacío de lista: sin clínicas, la columna solo muestra el botón | `theory-u/case-clinic.tsx:56-64` (`:89` es correcto: «Selecciona o crea…») |
+| E-2 | Errores tragados: las consultas devuelven `.data ?? []` y nunca lanzan | `hub.tsx:60`; `sensing.tsx:33`; `listening.tsx:40`; `prototypes.tsx:47`; `case-clinic.tsx:32`; `journey.tsx:32` |
+| E-3 | Sección fuera de la URL | `theory-u.tsx:21` (`Tabs defaultValue`); `hub.tsx:53` (`useState("company")`). Modelo: `/metrics` con `?seccion=` (`metrics.tsx:94`, `:219-226`) |
+| E-4 | Pistas sin enlace | `listening.tsx:49` («en el planificador de reuniones de cada cuenta») y `:71` («Cuentas → Planificador de reuniones»). El Planificador no tiene ruta propia: es la pestaña `meetings` de `/accounts/$id` (`accounts.$id.tsx:21`, `:91`) |
 
-Informe UX de origen: puntos 6 (carga y vacío), 7 (explicaciones bajo demanda) y 15 (Métricas) de `docs/UX-INFORME-20261031.md`.
 Uso de estas pantallas: sin dato.
 
 ## 4. Resultado buscado
-Medible por código (línea base en §3, objetivo 0): vacíos falsos en carga, pantallas en blanco en carga, secciones fuera de la URL, pistas sin enlace, explicaciones largas fijas y formas distintas de «sin dato» en las tres pantallas. Uso o satisfacción: sin dato.
+Medible por código, línea base en §3 y objetivo 0: vacíos falsos en carga (6 sitios), errores tragados (6 consultas), secciones fuera de la URL (2 pantallas), pistas sin enlace (2). Uso o satisfacción: sin dato.
 
 ## 5. Alcance
-**Incluye:** en `/metrics`, `/theory-u` y `/hub`, y en los componentes que solo montan esas pantallas:
-- P-1 Sección o pestaña en la URL (`?seccion=`).
-- P-2 Estado de carga distinto del vacío.
-- P-3 Vacío con frase de qué es y una acción siguiente cuando exista.
-- P-4 Pistas que nombran otro sitio, como enlace.
-- P-5 Explicaciones de más de una línea, detrás de «Cómo se calcula».
-- P-6 Un componente único para el estado de un dato: «Sin dato», «Estimado», «Real».
-
-**No incluye:**
-- Valores de paleta, tokens, tamaño de letra, `Kpi`/`Panel`/`Stat` compartidos (los otros SDD de NK-0051).
-- Cálculos, cifras y textos de datos de `/metrics` (SDD-A) y la búsqueda de `/hub` (SDD-B).
-- Reorganizar el Resumen de Métricas en 4-5 KPI (punto 15 del informe): ver §15.
-- Titulares con conclusión nuevos para Theory U y Conocimiento: tocarían `src/lib/headlines.ts`, que modifica el PR #76; ver §15.
-- Botón «Llevar a GTM Lab» en Theory U (Sprint 3) y avisos proactivos de Theory U (`SDD-20261025-theory-u-proactive-decision-support`).
-- `src/lib/nav.ts`, `/strategy`, `/memory` y cualquier otra pantalla.
-- Esquema, RLS, IA.
+**Incluye:** en `/hub` (todas sus secciones y «Drive por cuenta») y en las cinco pestañas de `/theory-u`: `ScreenState`, consultas que lanzan su error, `?seccion=`, vacíos con acción y pistas de E-4 como enlace.
+**No incluye:** `/metrics` (estados de carga de `/metrics` y forma del dato van a C2; datos a SDD-A); plegado de explicaciones (C2); paleta, tamaños y `Kpi`/`Panel` (otros SDD de NK-0051); titulares con conclusión (§15); botón «Llevar a GTM Lab» (Sprint 3); avisos proactivos de Theory U; `nav.ts`; esquema, RLS, IA.
 
 ## 6. Cambios de comportamiento (delta)
-**Añadido:** `?seccion=` en `/hub` y `/theory-u`; estados de carga; botón «Cómo se calcula» en los paneles de E-5; componente de estado de dato.
-**Modificado:** vacíos de E-1 solo tras cargar; textos de E-7 con acción; pista de E-4 como enlace; marcas de dato de E-6 con una sola forma.
-**Eliminado:** nada visible salvo los párrafos fijos de E-5 (siguen accesibles plegados).
+**Añadido:** estado de carga y de error en `/hub` y `/theory-u`; `?seccion=` en las dos; vacío de lista en clínicas.
+**Modificado:** vacíos de E-1 solo tras responder; contadores de `/hub` sin número hasta responder; texto y enlace de E-4.
+**Eliminado:** nada.
 
 ## 7. Historias y criterios de aceptación
-### H-1: Como persona del equipo, quiero que la pantalla no me mienta mientras carga, para no creer que no hay nada.
-- **CA-1** En `/hub`, `/theory-u` (todas las pestañas) y `/metrics`, mientras la consulta principal no ha respondido, la pantalla muestra el estado de carga y nunca el texto de vacío. · prueba: `src/components/screen-state.test.tsx`
-- **CA-2** Si la consulta falla, la pantalla muestra el error con `errorText()` («qué pasó + qué hacer») y no el vacío. · prueba: `src/components/screen-state.test.tsx`
+### H-1: Como persona del equipo, quiero que la pantalla no me mienta mientras carga ni cuando falla.
+- **CA-1** En `/hub` y en cada pestaña de `/theory-u`, mientras la consulta que decide el vacío no ha respondido, se ve el estado de carga, nunca el texto de vacío ni contadores a 0. · prueba: `src/components/screen-state.test.tsx` (componente) y un test de render por pantalla con Supabase simulado sin responder: `src/components/hub-screen.test.tsx`, `src/components/theory-u/theory-u-screens.test.tsx`
+- **CA-2** Si la consulta devuelve error, se ve el mensaje de `errorText()` («qué pasó + qué hacer») y no el vacío. · prueba: los mismos tests, con Supabase simulado devolviendo error
 
 ### H-2: Como persona del equipo, quiero volver atrás o compartir el enlace sin perder la pestaña.
-- **CA-3** `/hub?seccion=<id>` y `/theory-u?seccion=<id>` abren esa sección; cambiar de sección actualiza la URL; un valor desconocido abre la sección por defecto. `?doc=` y `?q=` de `/hub` siguen funcionando. · prueba: `src/lib/screen-sections.test.ts`
+- **CA-3** `/hub?seccion=<id>` (ids: `company`, `objections`, `playbooks`, `methodology`, `campaigns`, `skills`, `rules`, `drive`) y `/theory-u?seccion=<id>` (ids: `journey`, `sensing`, `listening`, `clinic`, `prototypes`) abren esa sección; un id desconocido abre la sección por defecto; cambiar de sección actualiza la URL con `replace` y conserva `q` y `doc`; si `?doc=` apunta a otra sección, gana `doc` y reescribe `seccion`. · prueba: `src/lib/screen-sections.test.ts` (validación y precedencia) y `src/components/hub-screen.test.tsx` (URL al cambiar)
 
 ### H-3: Como persona del equipo, quiero que un vacío o una pista me digan qué hacer y me lleven allí.
-- **CA-4** Cada vacío de E-7 dice qué es y, si existe una acción en la pantalla o en otra, ofrece un botón o enlace a ella. · prueba: `src/components/empty-actions.test.tsx`
-- **CA-5** En las tres pantallas, ningún texto nombra otra pantalla o sección («X → Y», «más abajo», «en «X»») sin ser un enlace. · prueba: `src/components/hints-are-links.test.ts` (recorre los archivos del alcance)
-
-### H-4: Como Owner o Sales Leader, quiero ver la cifra antes que la explicación, y saber de un vistazo si es real.
-- **CA-6** Ningún panel del alcance muestra fija una explicación de más de una línea: va detrás de «Cómo se calcula», que se abre con teclado y ratón y anuncia su estado a lectores de pantalla. · prueba: `src/components/how-calculated.test.tsx`
-- **CA-7** Toda marca de estado de dato en `/metrics` usa el mismo componente con una de tres palabras («Real», «Estimado», «Sin dato») más el motivo; ningún «—» suelto representa la falta de un dato. · prueba: `src/components/data-state.test.tsx`
+- **CA-4** Cada vacío de E-1 y E-1b dice qué es y ofrece la acción siguiente cuando existe (lista cerrada en §9). · prueba: `src/components/theory-u/theory-u-screens.test.tsx`, `src/components/hub-screen.test.tsx`
+- **CA-5** Las pistas de E-4 son enlaces a `/accounts` con el texto de §9. · prueba: `src/components/theory-u/theory-u-screens.test.tsx`
 
 ## 8. Casos límite y errores
-- Red caída o RLS que devuelve error: CA-2.
-- Sección en la URL que el rol no puede ver (Finanzas sin ser Owner ni Sales Leader, `metrics.tsx:218`): se abre Resumen, como hoy.
-- Pestaña de Theory U con varias consultas: el estado de carga dura hasta que responde la que decide el vacío.
-- Móvil: «Cómo se calcula» no puede tapar la cifra; se despliega debajo.
+- Red caída o RLS con error: CA-2.
+- «Drive por cuenta» (`?seccion=drive`): su panel tiene sus propias consultas (`DriveAccountsPanel`); [Por verificar] si también traga errores; si sí, entra en CA-2.
+- Pestaña con varias consultas: decide la que pinta el vacío.
+- `?seccion=drive&q=…`: la caja de búsqueda se oculta y `q` se conserva (SDD-B §8).
 
 ## 9. Experiencia y copy
-- «Cargando…» solo como texto accesible del esqueleto; la forma la da el esqueleto (un tipo por bloque: lista, tarjetas, tabla).
-- «Cómo se calcula» / «Ocultar cálculo».
-- «Real», «Estimado», «Sin dato», cada una seguida de « · motivo» cuando lo hay. La palabra lleva el estado; el color solo acompaña.
-- Vacíos (E-7), propuesta: «Ningún deal perdido en {T}. Cuando marques uno como perdido, verás aquí por qué.»; «Aún no hay deals. Crea el primero en Pipeline.» (enlace); «Elige una clínica de la lista o crea una con «Nueva clínica».» [Por verificar] el nombre exacto del botón en `case-clinic.tsx`.
-- `listening.tsx:71`: «Planificador de reuniones» enlaza a su pantalla. [Por verificar] la ruta exacta.
+- Carga: esqueleto por tipo de bloque (lista o tarjetas); «Cargando…» solo como texto accesible.
+- Vacíos (lista cerrada):
+  - Clínicas sin ninguna: «Aún no hay clínicas de casos. Crea la primera con «+ Nueva clínica de casos».» (botón de `case-clinic.tsx:57`).
+  - Sensing: «Sin notas todavía. Habla con clientes, observa y anota.» (se mantiene; solo deja de salir en carga).
+  - Escucha: «Aún no hay reuniones con nivel de escucha. Ábrelas desde una cuenta, en su pestaña «Planificador de reuniones».» con enlace a `/accounts`.
+  - Recorrido U y Prototipos: texto actual, solo tras responder.
+- Pista de `listening.tsx:49`: «… en el planificador de reuniones de cada cuenta» pasa a enlazar «cada cuenta» a `/accounts`.
 - Español, «tú», sin iconos.
 
 ## 10. Datos, permisos y privacidad
-Sin cambios de datos, consultas, RLS ni GRANT. Tests con datos ficticios.
+Mismas tablas, columnas y RLS. Cambia el tratamiento del error: los `queryFn` del alcance lanzan si la respuesta trae `error`. Tests con datos ficticios.
 
 ## 11. Llamadas a IA
 | Llamada | Orden de preferencia usado | Modelo y esfuerzo | Coste previo |
@@ -96,41 +79,157 @@ Sin cambios de datos, consultas, RLS ni GRANT. Tests con datos ficticios.
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-1 | `ScreenState` (carga, error, vacío) en `src/components/page.tsx` junto a `Empty`, y su uso en las tres pantallas | CA-1, CA-2 | `src/components/screen-state.test.tsx` |
-| U-2 | Sección en la URL en `/hub` y `/theory-u` (reglas puras de validación en `src/lib/screen-sections.ts`) | CA-3 | `src/lib/screen-sections.test.ts` |
-| U-3 | Vacíos con acción y pistas como enlace | CA-4, CA-5 | `src/components/empty-actions.test.tsx`, `src/components/hints-are-links.test.ts` |
-| U-4 | `HowCalculated` y paneles de E-5 | CA-6 | `src/components/how-calculated.test.tsx` |
-| U-5 | `DataState` y su uso en `/metrics` (sustituye «—» y textos sueltos, incluidos los que añade SDD-A) | CA-7 | `src/components/data-state.test.tsx` |
+| U-1 | `ScreenState` en `src/components/page.tsx` junto a `Empty`; consultas del alcance que lanzan; uso en `/hub` y Theory U | CA-1, CA-2 | `src/components/screen-state.test.tsx`, `src/components/hub-screen.test.tsx`, `src/components/theory-u/theory-u-screens.test.tsx` |
+| U-2 | `src/lib/screen-sections.ts` (ids, validación, precedencia de `doc`) y `?seccion=` en las dos rutas | CA-3 | `src/lib/screen-sections.test.ts` |
+| U-3 | Vacíos y pistas de §9 | CA-4, CA-5 | `src/components/theory-u/theory-u-screens.test.tsx` |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- `ScreenState` recibe el resultado de `useQuery` (`isPending`, `error`, `data`) y decide; quita el `= []` por defecto de las consultas afectadas para que «sin datos» y «cargando» no se confundan.
-- `validateSearch` de `hub.tsx:23` pasa a `{ doc?, q?, seccion? }` (`q` lo añade SDD-B). En `theory-u.tsx`, `Tabs value` controlado desde la búsqueda, con `navigate({ replace: true })`.
-- `DataState` debe estar disponible antes de que SDD-A se construya si se quiere evitar retocar dos veces sus textos. Alternativa (propuesta): SDD-A entrega solo textos y U-5 de este SDD los envuelve después. El brief fija el orden.
-- `HowCalculated`: `Collapsible` de `src/components/ui` si existe [Por verificar]; si no, `<details>`/`<summary>` con estilo del sistema.
-- Contrato con SDD-A y SDD-B (mismos archivos): A y B cambian comportamiento y textos; C cambia estructura, estados y presentación. Orden de integración: A → B → C.
+- `ScreenState` recibe `isPending`, `error` y `data` de `useQuery`; quitar el `= []` por defecto de las consultas afectadas.
+- `validateSearch` de `hub.tsx:23` pasa a `{ doc?, q?, seccion? }` (`q` lo añade SDD-B). `useOpenDocFromUrl` llama hoy a `setSection` (`hub.tsx:65`): con la sección en la URL, debe escribir `seccion`. En `theory-u.tsx`, `Tabs value` controlado desde la búsqueda; `navigate({ search: (prev) => ({ ...prev, seccion }), replace: true })`.
+- Tests de pantalla fuera de `src/routes/` (el generador de rutas los tomaría por rutas) o con prefijo `-`; infraestructura en `vitest.config.ts` y `src/test/app-routing.test.tsx`.
+- Los ids de `/hub` son los valores de `knowledge_docs.section` (estables) y no ids en español como los de `/metrics`: evita una tabla de traducción. Ver §15.
 
 ## 14. Riesgos y dependencias
-- Depende de que los SDD de paleta y legibilidad de NK-0051 estén integrados (o al menos `Kpi`/`Panel` compartidos); si no, U-1 y U-5 crearían piezas que esos SDD también crean. Mitigación: el brief comprueba la base.
-- La rama local de NK-0051 (`feat/ux-graphite-legibility-move`) no está en el remoto: si existe en otra máquina, puede chocar con todo lo de arriba. [Por verificar] con Fede.
-- Tres pantallas en un SDD: si el gate lo ve grande, se parte por pantalla sin cambiar los CA.
+- `page.tsx` lo tocan también los SDD de legibilidad (`Kpi`/`Panel`): conflicto de archivo, no de función; lo resuelve el orden.
+- Theory U proactivo toca los mismos componentes: C1 va antes.
+- La rama local de NK-0051, si reaparece, obliga a rebasar.
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Resumen de Métricas en 4-5 KPI** (punto 15 del informe UX): ¿entra aquí, va a un SDD propio o se espera a tener uso real de la pantalla?
-2. **Titulares con conclusión** para Conocimiento y Theory U (como Métricas o Memoria): ¿los quieres? Si sí, se añaden en `headlines.ts` después de integrar el PR #76.
-3. **Rama local de NK-0051:** ¿existe en otra máquina o se perdió? Si se perdió, los SDD de paleta y legibilidad están en «Borrador» sin código, y este SDD queda detrás de ellos.
+1. **Ids en la URL de `/hub`:** propongo los internos en inglés (`?seccion=objections`), por estabilidad. ¿O prefieres español como en `/metrics` (`?seccion=objeciones`)?
+2. **Titulares con conclusión** para Conocimiento y Theory U: ¿los quieres? Irían en `headlines.ts` después de integrar el PR #76.
+3. **Resumen de Métricas en 4-5 KPI** (punto 15 del informe UX): ¿SDD propio o se espera a tener uso real?
+4. **Rama local de NK-0051:** ¿existe en otra máquina o se perdió?
 
 ## 16. Pendiente de verificar
-- Vacíos falsos en `sensing.tsx`, `listening.tsx`, `prototypes.tsx`, `case-clinic.tsx`: el gate, leyendo sus consultas.
-- Ruta del Planificador de reuniones y nombre del botón de nueva clínica: el gate.
-- Existencia de `Collapsible` en `src/components/ui`: el gate.
+- Si `DriveAccountsPanel` traga errores: el brief.
 - Estado real de la rama local de NK-0051: Fede.
 
+**Versión 2 (2026-11-06):** partido tras el gate (objeción 11): este documento es C1; HowCalculated y DataState pasan a C2. Corregidos §8 Finanzas (sale de C1), CA-2 (consultas que lanzan, objeción 2), CA-1 con tests por pantalla (3), CA-3 con ids y precedencia (4), CA-5 con lista cerrada (5), ruta del Planificador y nombre del botón (6), contrato único entre SDD (9) y cabecera (10). No ha tenido segunda pasada del gate.
+
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: —
-- [Por verificar] que sigue sin comprobarse: —
-- Contradicciones con el código o con decisiones previas: —
-- Lo que esta revisión NO demuestra: —
+Informe de la primera pasada (sobre la v1 conjunta C1+C2, commit `f089708`), copiado sin editar:
+
+Veredicto del gate: **Objeciones**
+
+**CA sin prueba posible o sin G-n** (no hay PRD, así que no exijo G-n):
+- **CA-1:** `screen-state.test.tsx` solo prueba el componente. No demuestra que las tres pantallas y las cinco pestañas lo usen.
+- **CA-2:** no se cumple con las consultas actuales, porque se tragan el error (objeción 2).
+- **CA-3:** un test puro en `src/lib/screen-sections.test.ts` no demuestra que «cambiar de sección actualiza la URL» ni que `?doc=` siga funcionando.
+- **CA-5:** un test que busca patrones en el texto no es viable. Da falsos positivos y se le escapan casos (objeción 5).
+- **CA-6:** «más de una línea» depende del ancho de pantalla, así que un test no puede comprobarlo. Además, su lista de paneles está incompleta.
+- **CA-7:** «ningún «—» suelto representa la falta de un dato» es un juicio de significado sobre unas 50 líneas. Un test del componente no lo demuestra.
+
+**[Por verificar] que sigue sin comprobarse:**
+- Sin resolver:
+  - Si existe la rama local de NK-0051 (lo decide Fede). Indicio: `.factory/ledger.json:1380-1381` registra NK-0051 como «4 SDD, 8 commits sobre 47ec72c», en estado LOGGED.
+  - Si los paneles de `/metrics` con consulta propia (`FinancePanel`, `CacPanel`, `SegmentCoverage`, `LeadFunnelPanel`) también muestran vacíos falsos. No los leí.
+- Resueltos:
+  - **Vacíos falsos en Theory U:**
+    - `sensing.tsx:36` + `:80`: sí. El vacío sale de `data?.notes ?? []` mientras carga.
+    - `listening.tsx:43` + `:71`: sí.
+    - `prototypes.tsx:50` + `:133`: sí, cuando no hay nada seleccionado.
+    - `case-clinic.tsx`: no hay vacío falso. `:89` es «Selecciona o crea…», que es cierto también mientras carga. Lo que falta es un vacío de lista: si no hay clínicas, la columna de `:56-64` solo muestra el botón.
+    - Confirmado también `journey.tsx:30` + `:69`.
+  - **Planificador de reuniones:** no tiene ruta propia. Es la pestaña `meetings` de `/accounts/$id` (`accounts.$id.tsx:21`, `:26`, `:91`). Desde Theory U no hay cuenta concreta, así que el enlace solo puede ir a `/accounts`, o reescribir el texto. El patrón con cuenta está en `quick-actions.tsx:84`.
+  - **Botón de nueva clínica:** se llama «+ Nueva clínica de casos» (`case-clinic.tsx:57`), no «Nueva clínica».
+  - **Collapsible:** sí existe, `src/components/ui/collapsible.tsx` (Radix, `package.json:33`). Hoy no lo usa nadie; el código usa `<details>` en 10 sitios (p. ej. `briefing.tsx:65`, `strategy-evidence.tsx:24`).
+
+**Contradicciones con el código o con decisiones previas:**
+1. §8 dice que con Finanzas sin permiso «se abre Resumen, como hoy». Es falso: hoy se muestra el aviso «Las finanzas solo las ven el Owner y el Sales Leader…» (`metrics.tsx:405-411`).
+2. CA-2 choca con el código y con §10 («sin cambios de consultas»):
+   - `hub.tsx:60` y las consultas de Theory U (`sensing.tsx:33`, `listening.tsx:40`, `prototypes.tsx:47`, `case-clinic.tsx:32`, `journey.tsx:32`) devuelven `.data ?? []` y nunca lanzan el error.
+   - En `metrics.tsx:110-121`, `quotas`, `org_members` y `profiles` tampoco lanzan; solo `fetchAll` lanza (`fetch-all.ts:15`).
+3. CA-7 de este SDD choca con SDD-A:
+   - Este SDD fija la forma «Estimado · motivo».
+   - SDD-A CA-9 prueba el texto literal «estimado: punto medio del rango» en `segment-coverage.test.tsx`. Integrar C obligaría a cambiar una aserción de A.
+   - Los contratos tampoco coinciden. SDD-A §13 dice que C solo cambia «clases y estructura visual». Este SDD (§13) dice que cambia «estructura, estados y presentación», y además reescribe textos (E-4, E-7, formato de «Sin dato»).
+4. CA-5 duplica a SDD-A CA-10 en `/metrics`: dos tests (`metrics/hints.test.tsx` y `hints-are-links.test.ts`) para la misma regla.
+5. El texto propuesto «Ningún deal perdido en {T}» solo tiene sentido después de SDD-A CA-1. Hoy `RevopsLost` recibe todos los deals, sin trimestre (`metrics.tsx:239-245`).
+6. «Los tres SDD de NK-0051» no cuadra con el registro:
+   - El ledger dice 4 SDD (incluye `deal-won-duplicate-approvals`).
+   - Los tres SDD citados tienen «Ticket: por asignar» (`ux-palette-graphite.md:5`, `ux-legibility-contrast.md:5`, `ux-move-without-drag.md:6`).
+7. Con `SDD-20261031-ux-legibility-contrast` no hay solape funcional: no crea esqueleto ni estado de carga (su §13, línea 119). Sí hay colisión de archivos:
+   - Su §13 permite poner `Kpi`/`Panel` en `page.tsx`, el mismo archivo donde va `ScreenState`.
+   - Su suelo de 12 px toca las mismas líneas que E-5 (p. ej. `segment-coverage.tsx:128`, en `text-[11px]`).
+   - El orden ya declarado lo cubre.
+8. SDD-B en disco, cambios aún sin commit en el momento de la revisión:
+   - Ya da por hecho `?seccion=drive` (línea 80), pero este SDD no define los ids de sección de `/hub` ni de `/theory-u`, ni si «Drive por cuenta» es una sección.
+   - Su CA-5 ya cubre «nunca vacío mientras carga» en la búsqueda de `/hub`, lo que solapa con CA-1 de este SDD.
+   - Su CA-9 pasa la consulta de `/hub` a `fetchAll`.
+
+**Lo que esta revisión NO demuestra:**
+- No ejecuté `scripts/factory/gate.mjs`. El cambio es solo de documentación (código igual a `main` @ f76f639), y el script escribe evidencias en disco, cosa que el encargo prohíbe. No se ejecutó ningún test ni build, así que no aplica el protocolo de flakes.
+- No se ejecutó en una segunda máquina ni en prueba larga (soak).
+- Los vacíos falsos los deduzco leyendo el código; no los vi en un navegador.
+- Los recuentos de E-5 los reproduje con el mismo `awk` del SDD (coinciden: 4, 3, 2, 1, 1, 1). Es una aproximación, no una medida de líneas visibles.
+- No revisé las consultas propias de cada panel de `/metrics`.
+- SDD-B estaba cambiando en disco durante la revisión, así que el punto 8 puede quedar desfasado.
+
+## Objeciones detalladas
+
+1. **§8, caso Finanzas, es falso.**
+   - Evidencia: `metrics.tsx:405-411`.
+   - Corrección: «se mantiene el aviso actual de permisos», o decidir explícitamente que pase a abrir Resumen.
+
+2. **CA-2 no se puede cumplir sin cambiar las consultas.**
+   - Evidencia: `hub.tsx:60`; `sensing.tsx:33`; `listening.tsx:40`; `prototypes.tsx:47`; `case-clinic.tsx:32`; `journey.tsx:32`; `metrics.tsx:110-121`.
+   - Corrección: añadir a U-1 «los `queryFn` del alcance lanzan si cualquier respuesta de Supabase trae `error`», y matizar §10 («mismas tablas y columnas; cambia el tratamiento del error»).
+
+3. **CA-1 y CA-2 se prueban solo con el componente.**
+   - Corrección: un test de render por pantalla, con Supabase simulado sin responder (y otro con error): `/hub`, `/metrics` y las cinco pestañas de `/theory-u`. La infraestructura existe (`vitest.config.ts` con jsdom y RTL, `src/test/app-routing.test.tsx`).
+   - Añadir a E-1 los contadores de `hub.tsx:112`, que muestran 0 mientras carga, y el vacío de lista que falta en `case-clinic.tsx:56-64`.
+   - Quitar `case-clinic.tsx:89` de la lista de vacíos falsos.
+
+4. **CA-3 no está especificado ni se puede probar como está.**
+   - Faltan: la lista cerrada de ids de cada pantalla (¿`drive` en `/hub`? ¿ids en español como en `/metrics`, línea 61?) y quién gana si `?doc=` apunta a otra sección que `?seccion=` (`useOpenDocFromUrl` llama a `setSection`, `hub.tsx:65`).
+   - Corrección:
+     - `screen-sections.test.ts` solo para la validación.
+     - Un test de ruta para «cambiar actualiza la URL con `replace`» y para la combinación `?doc=`/`?q=`/`?seccion=`.
+     - Regla propuesta: `?doc=` gana y reescribe `seccion`.
+
+5. **CA-5, el recorrido de archivos, no es viable sin falsos positivos.**
+   - Falsos positivos: «→» con sentido de flujo, que no es una pista: `self-service-funnel.tsx:70`, `:100-101`; `pipeline-board-panel.tsx:94-95`; `metrics.tsx:305`; comentarios en `budget-panel.tsx:12`, `cac-panel.tsx:82`, `drive-overview.tsx:1`. También pistas que ya son `<Link>`: `budget-panel.tsx:45`, `quarter-kpis-panel.tsx:76`.
+   - Falsos negativos: `listening.tsx:49` («en el planificador de reuniones de cada cuenta») y `metrics.tsx:258` («Define cuotas abajo», no «más abajo»).
+   - Corrección: lista cerrada de pistas con archivo:línea en §3 (E-4 ampliado con `listening.tsx:49` y `metrics.tsx:258`) y un test de render que compruebe que cada una es un enlace con su destino. En `/metrics`, dejarlo a SDD-A CA-10 para no tener dos tests.
+
+6. **E-4 y el texto de §9: la ruta del Planificador.**
+   - Evidencia: no existe pantalla propia; es la pestaña `meetings` de `/accounts/$id` (`accounts.$id.tsx:21`, `:91`).
+   - Corrección: texto propuesto «Ábrelas desde una cuenta, en su pestaña «Planificador de reuniones».» con enlace a `/accounts`.
+   - Corregir también el botón: «+ Nueva clínica de casos» (`case-clinic.tsx:57`).
+
+7. **CA-6 no es medible y E-5 está incompleto.**
+   - El alcance incluye `/theory-u` y `/hub`, pero E-5 solo lista paneles de Métricas.
+   - Párrafos largos fijos que confirmé leyendo: `listening.tsx:49`, `case-clinic.tsx:54`, `prototypes.tsx:80`.
+   - El mismo `awk` también da coincidencias en `journey.tsx`, `sensing.tsx` y `hub.tsx`, y 4 en `leads/lead-funnel-panel.tsx` (montado en `/metrics`, línea 415).
+   - Corrección: cambiar «más de una línea» por un umbral de caracteres, y que el test valide una lista cerrada de archivo:línea. U-4 la fija antes de empezar, y la aprueba Fede.
+   - Usar `src/components/ui/collapsible.tsx` (existe) o `<details>`, según cuál cumpla mejor «anuncia su estado».
+
+8. **CA-7 choca con SDD-A y no se puede probar como está escrito.**
+   - Evidencia: SDD-A CA-9 (texto «estimado: …») y SDD-A §9; unas 50 líneas con «—» en 9 archivos de `/metrics`.
+   - Además, «—» a veces significa «no aplica», no «falta el dato» (p. ej. `revops-panels.tsx:83`, `winRate == null` sin cerrados).
+   - Corrección:
+     - Fijar con Fede una sola forma («Estimado · motivo» o «estimado: motivo») y que SDD-A use esa desde el principio, para que su test no tenga que cambiar.
+     - Definir cuándo «—» es «no aplica» y puede quedarse.
+     - Lista cerrada de sitios con su test de render.
+
+9. **Contratos entre SDD inconsistentes.**
+   - SDD-A §13 y SDD-B §13 dicen que C toca «clases y estructura visual». C §13 dice «estructura, estados y presentación», y además cambia textos.
+   - Corrección: un único contrato escrito en los tres SDD:
+     - A: datos y textos de datos.
+     - B: búsqueda.
+     - C: estados de pantalla (carga, error, vacío), URL, plegado y la forma del estado de un dato.
+   - Indicar qué textos reescribe C (E-4, E-7).
+
+10. **Cabecera.**
+    - Corregir «los tres SDD de NK-0051»: el ledger dice 4 SDD (`.factory/ledger.json:1381`), y los tres citados dicen «Ticket: por asignar».
+    - Añadir la colisión de archivos con `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`, su línea 105) y fijar el orden.
+
+11. **Alcance: hay que partirlo, y no por pantalla.**
+    - Hoy son 3 pantallas, unos 15 archivos, 5 U, unas 50 sustituciones de «—», dos dependencias de orden (A y B) y una de base (NK-0051, sin código en el remoto).
+    - Propuesta de partición:
+      - **C1:** `ScreenState` + sección en la URL + vacíos y pistas en `/hub` y `/theory-u` (U-1, U-2, U-3). Solo depende de B.
+      - **C2:** `HowCalculated` + `DataState` en `/metrics` (U-4, U-5). Depende de A y de NK-0051 (`Kpi`/`Panel`, 12 px).
+    - Partir por pantalla, como sugiere §14, deja el conflicto con A sin resolver.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
