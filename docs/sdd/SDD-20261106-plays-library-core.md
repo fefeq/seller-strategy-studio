@@ -1,7 +1,7 @@
 # SDD-20261106-plays-library-core · [Feature] Librería de Plays GTM: catálogo de 28 plays, puertas con motivo y activación
 
 **Tipo:** Feature · **Prioridad propuesta:** Media
-**Estado:** Aprobado (2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** En curso (aprobado el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** `docs/prd/PRD-20261106-plays-gtm.md` (iniciativa; este es el SDD 1 de 9) · **Depende de:** — (usa lo ya fusionado en `main`)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) tiene una prueba automática que lo nombra y cita el objetivo G-n del PRD.
@@ -150,12 +150,12 @@ Orden: U-1 → U-2 → U-3 → U-4 → U-5 → U-6 → U-7. Un PR en borrador po
 5. Revisión técnica: ¿conviene que `play_runs` tenga retención? Propuesta: sin retención en este SDD; se decide con datos reales de volumen (sin dato).
 
 ## 16. Pendiente de verificar
-| [Por verificar] | Quién o qué lo comprueba |
-|---|---|
-| Número libre de migración y última entrada del diario | Claude Code al empezar, contra `main` y el anexo de migraciones pendientes |
-| Que `loadSnapshot` sea el único constructor de `Snapshot` (llamadas conocidas: `tasks.server.ts:16`, `agent.functions.ts:249`) | Claude Code en U-5, con búsqueda en todo `src/` |
-| Que ningún detector asignado a un play emita con un `detector` distinto del literal | Claude Code en U-1 (prueba CA-2) |
-| Estado de Apify, G2 y recepción de email en producción (afecta a la tabla del PRD, no a este SDD) | Fede, en producción |
+| [Por verificar] | Quién o qué lo comprueba | Resultado (Claude Code, 2026-11-06) |
+|---|---|---|
+| Número libre de migración y última entrada del diario | Claude Code al empezar, contra `main` y el anexo de migraciones pendientes | **Resuelto: 0077.** `origin/main` (47ec72c) termina en `0076_platform_admins_skip_creator` (idx 74); el anexo solo cubre 0071 a 0073. Ninguna rama remota ni worktree local usa 0077. Aviso: dos ramas sin fusionar (worktrees locales) llevan un `0074_*` cada una (`money_moment_notices`, `one_pending_won_request_per_deal`), así que quien fusione segundo debe volver a sellar su `when`. La entrada nueva es idx 75, `when` 1793966400000; `check-migration-journal.mjs` contra `origin/main`: sin errores. |
+| Que `loadSnapshot` sea el único constructor de `Snapshot` (llamadas conocidas: `tasks.server.ts:16`, `agent.functions.ts:249`) | Claude Code en U-5, con búsqueda en todo `src/` | **Resuelto: sí.** `detect(` se llama en tres sitios, los tres con un snapshot de `loadSnapshot`: `agent.functions.ts:249`, `inngest/tasks.server.ts:16` y `routes/api/public/jobs/proactive.ts:78` (este tercero no estaba en la lista). `inngest/lead-tasks.server.ts:356` también llama a `loadSnapshot`, pero no pasa por `detect()`. No hay otro sitio que construya un `Snapshot` fuera de pruebas. Lo vigila `detect-gating.test.ts`. |
+| Que ningún detector asignado a un play emita con un `detector` distinto del literal | Claude Code en U-1 (prueba CA-2) | **Resuelto para los nueve asignados:** cada uno aparece como literal `detector: "<id>"` en `src/lib/proactive/detectors/` (`catalog.test.ts`). **No comprobado:** las reglas que pasan por `buildStrategySuggestion` (pregunta 4 de la sección 15, de la revisión técnica); no pertenecen a ningún play y no se tocan. |
+| Estado de Apify, G2 y recepción de email en producción (afecta a la tabla del PRD, no a este SDD) | Fede, en producción | **Sin comprobar.** No afecta al código de este SDD. |
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
@@ -166,4 +166,24 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 - Lo que esta revisión NO demuestra: {pendiente}
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-{Sin empezar.}
+Rama `feat/plays-library-core`, commits por unidad (U-1 a U-7). La migración `0077_plays_library_core.sql` está escrita y probada en PGlite; **no se ha aplicado a ninguna base real**.
+
+**Decisiones mías que el SDD no fijaba (revísalas):**
+- **Motions y canales.** El PRD no asigna motion ni canal a cada play. Usé un conjunto cerrado propio (`entrante`, `saliente`, `producto`, `cuentas`, `reactivacion`, `mercado`; y siete canales) y reparto yo cada play. El tipo se llama `PlayMotion` para no confundirlo con `segments.motion` ni `segments.acquisition_motion`. Es lo más opinable del catálogo.
+- **Mapa de estados.** `parcial` = los 11 parciales del PRD; `planificado` = `pain-qualified-segments` («nuevo interno»); `bloqueado` = los 16 externos, con el bloqueo del PRD mapeado a uno de los cuatro valores de CA-3. `multi-thread-inbound-leads` figura `parcial` y **sin** `blockedBy` aunque el PRD le pone un bloqueo (contacto adicional vía Apollo, Clay o LinkedIn): CA-3 reserva `blockedBy` a los bloqueados, así que ese dato va en `needs`.
+- **Textos de `fuente_externa`.** La sección 9 no da el texto de ese bloqueo; escribí «Bloqueado: falta una fuente externa» y «Decide qué fuente o herramienta externa se conecta».
+- **Puertas vacías.** `Play.gates` existe, pero ningún play declara puertas todavía (la lógica de cada play es de los SDD 2 a 9). `GateDef` y `GateResult` viven en `src/lib/plays/types.ts`.
+- **`play_runs`.** `subject_table` y `subject_id` son `NOT NULL` (CA-16 los exige). `runRow` rechaza además un motivo con «@» o de más de 200 caracteres, para que un descarte no arrastre datos de una persona.
+- **Escritura de la pantalla.** La activación pasa por la función de servidor `setPlayEnabled` (`src/lib/plays.functions.ts`) y comparte con la herramienta del Agente el núcleo `togglePlay` (`src/lib/plays/toggle.ts`): así CA-9 se cumple en la pantalla, en una llamada directa y en el Agente, con las mismas palabras. En el Agente, el rechazo ocurre al confirmar la acción pendiente, no al proponerla (el registro no valida antes de crear la acción pendiente).
+- **Pausa sobre un play bloqueado.** Pausar un play bloqueado o planificado está permitido (solo activar se rechaza).
+- **Fallo abierto.** `loadSnapshot` ignora un error al leer `play_states` y deja todas las reglas encendidas, como hoy. Así el código puede desplegarse antes que la migración sin romper la sincronización; mientras no se aplique 0077, `/plays` muestra los plays con su valor por defecto y activar da error.
+- **Tipos generados.** Añadí a mano `play_runs` y `play_states` a `src/integrations/supabase/types.ts` (al estilo del generado) y a `INFRASTRUCTURE_TABLES` de `field-coverage.ts`, como ya hizo `strategy_reviews`. Conviene regenerar los tipos tras aplicar la migración.
+- **Orden de herramientas.** Las tres herramientas van al final del registro (`...PLAY_TOOLS`) para no mover el orden que ve el modelo. El manifiesto MCP se regeneró con el CLI (solo suma las tres).
+
+**Lo que NO está hecho o verificado:**
+- CA-5: el recorrido con `nokko-walkthrough` no se ha hecho; la pantalla compila (`vite build`) y sus reglas están probadas, pero no la he visto en un navegador (exige sesión).
+- CA-11 es una prueba de no regresión: pasa también sobre la base por su naturaleza. CA-12 y el resto de pruebas fallaron antes de implementar.
+- Sección 17: sin rellenar (la hace el gate).
+- Lint: `eslint .` ya falla en `origin/main` por reglas de prettier en ficheros existentes; los ficheros nuevos o tocados no añaden errores.
+- La migración no se ha probado contra el esquema real de Lovable Cloud, solo contra PGlite.
+
