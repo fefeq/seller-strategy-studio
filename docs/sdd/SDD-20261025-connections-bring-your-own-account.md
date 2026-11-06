@@ -4,6 +4,8 @@
 **Estado:** En curso (aprobado por Fede 2026-10-26; U-1 y U-2 entregadas sin proveedores habilitados) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-6) · **Depende de:** SDD universal de campos (origen del dato); SDD de Drive por empresa (primer caso)
 
+> **Enmienda aprobada (2026-11-02)** por `SDD-20261031-gtm-control-tower-8-postin-views-nokko`: para el proveedor «vistas de Postin», la misma dirección ya conectada en otra organización se rechaza en lugar de pedir confirmación (CA-14 de ese SDD).
+
 ## 1. Resumen
 La pantalla **Conexiones** es hoy un listado informativo de lo que NOKKO conecta con sus propios servicios. Se quiere que desde ahí **cada empresa conecte sus propias cuentas** (Google Drive, proveedores de datos y otros) y vea el estado, quién la conectó y cuánto se usa. Es la casa común de las conexiones; el SDD de Drive por empresa es su primer caso.
 
