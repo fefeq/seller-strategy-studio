@@ -1,7 +1,7 @@
 # SDD-20261106-founder-account-execution-path · [Feature] De la estrategia a la cuenta: comité, primer mensaje, seguimiento y guía de ejecución
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-11-06 (v2). **v2.1 del 2026-11-06 con correcciones de CA tras la segunda revisión del gate: pendiente del OK de Fede** · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado por Fede el 2026-11-06 (v2.1, tras tres revisiones del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** `docs/prd/PRD-20261106-founder-account-execution-path.md` · **Depende de:** — (recomendado detrás de NK-0051; ver §14 por los SDD 1b y 5b del control tower)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.

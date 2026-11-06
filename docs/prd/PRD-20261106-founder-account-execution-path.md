@@ -1,7 +1,7 @@
 # PRD-20261106-founder-account-execution-path · [Feature] De la estrategia a la cuenta: el founder sabe a quién buscar, qué decirle y cuándo volver a escribirle
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta (es el recorrido que Fede describe como el uso principal de NOKKO, y hoy se corta después de la configuración; no hay datos de uso que lo confirmen)
-**Estado:** Aprobado por Fede el 2026-11-06 (v2). v2.1 del 2026-11-06 con correcciones tras la segunda revisión del gate: pendiente del OK de Fede · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado por Fede el 2026-11-06 (v2.1, tras tres revisiones del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **SDD que lo desarrollan:** `docs/sdd/SDD-20261106-founder-account-execution-path.md`
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
