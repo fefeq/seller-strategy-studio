@@ -1,7 +1,7 @@
 # SDD-20261028-field-write-paths-normalization · [Bug] Tamaño y país se guardan sin la regla única en los caminos de Clay, Apollo, IA web y Parallel
 
 **Tipo:** Bug (SDD corto) · **Prioridad propuesta:** Media (la fija Fede; sin dato de cuántas cuentas afecta)
-**Estado:** Aprobado (Fede, 2026-10-29, confirmado por él; antes constaba aprobado el 2026-10-28 vía la sesión coordinadora; el gate no ha visto los retoques de texto posteriores a la cuarta pasada, sección 17) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-28
+**Estado:** Aprobado; ledger: NK-0018 SHIPPED (Fede, 2026-10-29, confirmado por él; antes constaba aprobado el 2026-10-28 vía la sesión coordinadora; el gate no ha visto los retoques de texto posteriores a la cuarta pasada, sección 17) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-28
 **PRD:** No aplica (bug acotado; cierra un hueco de CA-1/CA-3 de NK-0006) · **Depende de:** `docs/sdd/SDD-20261025-universal-field-definitions.md` (NK-0006)
 **Ticket:** NK-0018
 

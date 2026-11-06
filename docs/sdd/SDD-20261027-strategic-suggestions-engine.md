@@ -1,7 +1,7 @@
 # SDD-20261027-strategic-suggestions-engine · [Feature] Motor de sugerencias estratégicas para diseñar, ejecutar y monitorear el GTM
 
 **Tipo:** Feature (maestro, dividido en fases) · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 a F3 fusionadas en `main`, F4 en PR en borrador, F5 a F7 sin empezar; pregunta 5 resuelta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
+**Estado:** Aprobado por Fede el 2026-10-27 (según la petición de implementación de F0); F0 a F4 fusionadas en `main` (F4 en el PR #46); F5 a F7 sin verificar en el código (F5 se integra en 5b y F6 en 5a/5c del Control tower, decisión de Fede del 2026-11-06); pregunta 5 resuelta · **Pide:** Fede · **Para:** Claude Code (implementación), con auditoría independiente · **Fecha:** 2026-10-27
 **Depende de:** SDD universal de campos (1) y acciones sobre campos (2) para propuestas pendientes, origen y deshacer; SDD 7b (competidores como entidad) para las reglas sobre competidores; SDD 9 (Theory U proactivo) como fuente de evidencia, sin duplicarlo.
 **Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las secciones 14 y 16 conservan el nombre de la plantilla: las preguntas las responde Fede y la sección 16 la completa Claude Code.
 

@@ -1,7 +1,7 @@
 # SDD-20261101-strategy-setup-closeout · [Mejora] Cierre de «Configura tu estrategia» que guía al siguiente paso (NK-0008)
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (lo grande ya está entregado; faltan un hueco de CA-5, la línea base y las firmas)
-**Estado:** Aprobado por Fede (2026-11-01) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede (2026-11-01); ledger: NK-0008 SHIPPED · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **PRD:** `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-3) · **Depende de:** `SDD-20261025-strategy-setup-guided-next-step` (este SDD lo **extiende** y no lo reescribe; solo se tocan su cabecera, su §4, su §13 y su §16, y solo con aprobación de Fede)
 **Ticket:** NK-0008 (hoy `LOGGED` en el ledger; el código del SDD original ya está en `origin/main`)
 

@@ -1,7 +1,7 @@
 # SDD-20261027-segment-motion-aarrr-diagnosis · [Feature] Motion por segmento y diagnóstico AARRR
 
 **Tipo:** Feature · **Prioridad propuesta:** Media-alta (desbloquea plantillas por motion)
-**Estado:** Aceptado con cambios (ver sección 12) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-27
+**Estado:** Aceptado con cambios (ver sección 12); entregado: T-1 a T-7 fusionadas (PRs #42 y #43) y migración 0071 aplicada en la base real, medido el 2026-11-06; sin probar con datos reales · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-27
 
 ## 1. Problema
 NOKKO trata igual a todos los segmentos aunque se vendan de formas distintas (PLG, venta asistida, partners). Tampoco responde a «¿dónde se pierde negocio?» con los datos que ya tiene.

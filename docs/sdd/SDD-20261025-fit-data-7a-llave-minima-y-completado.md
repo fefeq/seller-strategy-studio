@@ -1,7 +1,7 @@
 # SDD-20261025-fit-data-7a-llave-minima-y-completado · [Feature] Llave mínima y completado asistido (parte a de 3 de «Datos mínimos de encaje»)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** SUPERADO por SDD-20261101-fit-data-7a-llave-minima-revalidado (NK-0012 SHIPPED); no ejecutar este texto · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-5) · **Depende de:** SDD-20261025-universal-field-definitions, SDD-20261025-field-actions-edit-delete-confirm
 
 ## 1. Resumen
