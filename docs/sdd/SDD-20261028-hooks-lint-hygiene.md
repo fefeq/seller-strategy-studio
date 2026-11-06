@@ -1,7 +1,7 @@
 # SDD-20261028-hooks-lint-hygiene · [Mejora] Cero avisos de reglas de hooks, con una corrección en el Hub
 
 **Tipo:** Mejora · **Prioridad propuesta:** Baja (higiene; solo la fila 9 es un fallo latente) · **Track:** medio (un solo PR, sin Unidades de Trabajo independientes)
-**Estado:** En curso (Aprobado por Fede, 2026-10-28; implementado en el PR #50, pendiente de aceptación de Fede) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-28
+**Estado:** En curso (Aprobado por Fede, 2026-10-28; implementado en el PR #50, fusionado el 2026-10-28; pendiente de aceptación de Fede) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-28
 **Nota de proceso:** en NOKKO, Dani no participa (decisión de Fede, 2026-10-27). Las preguntas de la sección 14 las responde Fede y la sección 16 la completa Claude Code; los títulos conservan el nombre de la plantilla.
 
 ## Decisiones de Fede (2026-10-28)

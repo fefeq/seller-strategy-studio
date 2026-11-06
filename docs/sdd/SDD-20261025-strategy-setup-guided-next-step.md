@@ -1,7 +1,7 @@
 # SDD-20261025-strategy-setup-guided-next-step · [Mejora] «Configura tu estrategia» que guía
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** En curso (Aprobado por Fede, 2026-10-27) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
+**Estado:** En curso (Aprobado por Fede, 2026-10-27; ledger: NK-0008 SHIPPED, cierre en SDD-20261101-strategy-setup-closeout) · **Pide:** Fede · **Para:** Claude Code · **Fecha:** 2026-10-25
 **Depende de:** SDD universal de campos (definición única de "completo")
 
 ## 1. Resumen

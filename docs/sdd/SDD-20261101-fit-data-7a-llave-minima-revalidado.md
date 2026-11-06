@@ -1,7 +1,7 @@
 # SDD-20261101-fit-data-7a-llave-minima-revalidado · [Mejora] Llave mínima comprobada en un solo sitio y completado asistido del dominio (NK-0012)
 
 **Tipo:** Mejora (el original era «Feature»; revalidado, lo que cabe hoy es acotado y sin esquema) · **Prioridad propuesta:** Media
-**Estado:** Aprobado por Fede (2026-11-01) (dos pasadas del gate respondidas; decide Fede) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede (2026-11-01) (dos pasadas del gate respondidas; decide Fede); ledger: NK-0012 SHIPPED · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **PRD:** `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-5) · **Depende de:** `SDD-20261025-universal-field-definitions` (U-1 a U-4 hechas; 0058 sin aplicar en producción hasta donde consta, ver §16) y `SDD-20261025-field-actions-edit-delete-confirm` (U-1 a U-5 hechas)
 **Ticket:** NK-0012 (`LOGGED`). Este SDD **sustituye el alcance** de `SDD-20261025-fit-data-7a-llave-minima-y-completado` y **no lo reescribe**: el original solo se toca (cabecera «Sustituido por…») con aprobación de Fede.
 
