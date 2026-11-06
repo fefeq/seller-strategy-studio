@@ -67,6 +67,31 @@ describe("start rule", () => {
     expect(existsSync(lockPath(dir, "full"))).toBe(false);
   });
 
+  it("an unreadable ledger file does not start, says so and leaves no lock behind (NK-0065)", () => {
+    writeFileSync(ledgerPath(dir, "full"), "{not json");
+    const opened = openRun(dir, "full", { now: NOW, pid: 1 });
+    expect(opened.ok).toBe(false);
+    if (opened.ok) return;
+    expect(opened.message).toMatch(/registro de gasto/);
+    expect(opened.message).toContain(ledgerPath(dir, "full"));
+    expect(existsSync(lockPath(dir, "full"))).toBe(false);
+  });
+
+  it.each([
+    ["a text amount", '{"spentUsd":"abc"}'],
+    ["a null amount", '{"spentUsd":null}'],
+    ["a negative amount", '{"spentUsd":-1}'],
+    ["an array", "[]"],
+    ["null", "null"],
+  ])("a ledger file with %s does not start and leaves no lock behind (NK-0065)", (_name, raw) => {
+    writeFileSync(ledgerPath(dir, "full"), raw);
+    const opened = openRun(dir, "full", { now: NOW, pid: 1 });
+    expect(opened.ok).toBe(false);
+    if (opened.ok) return;
+    expect(opened.message).toMatch(/registro de gasto/);
+    expect(existsSync(lockPath(dir, "full"))).toBe(false);
+  });
+
   it("does not start when the spend went past the approved amount", () => {
     seed("pilot", 1.03);
     expect(openRun(dir, "pilot", { now: NOW, pid: 1 }).ok).toBe(false);

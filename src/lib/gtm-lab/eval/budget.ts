@@ -63,7 +63,15 @@ export function loadLedger(dir: string, pass: EvalPass): SpendLedger {
     manual: [],
   };
   if (!existsSync(path)) return empty;
-  const saved = JSON.parse(readFileSync(path, "utf8")) as Partial<SpendLedger>;
+  const saved = JSON.parse(readFileSync(path, "utf8")) as Partial<SpendLedger> | null;
+  // A file of the wrong shape (or a spend that is not a finite number ≥ 0) would turn the cap into NaN: refuse it.
+  if (!saved || typeof saved !== "object" || Array.isArray(saved))
+    throw new Error(`${path} no es un registro de gasto`);
+  if (
+    "spentUsd" in saved &&
+    !(typeof saved.spentUsd === "number" && Number.isFinite(saved.spentUsd) && saved.spentUsd >= 0)
+  )
+    throw new Error(`${path} tiene un gasto no válido`);
   // The approved amount always comes from the code, never from the file.
   return { ...empty, ...saved, pass, approvedUsd: APPROVED_USD[pass] };
 }
@@ -130,7 +138,16 @@ export function openRun(
 ): { ok: true; run: Run } | { ok: false; message: string } {
   const lock = takeLock(dir, pass, pid, now());
   if (!lock.ok) return lock;
-  const ledger = loadLedger(dir, pass);
+  let ledger: SpendLedger;
+  try {
+    ledger = loadLedger(dir, pass);
+  } catch {
+    lock.release();
+    return {
+      ok: false,
+      message: `No se puede leer el registro de gasto de la pasada «${pass}» (${ledgerPath(dir, pass)}). Revísalo o restáuralo a mano antes de seguir.`,
+    };
+  }
   if (ledger.noData) {
     lock.release();
     return {
