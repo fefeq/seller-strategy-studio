@@ -21,6 +21,7 @@
 - §10 y pregunta 6: FK compuesta (h. 11).
 - §14 y CA-23: solape con los SDD 1b y 5b (h. 12).
 - Correcciones menores: h. 13 a 20.
+- Tras la revisión 3: regla única de ICP por cuenta alineada con `accountFit`, Descubiertos fuera, CA-22 con la regla de paso hecho, canales reales, huella con rol y cargo, CA-31 sin guardar, FK detallada y orden de U-3 y U-4.
 
 ## 1. Resumen
 Hoy NOKKO deja de guiar al founder cuando termina la configuración. Este SDD añade cuatro cosas sobre las cuentas objetivo:
@@ -47,7 +48,10 @@ Heredado del PRD §3. Todo es dato de código; el uso es sin dato, y la iniciati
   - El diálogo empieza con los niveles por defecto (`src/components/orchestrator/key-people.tsx:50`).
   - El ICP solo se aplica sin cargos ni niveles (`src/lib/orchestrator/runner.ts:376`).
   - Descubiertos sí lo aplica (`discoveries.server.ts:86`).
-- **Elección del ICP de una cuenta:** `icpForSegment` (`src/lib/icp.ts:99`) da el del segmento o, si no hay, el primero.
+- **Elección del ICP de una cuenta:** hoy hay dos reglas.
+  - `icpForSegment` (`src/lib/icp.ts:99`): el del segmento o, si no hay, el primero por `created_at`. La usan la búsqueda de personas (`runner.ts:386-391`) y Descubiertos.
+  - `accountFit` (`src/lib/scoring.ts:121-124`): el del segmento o, si no hay, el que mejor encaja. La usan la columna Encaje de la lista y la ficha de cuentas.
+  - Descubiertos solo lee los 3 primeros ICP (`discoveries.server.ts:38`) y trabaja sobre empresas candidatas, no sobre cuentas.
 - **`stakeholders`** (migración `0000`) no tiene estado de contacto.
 - **`accounts.is_target`** es un booleano, sin fecha (`0001:90`).
 - **La investigación del stakeholder** se genera con publicaciones de LinkedIn obtenidas por Apify en el prompt (`src/lib/ai-core.ts:98-113`). El texto guardado incluye:
@@ -80,7 +84,8 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
 **No incluye:** lo heredado del PRD §5, y además:
 - el «grupo de compra» de GTM Lab;
 - cambiar la investigación del stakeholder;
-- tocar `/plays`, `/abm` y la tabla `activities` (sin versionar).
+- tocar `/plays`, `/abm` y la tabla `activities` (sin versionar);
+- cambiar Descubiertos: busca empresas candidatas, no cuentas, y su límite de 3 ICP se queda como está.
 
 ## 6. Cambios de comportamiento (delta)
 **Añadido:**
@@ -102,9 +107,9 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
   - Antes: siempre abre con los niveles por defecto y no aplica el ICP.
   - Después: abre con los cargos y niveles del ICP de la cuenta, o con los cargos pendientes si viene de «Buscar los que faltan».
 - **ICP de una cuenta.**
-  - Antes: el del segmento o, si no hay, el primero.
-  - Después: el elegido para esa cuenta, si existe; si no, la misma regla de antes.
-  - Sin elección, Descubiertos y la búsqueda de personas se comportan igual que hoy.
+  - Antes: dos reglas. La búsqueda de personas usa el del segmento o el primero; la columna Encaje, el del segmento o el que mejor encaja.
+  - Después: una sola regla para todo lo que trabaja sobre una cuenta: el elegido para esa cuenta, si existe; si no, el del segmento; si no, el que mejor encaja (la de `accountFit`).
+  - Cambia la búsqueda de personas en cuentas sin segmento: pasa de «el primero» a «el que mejor encaja». Descubiertos no cambia.
 - **`account_touches`.**
   - Antes: sin persona.
   - Después: con persona opcional.
@@ -138,10 +143,10 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
 - **CA-9** El ICP de una cuenta DEBE ser:
   1. el elegido para esa cuenta, si existe;
   2. si no, el de su segmento;
-  3. si no, el primero de la empresa, como hoy.
+  3. si no, el que mejor encaja con la cuenta (regla actual de la columna Encaje); con empate, el más antiguo por `created_at`.
 
   El bloque DEBE decir qué ICP usa y permitir elegir otro, que se guarda para esa cuenta · cubre G-2 · prueba: `src/lib/icp.test.ts`
-- **CA-10** Toda ruta que elige el ICP de una cuenta (búsqueda de personas, Descubiertos y bloque del comité) DEBE usar la regla de CA-9 y dar el mismo resultado para la misma cuenta. Sin un ICP elegido, el resultado DEBE ser el de hoy · cubre G-2 · prueba: `src/lib/icp.test.ts`
+- **CA-10** Toda ruta que trabaja sobre una cuenta existente DEBE usar la regla de CA-9 y dar el mismo ICP para la misma cuenta: bloque del comité, nivel 4 de la guía, columna «Comité», columna Encaje y búsqueda de personas desde la cuenta o desde el agente. Descubiertos queda fuera (§5) · cubre G-2 · prueba: `src/lib/icp.test.ts` (regla), `src/lib/scoring.test.ts` (Encaje), `src/components/orchestrator/key-people.test.tsx` (diálogo) y un caso del runner en `src/lib/orchestrator/runner.test.ts`
 - **CA-11** SI el ICP no tiene cargos objetivo, ENTONCES el bloque DEBE decir «Tu ICP no dice a qué cargos dirigirte» y enlazar a Estrategia, ICP · cubre G-2 · prueba: `src/lib/buying-committee.test.ts`
 - **CA-12** «Buscar personas clave» abierto desde la cuenta DEBE empezar con los cargos y los niveles del ICP de la cuenta. Desde «Buscar los que faltan», DEBE empezar solo con los cargos pendientes. SI la cuenta no tiene dominio, ENTONCES DEBE decir que lo añadas, como hoy · cubre G-2 · prueba: `src/components/orchestrator/key-people.test.tsx`
 - **CA-13** La lista de cuentas DEBE mostrar, en las cuentas objetivo, la cobertura como «cubiertos de total, con o sin Decisor» · cubre G-2 · prueba: `src/lib/buying-committee.test.ts`
@@ -153,20 +158,20 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
 
   El formato depende del canal elegido: email con asunto, o LinkedIn sin asunto · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts` (entrada del modelo y plantilla)
 - **CA-15** La entrada del borrador NO DEBE incluir texto de LinkedIn: ni la sección «De qué habla en LinkedIn», ni las entradas de la lista de fuentes con URL de linkedin.com. SI la investigación guardada tiene alguna fuente de linkedin.com, ENTONCES el borrador DEBE usar solo el rol, el cargo y la estrategia, y avisar «La investigación incluye LinkedIn: no la uso hasta que se regenere» · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts`
-- **CA-16** El borrador DEBE marcar como «(hipótesis)» todo lo que no venga de la investigación permitida ni de la estrategia de la empresa · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts` (comprueba que la instrucción va en el prompt) y un caso nuevo en `src/lib/gtm-lab/eval/` (comprueba la calidad)
+- **CA-16** El borrador DEBE marcar como «(hipótesis)» todo lo que no venga de la investigación permitida ni de la estrategia de la empresa · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts` (comprueba que la instrucción va en el prompt) y un caso nuevo en `src/lib/gtm-lab/eval/` (mide la calidad con IA; es una evaluación, no un test que falle primero)
 - **CA-17** SI el stakeholder no tiene investigación, ENTONCES el borrador DEBE avisar «Sin investigación: el mensaje es genérico para su rol» · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts`
 - **CA-18** SI la empresa no tiene posicionamiento ni pilares, ENTONCES el borrador DEBE avisar «Sin posicionamiento: completa Estrategia para mensajes con tu diferencia» y no inventar una diferencia · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts`
 - **CA-19** SI la IA falla o no hay presupuesto, ENTONCES el sistema DEBE decir «No he podido preparar el borrador: [motivo]. Vuelve a intentarlo o escríbelo tú» y no guardar nada · cubre G-3 · prueba: `src/lib/stakeholder-message.test.ts`
 - **CA-20** Preparar un borrador NO DEBE enviar nada ni cambiar `contact_status`. Solo la pantalla guarda el último borrador en el stakeholder (texto, canal, fecha y huella). La herramienta del agente no guarda nada · cubre G-5 · prueba: `src/lib/stakeholder-message.test.ts`
 
 ### H-4: Como founder, quiero registrar a quién he escrito y que NOKKO me recuerde volver a escribirle para que nadie se quede sin seguimiento.
-- **CA-21** CUANDO marques a un stakeholder como «Contactado» con su canal (email, teléfono, LinkedIn, reunión u otro) y su fecha, el sistema DEBE:
+- **CA-21** CUANDO marques a un stakeholder como «Contactado» con su canal (`email`, `call`, `linkedin`, `meeting` o `other`, con `other` añadido a `TOUCH_CHANNELS`) y su fecha, el sistema DEBE:
   - guardar el estado;
   - crear un único toque de cuenta con esa persona;
   - calcular los toques de los días 3, 7 y 14 desde esa fecha.
 
   · cubre G-3, G-4 · prueba: `src/lib/stakeholder-contact.test.ts` y `src/lib/stakeholder-contact.pg.test.ts`
-- **CA-22** El paso vencido DEBE ser el último cuyo día ha pasado y que no está hecho, con la misma regla que `followupStatus`. «Toque hecho» crea un toque de cuenta con esa persona y cierra ese paso y los anteriores. El toque del primer contacto no cuenta como paso · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
+- **CA-22** El paso vencido DEBE ser el último cuyo día ha pasado y que no está hecho, con la misma regla que `followupStatus`. Un paso está hecho si existe un toque con esa persona con `occurred_at` igual o posterior a la fecha del paso, sin contar el del primer contacto. «Toque hecho» crea ese toque y así cierra ese paso y los anteriores · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
 - **CA-23** CUANDO venza un paso según CA-22 y el stakeholder siga en «Contactado», el sistema DEBE crear un único aviso (sugerencia en la app, prioridad 2) para el dueño de la cuenta, o para Equipo si no tiene dueño, con enlace al stakeholder · cubre G-4 · prueba: `src/lib/proactive.test.ts`
 - **CA-24** CUANDO marques «Respondió», «Reunión» o «Descartado», la secuencia DEBE pararse y no crear más avisos · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
 - **CA-25** CUANDO hayan pasado 21 días (`SEQUENCE_END_DAYS`) desde el contacto sin otro estado, el stakeholder DEBE mostrarse como «Sin respuesta», calculado y no guardado, y salir de la guía · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
@@ -174,7 +179,7 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
 - **CA-27** CUANDO marques «Reunión», el sistema DEBE ofrecer crear una reunión o un deal en la cuenta, sin crearlos solo · cubre G-4 · prueba: `src/components/account/stakeholders-tab.test.tsx`
 - **CA-28** El agente DEBE poder cambiar el estado de contacto o marcar un toque hecho solo con confirmación · cubre G-5 · prueba: `src/lib/agent-tools.test.ts`
 - **CA-29** La secuencia del stakeholder NO DEBE crear ni modificar leads, ni contar en la conversión por origen · cubre G-3 · prueba: `src/lib/stakeholder-sequence.test.ts`
-- **CA-31** El borrador de los toques 3, 7 y 14 DEBE salir de una plantilla con los pilares de mensaje; «Reescribir con IA» es opcional. Se le aplican CA-15 y CA-20 · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
+- **CA-31** El borrador de los toques 3, 7 y 14 DEBE salir de una plantilla con los pilares de mensaje; «Reescribir con IA» es opcional. Se le aplican CA-15 y CA-20. No se guarda en `message_draft`, que es solo del primer mensaje · cubre G-4 · prueba: `src/lib/stakeholder-sequence.test.ts`
 
 ### H-5: Como Owner, quiero que los datos de una empresa no se crucen con los de otra.
 - **CA-30** SI un toque de cuenta apunta a un stakeholder de otra cuenta o de otra empresa, o una cuenta apunta a un ICP de otra empresa, ENTONCES la base de datos DEBE rechazarlo · cubre G-2, G-3 · prueba: `src/lib/stakeholder-contact.pg.test.ts` (dos empresas ficticias sobre `src/test/pg-harness.ts`)
@@ -185,7 +190,8 @@ G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mid
 | Empresa sin ICP | No hay guía de ejecución; sigue la de configuración | CA-1 |
 | ICP sin cuentas objetivo | Nivel 5 para Owner y Sales leader | CA-2 |
 | ICP sin cargos objetivo | Aviso y enlace a Estrategia | CA-11 |
-| Varios ICP y la cuenta sin segmento que encaje | Usa el primero, como hoy, y deja elegir otro | CA-9 |
+| Varios ICP y la cuenta sin segmento que encaje | Usa el que mejor encaja, como la columna Encaje, y deja elegir otro | CA-9, CA-10 |
+| Más de 3 ICP | Descubiertos sigue mirando solo los 3 primeros; no afecta al comité ni a la búsqueda desde la cuenta | CA-10 |
 | Cuenta sin dominio | Explica que falta el dominio | CA-12 |
 | Cargos parecidos pero distintos | Equivalencia cerrada | CA-8 |
 | Stakeholder sin email ni LinkedIn | Se puede marcar como contactado por teléfono, en reunión o por otro canal | CA-21 |
@@ -211,13 +217,14 @@ Español, con «tú», sin iconos y con los estados escritos en palabras. Los ej
 - **`stakeholders`**, columnas nuevas:
   - `contact_status`: texto con check (`not_contacted`, `contacted`, `replied`, `meeting`, `discarded`); por defecto `not_contacted`.
   - `contacted_at`, `contact_channel` y `contact_updated_at`.
-  - `message_draft`: jsonb con canal, texto, fecha y huella. La huella combina la investigación, el posicionamiento y los pilares. Sirve de caché (§11) y de fecha para el nivel 2 de la guía.
+  - `message_draft`: jsonb con canal, texto, fecha y huella. La huella combina el rol de compra, el cargo, la investigación, el posicionamiento y los pilares. Sirve de caché (§11) y de fecha para el nivel 2 de la guía.
 - **`account_touches`:** `stakeholder_id` opcional.
 - **`accounts`:** `icp_profile_id` opcional.
 - **Integridad entre empresas (CA-30):**
   - FK compuesta `(stakeholder_id, account_id, org_id)` → `stakeholders(id, account_id, org_id)`, con `unique` en el destino y `on delete set null (stakeholder_id)`.
   - Lo mismo con `(icp_profile_id, org_id)` → `icp_profiles(id, org_id)`.
-  - Exige `org_id not null` en esas tablas **[Por verificar: que no haya nulos en producción]**. Si los hay, se usa un trigger.
+  - Exige `unique (id, account_id, org_id)` en `stakeholders`, `unique (id, org_id)` en `icp_profiles` y `org_id not null` en `account_touches` y `accounts` **[Por verificar: que no haya nulos en producción]**. Si los hay, se usa un trigger.
+  - `on delete set null (columna)` existe desde Postgres 15; producción usa 17 y PGlite 18, según `SDD-20261030-money-moment-notices.md` **[Por verificar en U-2]**.
 - **Común:**
   - `org_id default current_org()`; el cliente no envía `org_id`.
   - Hereda la RLS actual.
@@ -238,12 +245,12 @@ Una llamada no declarada aquí no se implementa.
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | Reglas puras: equivalencia de cargos, cobertura del comité, ICP de la cuenta, pasos de la secuencia y orden de la guía | CA-2, CA-3, CA-5 a CA-11, CA-13, CA-22, CA-24, CA-25, CA-29 | `buying-committee.test.ts`, `icp.test.ts`, `stakeholder-sequence.test.ts`, `execution-guide.test.ts` |
-| U-2 | Migración (número 0079 o posterior, que se asigna al fusionar según la numeración del plan maestro y se comprueba contra todas las ramas tras `git fetch`) y catálogo de campos | CA-30 | `src/lib/stakeholder-contact.pg.test.ts` |
+| U-2 | Migración (número 0079 o posterior, que se asigna al fusionar según la numeración del plan maestro y se comprueba contra todas las ramas tras `git fetch`) y catálogo de campos | CA-30 | `src/lib/stakeholder-contact.pg.test.ts`, que crea `stakeholders`, `account_touches`, `accounts` e `icp_profiles` sobre el arnés, como `migrations.pg.test.ts` |
 | U-3 | `setStakeholderContact` (un solo toque por acción), pestaña Stakeholders, «Buscar personas clave» con ICP y columna en `/accounts` | CA-12, CA-21, CA-27 | `stakeholder-contact.test.ts`, `key-people.test.tsx`, `stakeholders-tab.test.tsx` |
-| U-4 | Borradores (primer mensaje y toques) y herramientas del agente | CA-14 a CA-20, CA-28, CA-31 | `stakeholder-message.test.ts`, `agent-tools.test.ts` |
+| U-4 | Borradores (primer mensaje y toques) y herramientas del agente | CA-14 a CA-20, CA-28, CA-31 | `stakeholder-message.test.ts`, `stakeholder-sequence.test.ts`, `agent-tools.test.ts` |
 | U-5 | Detector `stakeholder_followup` y `src/components/home/execution-card.tsx` | CA-1, CA-4, CA-23, CA-26 | `proactive.test.ts`, `execution-card.test.tsx` |
 
-Orden: U-1 → U-2 → (U-3 y U-4 en paralelo) → U-5.
+Orden: U-1 → U-2 → U-3 → U-4 → U-5. U-4 usa `setStakeholderContact` de U-3; los borradores de U-4 pueden empezar en paralelo a U-3.
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - **Reutilizar:**
@@ -444,13 +451,86 @@ Orden: U-1 → U-2 → (U-3 y U-4 en paralelo) → U-5.
 - No sé si el modelo respeta «(hipótesis)», ni si el valor para los founders es real.
 - Tampoco sé si cambiarán las ramas de Plays, de tool-plan y de los avisos de dinero.
 
-**Nota del autor sobre el hallazgo 3:** la v2.1 no sigue el arreglo propuesto. Mantiene la regla actual (segmento o el primero) en todas las rutas para no cambiar Descubiertos, y añade elegir el ICP por cuenta. La incoherencia entre §6, CA-9 y CA-10 se corrige igualmente.
+Archivos revisados:
+- `/Users/fedecosentino/NOKKO GTM BRAIN/seller-strategy-studio-docs-founder-path/docs/prd/PRD-20261106-founder-account-execution-path.md`
+- `/Users/fedecosentino/NOKKO GTM BRAIN/seller-strategy-studio-docs-founder-path/docs/sdd/SDD-20261106-founder-account-execution-path.md`
+
+### Respuesta del autor a la revisión 2
+**Hallazgo 3:** la v2.1 no sigue el arreglo propuesto, para no cambiar Descubiertos. Tras la revisión 3, todo lo que trabaja sobre una cuenta usa una sola regla: el ICP elegido, el del segmento o, si no, el que mejor encaja (la de `accountFit`). Descubiertos queda fuera porque trabaja sobre empresas candidatas. Esto cierra también los hallazgos nuevos 1 a 3 de la revisión 3.
 
 ### Historial: revisión 1 (sobre la v1, 2026-11-06)
 Resumen del autor, no es el informe del gate. Veredicto: Objeciones. Hubo 14: 4 Altas (Buscar personas clave sin ICP, toque hecho, grupo de compra de GTM Lab, Apify en el borrador), 7 Medias y 3 Bajas, más correcciones de cita. La v2 las abordó y la revisión 2 encontró las que quedaron a medias.
 
-### Revisión 3 (sobre la v2.1)
-Pendiente.
+### Revisión 3 (sobre la v2.1, commit `f1c9f81`, 2026-11-06). Informe copiado sin editar (solo se han bajado de nivel los encabezados)
+
+**Veredicto: fusionable con cambios menores.** El contenido está casi listo: los 20 hallazgos de la revisión 2 quedan resueltos o muy cerca. Pero todavía no se puede fusionar por proceso. Hacen falta tu OK a la v2.1, este informe copiado en §17 y tu orden explícita de fusionar (`nokko-shape`). Los cambios de texto de abajo deberían entrar antes de ese OK.
+
+#### Hallazgos de la revisión 2 todavía abiertos
+
+- **H. 4 (parcial). CA-22 no dice cómo se sabe que un paso está hecho.** En leads, la regla se apoya en `next_step_at` (`followup.ts:46`). Los stakeholders no tienen esa columna, y §10 no guarda los pasos hechos (`SDD:211-216`). §13 dice que «el estado más los toques bastan» (`SDD:258`), pero falta la regla que lo deduce.
+  - **Arreglo en CA-22:** «Un paso está hecho si existe un toque con esa persona con `occurred_at` ≥ fecha del paso, sin contar el del primer contacto».
+- **H. 3. La regla es coherente pero incompleta, y CA-10 no se puede probar con el test que cita.** Lo detallo en los hallazgos nuevos 1 a 3.
+- **Resueltos:** 1, 2 (falta poco), 5 a 20.
+  - **H. 1:** el código actual siempre lista al menos una fuente de LinkedIn cuando hay publicaciones. La web aporta 8 como máximo y el corte es en 10 (`web-research.ts:118`), así que detectar por fuente funciona.
+  - **H. 2:** el SDD no dice que el test debe crear `stakeholders` y `account_touches` en el arnés, como pedía el gate. Solo §16 lo apunta de lado.
+
+#### Hallazgos nuevos
+
+1. **Media. Hay una cuarta regla de ICP por cuenta y el SDD no la menciona.** `accountFit` usa el ICP del segmento y, si no hay, el que mejor encaja, no el primero (`src/lib/scoring.ts:121-124`). La usan la lista y la ficha de cuentas (`accounts.index.tsx`, `accounts.$id.tsx`, vía `scoreAccount`).
+   - Efecto: el bloque puede decir «ICP: A» mientras la columna Encaje mide contra B. Y «Cambiar ICP» no cambiaría el Encaje.
+   - También queda incompleto §3 (`SDD:50`).
+   - **Arreglo:** declararlo en §3 y decidir si `accountFit` respeta `icp_profile_id`. Si no, ponerlo en «No incluye» con su motivo.
+2. **Media. Descubiertos solo mira los 3 primeros ICP** (`discoveries.server.ts:38`, `.limit(3)`).
+   - Con más de 3 ICP, ya hoy la búsqueda de personas (`runner.ts:386-391`, sin límite) y Descubiertos dan resultados distintos para la misma cuenta.
+   - Las dos frases de CA-10 (`SDD:144`, «mismo resultado» y «sin elección, el de hoy») chocan entre sí.
+   - Si una cuenta elige un ICP fuera de esos 3, Descubiertos nunca la procesa.
+   - **Arreglo:** quitar el límite o aceptarlo en CA-10, y añadir una fila en §8.
+3. **Media. CA-10 no se puede probar con `icp.test.ts`.** Un test de la función pura no demuestra que el runner, Descubiertos, `key-people.tsx`, el bloque, el nivel 4 de la guía y la columna de `/accounts` la llamen.
+   - **Arreglo en CA-10:**
+     - nombrar también el nivel 4 de la guía y la columna «Comité»;
+     - añadir pruebas por ruta (por ejemplo, `key-people.test.tsx` y un caso del runner);
+     - fijar que «el primero» es por `created_at`, como ya ordenan `runner.ts:388` y `discoveries.server.ts:38`.
+4. **Baja. Los canales de CA-21 no son los del sistema.** CA-21 (`SDD:163`) dice teléfono y otro. `TOUCH_CHANNELS` (`agent/tools/accounts.ts:22-30`) usa `call` y `meeting`, y no tiene «otro». **Arreglo:** mapear los canales en §10 o añadir `other` a la lista.
+5. **Baja. La huella de la caché no incluye el rol ni el cargo** (`SDD:214`), aunque CA-14 los usa (`SDD:151`). Si cambias el rol, el borrador cacheado queda viejo. **Arreglo:** incluirlos en la huella.
+6. **Baja. CA-31 junto a CA-20 es ambiguo.** No está claro si el borrador de un toque sobrescribe `message_draft` (`SDD:160`, `SDD:177`). **Arreglo:** decir si se guarda o no.
+7. **Baja. Trazabilidad de §12.**
+   - U-4 cierra CA-31 pero no lista `stakeholder-sequence.test.ts` (`SDD:243`).
+   - U-4 (`set_stakeholder_contact`) depende de `setStakeholderContact` de U-3, aunque §12 los pone en paralelo (`SDD:246`).
+8. **Baja. La mitad de CA-16 que mide la calidad no es una prueba automática.** El caso en `src/lib/gtm-lab/eval/` es una evaluación con IA, no un test que pueda fallar primero. **Arreglo:** decirlo en CA-16.
+9. **Baja, de proceso. El encabezado de Estado engaña al ledger.** El regex de `ledger.mjs:130` lee «Aprobado» en `SDD:4` y `PRD:4`, aunque la v2.1 está pendiente. Si se fusiona así, `promote` aceptaría un SDD sin aprobar. **Arreglo:** no fusionar hasta tu OK y entonces poner «Aprobado por Fede el <fecha> (v2.1)».
+
+**Viabilidad de la FK compuesta (punto 5): sí es viable.** `on delete set null (col)` existe desde PG 15. Por la documentación del repo, no por mí:
+- producción es PostgreSQL 17.11;
+- PGlite 0.5.x es PG 18 (`SDD-20261030-money-moment-notices.md:390,406`).
+
+No hay código que mueva un stakeholder de cuenta, así que el `ON UPDATE NO ACTION` por defecto no rompe nada. Hace falta declarar explícitamente:
+- `unique (id, account_id, org_id)` en `stakeholders` y `unique (id, org_id)` en `icp_profiles`;
+- `org_id not null` en las tablas que referencian (`account_touches` y `accounts`), porque con MATCH SIMPLE un `org_id` nulo se salta la comprobación.
+
+**Rutas de test (punto 4): todas en orden.**
+- Existen `src/lib/agent-tools.test.ts`, `src/lib/proactive.test.ts`, `src/test/pg-harness.ts`, `src/lib/migrations.pg.test.ts`, `src/lib/icp.test.ts` y `src/lib/gtm-lab/eval/`.
+- Todas las rutas nuevas encajan en `src/**/*.{test,spec}.{ts,tsx}`, también `*.pg.test.ts`.
+- Ya hay tests en subcarpetas de `src/components/` (`setup/`, `onboarding/`), así que `home/execution-card.test.tsx` sigue la convención.
+
+#### Integridad del §17
+
+Comparé `SDD:304-446` con el informe original de la revisión 2, recuperado del transcript del subagente (`subagents/agent-ae3bebd3939f37b4d.jsonl`). **El cuerpo es idéntico palabra por palabra**, aparte de los niveles de encabezado. Hay dos desviaciones:
+- Se omitieron las tres líneas finales «Archivos revisados», con las rutas locales. Es menor, pero técnicamente es una edición: conviene restaurarlas o anotarlo en el título.
+- La «Nota del autor sobre el hallazgo 3» (`SDD:447`) está dentro de la subsección del informe, sin encabezado propio, y se puede leer como texto del gate. **Arreglo:** moverla a un apartado «Respuesta del autor».
+
+Para fusionar falta además:
+- copiar este informe sin editar en «Revisión 3»;
+- tu OK a la v2.1;
+- tu orden de fusionar.
+
+La rama no tiene conflicto con `origin/main` (`b878e6f`), que solo toca otros dos SDD.
+
+#### Lo que esta revisión NO demuestra
+
+- No ejecuté tests, tipos, build ni `gate.mjs`. `node_modules` no está instalado en el worktree, así que no vi la versión real de PGlite ni probé la FK en él.
+- No miré producción: ni la versión de Postgres, ni los `org_id` nulos, ni la línea base de G-2.
+- No verifiqué el plan maestro, `reseal-journal.mjs` ni ramas fuera de origin.
+- No sé si el modelo respeta «(hipótesis)», ni si el harness de evaluación de GTM Lab admite un caso que no sea de GTM Lab.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
