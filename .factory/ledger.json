@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 65,
+  "seq": 66,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1699,6 +1699,27 @@
           "state": "LOGGED",
           "at": "2026-11-06T16:25:19.318Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0066",
+      "title": "Agente: la búsqueda en Conocimiento no filtra documentos personales; en Telegram devuelve los de otros miembros",
+      "kind": "bug",
+      "source": "Gate de docs/sdd/SDD-20261106-agent-rules-reader.md (§14), 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:20:03.271Z",
+          "by": "tracker",
           "note": ""
         }
       ]
