@@ -78,3 +78,20 @@ export function checkToggle(p: {
     ? { ok: false, error: `No puedes activar este play todavía: ${b.reason}. ${b.decide}.` }
     : { ok: true };
 }
+
+/** One play as the screen and the agent show it: catalogue data plus the state of the company. One function so they never answer differently. */
+export function describePlay(play: Play, row: PlayStateRow | null | undefined) {
+  return {
+    id: play.id,
+    title: play.title,
+    motion: play.motion,
+    channels: play.channels,
+    status: play.status,
+    blockedBy: play.blockedBy ?? null,
+    needs: play.needs,
+    detectors: play.detectors,
+    outputs: play.outputs,
+    sdd: play.sdd,
+    ...effectiveState(play, row),
+  };
+}
