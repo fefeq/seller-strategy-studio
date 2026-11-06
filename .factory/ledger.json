@@ -1282,7 +1282,7 @@
       "title": "GTM Lab en NOKKO, SDD 1: núcleo, metodología y evals de GTM Lab en src/lib/gtm-lab (sin base de datos)",
       "kind": "feature",
       "source": "PRD-20261101-gtm-lab-en-nokko §8 paso 1, rama docs/prd-gtm-lab-en-nokko (Fede, 2026-11-01)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nk-0048-author",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261101-gtm-lab-1-core.md",
@@ -1307,6 +1307,12 @@
           "at": "2026-11-02T15:11:04.054Z",
           "by": "Fede",
           "note": "owner=nk-0048-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-06T16:29:44.211Z",
+          "by": "Fede",
+          "note": "sha=7d8c53ae87ae2abe4032688b5f69dd6f8bb34a38"
         }
       ]
     },
