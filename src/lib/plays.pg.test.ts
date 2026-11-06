@@ -33,7 +33,7 @@ describe("CA-8 (RLS): only owner and sales_leader write play_states; members rea
   });
 
   it("lets every member of the company read them", async () => {
-    const seen = await as(db, U.aeA, () => rows("select play_id from play_states"));
+    const seen = (await as(db, U.aeA, () => rows("select play_id from play_states"))) as Record<string, any>[];
     expect(seen.map((r) => r.play_id)).toEqual(["crm-hygiene"]);
   });
 

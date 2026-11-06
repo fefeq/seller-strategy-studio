@@ -30,6 +30,7 @@ import {
 } from "./detectors/strategy-experiments";
 import { accountMissingKey } from "./detectors/account-missing-key";
 import { productQualified, usageDrop } from "./detectors/product-usage";
+import { detectorsOf } from "@/lib/plays/gating";
 
 /** Adding a rule = adding a file in ./detectors and listing it here. */
 export const DETECTORS: Detector[] = [
@@ -70,7 +71,11 @@ export const STRATEGY_DETECTORS: Detector[] = [
 ];
 
 export function detect(s: Snapshot): Suggestion[] {
-  const out = [...DETECTORS, ...STRATEGY_DETECTORS].flatMap((d) => d(s));
+  // Rules of a paused play (Plays GTM) are skipped; with no `disabledPlays` the result is the same as before. Filtering comes before the dedupe
+  // so a paused rule never hides another rule's suggestion that shares its key.
+  const off = s.disabledPlays?.length ? detectorsOf(s.disabledPlays) : null;
+  const all = [...DETECTORS, ...STRATEGY_DETECTORS].flatMap((d) => d(s));
+  const out = off ? all.filter((x) => !off.has(x.detector)) : all;
   const seen = new Set<string>();
   return out.filter((x) => (seen.has(x.dedupe_key) ? false : (seen.add(x.dedupe_key), true)));
 }
