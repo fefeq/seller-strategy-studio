@@ -1,10 +1,11 @@
 // Plays GTM: list_plays and get_play (read, any member) and set_play_enabled (write, owner and sales_leader). Part of the single registry in ../tools.ts.
 // They reuse the pure rules of src/lib/plays (the screen uses the same ones) and never run a play: they only read the catalogue and the company's play_states.
 import { z } from "zod";
-import { def, ok } from "../tool-kit";
+import { def } from "../tool-kit";
 import type { AgentTool, ToolCtx } from "../tool-kit";
-import { CATALOG, MOTIONS, STATUSES, type Play } from "@/lib/plays/catalog";
-import { checkToggle, describePlay } from "@/lib/plays/status";
+import { CATALOG, MOTIONS, STATUSES } from "@/lib/plays/catalog";
+import { describePlay } from "@/lib/plays/status";
+import { mustPlay, togglePlay } from "@/lib/plays/toggle";
 
 /** The company's play_states rows. A failed read (say, the table is not migrated yet) is treated as no rows: every play shows its default. */
 async function stateRows(c: ToolCtx) {
@@ -13,12 +14,6 @@ async function stateRows(c: ToolCtx) {
     .select("play_id,enabled")
     .eq("org_id", c.orgId);
   return new Map((error ? [] : (data ?? [])).map((r) => [r.play_id, r]));
-}
-
-function mustPlay(id: string): Play {
-  const p = CATALOG.find((x) => x.id === id);
-  if (!p) throw new Error(`No existe el play «${id}». Consulta los disponibles con list_plays.`);
-  return p;
 }
 
 export const PLAY_TOOLS: AgentTool[] = [
@@ -61,25 +56,6 @@ export const PLAY_TOOLS: AgentTool[] = [
     }),
     summarize: (a) =>
       `${a.enabled ? "Activar" : "Pausar"} el play «${CATALOG.find((p) => p.id === a.play_id)?.title ?? a.play_id}»`,
-    run: async (c, a) => {
-      const play = mustPlay(a.play_id);
-      // The same rule as the screen: role and block are checked here too, because privileged clients (Telegram, cron) skip RLS.
-      const check = checkToggle({ play, roles: c.roles, enable: a.enabled });
-      if (!check.ok) throw new Error(check.error);
-      ok(
-        await c.db
-          .from("play_states")
-          .upsert(
-            { org_id: c.orgId, play_id: play.id, enabled: a.enabled, updated_by: c.userId },
-            { onConflict: "org_id,play_id" },
-          ),
-      );
-      const closes = !a.enabled && play.detectors.length > 0;
-      return {
-        play_id: play.id,
-        enabled: a.enabled,
-        mensaje: `${play.title}: ${a.enabled ? "Activado" : "Pausado"}.${closes ? " Sus sugerencias pendientes se cerrarán en la siguiente sincronización y quedan en el historial." : ""}`,
-      };
-    },
+    run: (c, a) => togglePlay(c, a.play_id, a.enabled),
   }),
 ];

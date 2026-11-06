@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { accountsHeadline, homeHeadline, isOverdue, leadsHeadline, metricsHeadline, pipelineHeadline, suggestionsHeadline } from "./headlines";
+import { accountsHeadline, homeHeadline, isOverdue, leadsHeadline, metricsHeadline, pipelineHeadline, playsHeadline, suggestionsHeadline } from "./headlines";
 
 const money = (n: number) => `${n.toLocaleString("es-ES")} €`;
 
@@ -37,5 +37,29 @@ describe("headlines", () => {
     expect(isOverdue("2026-10-19", now)).toBe(true);
     expect(isOverdue("2026-10-20", now)).toBe(false);
     expect(isOverdue(null, now)).toBe(false);
+  });
+});
+
+describe("playsHeadline (CA-6, G-1)", () => {
+  it("counts plays whose data NOKKO already has and the plays activated, computed from the catalogue and the company's rows", () => {
+    // No rows: the six plays that already run as rules are on by default.
+    expect(playsHeadline([])).toBe("12 de 28 plays con datos de NOKKO; 6 activados");
+    // Pausing one of them and activating a play that has no rule yet.
+    expect(playsHeadline([{ play_id: "crm-hygiene", enabled: false }, { play_id: "closed-lost-revival", enabled: true }])).toBe("12 de 28 plays con datos de NOKKO; 6 activados");
+    expect(playsHeadline([{ play_id: "crm-hygiene", enabled: false }])).toBe("12 de 28 plays con datos de NOKKO; 5 activados");
+  });
+
+  it("never counts a blocked or planned play as activated, even if a row says so", () => {
+    expect(playsHeadline([{ play_id: "brand-mentions-monitoring", enabled: true }, { play_id: "pain-qualified-segments", enabled: true }])).toBe("12 de 28 plays con datos de NOKKO; 6 activados");
+  });
+
+  it("uses the singular for one activated play", () => {
+    const off = ["meeting-prep-and-follow-up", "meeting-form-orchestration", "signal-activation", "crm-hygiene", "plg-to-sales"].map((play_id) => ({ play_id, enabled: false }));
+    expect(playsHeadline(off)).toBe("12 de 28 plays con datos de NOKKO; 1 activado");
+  });
+
+  it("falls back to the section name while the company's state is not loaded, never to a made-up number", () => {
+    expect(playsHeadline(undefined)).toBe("Plays GTM");
+    expect(playsHeadline(null)).toBe("Plays GTM");
   });
 });

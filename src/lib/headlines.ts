@@ -1,4 +1,6 @@
 import { formatRatio } from "@/lib/coverage";
+import { CATALOG } from "@/lib/plays/catalog";
+import { effectiveState } from "@/lib/plays/status";
 // Screen headlines written as conclusions with the number inside (Nokko voice: «31 cuentas llevan
 // 21 días sin contacto»). Pure: each screen passes the data it already has. When there is no data
 // the headline falls back to the section name, so a number is never invented.
@@ -56,4 +58,13 @@ export function suggestionsHeadline(p: { pending: number; urgent: number }) {
 /** An open deal is overdue when its close date is before today. */
 export function isOverdue(closeDate: string | null | undefined, now = new Date()) {
   return !!closeDate && closeDate < now.toISOString().slice(0, 10);
+}
+
+/** Plays GTM: how many of the catalogue's plays NOKKO already has data for (not blocked) and how many the company has activated. Without the company's state, the section name. */
+export function playsHeadline(rows: { play_id: string; enabled: boolean }[] | null | undefined) {
+  if (!rows) return "Plays GTM";
+  const byId = new Map(rows.map((r) => [r.play_id, r]));
+  const withData = CATALOG.filter((p) => p.status !== "bloqueado").length;
+  const on = CATALOG.filter((p) => effectiveState(p, byId.get(p.id)).enabled).length;
+  return `${withData} de ${CATALOG.length} plays con datos de NOKKO; ${on} ${on === 1 ? "activado" : "activados"}`;
 }
