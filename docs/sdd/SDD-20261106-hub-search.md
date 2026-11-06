@@ -228,5 +228,77 @@ Resueltos:
 - `?q=` junto a `?seccion=drive` (SDD-C).
 - Quitar diacríticos también convierte «ñ» en «n»: «ano» encuentra «año» (comprobado). Declararlo como comportamiento aceptado o excluir la ñ del plegado, de forma consistente en `foldText`.
 
+
+Informe de la segunda pasada (sobre v2), copiado sin editar:
+
+- **Veredicto del gate (segunda pasada):** Objeciones. Las 9 objeciones de la primera pasada están resueltas en lo esencial. La v2 introduce un riesgo real de rotura (objeción nueva 1) y deja un choque de archivos de test con C1 (objeción nueva 2).
+
+- **Objeciones de la primera pasada:**
+  1. **Resuelta.** El test pasa a `src/routes/_authenticated/-hub.test.tsx` y las reglas puras a `src/lib/hub-search.ts` (SDD:101, :100). No dice cómo se renderiza `Hub`, que sigue sin exportarse (`hub.tsx:50`). Ver objeción nueva 2.
+  2. **Resuelta.** CA-5 dice «solo cuando la consulta de documentos ha respondido… mientras carga, nunca» (SDD:59).
+  3. **Resuelta.** CA-9 lee con `fetchAll` y avisa del truncado (SDD:69, :108), y §5:42 lo matiza. La forma de los datos en caché queda sin resolver: ver objeción nueva 1.
+  4. **Resuelta.** CA-3 define 120 puntos de código, que «…» no cuenta, los casos Hangul, texto ya descompuesto, emoji, «C++» y «(beta)», y el mapa de posiciones con la sigma declarada (SDD:57, :106).
+  5. **Resuelta.** `foldText` devuelve `""` para null, está en `text-search.ts` y `match.ts` la usa en `:67` y `:69` con casos nuevos (SDD:66, :104). Las otras copias quedan declaradas fuera (SDD:43). Cuadra: hay 15 archivos con `normalize("NFD")`.
+  6. **Parcial.** `search_knowledge` aparece en §5:44 y §15.5, pero no en §3 como pedía la corrección. Además §5 ya lo da por fuera mientras §15.5 sigue preguntando.
+  7. **Resuelta.** `navigate({ search: (prev) => ({ ...prev, q: q || undefined }), replace: true })`, `validateSearch` descarta `q` vacío, y CA-6 y CA-7 conservan `doc` (SDD:107, :62-63).
+  8. **Resuelta.** `searchDocs` devuelve el id de la sección y la etiqueta se comprueba en `-hub.test.tsx` (SDD:57, :105).
+  9. **Resuelta.** §8:79-81 cubre «+ Nuevo», «Importar de Drive», Battlecard, `?q=` con Drive y la «ñ». La «ñ» la decidió Fede el 2026-11-06 (§15.4).
+
+- **CA sin prueba posible o sin G-n:**
+  - **CA-4:** solo se prueba la función pura (`hub-search.test.ts`). Nada comprueba que la pantalla pinte el recuento por sección, y C1 cambia esos mismos contadores (C1:40, «sin número hasta responder»).
+  - **CA-3 (emoji en el borde):** «sin partir pares sustitutos» es redundante si se cuenta por puntos de código. Un emoji ZWJ o una letra con marca combinante pueden partirse igualmente, y el test no dice qué se espera.
+  - Sin PRD no se exige G-n.
+
+- **[Por verificar] que sigue sin comprobarse:**
+  - `max_rows` real de PostgREST en producción. Con CA-9 ya no bloquea, pero §3:24 sigue redactado como si la lista y la búsqueda «serían incompletas sin aviso», lo que contradice CA-9 y §16:123.
+  - Número de documentos por empresa y tamaño de los cuerpos (rendimiento): sin dato.
+  - Cómo renderizar `Hub` en el test sin exportarlo.
+
+- **Contradicciones con el código o con decisiones previas:**
+  - `fetchAll` devuelve `{ rows, truncated }` (`src/lib/fetch-all.ts:11`). Sin embargo, `hub.tsx:69` lee la caché `["docs"]` como `Doc[]`, y `:65` y `:74` usan `docs` como array. Ver objeción nueva 1.
+  - El test de render de `/hub` está en dos archivos distintos: B usa `src/routes/_authenticated/-hub.test.tsx` (SDD:101) y C1 usa `src/components/hub-screen.test.tsx` (C1:45, :49, :52, :82).
+  - SDD-D (`SDD-20261106-agent-rules-reader.md:10`, U-4 en `:101`) también toca `hub.tsx`. B no lo cita en «Coordinar con», y el contrato y el orden de integración A → B → C1 → C2 (SDD:109) no lo incluyen.
+  - NK-0066 (registrado en `.factory/ledger.json:1707`) toca la misma línea `core-read.ts:236` que §15.5 de B, y B no lo menciona.
+  - No hay contradicciones con SDD aprobados. CA-11 a CA-14 de `SDD-20261028-hooks-lint-hygiene` sobre `?doc=` se mantienen con la corrección de la objeción 7.
+
+- **Lo que esta revisión NO demuestra:**
+  - No hay código, así que no se ejecutó `scripts/factory/gate.mjs` ni ningún test. Tampoco hay `node_modules`.
+  - No vuelve a comprobar el comportamiento del generador de rutas: se apoya en la primera pasada.
+  - No prueba el mapa de posiciones del fragmento más allá de lo que hizo la primera pasada.
+  - No demuestra rendimiento ni `max_rows` real.
+  - Segunda máquina y soak: NOT RUN.
+  - No sé a qué preguntas corresponde exactamente la respuesta de Fede «1 rotular, 2 OK, 3 sí, 4 se perdió, 5 OK». En el SDD de B solo consta la decisión de §15.4. Las preguntas §15.1, §15.2, §15.3 y §15.5 siguen abiertas en el documento.
+  - Las citas comprobadas sobre `main` @ `f76f639` cuadran todas (sin cambios en `src`): `hub.tsx:23`, `:28-36`, `:39`, `:58-62`, `:60`, `:132`, `:138`; `match.ts:67`, `:69`; `memory.tsx:37-40`; `core-read.ts:236`; `scoring.ts:50`, `discoveries.ts:15`, `stages.ts:32`, `provenance.ts:229`; `src/lib/AGENTS.md:49`; `strategy-screens.test.tsx:12-41`; y `vitest.config.ts`, que incluye `src/**/*.test.tsx`.
+
+**Objeciones nuevas**
+
+1. **CA-9 puede romper «abrir tras importar o generar».**
+   - Evidencia: `fetch-all.ts:11` devuelve `{ rows, truncated }`. En cambio, `hub.tsx:69` hace `(qc.getQueryData<Doc[]>(["docs"]) ?? []).find(...)`. El genérico no avisa en TypeScript, y si la caché pasa a guardar el objeto, `.find` falla en ejecución tras «Importar de Drive» o «Battlecard». `hub.tsx:65` (`useOpenDocFromUrl(docParam, docs, …)`) y `:74` (`missingPlays(docs)`) también esperan un array.
+   - Corrección: fijar en §13 la forma de la caché. Por ejemplo, que el `queryFn` devuelva `{ rows, truncated }` y que todos los lectores (`:58`, `:65`, `:69`, `:74`) usen `.rows`. Y añadir a `-hub.test.tsx` un caso de `openDoc` tras invalidar la caché.
+
+2. **Dos tests de render para la misma pantalla, y sin forma de renderizarla.**
+   - Evidencia: B usa `-hub.test.tsx` (SDD:101) y C1 usa `src/components/hub-screen.test.tsx` (C1:45, :82). `Hub` no se exporta (`hub.tsx:50`). `AGENTS.md` pide que las pantallas grandes saquen sus paneles a `src/components/<screen>/`.
+   - Corrección: acordar en B y C1 un único archivo y un único método. O bien `Route.options.component` con el router simulado, o bien sacar la lista y la búsqueda a `src/components/hub/` y probar ese componente. Actualizar §12 de los dos SDD.
+
+3. **CA-4 sin prueba de pantalla.**
+   - Evidencia: SDD:58 solo cita `hub-search.test.ts`, y C1:40 cambia los mismos contadores (`hub.tsx:112`).
+   - Corrección: añadir a `-hub.test.tsx` (o al archivo único de la objeción 2) que, con búsqueda activa, cada sección muestra su número de coincidencias. Y declarar que C1 hereda ese contador junto con su estado de carga.
+
+4. **Falta coordinar con SDD-D y NK-0066.**
+   - Evidencia: SDD:5 y el contrato en SDD:109 no incluyen D, que toca `hub.tsx` (agent-rules-reader:10, :101). NK-0066 (`ledger.json:1707`) corregirá `core-read.ts:236`, justo lo que plantea §15.5.
+   - Corrección: añadir D y NK-0066 a «Coordinar con», situar D en el orden de integración, y que §15.5 diga que cualquier `foldText` en `search_knowledge` va con NK-0066 o después.
+
+5. **§15.5 contradice §5.**
+   - Evidencia: §5:44 da por fuera `search_knowledge`, mientras §15:120 todavía pregunta si se aplica `foldText` en este SDD.
+   - Corrección: pedir a Fede que decida y anotarlo como en §15.4. Si lo deja fuera, citarlo también en §3 (pendiente de la objeción 6 de la primera pasada).
+
+6. **Fragmento: puntos de código frente a grafemas.**
+   - Evidencia: CA-3 (SDD:57) solo protege pares sustitutos. Un emoji ZWJ o «e» + marca combinante pueden partirse en el borde.
+   - Corrección: o se recorta por grafemas con `Intl.Segmenter`, o se acepta y declara en §8 con el resultado esperado del caso «emoji en el borde».
+
+7. **Texto desfasado en §3.**
+   - Evidencia: SDD:24 mantiene «serían incompletas sin aviso» cuando CA-9 ya lo resuelve.
+   - Corrección: reescribirlo en la línea de §16:123.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

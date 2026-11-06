@@ -335,5 +335,118 @@ Informe de la primera pasada (sobre v1, commit `862d9c3`), copiado sin editar:
     - Tras CA-3, la pista del KPI «Win rate global» (`metrics.tsx:280`, «deals creados este trimestre») sigue hablando de deals creados mientras la cifra pasa a ser de cerrados.
     - **Corrección:** fijar M en CA-5 y el nuevo texto de la pista en CA-3.
 
+
+Informe de la segunda pasada (sobre v2), copiado sin editar:
+
+- Veredicto del gate (segunda pasada): **Objeciones**
+
+- Objeciones de la primera pasada:
+  1. **Resuelta.** El enfoque pasa a «rotular sin recalcular» (§5 «No incluye», §13 «Por qué no la opción estricta»). El comentario de `quarter-kpis.ts:2` sigue siendo cierto (§15.5).
+  2. **Parcial.** BudgetPanel ya está en A3, A4 y A5 y en CA-6, CA-7 y CA-8. Pero ninguna U ni ningún CA nombra una prueba de `budget-panel.tsx`, y el §13 solo le da `anyAcvEstimated` (un booleano), que no basta para el rótulo exacto que pide CA-6 (nueva 3).
+  3. **Resuelta.** A3 cita `cac.ts:29`, `:31` y `cac-panel.tsx:200-201`. CA-8 dice «el total de empresa no cambia».
+  4. **Parcial.** Se añaden A6 y A7, y A8 y A9 quedan fuera de alcance. Línea base: 7. Pero la parte (e), el margen por segmento con asignación por importe (`deal-lines.ts:106`, que se ve en `segment-coverage.tsx:128` como «margen de los deals ganados»), está en la tabla y ningún CA la rotula. La cita de A6 (`pipeline-board-panel.tsx:47-48`) se queda corta: la cadena está en `:47-49`.
+  5. **Parcial.** El módulo puro `src/lib/metrics-quarter.ts` ya tiene nombre. Pero la parte de pantalla de CA-3 vive inline en la ruta (`metrics.tsx:277-281`, `:320-351`), sin componente exportado que probar (nueva 4).
+  6. **Resuelta.** CA-2 y §3 distinguen Cohortes (todo el histórico) de Tendencias.
+  7. **Resuelta.** Los destinos de CA-11 son correctos y la pista «CAC real» de `quarter-kpis-panel.tsx:76` está en §3.
+  8. **Parcial.** CA-7 cubre el texto «Sin dato», pero no el tono verde de un payback negativo, el KPI ponderado contaminado ni el panel CAC real (nueva 2).
+  9. **Resuelta en el fondo:** se añaden `assignSegment`, `matchSegment`, `segmentBudget` y `funnelDiagnosis`, la mutación con evidencia, y A1 sale. Pero CA-12 nombra `getMetrics` de MCP, que no existe (nueva 1).
+  10. **Resuelta.** Se usa «Sin origen» y la forma «Estimado · motivo». Queda el choque interno CA-9/CA-10 (nueva 6).
+  11. **Resuelta.** «Coordinar con» ya incluye NK-0029 CA-18 y 5c CA-1. §15 cubre `advisor.ts:81` y el paso a Sprint 2. La descripción de las ventanas de win rate en §14 es inexacta (nueva 7).
+  12. **Resuelta con matiz.** M está definido y la pista del KPI es «{n} cerrados en {T}». Pero «todo el histórico para el ACV» no coincide con el código: el ACV usa solo ganados con importe, o abiertos con importe (`segment-coverage.ts:11-14`), no todos los deals del segmento.
+
+- CA sin prueba posible o sin G-n (sin PRD no exijo G-n):
+  - **CA-3 (textos):** `metrics-screen.test.tsx` no tiene qué renderizar. El KPI y los paneles de win rate están inline en el componente `Metrics` de la ruta, que no se exporta (`metrics.tsx:83`), y U-2 no extrae ningún componente.
+  - **CA-6, CA-7 y CA-8 (Presupuesto por segmento y KPI trimestral):** no hay `budget-panel.test.tsx` ni `quarter-kpis-panel.test.tsx` en U-4.
+  - **CA-12:** «`getMetrics` de MCP» no existe (grep en `src`: 0 resultados).
+  - **CA-10 frente a CA-9:** los rótulos de origen de margen («real», «de deals con líneas», «de plan») no tienen la forma «Estimado · motivo» ni «Sin dato · motivo», así que CA-10 los haría fallar.
+  - **§8 sin CA:** «Sin deals en {T}», «Sin dato · falta rango de ACV» y «repartido por clientes ganados».
+
+- [Por verificar] que sigue sin comprobarse:
+  - Deals cerrados sin `closed_at`, sin `source` y sin `segment_id`: hace falta producción; no la consulté.
+  - Paneles `LeadFunnelPanel`, `SelfServiceFunnel`, `StripeMetricsPanel` y `FinancePanel`: solo los recorrí con un grep superficial de valores por defecto; no salió ningún supuesto numérico evidente, pero no los leí enteros.
+  - `won-deals-panel.tsx` ya está comprobado: ya rotula la asignación por importe como «Automático (…)» (`won-deals-panel.tsx:135`, con `segmentSource` en `won-deals.ts:23,34`).
+  - SDD-A no tiene ticket NK en `.factory/ledger.json`; no sé si hace falta.
+
+- Contradicciones con el código o con decisiones previas:
+  - **Campos que ya existen.** `actuals` ya devuelve `acvSource: "ganados" | "abiertos" | null` (`pipeline-real.ts:44`), así que el `acvBasis` del §13 sobra. `segmentAcv` ya devuelve `source` (`segment-coverage.ts:12-18`) y `segmentCoverage` ya devuelve `acvSource` (`:59`); el campo nuevo solo hace falta para separar `"rango"`.
+  - **Valores de `basis` incoherentes.** CA-6 lista 4 valores y el §13 lista 5 (incluye `"sin_rango"`).
+  - **El §5 dice «ningún cambio visible en MCP», pero puede haberlo.** `get_segment_coverage` pasa objetos enteros: `won`, `opps`, `winRate`, `{...r.payback}`, y `plan`/`actual` de `budget_quarter` y `budget_year` (`mcp/tools/metrics.ts:61-67`). Si un campo nuevo cae dentro de esos objetos, el asistente lo verá. CA-12 lo esconde porque compara después de quitar los campos nuevos.
+  - **El §14 dice que «el asistente y MCP siguen con el histórico», y no es así del todo.** El asesor sí usa el histórico (`advisor.ts:80-81`). Pero `get_real_metrics` usa 365 días (`pipeline-real.ts:30`) y `get_segment_coverage` ya usa el trimestre (`segment-coverage.ts:44`). Hoy conviven tres ventanas, no dos, y CA-18 de NK-0029 debe saberlo.
+  - **Decisiones de Fede del 2026-11-06.** El SDD solo anota la 1 («rotular»), y el §15.1 sigue terminando con una pregunta. El relevo de Fede dice «2 OK, 3 sí, 5 OK»: Cohortes rotulada «Todo el histórico», win rate por trimestre y el comentario de `quarter-kpis.ts:2` se mantiene. No está escrito en el SDD. La respuesta a la 4 («se perdió») es ambigua: no sé si abre ticket para `advisor.ts:81`, A8 y A9. Hay que preguntárselo a Fede.
+
+- Lo que esta revisión NO demuestra:
+  - **Pruebas:** no ejecuté ninguna (no hay `node_modules`).
+  - **Gate:** no ejecuté `scripts/factory/gate.mjs`; el cambio es solo de documentación.
+  - **Datos reales:** no consulté producción.
+  - **Paneles:** los cuatro de arriba no los leí enteros.
+  - **Consumidores:** los busqué con grep por nombre; no cubre importaciones dinámicas.
+  - **SDD-C1 y SDD-C2:** solo comprobé el contrato del sprint (idéntico en A, B, C1 y C2) y los puntos que tocan a A. En C2, «las palabras las fija SDD-A» (`ux-metrics-data-state.md:28`) encaja con el CA-10 de A.
+  - **Segunda máquina y soak:** NOT RUN.
+
+**Objeciones nuevas**
+
+1. **CA-12 nombra una función que no existe, y la congelación tapa una fuga a MCP.**
+   - **Evidencia:** `getMetrics` aparece solo en el SDD (`:96`, `:122`). Las herramientas reales son `realMetrics` (`get_real_metrics`) y `segmentCoverageTool` (`get_segment_coverage`), en `src/lib/mcp/tools/metrics.ts:13` y `:34`. La segunda pasa objetos enteros (`:61-67`).
+   - **Corrección:**
+     - En CA-12 y U-0, nombrar los dos handlers.
+     - En el §13, fijar que los campos nuevos van en el nivel superior de la fila, nunca dentro de `payback`, `won`, `opps`, `winRate`, `plan` o `actual`.
+     - En CA-12, comparar la salida de MCP sin quitar nada: tiene que ser idéntica.
+
+2. **Margen 0 % o negativo: resolverlo solo en la presentación no basta.**
+   - **Evidencia:**
+     - Con margen negativo, `payback.ok` sale `true` y la cifra se pinta en verde (`segment-coverage.ts:67`, `segment-coverage.tsx:121`). Lo mismo pasa con `realOk` en BudgetPanel (`segment-budget.ts:157`, `budget-panel.tsx:88`).
+     - `weightedPayback` mezcla un payback negativo o `Infinity` en la media del KPI (`quarter-kpis.ts:25-28,49`): el resultado puede ser finito y positivo, así que `Number.isFinite` y el signo no lo detectan.
+     - El panel CAC real muestra «Payback real» con `toFixed` (`cac-panel.tsx:205-209`) y no está entre los sitios de A5.
+   - **Corrección:**
+     - Añadir `cac-panel.tsx:207` a A5 y a CA-7.
+     - Exigir tono neutro cuando el margen es ≤ 0.
+     - Que `quarterKpis` (o las filas de `periodBudget`) devuelvan un campo aditivo `marginNonPositive`, para que el KPI diga «Sin dato».
+     - Probarlo en `cac-panel.test.tsx` y en `quarter-kpis-panel.test.tsx`.
+
+3. **CA-6 en Presupuesto por segmento no se puede construir con el §13.**
+   - **Evidencia:** `periodBudget` solo extrae `{ acv }` (`segment-budget.ts:128`), y el §13 solo da un `anyAcvEstimated` booleano «agregado». CA-6 pide distinguir «punto medio del rango» de «mínimo del rango × 1,5» en cada fila.
+   - **Corrección:**
+     - En el §13, añadir `acvBasis` a cada fila de `periodBudget`, en el nivel superior.
+     - Añadir `src/components/budget-panel.test.tsx` a U-4 para CA-6, CA-7 y CA-8.
+
+4. **Los textos de CA-3 no tienen componente que probar.**
+   - **Evidencia:** el KPI global (`metrics.tsx:277-281`) y los paneles por origen y por rep (`:320-351`) están dentro de `function Metrics` (`:83`), que no se exporta. `AGENTS.md` pide un módulo por panel bajo `src/components/<pantalla>/`.
+   - **Corrección:**
+     - U-2 extrae `src/components/metrics/win-rate-panels.tsx`, con el KPI y los dos paneles.
+     - CA-3 nombra `src/components/metrics/win-rate-panels.test.tsx`.
+
+5. **Al filtrar por trimestre, los vacíos de Embudo y Perdidos dirían algo falso, y el §8 no tiene CA.**
+   - **Evidencia:** sin deals en T, Embudo diría «Aún no hay deals. El embudo aparece al crear el primero.» (`revops-panels.tsx:26`) y Perdidos «Ningún deal perdido todavía.» (`:53`). Además, «Win rate por fuente» (`metrics.tsx:320`) choca con «Sin origen» y con el §9.
+   - **Corrección:**
+     - En CA-1, exigir «Sin deals creados en {T}» y «Ningún deal perdido en {T}», con su prueba en `revops-panels.test.tsx`.
+     - Renombrar el panel a «Win rate por origen».
+     - Añadir al contrato del sprint que estos vacíos de `/metrics` son de A, no de C1.
+
+6. **CA-9 incumple CA-10.**
+   - **Evidencia:** CA-9 rotula el margen como «real», «de deals con líneas» o «de plan». CA-10 exige que toda marca de H-2 tenga la forma «Estimado · motivo» o «Sin dato · motivo», y C2 añade «Real» como tercera palabra (`ux-metrics-data-state.md:40`).
+   - **Corrección:** limitar CA-10 a las marcas «Estimado» y «Sin dato», o escribir los orígenes como «Real · margen de los libros», «Real · margen de deals con líneas» y «Estimado · margen de plan», según las palabras de C2.
+
+7. **Hay campos «nuevos» que ya existen, y el §14 describe mal las ventanas de win rate.**
+   - **Evidencia:** `pipeline-real.ts:44` (`acvSource`), `segment-coverage.ts:18,59` (`source` y `acvSource`). Las ventanas de win rate: `advisor.ts:80` (histórico), `pipeline-real.ts:30` (365 días), `segment-coverage.ts:44,65` (trimestre).
+   - **Corrección:**
+     - Quitar `acvBasis` de `actuals` y rotular A7 con el `acvSource` que ya existe.
+     - Declarar que `basis` solo separa `"rango"`.
+     - Unificar los valores entre CA-6 y el §13, incluido o no `"sin_rango"`.
+     - En el §14 y en la coordinación con NK-0029 CA-18, listar las tres ventanas.
+
+8. **A2 no tiene CA en todas las cifras que toca.**
+   - **Evidencia:** la fila de Cobertura usa la asignación por importe para pipeline, ganados, oportunidades y win rate (`segment-coverage.ts:39-47`), no solo para el ACV. El margen «de los deals ganados» (`deal-lines.ts:106` → `segment-coverage.tsx:128`) no se rotula.
+   - **Corrección:**
+     - CA-5 fija en qué cifra de la tarjeta va la marca. Si va una sola por tarjeta, M son todos los deals asignados al segmento.
+     - Definir «asignado por importe» como en `won-deals.ts:23`: `segment_id` null, o que apunta a un segmento que no existe.
+     - Cubrir el margen de deals con líneas o declararlo fuera de alcance.
+
+9. **El SDD no recoge las decisiones de Fede.**
+   - **Evidencia:** §15.1 sigue con «¿Te vale…?», y las preguntas 2, 3 y 5 siguen abiertas, aunque el relevo de Fede dice «2 OK, 3 sí, 5 OK».
+   - **Corrección:**
+     - Anotar como decididas, el 2026-11-06, la 2 (Cohortes rotulada «Todo el histórico»), la 3 (win rate por trimestre) y la 5 (el comentario se mantiene).
+     - Quitar la pregunta que queda en la 1.
+     - Pedirle a Fede que aclare «4 se perdió»: ¿ticket aparte para `advisor.ts:81`, A8 y A9, o no?
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

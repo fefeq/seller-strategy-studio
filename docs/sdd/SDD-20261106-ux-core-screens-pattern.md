@@ -287,5 +287,91 @@ Veredicto del gate: **Objeciones**
       - **C2:** `HowCalculated` + `DataState` en `/metrics` (U-4, U-5). Depende de A y de NK-0051 (`Kpi`/`Panel`, 12 px).
     - Partir por pantalla, como sugiere §14, deja el conflicto con A sin resolver.
 
+
+Informe de la segunda pasada (sobre v2), copiado sin editar:
+
+- Veredicto del gate (segunda pasada): **Objeciones**
+
+- Objeciones de la primera pasada:
+  1. Resuelta. El caso Finanzas sale de C1, porque `/metrics` queda fuera del alcance (§5, l.36; nota de versión, l.107).
+  2. Resuelta. Las consultas del alcance lanzan su error (U-1, l.82) y §10 ya dice que cambia el tratamiento del error (l.72). Una consulta se quedó fuera: ver la objeción nueva 3.
+  3. Parcial. Ya hay tests de render por pantalla (l.45), contadores de `/hub` (l.23), vacío de lista en clínicas (l.24) y `:89` fuera de la lista. Pero CA-1 prohíbe «contadores a 0» en todas las pestañas de Theory U, y E-1 y §6 solo citan los de `/hub`.
+  4. Parcial. Ya fija ids y precedencia (l.49) y hay test de URL para `/hub`. Faltan tres cosas: un test de URL para `/theory-u`; la regla «`doc` gana» rompe H-2; y los ids dependen de §15.1, que sigue abierta.
+  5. Resuelta para C1. E-4 es una lista cerrada (l.27) con test de render (l.53). `/metrics` queda en SDD-A CA-11 (`metrics-honest-data.md:93`).
+  6. Resuelta. La ruta del Planificador está en l.27 y l.66, y el botón «+ Nueva clínica de casos» en l.64.
+  7. No aplica a C1 (CA-6 pasa a C2). No la revisé.
+  8. No aplica a C1. La forma única está fijada en SDD-A CA-10 (`metrics-honest-data.md:90`, «la que fija SDD-C2»).
+  9. Parcial. El contrato es idéntico en A:134, B:109, C1:10 y C2:9, pero B:109 añade «C1 hereda el vacío de búsqueda de CA-5 en su `ScreenState`» y C1 no lo recoge.
+  10. Resuelta. La cabecera cita 4 SDD y el SDD de Theory U proactivo, con el orden fijado (l.5).
+  11. Resuelta. El SDD está partido: C1 solo depende de B (l.5).
+
+- CA sin prueba posible o sin G-n (sin PRD no exijo G-n):
+  - **CA-3 en `/theory-u`:** no tiene test que compruebe que cambiar de pestaña escribe `?seccion=` con `replace`. Solo se cita `hub-screen.test.tsx`, y U-2 solo `screen-sections.test.ts`.
+  - **CA-4 en `/hub`:** dice «lista cerrada en §9», pero §9 no da texto para el vacío de `hub.tsx:132` ni para el vacío de búsqueda que B le deja a C1. No se puede escribir la aserción. Además, U-3 no lista `hub-screen.test.tsx` aunque CA-4 lo cita.
+
+- [Por verificar] que sigue sin comprobarse:
+  - Si `driveAccountsOverview` (`src/lib/drive.functions`) lanza o devuelve errores parciales por cuenta (`drive-overview.tsx:85`). No lo leí.
+  - Lo que §16 deja pendiente se puede cerrar ya. A nivel de panel, `DriveAccountsPanel` no se traga el error: tiene carga y error propios (`drive-overview.tsx:25`, `:41-42`, con `errorText`).
+
+- Contradicciones con el código o con decisiones previas:
+  - CA-3 («conserva `doc`» y «`doc` gana») choca con H-2. Ver la objeción nueva 1.
+  - `hub.tsx:60` queda cubierto dos veces. B, que se integra antes, pasa la lectura a `fetchAll` (B CA-9, B:108), que ya lanza (`fetch-all.ts:15`). Cuando llegue C1, E-2 en `/hub` ya está resuelto, y los números de línea de `hub.tsx` se habrán movido.
+  - Dos tests de render para la misma pantalla: B usa `src/routes/_authenticated/-hub.test.tsx` (B:59, B:101) y C1 `src/components/hub-screen.test.tsx`.
+  - B:109 dice que C1 hereda el vacío de búsqueda de B CA-5; C1 no lo menciona.
+  - CA-3 fija los ids en inglés, pero §15.1 sigue abierta. Las decisiones de Fede del 2026-11-06 no la cubren: rotular (A), tope y enmiendas (D), bug de Telegram (D) y rama perdida (C1 §15.4).
+  - §14 (l.95) dice «sus 8 commits hay que rehacerlos desde los SDD de paleta y legibilidad». El ledger habla de 4 SDD (`.factory/ledger.json:1381`), y la cabecera también los cita (l.5): faltan `move-without-drag` y `deal-won-duplicate-approvals`.
+
+- Lo que esta revisión NO demuestra:
+  - No ejecuté `scripts/factory/gate.mjs`, ni tests, ni build: es un cambio solo de documentación (código = `main` @ f76f639) y el encargo prohíbe escribir.
+  - No miré nada en un navegador: los vacíos falsos y los contadores a 0 los deduzco leyendo el código.
+  - No leí `drive.functions`.
+  - No revisé C2 ni A a fondo; solo comprobé el contrato y los puntos que se les trasladaron.
+  - No comprobé el comportamiento de `Tabs` controlado de Radix con la URL.
+  - No hay segunda máquina ni prueba larga (soak).
+
+**Objeciones nuevas**
+
+1. **La precedencia de `?doc=` rompe H-2.**
+   - Evidencia: CA-3 (l.49) conserva `doc` al cambiar de sección y además hace que `doc` gane. `useOpenDocFromUrl` abre una vez por valor de `doc` (`use-open-doc-from-url.ts:4`, `:20`) y llama a `setSection` (`hub.tsx:65`).
+   - Caso: abres `/hub?doc=X` y cambias a otra sección. La URL queda `?doc=X&seccion=Y`. Al recargar, volver atrás o compartir, `doc` reescribe `seccion` y se pierde la pestaña.
+   - Corrección: un cambio de sección hecho por la persona borra `doc` de la URL. `doc` solo gana al abrir la página. Probarlo en el test de ruta de `/hub`.
+
+2. **Los contadores de Theory U están fuera de la lista, pero CA-1 los exige.**
+   - Evidencia, contadores que hoy marcan 0 mientras carga:
+     - `sensing.tsx:77` («{n} notas»)
+     - `listening.tsx:59` y `:65-67` (distribución y «Conversaciones valoradas» a 0)
+     - `prototypes.tsx:89` («(0)» por columna)
+   - Corrección: añadirlos a E-1, a §6 y al recuento de §4, o acotar CA-1 a los vacíos de E-1 y a los contadores de `/hub`.
+
+3. **Una consulta que se traga el error queda fuera de E-2.**
+   - Evidencia: `journey.tsx:37-42` (`u_counts`, `n.count ?? 0`). Si falla, muestra 0 notas y 0 experimentos como si fueran datos.
+   - Corrección: incluirla en E-2 y U-1, o excluirla de forma explícita en §5.
+
+4. **§9 no cierra la lista de vacíos de `/hub`.**
+   - Evidencia: E-1 incluye `hub.tsx:132` y CA-4 cita `hub-screen.test.tsx`, pero §9 no da su texto. Tampoco recoge el vacío de búsqueda que B le deja a C1 (B:109, B CA-5).
+   - Corrección: añadir a §9:
+     - `hub.tsx:132`: se mantiene «Sin documentos todavía. Crea el primero con «+ Nuevo».», solo tras responder.
+     - Vacío de búsqueda: el texto de B CA-5, sin cambios, pintado con `ScreenState`.
+     - Añadir `hub-screen.test.tsx` a U-3.
+
+5. **Hay solape con B en la lectura y en los tests de `/hub`.**
+   - Evidencia: B CA-9 y B:108 ya pasan `hub.tsx:60` a `fetchAll`, que lanza (`fetch-all.ts:15`). B:101 crea `-hub.test.tsx`.
+   - Corrección:
+     - E-2 y U-1: «en `/hub` la consulta ya lanza tras SDD-B; C1 solo pinta el error».
+     - Usar `src/routes/_authenticated/-hub.test.tsx` en lugar de `src/components/hub-screen.test.tsx` (CA-1, CA-2, CA-3, CA-4 y U-1).
+     - Avisar de que las líneas de `hub.tsx` son de `f76f639` y se mueven con B.
+
+6. **CA-3 no tiene prueba en `/theory-u`.**
+   - Evidencia: l.49 y U-2 (l.83) solo citan `screen-sections.test.ts` y `hub-screen.test.tsx`. Hoy `theory-u.tsx` no tiene `validateSearch` y usa `Tabs defaultValue` (`theory-u.tsx:13-21`).
+   - Corrección: añadir a CA-3 y U-2 un test de ruta de `/theory-u` (apertura con `?seccion=`, id desconocido, cambio con `replace`).
+
+7. **Los ids de CA-3 dependen de una pregunta abierta.**
+   - Evidencia: CA-3 fija `objections`, etc. (l.49), y §15.1 (l.98) sigue sin decidir.
+   - Corrección: que Fede responda §15.1 antes del brief, o marcar los ids de CA-3 como pendientes de esa decisión.
+
+8. **§14 se queda corto con lo que hay que rehacer.**
+   - Evidencia: l.95 frente a l.5 y `.factory/ledger.json:1381` (4 SDD).
+   - Corrección: «sus 8 commits hay que rehacerlos desde los 4 SDD de NK-0051 (en «Borrador»)».
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
