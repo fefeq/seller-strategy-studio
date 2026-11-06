@@ -526,6 +526,13 @@
       "when": 1793749600002,
       "tag": "0076_platform_admins_skip_creator",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1793836000002,
+      "tag": "0077_integrations_owner_write",
+      "breakpoints": true
     }
   ]
 }
