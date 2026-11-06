@@ -66,7 +66,7 @@ Sin cambios de datos ni consultas.
 - `DataState` junto a `Empty` en `src/components/page.tsx`. Si SDD-A se construye antes, A entrega sus textos con un envoltorio mínimo y U-2 los pasa al componente sin cambiar las palabras, de modo que los tests de A no cambian.
 
 ## 14. Riesgos y dependencias
-- Depende de SDD-A y de `Kpi`/`Panel` compartidos (NK-0051, sin código en el remoto). Si estos se retrasan, C2 espera.
+- Depende de SDD-A y de `Kpi`/`Panel` compartidos de `SDD-20261031-ux-legibility-contrast`, cuyo código se perdió con la rama local de NK-0051 (Fede, 2026-11-06) y está en «Borrador»: C2 no puede construirse hasta que ese SDD se apruebe y se entregue.
 
 ## 15. Preguntas para Fede y para la revisión técnica
 1. Umbral para plegar: 160 caracteres visibles. ¿Te vale?

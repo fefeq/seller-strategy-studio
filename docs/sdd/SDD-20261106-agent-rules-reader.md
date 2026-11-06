@@ -1,7 +1,7 @@
 # SDD-20261106-agent-rules-reader · [Mejora] Las Reglas de Conocimiento llegan al agente (requisito previo para retirar Ciclo GTM)
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta (bloquea la pieza 8 y la decisión A-3 del PRD de GTM Lab)
-**Estado:** Borrador (v2, corregido tras el gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Borrador (v2, corregido tras el gate; tope y enmiendas aprobados por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** No aplica para el lector (mejora acotada). Propone enmiendas a `docs/prd/PRD-20261101-gtm-lab-en-nokko.md` y a `docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md` (NK-0053), §15 · **Depende de:** — · **Bloquea:** pieza 8 del PRD de GTM Lab (retirada de Ciclo GTM y Debates) y A-3 (menú «Estrategia»)
 
 > Sprint 1 de mejoras en pantallas core, bloque D. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
@@ -114,11 +114,11 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 - **Choque con NK-0053:** si 5a se construye antes, este SDD se rehace sobre los modos; si va después, 5a conserva el bloque (enmienda).
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Tope del agente:** propongo `maxRules = 12` y `maxChars = 12 000` en total (BMAD sigue con 12 × 4000 sin tope total). ¿Te vale?
+1. **Decidido por Fede (2026-11-06): `maxRules = 12`, `maxChars = 12 000`.** ~~Tope del agente:~~ propuesta original: `maxRules = 12` y `maxChars = 12 000` en total (BMAD sigue con 12 × 4000 sin tope total). ¿Te vale?
 2. **Quién escribe reglas:** ¿limitamos la sección Reglas y la marca «obligatorio» a Owner y Sales Leader (otro SDD)?
-3. **Búsqueda del agente en Telegram** (documentos personales de otros): ¿lo registro ya como bug en el ledger?
+3. **Decidido por Fede (2026-11-06): se registra como bug en el ledger** (búsqueda del agente en Telegram, documentos personales de otros).
 4. **`ai-core.ts`, playbooks y MCP:** ¿SDD aparte, después de este?
-5. **Enmiendas propuestas** (se aplican solo con tu OK):
+5. **Enmiendas aprobadas por Fede (2026-11-06) y aplicadas** en `PRD-20261101-gtm-lab-en-nokko.md` (§6.2, §6.3 A-3, §7, §8 piezas 2 y 8) y en `SDD-20261030-gtm-control-tower-5a-agent-memory.md` (CA-38):
    - PRD de GTM Lab, §6.3 A-3: «Bloqueado hasta que `SDD-20261106-agent-rules-reader` esté entregado y verificado: hoy Ciclo GTM es el único sitio que trata las Reglas de Conocimiento como obligatorias (decisión de Fede, 2026-11-06).»
    - PRD, §8, pieza 8, «Depende de»: «7; `SDD-20261106-agent-rules-reader` entregado; e inventario de lo que importa `src/lib/bmad/` fuera de Ciclo GTM y Debates (biblioteca de playbooks, agente y modos de 5a, etapas de deals en `deals.tsx:17` y `core-write.ts:16`), con destino decidido para cada uno».
    - PRD, §6.2, fila 5a: «5a se mantiene, conservando el bloque de Reglas de Conocimiento en todos los modos»; §7 (lista de SDD a enmendar) y pieza 2: añadir 5a.

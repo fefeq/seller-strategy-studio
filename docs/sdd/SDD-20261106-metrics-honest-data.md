@@ -1,7 +1,7 @@
 # SDD-20261106-metrics-honest-data · [Mejora] Métricas con datos honestos: el trimestre filtra y cada supuesto se ve
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador (v2, corregido tras el gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Borrador (v2, corregido tras el gate; enfoque «rotular» decidido por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: mismos archivos y forma de «Estimado · motivo» / «Sin dato · motivo»); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: este SDD añade una ventana trimestral de win rate en `/metrics`); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD sus cifras no cambian); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
 
 > Sprint 1 de mejoras en pantallas core, bloque A. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
@@ -139,7 +139,7 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
 - Rotular un supuesto no lo corrige: el payback al 100 % sigue siendo el número. Es una decisión de este sprint (§15, pregunta 1).
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Rotular (propuesta) o «Sin dato»:** este SDD rotula los supuestos y no cambia cifras, para no romper `/strategy`, el asistente y MCP mientras `/strategy` está congelada. ¿Te vale, y abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez (junto con unificar CAC y payback)?
+1. **Decidido por Fede (2026-11-06): rotular.** ~~Rotular (propuesta) o «Sin dato»:~~ este SDD rotula los supuestos y no cambia cifras, para no romper `/strategy`, el asistente y MCP mientras `/strategy` está congelada. ¿Te vale, y abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez (junto con unificar CAC y payback)?
 2. **Cohortes:** propongo rotularla «Todo el histórico». ¿O prefieres que también filtre por trimestre?
 3. **Win rate al trimestre (CA-3):** ¿de acuerdo, o «histórico» rotulado?
 4. **Fuera de alcance, ¿ticket aparte?:** `advisor.ts:81` (el asesor y el agente reciben «sin origen = Outbound»); A8 (imputación de perdidos en `revops.ts`); A9 (ex miembros como «Sin asignar»).

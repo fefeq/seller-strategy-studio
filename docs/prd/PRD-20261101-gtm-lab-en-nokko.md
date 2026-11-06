@@ -1,7 +1,7 @@
 # PRD-20261101-gtm-lab-en-nokko · [Iniciativa] NOKKO evoluciona a GTM Lab: el recorrido de estrategia guiado como columna vertebral
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Alta (Fede lo pide como la dirección del producto; hoy NOKKO tiene dos recorridos de estrategia, Ciclo GTM y el contexto del control tower, y ninguno lleva paso a paso hasta un plan y unas tareas)
-**Estado:** Aprobado por Fede el 2026-11-01 · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede el 2026-11-01; enmendado el 2026-11-06 (lector de Reglas, `SDD-20261106-agent-rules-reader` §15.5, aprobado por Fede en el chat) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **SDD que lo desarrollan:** pendiente (orden en §8)
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
@@ -87,7 +87,7 @@ Se heredan los objetivos G-1 a G-7 del PRD consolidado de GTM Lab §4, medidos a
 | **3** · atribución y embudos | **Se mantiene** | Ninguna |
 | **4a** · fuentes de datos | **Se mantiene** | Ninguna |
 | **4b** · herramientas personales | **Se mantiene.** El espejo de tareas en el calendario lee el tablero de GTM Lab | 4b: cambiar la fuente de las tareas |
-| **5a, 5b y 5c** · agente, avisos, check-in y servidor para asistentes | **Se mantienen.** El check-in y los avisos leen el tablero de GTM Lab | 5b: cambiar la fuente de las tareas |
+| **5a, 5b y 5c** · agente, avisos, check-in y servidor para asistentes | **Se mantienen.** El check-in y los avisos leen el tablero de GTM Lab. 5a conserva el bloque de Reglas de Conocimiento en todos los modos (enmienda 2026-11-06) | 5a: conservar el bloque de Reglas; 5b: cambiar la fuente de las tareas |
 | **5d** · plan con IA y herramientas de estrategia | **Se sustituye** por los pasos «OKR», «Reparto de acciones» y «Revisión del plan» y por la ayuda de IA por paso. Las herramientas del agente para proponer cambios de estrategia pasan a trabajar sobre el proyecto principal | 5d: se supera. Las herramientas del agente se replantean en un SDD propio |
 | **8** · vistas de Postin | **Se mantiene** | Ninguna |
 
@@ -102,7 +102,7 @@ Se heredan los objetivos G-1 a G-7 del PRD consolidado de GTM Lab §4, medidos a
 |---|---|---|---|
 | A-1 | **Responsable de las tareas.** El tablero de GTM Lab no tiene responsable porque era para un solo usuario | Añadir `assignee` (miembro de la org, opcional) a las tareas del tablero en F3: es barato y el check-in lo necesita | Fede |
 | A-2 | **Forma del KR.** En GTM Lab el KR es texto con «meta». En el control tower es un número con valor inicial, meta y fecha | Al publicar, el KR entra como «Supuesto» y se pide número y fecha. Cambiar el formulario del paso más adelante, con un eval | Fede |
-| A-3 | **Nombre en el menú** | «Estrategia», sustituyendo a «Estrategia GTM», «Ciclo GTM» y «Debates». Lo que hoy es Estrategia pasa a pestañas del proyecto principal | Fede |
+| A-3 | **Nombre en el menú** | «Estrategia», sustituyendo a «Estrategia GTM», «Ciclo GTM» y «Debates». Lo que hoy es Estrategia pasa a pestañas del proyecto principal. **Bloqueado hasta que `SDD-20261106-agent-rules-reader` esté entregado y verificado:** hoy Ciclo GTM es el único sitio que trata las Reglas de Conocimiento como obligatorias (decisión de Fede, 2026-11-06) | Fede |
 | A-4 | **Experimentos.** GTM Lab tiene experimentos con ICE y NOKKO tiene `gtm_experiments` (prototipos de Theory U) | Dejarlos separados en F3 y decidir en F5 con los datos medidos | Fede |
 | A-6 | **Cómo se archiva Estrategia** | Guardar una instantánea por org (jsonb, en una tabla de archivo solo para el Owner). Después, vaciar los textos de `positioning` y `icp_profiles` y retirar `messaging_pillars`. Los `segments` **no se borran**: se marcan como archivados con una columna nueva y se ocultan, para no arrastrar metas, presupuestos ni el segmento de deals y cuentas | Fede |
 | A-7 | **Hueco sin ICP** | El archivo de Estrategia se hace en el mismo SDD que la publicación (7), y solo cuando el proyecto principal tenga hechos los pasos que publica. Así el scoring y los leads nunca se quedan sin ICP | Fede |
@@ -112,7 +112,8 @@ Se heredan los objetivos G-1 a G-7 del PRD consolidado de GTM Lab §4, medidos a
 - **Línea roja de la 0004.** NOKKO es multitenant y admite invitaciones. Si en producción hay una org que no sea de Fede y su equipo, no vale la 0004 y se para todo. Se comprueba en F0.
 - **Salida de Lovable A y B.** F2 en adelante depende de ella: hasta entonces GTM Lab no se ve en NOKKO.
 - **Calidad y coste de la IA.** Pueden cambiar al pasar por OpenRouter (caché, esfuerzo, salida estructurada). Lo cubre el gate de eval (E-3). Si `ai-gateway` no permite fijar el modelo, se amplía en el SDD de IA.
-- **Enmiendas a SDD aprobados** (1a, 1b, 4b y 5b, y dar por superados 2 y 5d). Hay que redactarlas y pasarlas por el gate antes de construir el control tower.
+- **Lector de Reglas.** Retirar Ciclo GTM sin lector de Reglas en el agente deja sin efecto la sección Reglas de Conocimiento (enmienda 2026-11-06).
+- **Enmiendas a SDD aprobados** (1a, 1b, 4b, 5a y 5b, y dar por superados 2 y 5d). Hay que redactarlas y pasarlas por el gate antes de construir el control tower.
 - **Catálogo de tareas.** Sigue la estructura de GTM Strategist, que solo se permite en uso interno. Falta atribuir el vocabulario de «motores».
 - **Empezar de cero en Estrategia.** Mientras no se publique el proyecto principal, el scoring de ICP, los leads y las sugerencias se quedan sin datos de estrategia. Por eso el archivo va junto a la primera publicación (A-7). Un segmento borrado en vez de archivado arrastra metas, presupuestos y asignaciones (§3).
 - **Doble escritura en las tablas de estrategia.** La publicación del proyecto principal y la edición manual en Estrategia escriben en las mismas filas. Hay que usar las rutas de escritura con `field_sources` (origen «gtm_lab») y nunca sobrescribir sin confirmar.
@@ -124,13 +125,13 @@ Se heredan los objetivos G-1 a G-7 del PRD consolidado de GTM Lab §4, medidos a
 |---|---|---|---|---|
 | F0 | Comprobación de la línea roja y aprobación de este PRD | — | — | Todo |
 | 1 | SDD · Núcleo y metodología de GTM Lab en NOKKO (`src/lib/gtm-lab/`), eval por `ai-gateway` | Feature (sin migraciones) | F0 | E-3 |
-| 2 | Enmiendas al control tower: 1a y U-0 aparte, 1b, 4b y 5b; 2 y 5d dados por superados | Docs | Este PRD aprobado | — |
+| 2 | Enmiendas al control tower: 1a y U-0 aparte, 1b, 4b, 5a (bloque de Reglas) y 5b; 2 y 5d dados por superados | Docs | Este PRD aprobado | — |
 | 3 | SDD · Proyectos por org, perfil y recorrido (`gtm_lab_projects`, `gtm_lab_deliverables`) | Feature | Lovable A y B | G-1 |
 | 4 | SDD · Ayuda de IA por paso con registro (`gtm_lab_ai_calls`) | Feature | 1 y 3 | G-3, G-4, G-5, E-3, E-4 |
 | 5 | SDD · Calculadoras, experimentos con ICE y documento (Markdown, impresión y Drive) | Feature | 3 | G-2 |
 | 6 | SDD · Tablero de tareas (`gtm_lab_project_tasks`, con responsable si A-1) | Feature | 3 | G-6, G-7 |
 | 7 | SDD · Proyecto principal, archivo de la Estrategia actual (A-6, A-7) y publicación en la estrategia de la org (mapeo en el anexo A) | Feature | 3 y 5 | E-2 |
-| 8 | SDD · Retirada: Ciclo GTM, Debates y `gtm_experiments` en solo lectura y luego archivados; menú nuevo | Mejora | 7 | E-1 |
+| 8 | SDD · Retirada: Ciclo GTM, Debates y `gtm_experiments` en solo lectura y luego archivados; menú nuevo | Mejora | 7; `SDD-20261106-agent-rules-reader` entregado; inventario de lo que importa `src/lib/bmad/` fuera de Ciclo GTM y Debates (biblioteca de playbooks, agente y modos de 5a, etapas de deals en `deals.tsx` y `agent/tools/core-write.ts`) con destino decidido para cada uno (enmienda 2026-11-06) | E-1 |
 | 9 | Resto del PRD consolidado de GTM Lab §8: enseñarlo al equipo y medir, límites de calidad de la IA y tramos 4 y 5 de la v2 y 2 a 4 de la v3 | Varios | 8 | G-1…G-7 |
 
 El control tower se construye después de 3 y 6, con sus enmiendas, porque lee las tareas del tablero.

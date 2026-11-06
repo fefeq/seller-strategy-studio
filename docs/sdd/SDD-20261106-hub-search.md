@@ -116,7 +116,7 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Misma consulta (`hub.tsx:60`). El tex
 1. **`/memory`:** tiene el mismo problema de acentos (`memory.tsx:39`). ¿Lo añado a NK-0053 (que ya toca `memory.tsx`) o va en este SDD como una línea más?
 2. **Buscador global ⌘K:** ¿quieres que Conocimiento aparezca ahí en un paso posterior?
 3. ¿Búsqueda también en «Drive por cuenta», más adelante?
-4. **«ano» encuentra «año»:** ¿lo aceptas (mismo plegado que los duplicados) o quieres que la búsqueda conserve la ñ? Conservarla en `foldText` cambiaría también la detección de duplicados.
+4. **Decidido por Fede (2026-11-06): se acepta.** ~~«ano» encuentra «año»:~~ ¿lo aceptas (mismo plegado que los duplicados) o quieres que la búsqueda conserve la ñ? Conservarla en `foldText` cambiaría también la detección de duplicados.
 5. **Agente:** `search_knowledge` no pliega acentos. ¿Lo dejo como divergencia conocida o aplico `foldText` a sus resultados en este SDD?
 
 ## 16. Pendiente de verificar

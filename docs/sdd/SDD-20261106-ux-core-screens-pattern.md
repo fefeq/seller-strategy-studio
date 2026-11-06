@@ -5,7 +5,7 @@
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** `SDD-20261106-hub-search` (SDD-B) se integra antes · **Coordinar con:** los otros SDD de NK-0051 según el ledger (`.factory/ledger.json`, «4 SDD»): `SDD-20261031-ux-palette-graphite`, `SDD-20261031-ux-legibility-contrast` (su §13 permite poner `Kpi`/`Panel` en `src/components/page.tsx`, el mismo archivo que `ScreenState`), `SDD-20261031-ux-move-without-drag`, `SDD-20261031-deal-won-duplicate-approvals`; `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`: C1 va antes, por ser más pequeño); PR #76 de Plays (`headlines.ts`, `nav.ts`, que no se tocan)
 
 > Sprint 1 de mejoras en pantallas core, bloque C. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
-> **Base:** la rama local de NK-0051 (`feat/ux-graphite-legibility-move`, «8 commits sobre 47ec72c» según el ledger) no está en el remoto (`git ls-remote`, 2026-11-06). C1 parte de `main` @ `f76f639` y no depende de ella.
+> **Base:** la rama local de NK-0051 (`feat/ux-graphite-legibility-move`, «8 commits sobre 47ec72c» según el ledger) se perdió (confirmado por Fede, 2026-11-06). C1 parte de `main` @ `f76f639` y no depende de ella.
 
 **Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** A cambia datos y textos de datos de `/metrics`; B, la búsqueda de `/hub`; C1, estados de pantalla (carga, error, vacío), sección en la URL, vacíos y pistas de `/hub` y `/theory-u`; C2, el plegado de explicaciones en las tres pantallas y la forma del estado de un dato en `/metrics`. Orden de integración: A → B → C1 → C2.
 
@@ -92,17 +92,17 @@ Mismas tablas, columnas y RLS. Cambia el tratamiento del error: los `queryFn` de
 ## 14. Riesgos y dependencias
 - `page.tsx` lo tocan también los SDD de legibilidad (`Kpi`/`Panel`): conflicto de archivo, no de función; lo resuelve el orden.
 - Theory U proactivo toca los mismos componentes: C1 va antes.
-- La rama local de NK-0051, si reaparece, obliga a rebasar.
+- La rama local de NK-0051 se perdió: sus 8 commits hay que rehacerlos desde los SDD de paleta y legibilidad (en «Borrador»).
 
 ## 15. Preguntas para Fede y para la revisión técnica
 1. **Ids en la URL de `/hub`:** propongo los internos en inglés (`?seccion=objections`), por estabilidad. ¿O prefieres español como en `/metrics` (`?seccion=objeciones`)?
 2. **Titulares con conclusión** para Conocimiento y Theory U: ¿los quieres? Irían en `headlines.ts` después de integrar el PR #76.
 3. **Resumen de Métricas en 4-5 KPI** (punto 15 del informe UX): ¿SDD propio o se espera a tener uso real?
-4. **Rama local de NK-0051:** ¿existe en otra máquina o se perdió?
+4. **Decidido (Fede, 2026-11-06): la rama local de NK-0051 se perdió.** C1 parte de `main` y no depende de ella; los SDD de paleta y legibilidad siguen en «Borrador» sin código.
 
 ## 16. Pendiente de verificar
 - Si `DriveAccountsPanel` traga errores: el brief.
-- Estado real de la rama local de NK-0051: Fede.
+- ~~Estado real de la rama local de NK-0051~~: perdida (Fede, 2026-11-06).
 
 **Versión 2 (2026-11-06):** partido tras el gate (objeción 11): este documento es C1; HowCalculated y DataState pasan a C2. Corregidos §8 Finanzas (sale de C1), CA-2 (consultas que lanzan, objeción 2), CA-1 con tests por pantalla (3), CA-3 con ids y precedencia (4), CA-5 con lista cerrada (5), ruta del Planificador y nombre del botón (6), contrato único entre SDD (9) y cabecera (10). No ha tenido segunda pasada del gate.
 
