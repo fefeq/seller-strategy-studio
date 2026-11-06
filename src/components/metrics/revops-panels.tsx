@@ -18,12 +18,13 @@ function Card({ title, sub, children }: { title: string; sub?: string; children:
 }
 const Empty = ({ children }: { children: React.ReactNode }) => <p className="text-sm text-muted-foreground">{children}</p>;
 
-export function RevopsFunnel({ deals, history, path, label }: { deals: RDeal[]; history: RHistory[]; path: string[]; label: (k: string) => string }) {
+/** Deals created in `quarter` (filtered by the caller, src/lib/metrics-quarter.ts); `quarter` only names the empty state. */
+export function RevopsFunnel({ deals, history, path, label, quarter }: { deals: RDeal[]; history: RHistory[]; path: string[]; label: (k: string) => string; quarter: string }) {
   const { money } = useCurrency();
   const f = useMemo(() => reconciledFunnel(deals, history, path), [deals, history, path]);
   const top = f[0]?.entered ?? 0;
   const stale = f.reduce((s, x) => s + x.stale, 0);
-  if (!top) return <Card title="Embudo conciliado"><Empty>Aún no hay deals. El embudo aparece al crear el primero.</Empty></Card>;
+  if (!top) return <Card title="Embudo conciliado"><Empty>Sin deals creados en {quarter}</Empty></Card>;
   return (
     <Card title="Embudo conciliado" sub={`En cada etapa, los deals que entran avanzan, se pierden o siguen abiertos; nada se escapa.${stale ? ` ${stale} llevan más de 30 días sin moverse.` : ""}`}>
       <div className="space-y-3">
@@ -46,11 +47,12 @@ export function RevopsFunnel({ deals, history, path, label }: { deals: RDeal[]; 
   );
 }
 
-export function RevopsLost({ deals, history, path, label }: { deals: RDeal[]; history: RHistory[]; path: string[]; label: (k: string) => string }) {
+/** Deals lost in `quarter` (filtered by the caller); `quarter` only names the empty state. */
+export function RevopsLost({ deals, history, path, label, quarter }: { deals: RDeal[]; history: RHistory[]; path: string[]; label: (k: string) => string; quarter: string }) {
   const { money } = useCurrency();
   const seg = useSegmentNames();
   const l = useMemo(() => lostAnalysis(deals, history, path), [deals, history, path]);
-  if (!l.total) return <Card title="Deals perdidos"><Empty>Ningún deal perdido todavía.</Empty></Card>;
+  if (!l.total) return <Card title="Deals perdidos"><Empty>Ningún deal perdido en {quarter}</Empty></Card>;
   const List = ({ rows, name }: { rows: { key: string; count: number; amount: number }[]; name: (k: string) => string }) => (
     <ul className="space-y-2 text-sm">{rows.slice(0, 6).map((r) => (
       <li key={r.key}>
@@ -71,6 +73,10 @@ export function RevopsLost({ deals, history, path, label }: { deals: RDeal[]; hi
   );
 }
 
+// Cohortes and Tendencias do not follow the quarter selector, and say so (SDD-20261106-metrics-honest-data CA-2).
+const COHORTS_WINDOW = "Todo el histórico · no depende del trimestre";
+const TRENDS_WINDOW = "Últimas 12 semanas · no depende del trimestre";
+
 export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
   const { money } = useCurrency();
   const seg = useSegmentNames();
@@ -84,9 +90,11 @@ export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
       ))}</tbody>
     </table></div>
   );
-  if (!deals.length) return <Card title="Cohortes"><Empty>Aún no hay deals.</Empty></Card>;
+  const windowNote = <p className="text-sm text-ink-mid">{COHORTS_WINDOW}</p>;
+  if (!deals.length) return <div className="space-y-5">{windowNote}<Card title="Cohortes"><Empty>Aún no hay deals.</Empty></Card></div>;
   return (
     <div className="space-y-5">
+      {windowNote}
       <Card title="Por origen"><Table rows={bySource} name={(k) => SOURCE[k] ?? k} /></Card>
       <Card title="Por segmento"><Table rows={bySeg} name={seg} /></Card>
     </div>
@@ -96,7 +104,7 @@ export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
 export function RevopsTrends({ deals }: { deals: RDeal[] }) {
   const w = useMemo(() => weeklyTrend(deals, 12).map((x) => ({ ...x, label: x.start.slice(5) })), [deals]);
   return (
-    <Card title="Últimas 12 semanas" sub="Deals creados, ganados y perdidos por semana.">
+    <Card title={TRENDS_WINDOW} sub="Deals creados, ganados y perdidos por semana.">
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={w}>

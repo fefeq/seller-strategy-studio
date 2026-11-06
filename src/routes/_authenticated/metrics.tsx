@@ -32,13 +32,20 @@ import { PipelineBoardPanel } from "@/components/pipeline-board-panel";
 import { errorText } from "@/lib/errors";
 import { saveQuota } from "@/lib/save-quota";
 import { metricsHeadline } from "@/lib/headlines";
-import { formatRatio, quarterCoverage } from "@/lib/coverage";
+import { quarterCoverage } from "@/lib/coverage";
 import { openStages, stageLabel, stagePath } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { StripeMetricsPanel } from "@/components/stripe-panel";
 import { fetchAll } from "@/lib/fetch-all";
 import { pct } from "@/lib/money";
 import { funnelInQuarter, lostInQuarter, quarterWinRates } from "@/lib/metrics-quarter";
+import {
+  Bar,
+  Muted,
+  Panel,
+  ResumenKpis,
+  WinRatePanels,
+} from "@/components/metrics/performance-panels";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({
@@ -70,15 +77,6 @@ const SECTIONS = [
   { id: "leads", label: "Leads y self-service" },
 ] as const;
 type Section = (typeof SECTIONS)[number]["id"];
-
-const SOURCE_LABEL: Record<string, string> = {
-  outbound: "Outbound",
-  inbound: "Inbound",
-  partner: "Partner",
-  plg: "Producto (PLG)",
-  event: "Evento",
-  referral: "Referido",
-};
 
 function Metrics() {
   const { money: eur, currency } = useCurrency();
@@ -150,7 +148,6 @@ function Metrics() {
       { start, end },
       (d) => data.profiles.find((p) => p.id === d.owner_id)?.full_name ?? "Sin asignar",
     );
-    const created = data.history.filter((h) => !h.from_stage && inQ(h.changed_at)).length;
     return {
       openPipe: openInQ.reduce((s, d) => s + Number(d.amount ?? 0), 0),
       quota,
@@ -164,7 +161,6 @@ function Metrics() {
       commit,
       actual,
       acc: forecastAccuracy(commit, actual),
-      created,
       overall: win.overall,
       funnel: funnelInQuarter(data.deals, data.history, { start, end }),
       lost: lostInQuarter(data.deals, data.history, { start, end }),
@@ -228,6 +224,7 @@ function Metrics() {
               history={m.funnel.history}
               path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
               label={lab}
+              quarter={quarter}
             />
           )}
           {sec === "perdidos" && (
@@ -236,44 +233,24 @@ function Metrics() {
               history={m.lost.history}
               path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
               label={lab}
+              quarter={quarter}
             />
           )}
           {sec === "cohortes" && <RevopsCohorts deals={data.deals} />}
           {sec === "tendencias" && <RevopsTrends deals={data.deals} />}
           {sec === "resumen" && (
             <>
-              <div className="grid gap-4 md:grid-cols-4">
-                <Kpi
-                  label="Cobertura de pipeline"
-                  v={m.quota ? formatRatio(m.cov.ratio) : "—"}
-                  hint={
-                    m.quota
-                      ? `${m.cov.status === "healthy" ? "Sana (3–4x)" : m.cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${m.cov.undated.count ? ` · ${m.cov.undated.count} ${m.cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${eur(m.cov.undated.amount)}) no cuentan` : ""}`
-                      : "Define cuotas abajo"
-                  }
-                  tone={m.cov.status === "low" && m.quota ? "bad" : undefined}
-                />
-                <Kpi
-                  label="Pipeline que cierra este trimestre"
-                  v={eur(m.openPipe)}
-                  hint={`Cuota total ${eur(m.quota)}`}
-                />
-                <Kpi
-                  label="Forecast comprometido vs real"
-                  v={`${eur(m.actual)} / ${eur(m.commit)}`}
-                  hint={
-                    m.commit
-                      ? `${m.acc.diff >= 0 ? "+" : ""}${pct(m.acc.diff)} · ${m.acc.accurate ? "dentro del 10%" : "fuera del 10%"}`
-                      : "Marca deals como Commit"
-                  }
-                  tone={m.commit && !m.acc.accurate ? "bad" : undefined}
-                />
-                <Kpi
-                  label="Win rate global"
-                  v={m.overall.rate == null ? "—" : pct(m.overall.rate)}
-                  hint={`${m.created} deals creados este trimestre`}
-                />
-              </div>
+              <ResumenKpis
+                quarter={quarter}
+                money={eur}
+                quota={m.quota}
+                cov={m.cov}
+                openPipe={m.openPipe}
+                actual={m.actual}
+                commit={m.commit}
+                acc={m.acc}
+                overall={m.overall}
+              />
 
               <StripeMetricsPanel />
               <QuarterKpisPanel quarter={quarter} />
@@ -311,38 +288,7 @@ function Metrics() {
                     );
                   })}
                 </Panel>
-                <Panel title="Win rate por fuente">
-                  {m.bySource.length === 0 && (
-                    <Muted>
-                      Sin deals cerrados todavía. Aparecerán al marcar deals como ganados o
-                      perdidos.
-                    </Muted>
-                  )}
-                  {m.bySource.map((r) => (
-                    <Bar
-                      key={r.k}
-                      label={SOURCE_LABEL[r.k] ?? r.k}
-                      value={r.rate}
-                      right={`${pct(r.rate)} · ${r.won}G/${r.lost}P`}
-                    />
-                  ))}
-                </Panel>
-                <Panel title="Win rate por rep">
-                  {m.byRep.length === 0 && (
-                    <Muted>
-                      Sin deals cerrados todavía. Aparecerán al marcar deals como ganados o
-                      perdidos.
-                    </Muted>
-                  )}
-                  {m.byRep.map((r) => (
-                    <Bar
-                      key={r.k}
-                      label={r.k}
-                      value={r.rate}
-                      right={`${pct(r.rate)} · ${r.won}G/${r.lost}P`}
-                    />
-                  ))}
-                </Panel>
+                <WinRatePanels quarter={quarter} bySource={m.bySource} byRep={m.byRep} />
                 <Panel
                   title={`Deals que se han retrasado (${pct(m.slipRate)} del pipeline abierto)`}
                 >
@@ -414,43 +360,4 @@ function Metrics() {
       )}
     </Page>
   );
-}
-
-function Kpi({ label, v, hint, tone }: { label: string; v: string; hint: string; tone?: "bad" }) {
-  return (
-    <div className="min-w-0 rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 break-words font-display text-3xl">{v}</p>
-      <p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>
-        {hint}
-      </p>
-    </div>
-  );
-}
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <h3 className="mb-3 text-2xl">{title}</h3>
-      {children}
-    </div>
-  );
-}
-function Bar({ label, value, right }: { label: string; value: number; right: string }) {
-  return (
-    <div className="py-1.5 text-sm">
-      <div className="flex justify-between gap-3">
-        <span className="min-w-0 break-words">{label}</span>
-        <span className="shrink-0 font-mono text-xs text-muted-foreground">{right}</span>
-      </div>
-      <div className="mt-1 h-1.5 rounded bg-muted">
-        <div
-          className="h-full rounded bg-primary"
-          style={{ width: `${Math.min(100, Math.round(value * 100))}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-function Muted({ children }: { children: React.ReactNode }) {
-  return <p className="mt-2 text-xs text-muted-foreground">{children}</p>;
 }
