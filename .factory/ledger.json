@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 66,
+  "seq": 75,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1384,7 +1384,7 @@
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -1394,6 +1394,12 @@
           "at": "2026-11-02T23:44:52.757Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:32.050Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-ux-core-screens-pattern.md prd=-"
         }
       ]
     },
@@ -1727,6 +1733,195 @@
           "at": "2026-11-06T21:36:56.504Z",
           "by": "Fede",
           "note": "No es un bug: src/lib/agent/tools/core-read.ts:236-237 ya filtra en memoria scope = team o created_by = userId tras la consulta (comentario sobre Telegram en :235), probado en src/lib/agent-tools.test.ts:584-596. El hallazgo vino de la primera pasada del gate de SDD-20261106-agent-rules-reader y lo refutó la segunda."
+        }
+      ]
+    },
+    {
+      "id": "NK-0067",
+      "title": "Métricas con datos honestos: el trimestre filtra y cada supuesto se ve",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-metrics-honest-data.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.604Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0068",
+      "title": "Conocimiento: buscar en todas las secciones",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-hub-search.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.650Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0069",
+      "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-agent-rules-reader.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.701Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0070",
+      "title": "Asesor y agente: un deal sin origen cuenta como Outbound (advisor.ts:81)",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.757Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0071",
+      "title": "RevOps: un perdido sin transición se imputa a la primera etapa o a la más avanzada (revops.ts:26-27) y llega al titular de Perdidos",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.805Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0072",
+      "title": "Errores tragados fuera de Sprint 1: useLeads, useStripe y resúmenes de Drive (drive-core.ts:221) muestran vacío en vez de error",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.862Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0073",
+      "title": "Sprint 2: Métricas y Estrategia con Sin dato en todas las superficies y una sola fórmula de CAC y payback",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.913Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0074",
+      "title": "Sprint 2: solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:31.959Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0075",
+      "title": "Sprint 2: Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:52:32.006Z",
+          "by": "tracker",
+          "note": ""
         }
       ]
     }

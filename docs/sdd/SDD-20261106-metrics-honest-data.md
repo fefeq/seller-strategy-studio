@@ -38,6 +38,7 @@ Leído en `main` @ `f76f639` (el código de la rama no cambia respecto a esa bas
 - `pipeline-board-panel.tsx:84`: «Apúntalo en «CAC real», más abajo», desde Rendimiento.
 - `segment-coverage.tsx:128` («Presupuesto por segmento», que se apunta en `/strategy?tab=budget`, `budget-panel.tsx:44-45`), `:136`, `:137` («CAC real»): texto sin enlace.
 - `metrics.tsx:258`: «Define cuotas abajo» en Resumen; el panel de cuotas está en Rendimiento (`:370`).
+- `budget-panel.tsx:45`: «Estrategia GTM → Presupuesto vs real» enlaza a `/strategy` sin `tab` y abre «Modelos de venta» (`strategy.tsx:47`).
 - Se queda como está: «Añade facturas abajo» (`src/components/metrics/finance-panel.tsx:67`), porque las facturas están en el mismo panel.
 
 **Código compartido** (`/strategy` está congelada en este sprint)
@@ -51,7 +52,7 @@ Consumidores fuera de `/metrics` de las funciones afectadas: `src/components/str
 - Supuestos sin marca en `/metrics`: línea base medida en código, 7 (A1-A7). Objetivo: 0.
 - Sitios de `/metrics` donde un margen ≤ 0 da `Infinity`, un payback negativo o un tono verde: línea base 5 (Cobertura, CAC real, Presupuesto por segmento, KPI trimestral, tablero). Objetivo: 0.
 - Secciones que parecen depender del trimestre y no dependen, sin decirlo: línea base 3 (Embudo, Perdidos, Cohortes) + win rates. Objetivo: 0.
-- Pistas de `/metrics` que mandan a otra sección con «abajo» o sin enlace: línea base 8 (§3). Objetivo: 0.
+- Pistas de `/metrics` que mandan a otra sección con «abajo» o sin enlace: línea base 9 (§3). Objetivo: 0.
 - Cifras de las funciones compartidas que cambian, y diferencias en la salida de MCP: objetivo 0 (CA-12).
 - Uso o satisfacción: sin dato.
 
@@ -119,7 +120,7 @@ Forma de las marcas (CA-10): exactamente tres estados, «Real» con origen opcio
 - **CA-10** Cada marca que añade este SDD en `/metrics` lleva `data-mark` y su texto cumple exactamente `^(Real( · .+)?|Estimado · .+|Sin dato · .+)$`. · prueba: `src/test/data-marks.ts` (comprobación compartida) llamada desde cada test de componente de CA-3 a CA-9; falla primero porque en la base no hay ningún `[data-mark]` y la comprobación exige al menos uno por test.
 
 ### H-3: Como Owner o Sales Leader, quiero que una pista me lleve a donde se arregla.
-- **CA-11** «CAC real» → `/metrics?seccion=economia`; «Presupuesto por segmento» y «Presupuesto vs real» → `/strategy?tab=budget`; «Define cuotas» → `/metrics?seccion=rendimiento`. Las pistas de la lista cerrada del §3 son enlaces con ese destino, y ningún texto de `/metrics` dice «más abajo», «más arriba» o «abajo» para referirse a otra sección («Añade facturas abajo», misma sección, queda fuera). · prueba: `src/components/metrics/hints.test.tsx`
+- **CA-11** «CAC real» → `/metrics?seccion=economia`; «Presupuesto por segmento» y «Presupuesto vs real» (incluido `budget-panel.tsx:45`) → `/strategy?tab=budget`; «Define cuotas» → `/metrics?seccion=rendimiento`. Las pistas de la lista cerrada del §3 son enlaces con ese destino, y ningún texto de `/metrics` dice «más abajo», «más arriba» o «abajo» para referirse a otra sección («Añade facturas abajo», misma sección, queda fuera). · prueba: `src/components/metrics/hints.test.tsx`
 
 ### H-4: Como Fede, quiero que nada fuera de `/metrics` cambie en este sprint.
 - **CA-12** Con un conjunto fijo de datos ficticios que recorre A2-A7 y el margen ≤ 0:
@@ -157,7 +158,7 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
 |---|---|---|---|
 | U-0 | Red de congelación: fixture ficticia, salida de las funciones compartidas y de los handlers `realMetrics` y `segmentCoverageTool` en `f76f639`, mutaciones 1 y 2 con evidencia | CA-12 | `src/lib/strategy-freeze.test.ts` (pasa en base a propósito; su fallo-primero son las dos mutaciones, con evidencia guardada) |
 | U-1 | `src/lib/metrics-quarter.ts` puro: `funnelInQuarter`, `lostInQuarter`, `quarterWinRates` (global, por origen con «—» para null, por rep); `metrics.tsx` lo usa | CA-1 (filtro), CA-3 (cálculo), CA-4 | `src/lib/metrics-quarter.test.ts` |
-| U-2 | Extrae `src/components/metrics/performance-panels.tsx` (KPI de `metrics.tsx:277-281` y paneles de `:320-351`, con `Kpi`, `Panel`, `Bar` y `Muted` de `:425-460`, sin cambiar su marcado); textos de win rate; vacíos y ventanas de `revops-panels.tsx`; envoltorio `DataMark` y la comprobación `src/test/data-marks.ts` | CA-1 (textos), CA-2, CA-3 (textos), CA-4 (pantalla), CA-10 | `src/components/metrics/performance-panels.test.tsx`, `src/components/metrics/revops-panels.test.tsx` |
+| U-2 | Extrae `src/components/metrics/performance-panels.tsx` (toda la fila de KPI de Resumen, `metrics.tsx:251-282`, para que `hints.test.tsx` pinte también «Define cuotas abajo» de `:258`, y paneles de `:320-351`, con `Kpi`, `Panel`, `Bar` y `Muted` de `:425-460`, sin cambiar su marcado); textos de win rate; vacíos y ventanas de `revops-panels.tsx`; envoltorio `DataMark` y la comprobación `src/test/data-marks.ts` | CA-1 (textos), CA-2, CA-3 (textos), CA-4 (pantalla), CA-10 | `src/components/metrics/performance-panels.test.tsx`, `src/components/metrics/revops-panels.test.tsx` |
 | U-3 | Campos aditivos de nivel superior (lista cerrada del §13) y `sharedSplitBasis`, `boardMargin` | CA-5 a CA-9 (parte pura) | `src/lib/segment-coverage.test.ts`, `src/lib/segment-budget.test.ts`, `src/lib/metrics.test.ts`, `src/lib/cac.test.ts`, `src/lib/quarter-kpis.test.ts`, `src/lib/pipeline-board.test.ts` |
 | U-4 | Marcas en Cobertura, CAC real, Presupuesto por segmento, KPI trimestral y tablero; tono neutro con margen ≤ 0; pistas enlazadas | CA-5 a CA-9 (pantalla), CA-11 | `src/components/segment-coverage.test.tsx`, `src/components/cac-panel.test.tsx`, `src/components/budget-panel.test.tsx`, `src/components/quarter-kpis-panel.test.tsx`, `src/components/pipeline-board-panel.test.tsx`, `src/components/metrics/hints.test.tsx` |
 
@@ -203,6 +204,8 @@ Nota: el «2 OK, 3 sí, 5 OK» de Fede del 2026-11-06 respondía a otra lista, n
 - Ticket NK: SDD-A no tiene ticket en `.factory/ledger.json`. Lo decide el coordinador (`nokko-intake`) antes del brief.
 
 **Versión 2 (2026-11-06):** reescrito tras el gate. Cambia el enfoque de «opción estricta» a «rotular sin recalcular» (objeción 1). Añade BudgetPanel (2), corrige A3 (3), añade A6-A7 y lista A8-A9 (4), mueve las pruebas a un módulo puro y a tests de componente (5), corrige Cohortes y Tendencias (6), los destinos de CA-11 (7), el margen ≤ 0 (8), CA-12 con mutación (9), los rótulos (10), las coordinaciones (11) y define M (12). Las citas del §3 se corrigen según el gate. No ha tenido segunda pasada del gate.
+
+**Versión 4 (2026-11-06):** tercera pasada del gate: U-2 extrae toda la fila de KPI (`:251-282`) para que CA-11 pueda probar `:258`; `budget-panel.tsx:45` entra en la lista de pistas y en CA-11 (línea base 9).
 
 **Versión 3 (2026-11-06):** corregido tras la segunda pasada del gate. Nueva 1: CA-12 nombra los handlers reales (`realMetrics`, `segmentCoverageTool`), compara la salida de MCP sin quitar nada y añade una mutación que mete un campo dentro de `payback`; los campos nuevos van en el nivel superior (§13). Nueva 2: margen ≤ 0 con tono neutro y «Sin dato» en Cobertura, CAC real (`cac-panel.tsx:207`), Presupuesto, tablero y KPI, con `marginNonPositive`, `paybackMarginBasis` y `paybackBasis` (CA-7). Nueva 3 (y parcial 2): `acvSource`/`acvRangeBasis` por fila de `periodBudget` y `budget-panel.test.tsx` en CA-5 a CA-8. Nueva 4 (y parcial 5): U-2 extrae `src/components/metrics/performance-panels.tsx` y CA-3 lo prueba. Nueva 5: vacíos del trimestre en CA-1 y CA-3, «Win rate por origen», y nota de aplicación del contrato (textos de vacío de A; carga y error de C1). Nueva 6 (y parcial 10): CA-10 con los tres estados («Real · origen», «Estimado · motivo», «Sin dato · motivo») y `data-mark`. Nueva 7 (y parcial 11): fuera `acvBasis` de `actuals`, `basis` solo separa `"rango"` (`rangeBasis`/`acvRangeBasis`), valores unificados, y §14 con las tres ventanas. Nueva 8 (y parcial 4): «asignado por importe» definido como `won-deals.ts:23`, una marca por tarjeta con M = deals asignados al segmento, margen de deals con líneas cubierto por esa marca, cita de A6 a `:47-49`. Nueva 9: §15.1 queda como decisión sin pregunta (la pregunta de Sprint 2 va aparte); la 2, 3 y 5 siguen abiertas porque el «2 OK, 3 sí, 5 OK» de Fede respondía a otra lista. Matiz de la 12: M ya no habla de «todo el histórico para el ACV». §8 sin CA: sus casos apuntan a CA-1, CA-3 y CA-6, y se quita la marca «repartido por clientes ganados». Se añade al §3 «Define cuotas abajo» (`metrics.tsx:258`) y el cero falso del KPI sin cerrados. Contrato del sprint sustituido por el texto común.
 
