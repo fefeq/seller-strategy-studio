@@ -3,17 +3,37 @@ import type { GateDef } from "./types";
 // Code catalogue of the 28 reference plays (PRD-20261106-plays-gtm, section 3). It lives in code, not in the database: it changes with
 // each SDD and the tests watch it. Per-company state (enabled or not) is the only thing stored (play_states). Titles are our own words.
 
-export const MOTIONS = ["entrante", "saliente", "producto", "cuentas", "reactivacion", "mercado"] as const;
+export const MOTIONS = [
+  "entrante",
+  "saliente",
+  "producto",
+  "cuentas",
+  "reactivacion",
+  "mercado",
+] as const;
 export type PlayMotion = (typeof MOTIONS)[number];
 
-export const CHANNELS = ["email", "linkedin", "reunion", "llamada", "web", "producto", "crm"] as const;
+export const CHANNELS = [
+  "email",
+  "linkedin",
+  "reunion",
+  "llamada",
+  "web",
+  "producto",
+  "crm",
+] as const;
 export type PlayChannel = (typeof CHANNELS)[number];
 
 export const STATUSES = ["activo", "parcial", "planificado", "bloqueado"] as const;
 export type PlayStatus = (typeof STATUSES)[number];
 
 /** What blocks a play: a pending decision or an external source NOKKO does not have. */
-export const BLOCKERS = ["linkedin_d2", "proveedor_datos", "decision_gtm", "fuente_externa"] as const;
+export const BLOCKERS = [
+  "linkedin_d2",
+  "proveedor_datos",
+  "decision_gtm",
+  "fuente_externa",
+] as const;
 export type PlayBlocker = (typeof BLOCKERS)[number];
 
 /** The only things a play may produce. There is no automatic send, by type and by test (G-3). */

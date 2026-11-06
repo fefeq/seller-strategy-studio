@@ -36,7 +36,7 @@ describe("catalog (CA-1, G-1)", () => {
 });
 
 describe("detectors (CA-2, G-1)", () => {
-  it("names only detectors that exist as a literal `detector: \"<id>\"` in src/lib/proactive/detectors", () => {
+  it('names only detectors that exist as a literal `detector: "<id>"` in src/lib/proactive/detectors', () => {
     for (const p of CATALOG) {
       for (const d of p.detectors) {
         expect(detectorSource.includes(`detector: "${d}"`), `${p.id} → ${d}`).toBe(true);
@@ -53,17 +53,33 @@ describe("detectors (CA-2, G-1)", () => {
 
   it("keeps the initial split of the SDD and defaults to enabled only the plays that already run as rules", () => {
     const byId = Object.fromEntries(CATALOG.map((p) => [p.id, p]));
-    expect(byId["meeting-prep-and-follow-up"]?.detectors).toEqual(["meeting_no_prep", "meeting_no_notes"]);
+    expect(byId["meeting-prep-and-follow-up"]?.detectors).toEqual([
+      "meeting_no_prep",
+      "meeting_no_notes",
+    ]);
     expect(byId["meeting-form-orchestration"]?.detectors).toEqual(["late_lead"]);
     expect(byId["signal-activation"]?.detectors).toEqual(["account_signal"]);
     expect(byId["crm-hygiene"]?.detectors).toEqual(["account_missing_key"]);
-    expect(byId["plg-to-sales"]?.detectors).toEqual(["product_qualified", "usage_drop", "trial_conversion"]);
+    expect(byId["plg-to-sales"]?.detectors).toEqual([
+      "product_qualified",
+      "usage_drop",
+      "trial_conversion",
+    ]);
     expect(byId["multi-thread-inbound-leads"]?.detectors).toEqual(["no_decision_maker"]);
     for (const p of CATALOG) expect(p.defaultEnabled, p.id).toBe(p.detectors.length > 0);
   });
 
   it("leaves the always-on rules out of every play", () => {
-    const always = ["stale_deal", "past_close_date", "low_coverage", "meddpicc_gaps", "setup_incomplete", "registration_expiring", "unassigned_accounts", "followup_sequence"];
+    const always = [
+      "stale_deal",
+      "past_close_date",
+      "low_coverage",
+      "meddpicc_gaps",
+      "setup_incomplete",
+      "registration_expiring",
+      "unassigned_accounts",
+      "followup_sequence",
+    ];
     for (const d of always) expect(detectorOwner(d), d).toBeUndefined();
   });
 });
@@ -77,18 +93,25 @@ describe("blocking (CA-3, G-1)", () => {
   });
 
   it("accepts only the four blockers of the SDD", () => {
-    expect([...BLOCKERS].sort()).toEqual(["decision_gtm", "fuente_externa", "linkedin_d2", "proveedor_datos"]);
+    expect([...BLOCKERS].sort()).toEqual([
+      "decision_gtm",
+      "fuente_externa",
+      "linkedin_d2",
+      "proveedor_datos",
+    ]);
   });
 });
 
 describe("honest status (CA-4, G-1)", () => {
   it("has no play marked active in this SDD, and an active one would need a detector or an output", () => {
     for (const p of CATALOG) expect(p.status, p.id).not.toBe("activo");
-    for (const p of CATALOG.filter((x) => x.status === "activo")) expect(p.detectors.length + p.outputs.length, p.id).toBeGreaterThan(0);
+    for (const p of CATALOG.filter((x) => x.status === "activo"))
+      expect(p.detectors.length + p.outputs.length, p.id).toBeGreaterThan(0);
   });
 
   it("states a play with a detector as partial, never planned or blocked", () => {
-    for (const p of CATALOG.filter((x) => x.detectors.length > 0)) expect(p.status, p.id).toBe("parcial");
+    for (const p of CATALOG.filter((x) => x.detectors.length > 0))
+      expect(p.status, p.id).toBe("parcial");
   });
 });
 

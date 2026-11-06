@@ -13,5 +13,7 @@ export function detectorsOf(playIds: string[]): Set<string> {
 /** Plays that run proactive rules and are paused for the company, from its play_states rows. Rows for plays that are not in the catalogue are ignored. */
 export function disabledPlayIds(rows: { play_id: string; enabled: boolean }[]): string[] {
   const byId = new Map(rows.map((r) => [r.play_id, r]));
-  return CATALOG.filter((p) => p.detectors.length > 0 && !effectiveState(p, byId.get(p.id)).enabled).map((p) => p.id);
+  return CATALOG.filter(
+    (p) => p.detectors.length > 0 && !effectiveState(p, byId.get(p.id)).enabled,
+  ).map((p) => p.id);
 }

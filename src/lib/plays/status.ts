@@ -5,21 +5,40 @@ import type { Play, PlayBlocker } from "./catalog";
 
 export type PlayStateRow = { enabled: boolean };
 
-export type EffectiveState = { enabled: boolean; label: string; canEnable: boolean; reason: string | null };
+export type EffectiveState = {
+  enabled: boolean;
+  label: string;
+  canEnable: boolean;
+  reason: string | null;
+};
 
 /** Why a blocker stops a play (`label` goes after «Bloqueado: ») and what has to be decided to unblock it. */
 const BLOCKER_TEXT: Record<PlayBlocker, { label: string; decide: string }> = {
-  linkedin_d2: { label: "falta una decisión de LinkedIn", decide: "Decide si NOKKO puede usar datos de LinkedIn (decisión D2)" },
-  proveedor_datos: { label: "falta un proveedor de datos", decide: "Elige el proveedor de datos para las señales externas" },
-  decision_gtm: { label: "falta decidir a qué GTM sirve NOKKO", decide: "Decide a qué GTM sirve NOKKO" },
-  fuente_externa: { label: "falta una fuente externa", decide: "Decide qué fuente o herramienta externa se conecta" },
+  linkedin_d2: {
+    label: "falta una decisión de LinkedIn",
+    decide: "Decide si NOKKO puede usar datos de LinkedIn (decisión D2)",
+  },
+  proveedor_datos: {
+    label: "falta un proveedor de datos",
+    decide: "Elige el proveedor de datos para las señales externas",
+  },
+  decision_gtm: {
+    label: "falta decidir a qué GTM sirve NOKKO",
+    decide: "Decide a qué GTM sirve NOKKO",
+  },
+  fuente_externa: {
+    label: "falta una fuente externa",
+    decide: "Decide qué fuente o herramienta externa se conecta",
+  },
 };
 
 const LEADERS = ["owner", "sales_leader"];
 
 /** Only the Owner and the Sales Leader activate or pause plays (as strategy_reviews); the rest see the action disabled with this reason. */
 export function canTogglePlays(roles: string[]): { ok: boolean; reason?: string } {
-  return roles.some((r) => LEADERS.includes(r)) ? { ok: true } : { ok: false, reason: "Solo el Owner o el Sales Leader pueden activar o pausar plays." };
+  return roles.some((r) => LEADERS.includes(r))
+    ? { ok: true }
+    : { ok: false, reason: "Solo el Owner o el Sales Leader pueden activar o pausar plays." };
 }
 
 /** What stops a play from being enabled, or null. Blocked and planned plays can never be enabled. */
@@ -29,7 +48,11 @@ function blocking(play: Play): { reason: string; decide: string; label: string }
     return { reason: t.label, decide: t.decide, label: `Bloqueado: ${t.label}` };
   }
   if (play.status === "planificado") {
-    return { reason: "todavía no está construido", decide: `Se construye en el SDD ${play.sdd} del plan de Plays GTM`, label: "Planificado: todavía no está construido" };
+    return {
+      reason: "todavía no está construido",
+      decide: `Se construye en el SDD ${play.sdd} del plan de Plays GTM`,
+      label: "Planificado: todavía no está construido",
+    };
   }
   return null;
 }
@@ -42,10 +65,16 @@ export function effectiveState(play: Play, row: PlayStateRow | null | undefined)
 }
 
 /** Shared by the screen, the server function and the agent tool. A leader may always pause; activating needs a play that is not blocked or planned. */
-export function checkToggle(p: { play: Play; roles: string[]; enable: boolean }): { ok: true } | { ok: false; error: string } {
+export function checkToggle(p: {
+  play: Play;
+  roles: string[];
+  enable: boolean;
+}): { ok: true } | { ok: false; error: string } {
   const who = canTogglePlays(p.roles);
   if (!who.ok) return { ok: false, error: who.reason ?? "No tienes permiso para esto." };
   if (!p.enable) return { ok: true };
   const b = blocking(p.play);
-  return b ? { ok: false, error: `No puedes activar este play todavía: ${b.reason}. ${b.decide}.` } : { ok: true };
+  return b
+    ? { ok: false, error: `No puedes activar este play todavía: ${b.reason}. ${b.decide}.` }
+    : { ok: true };
 }

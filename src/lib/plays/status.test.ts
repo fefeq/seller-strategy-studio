@@ -58,7 +58,9 @@ describe("blocked and planned plays cannot be enabled (CA-9, G-3)", () => {
   it("covers the four blockers with their own words", () => {
     const label = (id: string) => effectiveState(play(id), null).label;
     expect(label("new-hire-tracking")).toBe("Bloqueado: falta una decisión de LinkedIn");
-    expect(label("website-visitor-de-anonymization")).toBe("Bloqueado: falta un proveedor de datos");
+    expect(label("website-visitor-de-anonymization")).toBe(
+      "Bloqueado: falta un proveedor de datos",
+    );
     expect(label("public-records-signals")).toBe("Bloqueado: falta decidir a qué GTM sirve NOKKO");
     expect(label("funding-signal-scraping")).toMatch(/^Bloqueado: /);
   });
@@ -74,16 +76,23 @@ describe("blocked and planned plays cannot be enabled (CA-9, G-3)", () => {
 
   it("keeps a stored enabled=true from turning a blocked or planned play on (state changed after activation)", () => {
     expect(effectiveState(BLOCKED_LI, { enabled: true }).enabled).toBe(false);
-    expect(effectiveState(PLANNED, { enabled: true })).toMatchObject({ enabled: false, canEnable: false });
+    expect(effectiveState(PLANNED, { enabled: true })).toMatchObject({
+      enabled: false,
+      canEnable: false,
+    });
     expect(effectiveState(PLANNED, null).label).toMatch(/^Planificado/);
   });
 
   it("lets a leader activate or pause a play that is not blocked", () => {
-    expect(checkToggle({ play: NO_RULE, roles: ["sales_leader"], enable: true })).toEqual({ ok: true });
+    expect(checkToggle({ play: NO_RULE, roles: ["sales_leader"], enable: true })).toEqual({
+      ok: true,
+    });
     expect(checkToggle({ play: WITH_RULE, roles: ["owner"], enable: false })).toEqual({ ok: true });
   });
 
   it("lets a leader pause a blocked play (pausing is always safe)", () => {
-    expect(checkToggle({ play: BLOCKED_LI, roles: ["owner"], enable: false })).toEqual({ ok: true });
+    expect(checkToggle({ play: BLOCKED_LI, roles: ["owner"], enable: false })).toEqual({
+      ok: true,
+    });
   });
 });

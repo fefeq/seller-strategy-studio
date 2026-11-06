@@ -14,35 +14,143 @@ const iso = (ms: number) => new Date(ms).toISOString();
 const reference = (): Snapshot => ({
   now: NOW,
   orgId: "o1",
-  setup: { currency: "EUR", segments: [], icps: [], positioning: null, pillars: [], quotas: [], accounts: 3, deals: 2, quarter: "2026-Q4" },
+  setup: {
+    currency: "EUR",
+    segments: [],
+    icps: [],
+    positioning: null,
+    pillars: [],
+    quotas: [],
+    accounts: 3,
+    deals: 2,
+    quarter: "2026-Q4",
+  },
   members: [{ user_id: "u-owner", role: "owner" }],
   accounts: [
-    { id: "a1", name: "Cuenta Ficticia Uno", is_target: true, owner_id: "u1", created_at: "2026-01-01T00:00:00Z" },
-    { id: "a2", name: "Cuenta Ficticia Dos", is_target: false, owner_id: "u1", created_at: "2026-01-02T00:00:00Z" },
-    { id: "a3", name: "Cuenta Ficticia Tres", is_target: false, owner_id: null, created_at: "2026-01-03T00:00:00Z" },
+    {
+      id: "a1",
+      name: "Cuenta Ficticia Uno",
+      is_target: true,
+      owner_id: "u1",
+      created_at: "2026-01-01T00:00:00Z",
+    },
+    {
+      id: "a2",
+      name: "Cuenta Ficticia Dos",
+      is_target: false,
+      owner_id: "u1",
+      created_at: "2026-01-02T00:00:00Z",
+    },
+    {
+      id: "a3",
+      name: "Cuenta Ficticia Tres",
+      is_target: false,
+      owner_id: null,
+      created_at: "2026-01-03T00:00:00Z",
+    },
   ],
   stakeholders: [{ account_id: "a1", buying_role: "champion" }],
   deals: [
-    { id: "d1", name: "Trato frío", stage: "demo", amount: 1000, close_date: "2026-10-01", updated_at: iso(NOW.getTime() - 60 * D), owner_id: "u1", meddpicc: {}, account_id: "a1" },
-    { id: "d2", name: "Trato ganado", stage: "won", amount: 500, close_date: "2026-09-01", updated_at: iso(NOW.getTime() - 5 * D), owner_id: "u1", meddpicc: {}, account_id: "a2" },
+    {
+      id: "d1",
+      name: "Trato frío",
+      stage: "demo",
+      amount: 1000,
+      close_date: "2026-10-01",
+      updated_at: iso(NOW.getTime() - 60 * D),
+      owner_id: "u1",
+      meddpicc: {},
+      account_id: "a1",
+    },
+    {
+      id: "d2",
+      name: "Trato ganado",
+      stage: "won",
+      amount: 500,
+      close_date: "2026-09-01",
+      updated_at: iso(NOW.getTime() - 5 * D),
+      owner_id: "u1",
+      meddpicc: {},
+      account_id: "a2",
+    },
   ],
   meetings: [
-    { id: "m1", title: "Reunión sin preparar", scheduled_at: iso(NOW.getTime() + 10 * H), ai_brief: null, account_id: "a1", created_by: "u1" },
-    { id: "m2", title: "Reunión sin notas", scheduled_at: iso(NOW.getTime() - 5 * H), ai_brief: "x", account_id: "a1", created_by: "u1", notes: null, call_notes: null },
+    {
+      id: "m1",
+      title: "Reunión sin preparar",
+      scheduled_at: iso(NOW.getTime() + 10 * H),
+      ai_brief: null,
+      account_id: "a1",
+      created_by: "u1",
+    },
+    {
+      id: "m2",
+      title: "Reunión sin notas",
+      scheduled_at: iso(NOW.getTime() - 5 * H),
+      ai_brief: "x",
+      account_id: "a1",
+      created_by: "u1",
+      notes: null,
+      call_notes: null,
+    },
   ],
   registrations: [],
   trials: [
-    ...Array.from({ length: 10 }, () => ({ segment_id: "g1", signed_up_at: iso(NOW.getTime() - 10 * D), activated_at: null, converted_at: null, mrr: null })),
-    ...Array.from({ length: 10 }, () => ({ segment_id: "g2", signed_up_at: iso(NOW.getTime() - 10 * D), activated_at: iso(NOW.getTime() - 9 * D), converted_at: iso(NOW.getTime() - 8 * D), mrr: 10 })),
+    ...Array.from({ length: 10 }, () => ({
+      segment_id: "g1",
+      signed_up_at: iso(NOW.getTime() - 10 * D),
+      activated_at: null,
+      converted_at: null,
+      mrr: null,
+    })),
+    ...Array.from({ length: 10 }, () => ({
+      segment_id: "g2",
+      signed_up_at: iso(NOW.getTime() - 10 * D),
+      activated_at: iso(NOW.getTime() - 9 * D),
+      converted_at: iso(NOW.getTime() - 8 * D),
+      mrr: 10,
+    })),
   ],
-  segments: [{ id: "g1", name: "Segmento Ficticio Uno" }, { id: "g2", name: "Segmento Ficticio Dos" }],
-  leads: [{ id: "l1", company: "Lead Ficticio", stage: "new", stage_entered_at: iso(NOW.getTime() - 40 * D), next_step_at: null, owner_id: "u1", account_id: null }],
-  signals: [{ id: "s1", account_id: "a1", title: "Ronda ficticia", kind: "funding", summary: "Resumen", relevance: "Relevancia", url: "https://ejemplo.test/a", found_at: iso(NOW.getTime() - 2 * D) }],
+  segments: [
+    { id: "g1", name: "Segmento Ficticio Uno" },
+    { id: "g2", name: "Segmento Ficticio Dos" },
+  ],
+  leads: [
+    {
+      id: "l1",
+      company: "Lead Ficticio",
+      stage: "new",
+      stage_entered_at: iso(NOW.getTime() - 40 * D),
+      next_step_at: null,
+      owner_id: "u1",
+      account_id: null,
+    },
+  ],
+  signals: [
+    {
+      id: "s1",
+      account_id: "a1",
+      title: "Ronda ficticia",
+      kind: "funding",
+      summary: "Resumen",
+      relevance: "Relevancia",
+      url: "https://ejemplo.test/a",
+      found_at: iso(NOW.getTime() - 2 * D),
+    },
+  ],
   usage: [
-    { domain: "empresa-nueva.test", account_id: null, active_users_7d: 20, active_users_prev_7d: 5 },
+    {
+      domain: "empresa-nueva.test",
+      account_id: null,
+      active_users_7d: 20,
+      active_users_prev_7d: 5,
+    },
     { domain: "cuenta-dos.test", account_id: "a2", active_users_7d: 2, active_users_prev_7d: 10 },
   ],
-  fitKey: { accounts: [{ id: "a3", domain: null }], contacts: [{ account_id: "a3", email: "persona@dominio-ficticio.test" }] },
+  fitKey: {
+    accounts: [{ id: "a3", domain: null }],
+    contacts: [{ account_id: "a3", email: "persona@dominio-ficticio.test" }],
+  },
 });
 
 const summary = (s: Snapshot) => detect(s).map((x) => `${x.detector} ${x.dedupe_key}`);
@@ -75,8 +183,18 @@ describe("detect() with every play enabled (CA-11, G-3)", () => {
   });
 
   it("is identical when the rows only say enabled, or only mention plays that run no rule", () => {
-    expect(disabledPlayIds([{ play_id: "crm-hygiene", enabled: true }, { play_id: "plg-to-sales", enabled: true }])).toEqual([]);
-    expect(disabledPlayIds([{ play_id: "brand-mentions-monitoring", enabled: false }, { play_id: "closed-lost-revival", enabled: false }])).toEqual([]);
+    expect(
+      disabledPlayIds([
+        { play_id: "crm-hygiene", enabled: true },
+        { play_id: "plg-to-sales", enabled: true },
+      ]),
+    ).toEqual([]);
+    expect(
+      disabledPlayIds([
+        { play_id: "brand-mentions-monitoring", enabled: false },
+        { play_id: "closed-lost-revival", enabled: false },
+      ]),
+    ).toEqual([]);
   });
 
   it("covers the nine rules that belong to plays, so the reference really exercises the gate", () => {
@@ -89,25 +207,48 @@ describe("detect() with every play enabled (CA-11, G-3)", () => {
 describe("detect() with a paused play (CA-12, G-3)", () => {
   it("drops only the suggestions whose detector belongs to the paused play and keeps every other one, in order", () => {
     const out = summary({ ...reference(), disabledPlays: ["meeting-prep-and-follow-up"] });
-    expect(out).toEqual(BASE.filter((x) => !x.startsWith("meeting_no_prep ") && !x.startsWith("meeting_no_notes ")));
+    expect(out).toEqual(
+      BASE.filter((x) => !x.startsWith("meeting_no_prep ") && !x.startsWith("meeting_no_notes ")),
+    );
   });
 
   it("does that for each play with rules, and never touches the always-on rules", () => {
     for (const p of CATALOG.filter((x) => x.detectors.length > 0)) {
       const out = summary({ ...reference(), disabledPlays: [p.id] });
       expect(out, p.id).toEqual(BASE.filter((x) => !p.detectors.includes(x.split(" ")[0]!)));
-      for (const always of ["stale_deal", "past_close_date", "setup_incomplete"]) expect(out.some((x) => x.startsWith(`${always} `)), `${p.id} ${always}`).toBe(true);
+      for (const always of ["stale_deal", "past_close_date", "setup_incomplete"])
+        expect(
+          out.some((x) => x.startsWith(`${always} `)),
+          `${p.id} ${always}`,
+        ).toBe(true);
     }
   });
 
   it("filters before the dedupe, so a paused play never hides another rule's suggestion with the same key", () => {
-    const out = detect({ ...reference(), disabledPlays: CATALOG.filter((p) => p.detectors.length > 0).map((p) => p.id) });
-    expect(out.map((x) => x.detector).sort()).toEqual(["past_close_date", "setup_incomplete", "stale_deal"]);
+    const out = detect({
+      ...reference(),
+      disabledPlays: CATALOG.filter((p) => p.detectors.length > 0).map((p) => p.id),
+    });
+    expect(out.map((x) => x.detector).sort()).toEqual([
+      "past_close_date",
+      "setup_incomplete",
+      "stale_deal",
+    ]);
   });
 
   it("reads the paused plays from the play_states rows", () => {
-    expect(disabledPlayIds([{ play_id: "meeting-prep-and-follow-up", enabled: false }, { play_id: "crm-hygiene", enabled: true }, { play_id: "a-future-play", enabled: false }])).toEqual(["meeting-prep-and-follow-up"]);
-    expect([...detectorsOf(["plg-to-sales"])].sort()).toEqual(["product_qualified", "trial_conversion", "usage_drop"]);
+    expect(
+      disabledPlayIds([
+        { play_id: "meeting-prep-and-follow-up", enabled: false },
+        { play_id: "crm-hygiene", enabled: true },
+        { play_id: "a-future-play", enabled: false },
+      ]),
+    ).toEqual(["meeting-prep-and-follow-up"]);
+    expect([...detectorsOf(["plg-to-sales"])].sort()).toEqual([
+      "product_qualified",
+      "trial_conversion",
+      "usage_drop",
+    ]);
     expect(detectorsOf([]).size).toBe(0);
   });
 
@@ -118,10 +259,16 @@ describe("detect() with a paused play (CA-12, G-3)", () => {
     const prep = store.find((r) => r.dedupe_key === "meeting_no_prep:m1")!;
     const notes = store.find((r) => r.dedupe_key === "meeting_no_notes:m2")!;
     expect([prep.status, notes.status]).toEqual(["pending", "pending"]);
-    await syncSuggestions(db, "o1", detect({ ...reference(), disabledPlays: ["meeting-prep-and-follow-up"] }));
+    await syncSuggestions(
+      db,
+      "o1",
+      detect({ ...reference(), disabledPlays: ["meeting-prep-and-follow-up"] }),
+    );
     expect([prep.status, notes.status]).toEqual(["resolved", "resolved"]);
     expect(store.some((r) => r.dedupe_key === "meeting_no_prep:m1")).toBe(true); // still there: history
-    expect(store.find((r) => r.dedupe_key === "late_lead:l1:new:2026-09-27")!.status).toBe("pending"); // the rest is untouched
+    expect(store.find((r) => r.dedupe_key === "late_lead:l1:new:2026-09-27")!.status).toBe(
+      "pending",
+    ); // the rest is untouched
   });
 });
 
@@ -135,13 +282,28 @@ describe("loadSnapshot feeds the gate (U-5)", () => {
     expect(src).toContain("...(disabledPlays.length?{disabledPlays}:{})");
   });
   it("is the only place that builds a Snapshot for detect(): the three callers go through it", () => {
-    for (const f of ["src/lib/agent.functions.ts", "src/lib/inngest/tasks.server.ts", "src/routes/api/public/jobs/proactive.ts"]) {
-      expect(readFileSync(f, "utf8").replace(/\s+/g, ""), f).toMatch(/detect\((await)?(loadSnapshot|snap)/);
+    for (const f of [
+      "src/lib/agent.functions.ts",
+      "src/lib/inngest/tasks.server.ts",
+      "src/routes/api/public/jobs/proactive.ts",
+    ]) {
+      expect(readFileSync(f, "utf8").replace(/\s+/g, ""), f).toMatch(
+        /detect\((await)?(loadSnapshot|snap)/,
+      );
     }
   });
 });
 
-type Row = { id: string; org_id: string; dedupe_key: string; detector: string; status: string; title: string; body: string | null; snoozed_until: string | null };
+type Row = {
+  id: string;
+  org_id: string;
+  dedupe_key: string;
+  detector: string;
+  status: string;
+  title: string;
+  body: string | null;
+  snoozed_until: string | null;
+};
 
 /** The slice of the Supabase client syncSuggestions uses on `suggestions`, as in setup-snooze-suggestions.test.ts. */
 function fakeDb(store: Row[]): Db {
@@ -152,17 +314,41 @@ function fakeDb(store: Row[]): Db {
     const filters: ((r: Row) => boolean)[] = [];
     const b: Record<string, unknown> = {
       select: () => b,
-      update: (p: Partial<Row>) => { op = "update"; patch = p; return b; },
-      upsert: (rows: Partial<Row>[]) => { op = "upsert"; incoming = rows; return b; },
+      update: (p: Partial<Row>) => {
+        op = "update";
+        patch = p;
+        return b;
+      },
+      upsert: (rows: Partial<Row>[]) => {
+        op = "upsert";
+        incoming = rows;
+        return b;
+      },
       eq: (c: keyof Row, v: unknown) => (filters.push((r) => r[c] === v), b),
       in: (c: keyof Row, vs: unknown[]) => (filters.push((r) => vs.includes(r[c])), b),
-      not: (c: keyof Row, _o: string, v: string) => { const vs = v.slice(1, -1).split(","); filters.push((r) => !vs.includes(String(r[c]))); return b; },
+      not: (c: keyof Row, _o: string, v: string) => {
+        const vs = v.slice(1, -1).split(",");
+        filters.push((r) => !vs.includes(String(r[c])));
+        return b;
+      },
       lte: (c: keyof Row, v: string) => (filters.push((r) => r[c] != null && String(r[c]) <= v), b),
       then: (res: (v: unknown) => unknown, rej: (e: unknown) => unknown) => {
         const hit = store.filter((r) => filters.every((f) => f(r)));
-        if (op === "upsert") for (const n of incoming) if (!store.some((r) => r.org_id === n.org_id && r.dedupe_key === n.dedupe_key)) store.push({ id: `s${store.length + 1}`, status: "pending", snoozed_until: null, body: null, ...n } as Row);
+        if (op === "upsert")
+          for (const n of incoming)
+            if (!store.some((r) => r.org_id === n.org_id && r.dedupe_key === n.dedupe_key))
+              store.push({
+                id: `s${store.length + 1}`,
+                status: "pending",
+                snoozed_until: null,
+                body: null,
+                ...n,
+              } as Row);
         if (op === "update") for (const r of hit) Object.assign(r, patch);
-        return Promise.resolve({ data: op === "select" ? hit.map((r) => ({ ...r })) : null, error: null }).then(res, rej);
+        return Promise.resolve({
+          data: op === "select" ? hit.map((r) => ({ ...r })) : null,
+          error: null,
+        }).then(res, rej);
       },
     };
     return b;
