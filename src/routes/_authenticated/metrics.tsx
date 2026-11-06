@@ -19,7 +19,6 @@ import {
   quarterOf,
   quarterRange,
   stageConversion,
-  winRate,
 } from "@/lib/metrics";
 import { SelfServiceFunnel } from "@/components/self-service-funnel";
 import { SegmentCoverage } from "@/components/segment-coverage";
@@ -39,6 +38,7 @@ import { useStages } from "@/components/stage-settings";
 import { StripeMetricsPanel } from "@/components/stripe-panel";
 import { fetchAll } from "@/lib/fetch-all";
 import { pct } from "@/lib/money";
+import { funnelInQuarter, lostInQuarter, quarterWinRates } from "@/lib/metrics-quarter";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({
@@ -144,15 +144,12 @@ function Metrics() {
         .reduce((s, d) => s + Number(d.amount ?? 0), 0) +
       wonQ.reduce((s, d) => s + Number(d.amount ?? 0), 0);
     const actual = wonQ.reduce((s, d) => s + Number(d.amount ?? 0), 0);
-    const group = (key: (d: NonNullable<typeof data>["deals"][number]) => string) => {
-      const g: Record<string, { won: number; lost: number }> = {};
-      for (const d of data.deals.filter((x) => x.stage === "won" || x.stage === "lost")) {
-        const k = key(d);
-        g[k] ??= { won: 0, lost: 0 };
-        g[k][d.stage === "won" ? "won" : "lost"]++;
-      }
-      return Object.entries(g).map(([k, v]) => ({ k, ...v, rate: winRate(v.won, v.lost) }));
-    };
+    // Win rates of the deals closed in the selected quarter (SDD-20261106-metrics-honest-data CA-3, CA-4).
+    const win = quarterWinRates(
+      data.deals,
+      { start, end },
+      (d) => data.profiles.find((p) => p.id === d.owner_id)?.full_name ?? "Sin asignar",
+    );
     const created = data.history.filter((h) => !h.from_stage && inQ(h.changed_at)).length;
     return {
       openPipe: openInQ.reduce((s, d) => s + Number(d.amount ?? 0), 0),
@@ -160,20 +157,17 @@ function Metrics() {
       cov: quarterCoverage(data.deals, quota, quarter),
       conv: stageConversion(data.history, stagePath(stages)),
       days: daysInStage(data.history),
-      bySource: group((d) => d.source ?? "outbound"),
-      byRep: group(
-        (d) => data.profiles.find((p) => p.id === d.owner_id)?.full_name ?? "Sin asignar",
-      ),
+      bySource: win.bySource,
+      byRep: win.byRep,
       slipped: open.filter((d) => d.slip_count > 0),
       slipRate: open.length ? open.filter((d) => d.slip_count > 0).length / open.length : 0,
       commit,
       actual,
       acc: forecastAccuracy(commit, actual),
       created,
-      overall: winRate(
-        data.deals.filter((d) => d.stage === "won").length,
-        data.deals.filter((d) => d.stage === "lost").length,
-      ),
+      overall: win.overall,
+      funnel: funnelInQuarter(data.deals, data.history, { start, end }),
+      lost: lostInQuarter(data.deals, data.history, { start, end }),
     };
   }, [data, quarter, stages]);
 
@@ -230,16 +224,16 @@ function Metrics() {
         <div className="space-y-8">
           {sec === "embudo" && (
             <RevopsFunnel
-              deals={data.deals}
-              history={data.history}
+              deals={m.funnel.deals}
+              history={m.funnel.history}
               path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
               label={lab}
             />
           )}
           {sec === "perdidos" && (
             <RevopsLost
-              deals={data.deals}
-              history={data.history}
+              deals={m.lost.deals}
+              history={m.lost.history}
               path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
               label={lab}
             />
@@ -276,7 +270,7 @@ function Metrics() {
                 />
                 <Kpi
                   label="Win rate global"
-                  v={pct(m.overall)}
+                  v={m.overall.rate == null ? "—" : pct(m.overall.rate)}
                   hint={`${m.created} deals creados este trimestre`}
                 />
               </div>
