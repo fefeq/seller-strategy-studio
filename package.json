@@ -1,6 +1,7 @@
 {
   "name": "tanstack_start_ts",
   "private": true,
+  "description": "NOKKO: estudio de estrategia go-to-market para equipos comerciales, con agente de IA",
   "sideEffects": false,
   "type": "module",
   "scripts": {
