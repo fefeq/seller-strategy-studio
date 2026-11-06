@@ -1,7 +1,7 @@
 # SDD-20261102-ai-eval-harness · [Feature] Arnés de evaluación de las generaciones de IA (comprobaciones, juez y coste)
 
 **Tipo:** Feature · **Prioridad propuesta:** Media (hoy nadie mide la calidad ni el coste de lo que genera la IA; sube a Alta antes de construir el plan con IA del SDD 5d)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-02
+**Estado:** SUPERADO por NK-0048 (`src/lib/gtm-lab/eval/`, ya en `main`: PR #80); no ejecutar este texto. Decisión de Fede, 2026-11-06. Si hace falta medir `setup-extract`, se hace como extensión del eval de GTM Lab · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-02
 **PRD:** No aplica (mejora acotada de herramientas internas; no cambia producto ni datos) · **Depende de:** — · **Ticket:** sin número (propuesta: registrarlo en el ledger si Fede da el GO)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.
