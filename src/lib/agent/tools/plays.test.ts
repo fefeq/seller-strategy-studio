@@ -68,9 +68,9 @@ const writes = (log: Q[]) => log.filter((q) => q.op !== "select");
 function expectScoped(log: Q[]) {
   for (const q of log) {
     if (q.op === "insert" || q.op === "upsert") {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- payloads are recorded untyped by the fake
+      const payloads = [q.payload].flat() as { org_id?: string }[];
       expect(
-        [q.payload].flat().every((p: any) => p.org_id === ORG),
+        payloads.every((p) => p.org_id === ORG),
         `${q.op} ${q.table}`,
       ).toBe(true);
     } else expect(eq(q, "org_id", ORG), `${q.op} ${q.table}`).toBe(true);
