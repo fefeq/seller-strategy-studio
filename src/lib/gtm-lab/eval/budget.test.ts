@@ -182,6 +182,21 @@ describe("null cost («sin dato»)", () => {
     expect(openRun(dir, "pilot", { now: NOW, pid: 1 }).ok).toBe(false);
   });
 
+  it.each([[Number.NaN], [Number.POSITIVE_INFINITY], [-0.8]])(
+    "a cost that is not a finite number ≥ 0 (%s) is «sin dato», never added to the spend",
+    async (cost) => {
+      await withRun(dir, "pilot", { now: NOW, pid: 1 }, async (run) => {
+        run.record(0.9, "a");
+        expect(run.record(cost, "b")).toBe("no-data");
+        expect(run.overCap()).toBe(true);
+      });
+      const ledger = loadLedger(dir, "pilot");
+      expect(ledger.spentUsd).toBeCloseTo(0.9);
+      expect(ledger.noData?.reason).toContain("b");
+      expect(openRun(dir, "pilot", { now: NOW, pid: 1 }).ok).toBe(false);
+    },
+  );
+
   it("is lifted only by a manual cost with source, approver and date, which adds to the spend", async () => {
     await withRun(dir, "pilot", { now: NOW, pid: 1 }, async (run) => {
       run.record(0.1, "a");

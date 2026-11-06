@@ -67,18 +67,28 @@ export const PRICES: Readonly<
   "claude-opus-5-5": { input: 4, output: 20, cacheRead: 0.2, cacheWrite: 5 },
 });
 
-/** Measured cost in USD; null when the model has no price (the original threw: here the pass goes «sin dato»). */
+/** Measured cost in USD; null when the model has no price or a token count is not a finite number ≥ 0 (the
+ * original threw on a missing price: here the pass goes «sin dato»). */
 export function costUsd(model: string, usage: AnthropicUsage): number | null {
   // The API may answer with a dated id (e.g. claude-sonnet-5-5-2026…): match by prefix.
   const price = Object.entries(PRICES).find(
     ([id]) => model === id || model.startsWith(`${id}-`),
   )?.[1];
   if (!price) return null;
+  const tokens = [
+    usage.input_tokens,
+    usage.output_tokens,
+    usage.cache_read_input_tokens ?? 0,
+    usage.cache_creation_input_tokens ?? 0,
+  ];
+  // A missing or malformed count would give NaN: «sin dato», never a guess.
+  if (!tokens.every((n) => typeof n === "number" && Number.isFinite(n) && n >= 0)) return null;
+  const [input, output, cacheRead, cacheWrite] = tokens;
   return (
-    (usage.input_tokens * price.input +
-      usage.output_tokens * price.output +
-      (usage.cache_read_input_tokens ?? 0) * price.cacheRead +
-      (usage.cache_creation_input_tokens ?? 0) * price.cacheWrite) /
+    (input * price.input +
+      output * price.output +
+      cacheRead * price.cacheRead +
+      cacheWrite * price.cacheWrite) /
     1e6
   );
 }

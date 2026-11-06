@@ -107,7 +107,8 @@ function takeLock(dir: string, pass: EvalPass, pid: number, now: Date): Lock {
 export interface Run {
   /** What is left of the approved amount when the run started. */
   capUsd: number;
-  /** Adds a measured cost (USD) to the ledger and writes it; null means «sin dato» and blocks the pass. */
+  /** Adds a measured cost (USD) to the ledger and writes it; null, or anything but a finite number ≥ 0, means
+   * «sin dato» and blocks the pass. */
   record(costUsd: number | null, label: string): "ok" | "no-data";
   /** True once this run spent more than its cap, or after a call without a cost. */
   overCap(): boolean;
@@ -156,9 +157,13 @@ export function openRun(
     capUsd,
     record(costUsd, label) {
       entry.calls += 1;
-      if (costUsd === null) {
+      // NaN, Infinity or a negative would silently disable the cap (NaN > cap is false) or refund the ledger.
+      if (costUsd === null || !Number.isFinite(costUsd) || costUsd < 0) {
         blocked = true;
-        ledger.noData = { reason: `${label}: coste nulo`, at: now().toISOString() };
+        ledger.noData = {
+          reason: `${label}: ${costUsd === null ? "coste nulo" : `coste no válido (${costUsd})`}`,
+          at: now().toISOString(),
+        };
         saveLedger(dir, ledger);
         return "no-data";
       }

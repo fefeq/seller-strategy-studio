@@ -140,4 +140,13 @@ describe("PRICES cost (eval-suggest.mjs costUsd)", () => {
   it("a model without price has no cost («sin dato»), never a guess", () => {
     expect(costUsd("claude-haiku-5-5", { input_tokens: 1, output_tokens: 1 })).toBeNull();
   });
+
+  it.each([
+    [{ output_tokens: 100 }],
+    [{ input_tokens: 100, output_tokens: -1 }],
+    [{ input_tokens: "100", output_tokens: 100 }],
+    [{ input_tokens: 100, output_tokens: 100, cache_read_input_tokens: Number.NaN }],
+  ])("usage with a token count that is not a finite number ≥ 0 has no cost: %j", (usage) => {
+    expect(costUsd("claude-opus-5-5", usage as never)).toBeNull();
+  });
 });
