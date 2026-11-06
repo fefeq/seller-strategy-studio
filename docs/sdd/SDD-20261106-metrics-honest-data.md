@@ -1,7 +1,7 @@
 # SDD-20261106-metrics-honest-data · [Mejora] Métricas con datos honestos: el trimestre filtra y cada supuesto se ve
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador (v3, corregido tras la segunda pasada del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado por Fede el 2026-11-06 (v4; «OK a todo» en el chat, tras tres pasadas del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: pone la forma visual, `DataState`, a las palabras que fija este SDD); `SDD-20261106-ux-core-screens-pattern` (SDD-C1: estados de carga y error de `/metrics`); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: hoy hay tres ventanas de win rate, ver §14); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD su salida no cambia, CA-12); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
 
 > Sprint 1 de mejoras en pantallas core, bloque A. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
@@ -450,6 +450,85 @@ Informe de la segunda pasada (sobre v2), copiado sin editar:
      - Anotar como decididas, el 2026-11-06, la 2 (Cohortes rotulada «Todo el histórico»), la 3 (win rate por trimestre) y la 5 (el comentario se mantiene).
      - Quitar la pregunta que queda en la 1.
      - Pedirle a Fede que aclare «4 se perdió»: ¿ticket aparte para `advisor.ts:81`, A8 y A9, o no?
+
+
+Informe de la tercera pasada (sobre v3; sus dos bloqueantes se corrigen en v4), copiado sin editar:
+
+- Veredicto del gate (tercera pasada): **Objeciones** (2 bloqueantes: pequeñas y fáciles de corregir).
+
+- Objeciones de la segunda pasada:
+  1. Resuelta. CA-12 y U-0 nombran `realMetrics` y `segmentCoverageTool` y comparan la salida de MCP con `toStrictEqual`. Los campos nuevos van en el nivel superior y la mutación 2 los vigila. Lo he comprobado en el código: `mcp/tools/metrics.ts:61-67` solo pasa enteros `won`, `opps`, `winRate`, `payback`, `plan` y `actual`.
+  2. Resuelta. `marginNonPositive`, `paybackMarginBasis` y `paybackBasis`, tono neutro, `cac-panel.tsx:207-208` dentro de A5 y CA-7, y pruebas en `cac-panel.test.tsx` y `quarter-kpis-panel.test.tsx`. Queda un matiz de `Deviation` (ver notas).
+  3. Resuelta. `acvSource` y `acvRangeBasis` en cada fila de `periodBudget`, y `budget-panel.test.tsx` en CA-5 a CA-8.
+  4. Resuelta. U-2 extrae `performance-panels.tsx` y CA-3 lo prueba. Matiz en las notas: «sin cambiar su marcado» choca con que `Kpi.hint` es `string`.
+  5. Resuelta. CA-1 y CA-3 tienen sus vacíos con trimestre, el panel pasa a «Win rate por origen» y el §13 aplica el contrato.
+  6. Resuelta. CA-9 usa «Real · …» y CA-10 admite los tres estados, igual que C2 (`ux-metrics-data-state.md:42`).
+  7. Resuelta. Sin `acvBasis` en `actuals`, los valores de CA-6 y del §13 coinciden y el §14 lista las tres ventanas. Lo he comprobado en `pipeline-real.ts:30`, `segment-coverage.ts:44` y `advisor.ts:80`.
+  8. Resuelta. La regla es la de `won-deals.ts:23`, hay una marca por tarjeta con M igual a `segment-coverage.ts:39`, y el margen de deals con líneas queda declarado fuera de alcance (§5).
+  9. Resuelta según las decisiones de Fede que me dieron: la §15.1 es una decisión y las preguntas 2, 3 y 5 siguen abiertas, lo que no es objeción. También quedan resueltas las parciales de la primera pasada (2, 4, 5 y 8) y el matiz de la 12.
+
+- CA sin prueba posible o sin G-n (sin PRD no exijo G-n):
+  - CA-11, pista «Define cuotas abajo» (`metrics.tsx:258`): está dentro de `function Metrics` de la ruta, que no se exporta (`:83`). U-2 solo extrae `:277-281` y `:320-351`, y el §13 prohíbe los tests en `src/routes/`. `hints.test.tsx` no tiene qué pintar. Es la objeción bloqueante 1.
+
+- [Por verificar] que sigue sin comprobarse:
+  - Deals cerrados sin `closed_at`, sin `source` o sin `segment_id`, y deals que apuntan a un segmento borrado: hace falta producción y no la he consultado.
+  - Si el `defineTool` de `@lovable.dev/mcp-js` deja llamar a `.handler` desde un test (CA-12). No hay `node_modules` ni ningún test del repo que lo haga.
+  - `LeadFunnelPanel`, `SelfServiceFunnel`, `StripeMetricsPanel` y `FinancePanel`: siguen sin leerse enteros.
+  - SDD-A sigue sin ticket NK en `.factory/ledger.json` (grep: 0 resultados).
+
+- Contradicciones con el código o con decisiones previas:
+  - C2 da por hecho que A enlaza `budget-panel.tsx:45` (`ux-metrics-data-state.md:27`, `:98`, `:133`). Ni la lista cerrada del §3 de A ni CA-11 incluyen esa pista, y hoy abre «Modelos de venta» (enlace a `/strategy` sin `tab`). Es la objeción bloqueante 2.
+  - Ninguna más. Las citas que he comprobado coinciden con `f76f639`: `segment-coverage.ts:9-19`, `:36-67`, `segment-budget.ts:116-160`, `quarter-kpis.ts:25-49`, `cac.ts:22-31`, `pipeline-board-panel.tsx:45-96`, `pipeline-board.ts:94`, `cac-panel.tsx:200-208`, `budget-panel.tsx:78-88`, `quarter-kpis-panel.tsx:57`, `:76`, `:83`, `:123`, `revops-panels.tsx:9`, `:26`, `:53`, `metrics.tsx:138`, `:147-176`, `:258`, `:280`, `:320`.
+
+- Lo que esta revisión NO demuestra:
+  - **Pruebas:** no he ejecutado ninguna (no hay `node_modules`).
+  - **Gate:** no he ejecutado `scripts/factory/gate.mjs`; el cambio es solo de documentación.
+  - **Producción:** no la he consultado.
+  - **Consumidores:** los busqué con grep por nombre, que no cubre importaciones dinámicas.
+  - **SDD-C1 y C2:** solo he cruzado los puntos que tocan a A, no los he revisado enteros.
+  - **Herramientas de agente:** no he leído enteras las que llaman a estas funciones.
+  - **Segunda máquina y soak:** NOT RUN.
+
+**Objeciones bloqueantes**
+
+1. **CA-11 no se puede probar para `metrics.tsx:258`.**
+   - **Evidencia:**
+     - El KPI «Cobertura de pipeline» con la pista «Define cuotas abajo» está en `src/routes/_authenticated/metrics.tsx:252-261`, dentro de `function Metrics` (`:83`), que no se exporta.
+     - U-2 extrae solo el KPI de win rate (`:277-281`) y los paneles `:320-351`.
+     - El §13 dice: «Ningún test en `src/routes/`».
+   - **Corrección (una de las dos):**
+     - Que U-2 extraiga toda la fila de KPI (`:251-282`) a `performance-panels.tsx`, de modo que `hints.test.tsx` la pinte.
+     - O que el §13 adopte para `hints.test.tsx` la técnica de C1: pintar `Route.options.component` con el router simulado (`ux-core-screens-pattern.md:135`).
+
+2. **A rompe una suposición de C2 sobre `budget-panel.tsx:45`.**
+   - **Evidencia:**
+     - El enlace de `budget-panel.tsx:45` es «Estrategia GTM → Presupuesto vs real» y va a `/strategy` sin `tab`. Con eso abre «Modelos de venta» (`strategy.tsx:47`), el mismo fallo que `quarter-kpis-panel.tsx:76`.
+     - A no lo pone en la lista cerrada del §3; solo lo cita como evidencia del destino en `:39`. La línea base del §4 es 8.
+     - C2 (X-3) da por hecho que A cambia ese enlace por CA-11, y deja a la vista «el enlace que deje A».
+   - **Corrección:**
+     - Añadir `budget-panel.tsx:45` a la lista cerrada del §3 y a CA-11, con destino `/strategy?tab=budget`.
+     - Subir la línea base del §4 de 8 a 9.
+
+**Notas para el brief**
+
+- **KPI trimestral (CA-7):**
+  - `paybackBasis` da `"estimado"` solo con `supuesto_100` o `acvSource` `"rango"`. Un payback que sale del ACV medio de deals abiertos queda sin marca en el KPI, aunque CA-6 lo marca como «Estimado · media de deals abiertos» en Cobertura y en Presupuesto. Eso choca con el objetivo del §4 («0 supuestos sin marca»). Hay que añadir `"abiertos"` a la regla.
+  - El texto «(ver Cobertura)» puede llevar a una tarjeta que no tiene marca:
+    - El KPI sale de `periodBudget`, con `marginFor` sin margen de deals (`segment-budget.ts:141`) y solo con CAC real.
+    - Cobertura usa `withPeriodMargin` con margen de deals y CAC objetivo.
+    - Hay que fijar el destino o un texto que no apunte a otro sitio.
+- **«Infinity» que se cuela por `Deviation`:** con margen ≤ 0, `Deviation` sigue pintando «+Infinity%» o una desviación en verde en `budget-panel.tsx:87` y `quarter-kpis-panel.tsx:109`, y «plan Infinity m» en el lado del plan. La aserción general de CA-7 («nunca Infinity») lo cubre, pero el brief debe decir que se suprimen la desviación y el plan cuando su base es `no_positivo`.
+- **Rótulo huérfano:** en el §6 aparece «Estimado · margen objetivo», pero no sale en ningún CA ni en el enum de `boardMargin`. Hay que quitarlo o asignarle un sitio.
+- **Nombre de campo:** `wonInQuarter`/`inferredWon` en las filas de `segmentBudget`, que es anual (BudgetPanel pasa `year`, `budget-panel.tsx:30`). Mejor un nombre neutro, por ejemplo `wonInPeriod`.
+- **Regla de `rangeBasis`:** con `acv_min = 0` y sin `acv_max`, el ACV es 0 y sale «Sin dato · falta rango de ACV», aunque el rango existe. Conviene decidirlo por los campos y no por el resultado.
+- **Marcado que tiene que cambiar:**
+  - `Kpi.hint` (`metrics.tsx:426`) es `string` y `SummaryRow.cells` (`cac-panel.tsx:243`) es `string[]`. Para meter `DataMark` hay que pasarlos a `ReactNode`, así que «sin cambiar su marcado» no se puede cumplir al pie de la letra.
+  - `SOURCE_LABEL` vive en la ruta (`metrics.tsx:74-81`) y no tiene la clave `"—"`: hay que moverlo con el panel y añadir «Sin origen».
+- **Consumidor omitido:** falta en la lista del §3 la herramienta de agente `get_funnel_diagnosis` (`src/lib/agent/tools/strategy.ts:67`, vía `funnel-diagnosis-data.ts`). Hoy no hay fuga porque elige campos uno a uno (`funnel-diagnosis.ts:86`, `:99`).
+- **Las ventanas no son marcas:** «Últimos 365 días» y «… · no depende del trimestre» no llevan `data-mark` (C2 lo dice en `:58`). A debería escribirlo en CA-2 y CA-9; si no, la comprobación de CA-10 las rechazaría.
+- **Ubicación de `Kpi`/`Panel`:** pasan a `performance-panels.tsx`, y el SDD de legibilidad permite ponerlos en `page.tsx` (`ux-core-screens-pattern.md:5`). Es un conflicto de archivo que el brief debe anotar.
+- **Redacción de CA-12:** dice que «los tests existentes pasan sin cambios», pero U-3 añade casos a esos mismos archivos. Hay que precisar que no se modifica ningún caso existente. No hay `toEqual` sobre salidas afectadas (comprobado con grep) ni snapshots.
+- **Ticket:** SDD-A necesita ticket NK (`nokko-intake`) antes del brief.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

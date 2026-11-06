@@ -373,5 +373,72 @@ Informe de la segunda pasada (sobre v2), copiado sin editar:
    - Evidencia: l.95 frente a l.5 y `.factory/ledger.json:1381` (4 SDD).
    - Corrección: «sus 8 commits hay que rehacerlos desde los 4 SDD de NK-0051 (en «Borrador»)».
 
+
+Informe de la tercera pasada (sobre v3), copiado sin editar:
+
+- **Veredicto del gate (tercera pasada):** Sin objeciones. La v3 resuelve las 8 objeciones nuevas de la segunda pasada y las parciales que quedaban de la primera (3, 4 y 9). No he encontrado nada que haga un CA imposible de probar, que contradiga el código o que rompa otro SDD. Quedan notas para el brief.
+
+- **Objeciones de la segunda pasada:**
+  1. Resuelta. `doc` solo manda al abrir la página. Un cambio de sección hecho a mano quita `doc`, y se prueba en `hub-screen.test.tsx` (CA-3, l.76). Falta decir si la escritura de `seccion` al abrir `?doc=` usa `replace` (nota 1).
+  2. Resuelta. Los contadores de Theory U están en E-1c (l.25), en §4 (l.44) y en §6 (l.67). El recuento de §4 no cuadra con E-1c (nota 4).
+  3. Resuelta. `u_counts` (`journey.tsx:34-43`) está en E-2, CA-2, U-3 y §13.
+  4. Resuelta. §9 cierra la lista de `/hub`: la sección sin documentos, el vacío de búsqueda de B CA-5 y el aviso de truncado de B CA-9. U-2 cita `hub-screen.test.tsx`.
+  5. Resuelta. En `/hub` la consulta ya lanza el error tras B, y C1 solo lo pinta. Hay un único test, `src/components/hub/hub-screen.test.tsx`, el mismo que fija B (B:33, :112). Avisa de que las líneas de `hub.tsx` se mueven.
+  6. Resuelta. Theory U pasa a `theory-u-screen.tsx`, con su propio test de URL (CA-3, U-3, U-4).
+  7. Resuelta. Los ids están marcados como propuesta pendiente de Fede (§15.1). La pregunta sigue abierta, pero eso no es objeción.
+  8. Resuelta. §14 habla ya de los 4 SDD de NK-0051.
+
+- **CA sin prueba posible o sin G-n:** ninguno. No hay PRD, así que no exijo G-n.
+
+- **[Por verificar] que sigue sin comprobarse:**
+  - Si las `Tabs` de Radix controladas desde la URL funcionan en jsdom con `fireEvent.mouseDown`. Lo confirma el primer test de U-4.
+  - Qué pasa en `/metrics` si `orgId` no llega nunca (persona sin empresa). La consulta desactivada deja `isPending` en verdadero, así que la carga no terminaría nunca. No comprobé si la ruta `_authenticated` lo impide.
+  - Que los tests de SDD-A sigan pasando con los estados de C1. Hoy no se puede comprobar porque esos tests aún no existen.
+  - Todo `hub-screen.tsx` y sus simulacros dependen de código de B que aún no existe. Las líneas citadas son de `f76f639`.
+
+- **Contradicciones con el código o con decisiones previas:** ninguna bloqueante. Comprobé que todas las líneas de E-1, E-1c, E-1b, E-1m, E-2, E-3 y E-4 coinciden con `f76f639`, salvo:
+  - U-5 dice que con `quotas` en error «hoy no aparece nada». Es falso: hoy la página se pinta igual, con `quotas = []` (`metrics.tsx:110`, `:120`). El test sigue fallando primero, porque no aparece `errorText`.
+  - El contrato es idéntico en A, B, C1, C2 y D. Las decisiones de Fede del 2026-11-06 (rama de NK-0051 perdida) están recogidas. NK-0066 no afecta a C1.
+
+- **Lo que esta revisión NO demuestra:**
+  - No ejecuté tests, ni build, ni `scripts/factory/gate.mjs`: el cambio es solo de documentación y el encargo prohíbe escribir.
+  - No miré nada en un navegador. Los vacíos falsos, los contadores y el blanco de `/metrics` los deduzco leyendo el código.
+  - No revisé A, B, C2 ni D a fondo. Solo miré el contrato, las referencias cruzadas y los tests que A crea.
+  - No comprobé el comportamiento de Radix ni del historial del navegador en jsdom.
+  - No hay segunda máquina ni prueba larga (soak).
+
+**Objeciones bloqueantes**
+
+Ninguna.
+
+**Notas para el brief**
+
+1. **Escribir `seccion` al abrir `?doc=` debe usar `replace: true`.**
+   - Evidencia: `use-open-doc-from-url.ts:20` no vuelve a abrir el documento mientras `doc` no cambie.
+   - Problema: si `onOpen` añade una entrada al historial, «Atrás» vuelve a `/hub?doc=X` sin `seccion`. La lista mostraría `company` y el editor seguiría en X, de otra sección. Eso rompe H-2.
+   - Corrección: añadirlo a CA-3 y a `hub-screen.test.tsx`, comprobando que `navigate` se llama con `replace: true` también en la apertura por `doc`.
+2. **La lista de tests de A en §13 está incompleta.**
+   - Evidencia: §13 (l.136) solo nombra `segment-coverage.test.tsx`, `cac-panel.test.tsx` y `pipeline-board-panel.test.tsx`. A crea además `budget-panel.test.tsx`, `quarter-kpis-panel.test.tsx`, `metrics/performance-panels.test.tsx`, `metrics/revops-panels.test.tsx` y `metrics/hints.test.tsx` (`metrics-honest-data.md:116`, `:160`, `:162`).
+   - Corrección: un check en el brief, «los tests de A y de B pasan sin cambios» (`git diff` vacío en sus archivos de test), como hace C2 en su U-1.
+3. **El test de CA-6 debe simular también lo que A extrae.**
+   - Evidencia: tras A, `metrics.tsx` importa `src/components/metrics/performance-panels.tsx` (A U-2).
+   - Corrección: simular también ese módulo, además de `useMe`, `useStages` y `useCurrency`.
+   - Decisión pendiente en §13 (l.135): no hace falta extraer `metrics-screen.tsx`. Importar `Route.options.component` se puede probar y evita el choque con A y C2.
+4. **El recuento de contadores de §4 no cuadra con E-1c.**
+   - Evidencia: §4 dice «5 en Theory U», pero E-1c (l.25) da 6 o 7 sitios según cómo se agrupen: `sensing:77`, `listening:59`, `:65`, `:66-67`, `prototypes:89` y `journey:135-136`.
+   - Corrección: fijar en el brief la lista cerrada que cuenta (línea base y objetivo 0).
+5. **`PipelineBoardPanel` en CA-7.**
+   - Hoy ya devuelve `null` mientras carga (`pipeline-board-panel.tsx:42`, `:59`), así que su caso «sin responder» no falla primero. Solo falla primero el caso «con error».
+   - El test necesita simular `useLeads` (fuera de alcance). Con `ScreenState` sobre su consulta y `leadsData` aún sin llegar, debe seguir sin pintar cifras.
+6. **El error de `fetchAll` pierde el `code` de Postgres.**
+   - Evidencia: `fetch-all.ts:15` hace `throw new Error(error.message)`, así que `errorText` solo puede reconocer el error por su mensaje.
+   - Impacto: los casos de RLS y JWT se siguen reconociendo por el mensaje; el resto cae en el texto genérico.
+   - Corrección: en los tests de CA-2 y CA-6, usar un error que se reconozca por mensaje, o comprobar el texto genérico.
+7. **Cambiar de trimestre vuelve a mostrar el estado de carga.**
+   - La clave de las consultas de `/metrics` y de sus paneles cambia con el trimestre (p. ej. `["metrics", orgId]` y las de los paneles por `quarter`). Al cambiarlo, `isPending` vuelve a ser verdadero y se ve la carga, no los datos anteriores.
+   - Es correcto (hoy enseña vacíos falsos), pero conviene decirlo en §8 para que el walkthrough no lo marque como fallo.
+8. **Lo que se queda fuera.** `SelfServiceFunnel` muestra mientras carga «conecta tu PostHog en Conexiones» (`self-service-funnel.tsx:61`), porque `trials` está vacío. Es una pista que depende del dato. No entra en C1; anotarlo en §15.5 o como ticket aparte.
+9. **Simulacros del test de Theory U.** Las pestañas usan funciones de servidor: `synth` en `journey.tsx:102`, `analyze` en `sensing.tsx:49` y `decideExperiment` en `prototypes.tsx:58`. Además, `TabsContent` desmonta las pestañas inactivas, así que cada caso de CA-1 y CA-2 por pestaña tiene que abrirse con su `?seccion=`.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

@@ -302,5 +302,69 @@ Informe de la segunda pasada (sobre v2), copiado sin editar:
    - Evidencia: SDD:24 mantiene «serían incompletas sin aviso» cuando CA-9 ya lo resuelve.
    - Corrección: reescribirlo en la línea de §16:123.
 
+
+Informe de la tercera pasada (sobre v3; su bloqueante se corrige en v4), copiado sin editar:
+
+- **Veredicto del gate (tercera pasada):** Objeciones. Queda una sola, menor y fácil de corregir (objeción bloqueante 1): el test de pantalla, montado tal como lo describe §13, no llega a renderizar `/hub`. Todas las objeciones de la segunda pasada están resueltas.
+
+- **Objeciones de la segunda pasada:**
+  1. **Resuelta.** La caché `["docs"]` guarda `{ rows, truncated }`. §13 enumera todos sus lectores (`:62`, `:65`, `:69`, `:74`, `:112`). La clave `["docs"]` solo aparece en `hub.tsx` (`git grep` en `f76f639`: `:59`, `:68`, `:69`, `:75`, `:93`, `:100`). CA-9 prueba el caso «abrir tras importar».
+  2. **Resuelta.** Hay un único test de pantalla, `src/components/hub/hub-screen.test.tsx`, y para poder probarla U-0 la extrae a `src/components/hub/`. C1 está alineado (C1:5, :72, :123, :140).
+  3. **Resuelta.** CA-4 tiene ya prueba de pantalla, y C1 hereda los contadores (C1:54).
+  4. **Resuelta.** D aparece en «Coordinar con» y el orden A → B → C1 → D → C2 es el mismo texto en A, B, C1, C2 y D. NK-0066 queda descartado, coherente con su rechazo y con `core-read.ts:237`.
+  5. **Resuelta.** `search_knowledge` aparece en §3:25, §5 lo deja fuera como propuesta y §15.5 sigue abierta, con la razón por la que no basta aplicar `foldText` a los resultados.
+  6. **Resuelta.** El fragmento se recorta por grafemas con `Intl.Segmenter`, con resultado esperado para el emoji ZWJ y la marca combinante, y la degradación queda declarada en §8.
+  7. **Resuelta.** §3:26 ya concuerda con CA-9 y §16.
+  - La objeción 6 de la primera pasada (citar `search_knowledge` en §3) también queda resuelta.
+
+- **CA sin prueba posible o sin G-n:**
+  - **CA-0, parte de estructura:** nada lo comprueba automáticamente. Que la ruta solo conserve `validateSearch`, `head` y `component: HubScreen` se ve únicamente revisando el diff. Además, el test de U-0 solo «falla» porque el módulo no existe todavía, que es la forma más débil de fallar primero.
+  - Sin PRD no se exige G-n.
+
+- **[Por verificar] que sigue sin comprobarse:**
+  - `max_rows` real de PostgREST en producción. Ya no bloquea.
+  - Número de documentos por empresa y tamaño de los cuerpos, que deciden el rendimiento.
+  - Que TypeScript 5.8 incluya los tipos de `Intl.Segmenter` en `lib` ES2022 (`tsconfig.json:13`, `package.json:109`). No hay `node_modules` para mirarlo.
+  - El mapa de posiciones con recorte por grafema: no lo he ejecutado. Me apoyo en lo que probó la primera pasada.
+
+- **Contradicciones con el código o con decisiones previas:**
+  - Los simulacros que lista §13 no bastan para renderizar `HubScreen` (objeción bloqueante 1).
+  - §14 dice que el fragmento «solo se calcula para los resultados visibles». En cambio, §13 hace que `searchDocs` devuelva `snippet` en todos los resultados, y la lista no tiene límite, así que todos son visibles.
+  - SDD-D no sabe que B mueve `hub.tsx`. Pone «Depende de: —» y su U-4 cita `hub.tsx:35` y `:163`, que tras U-0 están en `src/components/hub/hub-screen.tsx` y `doc-editor.tsx`. B sí lo declara (§13, §14), así que el problema está en D, no en B.
+  - No hay ninguna contradicción con las decisiones de Fede del 2026-11-06: «ano» encuentra «año», NK-0066 rechazado y la rama local de NK-0051 perdida.
+
+- **Lo que esta revisión NO demuestra:**
+  - No hay código ni `node_modules`. No he ejecutado tests, ni `scripts/factory/gate.mjs`, ni el compilador.
+  - No he vuelto a comprobar el generador de rutas. Ya no aplica, porque el test vive en `src/components/hub/`.
+  - Ni rendimiento ni `max_rows`.
+  - Segunda máquina y soak: NOT RUN.
+  - Solo he cotejado los otros SDD del sprint (A, C1, C2 y D) en sus referencias a `/hub`, al contrato y al orden.
+  - Citas comprobadas sobre `f76f639` (en `src` solo ha cambiado `src/test/factory-ledger.test.ts`), y todas cuadran: `hub.tsx:23`, `:28-36`, `:39`, `:48`, `:50`, `:58-75`, `:112`, `:132`, `:138`, `:147-177`, `:163`; `match.ts:67`, `:69`; `fetch-all.ts:8-21`, `:15`; `memory.tsx:37-40`; `command-palette.tsx:40-43`; `core-read.ts:236-237`; `src/lib/AGENTS.md:49`; `tsconfig.json:13`; `AGENTS.md:25`. El id de ruta `/_authenticated/hub` existe en `routeTree.gen.ts:361`.
+
+**Objeciones bloqueantes**
+
+1. **El test de pantalla no llega a renderizar `HubScreen` con los simulacros de §13.**
+   - Evidencia:
+     - `HubScreen` pinta `Page` (`hub.tsx:10`, `:104`), y `Page` monta `FlowStrip` (`src/components/page.tsx:2`, `:7`).
+     - `FlowStrip` usa `Link` y `useRouterState` de `@tanstack/react-router` (`src/components/flow-strip.tsx:1`, `:6`).
+     - §13 dice que hay que simular `@tanstack/react-router` solo con `useSearch` y `useNavigate`. Con ese simulacro, `useRouterState` no existe y el render falla en todos los casos de `hub-screen.test.tsx`: CA-0, CA-3 a CA-7 y CA-9, más los que añade C1.
+     - Ningún test del repo renderiza `Page` (`grep -rln "useRouterState|flow-strip|@/components/page"` sobre `*.test.tsx` no devuelve nada), así que el precedente `strategy-screens.test.tsx:41-51` no cubre este caso.
+   - Corrección: añadir a §13 que el simulacro del router también exporta `Link` (como en `strategy-screens.test.tsx:42-50`) y `useRouterState: ({ select }) => select({ location: { pathname: "/hub" } })`. La alternativa es simular `@/components/flow-strip`. C1 lo hereda.
+
+**Notas para el brief**
+
+1. **Simulacro de `navigate`:** CA-6 y CA-7 comprueban llamadas a `navigate`, así que `useNavigate` debe devolver un mismo `vi.fn()` creado con `vi.hoisted`. No sirve `() => vi.fn()` como en `strategy-screens.test.tsx:51`, que devuelve uno nuevo en cada render y no deja comprobar nada.
+2. **Un solo punto de simulación para la lectura:** CA-5 (y C1 CA-1) usan «Supabase simulado sin responder», pero CA-9 simula `@/lib/fetch-all`. Si `vi.mock("@/lib/fetch-all")` vale para todo el archivo, el simulacro de Supabase ya no controla la lectura de documentos. Hay que fijar uno de los dos:
+   - `fetch-all` simulado con `importOriginal`, que deja pasar las llamadas y se sobreescribe solo en el caso de truncado;
+   - o el estado pendiente controlado desde el propio simulacro de `fetchAll`.
+3. **Escribir espacios en la caja:** §13 no dice si la caja la manda el estado local o `?q=`. Si la manda la URL, la limpieza de `q` (U-2) solo puede descartar un `q` vacío o de solo espacios, nunca recortar los bordes de uno que tiene texto. Si no, no se puede escribir «decision ventas»: el espacio desaparece al teclearlo. Hay que fijarlo en CA-6 y añadir un caso con «foo » en `hub-search.test.ts`.
+4. **Pulsar una sección con búsqueda activa:** no está definido. Hoy hace `setSection(id); setSelected(null)` (`hub.tsx:111`), y con búsqueda la lista muestra todas las secciones. Falta decir si la lista se filtra por esa sección, si se conserva `q`, y si se cierra el editor. C1 CA-3 conserva `q` y quita `doc` al cambiar de sección, así que la respuesta tiene que encajar con eso.
+5. **Fin de la coincidencia en el mapa:** `map[i + q.length]` se sale del array cuando la coincidencia acaba al final del texto. El mapa necesita una posición extra al final, igual a la longitud del original. `q.length` debe ser la longitud de `foldText(q)`, no la de `q`. Hay que añadir el caso «coincidencia al final del texto».
+6. **Línea de `docs`:** `const { data: docs = [] }` (`hub.tsx:58`) tiene que pasar en B a `const docs = data?.rows ?? []`, no esperar a C1. Si no, `docs` sería el objeto `{ rows, truncated }`. §13 lo da a entender, pero no lo dice.
+7. **§14 frente a §13:** quitar «solo para los resultados visibles» de §14, o limitar el cálculo del fragmento en `searchDocs`.
+8. **Errores entre B y C1:** `fetchAll` lanza (`fetch-all.ts:15`) y B no pinta el error. Entre la integración de B y la de C1, una lectura fallida muestra «Sin documentos todavía» (`hub.tsx:132`), como ya pasa hoy, y React Query reintenta. No empeora nada, pero conviene declararlo.
+9. **CA-0:** que la revisión de U-0 compruebe a mano que la ruta solo conserva `validateSearch`, `head` y `component: HubScreen`, y que el commit de U-0 no cambie más que el paso de `Route.useSearch()` a `useSearch({ from: "/_authenticated/hub" })`.
+10. **Para SDD-D:** añadir a D la misma advertencia que tiene C1:9. Las líneas `hub.tsx:35` y `:163` de su U-4 pasan a `src/components/hub/hub-screen.tsx` y `src/components/hub/doc-editor.tsx` tras B. El texto común del contrato también sigue diciendo «hub.tsx».
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
