@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 64,
+  "seq": 65,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1673,6 +1673,27 @@
           "at": "2026-11-06T16:11:56.761Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261106-tool-plan-real-connections.md prd=docs/prd/PRD-20261106-tool-plan-real-connections.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0065",
+      "title": "NK-0048 seguimiento: cinco objeciones bajas del gate (lock huérfano en openRun, result.md contradictorio, evidencia de fail-first, §18 y base_commit, mensajes de askPinned) y fixture «VeriDoc API» por un nombre ficticio",
+      "kind": "bug",
+      "source": "Gate independiente de NK-0048 sobre 0a290d0, f854d61 y 7d8c53a (2026-11-06); objeciones 2 a 6; decisión de §16 pendiente de Fede",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T16:25:19.318Z",
+          "by": "Claude",
+          "note": ""
         }
       ]
     }
