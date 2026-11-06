@@ -63,7 +63,15 @@ export function loadLedger(dir: string, pass: EvalPass): SpendLedger {
     manual: [],
   };
   if (!existsSync(path)) return empty;
-  const saved = JSON.parse(readFileSync(path, "utf8")) as Partial<SpendLedger>;
+  const saved = JSON.parse(readFileSync(path, "utf8")) as Partial<SpendLedger> | null;
+  // A file of the wrong shape (or a spend that is not a finite number ≥ 0) would turn the cap into NaN: refuse it.
+  if (!saved || typeof saved !== "object" || Array.isArray(saved))
+    throw new Error(`${path} no es un registro de gasto`);
+  if (
+    "spentUsd" in saved &&
+    !(typeof saved.spentUsd === "number" && Number.isFinite(saved.spentUsd) && saved.spentUsd >= 0)
+  )
+    throw new Error(`${path} tiene un gasto no válido`);
   // The approved amount always comes from the code, never from the file.
   return { ...empty, ...saved, pass, approvedUsd: APPROVED_USD[pass] };
 }
