@@ -1,7 +1,7 @@
 # SDD-20261025-connections-bring-your-own-account · [Feature] Conexiones: conecta tus propias cuentas
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** En curso (aprobado por Fede 2026-10-26; U-1 y U-2 entregadas sin proveedores habilitados) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** En curso (aprobado por Fede 2026-10-26; U-1 y U-2 entregadas sin proveedores habilitados); el PR #32 se cerró sin fusionar; se rehace sobre main tras la salida de Lovable B, con este SDD revisado (D-3, decisión de Fede del 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-6) · **Depende de:** SDD universal de campos (origen del dato); SDD de Drive por empresa (primer caso)
 
 > **Enmienda aprobada (2026-11-02)** por `SDD-20261031-gtm-control-tower-8-postin-views-nokko`: para el proveedor «vistas de Postin», la misma dirección ya conectada en otra organización se rechaza en lugar de pedir confirmación (CA-14 de ese SDD).

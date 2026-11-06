@@ -1,7 +1,7 @@
 # SDD-20261025-theory-u-proactive-decision-support · [Feature] Theory U con IA proactiva para decidir
 
 **Tipo:** Feature · **Prioridad propuesta:** Media
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** SUPERADO por GTM Lab (D-7, decisión de Fede del 2026-11-06): su idea entra en la ayuda de IA por paso; no ejecutar este texto (antes: Borrador) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-8) · **Depende de:** SDD universal de campos; SDD de acciones sobre campos
 
 ## 1. Resumen
