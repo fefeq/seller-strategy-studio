@@ -291,7 +291,7 @@ export function StrategyChanges() {
           const keys = Object.keys(c.values);
           return (
             <div key={c.id} className="rounded-lg border bg-card p-4">
-              <p className="font-mono text-[10px] uppercase text-muted-foreground">
+              <p className="font-mono text-xs uppercase text-muted-foreground">
                 {ELEMENT_LABEL[
                   (c.element === "competitor"
                     ? "competitor"

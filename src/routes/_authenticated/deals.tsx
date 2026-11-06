@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CompanyLogo } from "@/components/company-logo";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -5,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { Page, HealthDot } from "@/components/page";
+import { Page, HealthDot, Kpi } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,11 +26,31 @@ import { DateField } from "@/components/date-field";
 import { NewDealButton } from "@/components/new-deal";
 import { DealLinesEditor, useDealLines } from "@/components/deal-lines";
 import { StageSettings, useStages } from "@/components/stage-settings";
-import { stageOptions, stagePath, stageProbability } from "@/lib/stages";
+import { stageLabel, stageOptions, stagePath, stageProbability } from "@/lib/stages";
 import { fetchAll } from "@/lib/fetch-all";
 import { dealsQuery, settle } from "@/hooks/screen-queries";
+import type { Tables } from "@/integrations/supabase/types";
 import { LossDialog, LossSection } from "@/components/loss-reason";
 import { needsLossPrompt, type LossPatch } from "@/lib/loss-reasons";
+import { BoardDnd, DragCard, DropColumn } from "@/components/board-dnd";
+import { MoveMenu } from "@/components/move-menu";
+import { MOVE_COPY, UNDO_MS, dealMoveOptions, isReversibleMove, undoDeal } from "@/lib/board-move";
+import {
+  WON_COPY,
+  blockedByPendingWon,
+  fetchPendingStageChanges,
+  pendingStageChanges,
+  pendingWonDealIds,
+  requestWonApproval,
+} from "@/lib/won-approval";
+
+// The generated client is typed per table; the approvals helpers only need these two calls.
+type ApprovalsDb = Parameters<typeof fetchPendingStageChanges>[0] &
+  Parameters<typeof requestWonApproval>[0];
+const approvalsDb = supabase as unknown as ApprovalsDb;
+
+/** A row of the board query: the deal plus the account columns it selects. */
+type Deal = Tables<"deals"> & { accounts: { name: string; domain: string | null } | null };
 
 export const Route = createFileRoute("/_authenticated/deals")({
   validateSearch: (s: Record<string, unknown>) => ({
@@ -76,6 +97,13 @@ function Deals() {
   );
   const canEditStale = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   const { stages } = useStages();
+  // Deals waiting for approval to become «Ganado»: marked on their card and not movable meanwhile.
+  const { data: pendingRows = [] } = useQuery({
+    queryKey: ["approvals", "pending-stage-change"],
+    queryFn: () => fetchPendingStageChanges(approvalsDb),
+  });
+  const pendingWon = pendingWonDealIds(pendingRows);
+  const toApprovals = { label: "Aprobaciones", onClick: () => navigate({ to: "/approvals" }) };
 
   // Moving a deal into «Perdido» first asks why (CA-8); the deal only moves when the person saves, skips or the dialog closes with a choice.
   const [losing, setLosing] = useState<string | null>(null);
@@ -83,6 +111,13 @@ function Deals() {
 
   async function move(id: string, stage: string, loss?: LossPatch | null) {
     const deal = deals.find((d) => d.id === id);
+    if (deal && deal.stage === stage && loss === undefined) return;
+    // Fresh read, before anything is asked: another person may have requested «Ganado» a second ago.
+    const pendingNow = await fetchPendingStageChanges(approvalsDb).catch(() => pendingRows);
+    if (blockedByPendingWon(pendingStageChanges(pendingNow, id).length, stage)) {
+      toast.warning(WON_COPY.blockedByPending, { action: toApprovals });
+      return;
+    }
     if (deal && loss === undefined && needsLossPrompt(stage, deal.stage)) {
       setLosing(id);
       return;
@@ -103,14 +138,22 @@ function Deals() {
         );
     }
     if (stage === "won") {
-      await supabase
-        .from("approvals")
-        .insert({
-          kind: "stage_change",
-          title: `Marcar como Ganado: ${deals.find((d) => d.id === id)?.name}`,
-          evidence: JSON.stringify({ deal_id: id, stage }),
-        });
-      toast.info("Enviado a Aprobaciones: mover a Ganado requiere aprobación.");
+      const r = await requestWonApproval(approvalsDb, {
+        dealId: id,
+        dealName: deal?.name ?? "",
+        dealStage: deal?.stage,
+        wonKey: stage,
+        pending: pendingNow,
+      });
+      if (r.result === "error") {
+        toast.error(errorText(r.error));
+        return;
+      }
+      toast.dismiss(`move-${id}`);
+      if (r.result === "created") toast.info(WON_COPY.sent);
+      else if (r.result === "already-pending")
+        toast.info(WON_COPY.alreadyPending, { action: toApprovals });
+      else toast.info(WON_COPY.alreadyWon);
       qc.invalidateQueries();
       return;
     }
@@ -118,8 +161,61 @@ function Deals() {
       .from("deals")
       .update({ stage, probability: stageProbability(stage, stages), ...(loss ?? {}) })
       .eq("id", id);
-    if (error) toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["deals"] });
+    if (error) {
+      toast.error(errorText(error));
+      return;
+    }
+    if (deal) announceMove(id, deal.stage, deal.probability ?? null, stage);
+  }
+
+  // Every successful move says where the deal went; the reversible ones offer «Deshacer» for a few seconds.
+  function announceMove(
+    id: string,
+    fromStage: string,
+    fromProbability: number | null,
+    toStage: string,
+  ) {
+    const label = stageLabel(toStage, stages);
+    if (!isReversibleMove({ entity: "deal", from: fromStage, to: toStage, stages })) {
+      toast.info(MOVE_COPY.moved(label), { id: `move-${id}` });
+      return;
+    }
+    toast(MOVE_COPY.moved(label), {
+      id: `move-${id}`,
+      duration: UNDO_MS,
+      action: {
+        label: MOVE_COPY.undo,
+        onClick: () => void undoMove(id, fromStage, fromProbability, toStage),
+      },
+    });
+  }
+  async function undoMove(
+    id: string,
+    prevStage: string,
+    prevProbability: number | null,
+    movedTo: string,
+  ) {
+    // Meanwhile somebody may have asked for «Ganado»: the deal must not move back then.
+    const pending = await fetchPendingStageChanges(approvalsDb).catch(
+      () => [] as typeof pendingRows,
+    );
+    if (pendingStageChanges(pending, id).length)
+      return void toast.warning(WON_COPY.blockedByPending, {
+        id: `move-${id}`,
+        action: toApprovals,
+      });
+    const plan = undoDeal({ prevStage, prevProbability, movedTo });
+    const { data, error } = await supabase
+      .from("deals")
+      .update(plan.patch)
+      .eq("id", id)
+      .eq("stage", plan.onlyIfStage)
+      .select("id");
+    if (error) return void toast.error(errorText(error));
+    if (!data?.length) return void toast.info(MOVE_COPY.changedMeanwhile, { id: `move-${id}` });
+    qc.invalidateQueries({ queryKey: ["deals"] });
+    toast.success(MOVE_COPY.undone(stageLabel(prevStage, stages)), { id: `move-${id}` });
   }
 
   return (
@@ -152,18 +248,21 @@ function Deals() {
     >
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Kpi
+          size="hero"
           label="Pipeline abierto"
-          v={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
+          value={eur(open.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
         />
         <Kpi
+          size="hero"
           label="Forecast ponderado"
-          v={eur(
+          value={eur(
             open.reduce((s, d) => s + (Number(d.amount ?? 0) * (d.probability ?? 0)) / 100, 0),
           )}
         />
         <Kpi
+          size="hero"
           label="Ganado"
-          v={eur(
+          value={eur(
             deals.filter((d) => d.stage === "won").reduce((s, d) => s + Number(d.amount ?? 0), 0),
           )}
         />
@@ -178,64 +277,88 @@ function Deals() {
         ); cada segmento usa su propio ciclo cuando lo tiene.
       </p>
       <p className="mb-2 text-xs text-muted-foreground md:hidden">
-        Desliza para ver todas las etapas. Abre un deal para cambiar su etapa.
+        Desliza para ver todas las etapas. Usa «Mover a…» en cada tarjeta para cambiar su etapa.
       </p>
-      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
-        {stages.map((st) => {
-          const col = deals.filter((d) => d.stage === st.key);
-          return (
-            <div
-              key={st.key}
-              className="w-[80vw] max-w-72 shrink-0 snap-start rounded-lg bg-muted/60 p-2 md:w-64 md:max-w-none"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => move(e.dataTransfer.getData("id"), st.key)}
-            >
-              <div className="flex justify-between gap-3 px-2 py-2">
-                <span className="eyebrow">{st.label}</span>
-                <span className="shrink-0 font-mono text-xs">
-                  {eur(col.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {col.map((d) => (
-                  <button
-                    key={d.id}
-                    draggable
-                    onDragStart={(e) => e.dataTransfer.setData("id", d.id)}
-                    onClick={() => navigate({ search: { deal: d.id } })}
-                    className={`block w-full rounded-md border bg-card p-3 text-left text-sm hover:border-signal ${cold.get(d.id)?.stale ? "border-signal/60" : ""}`}
-                  >
-                    <span className="break-words font-medium">
-                      <CompanyLogo
-                        domain={d.accounts?.domain}
-                        size={16}
-                        className="mr-1.5 -mt-0.5"
-                      />
-                      {d.name}
-                    </span>
-                    {d.accounts?.name &&
-                      d.accounts.name.trim().toLowerCase() !== d.name.trim().toLowerCase() && (
-                        <span className="block text-xs text-muted-foreground">
-                          {d.accounts.name}
-                        </span>
+      <BoardDnd
+        cardLabel={(id) => deals.find((d) => d.id === id)?.name ?? ""}
+        columnLabel={(key) => stageLabel(key, stages)}
+        onMove={(id, key) => void move(id, key)}
+      >
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 md:snap-none">
+          {stages.map((st) => {
+            const col = deals.filter((d) => d.stage === st.key);
+            return (
+              <DropColumn
+                key={st.key}
+                id={st.key}
+                className="w-[80vw] max-w-72 shrink-0 snap-start rounded-lg bg-muted/60 p-2 md:w-64 md:max-w-none"
+              >
+                <div className="flex justify-between gap-3 px-2 py-2">
+                  <span className="eyebrow">{st.label}</span>
+                  <span className="shrink-0 font-mono text-xs">
+                    {eur(col.reduce((s, d) => s + Number(d.amount ?? 0), 0))}
+                  </span>
+                </div>
+                <div className="space-y-2">
+                  {col.map((d) => (
+                    <DragCard key={d.id} id={d.id} column={st.key}>
+                      {({ dragging, ...drag }) => (
+                        <div className="relative">
+                          <button
+                            {...drag}
+                            onClick={() => navigate({ search: { deal: d.id } })}
+                            className={`block w-full rounded-md border bg-card p-3 pb-10 text-left text-sm hover:border-signal ${dragging ? "opacity-40" : ""} ${cold.get(d.id)?.stale ? "border-signal/60" : ""}`}
+                          >
+                            <span className="break-words font-medium">
+                              <CompanyLogo
+                                domain={d.accounts?.domain}
+                                size={16}
+                                className="mr-1.5 -mt-0.5"
+                              />
+                              {d.name}
+                            </span>
+                            {d.accounts?.name &&
+                              d.accounts.name.trim().toLowerCase() !==
+                                d.name.trim().toLowerCase() && (
+                                <span className="block text-xs text-muted-foreground">
+                                  {d.accounts.name}
+                                </span>
+                              )}
+                            {pendingWon.has(d.id) && (
+                              <span className="mt-1 block text-xs font-medium text-signal">
+                                {WON_COPY.mark}
+                              </span>
+                            )}
+                            {cold.get(d.id)?.stale && (
+                              <span className="mt-1 block text-xs text-signal">
+                                Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral{" "}
+                                {cold.get(d.id)!.threshold.days})
+                              </span>
+                            )}
+                            <span className="mt-2 flex items-center justify-between">
+                              <span className="font-mono text-xs">
+                                {eur(Number(d.amount ?? 0))}
+                              </span>
+                              <HealthDot value={d.health} />
+                            </span>
+                          </button>
+                          <span className="absolute bottom-1 right-2">
+                            <MoveMenu
+                              itemLabel={d.name}
+                              options={dealMoveOptions(stages, d.stage)}
+                              onMove={(key) => void move(d.id, key)}
+                            />
+                          </span>
+                        </div>
                       )}
-                    {cold.get(d.id)?.stale && (
-                      <span className="mt-1 block text-[11px] text-signal">
-                        Enfriado: {cold.get(d.id)!.idleDays} días sin actividad (umbral{" "}
-                        {cold.get(d.id)!.threshold.days})
-                      </span>
-                    )}
-                    <span className="mt-2 flex items-center justify-between">
-                      <span className="font-mono text-xs">{eur(Number(d.amount ?? 0))}</span>
-                      <HealthDot value={d.health} />
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                    </DragCard>
+                  ))}
+                </div>
+              </DropColumn>
+            );
+          })}
+        </div>
+      </BoardDnd>
       <LossDialog
         deal={losingDeal}
         onCancel={() => setLosing(null)}
@@ -267,21 +390,12 @@ function Deals() {
   );
 }
 
-function Kpi({ label, v }: { label: string; v: string }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 font-display text-4xl">{v}</p>
-    </div>
-  );
-}
-
 function DealDetail({
   deal,
   onMove,
   onSaved,
 }: {
-  deal: any;
+  deal: Deal;
   onMove: (stage: string) => Promise<void>;
   onSaved: () => void;
 }) {
@@ -294,9 +408,9 @@ function DealDetail({
     const prev = server.current;
     server.current = deal;
     if (prev === deal) return;
-    setD((cur: any) => (prev.id !== deal.id ? deal : mergeServerEdits(cur, prev, deal)));
+    setD((cur) => (prev.id !== deal.id ? deal : mergeServerEdits(cur, prev, deal)));
   }, [deal]);
-  const m: Record<string, { score: number; note: string }> = d.meddpicc ?? {};
+  const m = (d.meddpicc ?? {}) as Record<string, { score: number; note: string }>;
   const qc = useQueryClient();
   const { data: items = [] } = useQuery({
     queryKey: ["map", deal.id],
@@ -360,13 +474,11 @@ function DealDetail({
     qc.invalidateQueries({ queryKey: ["map", deal.id] });
   }
   async function requestDiscount() {
-    await supabase
-      .from("approvals")
-      .insert({
-        kind: "discount",
-        title: `Descuento para ${d.name}`,
-        evidence: `Importe: ${eur(Number(d.amount ?? 0))}. Justificación: añade el contexto en la cuenta.`,
-      });
+    await supabase.from("approvals").insert({
+      kind: "discount",
+      title: `Descuento para ${d.name}`,
+      evidence: `Importe: ${eur(Number(d.amount ?? 0))}. Justificación: añade el contexto en la cuenta.`,
+    });
     toast.success("Solicitud enviada a Deal Desk.");
   }
 
@@ -424,7 +536,7 @@ function DealDetail({
         </Field>
         <Field label="Salud">
           <Pick
-            value={d.health}
+            value={d.health ?? ""}
             options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }}
             onChange={(v) => setD({ ...d, health: v })}
           />
@@ -565,14 +677,14 @@ function DealDetail({
             value={due || null}
             onChange={(iso) => setDue(iso ?? "")}
           />
-          <select
-            className="h-10 rounded-md border bg-background px-2 text-base md:h-auto md:text-sm"
+          <NativeSelect
+            aria-label="Lado del hito"
             value={side}
             onChange={(e) => setSide(e.target.value)}
           >
             <option value="nosotros">Nosotros</option>
             <option value="cliente">Cliente</option>
-          </select>
+          </NativeSelect>
           <Button disabled={!newItem} onClick={addItem}>
             +
           </Button>
