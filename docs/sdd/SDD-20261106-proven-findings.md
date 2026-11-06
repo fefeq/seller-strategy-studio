@@ -2,7 +2,7 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
 **Estado:** Borrador (decisiones de Fede cerradas el 2026-11-06, ver sección 15; falta su aprobación para ejecutar) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
-**PRD:** No aplica (mejora acotada: sin tabla, sin migración, sin permisos nuevos). · **Depende de:** — (independiente de `SDD-20261106-signal-freshness`)
+**Coordinado con:** `SDD-20261106-plays-library-core` (comparte el registro de herramientas, `TITLES` y el manifest; se ejecuta después de fusionarlo; no es un play del catálogo). **PRD:** No aplica (mejora acotada: sin tabla, sin migración, sin permisos nuevos). · **Depende de:** — (independiente de `SDD-20261106-signal-freshness`)
 
 > Nivel elegido: SDD corto. Las secciones que no cambian el resultado van como «No aplica».
 

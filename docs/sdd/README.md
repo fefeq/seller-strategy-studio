@@ -21,6 +21,7 @@ PRD de la iniciativa: `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (objet
 | 11 | `SDD-20261027-strategic-suggestions-engine` | Feature (maestro, 8 fases) | 1, 2, 7b; usa 9 |
 
 ## Tanda 2026-11-06 · señales, hallazgos y reglas de outreach
+**Requisito previo:** `feat/plays-library-core` (SDD 1 de Plays, migración 0077) fusionada en `main`; toca el mismo registro de herramientas, manifest, `proactive/` y `org-data.ts`. `signal-freshness` y la U-3 de `frontal-rules-integration` son los SDD 2 y 3 del PRD de Plays (`docs/prd/PRD-20261106-plays-gtm.md`).
 Orden de ejecución (uno tras otro: comparten `proactive.test.ts` y `agent-tools.test.ts`). Los tres necesitan la aprobación explícita de Fede.
 | # | SDD | Tipo | Depende de |
 |---|---|---|---|

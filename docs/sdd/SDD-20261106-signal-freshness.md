@@ -2,7 +2,7 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
 **Estado:** Borrador (decisiones de Fede cerradas el 2026-11-06, ver sección 15; falta su aprobación para ejecutar) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
-**PRD:** No aplica (mejora acotada: sin tabla, sin migración, sin permisos nuevos) · **Depende de:** — · **Sustituye** la unidad U-2 de `SDD-20261106-frontal-rules-integration` (señales con ventana por tipo): esa unidad pasa a usar este módulo, ver sección 6
+**PRD:** No aplica (mejora acotada: sin tabla, sin migración, sin permisos nuevos) · **Depende de:** `SDD-20261106-plays-library-core` fusionado en `main` · **Es el SDD 2 del PRD de Plays** (`docs/prd/PRD-20261106-plays-gtm.md`, plays `signals-in-crm-with-decay` y `signal-activation`) · **Sustituye** la unidad U-2 de `SDD-20261106-frontal-rules-integration` (señales con ventana por tipo): esa unidad pasa a usar este módulo, ver sección 6
 
 > Nivel elegido: SDD corto. Un PRD añadiría objetivos de negocio medibles, que hoy no existen porque no hay uso real (foto de la Fase A: 1 cuenta, 0 leads). Las secciones que no cambian el resultado van como «No aplica».
 
@@ -49,6 +49,7 @@ El vendedor puede recibir como sugerencia una noticia publicada hace semanas sol
 - **CA-4** La clave de dedupe sigue siendo `signal:<id>`: una señal descartada no vuelve. · prueba: `src/lib/proactive.test.ts`
 - **CA-5** Señales apiladas: una cuenta con al menos dos señales de tipos distintos entre los accionables (sin `risk`), ninguna caducada y al menos una en Gancho, sube sus sugerencias de señal a prioridad 2 y el cuerpo nombra la otra señal. Una señal sola, o dos del mismo tipo, no apilan. · prueba: `src/lib/signal-freshness.test.ts` y `src/lib/proactive.test.ts`
 - **CA-6** `signalLoadDays()` devuelve la mayor vigencia de la tabla de ventanas, y `loadSnapshot` la usa para cargar señales con `found_at` dentro de ese margen, las más recientes primero, con tope de 200 y con `published_at` en el `select`. · prueba: `src/lib/signal-freshness.test.ts` para la función pura. `loadSnapshot` no tiene hoy test propio: el orden y el `select` se comprueban en el recorrido local de la sección 12 (U-2).
+- **CA-13** En el catálogo de Plays (`src/lib/plays/catalog.ts`), `signal-activation` conserva `detectors: ["account_signal"]` y su `needs` ya no lista «Modelo de señales con peso y caída»; `signals-in-crm-with-decay` actualiza su `needs` (el peso por tipo y la caída ya existen) y sigue sin detector propio. Pausar `signal-activation` en una empresa apaga el detector con el comportamiento nuevo (tope incluido), por el mecanismo ya existente de plays · prueba: `src/lib/plays/catalog.test.ts` y `src/lib/proactive.test.ts`
 - **CA-12** El detector emite como máximo 5 sugerencias de señal nuevas por ejecución y por empresa, las de mayor prioridad y más recientes primero; el resto espera a la siguiente ejecución sin perderse. El valor es la constante `MAX_SIGNAL_SUGGESTIONS_PER_RUN`. · prueba: `src/lib/proactive.test.ts`
 
 ### H-2: Como persona que habla con el agente, quiero que me diga qué señales puedo usar y cuáles no, sin que él calcule fechas.
@@ -90,7 +91,7 @@ Cada unidad es un PR pequeño. U-2, U-3 y U-4 dependen de U-1 y son independient
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | `src/lib/signal-freshness.ts`: edad, estado, apilado y lectura | CA-1, CA-2, CA-5 (regla), CA-10 | `src/lib/signal-freshness.test.ts` |
-| U-2 | Detector y snapshot | CA-3, CA-4, CA-5, CA-6, CA-12 | `src/lib/proactive.test.ts`, `src/lib/signal-freshness.test.ts` |
+| U-2 | Detector, snapshot y catálogo de Plays | CA-3, CA-4, CA-5, CA-6, CA-12, CA-13 | `src/lib/proactive.test.ts`, `src/lib/signal-freshness.test.ts` |
 | U-3 | Herramienta, título y manifest MCP | CA-7, CA-8, CA-9 | `src/lib/agent-tools.test.ts` |
 | U-4 | Estado en la ficha de cuenta | CA-11 | `src/lib/signal-freshness.test.ts` (etiquetas) + recorrido |
 
@@ -123,13 +124,15 @@ Decididas por Fede el 2026-11-06:
 1. Tabla inicial de ventanas de la sección 13: aceptada como valores por defecto declarados (no son un resultado medido).
 2. Tope de 5 sugerencias de señal nuevas por ejecución y empresa (CA-12).
 3. Esta regla sustituye a la U-2 de `frontal-rules-integration`.
+4. Este SDD se adopta como el SDD 2 de Plays (`plays-signals-decay`); no se redacta otro (decisión de Fede, 2026-11-06).
 Siguen abiertas (no bloquean la ejecución; hay valor por defecto):
-4. ¿`risk` fuera de las señales apiladas? Por defecto: fuera (es amenaza, no motivo de compra).
-5. ¿Ventanas ajustables por empresa desde Configuración? Por defecto: fijas hasta tener datos.
-6. Para el gate: ¿cómo comprobar `loadSnapshot` sin test propio (CA-6)?
+5. ¿`risk` fuera de las señales apiladas? Por defecto: fuera (es amenaza, no motivo de compra).
+6. ¿Ventanas ajustables por empresa desde Configuración? Por defecto: fijas hasta tener datos.
+7. Para el gate: ¿cómo comprobar `loadSnapshot` sin test propio (CA-6)?
 
 ## 16. Pendiente de verificar
 - Señales por empresa y por tipo: **sin dato**. No bloquea: CA-12 limita el lote del primer día a 5. Si Fede aporta los conteos agregados de NOKKO, se anotan aquí; Claude Code no consulta ninguna base de datos.
+- Rebase sobre `main` tras fusionar `plays-library-core`: confirmar que `catalog.ts`, el filtro de `detect()` por play y los tests de catálogo siguen como en la rama `feat/plays-library-core` (leída el 2026-11-06). Si cambian, para y pregunta.
 - Que el manifest MCP se regenera con `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` (comando citado por `frontal-rules-integration`; no comprobado aquí porque el clon no tiene dependencias instaladas): Claude Code corre `bun install` primero.
 - Que existe script de tipos además de `vitest run` y `eslint .`: confirmar en `AGENTS.md`.
 

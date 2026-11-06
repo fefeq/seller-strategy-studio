@@ -2,7 +2,7 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
 **Estado:** Borrador (decisiones de Fede cerradas el 2026-11-06, ver sección 15; falta su aprobación para ejecutar) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
-**PRD:** No aplica (mejora acotada) · **Depende de:** — · **Coordinado con:** `SDD-20261106-signal-freshness` (sustituye a la antigua U-2 de este SDD)
+**PRD:** No aplica (mejora acotada) · **Depende de:** — · **Coordinado con:** `SDD-20261106-signal-freshness` (sustituye a la antigua U-2 de este SDD) y `SDD-20261106-plays-library-core` (debe estar fusionado en `main` antes de U-3). **La U-3 es el SDD 3 del PRD de Plays** (play `closed-lost-revival`)
 **Diseño de origen:** `claude/diseno-integracion-reglas-frontal.md` (Proyecto «Nokko GTM Brain»)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada CA-n tiene una prueba automática que lo nombra.
@@ -25,7 +25,7 @@ Equipos de 2–5 vendedores. (a) El borrador de seguimiento tiene dos límites d
 
 ## 5. Alcance
 **Incluye:** `draft-rules.ts`, `revival.ts` + detector + herramienta `draft_revival`, dos jugadas nuevas en `playbooks/base.ts`, línea en `briefing.ts` y `weekly-report.ts`, una línea en el prompt del sistema.
-**No incluye:** migraciones; vigencia de señales (SDD `signal-freshness`); fecha de renovación del competidor (decidido: fuera de v1); score de actividad del lead por toques (ver sección 15, decisión 5); multiplicadores de recencia en el score; cambios de roles de comité; proveedores de señales (Apollo/Lusha, Fase B); infraestructura de email; pixel de visitantes; raspado de interacciones; ABM; envío automático de nada.
+**No incluye:** migraciones; la puerta «algo cambió de verdad» del PRD de Plays para la reactivación (necesita señales con caída; queda para una segunda entrega, ver sección 15); vigencia de señales (SDD `signal-freshness`); fecha de renovación del competidor (decidido: fuera de v1); score de actividad del lead por toques (ver sección 15, decisión 5); multiplicadores de recencia en el score; cambios de roles de comité; proveedores de señales (Apollo/Lusha, Fase B); infraestructura de email; pixel de visitantes; raspado de interacciones; ABM; envío automático de nada.
 
 ## 6. Cambios de comportamiento (delta)
 **Añadido:** `src/lib/draft-rules.ts`; `src/lib/revival.ts`; detector `closed-lost-revival`; herramienta de lectura `draft_revival`; campo opcional `lostDeals` en `Snapshot`; jugadas «Reactivación» y «Outreach con señal».
@@ -49,6 +49,7 @@ Equipos de 2–5 vendedores. (a) El borrador de seguimiento tiene dos límites d
 - **CA-12** Sin `lostDeals` en el snapshot la regla no dispara (snapshots antiguos siguen funcionando) · prueba: `src/lib/proactive.test.ts`
 - **CA-13** `draft_revival` es de lectura, filtra por `org_id`, comprueba con `mustFind` el deal, devuelve borrador sin enviar ni cambiar el deal, y su resultado pasa `lintDraft` o trae `avisos` · prueba: `src/lib/agent-tools.test.ts` (`expectScoped`)
 - **CA-14** Cada `action.tool` del detector existe en el registro y en `TITLES`; `.lovable/mcp/manifest.json` está regenerado · prueba: `src/lib/proactive.test.ts` y test de manifiesto existente
+- **CA-19** En el catálogo de Plays (`src/lib/plays/catalog.ts`), `closed-lost-revival` declara el id literal del detector nuevo en `detectors` (un solo play lo posee) y actualiza su `needs`; pausar ese play en una empresa apaga el detector · prueba: `src/lib/plays/catalog.test.ts` y `src/lib/proactive.test.ts`
 - **CA-15** El briefing de Inicio y el informe semanal muestran las reactivaciones con el mismo texto que la sugerencia · prueba: `src/lib/briefing.test.ts` y `src/lib/weekly-report.test.ts`
 
 ### H-4: Como Owner/Sales Leader, quiero que la biblioteca incluya jugadas de reactivación y de outreach con señal con los mismos números que las reglas.
@@ -82,7 +83,7 @@ Sin tablas ni columnas nuevas, sin migraciones. Sin cambios de RLS ni GRANTs. `d
 |---|---|---|---|
 | U-1 | `feat/draft-rules`: `draft-rules.ts`, enganche en `followup.ts` y `draft_followup` | CA-1 a CA-4 | `draft-rules.test.ts` |
 | U-2 | Sustituida por `SDD-20261106-signal-freshness` (se ejecuta aparte) | CA-5 a CA-8 (allí) | — |
-| U-3 | `feat/closed-lost-revival`: `revival.ts`, `lostDeals`, detector, `draft_revival`, briefing y semanal, manifiesto | CA-9 a CA-15 | `revival.test.ts`, `proactive.test.ts`, `agent-tools.test.ts` |
+| U-3 | `feat/closed-lost-revival`: `revival.ts`, `lostDeals`, detector, `draft_revival`, briefing y semanal, manifiesto, catálogo de Plays | CA-9 a CA-15, CA-19 | `revival.test.ts`, `proactive.test.ts`, `agent-tools.test.ts` |
 | U-4 | `feat/playbook-base-plays`: dos jugadas, línea de prompt | CA-16 a CA-18 | `playbooks.test.ts` |
 
 Orden global de los tres SDD del 2026-11-06: U-1 de este SDD → `signal-freshness` → `proven-findings` → U-3 → U-4. U-4 va última porque depende de las constantes de las anteriores. Dos PR no pueden ir en paralelo si tocan `proactive.test.ts` o `agent-tools.test.ts`.
@@ -108,7 +109,7 @@ Decididas por Fede el 2026-11-06:
 4. Tope de reactivaciones por empresa (CA-11).
 5. Definición de «toque» para el score de actividad del lead: mensaje saliente, llamada o reunión registrada con ese lead. **El score sigue fuera de v1**: ese registro no está construido y necesita su propio SDD; aquí solo queda fijada la definición.
 6. Valores de ventana de lanzamiento, alianza y expansión: los de la tabla de `signal-freshness`.
-Abierta: valor concreto de `MAX_REVIVALS_PER_RUN` (por defecto, 5, igual que el tope de señales; Claude Code lo anota y Fede lo ajusta tras ver el lote real).
+Abiertas: (a) ¿la reactivación necesita ya la puerta «algo cambió de verdad» que pide el PRD de Plays para el SDD 3? Por defecto: no en esta entrega; se añade después usando `signal-freshness`. (b) valor concreto de `MAX_REVIVALS_PER_RUN` (por defecto, 5, igual que el tope de señales; Claude Code lo anota y Fede lo ajusta tras ver el lote real).
 
 ## 16. Pendiente de verificar
 - `roles.ts` frente a los 5 roles de comité → Claude Code lo compara y lo reporta sin cambiarlo.
