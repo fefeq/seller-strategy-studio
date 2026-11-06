@@ -112,7 +112,7 @@ Abierta: valor concreto de `MAX_REVIVALS_PER_RUN` (por defecto, 5, igual que el 
 
 ## 16. Pendiente de verificar
 - `roles.ts` frente a los 5 roles de comité → Claude Code lo compara y lo reporta sin cambiarlo.
-- Deals perdidos por motivo y fecha de cierre en preproducción (conteos agregados) → Claude Code, antes de abrir el PR de U-3.
+- Deals perdidos por motivo y fecha de cierre: **sin dato**. No bloquea (CA-11 limita el lote). Si Fede aporta conteos agregados de NOKKO, se anotan aquí; Claude Code no consulta ninguna base de datos.
 - Comportamiento real en producción → solo Fede, tras publicar.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)

@@ -18,7 +18,7 @@ Eres el agente de implementación de NOKKO (repo seller-strategy-studio). Implem
 1. SDD 1 universal-field-definitions.
 2. SDD 2 field-actions-edit-delete-confirm, SDD 3 strategy-setup-guided-next-step, SDD 10 connections-bring-your-own-account (con SDD 5 drive-per-company-account), SDD 6 discoveries-scoped-manual-search.
 3. SDD 7a, 7b, 7c (fit-data), SDD 8 products, SDD 9 theory-u, SDD 4 onboarding (épica: dos entregas).
-4. Tanda 2026-11-06, en este orden y de uno en uno: `frontal-rules-integration` U-1; `signal-freshness`; `proven-findings`; `frontal-rules-integration` U-3 y después U-4. La U-2 de `frontal-rules-integration` está sustituida por `signal-freshness`: no la implementes. Antes de abrir el PR de cada unidad, `bun install`, y si el SDD lo pide, la consulta de solo lectura de conteos agregados en preproducción.
+4. Tanda 2026-11-06, en este orden y de uno en uno: `frontal-rules-integration` U-1; `signal-freshness`; `proven-findings`; `frontal-rules-integration` U-3 y después U-4. La U-2 de `frontal-rules-integration` está sustituida por `signal-freshness`: no la implementes. Antes de abrir el PR de cada unidad, `bun install`, Los datos reales que el SDD marque «sin dato» no se consultan: se anotan solo si Fede los aporta.
 Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 
 ## 3. Git
@@ -55,6 +55,7 @@ Dentro de un SDD, sigue sus unidades de trabajo (U-1, U-2…) en orden.
 - Push o merge a `main`/`production`, desplegar, ni tocar producción.
 - Crear tickets, documentos en Drive o mensajes a terceros o a clientes.
 - Instalar proveedores nuevos ni contratar servicios.
+- Tocar nada de Postin: sus repos, proyectos, servidores MCP, bases de datos ni documentos. NOKKO es independiente; si una herramienta apunta a Postin, no la uses.
 - Ampliar el alcance («No incluye»). Anota las mejoras en el PR como sugerencia.
 
 ## 8. Entrega final

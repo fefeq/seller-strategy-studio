@@ -20,7 +20,7 @@ El vendedor puede recibir como sugerencia una noticia publicada hace semanas sol
 - `list_account_signals` devuelve señales de los últimos 30 días sin decir si sirven (`src/lib/agent/tools/web.ts:22-34`).
 - Las ventanas por tipo salen del skill `signal-detection` del repo público GTM OS de Frontal (`github.com/Frontal-so/gtm-os`, MIT). Sus cifras no traen fuente propia: se usan como punto de partida y se calibran con datos de cada empresa.
 - `published_at` lo rellena el modelo al extraer la señal (campo «AAAA-MM-DD si se sabe», guardado a las 12:00 UTC; nulo si no se sabe o el formato no cuadra): `src/lib/web-research-core.ts:295-308` y esquema en la línea 199. Es un dato declarado por IA, no verificado.
-- Sin dato de uso real. **[Por verificar]** cuántas señales hay hoy y de qué tipos (consulta de solo lectura en preproducción, ver sección 16).
+- Sin dato de uso real. **[Por verificar]** cuántas señales hay hoy y de qué tipos (ver sección 16).
 
 ## 4. Resultado buscado
 - Ninguna sugerencia `account_signal` nueva para una noticia cuya publicación supere la ventana de Gancho de su tipo. Línea base: sin dato.
@@ -129,7 +129,7 @@ Siguen abiertas (no bloquean la ejecución; hay valor por defecto):
 6. Para el gate: ¿cómo comprobar `loadSnapshot` sin test propio (CA-6)?
 
 ## 16. Pendiente de verificar
-- Señales por empresa y por tipo en preproducción: lo consulta Claude Code (solo lectura, conteos agregados) antes de abrir el PR de U-2 y lo anota en el SDD. Sirve para estimar el lote del primer día (CA-12 lo limita a 5).
+- Señales por empresa y por tipo: **sin dato**. No bloquea: CA-12 limita el lote del primer día a 5. Si Fede aporta los conteos agregados de NOKKO, se anotan aquí; Claude Code no consulta ninguna base de datos.
 - Que el manifest MCP se regenera con `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` (comando citado por `frontal-rules-integration`; no comprobado aquí porque el clon no tiene dependencias instaladas): Claude Code corre `bun install` primero.
 - Que existe script de tipos además de `vitest run` y `eslint .`: confirmar en `AGENTS.md`.
 

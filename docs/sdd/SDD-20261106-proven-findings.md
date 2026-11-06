@@ -105,7 +105,7 @@ Siguen abiertas (no bloquean la ejecución):
 5. Para el gate: ¿`get_proven_findings` exige rol o basta la lectura abierta como `list_deals`? Por defecto: abierta.
 
 ## 16. Pendiente de verificar
-- Deals perdidos con y sin motivo, y experimentos cerrados con aprendizaje, en preproducción: lo consulta Claude Code (solo conteos agregados) antes de abrir el PR de U-1 y lo anota en el SDD.
+- Deals perdidos con y sin motivo, y experimentos cerrados con aprendizaje: **sin dato**. No bloquea. Si Fede aporta los conteos agregados de NOKKO, se anotan aquí; Claude Code no consulta ninguna base de datos.
 - Columna del aprendizaje: `learning text not null default ''` (`0003_theory_u.sql:63`); verificada, «en blanco» = cadena vacía o solo espacios.
 - Cómo se actualiza `.lovable/mcp/manifest.json` (a mano o con script).
 
