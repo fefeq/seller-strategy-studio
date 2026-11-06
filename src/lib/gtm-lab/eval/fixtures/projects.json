@@ -57,7 +57,7 @@
     },
     {
       "id": "kyc-api",
-      "name": "Pruebadoc API",
+      "name": "Zafrelio API",
       "tags": ["enterprise", "técnico", "pre-lanzamiento"],
       "deliverables": {
         "project-profile": { "product": "API de verificación de documentos de identidad para fintechs", "problem": "Las fintechs pequeñas pierden clientes en el alta por verificaciones lentas", "candidates": "Neobancos, plataformas de préstamos, exchanges", "today": "Proveedores grandes con contratos anuales o revisión manual", "edge": "Integración en un día y pago por verificación", "proof": "sin dato", "goal": "5 clientes en producción" },
