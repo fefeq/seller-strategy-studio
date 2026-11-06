@@ -98,7 +98,7 @@ function usageOf(raw: Raw): PinnedUsage {
 }
 
 /** Parses a chat/completions body. An `error` in a 200 body is a provider error, never a model failure. */
-export function parsePinnedResponse(body: string, hasSchema: boolean): PinnedResult {
+export function parsePinnedResponse(body: string, hasSchema: boolean, model = ""): PinnedResult {
   let json: Raw;
   try {
     json = obj(JSON.parse(body));
@@ -107,15 +107,24 @@ export function parsePinnedResponse(body: string, hasSchema: boolean): PinnedRes
   }
   if (json.error) {
     const code = obj(json.error).code;
-    const status = typeof code === "number" ? code : 502;
-    throw new ProviderError(openrouterErrorMessage(status), status, body, "openrouter");
+    const numeric = typeof code === "string" && /^\d{3}$/.test(code) ? Number(code) : code;
+    const status = typeof numeric === "number" ? numeric : 502;
+    throw new ProviderError(pinnedErrorMessage(status, model), status, body, "openrouter");
   }
   const choice = obj(Array.isArray(json.choices) ? json.choices[0] : undefined);
   const native = str(choice.native_finish_reason);
   const finish = str(choice.finish_reason);
   const stopReason = native ?? (finish ? (FINISH_TO_STOP[finish] ?? finish) : null);
   const content = obj(choice.message).content;
-  const text = typeof content === "string" ? content : "";
+  // Some providers send the content as parts; only the text parts count.
+  const text =
+    typeof content === "string"
+      ? content
+      : Array.isArray(content)
+        ? content
+            .map((part) => (typeof obj(part).text === "string" ? (obj(part).text as string) : ""))
+            .join("")
+        : "";
   let output: unknown = null;
   // Same rule as gtm-lab anthropic.ts: the output only counts when the model finished normally.
   if (hasSchema && stopReason === "end_turn") {
@@ -174,5 +183,5 @@ export async function askPinned(
   const body = await res.text().catch(() => "");
   if (!res.ok)
     throw new ProviderError(pinnedErrorMessage(res.status, model), res.status, body, "openrouter");
-  return parsePinnedResponse(body, Boolean(opts.schema));
+  return parsePinnedResponse(body, Boolean(opts.schema), model);
 }

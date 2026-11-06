@@ -241,6 +241,38 @@ describe("parsePinnedResponse (NK-0048 CA-8)", () => {
     expect(() => parsePinnedResponse(body, true)).toThrow(/demasiadas peticiones/);
   });
 
+  it("a 404 inside a 200 body names the pinned model like an HTTP 404 (NK-0065)", () => {
+    const body = JSON.stringify({ error: { code: 404, message: "no endpoints" } });
+    expect(() => parsePinnedResponse(body, true, MODEL)).toThrow(`El modelo fijado (${MODEL})`);
+  });
+
+  it("a numeric string code in the error body keeps its status (NK-0065)", () => {
+    const body = JSON.stringify({ error: { code: "429", message: "rate" } });
+    expect(() => parsePinnedResponse(body, true)).toThrow(/demasiadas peticiones/);
+  });
+
+  it("content in parts is joined into the text and parsed (NK-0065)", () => {
+    const body = JSON.stringify({
+      model: MODEL,
+      provider: "Anthropic",
+      choices: [
+        {
+          native_finish_reason: "end_turn",
+          message: {
+            content: [
+              { type: "text", text: '{"a":' },
+              { type: "text", text: '"x"}' },
+            ],
+          },
+        },
+      ],
+      usage: {},
+    });
+    const r = parsePinnedResponse(body, true);
+    expect(r.text).toBe('{"a":"x"}');
+    expect(r.output).toEqual({ a: "x" });
+  });
+
   it("an invalid body is a provider error", () => {
     expect(() => parsePinnedResponse("<html>", true)).toThrow(/respuesta inválida/);
   });
