@@ -1,112 +1,148 @@
 # SDD-20261106-metrics-honest-data · [Mejora] Métricas con datos honestos: el trimestre filtra y cada supuesto se ve
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador (v2, corregido tras el gate; enfoque «rotular» decidido por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
-**PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: mismos archivos y forma de «Estimado · motivo» / «Sin dato · motivo»); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: este SDD añade una ventana trimestral de win rate en `/metrics`); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD sus cifras no cambian); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
+**Estado:** Borrador (v3, corregido tras la segunda pasada del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: pone la forma visual, `DataState`, a las palabras que fija este SDD); `SDD-20261106-ux-core-screens-pattern` (SDD-C1: estados de carga y error de `/metrics`); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: hoy hay tres ventanas de win rate, ver §14); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD su salida no cambia, CA-12); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
 
 > Sprint 1 de mejoras en pantallas core, bloque A. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
 
 ## 1. Resumen
-`/metrics` presenta como reales cifras que se apoyan en supuestos del código: deals sin origen sumados a «Outbound», ACV de `mínimo × 1,5`, payback con margen del 100 % cuando falta el margen, coste compartido repartido a partes iguales cuando nadie ganó y margen medio de objetivos usado como margen. Además, el trimestre no filtra Embudo, Perdidos ni los win rates. Este cambio hace que el trimestre filtre lo que parece filtrar y que cada cifra apoyada en un supuesto lo diga («Estimado · motivo»), **sin cambiar ninguna cifra calculada por las funciones compartidas**, de modo que `/metrics`, `/strategy`, el asistente y MCP sigan dando el mismo número.
+`/metrics` presenta como reales cifras que se apoyan en supuestos del código: deals sin origen sumados a «Outbound», ACV de `mínimo × 1,5`, payback con margen del 100 % cuando falta el margen, coste compartido repartido a partes iguales cuando nadie ganó y la media de márgenes objetivo usada como margen. Además, el trimestre no filtra Embudo, Perdidos ni los win rates. Este cambio hace que el trimestre filtre lo que parece filtrar y que cada cifra diga de dónde sale con una de tres marcas («Real · origen», «Estimado · motivo», «Sin dato · motivo»), **sin cambiar ninguna cifra calculada por las funciones compartidas**, de modo que `/metrics`, `/strategy`, el asistente y MCP sigan dando el mismo número.
 
 ## 2. Problema y para quién
 Owner y Sales Leader deciden presupuesto, cuota y canal con números que la pantalla presenta como reales y en parte son supuestos. El problema es que los supuestos no se ven.
 
 ## 3. Evidencia y por qué ahora
-Leído en `main` @ `f76f639` y revisado por el gate (§17).
+Leído en `main` @ `f76f639` (el código de la rama no cambia respecto a esa base) y revisado por el gate en dos pasadas (§17).
 
 **El trimestre no filtra**
-- `src/routes/_authenticated/metrics.tsx:231-246`: Embudo y Perdidos reciben `data.deals` y `data.history` completos; el `quarter` del selector (`:93`, `:200-211`) no se les pasa.
-- Cohortes usa todo el histórico (`src/components/metrics/revops-panels.tsx:77-78`, `src/lib/revops.ts:94`) sin decirlo. Tendencias ya rotula «Últimas 12 semanas» (`revops-panels.tsx:99`), pero no dice que no depende del trimestre.
-- `metrics.tsx:147-155`, `:173-176`: win rate por origen, por rep y global con todos los cerrados de la historia; la pista del KPI (`:280`) habla de «deals creados este trimestre».
+- `src/routes/_authenticated/metrics.tsx:231-246`: Embudo y Perdidos reciben `data.deals` y `data.history` completos; el `quarter` del selector (`:93`, `:200-211`) no se les pasa. Con el filtro, sus vacíos actuales dirían algo falso: «Aún no hay deals. El embudo aparece al crear el primero.» (`src/components/metrics/revops-panels.tsx:26`) y «Ningún deal perdido todavía.» (`:53`).
+- Cohortes usa todo el histórico (`revops-panels.tsx:77-78`, `src/lib/revops.ts:94`) sin decirlo. Tendencias ya rotula «Últimas 12 semanas» (`revops-panels.tsx:99`), pero no dice que no depende del trimestre.
+- `metrics.tsx:147-155`, `:173-176`: win rate por origen, por rep y global con todos los cerrados de la historia; la pista del KPI (`:280`) habla de «deals creados este trimestre». Sin cerrados, el KPI muestra 0 % (`winRate` devuelve 0 con total 0, `src/lib/metrics.ts:52-55`): un cero que parece medido.
+- El panel se titula «Win rate por fuente» (`metrics.tsx:320`), mientras el resto de `/metrics` dice «origen» (`revops-panels.tsx:9`, `:68`).
 
 **Supuestos que la pantalla no dice**
 | # | Dónde se calcula | Dónde se ve en `/metrics` | Qué hace |
 |---|---|---|---|
 | A1 | `metrics.tsx:163` (local) | Rendimiento › Win rate por fuente | `d.source ?? "outbound"`: un deal sin origen suma a «Outbound». En Perdidos y Cohortes el mismo caso ya se rotula «Sin origen» (`revops-panels.tsx:9`). |
-| A2 | `src/lib/segment-coverage.ts:22-26` (`assignSegment`) → `src/lib/metrics.ts:25` (`matchSegment`) | Cobertura; CAC real («Deals ganados», `cac-panel.tsx:202-203`); margen por segmento (`deal-lines.ts:106`) | Un deal sin `segment_id` se asigna por importe, sin decirlo. |
-| A3 | `src/lib/cac.ts:29` (`segmentCac`) | CAC real (`cac-panel.tsx:200-201`); Presupuesto por segmento («Gasto de captación», `budget-panel.tsx:82`, vía `segment-budget.ts:124`, `:156`) | Si nadie ganó en el trimestre, el compartido se reparte a partes iguales. El CAC ya es null en ese caso (`cac.ts:31`); cambian «+ Compartido asignado», «Coste total» y el gasto por segmento. |
-| A4 | `segment-coverage.ts:9-19` (`segmentAcv`) | Cobertura (`segment-coverage.tsx:93`); Presupuesto por segmento (`segment-budget.ts:128`) | Sin ganados ni abiertos: punto medio del rango, o `acv_min × 1.5` si no hay máximo (`:17`). Los dos casos se rotulan «punto medio del rango» (`segment-coverage.tsx:17`). De ese ACV salen deals objetivo (`segment-coverage.ts:49`), oportunidades objetivo (`:50`) y payback (`:56`). |
-| A5 | `metrics.ts:40` (`capacityPlan`, `grossMarginPct ?? 100`) | Cobertura (`segment-coverage.tsx:121`, `:126-129`: sin margen no se dice nada); Presupuesto por segmento (`budget-panel.tsx:78` muestra «margen en el payback: —» junto a un payback al 100 % en `:85`, vía `segment-budget.ts:136`, `:141-143`); KPI trimestral de empresa (`quarter-kpis.ts:49`) | Sin margen, payback como si el margen fuera 100 %. Con margen 0 sale `Infinity` y con margen negativo, un payback negativo (`metrics.ts:40-41`). |
-| A6 | `src/components/pipeline-board-panel.tsx:47-48` (local) | Rendimiento › tablero («margen X %», `:96`) | Sin margen real, de deals ni de plan, usa la media sin ponderar de los márgenes objetivo de los segmentos, rotulada como margen. |
-| A7 | `src/lib/pipeline-real.ts:30`, `:38-41` | Rendimiento › tablero («ACV real», `pipeline-board-panel.tsx:96`; win rate, `:90`) | «ACV real» puede ser la media de deals abiertos; el win rate es de 365 días dentro de un panel trimestral, sin ventana visible. |
+| A2 | `src/lib/segment-coverage.ts:22-26` (`assignSegment`) → `src/lib/metrics.ts:25` (`matchSegment`) | Cobertura: todas las cifras de la tarjeta salen de los deals asignados (`segment-coverage.ts:39`), y también el margen «de los deals ganados» (`src/lib/deal-lines.ts:106` → `src/components/segment-coverage.tsx:128`); CAC real («Deals ganados», `src/components/cac-panel.tsx:202`); Presupuesto por segmento (clientes y CAC, `src/lib/segment-budget.ts:120-124`) | Un deal con `segment_id` null, o que apunta a un segmento que ya no existe (`segment-coverage.ts:23`), se asigna por importe sin decirlo. `won-deals-panel.tsx` ya lo rotula «Automático (…)» (`won-deals.ts:23`, `:34`). |
+| A3 | `src/lib/cac.ts:29` (`segmentCac`) | CAC real (`cac-panel.tsx:200-201`); Presupuesto por segmento («Gasto de captación», `src/components/budget-panel.tsx:82`, vía `segment-budget.ts:124`, `:151`) | Si nadie ganó en el trimestre, el compartido se reparte a partes iguales. El CAC ya es null en ese caso (`cac.ts:31`); cambian «+ Compartido asignado», «Coste total» y el gasto por segmento. El total de empresa no depende del reparto (`quarter-kpis.ts:39`). |
+| A4 | `segment-coverage.ts:9-19` (`segmentAcv`) | Cobertura (`segment-coverage.tsx:93`); Presupuesto por segmento (`segment-budget.ts:128`) | Sin ganados ni abiertos con importe: punto medio del rango, o `acv_min × 1.5` si no hay máximo (`:17`); sin rango, 0. Los tres casos devuelven `source: "rango"` (`:18`) y se rotulan «punto medio del rango» (`segment-coverage.tsx:17`). De ese ACV salen deals objetivo (`segment-coverage.ts:49`), oportunidades objetivo (`:50`) y payback (`:56`). |
+| A5 | `metrics.ts:40` (`capacityPlan`, `grossMarginPct ?? 100`) | Cobertura (`segment-coverage.tsx:121`; sin margen no se dice nada, `:125-130`); CAC real («Payback real», `cac-panel.tsx:205-210`); Presupuesto por segmento (`budget-panel.tsx:78` muestra «margen en el payback: —» junto a un payback al 100 % en `:85`, vía `segment-budget.ts:136`, `:141-143`); KPI trimestral de empresa (`quarter-kpis.ts:49`, `quarter-kpis-panel.tsx:57`, `:83`) | Sin margen, payback como si el margen fuera 100 %. Con margen 0 sale `Infinity` y con margen negativo un payback negativo (`metrics.ts:40-41`), que además se pinta en verde: `payback.ok` y `realOk` salen `true` (`segment-coverage.ts:67` → `segment-coverage.tsx:121`; `segment-budget.ts:157` → `budget-panel.tsx:88`; `cac-panel.tsx:208`). `weightedPayback` mezcla esos valores en la media del KPI (`quarter-kpis.ts:25-29`, `:49`) y el resultado puede ser finito y positivo. |
+| A6 | `src/components/pipeline-board-panel.tsx:47-49` (local) | Rendimiento › tablero («margen X %», `:96`) | Cadena de margen: real de las cuentas → deals con líneas → plan → media sin ponderar de los márgenes objetivo de los segmentos; el resultado se rotula solo «margen». Con margen ≤ 0, el payback del tablero sale `Infinity` o negativo (`src/lib/pipeline-board.ts:94`, `:95`). |
+| A7 | `src/lib/pipeline-real.ts:30`, `:37-44` (`actuals`) | Rendimiento › tablero («ACV real», `pipeline-board-panel.tsx:96`; win rate, `:90`) | «ACV real» puede ser la media de deals abiertos (`acvSource: "abiertos"`, `pipeline-real.ts:44`); el win rate es de 365 días dentro de un panel trimestral, sin ventana visible. |
 
 **Pistas que llevan a ninguna parte**
 - `src/components/quarter-kpis-panel.tsx:123`: «costes en «CAC real» (más abajo)»: está en Resumen; «CAC real» vive en «CAC y presupuesto» (`metrics.tsx:289-291`).
-- `quarter-kpis-panel.tsx:76`: «Presupuesto vs real» enlaza a `/strategy` sin `tab`, y abre «Modelos de venta» (`strategy.tsx:47`); «CAC real» en la misma línea, sin enlace.
+- `quarter-kpis-panel.tsx:76`: «Presupuesto vs real» enlaza a `/strategy` sin `tab`, y abre «Modelos de venta» (`src/routes/_authenticated/strategy.tsx:47`); «CAC real» en la misma línea, sin enlace.
 - `pipeline-board-panel.tsx:84`: «Apúntalo en «CAC real», más abajo», desde Rendimiento.
 - `segment-coverage.tsx:128` («Presupuesto por segmento», que se apunta en `/strategy?tab=budget`, `budget-panel.tsx:44-45`), `:136`, `:137` («CAC real»): texto sin enlace.
+- `metrics.tsx:258`: «Define cuotas abajo» en Resumen; el panel de cuotas está en Rendimiento (`:370`).
+- Se queda como está: «Añade facturas abajo» (`src/components/metrics/finance-panel.tsx:67`), porque las facturas están en el mismo panel.
 
 **Código compartido** (`/strategy` está congelada en este sprint)
-Consumidores fuera de `/metrics` de las funciones afectadas: `src/components/strategy/motions.tsx`, `payback-quarters.tsx`, `budget-quarters.tsx` (pestañas de `strategy.tsx:59-68`), `src/lib/funnel-diagnosis.ts:122` (Diagnóstico), `payback-card.tsx` (Inicio, `home.tsx:80`), `src/lib/mcp/tools/metrics.ts:55-56` (asistente y MCP), `src/lib/pipeline-real.ts:77`, y de `assignSegment`: `won-deals.ts:22`, `deal-lines.ts:106`, `stale.ts:43`, `proactive/detectors/strategy-segments.ts:37,61`. `quarter-kpis.ts:2` promete en un comentario que Métricas muestra «las mismas cifras que Estrategia GTM → Presupuesto vs real».
+Consumidores fuera de `/metrics` de las funciones afectadas: `src/components/strategy/motions.tsx`, `payback-quarters.tsx`, `budget-quarters.tsx` (pestañas de `strategy.tsx:59-68`), `src/lib/funnel-diagnosis.ts:122` (Diagnóstico), `payback-card.tsx` (Inicio, `home.tsx:80`), `src/lib/pipeline-real.ts:77`, y de `assignSegment`: `won-deals.ts:22`, `deal-lines.ts:106`, `stale.ts:43`, `proactive/detectors/strategy-segments.ts:37,61`. Herramientas MCP (asistente): `realMetrics` (`get_real_metrics`, `src/lib/mcp/tools/metrics.ts:13`) y `segmentCoverageTool` (`get_segment_coverage`, `:34`). La segunda pasa objetos enteros: `won`, `opps` y `winRate` de la fila (`:61`), `plan` y `actual` de `budget_quarter` y `budget_year` (`:65`, `:67`) y `{...r.payback}` (`:66`); de `cac` elige campos uno a uno (`:62`). `quarter-kpis.ts:2` promete en un comentario que Métricas muestra «las mismas cifras que Estrategia GTM → Presupuesto vs real».
 
 **Fuera de este SDD (listadas para no perderlas):** A8 `revops.ts:26-27` (etapa desconocida cuenta como la primera; perdido sin transición se imputa a la primera o a la más avanzada, y llega al titular de Perdidos, `revops-panels.tsx:64,66`); A9 `metrics.tsx:111-115`, `:165` (deals de ex miembros salen como «Sin asignar»). Ver §15.
 
 **Uso:** sin dato (no hay analítica de `/metrics`).
 
 ## 4. Resultado buscado
-- Supuestos sin rotular en `/metrics`: línea base medida en código, 7 (A1-A7). Objetivo: 0.
+- Supuestos sin marca en `/metrics`: línea base medida en código, 7 (A1-A7). Objetivo: 0.
+- Sitios de `/metrics` donde un margen ≤ 0 da `Infinity`, un payback negativo o un tono verde: línea base 5 (Cobertura, CAC real, Presupuesto por segmento, KPI trimestral, tablero). Objetivo: 0.
 - Secciones que parecen depender del trimestre y no dependen, sin decirlo: línea base 3 (Embudo, Perdidos, Cohortes) + win rates. Objetivo: 0.
-- Cifras de las funciones compartidas que cambian: objetivo 0 (CA-12).
+- Pistas de `/metrics` que mandan a otra sección con «abajo» o sin enlace: línea base 8 (§3). Objetivo: 0.
+- Cifras de las funciones compartidas que cambian, y diferencias en la salida de MCP: objetivo 0 (CA-12).
 - Uso o satisfacción: sin dato.
 
 ## 5. Alcance
 **Incluye:**
-- Embudo y Perdidos filtrados por el trimestre; Cohortes y Tendencias con su ventana dicha.
-- Win rate global, por origen y por rep del trimestre seleccionado.
+- Embudo y Perdidos filtrados por el trimestre, con sus textos de vacío del trimestre; Cohortes y Tendencias con su ventana dicha.
+- Win rate global, por origen y por rep del trimestre seleccionado, extraídos a `src/components/metrics/performance-panels.tsx`; el panel pasa a llamarse «Win rate por origen».
 - A1 corregido (es local a `/metrics`): «Sin origen».
-- A2-A7 rotulados en `/metrics` con «Estimado · motivo», a partir de **campos nuevos aditivos** que devuelven las funciones compartidas; ningún valor existente cambia.
-- Payback con margen 0 o negativo mostrado como «Sin dato · margen 0 % o negativo» en `/metrics` (la función sigue devolviendo lo mismo).
+- A2-A7 marcados en `/metrics` con «Real · origen», «Estimado · motivo» o «Sin dato · motivo», a partir de **campos nuevos aditivos en el nivel superior** de lo que devuelven las funciones compartidas (§13); ningún valor existente cambia.
+- Payback con margen 0 o negativo: en `/metrics` se muestra «Sin dato · margen 0 % o negativo», en tono neutro (las funciones siguen devolviendo lo mismo).
 - Pistas de `/metrics` como enlace a su destino correcto.
 
 **No incluye:**
-- Cambiar ninguna cifra que devuelvan `capacityPlan`, `matchSegment`, `assignSegment`, `segmentAcv`, `segmentCoverage`, `paybackByQuarter`, `segmentBudget`, `quarterlyBudget`, `quarterKpis`, `wonDealsMargin`, `segmentCac`, `actuals` o `funnelDiagnosis`.
-- Cualquier cambio visible en `/strategy`, Inicio, el asistente o MCP.
-- Pasar los supuestos a «Sin dato» (alternativa en §15, pregunta 1).
-- Unificar las fórmulas de CAC y payback (§15).
-- `src/lib/advisor.ts:81` y A8-A9 (§15).
+- Cambiar ninguna cifra que devuelvan `capacityPlan`, `matchSegment`, `assignSegment`, `segmentAcv`, `segmentCoverage`, `paybackByQuarter`, `segmentBudget`, `quarterlyBudget`, `quarterKpis`, `wonDealsMargin`, `segmentCac`, `actuals`, `pipelineEconomics` o `funnelDiagnosis`.
+- Cualquier cambio en `/strategy`, Inicio o el asistente, y cualquier cambio en la salida de las herramientas MCP `get_real_metrics` y `get_segment_coverage` (CA-12 la compara sin quitar nada).
+- Contar aparte qué deals del margen por segmento «de deals con líneas» (`deal-lines.ts:106`) se asignaron por importe: son un subconjunto de los M deals de la tarjeta, y la marca de tarjeta de CA-5 ya lo dice.
+- Pasar los supuestos a «Sin dato» en todas las superficies, y unificar las fórmulas de CAC y payback (§15, pregunta 1).
+- `src/lib/advisor.ts:81` y A8-A9 (§15, pregunta 4).
+- Estados de carga y error de `/metrics` (SDD-C1) y forma visual de las marcas (`DataState`, SDD-C2).
 - Canal de adquisición y diccionario de métricas (NK-0029).
-- Estilo visual (SDD-C1 y C2), `src/lib/headlines.ts`, `src/lib/nav.ts` (PR #76).
+- `src/lib/headlines.ts`, `src/lib/nav.ts` (PR #76).
 - Esquema, migraciones, RLS.
 
 ## 6. Cambios de comportamiento (delta)
-**Añadido (solo en `/metrics`):** «Sin origen» en win rate por origen; «Estimado · N de M deals asignados por importe»; «Estimado · punto medio del rango» / «Estimado · mínimo del rango × 1,5»; «Estimado · margen del 100 % supuesto (falta margen)»; «Estimado · compartido repartido a partes iguales (nadie ganó)»; «Estimado · media de márgenes objetivo»; «Estimado · media de deals abiertos» para el ACV del tablero; «Últimos 365 días» en su win rate; «Todo el histórico · no depende del trimestre» en Cohortes; «no depende del trimestre» en Tendencias.
-**Modificado:** Embudo y Perdidos → del trimestre; win rates → del trimestre, con pista «{n} cerrados en {T}»; payback con margen ≤ 0 → «Sin dato · margen 0 % o negativo»; pistas → enlaces.
-**Eliminado:** el supuesto «sin origen = Outbound» en `/metrics`.
+**Añadido (solo en `/metrics`):**
+- «Sin origen» en win rate por origen.
+- «Estimado · N de M deals asignados por importe» (tarjeta de Cobertura) y «Estimado · N de M asignados por importe» (Deals ganados de CAC real; clientes de Presupuesto por segmento).
+- ACV: «Real · media de ganados», «Estimado · media de deals abiertos», «Estimado · punto medio del rango», «Estimado · mínimo del rango × 1,5», «Sin dato · falta rango de ACV».
+- Margen: «Real · de las cuentas», «Real · de deals con líneas», «Estimado · margen de plan», «Estimado · margen objetivo», «Estimado · media de márgenes objetivo», «Estimado · margen del 100 % supuesto (falta margen)».
+- Compartido: «Estimado · repartido a partes iguales (nadie ganó)».
+- Win rate del tablero: «Últimos 365 días».
+- «Todo el histórico · no depende del trimestre» en Cohortes; «Últimas 12 semanas · no depende del trimestre» en Tendencias.
+- Vacíos con trimestre: «Sin deals creados en {T}» (Embudo), «Ningún deal perdido en {T}» (Perdidos), «Sin deals cerrados en {T}» (paneles de win rate).
+
+**Modificado:**
+- Embudo y Perdidos → del trimestre.
+- Win rates → del trimestre; pista del KPI «{n} cerrados en {T}»; sin cerrados, el KPI muestra «—» con «Sin dato · sin deals cerrados en {T}» en vez de «0 %».
+- «Win rate por fuente» → «Win rate por origen».
+- Payback con margen ≤ 0 → «Sin dato · margen 0 % o negativo», en tono neutro (nunca verde).
+- KPI trimestral de payback → marca según los segmentos que entran en su media (CA-7).
+- Pistas → enlaces.
+
+**Eliminado:** el supuesto «sin origen = Outbound» en `/metrics`; los «más abajo» y «abajo» que mandan a otra sección.
 
 ## 7. Historias y criterios de aceptación
+Forma de las marcas (CA-10): exactamente tres estados, «Real» con origen opcional («Real · origen»), «Estimado · motivo» y «Sin dato · motivo». Un «—» que significa «no aplica» no es una marca. Hasta que C2 entregue `DataState`, A las pinta con un envoltorio mínimo que lleva el atributo `data-mark` (§13).
+
 ### H-1: Como Owner o Sales Leader, quiero que el trimestre que elijo filtre lo que parece filtrar, para comparar trimestres sin mezclar periodos.
-- **CA-1** Con el trimestre T, Embudo cuenta solo deals con `created_at` en T, y Perdidos solo deals perdidos con `closed_at ?? updated_at` en T. · prueba: `src/lib/metrics-quarter.test.ts`
+- **CA-1** Con el trimestre T, Embudo cuenta solo deals con `created_at` en T (y su historial), y Perdidos solo deals perdidos con `closed_at ?? updated_at` en T. Sin deals, Embudo dice «Sin deals creados en {T}» y Perdidos «Ningún deal perdido en {T}». · prueba: `src/lib/metrics-quarter.test.ts` (filtro) y `src/components/metrics/revops-panels.test.tsx` (textos)
 - **CA-2** Cohortes muestra «Todo el histórico · no depende del trimestre» y Tendencias «Últimas 12 semanas · no depende del trimestre». · prueba: `src/components/metrics/revops-panels.test.tsx`
-- **CA-3** Win rate global, por origen y por rep cuentan solo deals cerrados en T; la pista del KPI global dice «{n} cerrados en {T}»; sin cerrados en T, cada panel dice «Sin deals cerrados en {T}». · prueba: `src/lib/metrics-quarter.test.ts` (cálculo) y `src/components/metrics/metrics-screen.test.tsx` (textos)
+- **CA-3** Win rate global, por origen y por rep cuentan solo deals cerrados (`closed_at ?? updated_at`) en T. La pista del KPI global dice «{n} cerrados en {T}». Sin cerrados en T, el KPI muestra «—» con «Sin dato · sin deals cerrados en {T}», nunca «0 %», y cada panel dice «Sin deals cerrados en {T}». El panel se titula «Win rate por origen». · prueba: `src/lib/metrics-quarter.test.ts` (cálculo) y `src/components/metrics/performance-panels.test.tsx` (textos)
 
 ### H-2: Como Owner o Sales Leader, quiero ver qué cifra se apoya en un supuesto, para no decidir sobre él sin saberlo.
-- **CA-4** Un deal con `source` null cuenta en «Sin origen», nunca en «Outbound». · prueba: `src/lib/metrics-quarter.test.ts`
-- **CA-5** Las filas de cobertura y de CAC por segmento devuelven cuántos deals se asignaron por importe (M = deals del segmento usados en esa cifra: todo el histórico para el ACV, ganados en T para «Deals ganados»), y la pantalla muestra «Estimado · N de M deals asignados por importe» cuando N > 0. · prueba: `src/lib/segment-coverage.test.ts` y `src/components/segment-coverage.test.tsx`
-- **CA-6** `segmentAcv` devuelve además la base exacta («ganados», «abiertos», «punto_medio», «minimo_x1_5»), y Cobertura y Presupuesto por segmento la rotulan («Estimado · punto medio del rango», «Estimado · mínimo del rango × 1,5»). · prueba: `src/lib/segment-coverage.test.ts` y `src/components/segment-coverage.test.tsx`
-- **CA-7** `capacityPlan` devuelve además si supuso el margen; Cobertura, Presupuesto por segmento y el KPI trimestral rotulan esos paybacks «Estimado · margen del 100 % supuesto (falta margen)». Con margen ≤ 0 la pantalla muestra «Sin dato · margen 0 % o negativo», nunca «Infinity» ni un número negativo. · prueba: `src/lib/metrics.test.ts` y `src/components/segment-coverage.test.tsx`
-- **CA-8** `segmentCac` devuelve además la base del reparto del compartido («clientes», «partes_iguales» o ninguna); CAC real y Presupuesto por segmento rotulan «Estimado · compartido repartido a partes iguales (nadie ganó)». El total de empresa no cambia. · prueba: `src/lib/cac.test.ts` y `src/components/cac-panel.test.tsx`
-- **CA-9** El tablero de Rendimiento rotula el margen según su origen («real», «de deals con líneas», «de plan» o «Estimado · media de márgenes objetivo»), el ACV según su base («Estimado · media de deals abiertos» cuando lo es) y su win rate con «Últimos 365 días». · prueba: `src/components/pipeline-board-panel.test.tsx`
-- **CA-10** Toda marca de esta historia usa la forma «Estimado · motivo» o «Sin dato · motivo» que fija SDD-C2. · prueba: los tests de componente de CA-5 a CA-9
+- **CA-4** Un deal con `source` null cuenta en «Sin origen», nunca en «Outbound». · prueba: `src/lib/metrics-quarter.test.ts` y `src/components/metrics/performance-panels.test.tsx`
+- **CA-5** «Asignado por importe» = deal con `segment_id` null o que apunta a un segmento que no existe (la regla de `won-deals.ts:23`). Cada fila de `segmentCoverage` devuelve `assignedDeals` (M: todos los deals asignados al segmento, los mismos de `segment-coverage.ts:39`, de los que salen todas las cifras de la tarjeta) e `inferredDeals` (N, los de M asignados por importe), y además `wonInQuarter` e `inferredWon` (ganados en T, los de `:36`). La tarjeta de Cobertura muestra una sola marca, bajo el nombre del segmento: «Estimado · N de M deals asignados por importe» cuando N > 0. La fila «Deals ganados» de CAC real muestra «Estimado · N de M asignados por importe» en la celda del segmento cuando `inferredWon` > 0. Las filas de `segmentBudget` devuelven los mismos `wonInQuarter`/`inferredWon` del periodo y la celda CAC de Presupuesto por segmento lleva la misma marca. · prueba: `src/lib/segment-coverage.test.ts`, `src/lib/segment-budget.test.ts`, `src/components/segment-coverage.test.tsx`, `src/components/cac-panel.test.tsx`, `src/components/budget-panel.test.tsx`
+- **CA-6** Las filas de `segmentCoverage` y de `segmentBudget` devuelven `acvSource` (`"ganados" | "abiertos" | "rango"`, el valor que ya da `segmentAcv`, `segment-coverage.ts:18`) y `acvRangeBasis` (`"punto_medio" | "minimo_x1_5" | "sin_rango"` cuando `acvSource` es `"rango"`; null en otro caso). Cobertura (junto al ACV, `segment-coverage.tsx:93`) y Presupuesto por segmento (en la celda Payback) rotulan: ganados → «Real · media de ganados»; abiertos → «Estimado · media de deals abiertos»; punto_medio → «Estimado · punto medio del rango»; minimo_x1_5 → «Estimado · mínimo del rango × 1,5»; sin_rango → «Sin dato · falta rango de ACV». · prueba: `src/lib/segment-coverage.test.ts`, `src/lib/segment-budget.test.ts`, `src/components/segment-coverage.test.tsx`, `src/components/budget-panel.test.tsx`
+- **CA-7** `capacityPlan` devuelve además `marginAssumed` (margen null) y `marginNonPositive` (margen ≤ 0). Las filas de `segmentCoverage` devuelven `paybackMarginBasis` y las de `segmentBudget` `paybackMarginBasis: { plan, actual }`, con valores `"dato" | "supuesto_100" | "no_positivo" | null` (null si no hay payback). `quarterKpis` devuelve `paybackBasis: { plan, actual }` con `"dato" | "estimado" | "sin_dato" | null`, calculado sobre los segmentos que entran en `weightedPayback` (payback no null y clientes > 0): `"sin_dato"` si alguno es `no_positivo`; `"estimado"` si alguno es `supuesto_100` o tiene `acvSource` `"rango"`. En pantalla:
+  - `supuesto_100` → «Estimado · margen del 100 % supuesto (falta margen)» junto al payback, en Cobertura, CAC real («Payback real»), Presupuesto por segmento y el KPI trimestral.
+  - `no_positivo` → la cifra se sustituye por «Sin dato · margen 0 % o negativo», en tono neutro (ni verde ni rojo), en Cobertura (`segment-coverage.tsx:121`), CAC real (`cac-panel.tsx:207-208`), Presupuesto por segmento (`budget-panel.tsx:85-88`) y el tablero (`pipeline-board-panel.tsx:95`, con el `marginNonPositive` de `boardMargin`, §13).
+  - KPI trimestral (`quarter-kpis-panel.tsx:57`, `:83`): `"sin_dato"` → «—» con «Sin dato · un segmento tiene margen 0 % o negativo»; `"estimado"` → la cifra con «Estimado · supuestos en algún segmento (ver Cobertura)».
+  - Nunca se ve «Infinity» ni un payback negativo en `/metrics`.
+  · prueba: `src/lib/metrics.test.ts`, `src/lib/segment-coverage.test.ts`, `src/lib/segment-budget.test.ts`, `src/lib/quarter-kpis.test.ts`, `src/components/segment-coverage.test.tsx`, `src/components/cac-panel.test.tsx`, `src/components/budget-panel.test.tsx`, `src/components/quarter-kpis-panel.test.tsx`, `src/components/pipeline-board-panel.test.tsx`
+- **CA-8** `sharedSplitBasis(costs, customersBySegment, segmentIds)` (nueva, en `cac.ts`) devuelve `"clientes"`, `"partes_iguales"` o null (sin compartido) con la misma regla de `cac.ts:29`; `segmentCac` no cambia. Las filas de `segmentCoverage` y de `segmentBudget` lo devuelven como `sharedSplit`. Con `"partes_iguales"`, CAC real marca «+ Compartido asignado» y «Coste total» (`cac-panel.tsx:200-201`) y Presupuesto por segmento marca «Gasto de captación» (`budget-panel.tsx:82`) con «Estimado · repartido a partes iguales (nadie ganó)». El total de empresa (`quarter-kpis.ts:39`, «coste total» de `cac-panel.tsx:151`) no cambia. · prueba: `src/lib/cac.test.ts`, `src/components/cac-panel.test.tsx`, `src/components/budget-panel.test.tsx`
+- **CA-9** El tablero de Rendimiento marca el margen según `boardMargin(...).source` (§13): real → «Real · de las cuentas»; deals → «Real · de deals con líneas»; plan → «Estimado · margen de plan»; media_objetivos → «Estimado · media de márgenes objetivo». Marca el ACV según `actuals(...).acvSource` (`pipeline-real.ts:44`): ganados → «Real · media de ganados»; abiertos → «Estimado · media de deals abiertos». Su win rate lleva «Últimos 365 días». `boardMargin` devuelve el mismo `pct` que la cadena actual (`pipeline-board-panel.tsx:47-49`). · prueba: `src/lib/pipeline-board.test.ts` y `src/components/pipeline-board-panel.test.tsx`
+- **CA-10** Cada marca que añade este SDD en `/metrics` lleva `data-mark` y su texto cumple exactamente `^(Real( · .+)?|Estimado · .+|Sin dato · .+)$`. · prueba: `src/test/data-marks.ts` (comprobación compartida) llamada desde cada test de componente de CA-3 a CA-9; falla primero porque en la base no hay ningún `[data-mark]` y la comprobación exige al menos uno por test.
 
 ### H-3: Como Owner o Sales Leader, quiero que una pista me lleve a donde se arregla.
-- **CA-11** «CAC real» → `/metrics?seccion=economia`; «Presupuesto por segmento» y «Presupuesto vs real» → `/strategy?tab=budget`. Ningún texto de `/metrics` dice «más abajo» o «más arriba» para referirse a otra sección. · prueba: `src/components/metrics/hints.test.tsx`
+- **CA-11** «CAC real» → `/metrics?seccion=economia`; «Presupuesto por segmento» y «Presupuesto vs real» → `/strategy?tab=budget`; «Define cuotas» → `/metrics?seccion=rendimiento`. Las pistas de la lista cerrada del §3 son enlaces con ese destino, y ningún texto de `/metrics` dice «más abajo», «más arriba» o «abajo» para referirse a otra sección («Añade facturas abajo», misma sección, queda fuera). · prueba: `src/components/metrics/hints.test.tsx`
 
 ### H-4: Como Fede, quiero que nada fuera de `/metrics` cambie en este sprint.
-- **CA-12** Para un conjunto fijo de datos ficticios que recorre A2-A7, las funciones de §5 «No incluye» (primera línea) y `getMetrics` de MCP devuelven lo mismo que en `f76f639` una vez quitados solo los campos nuevos declarados en §13; los tests existentes de esos módulos pasan sin cambios. La prueba guarda evidencia de que falla si se altera un valor existente (mutación: cambiar el `?? 100` por `?? 50` debe romperla). · prueba: `src/lib/strategy-freeze.test.ts`
+- **CA-12** Con un conjunto fijo de datos ficticios que recorre A2-A7 y el margen ≤ 0:
+  - las funciones de la primera línea de §5 «No incluye» devuelven lo mismo que en `f76f639` una vez quitados solo los campos nuevos de la lista cerrada del §13;
+  - los handlers MCP `realMetrics` (`get_real_metrics`) y `segmentCoverageTool` (`get_segment_coverage`) de `src/lib/mcp/tools/metrics.ts`, con `mcpCtx` simulado sobre esos datos, devuelven exactamente lo mismo que en `f76f639`, sin quitar nada (`toStrictEqual`);
+  - los tests existentes de esos módulos pasan sin cambios.
+  La prueba guarda evidencia de que falla si se altera un valor existente (mutación 1: `?? 100` → `?? 50` en `metrics.ts:40`) y si un campo nuevo cae dentro de un objeto que MCP pasa entero (mutación 2: añadir `paybackMarginBasis` dentro de `payback`). · prueba: `src/lib/strategy-freeze.test.ts`
 
 ## 8. Casos límite y errores
-- Trimestre sin deals: «Sin deals en {T}», no ceros que parezcan medidos.
+- Trimestre sin deals: textos de vacío del trimestre (CA-1 para Embudo y Perdidos; CA-3 para win rates), no ceros que parezcan medidos.
 - Deal cerrado sin `closed_at`: se usa `updated_at`, la regla vigente (`metrics.tsx:138`). [Por verificar] cuántos hay: producción.
-- Segmento sin `acv_min` ni `acv_max` y sin deals: hoy ACV 0 (`segment-coverage.ts:15-17`); se rotula «Sin dato · falta rango de ACV».
-- Margen 0 o negativo: CA-7.
-- Compartido con clientes solo en un segmento: reparto por clientes, ya declarado (`cac-panel.tsx:146`); se rotula como «repartido por clientes ganados» solo en la línea del compartido.
-- Multitenant: sin consultas nuevas.
+- Segmento sin `acv_min` ni `acv_max` y sin deals con importe: hoy ACV 0 (`segment-coverage.ts:15-17`); se rotula «Sin dato · falta rango de ACV» (CA-6).
+- Margen 0 o negativo: CA-7, en los cinco sitios del §4.
+- Compartido con clientes en algún segmento: reparto por clientes, ya declarado en el panel (`cac-panel.tsx:146`); no lleva marca nueva.
+- Deal que apunta a un segmento borrado: cuenta como asignado por importe (CA-5).
+- Multitenant: sin consultas nuevas; las funciones nuevas son puras.
+- Carga y error de `/metrics`: SDD-C1.
 
 ## 9. Experiencia y copy
 - Textos de §6. Español, «tú», sin iconos; la palabra lleva el estado.
-- La forma visual de «Estimado · motivo» y «Sin dato · motivo» la fija SDD-C2 (`DataState`, su U-2). Si A se construye antes que C, A entrega los textos con un envoltorio mínimo y C2 los pasa al componente sin cambiar las palabras.
+- A pone las palabras de cada marca; C2 pone la forma visual (`DataState`, su U-2) y la aplica sin cambiar las palabras ni quitar `data-mark`.
 - «Sin origen» (el rótulo que ya usa `/metrics`), no «Sin fuente».
+- Los textos de vacío de Embudo, Perdidos y win rates con trimestre son de A porque dependen del filtro de A; el estado de carga y error de `/metrics` es de C1.
 
 ## 10. Datos, permisos y privacidad
 Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos ficticios. Finanzas sigue solo para Owner y Sales Leader (`metrics.tsx:218`, `:405-412`).
@@ -119,37 +155,56 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-0 | Red de congelación: fixture ficticia, salida de las funciones compartidas y de `getMetrics` en `f76f639`, prueba de mutación con evidencia | CA-12 | `src/lib/strategy-freeze.test.ts` (pasa en base a propósito; su fallo-primero es la mutación, con evidencia guardada) |
-| U-1 | `src/lib/metrics-quarter.ts` puro: filtro de Embudo y Perdidos, win rates del trimestre, «Sin origen»; `metrics.tsx` lo usa | CA-1, CA-3, CA-4 | `src/lib/metrics-quarter.test.ts` |
-| U-2 | Ventana de Cohortes y Tendencias; textos de win rate | CA-2, CA-3 | `src/components/metrics/revops-panels.test.tsx`, `src/components/metrics/metrics-screen.test.tsx` |
-| U-3 | Campos aditivos en `segmentAcv`, `capacityPlan`, `segmentCac`, `segmentCoverage`, `segmentBudget`/`periodBudget`, `quarterKpis`, `actuals` | CA-5 a CA-8 (parte pura) | `src/lib/segment-coverage.test.ts`, `src/lib/metrics.test.ts`, `src/lib/cac.test.ts` |
-| U-4 | Rótulos en Cobertura, CAC real, Presupuesto por segmento, KPI trimestral y tablero; pistas enlazadas | CA-5 a CA-11 (pantalla) | `src/components/segment-coverage.test.tsx`, `src/components/cac-panel.test.tsx`, `src/components/pipeline-board-panel.test.tsx`, `src/components/metrics/hints.test.tsx` |
+| U-0 | Red de congelación: fixture ficticia, salida de las funciones compartidas y de los handlers `realMetrics` y `segmentCoverageTool` en `f76f639`, mutaciones 1 y 2 con evidencia | CA-12 | `src/lib/strategy-freeze.test.ts` (pasa en base a propósito; su fallo-primero son las dos mutaciones, con evidencia guardada) |
+| U-1 | `src/lib/metrics-quarter.ts` puro: `funnelInQuarter`, `lostInQuarter`, `quarterWinRates` (global, por origen con «—» para null, por rep); `metrics.tsx` lo usa | CA-1 (filtro), CA-3 (cálculo), CA-4 | `src/lib/metrics-quarter.test.ts` |
+| U-2 | Extrae `src/components/metrics/performance-panels.tsx` (KPI de `metrics.tsx:277-281` y paneles de `:320-351`, con `Kpi`, `Panel`, `Bar` y `Muted` de `:425-460`, sin cambiar su marcado); textos de win rate; vacíos y ventanas de `revops-panels.tsx`; envoltorio `DataMark` y la comprobación `src/test/data-marks.ts` | CA-1 (textos), CA-2, CA-3 (textos), CA-4 (pantalla), CA-10 | `src/components/metrics/performance-panels.test.tsx`, `src/components/metrics/revops-panels.test.tsx` |
+| U-3 | Campos aditivos de nivel superior (lista cerrada del §13) y `sharedSplitBasis`, `boardMargin` | CA-5 a CA-9 (parte pura) | `src/lib/segment-coverage.test.ts`, `src/lib/segment-budget.test.ts`, `src/lib/metrics.test.ts`, `src/lib/cac.test.ts`, `src/lib/quarter-kpis.test.ts`, `src/lib/pipeline-board.test.ts` |
+| U-4 | Marcas en Cobertura, CAC real, Presupuesto por segmento, KPI trimestral y tablero; tono neutro con margen ≤ 0; pistas enlazadas | CA-5 a CA-9 (pantalla), CA-11 | `src/components/segment-coverage.test.tsx`, `src/components/cac-panel.test.tsx`, `src/components/budget-panel.test.tsx`, `src/components/quarter-kpis-panel.test.tsx`, `src/components/pipeline-board-panel.test.tsx`, `src/components/metrics/hints.test.tsx` |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- **Rotular, no recalcular.** Campos nuevos, todos opcionales para los consumidores: `segmentAcv` → `basis: "ganados" | "abiertos" | "punto_medio" | "minimo_x1_5" | "sin_rango"`; `capacityPlan` → `marginAssumed: boolean`; `SegmentCac` → `sharedBasis: "clientes" | "partes_iguales" | null`; filas de `segmentCoverage` → `inferredDeals`, `inferredWon`; filas de `periodBudget`/`quarterKpis` → los mismos indicadores agregados (`anyMarginAssumed`, `anyAcvEstimated`, `sharedBasis`); `actuals` → `acvBasis`. Ningún campo existente cambia de valor ni de tipo (CA-12).
-- **Por qué no la opción estricta:** cambiaría cifras solo en `/metrics` y rompería la coincidencia con `/strategy`, el asistente y MCP (`quarter-kpis.ts:2`, `segment-coverage.ts:1`, `cac.ts:1`, `segment-budget.ts:3`; SDD 5c CA-1). Queda como pregunta 1 de §15, para cuando `/strategy` se descongele y se pueda cambiar en todas las superficies a la vez.
-- **Filtro trimestral:** en `src/lib/metrics-quarter.ts`, antes de llamar a `RevopsFunnel`/`RevopsLost`, sin tocar `src/lib/revops.ts` (portado y probado).
-- **Margen ≤ 0:** se resuelve en la presentación (`Number.isFinite` y signo); `capacityPlan` no cambia.
-- **Tests de componente:** jsdom y Testing Library ya están configurados (`vitest.config.ts:8`); patrón de mocks en `src/components/strategy-screens.test.tsx:12-41`. Ningún test en `src/routes/` (el generador de rutas lo tomaría por ruta); si hace falta, con prefijo `-`.
-- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** A cambia datos y textos de datos de `/metrics`; B, la búsqueda de `/hub`; C1, estados de pantalla (carga, error, vacío), sección en la URL, vacíos y pistas de `/hub` y `/theory-u`; C2, el plegado de explicaciones en las tres pantallas y la forma del estado de un dato en `/metrics`. Orden de integración: A → B → C1 → C2.
+- **Rotular, no recalcular.** Lista cerrada de campos nuevos, todos en el **nivel superior** de lo que devuelve cada función; nunca dentro de `payback`, `won`, `opps`, `winRate`, `cac`, `plan` o `actual` (los objetos que MCP pasa enteros o parcialmente, `mcp/tools/metrics.ts:61-67`):
+  - `segmentAcv` → `rangeBasis: "punto_medio" | "minimo_x1_5" | "sin_rango" | null` (`source` ya existe, `segment-coverage.ts:12-18`; solo hace falta separar `"rango"`: `"sin_rango"` si el ACV resultante es 0, `"minimo_x1_5"` si no hay `acv_max`, `"punto_medio"` en otro caso).
+  - `capacityPlan` → `marginAssumed: boolean`, `marginNonPositive: boolean`.
+  - filas de `segmentCoverage` → `acvRangeBasis` (`acvSource` ya existe, `:59`), `assignedDeals`, `inferredDeals`, `wonInQuarter`, `inferredWon`, `paybackMarginBasis`, `sharedSplit`.
+  - filas de `periodBudget` (y por tanto de `segmentBudget` y `quarterlyBudget`) → `acvSource`, `acvRangeBasis`, `wonInQuarter`, `inferredWon`, `paybackMarginBasis: { plan, actual }`, `sharedSplit`.
+  - `quarterKpis` / `kpiTotals` → `paybackBasis: { plan, actual }`.
+  - `actuals` → nada nuevo: `acvSource` ya existe (`pipeline-real.ts:10`, `:44`).
+  - Funciones nuevas: `sharedSplitBasis` (`cac.ts`), `boardMargin(k, wonAll, segments) → { pct, source: "real" | "deals" | "plan" | "media_objetivos" | null, marginNonPositive }` (`pipeline-board.ts`, mueve la cadena de `pipeline-board-panel.tsx:47-49` sin cambiar el valor), `funnelInQuarter`, `lostInQuarter`, `quarterWinRates` (`src/lib/metrics-quarter.ts`).
+  - Ningún campo existente cambia de valor ni de tipo (CA-12).
+- **Por qué no la opción estricta:** cambiaría cifras solo en `/metrics` y rompería la coincidencia con `/strategy`, el asistente y MCP (`quarter-kpis.ts:2`, `segment-coverage.ts:1`, `cac.ts:1`, `segment-budget.ts:3`; SDD 5c CA-1). Queda para cuando `/strategy` se descongele (§15, pregunta 1).
+- **Filtro trimestral:** en `src/lib/metrics-quarter.ts`, antes de llamar a `RevopsFunnel`/`RevopsLost` (`revops.ts:48`, `:74`), sin tocar `src/lib/revops.ts` (portado y probado). `RevopsFunnel` y `RevopsLost` reciben `quarter` solo para el texto de vacío.
+- **Margen ≤ 0 y tono:** el valor no cambia; la pantalla lee `paybackMarginBasis` / `marginNonPositive` y no aplica `payback.ok` ni `realOk` cuando es `"no_positivo"`.
+- **Envoltorio mínimo:** `DataMark({ state: "real" | "estimado" | "sin_dato", reason? })` en `src/components/metrics/data-mark.tsx`, que pinta la palabra y « · motivo» dentro de un `<span data-mark={state}>`. C2 lo sustituye o lo hace delegar en `DataState`, sin cambiar textos ni el atributo.
+- **Tests de componente:** jsdom y Testing Library ya están configurados (`vitest.config.ts:8`); patrón de mocks en `src/components/strategy-screens.test.tsx:12-41`. Ningún test en `src/routes/` (el generador de rutas lo tomaría por ruta). Los paneles de win rate se prueban en `performance-panels.test.tsx`, no a través de la ruta.
+- **Test MCP de CA-12:** `vi.mock("@/lib/mcp/context")` con un `mcpCtx` que devuelve una `db` falsa sobre la fixture y conserva `json`; la salida en `f76f639` queda guardada como golden en el propio test.
+- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** «A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.»
+- **Aplicación del contrato en A:** los textos de vacío de Embudo, Perdidos y win rates con trimestre (CA-1, CA-3) son «textos de datos» de A, porque solo existen con su filtro; el estado de carga y error de `/metrics` es de C1. Tras A, `Kpi`, `Panel`, `Bar` y `Muted` viven en `src/components/metrics/performance-panels.tsx`.
 
 ## 14. Riesgos y dependencias
-- Win rate trimestral con pocos cerrados es volátil; se muestran los recuentos (`3G/1P`, `metrics.tsx:332`). El asistente y MCP siguen con el histórico: dos ventanas de win rate vivas, cada una rotulada (lo recoge NK-0029 CA-18).
-- Campos aditivos en funciones ya cargadas: CA-12 protege la rama existente.
-- Rotular un supuesto no lo corrige: el payback al 100 % sigue siendo el número. Es una decisión de este sprint (§15, pregunta 1).
+- Win rate trimestral con pocos cerrados es volátil; se muestran los recuentos (`3G/1P`, `metrics.tsx:332`) y la pista «{n} cerrados en {T}».
+- Ventanas de win rate vivas. Hoy hay tres: histórico (asesor y agente, `advisor.ts:80`; y los win rates de `/metrics`, `metrics.tsx:147-155`, `:173-176`), 365 días (`get_real_metrics` y el tablero de Rendimiento, `pipeline-real.ts:30`) y trimestre (Cobertura y `get_segment_coverage`, `segment-coverage.ts:44`, `:65`). Tras este SDD siguen siendo tres: los win rates de `/metrics` pasan del histórico al trimestre, y el histórico queda solo en el asesor. Cada una lleva su ventana dicha en `/metrics`. Se lo pasamos a NK-0029 CA-18.
+- Campos aditivos en funciones ya cargadas: CA-12 protege las cifras existentes y la salida de MCP.
+- Marcar un supuesto no lo corrige: el payback al 100 % sigue siendo el número. Es la decisión de este sprint (§15, pregunta 1).
+- Orden de integración: A va primero. C2 debe conservar `data-mark` al aplicar `DataState`, o los tests de A dejan de encontrar las marcas.
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Decidido por Fede (2026-11-06): rotular.** ~~Rotular (propuesta) o «Sin dato»:~~ este SDD rotula los supuestos y no cambia cifras, para no romper `/strategy`, el asistente y MCP mientras `/strategy` está congelada. ¿Te vale, y abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez (junto con unificar CAC y payback)?
-2. **Cohortes:** propongo rotularla «Todo el histórico». ¿O prefieres que también filtre por trimestre?
-3. **Win rate al trimestre (CA-3):** ¿de acuerdo, o «histórico» rotulado?
-4. **Fuera de alcance, ¿ticket aparte?:** `advisor.ts:81` (el asesor y el agente reciben «sin origen = Outbound»); A8 (imputación de perdidos en `revops.ts`); A9 (ex miembros como «Sin asignar»).
-5. **Comentario de `quarter-kpis.ts:2`:** sigue siendo cierto con este planteamiento (las cifras coinciden); con la opción estricta habría que reescribirlo.
+1. **Decidido por Fede (2026-11-06): rotular.** Este SDD marca los supuestos y no cambia cifras, para no romper `/strategy`, el asistente y MCP mientras `/strategy` está congelada.
+   - **Pregunta abierta derivada:** ¿abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez, junto con unificar CAC y payback?
+2. **Cohortes (abierta):** propongo rotularla «Todo el histórico» (CA-2). ¿O prefieres que también filtre por trimestre?
+3. **Win rate al trimestre (abierta):** propongo que el win rate global, por origen y por rep sea del trimestre (CA-3). ¿De acuerdo, o prefieres «histórico» rotulado?
+4. **Fuera de alcance, ¿ticket aparte? (abierta):** `advisor.ts:81` (el asesor y el agente reciben «sin origen = Outbound»); A8 (imputación de perdidos en `revops.ts`); A9 (ex miembros como «Sin asignar»).
+5. **Comentario de `quarter-kpis.ts:2` (abierta):** sigue siendo cierto con «rotular» (las cifras coinciden). Propongo dejarlo como está.
+
+Nota: el «2 OK, 3 sí, 5 OK» de Fede del 2026-11-06 respondía a otra lista, no a estas preguntas. Por eso la 2, la 3 y la 5 siguen abiertas y los CA se escriben con la propuesta.
 
 ## 16. Pendiente de verificar
-- Deals cerrados sin `closed_at`, sin `source` y sin `segment_id`: producción.
-- Paneles no leídos por el gate (`LeadFunnelPanel`, `SelfServiceFunnel`, `StripeMetricsPanel`, `FinancePanel`, `won-deals-panel.tsx`): pueden tener más supuestos. Revisión en la segunda pasada del gate.
+- Deals cerrados sin `closed_at`, sin `source` y sin `segment_id`, y deals que apuntan a un segmento borrado: producción.
+- Paneles no leídos enteros (`LeadFunnelPanel`, `SelfServiceFunnel`, `StripeMetricsPanel`, `FinancePanel`): el gate no encontró supuestos numéricos con un grep, pero no los leyó enteros. `won-deals-panel.tsx` ya está comprobado (rotula «Automático (…)»).
+- Ticket NK: SDD-A no tiene ticket en `.factory/ledger.json`. Lo decide el coordinador (`nokko-intake`) antes del brief.
 
 **Versión 2 (2026-11-06):** reescrito tras el gate. Cambia el enfoque de «opción estricta» a «rotular sin recalcular» (objeción 1). Añade BudgetPanel (2), corrige A3 (3), añade A6-A7 y lista A8-A9 (4), mueve las pruebas a un módulo puro y a tests de componente (5), corrige Cohortes y Tendencias (6), los destinos de CA-11 (7), el margen ≤ 0 (8), CA-12 con mutación (9), los rótulos (10), las coordinaciones (11) y define M (12). Las citas del §3 se corrigen según el gate. No ha tenido segunda pasada del gate.
+
+**Versión 3 (2026-11-06):** corregido tras la segunda pasada del gate. Nueva 1: CA-12 nombra los handlers reales (`realMetrics`, `segmentCoverageTool`), compara la salida de MCP sin quitar nada y añade una mutación que mete un campo dentro de `payback`; los campos nuevos van en el nivel superior (§13). Nueva 2: margen ≤ 0 con tono neutro y «Sin dato» en Cobertura, CAC real (`cac-panel.tsx:207`), Presupuesto, tablero y KPI, con `marginNonPositive`, `paybackMarginBasis` y `paybackBasis` (CA-7). Nueva 3 (y parcial 2): `acvSource`/`acvRangeBasis` por fila de `periodBudget` y `budget-panel.test.tsx` en CA-5 a CA-8. Nueva 4 (y parcial 5): U-2 extrae `src/components/metrics/performance-panels.tsx` y CA-3 lo prueba. Nueva 5: vacíos del trimestre en CA-1 y CA-3, «Win rate por origen», y nota de aplicación del contrato (textos de vacío de A; carga y error de C1). Nueva 6 (y parcial 10): CA-10 con los tres estados («Real · origen», «Estimado · motivo», «Sin dato · motivo») y `data-mark`. Nueva 7 (y parcial 11): fuera `acvBasis` de `actuals`, `basis` solo separa `"rango"` (`rangeBasis`/`acvRangeBasis`), valores unificados, y §14 con las tres ventanas. Nueva 8 (y parcial 4): «asignado por importe» definido como `won-deals.ts:23`, una marca por tarjeta con M = deals asignados al segmento, margen de deals con líneas cubierto por esa marca, cita de A6 a `:47-49`. Nueva 9: §15.1 queda como decisión sin pregunta (la pregunta de Sprint 2 va aparte); la 2, 3 y 5 siguen abiertas porque el «2 OK, 3 sí, 5 OK» de Fede respondía a otra lista. Matiz de la 12: M ya no habla de «todo el histórico para el ACV». §8 sin CA: sus casos apuntan a CA-1, CA-3 y CA-6, y se quita la marca «repartido por clientes ganados». Se añade al §3 «Define cuotas abajo» (`metrics.tsx:258`) y el cero falso del KPI sin cerrados. Contrato del sprint sustituido por el texto común.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Informe de la primera pasada (sobre v1, commit `862d9c3`), copiado sin editar:
