@@ -122,7 +122,11 @@ export function parsePinnedResponse(body: string, hasSchema: boolean, model = ""
       ? content
       : Array.isArray(content)
         ? content
-            .map((part) => (typeof obj(part).text === "string" ? (obj(part).text as string) : ""))
+            .map((part) =>
+              obj(part).type === "text" && typeof obj(part).text === "string"
+                ? (obj(part).text as string)
+                : "",
+            )
             .join("")
         : "";
   let output: unknown = null;

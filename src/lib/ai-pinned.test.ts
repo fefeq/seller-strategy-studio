@@ -273,6 +273,28 @@ describe("parsePinnedResponse (NK-0048 CA-8)", () => {
     expect(r.output).toEqual({ a: "x" });
   });
 
+  it("only parts of type text count; a refusal part does not leak into the text (NK-0065)", () => {
+    const body = JSON.stringify({
+      model: MODEL,
+      provider: "Anthropic",
+      choices: [
+        {
+          native_finish_reason: "end_turn",
+          message: {
+            content: [
+              { type: "refusal", text: "no" },
+              { type: "text", text: '{"a":"x"}' },
+            ],
+          },
+        },
+      ],
+      usage: {},
+    });
+    const r = parsePinnedResponse(body, true);
+    expect(r.text).toBe('{"a":"x"}');
+    expect(r.output).toEqual({ a: "x" });
+  });
+
   it("an invalid body is a provider error", () => {
     expect(() => parsePinnedResponse("<html>", true)).toThrow(/respuesta inválida/);
   });
