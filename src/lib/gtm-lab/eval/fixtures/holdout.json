@@ -1,0 +1,60 @@
+{
+  "_note": "Proyectos de control 100 % ficticios (SDD instrucciones-ia). No se usan para ajustar las instrucciones: solo se evalúan al final. Sin datos reales de nadie.",
+  "projects": [
+    {
+      "id": "rutas-reparto",
+      "name": "RutaCorta",
+      "tags": ["pyme", "primeras ventas", "logística"],
+      "deliverables": {
+        "project-profile": { "product": "Planificación de rutas de reparto para distribuidoras de bebidas y alimentación", "problem": "Las distribuidoras pequeñas planifican las rutas a mano cada mañana y los repartidores hacen kilómetros de más", "candidates": "Distribuidoras de bebidas, distribuidoras de alimentación a hostelería, mayoristas de limpieza", "today": "El jefe de almacén reparte los pedidos en una hoja de cálculo y por teléfono", "edge": "Rutas listas en el móvil del repartidor antes de cargar el camión", "proof": "3 distribuidoras de pago desde hace 4 meses", "goal": "25 distribuidoras de pago" },
+        "end-goal": { "goal": "Llegar a 25 distribuidoras pagando", "horizon": "12 meses", "why": "Demostrar que el producto se vende sin que yo esté en cada demo" },
+        "segment-list": { "segments": [ { "name": "Distribuidoras de bebidas", "who": "Flotas de 3 a 10 camiones", "problem": "Rutas hechas a mano cada día" }, { "name": "Mayoristas de limpieza", "who": "Reparto semanal a empresas", "problem": "Pedidos pequeños y dispersos" } ] },
+        "segment-scores": { "rows": [ { "item": "Distribuidoras de bebidas", "scores": { "pain": 5, "budget": 4, "access": 4, "fit": 5 } }, { "item": "Mayoristas de limpieza", "scores": { "pain": 3, "budget": 3, "access": 3, "fit": 3 } } ] },
+        "competitor-map": { "alternatives": [ { "name": "Hoja de cálculo y teléfono", "kind": "Otra forma de resolverlo", "weakness": "Depende de una persona" }, { "name": "Software de flotas para grandes empresas", "kind": "Competidor directo", "strength": "Muy completo", "weakness": "Caro y largo de implantar" } ] },
+        "entry-segment": { "segment": "Distribuidoras de bebidas", "why": "Las 3 distribuidoras que pagan son de bebidas" },
+        "assumption-map": { "rows": [ { "item": "El dueño compra sin consultar al jefe de almacén", "scores": { "importance": 4, "evidence": 2 } }, { "item": "Los repartidores usan la ruta del móvil", "scores": { "importance": 5, "evidence": 3 } }, { "item": "Pagan por camión y mes", "scores": { "importance": 3, "evidence": 4 } } ] },
+        "experiments": { "experiments": [ { "assumption": "El dueño compra sin consultar al jefe de almacén", "method": "Demo solo con el dueño en 6 distribuidoras", "success": "3 compran sin pedir otra reunión" } ] },
+        "customer-profile": { "role": "Dueño de la distribuidora", "company_type": "Distribuidora de bebidas", "company_size": "3 a 10 camiones", "pains": [ { "pain": "Kilómetros de más cada día" }, { "pain": "Todo depende del jefe de almacén" } ], "trigger": "El jefe de almacén se va de vacaciones o deja la empresa", "objections": [ { "objection": "Mis repartidores no van a usar el móvil" } ] },
+        "value-metric": {"metric": "Camiones con ruta planificada", "why": "Cada camión planificado ahorra kilómetros cada día", "measure": "Número de camiones en la flota"},
+        "price-approach": {"approach": "Según el valor que aporta al cliente", "why": "Menos kilómetros se traducen en ahorro directo", "reference": "sin dato"},
+        "growth-engine": {"engine": "Contactas tú a cada cliente", "why": "Pocas distribuidoras y venta consultiva", "evidence": "3 distribuidoras de pago desde hace 4 meses"},
+        "channel-list": {"channels": [{"name": "Demos con el dueño", "how": "Hago la demo directamente al dueño"}, {"name": "Ferias del sector", "how": "Visito ferias de distribución"}, {"name": "Referidos de las 3 distribuidoras actuales", "how": "Pido que me presenten a otras distribuidoras"}]},
+        "channel-scores": {"rows": [{"item": "Demos con el dueño", "scores": {"closeness": 5, "cost": 3, "speed": 4, "repeat": 3}}, {"item": "Ferias del sector", "scores": {"closeness": 3, "cost": 2, "speed": 2, "repeat": 2}}, {"item": "Referidos de las 3 distribuidoras actuales", "scores": {"closeness": 5, "cost": 5, "speed": 4, "repeat": 2}}]},
+        "channel-choice": {"choices": [{"channel": "Demos con el dueño", "why": "El dueño decide la compra", "first_test": "A las distribuidoras interesadas"}, {"channel": "Referidos de las 3 distribuidoras actuales", "why": "Se fían de quien ya lo usa", "first_test": "Pedir presentaciones"}]},
+        "north-metric": {"metric": "Camiones con ruta planificada", "definition": "Camiones con una ruta generada cada día laborable", "current": "sin dato"},
+        "okr": {"objective": "Llegar a más distribuidoras de pago", "key_results": [{"result": "Distribuidoras de pago", "measure": "Cobros registrados", "target": "6 distribuidoras"}, {"result": "Demos hechas", "measure": "Agenda", "target": "sin dato"}]},
+        "action-plan": {"actions": [{"action": "Pedir presentaciones a las 3 distribuidoras actuales", "when": "Semanas 1 a 4", "owner": "tú"}, {"action": "Hacer una demo al dueño de cada distribuidora presentada", "when": "Semanas 5 a 8", "owner": "tú"}, {"action": "Preparar una guía de puesta en marcha", "when": "Semanas 9 a 13", "owner": "tú"}]},
+        "value-proposition": { "for_whom": "Dueños de distribuidoras de bebidas pequeñas", "problem": "Las rutas se hacen a mano y dependen de una sola persona", "how": "Rutas automáticas en el móvil del repartidor cada mañana", "result": "Menos kilómetros y un reparto que no depende de nadie" },
+        "differentiators": { "items": [ { "differentiator": "Listo en una semana, sin proyecto de implantación", "proof": "Las 3 distribuidoras actuales empezaron en una semana" }, { "differentiator": "Pensado para flotas pequeñas", "proof": "Precio por camión" } ] }
+      }
+    },
+    {
+      "id": "nominas-gestorias",
+      "name": "Nómina Lista",
+      "tags": ["pyme", "idea", "regulado"],
+      "deliverables": {
+        "project-profile": { "product": "Revisión automática de nóminas antes de enviarlas, para gestorías laborales", "problem": "Las gestorías detectan errores en nóminas cuando el cliente ya se ha quejado", "candidates": "Gestorías laborales, asesorías con departamento laboral, departamentos de RR. HH. de pymes", "today": "Revisión manual por muestreo o ninguna revisión", "edge": "Revisa todas las nóminas del mes y señala solo las dudosas", "proof": "sin dato", "goal": "Saber si las gestorías pagarían por esto" },
+        "end-goal": { "goal": "Validar con 10 gestorías si pagarían", "horizon": "6 meses", "why": "No quiero construir de más sin saberlo" },
+        "segment-list": { "segments": [ { "name": "Gestorías laborales pequeñas", "who": "De 3 a 15 personas", "problem": "Errores que llegan al cliente" }, { "name": "RR. HH. de pymes", "who": "Una o dos personas que hacen nóminas", "problem": "Miedo a equivocarse con cambios de convenio" } ] },
+        "segment-scores": { "rows": [ { "item": "Gestorías laborales pequeñas", "scores": { "pain": 4, "budget": 3, "access": 4, "fit": 5 } }, { "item": "RR. HH. de pymes", "scores": { "pain": 3, "budget": 3, "access": 2, "fit": 3 } } ] },
+        "competitor-map": { "alternatives": [ { "name": "Revisión manual por muestreo", "kind": "Otra forma de resolverlo", "weakness": "Se escapan errores" }, { "name": "No revisar", "kind": "No hacer nada" }, { "name": "Programa de nóminas", "kind": "Competidor directo", "strength": "Ya lo usan", "weakness": "No avisa de nóminas raras" } ] },
+        "entry-segment": { "segment": "Gestorías laborales pequeñas", "why": "Más fáciles de contactar y les duele más" },
+        "assumption-map": { "rows": [ { "item": "Los errores les cuestan clientes", "scores": { "importance": 5, "evidence": 1 } }, { "item": "Confían en una revisión automática", "scores": { "importance": 4, "evidence": 1 } }, { "item": "Pueden exportar las nóminas de su programa", "scores": { "importance": 5, "evidence": 2 } } ] },
+        "experiments": { "experiments": [ { "assumption": "Los errores les cuestan clientes", "method": "Entrevistas con 8 responsables de gestoría", "success": "5 cuentan un cliente perdido o enfadado por un error" } ] },
+        "customer-profile": { "role": "Socio responsable del área laboral", "company_type": "Gestoría laboral", "company_size": "3 a 15 personas", "pains": [ { "pain": "Errores que descubre el cliente" } ], "trigger": "Un error grave en una nómina de un cliente importante" },
+        "value-metric": {"metric": "Nóminas revisadas al mes", "why": "Cada nómina revisada es un error menos que llega al cliente", "measure": "Recuento de nóminas del mes"},
+        "price-approach": {"approach": "Según el valor que aporta al cliente", "why": "Un error evitado vale más que la revisión", "reference": "sin dato"},
+        "growth-engine": {"engine": "Contactas tú a cada cliente", "why": "No hay producto ni clientes todavía: se empieza por conversaciones", "evidence": "sin dato"},
+        "channel-list": {"channels": [{"name": "Entrevistas con responsables de gestoría", "how": "Pido conversaciones de descubrimiento"}, {"name": "Colegios de gestores", "how": "Contacto con asociados de colegios de gestores"}, {"name": "Contenido sobre cambios de convenio", "how": "Publico avisos sobre cambios de convenio"}]},
+        "channel-scores": {"rows": [{"item": "Entrevistas con responsables de gestoría", "scores": {"closeness": 5, "cost": 5, "speed": 4, "repeat": 3}}, {"item": "Colegios de gestores", "scores": {"closeness": 3, "cost": 3, "speed": 2, "repeat": 2}}, {"item": "Contenido sobre cambios de convenio", "scores": {"closeness": 2, "cost": 5, "speed": 2, "repeat": 3}}]},
+        "channel-choice": {"choices": [{"channel": "Entrevistas con responsables de gestoría", "why": "Hay que oír el problema antes de vender", "first_test": "Pedir conversaciones"}, {"channel": "Colegios de gestores", "why": "Reúnen a muchas gestorías", "first_test": "Contactar con asociados"}]},
+        "north-metric": {"metric": "Nóminas revisadas al mes", "definition": "Nóminas procesadas por la revisión durante el mes", "current": "sin dato"},
+        "okr": {"objective": "Saber si las gestorías pagarían", "key_results": [{"result": "Entrevistas hechas", "measure": "Agenda", "target": "8 entrevistas"}, {"result": "Gestorías que dicen que pagarían", "measure": "Notas de entrevista", "target": "sin dato"}]},
+        "action-plan": {"actions": [{"action": "Contactar con gestorías para pedir conversaciones", "when": "Semanas 1 a 4", "owner": "tú"}, {"action": "Hacer las entrevistas", "when": "Semanas 5 a 8", "owner": "tú"}, {"action": "Resumir lo aprendido y decidir si seguir", "when": "Semanas 9 a 13", "owner": "tú"}]},
+        "value-proposition": { "for_whom": "Gestorías laborales pequeñas", "problem": "Los errores en nóminas se descubren cuando el cliente se queja", "how": "Revisión automática de todas las nóminas antes de enviarlas", "result": "Menos errores que lleguen al cliente" },
+        "differentiators": { "items": [ { "differentiator": "Revisa todas las nóminas, no una muestra", "proof": "[por demostrar]" } ] }
+      }
+    }
+  ],
+  "steps": ["segment-list", "north-metric", "value-proposition", "core-message"]
+}

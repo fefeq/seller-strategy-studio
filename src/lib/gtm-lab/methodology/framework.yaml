@@ -1,0 +1,348 @@
+# Metodología GTM Lab, v1. Redacción propia (decisión 0002).
+# Borrador de estructura: títulos y orden. El detalle de cada paso va en steps/<id>.md.
+version: 0.1
+name: "GTM Lab"
+status: draft
+
+profile:
+  # Preguntas de contexto: se responden una vez y alimentan la guía y la IA.
+  id: project-profile
+  questions:
+    - { id: product, label: "¿Qué hace tu producto, en una frase?" }
+    - { id: problem, label: "¿Qué problema resuelve y para quién?" }
+    - { id: candidates, label: "¿Qué tipos de cliente podrían usarlo?" }
+    - { id: today, label: "¿Cómo resuelven hoy ese problema sin ti?" }
+    - { id: edge, label: "¿Por qué tú y no esas alternativas?" }
+    - { id: proof, label: "¿Qué evidencia tienes hoy (clientes, pruebas, datos)?" }
+    - { id: goal, label: "¿Qué quieres haber conseguido en 12 meses?" }
+
+phases:
+  - id: direction
+    title: "Rumbo"
+    goal: "Saber qué quieres conseguir y cómo lo vas a medir."
+    steps:
+      - { id: end-goal, title: "Define tu objetivo final", deliverable: end-goal, requires: [project-profile] }
+      - { id: north-metric, title: "Elige tu métrica norte", deliverable: north-metric, requires: [end-goal] }
+
+  - id: market
+    title: "Mercado"
+    goal: "Elegir un segmento de entrada que puedas ganar."
+    steps:
+      - { id: segments, title: "Lista tus segmentos candidatos", deliverable: segment-list, requires: [project-profile] }
+      - { id: segment-score, title: "Puntúa los segmentos", deliverable: segment-scores, tool: segment-score, requires: [segment-list] }
+      - { id: competitors, title: "Mapea las alternativas", deliverable: competitor-map, requires: [segment-list] }
+      - { id: entry-segment, title: "Elige tu segmento de entrada", deliverable: entry-segment, requires: [segment-scores, competitor-map] }
+
+  - id: customer
+    title: "Cliente"
+    goal: "Validar a quién vendes antes de construir de más."
+    steps:
+      - { id: assumptions, title: "Identifica tus supuestos críticos", deliverable: assumption-map, tool: assumption-priority, requires: [entry-segment] }
+      - { id: validation-plan, title: "Planifica cómo validarlos", deliverable: experiments, requires: [assumption-map] }
+      - { id: customer-profile, title: "Define tu cliente inicial", deliverable: customer-profile, requires: [experiments] }
+      - { id: buying-group, title: "Entiende quién decide la compra", deliverable: buying-group, requires: [customer-profile], optional: true }
+
+  - id: pricing
+    title: "Precio"
+    goal: "Decidir por qué unidad cobras y cuánto."
+    steps:
+      - { id: value-metric, title: "Elige tu métrica de valor", deliverable: value-metric, requires: [customer-profile, competitor-map], optional: true }
+      - { id: price-approach, title: "Elige tu enfoque de precio", deliverable: price-approach, requires: [value-metric], optional: true }
+      - { id: packages, title: "Define tus paquetes", deliverable: packages, requires: [price-approach], optional: true }
+
+  - id: channels
+    title: "Canales"
+    goal: "Decidir por dónde llegas a tus clientes y qué pruebas primero."
+    steps:
+      - { id: growth-engine, title: "Elige tu motor de crecimiento", deliverable: growth-engine, requires: [customer-profile], optional: true }
+      - { id: channel-list, title: "Lista tus canales candidatos", deliverable: channel-list, requires: [growth-engine], optional: true }
+      - { id: channel-scores, title: "Puntúa los canales", deliverable: channel-scores, tool: channel-score, requires: [channel-list], optional: true }
+      - { id: channel-choice, title: "Elige tus canales", deliverable: channel-choice, requires: [channel-scores], optional: true }
+
+  - id: message
+    title: "Propuesta y mensaje"
+    goal: "Saber por qué te eligen y cómo decirlo."
+    steps:
+      - { id: value, title: "Escribe tu propuesta de valor", deliverable: value-proposition, requires: [customer-profile] }
+      - { id: differentiators, title: "Concreta tus diferenciales", deliverable: differentiators, requires: [value-proposition, competitor-map] }
+      - { id: core-message, title: "Redacta tu mensaje base", deliverable: core-message, requires: [differentiators] }
+
+  - id: plan
+    title: "Plan"
+    goal: "Convertir tu estrategia en lo que harás las próximas 13 semanas."
+    steps:
+      - { id: okr, title: "Fija tus objetivos de 90 días", deliverable: okr, requires: [north-metric], optional: true }
+      - { id: action-plan, title: "Reparte tus acciones", deliverable: action-plan, requires: [okr], uses: [channel-choice, experiments], optional: true }
+      - { id: plan-review, title: "Decide cómo revisarás el plan", deliverable: plan-review, requires: [action-plan], optional: true }
+
+cross_cutting:
+  - { id: experiment-backlog, title: "Backlog de experimentos", tool: ice }
+
+output:
+  id: strategy-doc
+  title: "Documento de estrategia GTM"
+  requires: [north-metric, entry-segment, customer-profile, core-message]
+
+# Formularios de cada entregable (SDD perfil-formularios). El perfil usa sus preguntas.
+# Tipos: text (una línea), long_text (varias líneas), select (options), list (fields, min, max).
+forms:
+  end-goal:
+    - { id: goal, type: long_text, label: "Qué quieres conseguir", required: true }
+    - { id: horizon, type: select, label: "Plazo", options: ["6 meses", "12 meses", "24 meses"], required: true }
+    - { id: why, type: long_text, label: "Por qué es importante para ti" }
+
+  north-metric:
+    - { id: metric, type: text, label: "Métrica", required: true }
+    - { id: definition, type: long_text, label: "Cómo se calcula", required: true }
+    - { id: current, type: text, label: "Valor actual", help: "Si no lo tienes medido, escribe «sin dato»." }
+    - { id: target, type: text, label: "Objetivo" }
+
+  segment-list:
+    - id: segments
+      type: list
+      label: "Segmentos"
+      required: true
+      min: 2
+      max: 10
+      fields:
+        - { id: name, type: text, label: "Nombre", required: true }
+        - { id: who, type: long_text, label: "Quiénes son", required: true }
+        - { id: problem, type: long_text, label: "Qué problema tienen", required: true }
+
+  competitor-map:
+    - id: alternatives
+      type: list
+      label: "Alternativas"
+      required: true
+      min: 1
+      max: 10
+      fields:
+        - { id: name, type: text, label: "Nombre", required: true }
+        - { id: kind, type: select, label: "Tipo", options: ["Competidor directo", "Otra forma de resolverlo", "No hacer nada"], required: true }
+        - { id: strength, type: long_text, label: "En qué es fuerte" }
+        - { id: weakness, type: long_text, label: "En qué es débil" }
+
+  entry-segment:
+    - { id: segment, type: text, label: "Segmento elegido", required: true }
+    - { id: why, type: long_text, label: "Por qué este y no otro", required: true }
+    - { id: discarded, type: long_text, label: "Qué descartas por ahora" }
+
+  experiments:
+    - id: experiments
+      type: list
+      label: "Experimentos"
+      required: true
+      min: 1
+      max: 10
+      fields:
+        - { id: assumption, type: long_text, label: "Qué supuesto pruebas", required: true }
+        - { id: method, type: long_text, label: "Cómo", required: true }
+        - { id: success, type: long_text, label: "Qué resultado lo confirma", required: true }
+
+  customer-profile:
+    - { id: role, type: text, label: "Cargo o rol", required: true }
+    - { id: company_type, type: text, label: "Tipo de empresa", required: true }
+    - { id: company_size, type: text, label: "Tamaño de empresa", required: true }
+    - id: pains
+      type: list
+      label: "Problemas principales"
+      required: true
+      min: 1
+      max: 5
+      fields:
+        - { id: pain, type: long_text, label: "Problema", required: true }
+    - { id: trigger, type: long_text, label: "Qué le hace buscar una solución", required: true }
+    - id: objections
+      type: list
+      label: "Objeciones habituales"
+      max: 10
+      fields:
+        - { id: objection, type: long_text, label: "Objeción", required: true }
+    - { id: channels, type: long_text, label: "Dónde se informa" }
+
+  buying-group:
+    - id: people
+      type: list
+      label: "Personas"
+      required: true
+      min: 1
+      max: 8
+      fields:
+        - { id: role, type: text, label: "Rol", required: true }
+        - { id: part, type: select, label: "Papel", options: ["Decide", "Influye", "Usa", "Bloquea"], required: true }
+        - { id: cares, type: long_text, label: "Qué le importa" }
+
+  value-metric:
+    - { id: metric, type: text, label: "Unidad por la que cobras", required: true }
+    - { id: why, type: long_text, label: "Por qué crece cuando el cliente recibe más valor", required: true }
+    - { id: measure, type: long_text, label: "Cómo se mide hoy esa unidad" }
+
+  price-approach:
+    - { id: approach, type: select, label: "Base del precio", options: ["Según lo que cuesta producirlo", "Según lo que cobran las alternativas", "Según el valor que aporta al cliente"], required: true }
+    - { id: why, type: long_text, label: "Por qué esta base", required: true }
+    - { id: reference, type: long_text, label: "Precios de las alternativas", help: "Si no conoces los precios de las alternativas, escribe «sin dato»." }
+
+  packages:
+    - id: packages
+      type: list
+      label: "Paquetes"
+      required: true
+      min: 1
+      max: 4
+      fields:
+        - { id: name, type: text, label: "Nombre", required: true }
+        - { id: price, type: text, label: "Precio", required: true, help: "Si es una propuesta tuya, márcala: [propuesta: 49 € al mes]. Si no la tienes, escribe «sin dato»." }
+        - { id: includes, type: long_text, label: "Qué incluye", required: true }
+        - { id: for_whom, type: long_text, label: "Para quién", required: true }
+
+  growth-engine:
+    - { id: engine, type: select, label: "Cómo conseguirás clientes", options: ["El propio producto atrae clientes", "Atraes con contenido y publicidad", "Contactas tú a cada cliente"], required: true }
+    - { id: why, type: long_text, label: "Por qué esta forma", required: true }
+    - { id: evidence, type: long_text, label: "Qué señal tienes hoy", help: "Si no tienes ninguna señal todavía, escribe «sin dato»." }
+
+  channel-list:
+    - id: channels
+      type: list
+      label: "Canales"
+      required: true
+      min: 3
+      max: 8
+      fields:
+        - { id: name, type: text, label: "Nombre", required: true }
+        - { id: how, type: long_text, label: "Cómo llegarías a tu cliente por ahí", required: true }
+
+  channel-choice:
+    - id: choices
+      type: list
+      label: "Canales elegidos"
+      required: true
+      min: 2
+      max: 3
+      fields:
+        - { id: channel, type: text, label: "Canal", required: true }
+        - { id: why, type: long_text, label: "Por qué lo eliges", required: true }
+        - { id: first_test, type: long_text, label: "Primera prueba barata", required: true }
+    - { id: discarded, type: long_text, label: "Qué descartas por ahora" }
+
+  okr:
+    - { id: objective, type: long_text, label: "Objetivo de los próximos 90 días", required: true }
+    - id: key_results
+      type: list
+      label: "Resultados clave"
+      required: true
+      min: 2
+      max: 4
+      fields:
+        - { id: result, type: long_text, label: "Resultado", required: true }
+        - { id: measure, type: long_text, label: "Cómo lo medirás", required: true }
+        - { id: target, type: text, label: "Meta", required: true, help: "Si no tienes la meta todavía, escribe «sin dato»." }
+
+  action-plan:
+    - id: actions
+      type: list
+      label: "Acciones"
+      required: true
+      min: 3
+      max: 10
+      fields:
+        - { id: action, type: long_text, label: "Acción", required: true }
+        - { id: when, type: select, label: "Etapa", options: ["Semanas 1 a 4", "Semanas 5 a 8", "Semanas 9 a 13"], required: true }
+        - { id: owner, type: text, label: "Responsable", required: true }
+
+  plan-review:
+    - { id: cadence, type: select, label: "Cada cuánto", options: ["Cada semana", "Cada dos semanas", "Cada mes"], required: true }
+    - { id: reviewer, type: text, label: "Quién lo revisa", required: true }
+    - { id: change_rule, type: long_text, label: "Qué señal te haría cambiar el plan", required: true }
+
+  value-proposition:
+    - { id: for_whom, type: text, label: "Para quién", required: true }
+    - { id: problem, type: long_text, label: "Qué problema resuelves", required: true }
+    - { id: how, type: long_text, label: "Cómo lo resuelves", required: true }
+    - { id: result, type: long_text, label: "Qué resultado obtiene", required: true }
+
+  differentiators:
+    - id: items
+      type: list
+      label: "Diferenciales"
+      required: true
+      min: 1
+      max: 5
+      fields:
+        - { id: differentiator, type: long_text, label: "Diferencial", required: true }
+        - { id: proof, type: long_text, label: "Cómo lo demuestras", required: true }
+
+  core-message:
+    - { id: headline, type: text, label: "Titular", required: true }
+    - { id: message, type: long_text, label: "Mensaje en dos frases", required: true }
+    - id: proofs
+      type: list
+      label: "Pruebas que lo respaldan"
+      max: 5
+      fields:
+        - { id: proof, type: long_text, label: "Prueba", required: true }
+
+# Instrucciones de la ayuda de IA por paso (SDD ayuda-ia). Redacción propia (decisión 0002).
+ai:
+  end-goal: "Propón un objetivo final concreto y medible para los próximos meses, coherente con lo que el founder quiere conseguir según su perfil. Elige el plazo que mejor encaje y explica en una frase por qué importa."
+  north-metric: "Propón una única métrica que indique si el producto aporta valor real a sus clientes y que avance hacia el objetivo final. Explica en dos o tres frases cómo se calcula con datos que el founder pueda obtener. No inventes el valor actual: si no consta, escribe «sin dato». El objetivo y los umbrales que propongas van como [propuesta: …]; el objetivo, con marcas y aviso incluidos, en menos de 150 caracteres."
+  segment-list: "Propón entre 3 y 5 segmentos de cliente distintos que podrían usar el producto, a partir de los tipos de cliente del perfil. Describe cada segmento con una sola frase por campo, lo bastante concreta para poder encontrarlo y hablar con él. Cada segmento tiene un problema distinto: no repitas lo mismo en todos."
+  competitor-map: "Enumera las alternativas reales con las que el cliente resuelve hoy el problema: competidores directos, otras formas de resolverlo y la opción de no hacer nada. Para cada una, indica en qué es fuerte y en qué es débil desde el punto de vista del cliente."
+  entry-segment: "Recomienda un único segmento de entrada de entre los segmentos listados, el que el founder pueda ganar antes con los recursos que tiene. Justifica la elección frente a los demás y di qué se descarta por ahora."
+  experiments: "Propón experimentos baratos y rápidos para validar los supuestos más arriesgados sobre el segmento de entrada. Cada uno debe decir qué supuesto prueba, cómo se hace y qué resultado lo confirmaría."
+  customer-profile: "Describe al cliente inicial dentro del segmento de entrada: su rol, el tipo y tamaño de empresa, sus problemas principales, qué le empuja a buscar una solución, sus objeciones habituales y dónde se informa. Apóyate en los experimentos planificados."
+  buying-group: "Describe las personas que intervienen en la compra en el cliente inicial: quién decide, quién influye, quién usa el producto y quién podría bloquearlo, y qué le importa a cada una."
+  value-metric: "Propón la unidad por la que conviene cobrar: algo que crezca cuando el cliente recibe más valor y que el founder pueda medir (por ejemplo, usuarios, citas gestionadas o documentos verificados). Descarta en una frase la unidad más obvia si no encaja. Una sola métrica, sin cifras."
+  price-approach: "Recomienda cuál de las tres bases de precio encaja con este producto y este cliente, y explica el porqué en dos frases. En los precios de las alternativas usa solo los que consten en el contexto; si no constan, escribe «sin dato». No inventes precios de competidores."
+  packages: "Propón entre 1 y 3 paquetes que diferencien al cliente por la unidad de cobro elegida. Cada precio va como [propuesta: …], con su unidad. Si es un servicio o un marketplace, usa tarifas o comisión. No prometas descuentos ni garantías que no estén en el contexto."
+  growth-engine: "Recomienda cuál de las tres formas de conseguir clientes encaja con este producto y este cliente, y explica el porqué en dos frases. Apóyate en el cliente inicial. Una sola opción."
+  channel-list: "Propón entre 3 y 6 canales por los que llegar al cliente inicial, coherentes con la forma de conseguir clientes elegida. Cada uno con una frase sobre cómo llegarías a él. Sin cifras de alcance ni de coste."
+  channel-choice: "Elige 2 o 3 canales de la lista, empezando por los mejor puntuados salvo que haya una razón clara. Para cada uno, di por qué y cuál es la primera prueba barata y concreta. Sin cifras de coste ni de resultados."
+  okr: "Propón un objetivo para los próximos 90 días que avance hacia el objetivo final y la métrica norte, y de 2 a 4 resultados clave medibles. Cada meta numérica va como [propuesta: …]. Una frase por campo."
+  action-plan: "Propón entre 4 y 8 acciones que cubran los resultados clave, repartidas en las tres etapas. Si constan, parte de las primeras pruebas de los canales elegidos y del plan de validación. Cada acción empieza por un verbo y cabe en una frase. El responsable es «tú» salvo que el contexto nombre a otras personas."
+  plan-review: "Propón cómo revisar el plan: cada cuánto, quién y qué señal te haría cambiarlo. Una frase por campo; las cifras van como [propuesta: …]."
+  value-proposition: "Redacta la propuesta de valor para el cliente inicial: para quién es, qué problema resuelve, cómo lo resuelve el producto y qué resultado obtiene el cliente. Evita frases genéricas que valdrían para cualquier producto."
+  differentiators: "Propón hasta 5 diferenciales frente a las alternativas mapeadas que el cliente valore de verdad. Para cada uno, di cómo puede demostrarlo el founder; si no hay prueba todavía, escribe qué tendría que medir para tenerla, sin corchetes."
+  core-message: "Redacta el mensaje base a partir de la propuesta de valor y los diferenciales: un titular claro y un mensaje de dos frases, los dos sin corchetes y listos para publicar. En las pruebas incluye solo las que estén en el contexto; si no hay, deja la lista vacía. Sin superlativos vacíos."
+
+# Herramientas con cálculo (SDD calculadoras). Escala 1-5. Redacción propia (decisión 0002).
+tools:
+  segment-score:
+    formula: sum
+    help: "Puntúa cada segmento del 1 (poco) al 5 (mucho). La app suma y ordena: úsalo para elegir tu segmento de entrada."
+    rows: { from: segment-list, list: segments, item: name, label: "Segmento" }
+    criteria:
+      - { id: pain, label: "Dolor", help: "¿Cuánto les duele hoy este problema?" }
+      - { id: budget, label: "Capacidad de pago", help: "¿Pueden y suelen pagar por resolverlo?" }
+      - { id: access, label: "Acceso", help: "¿Qué tan fácil te resulta llegar a ellos y hablar con ellos?" }
+      - { id: fit, label: "Encaje", help: "¿Cuánto resuelve tu producto actual su problema sin desarrollos extra?" }
+
+  channel-score:
+    formula: sum
+    help: "Puntúa cada canal del 1 (poco) al 5 (mucho). La app suma y ordena: úsalo para elegir los dos o tres que probar primero."
+    rows: { from: channel-list, list: channels, item: name, label: "Canal" }
+    criteria:
+      - { id: closeness, label: "Cercanía", help: "¿Qué tan directo es el camino hasta tu cliente inicial?" }
+      - { id: cost, label: "Coste asumible", help: "¿Puedes sostener el gasto de tiempo y dinero sin ponerte en riesgo?" }
+      - { id: speed, label: "Rapidez", help: "¿En cuánto tiempo sabrás si funciona? (1 = meses, 5 = días)" }
+      - { id: repeat, label: "Repetible", help: "¿Podrías repetirlo cada semana sin depender de una casualidad?" }
+
+  assumption-priority:
+    formula: risk
+    help: "Arriba quedan los supuestos más importantes con menos pruebas: valídalos primero."
+    rows: { free: true, label: "Supuesto", min: 3, max: 15 }
+    criteria:
+      - { id: importance, label: "Importancia", help: "Si este supuesto resulta falso, ¿cuánto afecta a tu estrategia? (1 = poco, 5 = la tumba)" }
+      - { id: evidence, label: "Evidencia", help: "¿Cuánta prueba tienes hoy de que es cierto? (1 = ninguna, 5 = sólida)" }
+
+# Documento de estrategia (SDD documento): secciones y entregables de cada una. Redacción propia.
+# El documento añade al final «Experimentos» (backlog) y «Pendiente».
+document:
+  sections:
+    - { id: context, title: "Contexto del proyecto", deliverables: [project-profile] }
+    - { id: direction, title: "Rumbo", deliverables: [end-goal, north-metric] }
+    - { id: market, title: "Mercado", deliverables: [segment-list, segment-scores, competitor-map, entry-segment] }
+    - { id: customer, title: "Cliente", deliverables: [assumption-map, experiments, customer-profile, buying-group] }
+    - { id: pricing, title: "Precio", deliverables: [value-metric, price-approach, packages] }
+    - { id: channels, title: "Canales", deliverables: [growth-engine, channel-list, channel-scores, channel-choice] }
+    - { id: message, title: "Propuesta y mensaje", deliverables: [value-proposition, differentiators, core-message] }
+    - { id: plan, title: "Plan de 90 días", deliverables: [okr, action-plan, plan-review] }
