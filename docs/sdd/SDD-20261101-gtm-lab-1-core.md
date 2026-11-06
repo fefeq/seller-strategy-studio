@@ -332,7 +332,7 @@ Total aprobable: $1 (piloto) + $1,50 (referencia) + $2 (completa).
    - la de Anthropic de la línea base, más `ANTHROPIC_WORKSPACE_ID` si aplica.
 
 ## 16. Pendiente de verificar
-- **Nombres de producto de los fixtures:** que no coinciden con empresas reales. Lo revisa el autor en U-6.
+- **Nombres de producto de los fixtures:** que no coinciden con empresas reales. «VeriDoc API» sí coincidía (VeriDoc Global) y se sustituyó por «Zafrelio API» en NK-0065; el resto, sin coincidencias en una búsqueda rápida y sin garantía.
 - **Acceso de la cuenta de OpenRouter a `anthropic/claude-sonnet-5.5`**, y si es BYOK o saldo. Lo comprueba Fede.
 - **Coste en OpenRouter:** `usage.cost` y `cost_details.upstream_inference_cost`. Se comprueba con la primera llamada del piloto.
 - **Negativas en OpenRouter:** qué `finish_reason` y `native_finish_reason` da ante una negativa de Anthropic. Lo recoge el piloto si aparece alguna; si no, queda sin comprobar.
@@ -692,11 +692,16 @@ Total aprobable: $1 (piloto) + $1,50 (referencia) + $2 (completa).
 - **§16:** cuatro comprobaciones nuevas para el piloto.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-**Estado: En curso** (2026-11-02). U-1 a U-6 construidas en `feat/gtm-lab-1-core` @ `eb36b88`, sin push. U-7 a U-9 pendientes del OK de Fede. Paquete de resultado: `.factory/evidence/NK-0048/result.md`.
+**Estado: Entregado** (2026-11-06). U-1 a U-9 hechas en `feat/gtm-lab-1-core` @ `f854d61` (rebasada sobre `main`; `base_commit` real `47ec72c`, no `991051192db6`), sin push; integrada en `7d8c53a` (`integration/20261106`) con gate independiente PASS. Paquete de resultado: `.factory/evidence/NK-0048/result.md`.
 - **CA-3:** la regla «nada de `src/` fuera de los tests importa `core/node.ts`» va en `src/lib/gtm-lab/node-entry.test.ts`, para no tocar `boundaries.test.ts` más allá de los 7 cambios de CA-2.
 - **Módulos puros añadidos a los de §5:** `eval/anthropic-http.ts` (cabeceras, versión, `PRICES`, `costUsd`), `eval/cases.ts` (fixtures con `?raw`, `CALIBRATION`, modelo fijado, nombre de esquema `suggestion`) y `eval/report.ts` (umbral de `criterio.md` §5 y comparación de CA-19, donde «pasan» son las comprobaciones automáticas).
 - **`costUsd`:** devuelve `null` para un modelo sin precio, en lugar de lanzar un error como el original, así que la pasada queda en «sin dato».
 - **`record-cost`:** usa `GTM_LAB_EVAL_COST_USD`, `_SOURCE`, `_APPROVED_BY` y `_DATE` (por defecto, hoy).
 - **Claves:** `.env.local` del worktree desde el que se lanza, o el entorno.
-- **Gate:** FAIL solo por 2 fallos que ya están en la base `9910511`, en `migrations-journal` (0073 duplicada) y `field-coverage` (`platform_admins`). No se añaden a los fallos conocidos sin decisión.
-- **§16, fixtures:** «VeriDoc API» coincide con VeriDoc Global. No se cambia sin decisión.
+- **Gate:** los 2 fallos de la base `9910511` (`migrations-journal`, 0073 duplicada, y `field-coverage`, `platform_admins`) los cubrió NK-0049, ya en `main`. Tras el rebase, PASS sobre `0a290d0` y sobre el merge de integración `7d8c53a`.
+- **§16, fixtures:** «VeriDoc API» coincidía con una empresa real (VeriDoc Global). Fede decidió renombrarlo; NK-0065 lo cambia por el nombre ficticio «Zafrelio API» (búsqueda web rápida sin coincidencias, sin garantía).
+- **Pasadas reales (U-7 a U-9, lanzadas por Fede el 2026-11-06):** gasto medido $1,6616 en total ($0,1670 piloto de $1; $0,7386 referencia de $1,50; $0,7560 completa de $2), sin «sin dato». Comprobado en real: modelo fijado y esquema estricto con `require_parameters`, proveedor Anthropic sin respaldo, `prompt_tokens` incluye la caché y la API de Anthropic acepta la petición con `fetch`.
+- **E-3 / CA-19:** la pasada completa dio 21 de 24 (mínimo 22) y 2 casos menos que la referencia, así que salta la marca «requiere decisión de Fede». Fede lo aceptó el 2026-11-06 con 21/24: aceptado por decisión, no por umbral.
+- **Sigue sin comprobar (§16):** rama BYOK=true (solo se vio `is_byok=false`), `reasoning.effort`, fallo de la clave BYOK al saldo compartido, negativas (no apareció ninguna), cuadre del coste del juez con la consola de Anthropic y bundle del Worker con `?raw` y `yaml` (SDD 3). Sin pasada de pago para BYOK ni `reasoning.effort`.
+- **Pruebas del autor:** el fail-first del autor no se archivó; lo sustituye la prueba independiente del gate de `f854d61`.
+- **Seguimiento:** las objeciones bajas 2 a 6 del gate y este cambio de fixture van en NK-0065.
