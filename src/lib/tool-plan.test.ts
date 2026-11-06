@@ -5,17 +5,30 @@ import { describe, expect, it } from "vitest";
 import { connectionFor, type ConnectionKind } from "@/lib/tool-plan";
 
 const SEED: [string, ConnectionKind][] = [
-  ["Apollo", "native"], ["Clay", "native"],
-  ["HubSpot", "webhook"], ["Attio", "webhook"], ["LinkedIn Sales Navigator", "webhook"],
-  ["Gmail", "not_yet"], ["Google Calendar", "not_yet"], ["Gong", "not_yet"], ["Fireflies", "not_yet"],
-  ["GitHub", "none"], ["Slack", "none"], ["Instantly", "none"], ["Lemlist", "none"], ["DocuSign", "none"], ["PandaDoc", "none"],
+  ["Apollo", "native"],
+  ["Clay", "native"],
+  ["HubSpot", "webhook"],
+  ["Attio", "webhook"],
+  ["LinkedIn Sales Navigator", "webhook"],
+  ["Gmail", "not_yet"],
+  ["Google Calendar", "not_yet"],
+  ["Gong", "not_yet"],
+  ["Fireflies", "not_yet"],
+  ["GitHub", "none"],
+  ["Slack", "none"],
+  ["Instantly", "none"],
+  ["Lemlist", "none"],
+  ["DocuSign", "none"],
+  ["PandaDoc", "none"],
 ];
 
 describe("connectionFor, the 15 seeded tools (CA-1)", () => {
   it("covers exactly 15 names: 2 native, 3 webhook, 4 not_yet, 6 none", () => {
     expect(SEED).toHaveLength(15);
     const count = (k: ConnectionKind) => SEED.filter(([, kind]) => kind === k).length;
-    expect([count("native"), count("webhook"), count("not_yet"), count("none")]).toEqual([2, 3, 4, 6]);
+    expect([count("native"), count("webhook"), count("not_yet"), count("none")]).toEqual([
+      2, 3, 4, 6,
+    ]);
   });
   it.each(SEED)("%s is %s", (name, kind) => {
     expect(connectionFor(name)).toEqual({ kind });
@@ -31,10 +44,16 @@ describe("connectionFor, names outside the seed (CA-2)", () => {
     expect(connectionFor("  hubspot ")).toEqual({ kind: "webhook" });
     expect(connectionFor("LINKEDIN   sales navigator")).toEqual({ kind: "webhook" });
   });
-  it.each(["Apollo.io", "Google Drive", "Firecrawl", "Parallel", "Perplexity", "Apify"])("alias %s is native", (name) => {
-    expect(connectionFor(name)).toEqual({ kind: "native" });
-  });
-  it.each(["Pipedrive", "Salesforce"])("%s (listed in NOT_YET as arriving by webhook) is webhook", (name) => {
-    expect(connectionFor(name)).toEqual({ kind: "webhook" });
-  });
+  it.each(["Apollo.io", "Google Drive", "Firecrawl", "Parallel", "Perplexity", "Apify"])(
+    "alias %s is native",
+    (name) => {
+      expect(connectionFor(name)).toEqual({ kind: "native" });
+    },
+  );
+  it.each(["Pipedrive", "Salesforce"])(
+    "%s (listed in NOT_YET as arriving by webhook) is webhook",
+    (name) => {
+      expect(connectionFor(name)).toEqual({ kind: "webhook" });
+    },
+  );
 });

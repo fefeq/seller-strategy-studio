@@ -14,14 +14,39 @@ let A: string;
 let B: string;
 let rowA: string;
 let rowB: string;
-const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Record<string, any>[];
-const throws = async (fn: () => Promise<unknown>) => { try { await fn(); return ""; } catch (e) { return String((e as Error).message); } };
-const setStatus = (id: string) => rows("update integrations set status = 'connected' where id = $1 returning id", [id]);
-const insertFor = (org: string, name: string) => rows("insert into integrations (org_id, category, name) values ($1, 'CRM', $2) returning id", [org, name]);
+type Row = { id: string; status: string; n: number };
+const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Row[];
+const throws = async (fn: () => Promise<unknown>) => {
+  try {
+    await fn();
+    return "";
+  } catch (e) {
+    return String((e as Error).message);
+  }
+};
+const setStatus = (id: string) =>
+  rows("update integrations set status = 'connected' where id = $1 returning id", [id]);
+const insertFor = (org: string, name: string) =>
+  rows("insert into integrations (org_id, category, name) values ($1, 'CRM', $2) returning id", [
+    org,
+    name,
+  ]);
 // Case (d) inserts without RETURNING: RETURNING also needs the SELECT policy, which hides a row of a company that is not the
 // active one, so it would fail for that reason in both blocks and prove nothing about the insert policy.
-const insertQuiet = async (org: string, name: string) => { await db.query("insert into integrations (org_id, category, name) values ($1, 'CRM', $2)", [org, name]); };
-const count = async (name: string) => Number((await as(db, null, () => rows("select count(*)::int as n from integrations where name = $1", [name])))[0]!.n);
+const insertQuiet = async (org: string, name: string) => {
+  await db.query("insert into integrations (org_id, category, name) values ($1, 'CRM', $2)", [
+    org,
+    name,
+  ]);
+};
+const count = async (name: string) =>
+  Number(
+    (
+      await as(db, null, () =>
+        rows("select count(*)::int as n from integrations where name = $1", [name]),
+      )
+    )[0]!.n,
+  );
 const RLS = /row-level security/i;
 
 beforeAll(async () => {
@@ -43,7 +68,9 @@ beforeAll(async () => {
     create policy "org delete owner" on public.integrations for delete to authenticated using (org_id = public.current_org() and public.has_org_role(org_id, 'owner'));
   `);
   // ownerA is Owner of company A (active) and also of company B, where they are not the active one: case (d).
-  await db.exec(`insert into org_members (org_id, user_id, role) values ('${B}', '${U.ownerA}', 'owner')`);
+  await db.exec(
+    `insert into org_members (org_id, user_id, role) values ('${B}', '${U.ownerA}', 'owner')`,
+  );
   rowA = (await as(db, null, () => insertFor(A, "HubSpot")))[0]!.id;
   rowB = (await as(db, null, () => insertFor(B, "HubSpot")))[0]!.id;
 }, 60_000);
@@ -64,8 +91,12 @@ describe("control, before the migration: any member of the company can write (th
 
 describe("the migration that limits the plan to the Owner", () => {
   beforeAll(async () => {
-    const files = readdirSync(`${REPO}/drizzle/migrations`).filter((f) => f.endsWith("_integrations_owner_write.sql"));
-    expect(files, "exactly one *_integrations_owner_write.sql in drizzle/migrations").toHaveLength(1);
+    const files = readdirSync(`${REPO}/drizzle/migrations`).filter((f) =>
+      f.endsWith("_integrations_owner_write.sql"),
+    );
+    expect(files, "exactly one *_integrations_owner_write.sql in drizzle/migrations").toHaveLength(
+      1,
+    );
     await db.exec(readFileSync(`${REPO}/drizzle/migrations/${files[0]}`, "utf8"));
     await as(db, null, () => db.query("update integrations set status = 'planned'"));
   });
@@ -75,7 +106,9 @@ describe("the migration that limits the plan to the Owner", () => {
   });
   it("(b) a member who is not the Owner updates nothing and cannot insert", async () => {
     expect(await as(db, U.aeA, () => setStatus(rowA))).toHaveLength(0);
-    expect(await as(db, null, () => rows("select status from integrations where id = $1", [rowA]))).toEqual([{ status: "connected" }]);
+    expect(
+      await as(db, null, () => rows("select status from integrations where id = $1", [rowA])),
+    ).toEqual([{ status: "connected" }]);
     expect(await as(db, U.aeA, () => throws(() => insertFor(A, "Nuevo")))).toMatch(RLS);
   });
   it("(c) the Owner of another company cannot touch this company's rows", async () => {
@@ -86,7 +119,11 @@ describe("the migration that limits the plan to the Owner", () => {
     expect(await count("Otra empresa")).toBe(0);
   });
   it("members still read the plan of their active company, and only that one", async () => {
-    expect((await as(db, U.aeA, () => rows("select id from integrations"))).map((r) => r.id)).toEqual([rowA]);
-    expect((await as(db, U.ownerB, () => rows("select id from integrations"))).map((r) => r.id)).toEqual([rowB]);
+    expect(
+      (await as(db, U.aeA, () => rows("select id from integrations"))).map((r: Row) => r.id),
+    ).toEqual([rowA]);
+    expect(
+      (await as(db, U.ownerB, () => rows("select id from integrations"))).map((r: Row) => r.id),
+    ).toEqual([rowB]);
   });
 });

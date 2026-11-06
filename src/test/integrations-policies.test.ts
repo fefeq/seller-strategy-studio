@@ -13,7 +13,8 @@ describe("the integrations owner-write migration", () => {
   });
   const raw = () => (files[0] ? readFileSync(`${DIR}/${files[0]}`, "utf8") : "");
   const sql = () => raw().replace(/--.*$/gm, "").replace(/\s+/g, " ").toLowerCase();
-  const policy = (name: string) => sql().match(new RegExp(`create policy "${name}" on public\\.integrations .*?;`))?.[0] ?? "";
+  const policy = (name: string) =>
+    sql().match(new RegExp(`create policy "${name}" on public\\.integrations .*?;`))?.[0] ?? "";
   const OWNER = "public.has_org_role(org_id, 'owner')";
   const ACTIVE = "org_id = public.current_org()";
 

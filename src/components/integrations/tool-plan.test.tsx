@@ -19,7 +19,9 @@ vi.mock("@/integrations/supabase/client", () => {
       {},
       {
         get: (_t, p) => {
-          if (p === "then") return (f: (v: unknown) => unknown) => Promise.resolve(mode.update ? h.update : { data: h.rows, error: null }).then(f);
+          if (p === "then")
+            return (f: (v: unknown) => unknown) =>
+              Promise.resolve(mode.update ? h.update : { data: h.rows, error: null }).then(f);
           return (...args: unknown[]) => {
             if (p === "update") h.updates.push(args[0] as { status: string });
             return builder({ update: mode.update || p === "update" });
@@ -29,17 +31,29 @@ vi.mock("@/integrations/supabase/client", () => {
     );
   return { supabase: { from: () => builder() } };
 });
-vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { user: { id: "u1" }, roles: h.roles, currentOrg: { org_id: "o1" } } }) }));
-vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), message: vi.fn() }) }));
+vi.mock("@/hooks/use-me", () => ({
+  useMe: () => ({ data: { user: { id: "u1" }, roles: h.roles, currentOrg: { org_id: "o1" } } }),
+}));
+vi.mock("sonner", () => ({
+  toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn(), message: vi.fn() }),
+}));
 
 import { toast } from "sonner";
 import { ToolPlan } from "@/components/integrations/tool-plan";
 
-const row = (name: string, status = "planned", category = "CRM"): Row => ({ id: `id-${name}`, category, name, purpose: `Para qué sirve ${name}`, status });
+const row = (name: string, status = "planned", category = "CRM"): Row => ({
+  id: `id-${name}`,
+  category,
+  name,
+  purpose: `Para qué sirve ${name}`,
+  status,
+});
 
 function mount() {
   render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <ToolPlan />
     </QueryClientProvider>,
   );
@@ -61,14 +75,20 @@ describe("the status selector (CA-5, regression)", () => {
     expect(selects).toHaveLength(h.rows.length);
     for (const s of selects) {
       const options = within(s).getAllByRole("option") as HTMLOptionElement[];
-      expect(options.map((o) => o.textContent)).toEqual(["Pendiente", "Lo estamos montando", "Ya lo usamos"]);
+      expect(options.map((o) => o.textContent)).toEqual([
+        "Pendiente",
+        "Lo estamos montando",
+        "Ya lo usamos",
+      ]);
       expect(options.every((o) => !o.disabled)).toBe(true);
       expect((s as HTMLSelectElement).disabled).toBe(false);
     }
   });
   it("lets the owner set «Ya lo usamos» on a tool Nokko does not connect to", async () => {
     mount();
-    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), { target: { value: "connected" } });
+    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), {
+      target: { value: "connected" },
+    });
     await waitFor(() => expect(h.updates).toEqual([{ status: "connected" }]));
   });
 });
@@ -83,7 +103,9 @@ describe("the connection label on each row (CA-3)", () => {
     expect(within(card("HubSpot")).getByText("Entra por webhook")).toBeInTheDocument();
     expect(within(card("Gmail")).getByText("Sin conexión nativa todavía")).toBeInTheDocument();
     expect(within(card("GitHub")).getByText("Sin conexión conocida")).toBeInTheDocument();
-    expect(within(card("Herramienta propia")).getByText("Sin conexión conocida")).toBeInTheDocument();
+    expect(
+      within(card("Herramienta propia")).getByText("Sin conexión conocida"),
+    ).toBeInTheDocument();
   });
 });
 
@@ -91,7 +113,11 @@ describe("the section text (CA-3b)", () => {
   it("speaks to the reader as «tú» and no longer says «vosotros»", async () => {
     mount();
     await screen.findByText("Apollo");
-    expect(screen.getByText("Un tablero para que el equipo apunte qué herramientas usa o quiere usar. El estado lo marca el Owner y no significa que Nokko esté conectado; la etiqueta de conexión indica lo que Nokko conoce hoy de esa herramienta.")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Un tablero para que el equipo apunte qué herramientas usa o quiere usar. El estado lo marca el Owner y no significa que Nokko esté conectado; la etiqueta de conexión indica lo que Nokko conoce hoy de esa herramienta.",
+      ),
+    ).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/vosotros/i);
   });
 });
@@ -104,7 +130,12 @@ const NOTE = {
 
 describe("the warning under «Ya lo usamos» (CA-4)", () => {
   it("warns according to the connection type, and not for a native connection", async () => {
-    h.rows = [row("Apollo", "connected"), row("HubSpot", "connected"), row("Gmail", "connected"), row("GitHub", "connected")];
+    h.rows = [
+      row("Apollo", "connected"),
+      row("HubSpot", "connected"),
+      row("Gmail", "connected"),
+      row("GitHub", "connected"),
+    ];
     mount();
     await screen.findByText("Apollo");
     expect(within(card("Apollo")).queryByText(/El equipo la usa/)).toBeNull();
@@ -120,25 +151,35 @@ describe("the warning under «Ya lo usamos» (CA-4)", () => {
   });
 });
 
-const OWNER_ONLY = "No se ha guardado. Solo el Owner puede cambiar el plan de herramientas; si ya lo eres, recarga la página y vuelve a intentarlo.";
+const OWNER_ONLY =
+  "No se ha guardado. Solo el Owner puede cambiar el plan de herramientas; si ya lo eres, recarga la página y vuelve a intentarlo.";
 
 describe("a change the server does not accept (CA-6)", () => {
   it("says only the Owner can change the plan when nothing was written", async () => {
     h.update = { data: [], error: null };
     mount();
-    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), { target: { value: "connected" } });
+    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), {
+      target: { value: "connected" },
+    });
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(OWNER_ONLY));
   });
   it("says the same when the server answers with a permission error (42501)", async () => {
-    h.update = { data: null, error: { code: "42501", message: "new row violates row-level security policy" } };
+    h.update = {
+      data: null,
+      error: { code: "42501", message: "new row violates row-level security policy" },
+    };
     mount();
-    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), { target: { value: "connected" } });
+    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), {
+      target: { value: "connected" },
+    });
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith(OWNER_ONLY));
   });
   it("keeps the generic message for any other error", async () => {
     h.update = { data: null, error: { code: "08006", message: "connection failure" } };
     mount();
-    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), { target: { value: "connected" } });
+    fireEvent.change(await screen.findByLabelText("Estado de GitHub en el plan"), {
+      target: { value: "connected" },
+    });
     await waitFor(() => expect(toast.error).toHaveBeenCalled());
     expect(toast.error).not.toHaveBeenCalledWith(OWNER_ONLY);
   });

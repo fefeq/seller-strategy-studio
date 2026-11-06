@@ -24,7 +24,16 @@ export const CONNECTION_NOTE: Record<ConnectionKind, string | null> = {
 // Names are matched after normalising. Native follows what the Conexiones page lists as «Disponible»
 // (integrations.tsx WORKING); webhook and not_yet follow its NOT_YET line. Anything else is «none».
 const BY_KIND: Record<Exclude<ConnectionKind, "none">, string[]> = {
-  native: ["Apollo", "Apollo.io", "Clay", "Google Drive", "Firecrawl", "Parallel", "Perplexity", "Apify"],
+  native: [
+    "Apollo",
+    "Apollo.io",
+    "Clay",
+    "Google Drive",
+    "Firecrawl",
+    "Parallel",
+    "Perplexity",
+    "Apify",
+  ],
   webhook: ["HubSpot", "Attio", "LinkedIn Sales Navigator", "Pipedrive", "Salesforce"],
   not_yet: ["Gmail", "Google Calendar", "Gong", "Fireflies"],
 };
@@ -32,7 +41,9 @@ const BY_KIND: Record<Exclude<ConnectionKind, "none">, string[]> = {
 const normalize = (name: string) => name.trim().replace(/\s+/g, " ").toLowerCase();
 
 const KIND_OF = new Map<string, ConnectionKind>(
-  (Object.entries(BY_KIND) as [ConnectionKind, string[]][]).flatMap(([kind, names]) => names.map((n) => [normalize(n), kind] as const)),
+  (Object.entries(BY_KIND) as [ConnectionKind, string[]][]).flatMap(([kind, names]) =>
+    names.map((n) => [normalize(n), kind] as const),
+  ),
 );
 
 /** What Nokko does with a tool named in the plan. An unknown name is «none», never an error. */
