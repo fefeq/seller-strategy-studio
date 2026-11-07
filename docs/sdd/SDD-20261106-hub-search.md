@@ -1,7 +1,7 @@
 # SDD-20261106-hub-search · [Mejora] Buscar en Conocimiento
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Borrador (v3, corregido tras la segunda pasada del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 (SDD-C1 `SDD-20261106-ux-core-screens-pattern` y SDD-C2 `SDD-20261106-ux-metrics-data-state` de este sprint; C1 amplía el test de pantalla que crea este SDD), SDD-D `SDD-20261106-agent-rules-reader` (toca los textos de la sección Reglas y de la casilla «obligatorio», que este SDD mueve de archivo; ver §13), NK-0053 (`SDD-20261030-gtm-control-tower-5a-agent-memory`, toca `memory.tsx`)
 
 > Sprint 1 de mejoras en pantallas core, bloque B. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
@@ -118,7 +118,7 @@ El simulacro de `@tanstack/react-router` exporta además `Link` (como `strategy-
 - Fragmento: normalizar a NFC no basta (el gate lo comprobó con texto descompuesto y Hangul). Recorrer el original por puntos de código (`for…of`), plegar cada carácter con `foldText(ch)` y guardar, para cada unidad del texto plegado, su posición en el original; la coincidencia ocupa `[map[i], map[i + q.length])` en el original. Después, segmentar el original con `Intl.Segmenter(undefined, { granularity: "grapheme" })`, ampliar el inicio y el fin de la coincidencia al borde de grafema que los contiene, y añadir grafemas a cada lado hasta 120 en total. Diferencia conocida: la sigma final griega se pliega distinto carácter a carácter; el mapa se usa solo para el recorte.
 - `validateSearch` de la ruta pasa a `{ doc?: string; q?: string }` y descarta `q` vacío. Escribir con `navigate({ search: (prev) => ({ ...prev, q: q || undefined }), replace: true })`: un objeto sin `prev` borraría `doc`.
 - **Lectura y forma de la caché (CA-9):** `queryFn: () => fetchAll<Doc>((a, b) => supabase.from("knowledge_docs").select("*").order("updated_at", { ascending: false }).order("id").range(a, b))` (`src/lib/fetch-all.ts:8-21`, que devuelve `{ rows, truncated }` y lanza el error, `:15`). La caché `["docs"]` guarda ese objeto. Lectores que hoy esperan un array y pasan a `rows`: la lista de la sección (`hub.tsx:62`), `useOpenDocFromUrl` (`:65`), `openDoc` (`:69`, que pasa a `qc.getQueryData<{ rows: Doc[]; truncated: boolean }>(["docs"])?.rows.find(...)`), `missingPlays` (`:74`) y los contadores (`:112`). La clave `["docs"]` solo se usa en `hub.tsx` (`:59`, `:68`, `:69`, `:75`, `:93`, `:100`; comprobado con `git grep` en `f76f639`), así que no hay otros lectores. C1 quita el `= []` por defecto y usa `isPending`/`error` de esta misma consulta.
-- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.
+- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1, C2 y D):** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca la pantalla de /hub (`src/components/hub/` tras B) solo en los textos de la sección Reglas y de la casilla «obligatorio». Orden de integración: A → B → C1 → D → C2.
 - C1 hereda de este SDD el vacío de búsqueda de CA-5, los contadores de CA-4 (a los que añade «sin número hasta responder») y el aviso de CA-9, y los pone en su estado de pantalla.
 
 ## 14. Riesgos y dependencias
@@ -365,6 +365,9 @@ Informe de la tercera pasada (sobre v3; su bloqueante se corrige en v4), copiado
 8. **Errores entre B y C1:** `fetchAll` lanza (`fetch-all.ts:15`) y B no pinta el error. Entre la integración de B y la de C1, una lectura fallida muestra «Sin documentos todavía» (`hub.tsx:132`), como ya pasa hoy, y React Query reintenta. No empeora nada, pero conviene declararlo.
 9. **CA-0:** que la revisión de U-0 compruebe a mano que la ruta solo conserva `validateSearch`, `head` y `component: HubScreen`, y que el commit de U-0 no cambie más que el paso de `Route.useSearch()` a `useSearch({ from: "/_authenticated/hub" })`.
 10. **Para SDD-D:** añadir a D la misma advertencia que tiene C1:9. Las líneas `hub.tsx:35` y `:163` de su U-4 pasan a `src/components/hub/hub-screen.tsx` y `src/components/hub/doc-editor.tsx` tras B. El texto común del contrato también sigue diciendo «hub.tsx».
+
+
+Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

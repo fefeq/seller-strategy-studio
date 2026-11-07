@@ -178,7 +178,7 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
 - **Envoltorio mínimo:** `DataMark({ state: "real" | "estimado" | "sin_dato", reason? })` en `src/components/metrics/data-mark.tsx`, que pinta la palabra y « · motivo» dentro de un `<span data-mark={state}>`. C2 lo sustituye o lo hace delegar en `DataState`, sin cambiar textos ni el atributo.
 - **Tests de componente:** jsdom y Testing Library ya están configurados (`vitest.config.ts:8`); patrón de mocks en `src/components/strategy-screens.test.tsx:12-41`. Ningún test en `src/routes/` (el generador de rutas lo tomaría por ruta). Los paneles de win rate se prueban en `performance-panels.test.tsx`, no a través de la ruta.
 - **Test MCP de CA-12:** `vi.mock("@/lib/mcp/context")` con un `mcpCtx` que devuelve una `db` falsa sobre la fixture y conserva `json`; la salida en `f76f639` queda guardada como golden en el propio test.
-- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** «A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.»
+- **Contrato entre los SDD del sprint (el mismo texto en A, B, C1, C2 y D):** «A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca la pantalla de /hub (`src/components/hub/` tras B) solo en los textos de la sección Reglas y de la casilla «obligatorio». Orden de integración: A → B → C1 → D → C2.»
 - **Aplicación del contrato en A:** los textos de vacío de Embudo, Perdidos y win rates con trimestre (CA-1, CA-3) son «textos de datos» de A, porque solo existen con su filtro; el estado de carga y error de `/metrics` es de C1. Tras A, `Kpi`, `Panel`, `Bar` y `Muted` viven en `src/components/metrics/performance-panels.tsx`.
 
 ## 14. Riesgos y dependencias
@@ -529,6 +529,9 @@ Informe de la tercera pasada (sobre v3; sus dos bloqueantes se corrigen en v4), 
 - **Ubicación de `Kpi`/`Panel`:** pasan a `performance-panels.tsx`, y el SDD de legibilidad permite ponerlos en `page.tsx` (`ux-core-screens-pattern.md:5`). Es un conflicto de archivo que el brief debe anotar.
 - **Redacción de CA-12:** dice que «los tests existentes pasan sin cambios», pero U-3 añade casos a esos mismos archivos. Hay que precisar que no se modifica ningún caso existente. No hay `toEqual` sobre salidas afectadas (comprobado con grep) ni snapshots.
 - **Ticket:** SDD-A necesita ticket NK (`nokko-intake`) antes del brief.
+
+
+Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

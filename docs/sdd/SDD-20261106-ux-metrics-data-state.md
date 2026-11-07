@@ -1,13 +1,13 @@
 # SDD-20261106-ux-metrics-data-state · [Mejora] NK-0051 ampliado, C2: explicaciones plegadas y una sola forma para las marcas de dato
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Borrador (v3, corregido tras la segunda pasada del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación)
+**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación)
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`, punto 7) · **Depende de:** `SDD-20261106-metrics-honest-data` (SDD-A: crea las marcas con `data-mark`, el envoltorio `DataMark` y la comprobación `src/test/data-marks.ts`) y `SDD-20261106-ux-core-screens-pattern` (C1: saca la pista de `listening.tsx:49` a una línea propia, su §9). C2 se integra el último. · **Coordinar con:** `SDD-20261106-agent-rules-reader` (SDD-D: reescribe el texto de `hub.tsx:161-164`, que hoy no llega al umbral, §14); `SDD-20261031-ux-legibility-contrast` (mismos archivos de `/metrics`; conflicto de archivo, no de función, §14); `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`)
 
 > Sprint 1 de mejoras en pantallas core, bloque C2.
 > **Números de línea:** todos son de `main` @ `f76f639`. A, C1 y D cambian algunos de estos archivos antes que C2; U-1 vuelve a medir sobre la rama integrada (§12).
 
-**Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** «A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.»
+**Contrato entre los SDD del sprint (el mismo texto en A, B, C1, C2 y D):** «A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca la pantalla de /hub (`src/components/hub/` tras B) solo en los textos de la sección Reglas y de la casilla «obligatorio». Orden de integración: A → B → C1 → D → C2.»
 
 ## 1. Resumen
 Las explicaciones largas ocupan varias líneas fijas encima de las cifras, y cada marca de dato se pinta a su manera. C2 pliega las explicaciones de una lista cerrada detrás de un botón («Cómo se calcula» en `/metrics`, «Más sobre esto» en Theory U) y da una única forma visual, el componente `DataState`, a las marcas «Real · origen», «Estimado · motivo» y «Sin dato · motivo» que escribe SDD-A. C2 no cambia ninguna palabra: A pone las palabras de las marcas y C2 su forma.
@@ -69,7 +69,7 @@ Leído en `main` @ `f76f639`.
 
 ## 7. Historias y criterios de aceptación
 ### H-1: Como Owner, Sales Leader o persona del equipo, quiero ver la cifra o el formulario antes que la explicación.
-- **CA-1** `ExplanationFold({ kind: "calculo" | "metodo", children })` empieza cerrado. Su disparador es un `<button type="button">` nativo, sin `tabindex` negativo, con `aria-expanded="false"` y `aria-controls` apuntando al contenido. El texto del botón es «Cómo se calcula» con `kind="calculo"` y «Más sobre esto» con `kind="metodo"`; abierto, «Ocultar cálculo» y «Ocultar». Cerrado, el contenido no está en el documento. Al hacer clic, `aria-expanded` pasa a `"true"` y el contenido aparece dentro del componente, justo después del botón y en el flujo de la página: no está en un portal ni lleva clases `absolute` o `fixed`, así que en móvil se abre debajo y no tapa la cifra. · prueba: `src/components/explanation-fold.test.tsx`
+- **CA-1** `ExplanationFold({ kind: "calculo" | "metodo", children })` empieza cerrado. Su disparador es un `<button type="button">` nativo, sin `tabindex` negativo, con `aria-expanded="false"` y `aria-controls` igual al `id` del contenedor del contenido, también cerrado (`ExplanationFold` los pasa de forma explícita, porque Radix no pone `aria-controls` cerrado). El texto del botón es «Cómo se calcula» con `kind="calculo"` y «Más sobre esto» con `kind="metodo"`; abierto, «Ocultar cálculo» y «Ocultar». Cerrado, el contenido no está en el documento. Al hacer clic, `aria-expanded` pasa a `"true"` y el contenido aparece dentro del componente, justo después del botón y en el flujo de la página: no está en un portal ni lleva clases `absolute` o `fixed`, así que en móvil se abre debajo y no tapa la cifra. · prueba: `src/components/explanation-fold.test.tsx` «Fuera del documento» se refiere a los hijos, no al contenedor vacío de Radix.
 - **CA-2** En `/metrics`, cada bloque de la lista cerrada del §9 (X-1, X-2, X-3, X-5, X-7, X-8) no se ve al pintar el panel con datos ficticios; su panel tiene un botón «Cómo se calcula» con `aria-expanded="false"`, y al pulsarlo el texto del bloque aparece completo y sin cambios. Lo que el §9 deja a la vista se ve sin abrir nada: en X-3, el enlace de la pista; en X-8, con una lectura ficticia que trae `truncated` y `unpriced_items`, sus dos avisos. X-4 y X-6 se ven completos sin botón. · prueba: `src/components/metrics/explanation-fold-usage.test.tsx`
 - **CA-3** En Theory U, X-9 (sin la pista, que C1 ya ha sacado a su línea), X-10 y X-11 no se ven al pintar la pestaña; cada una tiene un botón «Más sobre esto», y al pulsarlo el texto aparece completo y sin cambios. La pista de C1 de `listening.tsx` («… de cada cuenta», con enlace a `/accounts`) se ve sin abrir nada. El vacío X-12 no se pliega. · prueba: `src/components/theory-u/explanation-fold-usage.test.tsx`
 
@@ -119,12 +119,12 @@ Base de cada U: la rama integrada tras A, B, C1 y D.
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | Primero vuelve a medir con el método del §3 sobre la base; si la lista difiere del §9, lo para y se lo lleva a Fede antes de escribir código. Después, `src/components/explanation-fold.tsx` y su uso en los 9 bloques del §9. Verificación: los tests de A y de C1 pasan sin cambios (`git diff` vacío en sus archivos de test). | CA-1, CA-2, CA-3 | `src/components/explanation-fold.test.tsx` (el módulo no existe); `src/components/metrics/explanation-fold-usage.test.tsx` y `src/components/theory-u/explanation-fold-usage.test.tsx` (en la base el texto se ve sin abrir nada y no hay botón) |
-| U-2 | `src/components/data-state.tsx`; `DataMark` de A pasa a ser `DataState` sin cambiar sus props, sus palabras ni `data-mark`; amplía `src/test/data-marks.ts`. Verificación: los tests de A pasan sin cambiar ninguna línea. | CA-4, CA-5 | `src/components/data-state.test.tsx` (el módulo no existe); los seis tests de A de CA-5 con la comprobación ampliada (en la base, el `DataMark` de A no lleva `data-slot="data-state"`) |
+| U-2 | `src/components/data-state.tsx`; `src/components/metrics/data-mark.tsx` conserva la firma de A (`DataMark({ state, reason? })`) y delega en `DataState`; no cambian sus props, sus palabras ni `data-mark`; amplía `src/test/data-marks.ts`. Verificación: los tests de A pasan sin cambiar ninguna línea y `npx tsc --noEmit` queda en 0 errores. | CA-4, CA-5 | `src/components/data-state.test.tsx` (el módulo no existe); los seis tests de A de CA-5 con la comprobación ampliada (en la base, el `DataMark` de A no lleva `data-slot="data-state"`) |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- `ExplanationFold` sobre `src/components/ui/collapsible.tsx`. Su `CollapsibleTrigger` pone `aria-expanded` y `aria-controls`, y `CollapsibleContent` saca el contenido del documento al cerrar. Se descarta `<details>`, que no expone `aria-expanded` y no cumple CA-1.
+- `ExplanationFold` sobre `src/components/ui/collapsible.tsx`. Su `CollapsibleTrigger` pone `aria-expanded`; `aria-controls` y el `id` del contenido se pasan de forma explícita (Radix solo pone `aria-controls` abierto, `@radix-ui/react-collapsible/dist/index.mjs:66`, y esparce las props del usuario después de las suyas, `:71`), y `CollapsibleContent` saca el contenido del documento al cerrar. Se descarta `<details>`, que no expone `aria-expanded` y no cumple CA-1.
 - `DataState` va en su propio archivo, `src/components/data-state.tsx`, no en `page.tsx`, para no chocar con `ScreenState` (C1) ni con `Kpi`/`Panel` (legibilidad). Props: `{ state: "real"; reason?: string } | { state: "estimado" | "sin_dato"; reason: string }`, las mismas de `DataMark` (A §13). Pinta `<span data-mark={state} data-slot="data-state" className="border-b-2 pb-0.5 text-xs text-ink-mid {filete}">{texto}</span>`, con el texto construido como una sola cadena. `text-xs` son 12 px, así que la marca ya cumple el suelo que propone el SDD de legibilidad sin depender de él.
-- `src/components/metrics/data-mark.tsx`: `export { DataState as DataMark }`, de modo que las llamadas de A no cambian.
+- `src/components/metrics/data-mark.tsx`: mantiene la firma de A y renderiza `<DataState …/>` dentro, de modo que las llamadas de A no cambian y los tipos siguen compilando.
 - Tests de uso: el patrón de mocks de Supabase está en `src/components/strategy-screens.test.tsx:12-41`, y jsdom con Testing Library en `vitest.config.ts:8`. Ningún test en `src/routes/`. Theory U monta cada pestaña por su componente (`UJourney`, `Listening`, `CaseClinics`, `Prototypes`), sin pasar por la ruta.
 - El script de medida del §3 no entra en el repositorio. Su método está escrito en el §3 para que U-1 lo repita.
 
@@ -149,6 +149,8 @@ Base de cada U: la rama integrada tras A, B, C1 y D.
 - ~~Vacíos falsos en los paneles de `/metrics` con consulta propia~~: los recoge C1 (E-1, E-2).
 
 **Versión 2 (2026-11-06):** nace al partir la v1 conjunta tras la primera pasada del gate (objeción 11). Este SDD es C2: `HowCalculated` y `DataState`. Añade un test de uso a cada CA (3), umbral de caracteres y lista por fijar (7), «no aplica» fuera y forma «Estimado · motivo» (8), y el contrato común (9). No tuvo segunda pasada.
+
+**Versión 4 (2026-11-06):** tercera pasada del gate: `aria-controls` explícito también cerrado (bloqueante 1); `DataMark` conserva la firma de A y delega, con `tsc` en la verificación (2); contrato común actualizado.
 
 **Versión 3 (2026-11-06):** corregida tras la segunda pasada del gate.
 - **Nueva 1 y parcial 2:** carga, error y vacío de `/metrics`, con los paneles de consulta propia, son de C1 (§5).
@@ -264,6 +266,80 @@ Informe de la segunda pasada (sobre v2), copiado sin editar:
      - Poner la línea base del §3 en el §4: 16 explicaciones en `/metrics` y 3 confirmadas en Theory U, y ~50 «—» por clasificar.
      - Copiar o enlazar en el §17 las objeciones 3, 7, 8, 9 y 11 de la primera pasada, y añadir esta segunda pasada.
      - Añadir el párrafo de versión.
+
+
+Informe de la tercera pasada (sobre v3; sus bloqueantes se corrigen en v4), copiado sin editar:
+
+- Veredicto del gate (tercera pasada): Objeciones
+- Objeciones de la segunda pasada:
+  - 1: resuelta. C2 §5 (`:60`) manda carga, error y vacío de `/metrics` a C1, y C1 v3 los asume (`ux-core-screens-pattern.md:7`, E-1 y E-2 en `:24`, `:28`).
+  - 2: resuelta. A fija todas las palabras, también «Real · …» (A CA-6 y CA-9, `metrics-honest-data.md:111`, `:119`). Las ventanas y los «—» quedan fuera (C2 `:58-59`). «repartido por clientes ganados» ya no está en el texto vivo de A.
+  - 3: resuelta en los tests. CA-4 exige un solo nodo de texto, CA-5 amplía `data-marks.ts` y U-2 ejecuta los tests de A sin tocarlos. Aparece un problema nuevo con los tipos (bloqueante 2).
+  - 4: resuelta. C1 §9 y §14 sacan la pista de `listening.tsx:49` (`ux-core-screens-pattern.md:108`, `:143`), y C2 pliega solo las 223 visibles de Scharmer.
+  - 5: resuelta. El botón dice «Más sobre esto» en Theory U y no se pliega nada en `/hub`. El texto sigue abierto (§15.2), que no es objeción.
+  - 6: resuelta. El §8 usa «160 visibles o menos» (`:81`). Volví a contar X-1 (174), X-3 (191), la frase de X-4 (227), X-6 (163), X-9 (311 y 223), X-10 (264), X-11 (194) y X-12 (169): todas coinciden.
+  - 7: parcial. `<details>` sale y se fija `Collapsible`, pero el Radix instalado no pone `aria-controls` mientras está cerrado (bloqueante 1).
+  - 8: resuelta. Ya no depende de `Kpi`/`Panel`; la legibilidad pasa a «Coordinar con» (§14, `:132`).
+  - 9: resuelta salvo un detalle. El §4 tiene línea base, el §17 tiene el informe y hay párrafo de versión, pero la línea del veredicto sigue diciendo «No revisado» (`:167`).
+- CA sin prueba posible o sin G-n: CA-1, tal como está escrito, no puede pasar con `Collapsible` porque cerrado no hay `aria-controls` (bloqueante 1). El resto, ninguno. No hay PRD, así que no exijo G-n.
+- [Por verificar] que sigue sin comprobarse:
+  - El umbral de 160 caracteres (§15.1) y los textos de los botones (§15.2): abiertas, son de Fede.
+  - Si la lista es completa. No repetí el recorrido del árbol de TypeScript. X-2, X-5, X-7 y X-8 solo los conté a ojo.
+  - La lista del §9 sobre la rama integrada (lo hace U-1).
+  - Teclado y móvil a 375 px (lo hace `nokko-walkthrough`).
+  - Cómo pinta A su `DataMark` y cómo lo llama: A aún no tiene código.
+- Contradicciones con el código o con decisiones previas:
+  - CA-1 (`:72`) y §13 (`:125`) dicen que el disparador lleva `aria-controls`. Radix 1.1.20 solo lo pone abierto (`node_modules/@radix-ui/react-collapsible/dist/index.mjs:66`, versión fijada en `bun.lock:557`).
+  - El tipo de `DataState` (§13, `:126-127`) dice ser «el mismo de `DataMark` (A §13)», pero A define `reason?` opcional en los tres estados (`metrics-honest-data.md:178`).
+  - El §14 (`:135`) trata como hipótesis que D pase de 160 en `hub.tsx:161-164`. El texto que fija D (`agent-rules-reader.md:100`) da 181 visibles con el método del §3 (hoy 146), así que U-1 se va a parar seguro.
+  - Las decisiones de Fede del 2026-11-06 están bien reflejadas: rama perdida en §14 `:132`. Las demás no tocan a C2.
+- Lo que esta revisión NO demuestra:
+  - No ejecuté tests, build ni `tsc`, ni miré nada en un navegador.
+  - En `src/`, entre `f76f639` y `HEAD`, solo cambia `src/test/factory-ledger.test.ts`, que no tiene que ver con C2.
+  - No escribí el recorrido de TypeScript. Las cuentas son a mano, con Python, sobre literales copiados.
+  - Leí C1, A y D solo en lo que cruzan con C2.
+  - Los tests de A no existen, así que la compatibilidad con `getByText` es teórica.
+  - No miré datos de producción.
+
+**Objeciones bloqueantes**
+
+1. **CA-1 no puede pasar con `Collapsible` tal como está escrito.**
+   - Evidencia: CA-1 (`ux-metrics-data-state.md:72`) exige, con el bloque cerrado, «`aria-expanded="false"` y `aria-controls` apuntando al contenido». El §13 (`:125`) dice que «`CollapsibleTrigger` pone `aria-expanded` y `aria-controls`». En el Radix instalado:
+     - `node_modules/@radix-ui/react-collapsible/dist/index.mjs:66` tiene `"aria-controls": context.open ? context.contentId : void 0`: cerrado, no hay atributo.
+     - El contenedor sí existe cerrado, con `id` y `hidden`, pero sin hijos (`:127-137`).
+   - Corrección, una de dos:
+     - Que CA-1 pida `aria-controls` solo abierto, igual al `id` del contenido.
+     - O que el §13 diga que `ExplanationFold` pasa `aria-controls` y el `id` del contenido de forma explícita. Radix esparce las props del usuario después de las suyas (`:71`), así que se pueden sobrescribir.
+   - Aclarar también en CA-1 que «el contenido no está en el documento» se refiere a los hijos, no al contenedor vacío de Radix.
+
+2. **`DataState` cambia las props de `DataMark` de A, aunque U-2 promete lo contrario.**
+   - Evidencia:
+     - A §13 tiene `DataMark({ state: "real" | "estimado" | "sin_dato", reason? })` (`metrics-honest-data.md:178`), y A está aprobado.
+     - C2 §13 (`:126-127`) fija la unión `{ state: "real"; reason?: string } | { state: "estimado" | "sin_dato"; reason: string }` y hace `export { DataState as DataMark }`.
+     - U-2 (`:122`) dice «sin cambiar sus props».
+   - Problema: si A llama `<DataMark state={m.state} reason={m.reason} />` con `state` de tipo unión y `reason: string | undefined`, TypeScript lo rechaza. Vitest no comprueba tipos, así que los tests de A pasarían y el fallo saldría en el build de Lovable.
+   - Corrección, una de dos:
+     - `data-mark.tsx` conserva la firma de A y delega en `DataState`.
+     - O el brief permite cambiar las llamadas de A (no sus tests).
+   - En los dos casos, U-2 añade `tsc --noEmit` (o el build) a su verificación.
+
+**Notas para el brief**
+
+- **D y la casilla de `/hub`.** El texto que fija D para la casilla «obligatorio» (`agent-rules-reader.md:100`) mide 181 visibles con el método del §3. U-1 se parará seguro. Mejor decidirlo ya: añadirlo como X-13 «fuera por regla» (descripción de un campo de formulario, como X-6) y corregir el §4, el §9 y el §14.
+- **X-3 se pliega por debajo del umbral.**
+  - Lo plegado mide 126 visibles, menos de 160, y no está seguido: son la primera y la tercera frase, con la pista en medio.
+  - Esto choca con la lógica de X-4, que se mide por lo que quedaría.
+  - Conviene llevárselo a Fede junto con el §15.1. Y en CA-2, cambiar «el texto del bloque aparece completo y sin cambios» por «el texto de la columna Plegado del §9», que es lo que vale para X-3 y X-8.
+- **X-8 tiene tres avisos condicionados, no dos.** El tercero es `other_currencies` (`stripe-panel.tsx:157-159`), y CA-2 solo prueba `truncated` y `unpriced_items`. Hay que añadirlo a la lectura ficticia.
+- **El método del §3 no ve el texto dentro de `{…}`**, porque lo cuenta como un carácter:
+  - `src/components/leads/lead-funnel-panel.tsx:58` mide 179 visibles cuando sale el aviso de «Entrada directa». Es un aviso condicionado, así que se queda a la vista por regla.
+  - `metrics.tsx:397` mide 159 con «EUR».
+  - Que U-1 los declare para que no parezcan olvidos.
+- **§17 desactualizado.** La línea del veredicto debería decir «Objeciones», que es el resultado de la segunda pasada, no «No revisado» (`:167`).
+- **Cómo hacer los tests de uso.** El de `/metrics` puede pintar `StripeMetricsPanel` con el mock de Supabase: lee `stripe_snapshots.details` (`stripe-panel.tsx:20`, `:131`), sin `useServerFn`. Los de Theory U montan `Listening`, `CaseClinics` y `Prototypes`, que existen como exports, pero tras C1 pasan por su `ScreenState` y el mock debe devolver datos.
+
+
+Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
