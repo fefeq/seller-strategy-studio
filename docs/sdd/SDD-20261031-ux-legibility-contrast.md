@@ -146,11 +146,37 @@ Orden: U-1 → U-2 → U-3 → U-4. U-4 va al final porque las piezas compartida
 - Visual real a 375 y 1440 px en claro y oscuro (necesita sesión en la app; no hecho).
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Veredicto del gate: No revisado
+- Veredicto del gate: PASS (`gate.mjs`, ticket NK-0051, commit 8ee3543f3b80; informe literal debajo)
 - CA sin prueba posible o sin G-n: no revisado
 - [Por verificar] que sigue sin comprobarse: ver §16
 - Contradicciones con el código o con decisiones previas: no revisado
-- Lo que esta revisión NO demuestra: todo; aún no hay revisión.
+- Lo que esta revisión NO demuestra: el gate automático no evalúa los CA uno a uno, ni la app en vivo, ni claro/oscuro, táctil, Safari/Firefox ni lectores de pantalla; no hay segunda máquina ni soak (ver informe).
+
+Informe del gate, sin editar:
+
+```
+PASS  clean tree on exact commit  8ee3543f3b80b0f6847f1ba1ae784a1735b52bee
+PASS  canary: runner detects failure
+PASS  guard: no `as any`
+PASS  guard: no window.confirm/prompt
+PASS  guard: no committed secrets
+PASS  guard: no secret in VITE_ vars
+PASS  guard: no .only/.skip in tests
+PASS  guard: no raw error.message toasts
+PASS  guard: .env untouched
+PASS  guard: assertions not weakened
+PASS  guard: no longer timeouts in tests
+PASS  typecheck
+PASS  lint (touched files, 75)
+PASS  release build (outside network best-effort blocked)
+PASS  full unit suite  2936/2936 passed; known failures 0; unexpected 0; files with no assertion run 0
+PASS  touched test files, whole (10)
+PASS  second-machine full run  NOT RUN: no second runner configured; canary + secret guard above are the local substitute
+PASS  artifact size recorded  NOT A SOAK: file handles, memory and restarts are not measured here
+PASS  extra: bunx vitest run src/lib/won-approval.pg.test.ts src/lib/board-move.pg.test.ts
+
+VERDICT PASS on 8ee3543f3b80  evidence: /Users/fedecosentino/NOKKO GTM BRAIN/seller-strategy-studio/.factory/evidence/NK-0051/8ee3543f3b80
+```
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

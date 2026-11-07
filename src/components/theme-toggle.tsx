@@ -3,8 +3,8 @@ import { cn } from "@/lib/utils";
 
 export type Theme = "light" | "dark";
 const KEY = "nokko-theme";
-// Color of the top band (paper-edge) per theme, for the browser/status bar.
-const BAND: Record<Theme, string> = { light: "#f3f2ee", dark: "#262320" };
+// Color of the top band (page background) per theme, for the browser/status bar.
+const BAND: Record<Theme, string> = { light: "#f6f6f4", dark: "#101216" };
 
 /**
  * Runs in <head> before first paint: the saved choice, else the system preference.
@@ -28,7 +28,11 @@ export function useTheme() {
     const mq = matchMedia("(prefers-color-scheme: dark)");
     const onChange = () => {
       let saved: string | null = null;
-      try { saved = localStorage.getItem(KEY); } catch { /* blocked storage */ }
+      try {
+        saved = localStorage.getItem(KEY);
+      } catch {
+        /* blocked storage */
+      }
       if (saved === "light" || saved === "dark") return;
       const t: Theme = mq.matches ? "dark" : "light";
       apply(t);
@@ -40,19 +44,37 @@ export function useTheme() {
   const set = (t: Theme) => {
     apply(t);
     setTheme(t);
-    try { localStorage.setItem(KEY, t); } catch { /* blocked storage */ }
+    try {
+      localStorage.setItem(KEY, t);
+    } catch {
+      /* blocked storage */
+    }
   };
   return { theme, setTheme: set, toggle: () => set(theme === "dark" ? "light" : "dark") };
 }
 
 /** Light/dark switch. `compact` = one word only (collapsed sidebar, tight headers). */
-export function ThemeToggle({ compact = false, className }: { compact?: boolean; className?: string }) {
+export function ThemeToggle({
+  compact = false,
+  className,
+}: {
+  compact?: boolean;
+  className?: string;
+}) {
   const { theme, toggle } = useTheme();
   const dark = theme === "dark";
   const label = dark ? "Cambiar a modo claro" : "Cambiar a modo oscuro";
   if (compact) {
     return (
-      <button onClick={toggle} aria-label={label} title={label} className={cn("flex h-9 items-center justify-center px-1 text-ink-mid hover:text-ink", className)}>
+      <button
+        onClick={toggle}
+        aria-label={label}
+        title={label}
+        className={cn(
+          "flex h-9 items-center justify-center px-1 text-ink-mid hover:text-ink",
+          className,
+        )}
+      >
         <span className="smallcaps">{dark ? "Claro" : "Oscuro"}</span>
       </button>
     );
@@ -63,14 +85,20 @@ export function ThemeToggle({ compact = false, className }: { compact?: boolean;
       aria-checked={dark}
       aria-label="Modo oscuro"
       onClick={toggle}
-      className={cn("group flex w-full items-center justify-between gap-3 py-2 text-xs text-ink-mid hover:text-ink md:py-1", className)}
+      className={cn(
+        "group flex w-full items-center justify-between gap-3 py-2 text-xs text-ink-mid hover:text-ink md:py-1",
+        className,
+      )}
     >
-      <span className="flex items-center gap-2">
-        {dark ? "Modo oscuro" : "Modo claro"}
-      </span>
+      <span className="flex items-center gap-2">{dark ? "Modo oscuro" : "Modo claro"}</span>
       {/* The switch: a hairline track with a square knob, no radius (design system). */}
       <span className="relative h-4 w-8 shrink-0 border border-hairline-firm">
-        <span className={cn("absolute top-0.5 size-2.5 bg-ink transition-[left] duration-150", dark ? "left-[17px]" : "left-0.5")} />
+        <span
+          className={cn(
+            "absolute top-0.5 size-2.5 bg-ink transition-[left] duration-150",
+            dark ? "left-[17px]" : "left-0.5",
+          )}
+        />
       </span>
     </button>
   );

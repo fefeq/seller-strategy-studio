@@ -53,7 +53,7 @@ export function DateField({
           if (e.key === "Enter") commit(e.currentTarget.value);
         }}
       />
-      {error && <p className="mt-1 text-[11px] text-destructive">{error}</p>}
+      {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>
   );
 }

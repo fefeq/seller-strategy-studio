@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 // Parallel on the screens: the deep report of an account (cited, with confidence), lists of companies that match
 // the ICP to import as accounts, and the enrichment table. Long runs are polled here while the screen is open
 import { useAccountOptions } from "@/components/entity-combobox";
@@ -320,9 +321,9 @@ export function IcpListButton(
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 sm:grid-cols-[1fr_8rem]">
-            <select
+            <NativeSelect
               aria-label="ICP"
-              className="h-9 rounded-md border bg-background px-2 text-sm"
+
               value={icpId}
               onChange={(e) => setIcpId(e.target.value)}
             >
@@ -332,10 +333,10 @@ export function IcpListButton(
                   {icpLabel(i)}
                 </option>
               ))}
-            </select>
-            <select
+            </NativeSelect>
+            <NativeSelect
               aria-label="Cuántas empresas"
-              className="h-9 rounded-md border bg-background px-2 text-sm"
+
               value={count}
               onChange={(e) => setCount(Number(e.target.value))}
             >
@@ -344,7 +345,7 @@ export function IcpListButton(
                   {n} empresas
                 </option>
               ))}
-            </select>
+            </NativeSelect>
             <Textarea
               className="sm:col-span-2"
               rows={2}
@@ -429,7 +430,7 @@ export function IcpListButton(
                           )}
                         </span>
                         {e.existingId && (
-                          <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                          <span className="font-mono text-xs uppercase text-muted-foreground">
                             ya en Nokko
                           </span>
                         )}
@@ -557,7 +558,7 @@ export function EnrichTableButton() {
                         </span>
                       )}
                     </span>
-                    <span className="font-mono text-[10px] text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {[!a.industry && "sector", !a.size && "tamaño", !a.country && "país"]
                         .filter(Boolean)
                         .join(", ") || "completa"}
