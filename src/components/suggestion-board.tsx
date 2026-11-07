@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState, type ComponentProps } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -25,9 +26,6 @@ import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence"
 import { ExecuteDialog, executeKind } from "@/components/strategy-execute";
 
 const PRIO: Record<number, string> = { 1: "Urgente", 2: "Importante", 3: "Cuando puedas" };
-const sel = "h-10 rounded-md border bg-card px-2 text-sm md:h-9";
-// Filter selects stretch to share the row on phones.
-const filterSel = `${sel} min-w-[9.5rem] flex-1 sm:flex-none`;
 
 export function SuggestionBoard() {
   const { data: me } = useMe();
@@ -125,8 +123,7 @@ export function SuggestionBoard() {
   // Shared by the table (md+) and the phone cards.
   const ownerCell = (s: Row) =>
     leader && ["pending", "snoozed"].includes(s.status) ? (
-      <select
-        className={sel}
+      <NativeSelect
         value={s.user_id ?? ""}
         onChange={(e) => assign(s.id, e.target.value || null)}
         aria-label="Asignar responsable"
@@ -137,7 +134,7 @@ export function SuggestionBoard() {
             {m.name}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     ) : (
       <div>
         <p className={s.user_id ? "" : "text-signal"}>{name(s.user_id)}</p>
@@ -350,8 +347,8 @@ export function SuggestionBoard() {
       </p>
 
       <div className="flex flex-wrap items-center gap-2">
-        <select
-          className={filterSel}
+        <NativeSelect
+          className="min-w-[9.5rem] flex-1 sm:flex-none"
           value={owner}
           onChange={(e) => setOwner(e.target.value)}
           aria-label="Responsable"
@@ -363,9 +360,9 @@ export function SuggestionBoard() {
               {m.name}
             </option>
           ))}
-        </select>
-        <select
-          className={filterSel}
+        </NativeSelect>
+        <NativeSelect
+          className="min-w-[9.5rem] flex-1 sm:flex-none"
           value={status}
           onChange={(e) => setStatus(e.target.value)}
           aria-label="Estado"
@@ -377,9 +374,9 @@ export function SuggestionBoard() {
           <option value="approved">Hechas (30 días)</option>
           <option value="resolved">Resueltas solas (30 días)</option>
           <option value="dismissed">Descartadas (30 días)</option>
-        </select>
-        <select
-          className={filterSel}
+        </NativeSelect>
+        <NativeSelect
+          className="min-w-[9.5rem] flex-1 sm:flex-none"
           value={prio}
           onChange={(e) => setPrio(e.target.value)}
           aria-label="Prioridad"
@@ -388,7 +385,7 @@ export function SuggestionBoard() {
           <option value="1">Urgente</option>
           <option value="2">Importante</option>
           <option value="3">Cuando puedas</option>
-        </select>
+        </NativeSelect>
         <Button
           variant={grouped ? "default" : "outline"}
           size="sm"
@@ -436,7 +433,7 @@ export function SuggestionBoard() {
             const overdue = isOverdue(s);
             return (
               <div key={s.id} className="space-y-3 py-4 text-sm">
-                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-[10px] uppercase">
+                <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-xs uppercase">
                   <span className={s.priority === 1 ? "text-signal" : "text-muted-foreground"}>
                     {PRIO[s.priority]}
                   </span>
@@ -490,7 +487,7 @@ export function SuggestionBoard() {
               return (
                 <tr key={s.id} className="border-b align-top last:border-0">
                   <td
-                    className={`px-3 py-2 font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
+                    className={`px-3 py-2 font-mono text-xs uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
                   >
                     {PRIO[s.priority]}
                   </td>

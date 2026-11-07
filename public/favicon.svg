@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Nokko">
   <rect width="64" height="64" fill="#0f1115"></rect>
   <g fill="#ffffff"><rect x="11" y="14.5" width="19" height="6"></rect><rect x="11" y="29" width="19" height="6"></rect><rect x="11" y="43.5" width="19" height="6"></rect></g>
-  <path d="M35 11 C 45 11, 41.5 28, 53 32 C 41.5 36, 45 53, 35 53" fill="none" stroke="#c6f432" stroke-width="6" stroke-linecap="butt"></path>
+  <path d="M35 11 C 45 11, 41.5 28, 53 32 C 41.5 36, 45 53, 35 53" fill="none" stroke="#8e97ff" stroke-width="6" stroke-linecap="butt"></path>
 </svg>

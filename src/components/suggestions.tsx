@@ -13,7 +13,12 @@ import { linkTarget, resolvePlan } from "@/lib/proactive/resolve";
 import { errorText } from "@/lib/errors";
 import { actionTool } from "@/lib/json";
 import { Input } from "@/components/ui/input";
-import { canViewStrategy, limitStrategy, parseStrategy, strategyHeading } from "@/lib/strategy-suggestions";
+import {
+  canViewStrategy,
+  limitStrategy,
+  parseStrategy,
+  strategyHeading,
+} from "@/lib/strategy-suggestions";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 import { ExecuteDialog, executeKind } from "@/components/strategy-execute";
 
@@ -99,7 +104,10 @@ export function useSuggestions() {
         .order("created_at", { ascending: false })
         .limit(100);
       // At most 7 strategic suggestions open at once (CA-7); the operational ones are not capped.
-      return limitStrategy((data ?? []).filter((r) => canViewStrategy(r, me?.roles ?? [])), new Date());
+      return limitStrategy(
+        (data ?? []).filter((r) => canViewStrategy(r, me?.roles ?? [])),
+        new Date(),
+      );
     },
   });
 }
@@ -160,7 +168,7 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p
-            className={`font-mono text-[10px] uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
+            className={`font-mono text-xs uppercase ${s.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
           >
             {PRIO[s.priority]}
             {strategy ? ` · ${strategyHeading(strategy)}` : ""}
@@ -189,7 +197,9 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
           </Link>
         )}
       </div>
-      {strategy && executeKind(s) && form && <ExecuteDialog s={s} open={form} onOpenChange={setForm} reason={reason} />}
+      {strategy && executeKind(s) && form && (
+        <ExecuteDialog s={s} open={form} onOpenChange={setForm} reason={reason} />
+      )}
       {strategy && (
         <Input
           className="mt-3"
@@ -203,7 +213,11 @@ export function SuggestionCard({ s, compact = false }: { s: S; compact?: boolean
       <div className="mt-3 flex flex-wrap gap-2">
         {strategy ? (
           <>
-            <Button size="sm" disabled={!!busy} onClick={() => (executeKind(s) ? setForm(true) : act("approve"))}>
+            <Button
+              size="sm"
+              disabled={!!busy}
+              onClick={() => (executeKind(s) ? setForm(true) : act("approve"))}
+            >
               Aceptar
             </Button>
             <Button size="sm" variant="outline" disabled={!!busy} onClick={() => act("snooze")}>

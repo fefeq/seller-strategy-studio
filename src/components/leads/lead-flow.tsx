@@ -24,8 +24,11 @@ export function LeadFlowPanel({ lead }: { lead: Lead }) {
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["accounts"] });
       qc.invalidateQueries({ queryKey: ["suggestions"] });
-    } catch (e) { toast.error(errorText(e)); }
-    finally { setBusy(false); }
+    } catch (e) {
+      toast.error(errorText(e));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -33,10 +36,19 @@ export function LeadFlowPanel({ lead }: { lead: Lead }) {
       <div className="flex items-baseline justify-between gap-3">
         <p className="eyebrow">Flujo de entrada</p>
         <Button type="button" size="sm" variant="ghost" disabled={busy} onClick={go}>
-          {busy ? "Trabajando… (hasta 1 min)" : flow ? "Repetir el flujo" : "Pasar por el flujo ahora"}
+          {busy
+            ? "Trabajando… (hasta 1 min)"
+            : flow
+              ? "Repetir el flujo"
+              : "Pasar por el flujo ahora"}
         </Button>
       </div>
-      {!flow && !busy && <p className="text-sm text-muted-foreground">Nokko completará su cuenta, buscará personas clave y te propondrá la siguiente etapa. Pasa solo al entrar el lead; si aún no lo ha hecho, puedes lanzarlo tú.</p>}
+      {!flow && !busy && (
+        <p className="text-sm text-muted-foreground">
+          Nokko completará su cuenta, buscará personas clave y te propondrá la siguiente etapa. Pasa
+          solo al entrar el lead; si aún no lo ha hecho, puedes lanzarlo tú.
+        </p>
+      )}
       {flow && (
         <ol className="space-y-1.5 text-sm">
           {FLOW_STEPS.map((s, i) => {
@@ -44,7 +56,14 @@ export function LeadFlowPanel({ lead }: { lead: Lead }) {
             return (
               <li key={s.id} className="grid grid-cols-[1.25rem_8.5rem_1fr] gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{i + 1}</span>
-                <span className="font-medium">{s.label}<span className={`block text-[11px] uppercase tracking-wide ${st?.status === "failed" ? "text-signal" : "text-muted-foreground"}`}>{st ? STATUS_WORD[st.status] : "Pendiente"}</span></span>
+                <span className="font-medium">
+                  {s.label}
+                  <span
+                    className={`block text-xs uppercase tracking-wide ${st?.status === "failed" ? "text-signal" : "text-muted-foreground"}`}
+                  >
+                    {st ? STATUS_WORD[st.status] : "Pendiente"}
+                  </span>
+                </span>
                 <span className="break-words text-muted-foreground">{st?.note ?? "—"}</span>
               </li>
             );
@@ -52,7 +71,15 @@ export function LeadFlowPanel({ lead }: { lead: Lead }) {
         </ol>
       )}
       {flow && lead.account_id && (
-        <p className="text-xs"><Link to="/accounts/$id" params={{ id: lead.account_id }} className="text-signal">Abrir la cuenta</Link> · <Link to="/inbox" className="text-signal">Ver la propuesta en Sugerencias</Link></p>
+        <p className="text-xs">
+          <Link to="/accounts/$id" params={{ id: lead.account_id }} className="text-signal">
+            Abrir la cuenta
+          </Link>{" "}
+          ·{" "}
+          <Link to="/inbox" className="text-signal">
+            Ver la propuesta en Sugerencias
+          </Link>
+        </p>
       )}
     </section>
   );
