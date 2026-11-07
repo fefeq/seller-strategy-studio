@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { annualFromQuarters, quartersOfYear, segmentBudget, type SegmentBudgetRow } from "@/lib/segment-budget";
 import { Deviation } from "@/components/budget-quarters";
+import { DataMark } from "@/components/metrics/data-mark";
+import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, SHARED_EQUAL, acvMark, inferredMark } from "@/components/metrics/mark-text";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
@@ -42,7 +44,7 @@ export function BudgetPanel({ year }: { year: number }) {
           <h3 className="text-2xl">Presupuesto por segmento · {year}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Suma de los cuatro trimestres. Se apunta por trimestre en{" "}
-            <Link to="/strategy" className="underline">Estrategia GTM → Presupuesto vs real</Link>.
+            <Link to="/strategy" search={{ tab: "budget" }} className="underline">Estrategia GTM → Presupuesto vs real</Link>.
             El margen real (ingresos − coste de servir) sustituye al margen objetivo en todos los paybacks.
           </p>
         </div>
@@ -71,7 +73,12 @@ export function BudgetPanel({ year }: { year: number }) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((r) => (
+            {rows.map((r) => {
+              // Margin 0 % or below: the payback (Infinity or negative) is replaced by «Sin dato», neutral tone.
+              const noReal = r.paybackMarginBasis.actual === "no_positivo";
+              const noPlan = r.paybackMarginBasis.plan === "no_positivo";
+              const acv = acvMark(r.acvSource, r.acvRangeBasis);
+              return (
               <tr key={r.segment.id} className="border-b border-dashed align-top">
                 <td className="sticky left-0 z-10 max-w-40 bg-background py-2 pr-3 sm:max-w-none">
                   <p className="font-medium">{r.segment.name}</p>
@@ -79,16 +86,21 @@ export function BudgetPanel({ year }: { year: number }) {
                 </td>
                 <Cmp real={r.actual.revenue != null ? money(r.actual.revenue) : "—"} plan={r.plan.revenue != null ? money(r.plan.revenue) : "—"} dev={<Deviation real={r.actual.revenue} plan={r.plan.revenue} />} />
                 <Cmp real={pct(r.actual.margin)} plan={pct(r.plan.margin)} dev={<Deviation real={r.actual.margin} plan={r.plan.margin} points />} />
-                <Cmp real={r.actual.acquisition ? money(r.actual.acquisition) : "—"} plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "—"} dev={<Deviation real={r.actual.acquisition || null} plan={r.plan.acquisition} lowerIsBetter />} />
-                <Cmp real={r.actual.cac != null ? money(r.actual.cac) : "—"} plan={r.plan.cac != null ? money(r.plan.cac) : "—"} dev={<Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />} />
+                <Cmp real={r.actual.acquisition ? money(r.actual.acquisition) : "—"} plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "—"} dev={<Deviation real={r.actual.acquisition || null} plan={r.plan.acquisition} lowerIsBetter />} marks={r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />} />
+                <Cmp real={r.actual.cac != null ? money(r.actual.cac) : "—"} plan={r.plan.cac != null ? money(r.plan.cac) : "—"} dev={<Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />} marks={r.inferredWon > 0 && <Mark {...inferredMark(r.inferredWon, r.wonInQuarter)} />} />
                 <Cmp
-                  real={r.actual.payback != null ? `${fmt1(r.actual.payback)} m` : "—"}
-                  plan={`${r.plan.payback != null ? `${fmt1(r.plan.payback)} m` : "—"}${r.payback.target != null ? ` · obj. ${r.payback.target} m` : ""}`}
-                  dev={<Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />}
-                  tone={r.payback.realOk === false ? "text-signal" : r.payback.realOk ? "text-success" : ""}
+                  real={noReal ? <DataMark {...MARGIN_NON_POSITIVE} /> : r.actual.payback != null ? `${fmt1(r.actual.payback)} m` : "—"}
+                  plan={<>{noPlan ? <DataMark {...MARGIN_NON_POSITIVE} /> : r.plan.payback != null ? `${fmt1(r.plan.payback)} m` : "—"}{r.payback.target != null ? ` · obj. ${r.payback.target} m` : ""}</>}
+                  dev={noReal || noPlan ? null : <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />}
+                  tone={noReal ? "" : r.payback.realOk === false ? "text-signal" : r.payback.realOk ? "text-success" : ""}
+                  marks={<>
+                    {(r.paybackMarginBasis.actual === "supuesto_100" || r.paybackMarginBasis.plan === "supuesto_100") && <Mark {...MARGIN_ASSUMED} />}
+                    {(r.actual.payback != null || r.plan.payback != null || r.acvRangeBasis === "sin_rango") && acv && <Mark {...acv} />}
+                  </>}
                 />
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -96,12 +108,18 @@ export function BudgetPanel({ year }: { year: number }) {
   );
 }
 
-function Cmp({ real, plan, dev, tone = "" }: { real: string; plan: string; dev: React.ReactNode; tone?: string }) {
+function Cmp({ real, plan, dev, tone = "", marks }: { real: ReactNode; plan: ReactNode; dev: ReactNode; tone?: string; marks?: ReactNode }) {
   return (
     <td className="px-2 py-2 text-right">
       <p className={`font-mono text-xs ${tone}`}>{real}</p>
       <p className="text-[11px] text-muted-foreground">presup. {plan}</p>
       <p className="font-mono text-[10px]">{dev}</p>
+      {marks}
     </td>
   );
+}
+
+/** A data mark under a table figure (SDD-20261106-metrics-honest-data CA-5 to CA-8). */
+function Mark(p: React.ComponentProps<typeof DataMark>) {
+  return <DataMark {...p} className="block text-[10px] text-muted-foreground" />;
 }

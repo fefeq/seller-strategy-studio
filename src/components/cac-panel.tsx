@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,8 @@ import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
 import { CAC_CHANNELS, channelQuarterTable, costByChannel, previousQuarter, quartersUpTo } from "@/lib/cac";
 import { useSegmentCoverageData } from "@/components/segment-coverage";
 import { errorText } from "@/lib/errors";
+import { DataMark } from "@/components/metrics/data-mark";
+import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, SHARED_EQUAL, inferredMark } from "@/components/metrics/mark-text";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -197,15 +199,17 @@ export function CacPanel({ quarter }: { quarter: string }) {
               <td className="py-2 pr-3">Total directo</td>
               {columns.map((c) => <td key={c.id} className="px-2 py-2 text-right font-mono text-xs">{money(colTotal(c.id))}</td>)}
             </tr>
-            <SummaryRow label="+ Compartido asignado" cells={rows.map((r) => money(r.cac.shared))} />
-            <SummaryRow label="Coste total" cells={rows.map((r) => money(r.cac.cost))} strong />
-            <SummaryRow label="Deals ganados" cells={rows.map((r) => String(r.cac.customers))} />
+            <SummaryRow label="+ Compartido asignado" cells={rows.map((r) => <>{money(r.cac.shared)}{r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}</>)} />
+            <SummaryRow label="Coste total" cells={rows.map((r) => <>{money(r.cac.cost)}{r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}</>)} strong />
+            <SummaryRow label="Deals ganados" cells={rows.map((r) => <>{String(r.cac.customers)}{r.inferredWon > 0 && <Mark {...inferredMark(r.inferredWon, r.wonInQuarter)} />}</>)} />
             <SummaryRow label="CAC real" cells={rows.map((r) => (r.cac.real != null ? money(r.cac.real) : "—"))} strong />
             <SummaryRow label="CAC objetivo" cells={rows.map((r) => (r.cac.target != null ? money(r.cac.target) : "—"))} muted />
             <SummaryRow
               label="Payback real"
-              cells={rows.map((r) => (r.payback.source === "real" && r.payback.real != null ? `${r.payback.real.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}` : "—"))}
-              tones={rows.map((r) => (r.payback.source !== "real" ? "" : r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""))}
+              cells={rows.map((r) => (r.payback.source !== "real" || r.payback.real == null ? "—"
+                : r.paybackMarginBasis === "no_positivo" ? <Mark {...MARGIN_NON_POSITIVE} />
+                  : <>{`${r.payback.real.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`}{r.paybackMarginBasis === "supuesto_100" && <Mark {...MARGIN_ASSUMED} />}</>))}
+              tones={rows.map((r) => (r.payback.source !== "real" || r.paybackMarginBasis === "no_positivo" ? "" : r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""))}
               strong
             />
           </tbody>
@@ -240,7 +244,12 @@ export function CacPanel({ quarter }: { quarter: string }) {
   );
 }
 
-function SummaryRow({ label, cells, strong, muted, tones }: { label: string; cells: string[]; strong?: boolean; muted?: boolean; tones?: string[] }) {
+/** A data mark under a table figure, in the muted small type of the table hints. */
+function Mark(p: React.ComponentProps<typeof DataMark>) {
+  return <DataMark {...p} className="block font-sans text-[10px] font-normal text-muted-foreground" />;
+}
+
+function SummaryRow({ label, cells, strong, muted, tones }: { label: string; cells: ReactNode[]; strong?: boolean; muted?: boolean; tones?: string[] }) {
   return (
     <tr className={muted ? "text-muted-foreground" : strong ? "font-medium" : ""}>
       <td className="py-1.5 pr-3">{label}</td>

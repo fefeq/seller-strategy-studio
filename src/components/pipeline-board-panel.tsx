@@ -1,5 +1,5 @@
 import { wonDealsMargin } from "@/lib/deal-lines";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,9 +8,11 @@ import { useLeads } from "@/hooks/use-leads";
 import { quarterRange } from "@/lib/metrics";
 import { actuals } from "@/lib/pipeline-real";
 import { quarterKpis } from "@/lib/quarter-kpis";
-import { closingIn, pipelineBoard, pipelineEconomics, type BoardColumn, type BoardGroup } from "@/lib/pipeline-board";
+import { boardMargin, closingIn, pipelineBoard, pipelineEconomics, type BoardColumn, type BoardGroup } from "@/lib/pipeline-board";
 import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
+import { DataMark } from "@/components/metrics/data-mark";
+import { MARGIN_NON_POSITIVE, acvMark, boardMarginMark } from "@/components/metrics/mark-text";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const SHOW = 5;
@@ -44,14 +46,14 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     const board = pipelineBoard(leadsData.leads, data.deals, range, leadsData.sla, new Date(), stages);
     const [k] = quarterKpis(data.segments, data.deals, data.budgets, data.costs, [quarter]);
     const real = actuals(data.deals);
-    const segMargins = data.segments.map((s) => s.gross_margin_pct).filter((x): x is number => x != null).map(Number);
-    // Real margin of the books first, then what the won deals with product lines actually carried.
-    const margin = k.actual.margin ?? wonDealsMargin(data.deals, range.end).all?.pct ?? k.plan.margin ?? (segMargins.length ? segMargins.reduce((a, b) => a + b, 0) / segMargins.length : null);
+    // Real margin of the books first, then what the won deals with product lines actually carried (boardMargin, same chain).
+    const bm = boardMargin(k, wonDealsMargin(data.deals, range.end).all, data.segments);
+    const margin = bm.pct;
     const cost = data.costs.reduce((s, c) => s + Number(c.amount || 0), 0) || null;
     const closing = closingIn(data.deals, range);
     const won = board.find((g) => g.id === "won")!.count;
     return {
-      board, cost, won, closing, real, margin,
+      board, cost, won, closing, real, margin, bm,
       eco: pipelineEconomics({ cost, won, closing: closing.length, winRatePct: real.winRate, acv: real.acv, marginPct: margin }),
     };
   }, [data, leadsData, quarter, stages]);
@@ -60,6 +62,8 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
   const owner = (id: string | null) => (id ? leadsData?.members.find((m) => m.id === id)?.full_name ?? "—" : "Sin asignar");
   const late = view.board.reduce((s, g) => s + g.columns.reduce((t, c) => t + c.items.filter((i) => i.late).length, 0), 0);
   const months = (n: number | null) => (n == null ? "—" : `${fmt1(n)} m`);
+  const acv = acvMark(view.real.acvSource);
+  const marginMark = boardMarginMark(view.bm.source);
 
   return (
     <section className="rounded-lg border bg-card p-5">
@@ -81,19 +85,21 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       </div>
 
       <div className="mt-5 grid gap-3 rounded-md border bg-muted/30 p-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Gasto de captación del trimestre" value={view.cost ? money(view.cost) : "—"} hint={view.cost ? "costes de «CAC real»" : "Apúntalo en «CAC real», más abajo"} />
+        <Stat label="Gasto de captación del trimestre" value={view.cost ? money(view.cost) : "—"} hint={view.cost ? <>costes de «<CacRealLink />»</> : <>Apúntalo en «<CacRealLink />»</>} />
         <Stat label="CAC real" value={view.eco.realCac != null ? money(view.eco.realCac) : "—"} hint={`${view.won} ${view.won === 1 ? "deal ganado" : "deals ganados"} en ${quarter}`} />
         <Stat
           label="CAC proyectado"
           value={view.eco.projectedCac != null ? money(view.eco.projectedCac) : "—"}
           hint={view.real.winRate != null
-            ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate ≈ ${fmt1(view.eco.expectedWins)} clientes`
-            : "Sin deals cerrados no hay win rate real"}
+            ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate (Últimos 365 días) ≈ ${fmt1(view.eco.expectedWins)} clientes`
+            : "Sin deals cerrados en los últimos 365 días no hay win rate real"}
         />
         <Stat
           label="Payback real → proyectado"
-          value={`${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`}
-          hint={view.real.acv != null && view.margin != null ? `ACV real ${money(view.real.acv)} · margen ${fmt1(view.margin)}%` : "Falta ACV o margen"}
+          value={view.bm.marginNonPositive ? <DataMark {...MARGIN_NON_POSITIVE} /> : `${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`}
+          hint={view.real.acv != null && view.margin != null
+            ? <>ACV {money(view.real.acv)}{acv && <> · <DataMark {...acv} /></>} · margen {fmt1(view.margin)}%{marginMark && <> · <DataMark {...marginMark} /></>}</>
+            : "Falta ACV o margen"}
         />
       </div>
     </section>
@@ -149,7 +155,12 @@ function Column({ c, money, owner, hideLabel }: { c: BoardColumn; money: (n: num
   );
 }
 
-function Stat({ label, value, hint }: { label: string; value: string; hint: string }) {
+/** «CAC real» lives in Métricas › CAC y presupuesto (SDD-20261106-metrics-honest-data CA-11). */
+function CacRealLink() {
+  return <Link to="/metrics" search={{ seccion: "economia" }} className="underline">CAC real</Link>;
+}
+
+function Stat({ label, value, hint }: { label: string; value: ReactNode; hint: ReactNode }) {
   return (
     <div>
       <p className="eyebrow">{label}</p>

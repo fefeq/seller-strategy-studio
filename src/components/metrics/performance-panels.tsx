@@ -2,6 +2,7 @@
 // (Kpi, Panel, Bar, Muted). Extracted from metrics.tsx by SDD-20261106-metrics-honest-data U-2 without
 // changing their markup; the win rates are those of the selected quarter (src/lib/metrics-quarter.ts).
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import type { QuarterCoverage } from "@/lib/coverage";
 import { formatRatio } from "@/lib/coverage";
 import { pct } from "@/lib/money";
@@ -47,9 +48,16 @@ export function ResumenKpis({
         label="Cobertura de pipeline"
         v={quota ? formatRatio(cov.ratio) : "—"}
         hint={
-          quota
-            ? `${cov.status === "healthy" ? "Sana (3–4x)" : cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${cov.undated.count ? ` · ${cov.undated.count} ${cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${money(cov.undated.amount)}) no cuentan` : ""}`
-            : "Define cuotas abajo"
+          quota ? (
+            `${cov.status === "healthy" ? "Sana (3–4x)" : cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${cov.undated.count ? ` · ${cov.undated.count} ${cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${money(cov.undated.amount)}) no cuentan` : ""}`
+          ) : (
+            <>
+              <Link to="/metrics" search={{ seccion: "rendimiento" }} className="underline">
+                Define cuotas
+              </Link>{" "}
+              en Rendimiento
+            </>
+          )
         }
         tone={cov.status === "low" && quota ? "bad" : undefined}
       />
