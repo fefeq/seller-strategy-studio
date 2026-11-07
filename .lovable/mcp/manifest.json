@@ -4384,6 +4384,103 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "list_plays",
+        "title": "Ver los Plays GTM y su estado",
+        "description": "Lista los 28 Plays GTM (jugadas con disparador, puertas y salida; no son los guiones de venta) con su estado en esta empresa: Activado, Pausado, Parcial, Planificado o Bloqueado con el motivo, qué datos necesita cada uno y qué reglas ya existentes le pertenecen. Filtra por motion o por estado. Solo lee.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "motion": {
+              "description": "Solo los plays de este motion",
+              "type": "string",
+              "enum": [
+                "entrante",
+                "saliente",
+                "producto",
+                "cuentas",
+                "reactivacion",
+                "mercado"
+              ]
+            },
+            "status": {
+              "description": "Solo los plays con este estado del catálogo",
+              "type": "string",
+              "enum": [
+                "activo",
+                "parcial",
+                "planificado",
+                "bloqueado"
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_play",
+        "title": "Ver un Play GTM",
+        "description": "Devuelve un play del catálogo con su estado en esta empresa: si está activado, si se puede activar, qué lo bloquea y qué datos necesita. Solo lee.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "play_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Id del play (list_plays), por ejemplo crm-hygiene"
+            }
+          },
+          "required": [
+            "play_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "set_play_enabled",
+        "title": "Activar o pausar un Play GTM",
+        "description": "Activa o pausa un play en esta empresa. Un play bloqueado o planificado no se puede activar. Pausar un play que ya ejecuta reglas cierra sus sugerencias pendientes en la siguiente sincronización. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "play_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Id del play (list_plays)"
+            },
+            "enabled": {
+              "type": "boolean",
+              "description": "true = activar; false = pausar"
+            }
+          },
+          "required": [
+            "play_id",
+            "enabled"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

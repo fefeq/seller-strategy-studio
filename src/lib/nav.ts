@@ -20,6 +20,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: "/strategy", label: "Estrategia GTM", keywords: "icp segmentos posicionamiento" },
       { to: "/metrics", label: "Métricas", keywords: "cac payback funnel" },
       { to: "/cycle", label: "Ciclo GTM" },
+      { to: "/plays", label: "Plays GTM", keywords: "jugadas señales automatizaciones" },
       { to: "/debates", label: "Debates" },
       { to: "/theory-u", label: "Theory U" },
       { to: "/advisor", label: "Asesor GTM", leadersOnly: true },
