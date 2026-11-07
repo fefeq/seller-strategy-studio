@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 66,
+  "seq": 67,
   "tickets": [
     {
       "id": "NK-0001",
@@ -230,6 +230,12 @@
           "at": "2026-10-28T20:23:13.987Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-9: revalidar contra GTM Lab antes de GTM Lab SDD 3; lo cubierto se absorbe y el resto va a la épica de encaje de personas"
         }
       ]
     },
@@ -374,6 +380,12 @@
           "at": "2026-10-28T20:23:14.260Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-9: revalidar contra GTM Lab antes de GTM Lab SDD 3; lo cubierto se absorbe y el resto va a la épica de encaje de personas"
         }
       ]
     },
@@ -395,6 +407,12 @@
           "at": "2026-10-28T20:23:14.305Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-7: superado por GTM Lab; su idea entra en la ayuda de IA por paso (GTM Lab SDD 4). No construir este SDD"
         }
       ]
     },
@@ -416,6 +434,12 @@
           "at": "2026-10-28T20:23:14.352Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-3: el PR #32 se cerró sin fusionar; se rehace sobre main en la Fase 3, tras NK-0058, con el SDD revisado"
         }
       ]
     },
@@ -707,6 +731,12 @@
           "at": "2026-10-31T18:25:33.652Z",
           "by": "Fede",
           "note": "owner=Claude"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-6: la U-0 (retirar la lectura de posts de personas en LinkedIn) se adelanta como épica propia tras NK-0058"
         }
       ]
     },
@@ -728,6 +758,12 @@
           "at": "2026-10-30T20:35:43.153Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-1: se enmienda (no se sustituye); conserva puertas, torre, Plan e Inicio y lee las tareas del tablero de GTM Lab"
         }
       ]
     },
@@ -749,6 +785,12 @@
           "at": "2026-10-30T21:34:02.600Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
         }
       ]
     },
@@ -851,6 +893,12 @@
           "at": "2026-10-30T22:15:32.650Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-2: se parte; U-1 a U-4 antes de NK-0052, y la U-5 la cierra NK-0052 (rompe la dependencia circular con la Torre 8)"
         }
       ]
     },
@@ -1394,6 +1442,12 @@
           "at": "2026-11-02T23:44:52.757Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Fase 2 en SDD-20261106-ux-coherence-nk0051-phase2 (aún fuera de main); sin ticket nuevo"
         }
       ]
     },
@@ -1415,6 +1469,12 @@
           "at": "2026-11-02T23:47:57.260Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-2: va después de NK-0032 U-1 a U-4 y cierra su U-5"
         }
       ]
     },
@@ -1436,6 +1496,12 @@
           "at": "2026-11-02T23:48:23.541Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-10: el Asesor GTM pasa a ser un modo de este agente. Absorbe además los requisitos del Sprint 1 (SDD-20261106-sprint1-requirements-gtm-lab-nk0053, aún fuera de main)"
         }
       ]
     },
@@ -1589,6 +1655,12 @@
           "at": "2026-11-06T16:02:40.668Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
         }
       ]
     },
@@ -1652,6 +1724,12 @@
           "at": "2026-11-06T16:02:40.817Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-5: Plays SDD 4, 5 y 6 se adelantan a la Fase 4 (solo dependen de Plays 1); el resto de Plays espera a NK-0054"
         }
       ]
     },
@@ -1730,8 +1808,35 @@
       "history": [
         {
           "state": "LOGGED",
+          "at": "2026-11-06T21:32:50.522Z",
+          "by": "phase0-decisions",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
           "at": "2026-11-06T21:53:38.027Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0067",
+      "title": "Buscar en Conocimiento: búsqueda por texto en /hub y contrato de URL con la sección de Drive",
+      "kind": "feature",
+      "source": "SDD-20261106-hub-search (Sprint 1, rama docs/sprint1-sdd); roadmap E-31",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:55.435Z",
+          "by": "phase0-decisions",
           "note": ""
         }
       ]

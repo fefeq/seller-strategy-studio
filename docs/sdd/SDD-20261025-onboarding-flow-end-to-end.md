@@ -1,7 +1,7 @@
 # SDD-20261025-onboarding-flow-end-to-end · [Feature] Onboarding completo y proactivo
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** Borrador; revalidar contra GTM Lab antes de su SDD 3 (D-9, decisión de Fede del 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-4) · **Depende de:** SDD universal de campos, SDD de acciones sobre campos, SDD de guía de estrategia
 
 ## 1. Resumen

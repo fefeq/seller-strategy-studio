@@ -1,7 +1,7 @@
 # SDD-20261030-gtm-control-tower-1a-core · [Feature] Núcleo: roles, objetivos, resultados clave, públicos y canales, decisiones y retirada de LinkedIn (fase 1a)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-30 (v9, tras cinco pasadas del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
+**Estado:** Aprobado por Fede el 2026-10-30 (v9, tras cinco pasadas del gate); la U-0 se adelanta como entrega propia tras la salida de Lovable B (D-6, decisión de Fede del 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
 **PRD:** `docs/prd/PRD-20261030-gtm-control-tower.md` · **Depende de:** los SDD de salida de Lovable A y B (SDD-20261029-lovable-exit-a y -b) cerrados antes de construir las unidades U-1, U-2, U-3, U-4 y U-7; U-0 puede hacerse antes pero se coordina con el SDD B (su CA-12 reescribe las llamadas a Apify) · **Continúa en:** `SDD-20261030-gtm-control-tower-1b-tasks-gates-tower.md`
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.
