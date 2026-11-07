@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 65,
+  "seq": 66,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1712,6 +1712,27 @@
           "at": "2026-11-06T21:03:04.494Z",
           "by": "Fede",
           "note": "sha=26512d3a5688c9f333e142a520c8efa1d7e1e8bd"
+        }
+      ]
+    },
+    {
+      "id": "NK-0066",
+      "title": "Camino del founder de la estrategia a la cuenta: comité de compra frente al ICP, primer mensaje por stakeholder, seguimiento propio del stakeholder (días 3, 7 y 14) y guía de ejecución en Inicio",
+      "kind": "feature",
+      "source": "Validación del flujo del founder con Fede en sesión Claude Code, 2026-11-06; SDD v2.1 aprobado tras tres revisiones del gate; PR #88",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-founder-account-execution-path.md",
+      "prd": "docs/prd/PRD-20261106-founder-account-execution-path.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:53:38.027Z",
+          "by": "Claude",
+          "note": ""
         }
       ]
     }
