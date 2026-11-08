@@ -70,7 +70,7 @@ Heredado del PRD §3. Todo es dato de código; el uso es sin dato, y la iniciati
 - **Migraciones:** en producción se aplican a mano (`docs/sdd/annex/migraciones-pendientes-lovable-20261101.md`). `scripts/factory/ledger.mjs` no reserva números.
 
 ## 4. Resultado buscado
-G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato». La de G-2 se mide con una consulta de solo lectura antes de construir **[Por verificar]**.
+G-1 a G-5 del PRD §4. Todas las líneas base son «sin dato», salvo G-2: medida el 2026-11-08 en producción, hay 0 cuentas objetivo, así que el cociente aún no se puede calcular.
 
 ## 5. Alcance
 **Incluye:**
@@ -223,8 +223,8 @@ Español, con «tú», sin iconos y con los estados escritos en palabras. Los ej
 - **Integridad entre empresas (CA-30):**
   - FK compuesta `(stakeholder_id, account_id, org_id)` → `stakeholders(id, account_id, org_id)`, con `unique` en el destino y `on delete set null (stakeholder_id)`.
   - Lo mismo con `(icp_profile_id, org_id)` → `icp_profiles(id, org_id)`.
-  - Exige `unique (id, account_id, org_id)` en `stakeholders`, `unique (id, org_id)` en `icp_profiles` y `org_id not null` en `account_touches` y `accounts` **[Por verificar: que no haya nulos en producción]**. Si los hay, se usa un trigger.
-  - `on delete set null (columna)` existe desde Postgres 15; producción usa 17 y PGlite 18, según `SDD-20261030-money-moment-notices.md` **[Por verificar en U-2]**.
+  - Exige `unique (id, account_id, org_id)` en `stakeholders`, `unique (id, org_id)` en `icp_profiles` y `org_id not null` en `account_touches` y `accounts`. Verificado el 2026-11-08: en producción no hay `org_id` nulos (las cuatro tablas tienen 0 filas), así que no hace falta el trigger. La migración debe fallar si al aplicarse encuentra nulos, por si cambia.
+  - `on delete set null (columna)` existe desde Postgres 15; producción usa PostgreSQL 17.11 (verificado el 2026-11-08) y PGlite 18, según `SDD-20261030-money-moment-notices.md` **[Por verificar en U-2: PGlite]**.
 - **Común:**
   - `org_id default current_org()`; el cliente no envía `org_id`.
   - Hereda la RLS actual.
@@ -299,8 +299,8 @@ Orden: U-1 → U-2 → U-3 → U-4 → U-5. U-4 usa `setStakeholderContact` de U
 ## 16. Pendiente de verificar
 | Qué | Quién o qué lo comprueba |
 |---|---|
-| Línea base de G-2 | Consulta de solo lectura en producción |
-| Que no haya `org_id` nulos en `stakeholders`, `account_touches`, `accounts` ni `icp_profiles` | Consulta de solo lectura en producción |
+| ~~Línea base de G-2~~ | Hecho el 2026-11-08: 0 cuentas objetivo en producción |
+| ~~Que no haya `org_id` nulos en `stakeholders`, `account_touches`, `accounts` ni `icp_profiles`~~ | Hecho el 2026-11-08: 0 nulos (0 filas en las cuatro tablas) |
 | Número de migración libre | Al fusionar U-2, contra todas las ramas |
 | Plan maestro y `reseal-journal.mjs` (fuera del repo) | Fede |
 | Que `pg-harness` modela la FK compuesta con `on delete set null (col)` | U-2 |
