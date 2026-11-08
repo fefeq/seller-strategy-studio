@@ -110,7 +110,9 @@ export async function loadAgentRules(
       .eq("org_id", c.orgId)
       .eq("scope", "team")
       .or("section.eq.rules,mandatory.eq.true")
-      .order("updated_at", { ascending: false });
+      .order("updated_at", { ascending: false })
+      // Same tiebreak as the Conocimiento screen, so the agent and «L de N» cut the same rule.
+      .order("id");
     if (error) {
       console.error("knowledge rules load failed", error.message);
       return { ok: false, rules: [] };
