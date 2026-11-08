@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 76,
+  "seq": 86,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2116,6 +2116,216 @@
           "state": "LOGGED",
           "at": "2026-11-08T19:45:42.101Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0077",
+      "title": "Plays GTM 1: los 9 detectores reabren sugerencias cerradas en todas las empresas (sin filas en play_states), reenvían avisos de prioridad 1 por Telegram y pierden snooze al reanudar (decidir: aceptar o limitar a plays reanudados)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.059Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0078",
+      "title": "Plays GTM 1: CA-11 solo prueba detect(); falta prueba de que syncSuggestions sin filas en play_states no cambia nada",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.116Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0079",
+      "title": "Plays GTM 1: «Ver actividad» se queda en «Cargando…» si falla la consulta de play_runs (p. ej. antes de aplicar 0077)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.178Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0080",
+      "title": "Plays GTM 1: togglePlay devuelve error.message en crudo al Agente y a MCP (en pantalla pasa por errorText)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.240Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0081",
+      "title": "Plays GTM 1: RLS permite a un líder poner enabled=true en un play bloqueado escribiendo directo; CA-9 solo se cumple en código (CHECK/policy o aceptar y documentar)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.303Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0082",
+      "title": "Plays GTM 1: decidir si meeting_prepped, account_researched, account_cooling y lead_enriched pertenecen a algún play (§15.4 del SDD; hoy siguen activos con el play pausado)",
+      "kind": "feature",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.356Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0083",
+      "title": "Plays GTM 1: decisiones de Fede en §15 (nombre Plays GTM vs playbooks, activar solo Owner y Sales Leader, bloqueados visibles en /plays, retención de play_runs); §16 sin comprobar y §17 sin revisar",
+      "kind": "feature",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.418Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0084",
+      "title": "Proceso: NK-0063 marcado SHIPPED ~50 s después del merge de #96 y antes del gate independiente, con evidencia no versionada (misma clase que NK-0075 para NK-0030)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.470Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0085",
+      "title": "Migración 0079: verificar en la base viva si está aplicada (registro con 77 filas, max id 78) o pendiente, y cómo se mapea id↔idx del journal",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.527Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0086",
+      "title": "NK-0065: la rama del ledger (fix/nk-0065-nk-0048-followups) no es la de la PR #84 (fix/nk-0048-gate-minors); citas 56fc3fd, 1ba122c y docs/prd-gtm-lab-en-nokko no existen; decidir gate retroactivo sobre 26512d3",
+      "kind": "bug",
+      "source": "Gate independiente de NK-0065 (no ejecutado: el commit 56fc3fd no existe)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.589Z",
+          "by": "tracker",
           "note": ""
         }
       ]
