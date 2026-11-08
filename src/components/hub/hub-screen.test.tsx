@@ -331,11 +331,8 @@ describe("HubScreen · búsqueda", () => {
     try {
       type("precio");
       fireEvent.click(sectionButton("Playbooks"));
-      const nexts = h.navigate.mock.calls.map((c) => {
-        const a = c[0] as { search: (p: Record<string, unknown>) => unknown };
-        return a.search({});
-      });
-      expect(nexts).toContainEqual({ q: "precio", seccion: "playbooks" });
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+      expect(lastSearch({}).next).toEqual({ q: "precio", seccion: "playbooks" });
       h.navigate.mockClear();
       type("otra");
       cleanup();
