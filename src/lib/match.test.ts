@@ -15,7 +15,9 @@ describe("match", () => {
     expect(normName("Típica")).toBe("tipica");
   });
   it("the same domain with or without www counts as the same account", () => {
-    expect(duplicateOf({ name: "Otro nombre", domain: "bancosantander.es" }, accounts)?.item.id).toBe("2");
+    expect(
+      duplicateOf({ name: "Otro nombre", domain: "bancosantander.es" }, accounts)?.item.id,
+    ).toBe("2");
   });
   it("«S.L.» or not, it is the same company", () => {
     expect(duplicateOf({ name: "ACME LOGISTICS" }, accounts)?.kind).toBe("same");
@@ -36,7 +38,13 @@ describe("match", () => {
 describe("markKnown", () => {
   it("flags a result whose name is an existing account even without domain, leaves new ones alone", async () => {
     const { markKnown } = await import("./match");
-    const out = markKnown<{ name: string; domain: string | null; existingId?: string | null }>([{ name: "ACME Logistics", domain: null }, { name: "Nueva Co", domain: "nueva.io" }], accounts);
+    const out = markKnown<{ name: string; domain: string | null; existingId?: string | null }>(
+      [
+        { name: "ACME Logistics", domain: null },
+        { name: "Nueva Co", domain: "nueva.io" },
+      ],
+      accounts,
+    );
     expect(out[0]?.existingId).toBe("1");
     expect(out[1]?.existingId).toBeUndefined();
   });
@@ -62,7 +70,10 @@ describe("source guard (CA-8)", () => {
   it("searchList in match.ts folds only through foldText from text-search.ts, with no copy of the normalization", () => {
     const src = readFileSync(path.resolve(__dirname, "match.ts"), "utf8");
     expect(src).toMatch(/import \{[^}]*\bfoldText\b[^}]*\} from "@\/lib\/text-search"/);
-    const searchListSrc = src.slice(src.indexOf("export function searchList"), src.indexOf("export function markKnown"));
+    const searchListSrc = src.slice(
+      src.indexOf("export function searchList"),
+      src.indexOf("export function markKnown"),
+    );
     expect(searchListSrc).toContain("foldText(");
     expect(searchListSrc).not.toMatch(/normalize\(/);
   });

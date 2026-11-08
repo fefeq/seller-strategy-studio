@@ -147,66 +147,66 @@ export function Sensing() {
       </div>
 
       <ScreenState isPending={isPending} error={error} refetch={refetch}>
-      <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="w-full sm:w-56">
-            <Pick
-              value={filter}
-              options={{ ...journeyOpts, "": "Todos los recorridos" }}
-              onChange={setFilter}
-            />
-          </div>
-          <Button variant="outline" onClick={runPatterns} disabled={busy || notes.length === 0}>
-            {busy ? "Analizando…" : "Detectar patrones con IA"}
-          </Button>
-          <span className="font-mono text-xs text-muted-foreground">{notes.length} notas</span>
-        </div>
-        {patterns && (
-          <div className="rounded-lg border bg-card p-5">
-            <p className="eyebrow mb-2">Patrones emergentes</p>
-            <pre className="whitespace-pre-wrap font-sans text-sm">{patterns}</pre>
-          </div>
-        )}
-        {notes.length === 0 && (
-          <Empty>Sin notas todavía. Habla con clientes, observa y anota.</Empty>
-        )}
-        {notes.map((n) => (
-          <div key={n.id} className="space-y-2 rounded-lg border bg-card p-4 text-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="min-w-0 break-words font-medium">
-                {n.interviewee || "Sin nombre"}
-                {n.accounts?.name ? (
-                  <span className="text-muted-foreground"> · {n.accounts.name}</span>
-                ) : null}
-              </p>
-              <span className="font-mono text-xs uppercase text-muted-foreground">
-                {SENSING_KINDS[n.kind]} · {new Date(n.occurred_on).toLocaleDateString("es-ES")}
-                {n.listening_level
-                  ? ` · Escucha ${LISTENING_LEVELS[n.listening_level as 1].label}`
-                  : ""}
-              </span>
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="w-full sm:w-56">
+              <Pick
+                value={filter}
+                options={{ ...journeyOpts, "": "Todos los recorridos" }}
+                onChange={setFilter}
+              />
             </div>
-            {n.heard && (
-              <p>
-                <span className="eyebrow mr-1">Escuché</span>
-                {n.heard}
-              </p>
-            )}
-            {n.surprised && (
-              <p>
-                <span className="eyebrow mr-1">Sorpresa</span>
-                {n.surprised}
-              </p>
-            )}
-            {n.emerging && (
-              <p className="text-signal">
-                <span className="eyebrow mr-1">Emerge</span>
-                {n.emerging}
-              </p>
-            )}
+            <Button variant="outline" onClick={runPatterns} disabled={busy || notes.length === 0}>
+              {busy ? "Analizando…" : "Detectar patrones con IA"}
+            </Button>
+            <span className="font-mono text-xs text-muted-foreground">{notes.length} notas</span>
           </div>
-        ))}
-      </div>
+          {patterns && (
+            <div className="rounded-lg border bg-card p-5">
+              <p className="eyebrow mb-2">Patrones emergentes</p>
+              <pre className="whitespace-pre-wrap font-sans text-sm">{patterns}</pre>
+            </div>
+          )}
+          {notes.length === 0 && (
+            <Empty>Sin notas todavía. Habla con clientes, observa y anota.</Empty>
+          )}
+          {notes.map((n) => (
+            <div key={n.id} className="space-y-2 rounded-lg border bg-card p-4 text-sm">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="min-w-0 break-words font-medium">
+                  {n.interviewee || "Sin nombre"}
+                  {n.accounts?.name ? (
+                    <span className="text-muted-foreground"> · {n.accounts.name}</span>
+                  ) : null}
+                </p>
+                <span className="font-mono text-xs uppercase text-muted-foreground">
+                  {SENSING_KINDS[n.kind]} · {new Date(n.occurred_on).toLocaleDateString("es-ES")}
+                  {n.listening_level
+                    ? ` · Escucha ${LISTENING_LEVELS[n.listening_level as 1].label}`
+                    : ""}
+                </span>
+              </div>
+              {n.heard && (
+                <p>
+                  <span className="eyebrow mr-1">Escuché</span>
+                  {n.heard}
+                </p>
+              )}
+              {n.surprised && (
+                <p>
+                  <span className="eyebrow mr-1">Sorpresa</span>
+                  {n.surprised}
+                </p>
+              )}
+              {n.emerging && (
+                <p className="text-signal">
+                  <span className="eyebrow mr-1">Emerge</span>
+                  {n.emerging}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
       </ScreenState>
     </div>
   );

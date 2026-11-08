@@ -81,7 +81,16 @@ export function ScreenState({
       <div role="status" aria-busy="true" data-skeleton={skeleton} className="space-y-3 py-4">
         <span className="sr-only">Cargando…</span>
         {Array.from({ length: rows }, (_, i) => (
-          <Skeleton key={i} className={skeleton === "cards" ? "h-24 w-full" : skeleton === "line" ? "h-4 w-56" : "h-10 w-full"} />
+          <Skeleton
+            key={i}
+            className={
+              skeleton === "cards"
+                ? "h-24 w-full"
+                : skeleton === "line"
+                  ? "h-4 w-56"
+                  : "h-10 w-full"
+            }
+          />
         ))}
       </div>
     );
