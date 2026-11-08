@@ -1768,19 +1768,25 @@
       "title": "Conocimiento: buscar en todas las secciones",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0068",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-hub-search.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0068-hub-search",
+      "base_commit": "24cdfdfc32c2557266386f296478551fbd5078da",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-06T21:52:31.650Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T18:11:03.528Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0068"
         }
       ]
     },
