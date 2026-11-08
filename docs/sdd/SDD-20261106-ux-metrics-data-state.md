@@ -342,4 +342,6 @@ Informe de la tercera pasada (sobre v3; sus bloqueantes se corrigen en v4), copi
 Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
+
+- **2026-11-07 (coordinador, ejecución delegada por Fede):** el test de C1 `theory-u-screen.test.tsx` «the hint is its own line … (CA-5)» buscaba el párrafo de Scharmer sin abrir nada, comportamiento previo a CA-3. Se le añade solo el paso de abrir el pliegue antes de buscar el párrafo; no cambia ninguna aserción. Re-medida de U-1 sobre la base integrada: coincide con el §9 (X-3 192, X-4 305; en `/hub` nada pasa de 160, la casilla de D mide 152).
 —
