@@ -1,7 +1,7 @@
 import { useSearch, useNavigate } from "@tanstack/react-router";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -76,6 +76,8 @@ export type Doc = {
 };
 
 const NO_DOCS: Doc[] = [];
+/** Pause in typing before ?q= is written. */
+const SEARCH_URL_DEBOUNCE_MS = 300;
 type DocsCache = { rows: Doc[]; truncated: boolean };
 
 export function HubScreen() {
@@ -110,15 +112,43 @@ export function HubScreen() {
     section === "rules" && data
       ? rulesNotice(rulesCoverage(data.rows, AGENT_RULE_LIMITS), data.truncated)
       : null;
-  // A person changing section replaces the URL: seccion set (not the default), doc out (it only wins when the page opens), q kept.
+  // The URL write of the search box waits for a pause in typing (NK-0067: every navigation re-checks the session).
+  // `pending` holds the text not yet written; section change, Escape, «Borrar búsqueda» and unmount write it right away.
+  const pending = useRef<{ value: string; timer: ReturnType<typeof setTimeout> } | null>(null);
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
+  /** Takes the pending text (and cancels its timer), or null when nothing waits. */
+  function takePending(): string | null {
+    const p = pending.current;
+    if (!p) return null;
+    clearTimeout(p.timer);
+    pending.current = null;
+    return p.value;
+  }
+  // A person changing section replaces the URL: seccion set (not the default), doc out (it only wins when the page opens), q kept
+  // (a q still waiting for its pause is written in this same navigation).
   function goToSection(id: string) {
     setSection(id);
     setSelected(null);
+    const waiting = takePending();
     navigate({
-      search: (prev) => nextSearchOnSectionChange(prev, id, HUB_DEFAULT_SECTION),
+      search: (prev) =>
+        nextSearchOnSectionChange(
+          waiting === null ? prev : nextSearch(prev, waiting),
+          id,
+          HUB_DEFAULT_SECTION,
+        ),
       replace: true,
     });
   }
+  useEffect(
+    () => () => {
+      const waiting = takePending();
+      if (waiting !== null)
+        navigateRef.current({ search: (prev) => nextSearch(prev, waiting), replace: true });
+    },
+    [],
+  );
   // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); every change is mirrored to the URL.
   const [text, setText] = useState(qParam ?? "");
   const active = cleanQuery(text);
@@ -129,9 +159,21 @@ export function HubScreen() {
     results,
   );
   const snippets = new Map((results ?? []).map((r) => [r.doc.id, r.snippet]));
-  function setQuery(value: string) {
+  /** Typing: the list filters now, the URL after 300 ms without keys. */
+  function typeQuery(value: string) {
     setText(value);
-    navigate({ search: (prev) => nextSearch(prev, value), replace: true });
+    takePending();
+    const timer = setTimeout(() => {
+      pending.current = null;
+      navigate({ search: (prev) => nextSearch(prev, value), replace: true });
+    }, SEARCH_URL_DEBOUNCE_MS);
+    pending.current = { value, timer };
+  }
+  /** Escape and «Borrar búsqueda»: written at once, nothing left waiting. */
+  function clearQuery() {
+    setText("");
+    takePending();
+    navigate({ search: (prev) => nextSearch(prev, ""), replace: true });
   }
   // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
   // The section of that document wins over ?seccion= at that moment and is written back, keeping doc.
@@ -243,9 +285,9 @@ export function HubScreen() {
                 value={text}
                 aria-label="Buscar en Conocimiento"
                 placeholder="Buscar en Conocimiento"
-                onChange={(e) => setQuery(e.target.value)}
+                onChange={(e) => typeQuery(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === "Escape") setQuery("");
+                  if (e.key === "Escape") clearQuery();
                 }}
                 className={text ? "pr-24" : undefined}
               />
@@ -255,7 +297,7 @@ export function HubScreen() {
                   size="sm"
                   variant="ghost"
                   className="absolute right-1 top-1/2 h-7 -translate-y-1/2 px-2 text-xs"
-                  onClick={() => setQuery("")}
+                  onClick={clearQuery}
                 >
                   Borrar búsqueda
                 </Button>

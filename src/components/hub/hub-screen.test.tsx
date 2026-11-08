@@ -1,7 +1,7 @@
 // SDD-20261106-hub-search, U-0 · CA-0 (first describe) and U-3 · CA-3 to CA-7, CA-9 (second): «Conocimiento» extracted from the route keeps behaving as before when nobody searches:
 // the list of the section, the count per section, ?doc= opening, «+ Nuevo» and opening a document after an import.
 // Fictional data; no network (supabase, router, drive and background jobs are mocked).
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -249,16 +249,101 @@ describe("HubScreen · búsqueda", () => {
     expect(count("Reglas")).toBe("1");
   });
 
-  it("reflects the text in ?q= keeping the other parameters (CA-6)", async () => {
+  it("reflects the text in ?q= keeping the other parameters (CA-6) (debounced)", async () => {
     h.search = { doc: "d1" };
     mount();
     await screen.findByText("Precios 2026");
     h.navigate.mockClear();
-    type("precio ");
-    expect(box().value).toBe("precio ");
+    vi.useFakeTimers();
+    try {
+      type("precio ");
+      expect(box().value).toBe("precio ");
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
     const { next, replace } = lastSearch({ doc: "d1" });
     expect(next).toEqual({ doc: "d1", q: "precio " });
     expect(replace).toBe(true);
+  });
+
+  // NK-0067: typing must not navigate per key (every navigation re-checks the session).
+  it("typing 13 characters navigates once after the pause, with the final q (CA-6, NK-0067)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    h.navigate.mockClear();
+    vi.useFakeTimers();
+    try {
+      const word = "descuento max";
+      for (let i = 1; i <= word.length; i++) {
+        type(word.slice(0, i));
+        act(() => {
+          vi.advanceTimersByTime(50);
+        });
+      }
+      expect(box().value).toBe(word);
+      expect(h.navigate).not.toHaveBeenCalled();
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+      expect(lastSearch({ doc: "d1", seccion: "rules" }).next).toEqual({
+        doc: "d1",
+        seccion: "rules",
+        q: word,
+      });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("Escape writes right away and cancels the pending write (CA-7, NK-0067)", async () => {
+    h.search = { doc: "d1", q: "decision" };
+    mount();
+    await screen.findByText("Es caro");
+    h.navigate.mockClear();
+    vi.useFakeTimers();
+    try {
+      type("prec");
+      fireEvent.keyDown(box(), { key: "Escape" });
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+      expect(lastSearch({ doc: "d1", q: "decision" }).next).toEqual({ doc: "d1" });
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a pending write is flushed when changing section and when unmounting (NK-0067)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    h.navigate.mockClear();
+    vi.useFakeTimers();
+    try {
+      type("precio");
+      fireEvent.click(sectionButton("Playbooks"));
+      const nexts = h.navigate.mock.calls.map((c) => {
+        const a = c[0] as { search: (p: Record<string, unknown>) => unknown };
+        return a.search({});
+      });
+      expect(nexts).toContainEqual({ q: "precio", seccion: "playbooks" });
+      h.navigate.mockClear();
+      type("otra");
+      cleanup();
+      expect(h.navigate).toHaveBeenCalledTimes(1);
+      expect(lastSearch({}).next).toEqual({ q: "otra" });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("opens with the search already applied from ?q= (CA-6)", async () => {
