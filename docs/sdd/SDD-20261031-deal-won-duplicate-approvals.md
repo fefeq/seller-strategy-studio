@@ -1,7 +1,7 @@
 # SDD-20261031-deal-won-duplicate-approvals · [Bug] Soltar un deal en «Ganado» crea una solicitud de aprobación por cada intento
 
 **Tipo:** Bug · **Severidad propuesta:** S3 (el fallo existe en el código, pero el 2026-10-31 no había ninguna solicitud pendiente en la base leída; ver §3)
-**Prioridad propuesta:** Baja · **Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Prioridad propuesta:** Baja · **Estado:** Hecho (entregado en el PR #91, merge d149d10; gate mecánico PASS sobre 4c6b339; migración 0074 aplicada, verificada en la base el 2026-11-08; sin prueba manual con sesión, cerrado por decisión de Fede del 2026-11-08; antes: Borrador) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** No aplica (bug acotado; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** — · **Ticket:** por asignar
 **Base de trabajo:** `origin/main` (decidido por Fede el 2026-10-31). Este SDD se leyó sobre `feat/software-factory`, que puede estar desfasada: **[Por verificar]** que `deals.tsx:59-74` y `approvals.tsx` sean iguales en `origin/main` y reproducir allí el fallo antes de U-1.
 
