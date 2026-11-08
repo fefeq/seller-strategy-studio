@@ -2,7 +2,10 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
 **Estado:** Aprobado por Fede el 2026-11-06 (v4; «OK a todo» en el chat, tras tres pasadas del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Ticket:** NK-0068
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: pone la forma visual, `DataState`, a las palabras que fija este SDD); `SDD-20261106-ux-core-screens-pattern` (SDD-C1: estados de carga y error de `/metrics`); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: hoy hay tres ventanas de win rate, ver §14); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD su salida no cambia, CA-12); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
+
+> **Renumeración (2026-11-08):** al sincronizar con `main`, los tickets del sprint pasaron a la numeración de `main`: A = NK-0068, B = NK-0067, D = NK-0076, C1 = NK-0077, C2 = NK-0078 (ampliaciones de NK-0051, ya entregado en PR #91), bug falso rechazado = NK-0079, seguimientos y Sprint 2 = NK-0080 a NK-0086. Fuera del §17 este documento ya usa la numeración nueva; los informes del gate del §17 son copias literales y conservan la antigua (NK-0066→0079, 0067→0068, 0068→0067, 0069→0076, 0070…0075→0080…0085). Ramas, briefs y evidencias anteriores conservan los nombres de rama originales.
 
 > Sprint 1 de mejoras en pantallas core, bloque A. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
 
@@ -193,7 +196,7 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
    - **Pregunta abierta derivada:** ¿abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez, junto con unificar CAC y payback?
 2. **Decidido por Fede (2026-11-06, «OK a todo»): Cohortes se rotula «Todo el histórico»** (CA-2).
 3. **Decidido por Fede (2026-11-06): win rate del trimestre, con recuentos** (CA-3).
-4. **Decidido por Fede (2026-11-06): dos tickets** — `advisor.ts:81` (NK-0070) y A8 (NK-0071); A9 sin ticket por ahora.
+4. **Decidido por Fede (2026-11-06): dos tickets** — `advisor.ts:81` (NK-0080) y A8 (NK-0081); A9 sin ticket por ahora.
 5. **Decidido por Fede (2026-11-06): se mantiene el comentario de `quarter-kpis.ts:2`.**
 
 Nota: el «2 OK, 3 sí, 5 OK» de Fede del 2026-11-06 respondía a otra lista, no a estas preguntas. Por eso la 2, la 3 y la 5 siguen abiertas y los CA se escriben con la propuesta.

@@ -2,7 +2,10 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
 **Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación decidida por Fede: no se abre ticket aparte)
+**Ticket:** NK-0077 (ampliación C1 de NK-0051)
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** `SDD-20261106-hub-search` (SDD-B: extrae `/hub` a `src/components/hub/hub-screen.tsx`, pasa su lectura a `fetchAll` y crea `src/components/hub/hub-screen.test.tsx`) y `SDD-20261106-metrics-honest-data` (SDD-A: cambia textos de los paneles de `/metrics` y crea sus tests); los dos se integran antes · **Coordinar con:** `SDD-20261106-agent-rules-reader` (SDD-D, se integra después de C1 y toca textos de `/hub`), `SDD-20261106-ux-metrics-data-state` (SDD-C2, se integra después; ver §14 sobre `listening.tsx:49`), los 4 SDD de NK-0051 según el ledger (`.factory/ledger.json:1381`): `SDD-20261031-ux-palette-graphite`, `SDD-20261031-ux-legibility-contrast` (su §13 permite poner `Kpi`/`Panel` en `src/components/page.tsx`, el mismo archivo que `ScreenState`), `SDD-20261031-ux-move-without-drag`, `SDD-20261031-deal-won-duplicate-approvals`; `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`: C1 va antes, por ser más pequeño); PR #76 de Plays (`headlines.ts`, `nav.ts`, que no se tocan)
+
+> **Renumeración (2026-11-08):** al sincronizar con `main`, los tickets del sprint pasaron a la numeración de `main`: A = NK-0068, B = NK-0067, D = NK-0076, C1 = NK-0077, C2 = NK-0078 (ampliaciones de NK-0051, ya entregado en PR #91), bug falso rechazado = NK-0079, seguimientos y Sprint 2 = NK-0080 a NK-0086. Fuera del §17 este documento ya usa la numeración nueva; los informes del gate del §17 son copias literales y conservan la antigua (NK-0066→0079, 0067→0068, 0068→0067, 0069→0076, 0070…0075→0080…0085). Ramas, briefs y evidencias anteriores conservan los nombres de rama originales.
 
 > Sprint 1 de mejoras en pantallas core, bloque C1. Nació al partir la v1 conjunta tras la primera pasada del gate (C2 está en `SDD-20261106-ux-metrics-data-state.md`). En la v3 asume también carga, error y vacío de `/metrics`, que no tenían dueño (objeción nueva 1 de la segunda pasada de C2).
 > **Base:** la rama local de NK-0051 (`feat/ux-graphite-legibility-move`, «8 commits sobre 47ec72c» según el ledger) se perdió (confirmado por Fede, 2026-11-06). C1 parte de `main` @ `f76f639` y no depende de ella.
@@ -150,7 +153,7 @@ No hay tests en `src/routes/`.
 2. **Titulares con conclusión** para Conocimiento y Theory U: ¿los quieres? Irían en `headlines.ts` después de integrar el PR #76.
 3. **Resumen de Métricas en 4-5 KPI** (punto 15 del informe UX): ¿SDD propio o se espera a tener uso real?
 4. **Decidido (Fede, 2026-11-06): la rama local de NK-0051 se perdió.** C1 parte de `main` y no depende de ella; los 4 SDD de NK-0051 siguen en «Borrador» sin código.
-5. **Decidido por Fede (2026-11-06): ticket aparte (NK-0072).** **Errores tragados fuera de C1:** `useLeads` (Leads y dos paneles de `/metrics`), `useStripe` (Conexiones y `/metrics`) y los resúmenes de Drive (`drive-core.ts:221`). ¿Abro ticket aparte? Tocan pantallas fuera de este sprint.
+5. **Decidido por Fede (2026-11-06): ticket aparte (NK-0082).** **Errores tragados fuera de C1:** `useLeads` (Leads y dos paneles de `/metrics`), `useStripe` (Conexiones y `/metrics`) y los resúmenes de Drive (`drive-core.ts:221`). ¿Abro ticket aparte? Tocan pantallas fuera de este sprint.
 
 ## 16. Pendiente de verificar
 - ~~Si `DriveAccountsPanel` traga errores~~: no; tiene carga y error propios (§3).

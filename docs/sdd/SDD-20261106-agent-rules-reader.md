@@ -2,7 +2,10 @@
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta (bloquea la pieza 8 y la decisión A-3 del PRD de GTM Lab)
 **Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Ticket:** NK-0076
 **PRD:** No aplica para el lector (mejora acotada). Propone enmiendas a `docs/prd/PRD-20261101-gtm-lab-en-nokko.md` y a `docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md` (NK-0053), §15 · **Depende de:** SDD-B U-0 (mueve `/hub` a `src/components/hub/hub-screen.tsx` y `doc-editor.tsx`, y cambia la caché `["docs"]` a `{ rows, truncated }`); se integra después de C1 · **Bloquea:** pieza 8 del PRD de GTM Lab (retirada de Ciclo GTM y Debates) y A-3 (menú «Estrategia»)
+
+> **Renumeración (2026-11-08):** al sincronizar con `main`, los tickets del sprint pasaron a la numeración de `main`: A = NK-0068, B = NK-0067, D = NK-0076, C1 = NK-0077, C2 = NK-0078 (ampliaciones de NK-0051, ya entregado en PR #91), bug falso rechazado = NK-0079, seguimientos y Sprint 2 = NK-0080 a NK-0086. Fuera del §17 este documento ya usa la numeración nueva; los informes del gate del §17 son copias literales y conservan la antigua (NK-0066→0079, 0067→0068, 0068→0067, 0069→0076, 0070…0075→0080…0085). Ramas, briefs y evidencias anteriores conservan los nombres de rama originales.
 
 > Sprint 1 de mejoras en pantallas core, bloque D. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
 > Decisión de Fede en la Fase 1 del sprint (chat del 2026-11-06, no registrada aún en `docs/`): las Reglas tendrán un lector real en el agente, y Ciclo GTM no se retira hasta que exista. Este SDD la deja por escrito.
@@ -116,7 +119,7 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 ## 15. Preguntas para Fede y para la revisión técnica
 1. **Decidido por Fede (2026-11-06): `maxRules = 12`, `maxChars = 12 000`.** ~~Tope del agente:~~ propuesta original: `maxRules = 12` y `maxChars = 12 000` en total (BMAD sigue con 12 × 4000 sin tope total). ¿Te vale?
 2. **Quién escribe reglas:** ¿limitamos la sección Reglas y la marca «obligatorio» a Owner y Sales Leader (otro SDD)?
-3. **Retractado (2026-11-06):** el «hallazgo» de la primera pasada sobre `search_knowledge` era falso: `core-read.ts:236-237` ya filtra en memoria `scope = team` o `created_by = userId`, con un comentario sobre Telegram, y lo prueba `agent-tools.test.ts:584-596`. Se registró como NK-0066 con tu OK antes de comprobarlo. **NK-0066 cerrado como `REJECTED` por orden de Fede (2026-11-06).**
+3. **Retractado (2026-11-06):** el «hallazgo» de la primera pasada sobre `search_knowledge` era falso: `core-read.ts:236-237` ya filtra en memoria `scope = team` o `created_by = userId`, con un comentario sobre Telegram, y lo prueba `agent-tools.test.ts:584-596`. Se registró como NK-0079 con tu OK antes de comprobarlo. **NK-0079 cerrado como `REJECTED` por orden de Fede (2026-11-06).**
 4. **`ai-core.ts`, playbooks y MCP:** ¿SDD aparte, después de este?
 5. **Enmiendas aprobadas por Fede (2026-11-06) y aplicadas** en `PRD-20261101-gtm-lab-en-nokko.md` (§6.2, §6.3 A-3, §7, §8 piezas 2 y 8) y en `SDD-20261030-gtm-control-tower-5a-agent-memory.md` (CA-38):
    - PRD de GTM Lab, §6.3 A-3: «Bloqueado hasta que `SDD-20261106-agent-rules-reader` esté entregado y verificado: hoy Ciclo GTM es el único sitio que trata las Reglas de Conocimiento como obligatorias (decisión de Fede, 2026-11-06).»
@@ -131,7 +134,7 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 
 **Versión 4 (2026-11-06):** tercera pasada del gate: aviso de fallo de herramientas en `mensaje` y probado por `decidePending` (bloqueante 1); texto de la casilla ≤ 135 caracteres con sus dos ramas (2); dependencia de B U-0, rutas nuevas de `/hub`, aviso de CA-6 sobre `data.rows` y `truncated` (3 y coherencia 1); contrato común actualizado.
 
-**Versión 3 (2026-11-06):** corregido tras la segunda pasada: retirado el falso hallazgo de seguridad y NK-0066 propuesto para cierre (objeción nueva 1), L = reglas completas y N sin vacías (2), texto de la casilla de `hub.tsx:163` en U-4 y en el contrato (3), modo `interview` en CA-1b, fallo dentro de herramientas en CA-5 y «textos que redacta el agente» en §4 (4).
+**Versión 3 (2026-11-06):** corregido tras la segunda pasada: retirado el falso hallazgo de seguridad y NK-0079 propuesto para cierre (objeción nueva 1), L = reglas completas y N sin vacías (2), texto de la casilla de `hub.tsx:163` en U-4 y en el contrato (3), modo `interview` en CA-1b, fallo dentro de herramientas en CA-5 y «textos que redacta el agente» en §4 (4).
 
 **Versión 2 (2026-11-06):** corregido tras el gate: filtros explícitos por organización y ámbito (objeción 1), aviso de fallo alineado con 5a CA-18 (2), tope como parámetro sin cambiar BMAD y sin ventana de 60 documentos (3), prueba del cableado (4), herramientas de redacción para clientes incluidas (5), enmiendas completas al PRD (6, 7), riesgo de inyección y bloque de datos separado (8), citas (9) y CA-7 con reexportación e imports dinámicos (10). No ha tenido segunda pasada del gate.
 
