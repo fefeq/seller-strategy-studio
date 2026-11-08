@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -48,7 +49,7 @@ const TEXT_FIELDS = [
 
 export function Prototypes() {
   const qc = useQueryClient();
-  const [sel, setSel] = useState<any | null>(null);
+  const [sel, setSel] = useState<Tables<"gtm_experiments"> | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const { data, isPending, isSuccess, error, refetch } = useQuery({
     queryKey: ["gtm_experiments"],
@@ -112,6 +113,7 @@ export function Prototypes() {
     revealOnMobile(editorRef.current);
   }
   async function save() {
+    if (!sel) return;
     const {
       id,
       org_id: _o,

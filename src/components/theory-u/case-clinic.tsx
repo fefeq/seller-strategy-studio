@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 import { Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
@@ -19,9 +20,12 @@ function revealOnMobile(el: HTMLElement | null) {
   }
 }
 
+// Row as selected with "*, deals(name)" (the joined deal is null when none is linked).
+type ClinicRow = Tables<"case_clinics"> & { deals: { name: string } | null };
+
 export function CaseClinics() {
   const qc = useQueryClient();
-  const [sel, setSel] = useState<any | null>(null);
+  const [sel, setSel] = useState<ClinicRow | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
   const { data, isPending, isSuccess, error, refetch } = useQuery({
     queryKey: ["case_clinics"],
@@ -55,7 +59,8 @@ export function CaseClinics() {
     qc.invalidateQueries({ queryKey: ["case_clinics"] });
     revealOnMobile(editorRef.current);
   }
-  async function save(extra: Record<string, unknown> = {}) {
+  async function save(extra: TablesUpdate<"case_clinics"> = {}) {
+    if (!sel) return;
     const {
       id,
       deals: _d,
@@ -69,7 +74,7 @@ export function CaseClinics() {
     const payload = { ...rest, deal_id: rest.deal_id || null, ...extra };
     const { error } = await supabase.from("case_clinics").update(payload).eq("id", id);
     if (error) return toast.error(errorText(error));
-    setSel({ ...sel, ...extra });
+    setSel({ ...sel, ...extra } as ClinicRow); // extra only sets columns already on the row
     toast.success("Clínica de casos guardada.");
     qc.invalidateQueries({ queryKey: ["case_clinics"] });
   }
