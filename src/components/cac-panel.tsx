@@ -14,6 +14,7 @@ import { useSegmentCoverageData } from "@/components/segment-coverage";
 import { errorText } from "@/lib/errors";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, SHARED_EQUAL, inferredMark } from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -151,10 +152,12 @@ export function CacPanel({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">CAC real · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Introduce lo que gastaste para captar clientes, por canal y segmento. CAC = coste / deals ganados en el trimestre.
-            Los costes «Compartido» se reparten entre segmentos según los clientes ganados. El payback de la cobertura usa este CAC.
-          </p>
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Introduce lo que gastaste para captar clientes, por canal y segmento. CAC = coste / deals ganados en el trimestre.
+              Los costes «Compartido» se reparten entre segmentos según los clientes ganados. El payback de la cobertura usa este CAC.
+            </p>
+          </ExplanationFold>
         </div>
         {/* No totals until the costs answer (never a 0 that looks like data). */}
         {data && <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">

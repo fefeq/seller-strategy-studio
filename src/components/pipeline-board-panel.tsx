@@ -14,6 +14,7 @@ import { useStages } from "@/components/stage-settings";
 import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_NON_POSITIVE, acvMark, boardMarginMark } from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const SHOW = 5;
@@ -82,10 +83,12 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">Pipeline · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los que dividen el gasto de captación en el CAC real;
-            las oportunidades que cierran este trimestre, al win rate real, dan el CAC y el payback proyectados.
-          </p>
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los que dividen el gasto de captación en el CAC real;
+              las oportunidades que cierran este trimestre, al win rate real, dan el CAC y el payback proyectados.
+            </p>
+          </ExplanationFold>
         </div>
         {late > 0 && (
           <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-xs text-signal">{late} con retraso</span>

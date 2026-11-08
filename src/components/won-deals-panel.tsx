@@ -10,6 +10,7 @@ import { quarterRange } from "@/lib/metrics";
 import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDealRow } from "@/lib/won-deals";
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const SELECT = "h-10 rounded-md border bg-background px-2 text-xs md:h-8";
 const STICKY_FIRST = "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -55,10 +56,12 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">Deals ganados · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Son los clientes nuevos entre los que se divide el gasto de «CAC real». Revisa que cada uno tenga su fecha de cierre real, su valor y su segmento:
-            la fecha decide el trimestre, el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV del payback.
-          </p>
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Son los clientes nuevos entre los que se divide el gasto de «CAC real». Revisa que cada uno tenga su fecha de cierre real, su valor y su segmento:
+              la fecha decide el trimestre, el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV del payback.
+            </p>
+          </ExplanationFold>
         </div>
         {/* No totals nor «Añadir» until the deals answer (never a 0 that looks like data). */}
         {data && <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">

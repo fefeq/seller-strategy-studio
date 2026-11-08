@@ -73,8 +73,12 @@ describe("ExplanationFold (CA-1)", () => {
   it("two folds on one page control different containers", () => {
     render(
       <>
-        <ExplanationFold kind="calculo"><p>Uno</p></ExplanationFold>
-        <ExplanationFold kind="calculo"><p>Dos</p></ExplanationFold>
+        <ExplanationFold kind="calculo">
+          <p>Uno</p>
+        </ExplanationFold>
+        <ExplanationFold kind="calculo">
+          <p>Dos</p>
+        </ExplanationFold>
       </>,
     );
     const [a, b] = screen.getAllByRole("button", { name: "Cómo se calcula" });

@@ -8,6 +8,7 @@ import { Deviation } from "@/components/budget-quarters";
 import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, SHARED_EQUAL, acvMark, inferredMark } from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
@@ -46,10 +47,14 @@ export function BudgetPanel({ year }: { year: number }) {
         <div className="max-w-2xl">
           <h3 className="text-2xl">Presupuesto por segmento · {year}</h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Suma de los cuatro trimestres. Se apunta por trimestre en{" "}
+            Se apunta por trimestre en{" "}
             <Link to="/strategy" search={{ tab: "budget" }} className="underline">Estrategia GTM → Presupuesto vs real</Link>.
-            El margen real (ingresos − coste de servir) sustituye al margen objetivo en todos los paybacks.
           </p>
+          <ExplanationFold kind="calculo">
+            <p className="text-xs text-muted-foreground">
+              Suma de los cuatro trimestres. El margen real (ingresos − coste de servir) sustituye al margen objetivo en todos los paybacks.
+            </p>
+          </ExplanationFold>
         </div>
         {/* No totals until the budget answers (never a 0 that looks like data). */}
         {data && <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
