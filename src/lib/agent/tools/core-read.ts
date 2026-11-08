@@ -227,8 +227,14 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         { effort: "low" },
       );
       // A failed read of the rules is said where the person reads the draft (SDD-20261106-agent-rules-reader, CA-5).
-      if (!rules.ok) return { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: `${RULES_READ_FAILED}\n\n${text.trim()}`, borrador_base: base, mensaje: RULES_READ_FAILED };
-      return { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: text.trim(), borrador_base: base };
+      const draft = { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: text.trim(), borrador_base: base };
+      return rules.ok
+        ? draft
+        : {
+            ...draft,
+            borrador: `${RULES_READ_FAILED}\n\n${draft.borrador}`,
+            mensaje: RULES_READ_FAILED,
+          };
     },
   }),
   def({

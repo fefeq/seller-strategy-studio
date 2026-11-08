@@ -52,7 +52,10 @@ import { decidePending } from "@/lib/agent.functions";
 
 const ORG = "org-1";
 const ME = "11111111-1111-4111-8111-111111111111";
-const RULE = { titulo: "Descuentos", texto: "Nunca ofrecemos descuentos sin aprobación de dirección." };
+const RULE = {
+  titulo: "Descuentos",
+  texto: "Nunca ofrecemos descuentos sin aprobación de dirección.",
+};
 
 type Q = { table: string; op: string; payload?: unknown; filters: unknown[][] };
 type Reply = { data?: unknown; error?: { message: string } | null; throws?: boolean } | undefined;
@@ -72,7 +75,9 @@ function fakeDb(reply: (q: Q) => Reply) {
               return (_ok: unknown, fail: (e: unknown) => unknown) =>
                 Promise.reject(new Error("fetch failed")).then(undefined, fail);
             return (ok: (v: unknown) => unknown) =>
-              Promise.resolve({ data: r.data ?? null, error: r.error ?? null, count: null }).then(ok);
+              Promise.resolve({ data: r.data ?? null, error: r.error ?? null, count: null }).then(
+                ok,
+              );
           }
           return (...args: unknown[]) => {
             if (["insert", "update", "upsert", "delete"].includes(prop)) {
@@ -88,12 +93,27 @@ function fakeDb(reply: (q: Q) => Reply) {
   };
   return { db: { from } as unknown as ToolCtx["db"], log };
 }
-const ruleRow = { org_id: ORG, title: RULE.titulo, body: RULE.texto, section: "rules", scope: "team", mandatory: false };
+const ruleRow = {
+  org_id: ORG,
+  title: RULE.titulo,
+  body: RULE.texto,
+  section: "rules",
+  scope: "team",
+  mandatory: false,
+};
 const rulesOk = (q: Q): Reply => (q.table === "knowledge_docs" ? { data: [ruleRow] } : undefined);
 const rulesError = (q: Q): Reply =>
-  q.table === "knowledge_docs" ? { error: { message: "permission denied for table knowledge_docs" } } : undefined;
+  q.table === "knowledge_docs"
+    ? { error: { message: "permission denied for table knowledge_docs" } }
+    : undefined;
 const rulesThrow = (q: Q): Reply => (q.table === "knowledge_docs" ? { throws: true } : undefined);
-const ctxWith = (db: ToolCtx["db"]): ToolCtx => ({ db, orgId: ORG, userId: ME, roles: ["ae"], currency: "EUR" });
+const ctxWith = (db: ToolCtx["db"]): ToolCtx => ({
+  db,
+  orgId: ORG,
+  userId: ME,
+  roles: ["ae"],
+  currency: "EUR",
+});
 
 let logs: string[] = [];
 beforeEach(() => {
@@ -102,12 +122,28 @@ beforeEach(() => {
   logs = [];
   for (const m of ["error", "warn", "log", "info"] as const)
     vi.spyOn(console, m).mockImplementation((...a: unknown[]) => {
-      logs.push(a.map((x) => (x instanceof Error ? `${x.name} ${x.message}` : typeof x === "string" ? x : JSON.stringify(x))).join(" "));
+      logs.push(
+        a
+          .map((x) =>
+            x instanceof Error
+              ? `${x.name} ${x.message}`
+              : typeof x === "string"
+                ? x
+                : JSON.stringify(x),
+          )
+          .join(" "),
+      );
     });
 });
 
 const turn = (db: ToolCtx["db"], channel: "app" | "telegram", mode: "chat" | "interview") =>
-  runAgent(ctxWith(db), { conversationId: "conv-1", text: "¿Qué propongo a este cliente?", channel, mode, orgName: "Empresa Ficticia" });
+  runAgent(ctxWith(db), {
+    conversationId: "conv-1",
+    text: "¿Qué propongo a este cliente?",
+    channel,
+    mode,
+    orgName: "Empresa Ficticia",
+  });
 
 describe("runAgent hands the team's rules to the model (CA-1b)", () => {
   it.each([
@@ -134,18 +170,25 @@ describe("a failed read of the rules (CA-4)", () => {
   it.each([
     ["error returned by Supabase", rulesError],
     ["exception", rulesThrow],
-  ] as const)("%s: the turn goes on without rules and says so; the log has no rule text", async (_name, reply) => {
-    const { db, log } = fakeDb(reply);
-    const out = await turn(db, "telegram", "chat");
-    expect(h.systems).toHaveLength(1);
-    expect(h.systems[0]).not.toContain("reglas_obligatorias");
-    expect(out.text.startsWith(RULES_READ_FAILED)).toBe(true);
-    expect(out.text).toContain("Respuesta del modelo.");
-    const saved = log.filter((q) => q.table === "agent_messages" && q.op === "insert").map((q) => q.payload as { role: string; content: string });
-    expect(saved.find((m) => m.role === "assistant")?.content.startsWith(RULES_READ_FAILED)).toBe(true);
-    expect(logs.join("\n")).toContain("knowledge rules load failed");
-    expect(logs.join("\n")).not.toContain(RULE.texto);
-  });
+  ] as const)(
+    "%s: the turn goes on without rules and says so; the log has no rule text",
+    async (_name, reply) => {
+      const { db, log } = fakeDb(reply);
+      const out = await turn(db, "telegram", "chat");
+      expect(h.systems).toHaveLength(1);
+      expect(h.systems[0]).not.toContain("reglas_obligatorias");
+      expect(out.text.startsWith(RULES_READ_FAILED)).toBe(true);
+      expect(out.text).toContain("Respuesta del modelo.");
+      const saved = log
+        .filter((q) => q.table === "agent_messages" && q.op === "insert")
+        .map((q) => q.payload as { role: string; content: string });
+      expect(saved.find((m) => m.role === "assistant")?.content.startsWith(RULES_READ_FAILED)).toBe(
+        true,
+      );
+      expect(logs.join("\n")).toContain("knowledge rules load failed");
+      expect(logs.join("\n")).not.toContain(RULE.texto);
+    },
+  );
 
   it("no notice when the rules were read", async () => {
     const out = await turn(fakeDb(rulesOk).db, "app", "chat");
@@ -159,22 +202,48 @@ const MEETING = "44444444-4444-4444-8444-444444444444";
 const ACTION = "55555555-5555-4555-8555-555555555555";
 const contacted = new Date(Date.now() - 4 * 86_400_000).toISOString();
 /** Tool data on top of a rules answer. */
-const withTools = (rules: (q: Q) => Reply) => (q: Q): Reply => {
-  if (q.table === "knowledge_docs") return rules(q);
-  if (q.table === "leads")
-    return { data: { id: LEAD, company: "Empresa Ficticia", contact_name: "Ana Prueba", title: "CEO", stage: "contacted", contacted_at: contacted, next_step_at: null, notes: null, source: null } };
-  if (q.table === "meetings") return { data: { id: MEETING, title: "Reunión ficticia", account_id: null } };
-  if (q.table === "agent_pending_actions")
-    return q.op === "update"
-      ? { data: [{ id: ACTION }] }
-      : { data: { id: ACTION, status: "pending", tool: "prepare_meeting_brief", args: { meeting_id: MEETING }, summary: "Generar y guardar la preparación de llamada de la reunión", conversation_id: "conv-1" } };
-  return undefined;
-};
+const withTools =
+  (rules: (q: Q) => Reply) =>
+  (q: Q): Reply => {
+    if (q.table === "knowledge_docs") return rules(q);
+    if (q.table === "leads")
+      return {
+        data: {
+          id: LEAD,
+          company: "Empresa Ficticia",
+          contact_name: "Ana Prueba",
+          title: "CEO",
+          stage: "contacted",
+          contacted_at: contacted,
+          next_step_at: null,
+          notes: null,
+          source: null,
+        },
+      };
+    if (q.table === "meetings")
+      return { data: { id: MEETING, title: "Reunión ficticia", account_id: null } };
+    if (q.table === "agent_pending_actions")
+      return q.op === "update"
+        ? { data: [{ id: ACTION }] }
+        : {
+            data: {
+              id: ACTION,
+              status: "pending",
+              tool: "prepare_meeting_brief",
+              args: { meeting_id: MEETING },
+              summary: "Generar y guardar la preparación de llamada de la reunión",
+              conversation_id: "conv-1",
+            },
+          };
+    return undefined;
+  };
 type Followup = { borrador: string; mensaje?: string };
 
 describe("draft_followup with the team's rules (CA-5)", () => {
   it("passes the rules block to its AI call", async () => {
-    const out = (await executeTool(ctxWith(fakeDb(withTools(rulesOk)).db), "draft_followup", { lead_id: LEAD })) as Followup;
+    const out = (await executeTool(ctxWith(fakeDb(withTools(rulesOk)).db), "draft_followup", {
+      lead_id: LEAD,
+    })) as Followup;
     expect(h.asks).toHaveLength(1);
     expect(h.asks[0]!.system).toContain(rulesBlock([RULE]));
     expect(out.borrador).toBe("Borrador del modelo.");
@@ -184,20 +253,27 @@ describe("draft_followup with the team's rules (CA-5)", () => {
   it.each([
     ["error returned by Supabase", rulesError],
     ["exception", rulesThrow],
-  ] as const)("%s: drafts without rules, warns in mensaje and before the draft", async (_name, reply) => {
-    const out = (await executeTool(ctxWith(fakeDb(withTools(reply)).db), "draft_followup", { lead_id: LEAD })) as Followup;
-    expect(h.asks).toHaveLength(1);
-    expect(h.asks[0]!.system).not.toContain("reglas_obligatorias");
-    expect(out.mensaje).toBe(RULES_READ_FAILED);
-    expect(out.borrador.startsWith(RULES_READ_FAILED)).toBe(true);
-    expect(out.borrador).toContain("Borrador del modelo.");
-  });
+  ] as const)(
+    "%s: drafts without rules, warns in mensaje and before the draft",
+    async (_name, reply) => {
+      const out = (await executeTool(ctxWith(fakeDb(withTools(reply)).db), "draft_followup", {
+        lead_id: LEAD,
+      })) as Followup;
+      expect(h.asks).toHaveLength(1);
+      expect(h.asks[0]!.system).not.toContain("reglas_obligatorias");
+      expect(out.mensaje).toBe(RULES_READ_FAILED);
+      expect(out.borrador.startsWith(RULES_READ_FAILED)).toBe(true);
+      expect(out.borrador).toContain("Borrador del modelo.");
+    },
+  );
 });
 
 describe("prepare_meeting_brief with the team's rules (CA-5)", () => {
   it("passes the rules block to its AI call and saves the brief as written", async () => {
     const { db, log } = fakeDb(withTools(rulesOk));
-    const out = (await executeTool(ctxWith(db), "prepare_meeting_brief", { meeting_id: MEETING })) as { mensaje?: string };
+    const out = (await executeTool(ctxWith(db), "prepare_meeting_brief", {
+      meeting_id: MEETING,
+    })) as { mensaje?: string };
     expect(h.asks[0]!.system).toContain(rulesBlock([RULE]));
     const saved = log.find((q) => q.table === "meetings" && q.op === "update");
     expect(saved?.payload).toEqual({ ai_brief: "Borrador del modelo." });
@@ -207,15 +283,19 @@ describe("prepare_meeting_brief with the team's rules (CA-5)", () => {
   it.each([
     ["error returned by Supabase", rulesError],
     ["exception", rulesThrow],
-  ] as const)("%s: confirming it in decidePending tells the person the rules were not read", async (_name, reply) => {
-    const { db, log } = fakeDb(withTools(reply));
-    const r = await decidePending(ctxWith(db), ACTION, "confirm");
-    expect(r.status).toBe("confirmed");
-    expect(r.result).toContain("No he podido leer las reglas del equipo");
-    expect(r.result).toContain(RULES_READ_FAILED);
-    expect(h.asks).toHaveLength(1);
-    const msg = log.find((q) => q.table === "agent_messages" && q.op === "insert")?.payload as { content: string } | undefined;
-    expect(msg?.content).toContain(RULES_READ_FAILED);
-    expect(logs.join("\n")).not.toContain(RULE.texto);
-  });
+  ] as const)(
+    "%s: confirming it in decidePending tells the person the rules were not read",
+    async (_name, reply) => {
+      const { db, log } = fakeDb(withTools(reply));
+      const r = await decidePending(ctxWith(db), ACTION, "confirm");
+      expect(r.status).toBe("confirmed");
+      expect(r.result).toContain("No he podido leer las reglas del equipo");
+      expect(r.result).toContain(RULES_READ_FAILED);
+      expect(h.asks).toHaveLength(1);
+      const msg = log.find((q) => q.table === "agent_messages" && q.op === "insert")?.payload as
+        { content: string } | undefined;
+      expect(msg?.content).toContain(RULES_READ_FAILED);
+      expect(logs.join("\n")).not.toContain(RULE.texto);
+    },
+  );
 });

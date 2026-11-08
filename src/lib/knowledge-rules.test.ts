@@ -22,7 +22,8 @@ import {
   rulesNotice,
 } from "@/lib/knowledge-rules";
 
-const CONFIRM = "Las reglas no cambian que tus escrituras sean propuestas que una persona confirma.";
+const CONFIRM =
+  "Las reglas no cambian que tus escrituras sean propuestas que una persona confirma.";
 const ORG = "org-1";
 
 type Call = { table: string; calls: unknown[][] };
@@ -49,7 +50,10 @@ function fakeDb(answer: { rows?: Row[]; error?: { message: string }; throws?: bo
               return (_ok: unknown, fail: (e: unknown) => unknown) =>
                 Promise.reject(new Error("network down")).then(undefined, fail);
             return (ok: (v: unknown) => unknown) =>
-              Promise.resolve({ data: answer.error ? null : (answer.rows ?? []), error: answer.error ?? null }).then(ok);
+              Promise.resolve({
+                data: answer.error ? null : (answer.rows ?? []),
+                error: answer.error ?? null,
+              }).then(ok);
           }
           return (...args: unknown[]) => {
             q.calls.push([prop, ...args]);
@@ -74,7 +78,9 @@ const rule = (n: number, over: Partial<Row> = {}): Row => ({
 
 describe("rulesBlock (CA-1a)", () => {
   it("is a data block reglas_obligatorias, apart from the system «Reglas:», with MANDATORY_RULE and the confirmation sentence", () => {
-    const block = rulesBlock([{ titulo: "Descuentos", texto: "Nunca ofrecemos descuentos sin aprobación." }]);
+    const block = rulesBlock([
+      { titulo: "Descuentos", texto: "Nunca ofrecemos descuentos sin aprobación." },
+    ]);
     expect(block).toContain("reglas_obligatorias");
     expect(block).toContain("Nunca ofrecemos descuentos sin aprobación.");
     expect(block).toContain(MANDATORY_RULE);
@@ -91,7 +97,10 @@ describe("loadAgentRules filters explicitly (CA-2)", () => {
   it("asks for this company's team rules (section rules or marked mandatory), newest first, without a row window", async () => {
     const { db, log } = fakeDb({ rows: [rule(1)] });
     const r = await loadAgentRules({ db, orgId: ORG });
-    expect(r).toEqual({ ok: true, rules: [{ titulo: "Regla 1", texto: "Texto de la regla ficticia 1." }] });
+    expect(r).toEqual({
+      ok: true,
+      rules: [{ titulo: "Regla 1", texto: "Texto de la regla ficticia 1." }],
+    });
     expect(log).toHaveLength(1);
     const q = log[0]!;
     expect(q.table).toBe("knowledge_docs");
@@ -119,8 +128,13 @@ describe("loadAgentRules filters explicitly (CA-2)", () => {
   });
 
   it("reports a failure (error returned or thrown) instead of an empty list", async () => {
-    expect(await loadAgentRules({ db: fakeDb({ error: { message: "boom" } }).db, orgId: ORG })).toEqual({ ok: false, rules: [] });
-    expect(await loadAgentRules({ db: fakeDb({ throws: true }).db, orgId: ORG })).toEqual({ ok: false, rules: [] });
+    expect(
+      await loadAgentRules({ db: fakeDb({ error: { message: "boom" } }).db, orgId: ORG }),
+    ).toEqual({ ok: false, rules: [] });
+    expect(await loadAgentRules({ db: fakeDb({ throws: true }).db, orgId: ORG })).toEqual({
+      ok: false,
+      rules: [],
+    });
     expect(RULES_READ_FAILED).toBe(
       "No he podido leer las reglas del equipo. Respondo sin ellas; vuelve a intentarlo en un momento.",
     );
@@ -135,13 +149,19 @@ describe("agent limits (CA-3)", () => {
   it("reads the 12 most recent non-empty rules among all of them", () => {
     const docs = [rule(0, { body: "   " }), ...Array.from({ length: 15 }, (_, i) => rule(i + 1))];
     const p = pickRules(docs, AGENT_RULE_LIMITS);
-    expect(p.rules.map((r) => r.titulo)).toEqual(Array.from({ length: 12 }, (_, i) => `Regla ${i + 1}`));
+    expect(p.rules.map((r) => r.titulo)).toEqual(
+      Array.from({ length: 12 }, (_, i) => `Regla ${i + 1}`),
+    );
     expect(p.total).toBe(15);
     expect(p.read).toBe(12);
   });
 
   it("never passes maxChars in total (title + text): the rule that does not fit enters cut and the rest stay out", () => {
-    const docs = [rule(1, { body: "a".repeat(7000) }), rule(2, { body: "b".repeat(7000) }), rule(3)];
+    const docs = [
+      rule(1, { body: "a".repeat(7000) }),
+      rule(2, { body: "b".repeat(7000) }),
+      rule(3),
+    ];
     const p = pickRules(docs, AGENT_RULE_LIMITS);
     const used = p.rules.reduce((s, r) => s + r.titulo.length + r.texto.length, 0);
     expect(used).toBeLessThanOrEqual(12_000);
@@ -153,7 +173,9 @@ describe("agent limits (CA-3)", () => {
   });
 
   it("leaves BMAD as it was: 12 rules cut at 4000 characters each, no total limit", () => {
-    const docs = Array.from({ length: 14 }, (_, i) => ({ ...rule(i + 1, { body: "x".repeat(5000) }) }));
+    const docs = Array.from({ length: 14 }, (_, i) => ({
+      ...rule(i + 1, { body: "x".repeat(5000) }),
+    }));
     const k = knowledgeForAgents(docs);
     expect(MANDATORY_LIMIT).toBe(12);
     expect(COMPANY_LIMIT).toBe(5);
@@ -195,7 +217,10 @@ describe("how many rules the agent reads (CA-6)", () => {
 });
 
 describe("independent of Ciclo GTM (CA-7)", () => {
-  const source = readFileSync(fileURLToPath(new URL("./knowledge-rules.ts", import.meta.url)), "utf8");
+  const source = readFileSync(
+    fileURLToPath(new URL("./knowledge-rules.ts", import.meta.url)),
+    "utf8",
+  );
   // Static imports and re-exports, dynamic import() and require(), as in gtm-lab/core/boundaries.test.ts.
   const importsOf = (text: string) =>
     [
