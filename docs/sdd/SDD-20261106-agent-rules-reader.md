@@ -420,4 +420,6 @@ Informe de la tercera pasada (sobre v3; sus bloqueantes se corrigen en v4), copi
 Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
+
+- **2026-11-08 (gates independientes):** el primer gate sobre la integración vio que el log de error del proveedor llevaba el prompt con las reglas (`requestBodyValues`); arreglo `safeErrorLog` (merge 70c8444). El gate final sobre `535235f` dio FAIL: si el proveedor repite una regla en su `error.message`, el SDK la copia a `APICallError.message` y `safeErrorLog` la conservaba (recortada). Arreglo en curso: no registrar el `message` de errores del proveedor (CA-4, §10).
 —
