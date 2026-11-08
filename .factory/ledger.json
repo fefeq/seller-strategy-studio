@@ -1381,13 +1381,13 @@
       "title": "UX 2026-10-31: paleta Grafito e índigo, legibilidad y contraste, duplicados de «Ganado» y mover sin arrastrar (4 SDD, 8 commits sobre 47ec72c)",
       "kind": "feature",
       "source": "",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0051-c1",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0051-c1-screen-states",
+      "base_commit": "a3ba34c6cfa7787fb846de243b68ff3e550cbe82",
       "history": [
         {
           "state": "LOGGED",
@@ -1400,6 +1400,12 @@
           "at": "2026-11-06T21:52:32.050Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261106-ux-core-screens-pattern.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T18:32:50.939Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0051-c1"
         }
       ]
     },
