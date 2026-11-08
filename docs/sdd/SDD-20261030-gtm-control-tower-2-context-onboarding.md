@@ -1,7 +1,7 @@
 # SDD-20261030-gtm-control-tower-2-context-onboarding · [Feature] Contexto estratégico y onboarding por bloques con nivel de confianza
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-30 (v6; incluye la copia temporal de Drive de CA-16, aceptada por Fede el 2026-10-30) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
+**Estado:** SUPERADO por GTM Lab (PRD-20261101-gtm-lab-en-nokko §8 paso 2, aprobado por Fede el 2026-11-01); no ejecutar este texto (antes: Aprobado por Fede el 2026-10-30 (v6; incluye la copia temporal de Drive de CA-16, aceptada por Fede el 2026-10-30)) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
 **PRD:** `docs/prd/PRD-20261030-gtm-control-tower.md` · **Depende de:** SDD 1a (U-1, U-2, U-3, U-4 y U-7: roles, activación por rol, objetivos, resultados clave, públicos y decisiones) y SDD 1b (U-5: capacidad semanal, CA-36), y de los SDD de salida de Lovable A y B para construir · **Coordinar con:** `SDD-20261025-onboarding-flow-end-to-end` (Borrador, ticket NK-0009), `SDD-20261025-fit-data-7a-llave-minima-y-completado`, `SDD-20261025-fit-data-7b-competitors-entity`, `SDD-20261025-products-in-onboarding-autofill` (todos en Borrador) y `SDD-20261025-universal-field-definitions` (En curso: define los niveles y orígenes de dato que este SDD reutiliza)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.

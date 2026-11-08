@@ -1,7 +1,7 @@
 # SDD-20261025-products-in-onboarding-autofill · [Mejora] Productos en el onboarding y autocompletado desde la web
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**Estado:** Borrador; revalidar contra GTM Lab antes de su SDD 3 (D-9, decisión de Fede del 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
 **PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-4) · **Depende de:** SDD universal de campos; SDD de acciones sobre campos
 
 ## 1. Resumen

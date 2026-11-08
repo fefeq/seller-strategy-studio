@@ -1,7 +1,7 @@
 # SDD-20261030-gtm-control-tower-1b-tasks-gates-tower · [Feature] Tareas, puertas, torre de control, Plan, Inicio y menú (fase 1b)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-30 (v9, tras cinco pasadas del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
+**Estado:** Aprobado por Fede el 2026-10-30 (v9, tras cinco pasadas del gate); pendiente de enmienda (D-1, decisión de Fede del 2026-11-06): se mantiene y lee las tareas del tablero de GTM Lab · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-30
 **PRD:** `docs/prd/PRD-20261030-gtm-control-tower.md` · **Depende de:** `SDD-20261030-gtm-control-tower-1a-core.md` (U-1, U-3 y U-7 entregadas) y los SDD de salida de Lovable A y B cerrados
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.
