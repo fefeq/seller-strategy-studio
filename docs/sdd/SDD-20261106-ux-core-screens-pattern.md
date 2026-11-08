@@ -445,6 +445,6 @@ Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 
-- **2026-11-07 (coordinador, con la ejecución delegada por Fede):** el test de B `hub-screen.test.tsx` «the box is hidden on the Drive tab and q stays in the URL» afirmaba que pulsar «Drive por cuenta» no llamaba a `navigate`, comportamiento previo a CA-3. Se sustituye su aserción por otra que protege lo mismo (la caja se oculta y `q` se conserva) y añade lo que exige CA-3 (`navigate` con `replace: true`, `seccion: "drive"`, `q` y `doc` conservados). Ninguna otra aserción cambia.
+- **2026-11-07 (coordinador, con la ejecución delegada por Fede):** el test de B `hub-screen.test.tsx` «the box is hidden on the Drive tab and q stays in the URL» afirmaba que pulsar «Drive por cuenta» no llamaba a `navigate`, comportamiento previo a CA-3. Se sustituye su aserción por otra que protege lo mismo (la caja se oculta y `q` se conserva) y añade lo que exige CA-3 (`navigate` con `replace: true`, `seccion: "drive"`, `q` conservado; `doc` se quita en el cambio manual, como dice CA-3). Ninguna otra aserción cambia.
 - `ScreenState` añade un tipo de esqueleto `line`, no previsto en el SDD. `/hub` y Theory U guardan la sección en estado local sincronizado con la URL (`use-url-section.ts`), porque los tests de B lo exigen.
 —

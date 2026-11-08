@@ -1801,19 +1801,25 @@
       "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0069",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-agent-rules-reader.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0069-agent-rules-reader",
+      "base_commit": "731b65163872110ea674ab11ad499c168593a36e",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-06T21:52:31.701Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:06:36.528Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0069"
         }
       ]
     },
