@@ -16,11 +16,14 @@ import {
   type AskOpts,
 } from "@/lib/gemini";
 
+/** Response bodies of ProviderErrors, outside the error object (see ProviderError). */
+const providerBodies = new WeakMap<ProviderError, string>();
+
 /** Error from an own-key provider, with the HTTP status so the caller can decide to fall back.
- *  The response body may quote the prompt (the team's rules, SDD-20261106-agent-rules-reader §10): it lives in a private
- *  field read through `body`, so logging or serializing the error never prints it. */
+ *  The response body may quote the prompt (the team's rules, SDD-20261106-agent-rules-reader §10): it is kept in a
+ *  module WeakMap, read only through providerErrorBody(), so no property, getter or symbol of the error reaches it and
+ *  logging or serializing the error (even inspect with getters) never prints it. */
 export class ProviderError extends Error {
-  readonly #body: string;
   constructor(
     message: string,
     readonly status: number,
@@ -28,11 +31,13 @@ export class ProviderError extends Error {
     readonly provider: AiProvider = "gemini",
   ) {
     super(message);
-    this.#body = body;
+    providerBodies.set(this, body);
   }
-  get body() {
-    return this.#body;
-  }
+}
+
+/** The provider's response body of a ProviderError (for fall-back decisions; never log it). */
+export function providerErrorBody(e: ProviderError): string {
+  return providerBodies.get(e) ?? "";
 }
 
 export async function ask(system: string, user: string, opts: AskOpts = {}) {
@@ -64,7 +69,8 @@ export async function withFallback<T>(
     } catch (e) {
       last = e;
       const more = i < chain.length - 1;
-      if (!(e instanceof ProviderError) || !more || !shouldFallBack(e.status, e.body)) throw e;
+      if (!(e instanceof ProviderError) || !more || !shouldFallBack(e.status, providerErrorBody(e)))
+        throw e;
       console.warn(`AI provider ${p} failed (${e.status}); trying ${chain[i + 1]}`);
     }
   }

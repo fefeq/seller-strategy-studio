@@ -14,7 +14,7 @@ vi.mock("@/lib/gemini", async (orig) => ({
   aiProviders: () => h.chain,
 }));
 
-import { ask, ProviderError } from "@/lib/ai-gateway";
+import { ask, ProviderError, providerErrorBody } from "@/lib/ai-gateway";
 
 const sent: string[] = [];
 /** The provider rejects and quotes the part of the request that carries the rule. */
@@ -99,8 +99,36 @@ describe("ask(): provider error quoting the rule (CA-5, §10)", () => {
 
   it("ProviderError keeps the body for the caller but never serializes it", () => {
     const e = new ProviderError("La IA rechazó la petición.", 400, RULE, "gemini");
-    expect(e.body).toBe(RULE);
+    expect(providerErrorBody(e)).toBe(RULE);
     expect(e.status).toBe(400);
     expect(serialized([e, { e }])).not.toContain(MARK);
+  });
+});
+
+describe("ProviderError has no property, getter or symbol that reaches the body (NK-0087)", () => {
+  const make = () => new ProviderError("OpenRouter rechazó la petición.", 400, RULE, "openrouter");
+  const wrappers: [string, () => unknown][] = [
+    ["bare", make],
+    ["as cause", () => new Error("wrapper", { cause: make() })],
+    ["in AggregateError", () => new AggregateError([make()], "agg")],
+    ["in object", () => ({ ctx: "x", err: make() })],
+  ];
+  it.each(wrappers)("%s: inspect with showHidden, getters and depth null", (_n, w) => {
+    expect(inspect(w(), { showHidden: true, getters: true, depth: null })).not.toContain(MARK);
+  });
+
+  it("no own or inherited key or symbol yields the body", () => {
+    const e = make();
+    const keys: (string | symbol)[] = [];
+    for (let o: object | null = e; o && o !== Error.prototype; o = Object.getPrototypeOf(o))
+      keys.push(...Reflect.ownKeys(o));
+    const values = keys.map((k) => {
+      try {
+        return String((e as unknown as Record<string | symbol, unknown>)[k]);
+      } catch {
+        return "";
+      }
+    });
+    expect(values.join("\n")).not.toContain(MARK);
   });
 });
