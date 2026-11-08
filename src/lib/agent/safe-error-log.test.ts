@@ -1,6 +1,6 @@
-// SDD-20261106-agent-rules-reader (NK-0076, NK-0087), CA-4 and §10: safeErrorLog keeps only safe fields of a provider
-// error, never the request body, the response body, an unfiltered cause or the message (@ai-sdk/openai copies the
-// provider's error.message, which may quote the prompt). Fictional rule.
+// SDD-20261106-agent-rules-reader (NK-0076, NK-0087), CA-4 and §10: safeErrorLog keeps only safe fields of any thrown
+// value, never the request body, the response body, an unfiltered cause or the message text (a provider, the SDK or a
+// failing fetch may quote the prompt in it). Fictional rule.
 import { inspect } from "node:util";
 import { describe, expect, it } from "vitest";
 import { APICallError, RetryError } from "ai";
@@ -40,9 +40,9 @@ describe("safeErrorLog", () => {
     });
     const out = safeErrorLog(retry);
     expect(out.name).toBe("AI_RetryError");
-    expect(out.message).toBeUndefined();
+    expect("message" in out).toBe(false);
     expect(out.lastError).toMatchObject({ name: "AI_APICallError", statusCode: 400 });
-    expect(out.lastError?.message).toBeUndefined();
+    expect("message" in out.lastError!).toBe(false);
     expect(serialized(out)).not.toContain("REGLA-FICTICIA-7f3a");
   });
 
@@ -50,18 +50,27 @@ describe("safeErrorLog", () => {
     const withStatus = Object.assign(new Error(RULE_TEXT), { statusCode: 500 });
     const withBody = Object.assign(new Error(RULE_TEXT), { responseBody: "x" });
     for (const e of [withStatus, withBody]) {
-      expect(safeErrorLog(e).message).toBeUndefined();
+      expect("message" in safeErrorLog(e)).toBe(false);
       expect(serialized(safeErrorLog(e))).not.toContain("REGLA-FICTICIA-7f3a");
     }
   });
 
-  it("keeps our own plain error message, bounded", () => {
-    expect(safeErrorLog(new Error("La IA no está configurada")).message).toBe(
-      "La IA no está configurada",
-    );
-    const long = safeErrorLog(new Error("x".repeat(5000)));
-    expect(long.message?.length).toBeLessThanOrEqual(301);
-    expect(long.messageLength).toBe(5000);
+  it("never logs the message, not even of a plain or custom-named error (NK-0087)", () => {
+    const plain = new Error(`socket hang up while sending: ${RULE_TEXT}`);
+    const custom = Object.assign(new Error(`upstream refused prompt: ${RULE_TEXT}`), {
+      name: "ProviderRefusal",
+      body: RULE_TEXT,
+    });
+    for (const e of [plain, custom, new Error("La IA no está configurada")]) {
+      const out = safeErrorLog(e);
+      expect("message" in out).toBe(false);
+      expect(out.messageLength).toBe(e.message.length);
+      expect(serialized(out)).not.toContain("REGLA-FICTICIA-7f3a");
+    }
+    expect(safeErrorLog(custom)).toEqual({
+      name: "ProviderRefusal",
+      messageLength: custom.message.length,
+    });
   });
 
   it("non-errors log only their type", () => {
