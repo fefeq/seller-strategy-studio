@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 86,
+  "seq": 92,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2361,6 +2361,132 @@
         {
           "state": "LOGGED",
           "at": "2026-11-08T19:58:19.354Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0087",
+      "title": "Sesión: cada navegación ejecuta supabase.auth.getUser() en beforeLoad de _authenticated/route.tsx (una petición a /auth/v1/user por clic en cualquier pantalla)",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.573Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0088",
+      "title": "Peticiones duplicadas al cargar: datos de usuario y empresa 2 veces, /auth/v1/user 3 veces; segments y segment_budget_quarters 2-3 veces en /metrics; u_journeys al volver a Recorrido U",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.652Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0089",
+      "title": "URL: un ?seccion= desconocido o un q de solo espacios abre la sección por defecto pero no se limpia de la URL (/hub, /theory-u)",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.732Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0090",
+      "title": "/hub: en el estado de error siguen a la vista «+ Nuevo» e «Importar de Drive»",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.812Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0091",
+      "title": "Logs: los errores de proveedor de IA se registran con message recortado a 300 caracteres pero sin limpiar; un proveedor que repita el prompt en el error filtraría parte de él",
+      "kind": "alert",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.888Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0092",
+      "title": "Tests: src/lib/money-notices.pg.test.ts cae por timeout de 5 s con la máquina cargada (pasa 17/17 en solitario)",
+      "kind": "alert",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:47:09.954Z",
           "by": "tracker",
           "note": ""
         }
