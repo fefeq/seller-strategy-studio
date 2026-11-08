@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 75,
+  "seq": 76,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2083,6 +2083,27 @@
           "state": "LOGGED",
           "at": "2026-11-08T19:04:59.703Z",
           "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0076",
+      "title": "Descubiertos: panel de última y próxima búsqueda, coste previo y herramienta del Agente (U-1, U-3 y U-4 del SDD de NK-0011)",
+      "kind": "feature",
+      "source": "SDD-20261025-discoveries-scoped-manual-search; decisión de Fede del 2026-11-08 de entregar solo U-2 en NK-0011",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:45:42.101Z",
+          "by": "Claude",
           "note": ""
         }
       ]
