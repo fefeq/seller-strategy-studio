@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 86,
+  "seq": 103,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1927,19 +1927,31 @@
       "title": "Buscar en Conocimiento: búsqueda por texto en /hub y contrato de URL con la sección de Drive",
       "kind": "feature",
       "source": "SDD-20261106-hub-search (Sprint 1, rama docs/sprint1-sdd); roadmap E-31",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0068",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261106-hub-search.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0068-hub-search",
+      "base_commit": "24cdfdfc32c2557266386f296478551fbd5078da",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-06T21:32:55.435Z",
           "by": "phase0-decisions",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:15.757Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-hub-search.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:15.850Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0068"
         }
       ]
     },
@@ -1948,19 +1960,31 @@
       "title": "Métricas honestas: quitar la atribución inventada y dejar un único CAC y un único payback en /metrics",
       "kind": "feature",
       "source": "SDD-20261106-metrics-honest-data (Sprint 1, rama docs/sprint1-sdd); roadmap E-30. Registrado antes como NK-0066 en b93ca5e (PR #89) y perdido al fusionar el ledger con el NK-0066 del PR #90; vuelto a registrar el 2026-11-08",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0067",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261106-metrics-honest-data.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0067-metrics-honest-data",
+      "base_commit": "91749f4c29dc33609975bafb2a631ef6872576e6",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T18:14:42.109Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:14.201Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-metrics-honest-data.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:14.268Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0067"
         }
       ]
     },
@@ -2343,6 +2367,387 @@
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:34:44.589Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0087",
+      "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0069",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-agent-rules-reader.md",
+      "prd": null,
+      "branch": "feat/nk-0069-agent-rules-reader",
+      "base_commit": "731b65163872110ea674ab11ad499c168593a36e",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:17.874Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:22.138Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0069"
+        }
+      ]
+    },
+    {
+      "id": "NK-0088",
+      "title": "Ampliación de NK-0051 (C1): estados de carga y error, sección en la URL, vacíos y pistas en Conocimiento, Theory U y Métricas",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0051-c1",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
+      "prd": null,
+      "branch": "feat/nk-0051-c1-screen-states",
+      "base_commit": "a3ba34c6cfa7787fb846de243b68ff3e550cbe82",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:25.150Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:25.200Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0051-c1"
+        }
+      ]
+    },
+    {
+      "id": "NK-0089",
+      "title": "Ampliación de NK-0051 (C2): explicaciones plegadas y una sola forma para el estado de un dato",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0051-c2",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-ux-metrics-data-state.md",
+      "prd": null,
+      "branch": "feat/nk-0051-c2-data-state",
+      "base_commit": "02ad8958b5bad6803443f92aeb557183f74522d7",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:27.048Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:27.098Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0051-c2"
+        }
+      ]
+    },
+    {
+      "id": "NK-0090",
+      "title": "Agente: la búsqueda en Conocimiento no filtra documentos personales en Telegram (hallazgo de gate)",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "REJECTED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:29.555Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-08T20:48:29.610Z",
+          "by": "Fede",
+          "note": "No es un bug: src/lib/agent/tools/core-read.ts:236-237 ya filtra en memoria scope = team o created_by = userId (comentario sobre Telegram en :235), probado en src/lib/agent-tools.test.ts:584-596. Lo refutó la segunda pasada del gate de SDD-20261106-agent-rules-reader."
+        }
+      ]
+    },
+    {
+      "id": "NK-0091",
+      "title": "Asesor y agente: un deal sin origen cuenta como Outbound (advisor.ts:81)",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.004Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0092",
+      "title": "RevOps: un perdido sin transición se imputa a la primera etapa o a la más avanzada (revops.ts:26-27) y llega al titular de Perdidos",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.061Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0093",
+      "title": "Errores tragados fuera de Sprint 1: useLeads, useStripe y resúmenes de Drive (drive-core.ts:221) muestran vacío en vez de error",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.118Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0094",
+      "title": "Sprint 2: Métricas y Estrategia con Sin dato en todas las superficies y una sola fórmula de CAC y payback (resto de NK-0068)",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.176Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0095",
+      "title": "Sprint 2: solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.227Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0096",
+      "title": "Sprint 2: Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP",
+      "kind": "feature",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.277Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0097",
+      "title": "Legibilidad: marcas de dato de /metrics con text-[10px]/[11px] por debajo de 12 px (seguimiento de NK-0051)",
+      "kind": "bug",
+      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:34.327Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0098",
+      "title": "Sesión: cada navegación ejecuta supabase.auth.getUser() en beforeLoad de _authenticated/route.tsx (una petición a /auth/v1/user por clic en cualquier pantalla)",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.574Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0099",
+      "title": "Peticiones duplicadas al cargar: datos de usuario y empresa 2 veces, /auth/v1/user 3 veces; segments y segment_budget_quarters 2-3 veces en /metrics; u_journeys al volver a Recorrido U",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.629Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0100",
+      "title": "URL: un ?seccion= desconocido o un q de solo espacios abre la sección por defecto pero no se limpia de la URL (/hub, /theory-u)",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.678Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0101",
+      "title": "/hub: en el estado de error siguen a la vista «+ Nuevo» e «Importar de Drive»",
+      "kind": "bug",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.735Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0102",
+      "title": "Logs: los errores de proveedor de IA se registran con message recortado a 300 caracteres pero sin limpiar; un proveedor que repita el prompt en el error filtraría parte de él",
+      "kind": "alert",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.791Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0103",
+      "title": "Tests: src/lib/money-notices.pg.test.ts cae por timeout de 5 s con la máquina cargada (pasa 17/17 en solitario)",
+      "kind": "alert",
+      "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:48:37.846Z",
           "by": "tracker",
           "note": ""
         }
