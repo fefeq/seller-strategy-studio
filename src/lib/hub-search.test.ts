@@ -1,4 +1,6 @@
 // SDD-20261106-hub-search, U-2 · CA-4, CA-6, CA-7, CA-9: the pure rules of the Conocimiento search box. Fictional data.
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   cleanQuery,
@@ -108,5 +110,15 @@ describe("texts (CA-5, CA-9)", () => {
     expect(emptySearchText(" precio ")).toBe(
       "Nada coincide con «precio». Prueba con otra palabra o crea un documento con «+ Nuevo».",
     );
+  });
+});
+
+describe("route stays thin (CA-0, CA-6)", () => {
+  const route = readFileSync(path.resolve(__dirname, "../routes/_authenticated/hub.tsx"), "utf8");
+  it("only holds validateSearch, head and component: HubScreen, and drops a blank q through cleanQuery", () => {
+    expect(route).toContain("component: HubScreen");
+    expect(route).toContain("validateSearch");
+    expect(route).toContain("cleanQuery(s.q)");
+    expect(route).not.toMatch(/useQuery|supabase|useState/);
   });
 });

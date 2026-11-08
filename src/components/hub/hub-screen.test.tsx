@@ -1,4 +1,4 @@
-// SDD-20261106-hub-search, U-0 · CA-0: «Conocimiento» extracted from the route keeps behaving as before when nobody searches:
+// SDD-20261106-hub-search, U-0 · CA-0 (first describe) and U-3 · CA-3 to CA-7, CA-9 (second): «Conocimiento» extracted from the route keeps behaving as before when nobody searches:
 // the list of the section, the count per section, ?doc= opening, «+ Nuevo» and opening a document after an import.
 // Fictional data; no network (supabase, router, drive and background jobs are mocked).
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
@@ -22,6 +22,7 @@ const h = vi.hoisted(() => ({
   search: {} as Record<string, unknown>,
   navigate: vi.fn(),
   importId: "d2",
+  truncated: false,
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -42,6 +43,17 @@ vi.mock("@/integrations/supabase/client", () => {
       },
     );
   return { supabase: { from: (t: string) => chain(t) } };
+});
+// Real fetchAll (so the supabase mock above still controls the read); only «truncated» can be forced.
+vi.mock("@/lib/fetch-all", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/fetch-all")>();
+  return {
+    ...real,
+    fetchAll: async (...a: Parameters<typeof real.fetchAll>) => {
+      const r = await real.fetchAll(...a);
+      return h.truncated ? { ...r, truncated: true } : r;
+    },
+  };
 });
 vi.mock("@/hooks/use-me", () => ({
   useMe: () => ({ data: { user: { id: "u1" }, roles: ["owner"], currentOrg: { org_id: "o1" } } }),
@@ -106,6 +118,7 @@ beforeEach(() => {
   h.gate = null;
   h.search = {};
   h.navigate.mockReset();
+  h.truncated = false;
 });
 afterEach(cleanup);
 
@@ -166,5 +179,172 @@ describe("HubScreen · sin búsqueda, igual que antes (CA-0)", () => {
     await screen.findByText("Propuesta de valor");
     fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
     expect(screen.getByText("panel-drive-por-cuenta")).toBeInTheDocument();
+  });
+});
+
+// The search box reads and writes ?q= through useNavigate's search function; this applies it to the current URL search.
+const lastSearch = (prev: Record<string, unknown>) => {
+  const call = h.navigate.mock.calls.at(-1)?.[0] as {
+    search: (p: Record<string, unknown>) => unknown;
+    replace?: boolean;
+  };
+  return { next: call.search(prev), replace: call.replace };
+};
+const box = () => screen.getByLabelText("Buscar en Conocimiento") as HTMLInputElement;
+const type = (v: string) => fireEvent.change(box(), { target: { value: v } });
+const count = (label: string) => sectionButton(label).querySelector("span")?.textContent;
+
+describe("HubScreen · búsqueda", () => {
+  beforeEach(() => {
+    h.docs = [
+      row("d1", "company", "Decisión de compra"),
+      row("d3", "company", "Precios 2026"),
+      row(
+        "d4",
+        "objections",
+        "Es caro",
+        "Cuando dicen que es caro, la DECISION se retrasa. Pregunta quién decide.",
+      ),
+      row("d5", "rules", "Sin relación", "nada"),
+    ];
+  });
+
+  it("finds across sections without accents or case and names the section of each result (CA-1, CA-3)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    expect(screen.getByPlaceholderText("Buscar en Conocimiento")).toBeInTheDocument();
+    type("decision");
+    const list = screen.getByTestId("hub-results");
+    const items = within(list).getAllByRole("button");
+    expect(items).toHaveLength(2);
+    expect(items[0]).toHaveTextContent("Decisión de compra");
+    expect(items[0]).toHaveTextContent("Empresa");
+    expect(items[1]).toHaveTextContent("Es caro");
+    expect(items[1]).toHaveTextContent("Objeciones y battlecards");
+    expect(items[1]).toHaveTextContent(/DECISION se retrasa/);
+    expect(within(list).queryByText("Precios 2026")).not.toBeInTheDocument();
+  });
+
+  it("every section shows its matches while searching and its total again after clearing (CA-4)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    expect(count("Empresa")).toBe("2");
+    expect(count("Objeciones y battlecards")).toBe("1");
+    type("decision");
+    expect(count("Empresa")).toBe("1");
+    expect(count("Objeciones y battlecards")).toBe("1");
+    expect(count("Reglas")).toBe("0");
+    fireEvent.click(screen.getByRole("button", { name: "Borrar búsqueda" }));
+    expect(count("Empresa")).toBe("2");
+    expect(count("Reglas")).toBe("1");
+  });
+
+  it("reflects the text in ?q= keeping the other parameters (CA-6)", async () => {
+    h.search = { doc: "d1" };
+    mount();
+    await screen.findByText("Precios 2026");
+    h.navigate.mockClear();
+    type("precio ");
+    expect(box().value).toBe("precio ");
+    const { next, replace } = lastSearch({ doc: "d1" });
+    expect(next).toEqual({ doc: "d1", q: "precio " });
+    expect(replace).toBe(true);
+  });
+
+  it("opens with the search already applied from ?q= (CA-6)", async () => {
+    h.search = { q: "decision" };
+    mount();
+    expect(await screen.findByText("Es caro")).toBeInTheDocument();
+    expect(box().value).toBe("decision");
+    expect(count("Empresa")).toBe("1");
+  });
+
+  it("Escape and «Borrar búsqueda» empty the box and remove q without touching doc (CA-7)", async () => {
+    h.search = { doc: "d1", q: "decision" };
+    mount();
+    await screen.findByText("Es caro");
+    fireEvent.keyDown(box(), { key: "Escape" });
+    expect(box().value).toBe("");
+    expect(lastSearch({ doc: "d1", q: "decision" }).next).toEqual({ doc: "d1" });
+    type("precio");
+    h.navigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Borrar búsqueda" }));
+    expect(box().value).toBe("");
+    expect(lastSearch({ doc: "d1", q: "precio" }).next).toEqual({ doc: "d1" });
+    expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).not.toBeInTheDocument();
+  });
+
+  it("never says «Nada coincide» while the documents have not answered; says it after (CA-5)", async () => {
+    let release: () => void = () => {};
+    h.gate = new Promise<void>((r) => {
+      release = r;
+    });
+    h.search = { q: "zzz" };
+    mount();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.queryByText(/Nada coincide/)).not.toBeInTheDocument();
+    release();
+    expect(
+      await screen.findByText(
+        "Nada coincide con «zzz». Prueba con otra palabra o crea un documento con «+ Nuevo».",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("warns when the read was cut and says how many are shown (CA-9)", async () => {
+    h.truncated = true;
+    mount();
+    expect(
+      await screen.findByText(
+        "Se muestran los primeros 4 documentos; la búsqueda no incluye el resto.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("no warning when the read was complete (CA-9)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    expect(screen.queryByText(/la búsqueda no incluye el resto/)).not.toBeInTheDocument();
+  });
+
+  it("the box is hidden on the Drive tab and q stays in the URL (spec §8)", async () => {
+    h.search = { q: "decision" };
+    mount();
+    await screen.findByText("Es caro");
+    fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
+    expect(screen.queryByLabelText("Buscar en Conocimiento")).not.toBeInTheDocument();
+    expect(screen.getByText("panel-drive-por-cuenta")).toBeInTheDocument();
+    expect(h.navigate).not.toHaveBeenCalled();
+    fireEvent.click(sectionButton("Empresa"));
+    expect(box().value).toBe("decision");
+  });
+
+  it("«+ Nuevo» and import stay visible while searching and act on the marked section", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    fireEvent.click(sectionButton("Objeciones y battlecards"));
+    type("decision");
+    expect(screen.getByRole("button", { name: "+ Nuevo" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Importar de Drive" })).toBeInTheDocument();
+    expect(screen.getByText("Battlecard desde reseñas")).toBeInTheDocument();
+    expect(sectionButton("Objeciones y battlecards").className).toContain("bg-primary");
+  });
+
+  it("opens a result, and the editor stays open when the text stops matching", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    type("decision");
+    fireEvent.click(within(screen.getByTestId("hub-results")).getByText("Es caro"));
+    expect(screen.getByDisplayValue("Es caro")).toBeInTheDocument();
+    type("zzz");
+    expect(screen.getByDisplayValue("Es caro")).toBeInTheDocument();
+  });
+
+  it("opens a document after an import with the new cache shape (CA-9)", async () => {
+    mount();
+    await screen.findByText("Precios 2026");
+    h.docs = [...h.docs, row("d2", "company", "Importado de Drive")];
+    fireEvent.click(screen.getByRole("button", { name: "Importar de Drive" }));
+    expect(await screen.findByDisplayValue("Importado de Drive")).toBeInTheDocument();
   });
 });
