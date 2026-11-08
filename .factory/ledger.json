@@ -1441,12 +1441,12 @@
       "title": "UX 2026-10-31: paleta Grafito e índigo, legibilidad y contraste, duplicados de «Ganado» y mover sin arrastrar (4 SDD, 8 commits sobre 47ec72c)",
       "kind": "feature",
       "source": "",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "claude-nk0051-integration",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261031-ux-palette-graphite.md",
       "prd": null,
-      "branch": null,
+      "branch": "integration/20261106-nk0051",
       "base_commit": null,
       "history": [
         {
@@ -1460,6 +1460,24 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "Fase 2 en SDD-20261106-ux-coherence-nk0051-phase2 (aún fuera de main); sin ticket nuevo"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:21:00.131Z",
+          "by": "Claude",
+          "note": "docs: sdd=docs/sdd/SDD-20261031-ux-palette-graphite.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:21:00.178Z",
+          "by": "Fede",
+          "note": "owner=claude-nk0051-integration"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T19:21:00.224Z",
+          "by": "Fede",
+          "note": "sha=4c6b339e3eb2330ff17be084961a7a357b2f38fc"
         }
       ]
     },
