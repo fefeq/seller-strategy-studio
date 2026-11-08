@@ -905,6 +905,12 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "D-2: se parte; U-1 a U-4 antes de NK-0052, y la U-5 la cierra NK-0052 (rompe la dependencia circular con la Torre 8)"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "2026-11-08: sin la U-5 de Postin (NK-0052 descartado); enmendar el SDD 4a antes de construir"
         }
       ]
     },
@@ -1505,6 +1511,12 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "D-2: va después de NK-0032 U-1 a U-4 y cierra su U-5"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Descartado por Fede el 2026-11-08: la Torre no leerá vistas de Postin; «Activa» y «Publicó» se apuntan a mano. No construir"
         }
       ]
     },
@@ -1712,6 +1724,12 @@
           "at": "2026-11-06T16:02:40.717Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Descartado por Fede el 2026-11-08: no se pide a Dani. No construir"
         }
       ]
     },
@@ -1865,6 +1883,12 @@
           "at": "2026-11-06T21:53:38.027Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Decisión de Fede (2026-11-08): Fase 2, carril producto, tras «Ganado íntegro»"
         }
       ]
     },
@@ -2033,6 +2057,12 @@
           "at": "2026-11-08T19:04:59.656Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Decisión de Fede (2026-11-08): un deal ganado no puede tener fecha de cierre futura; se valida al marcar Ganado. Va con la épica «Ganado íntegro»"
         }
       ]
     },
