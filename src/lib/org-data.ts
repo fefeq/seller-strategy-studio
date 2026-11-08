@@ -5,6 +5,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { quarterOf } from "@/lib/metrics";
 import type { SetupData } from "@/lib/setup-schema";
 import type { FitKeyData, Snapshot } from "@/lib/proactive/types";
+import { disabledPlayIds } from "@/lib/plays/gating";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
@@ -224,6 +225,7 @@ export async function loadSnapshot(
     signals,
     usage,
     guide,
+    playStates,
   ] = await Promise.all([
     loadSetupData(db, orgId),
     fetchAll((a, b) =>
@@ -289,7 +291,10 @@ export async function loadSnapshot(
       .order("active_users_7d", { ascending: false })
       .limit(500),
     loadSetupGuideExtras(db, orgId),
+    db.from("play_states").select("play_id,enabled").eq("org_id", orgId),
   ]);
+  // Plays the company paused. A failed read (say, the table is not migrated yet) leaves every rule on, exactly as before the Plays GTM.
+  const disabledPlays = disabledPlayIds(playStates.error ? [] : (playStates.data ?? []));
   const strategy = await loadStrategyData(db, orgId);
   const fitKey = opts.fitKey === false ? undefined : await loadFitKeyData(db, orgId);
   return {
@@ -298,6 +303,7 @@ export async function loadSnapshot(
     setup,
     strategy,
     ...(fitKey ? { fitKey } : {}),
+    ...(disabledPlays.length ? { disabledPlays } : {}),
     setupSnoozes: guide.snoozes,
     setupActivityAt: guide.activityAt,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],

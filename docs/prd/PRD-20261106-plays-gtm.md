@@ -1,7 +1,7 @@
 # PRD-20261106-plays-gtm · [Iniciativa] Plays GTM en NOKKO: librería con los 28 plays de referencia
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media (la base de datos interna ya existe y el coste es de ingeniería, no de proveedores; los plays con fuente externa esperan decisiones tuyas)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Aprobado (2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **SDD que lo desarrollan:** `docs/sdd/SDD-20261106-plays-library-core.md` (redactado); el resto, «pendiente» (sección 8)
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
@@ -116,5 +116,5 @@ Nunca hay línea base estimada.
 Los SDD 2 a 9 se redactan uno a uno con `nokko-shape` cuando apruebes este PRD y el SDD 1; un SDD por feature evita una especificación de 28 plays que nadie pueda revisar.
 
 ## 9. Aprobación
-- [ ] Fede aprueba el PRD (primer GO de dirección). Fecha: {…}
+- [x] Fede aprueba el PRD (primer GO de dirección). Fecha: 2026-11-06
 - Al aprobar, el Estado pasa a «Aprobado». Después se redactan los SDD con `nokko-shape`.

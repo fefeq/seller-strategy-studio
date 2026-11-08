@@ -4,7 +4,7 @@
 // Free-form jsonb columns never fail: they are listed as pending. Pure; the test reads types.ts.
 import type { Binding, ConceptId } from "@/lib/field-catalog";
 
-/** Tables that hold no user field: the change log records edits of other tables, the strategy decision log records who decided what, and notifications are written by triggers and jobs (their own columns, dedupe_key included, are not concepts). */
+/** Tables that hold no user field: the change log records edits of other tables, the strategy decision log records who decided what, notifications are written by triggers and jobs (their own columns, dedupe_key included, are not concepts), and the play state and run logs belong to the Plays engine. */
 export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set([
   "field_edit_log",
   "strategy_decisions",
@@ -12,6 +12,8 @@ export const INFRASTRUCTURE_TABLES: ReadonlySet<string> = new Set([
   "strategy_links",
   "strategy_reviews",
   "notifications",
+  "play_states",
+  "play_runs",
 ]);
 
 export type ColumnType = "json" | "other";

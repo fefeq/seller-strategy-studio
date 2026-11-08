@@ -98,6 +98,8 @@ export type Snapshot = {
    * asked for (`loadSnapshot` option `fitKey`), so the per-lead follow-up does not pay for it.
    */
   fitKey?: FitKeyData;
+  /** Plays the company paused (ids from src/lib/plays/catalog.ts): detect() skips the rules that belong to them. Optional: without it every rule runs. */
+  disabledPlays?: string[];
 };
 
 export type FitKeyData = {
