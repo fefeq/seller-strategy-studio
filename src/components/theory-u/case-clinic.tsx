@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { CASE_CLINIC_STEPS } from "@/lib/theory-u";
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -53,7 +54,7 @@ export function CaseClinics() {
 
   return (
     <div className="space-y-4">
-      <p className="max-w-3xl text-sm text-muted-foreground">Coaching entre pares de Theory U (~45 min). Un vendedor (case giver) trae un deal atascado o un reto propio; 3–4 compañeros escuchan, guardan silencio y devuelven espejos antes de dialogar. No se dan consejos de manual: se buscan nuevas formas de ver la situación.</p>
+      <ExplanationFold kind="metodo" className="max-w-3xl"><p className="text-sm text-muted-foreground">Coaching entre pares de Theory U (~45 min). Un vendedor (case giver) trae un deal atascado o un reto propio; 3–4 compañeros escuchan, guardan silencio y devuelven espejos antes de dialogar. No se dan consejos de manual: se buscan nuevas formas de ver la situación.</p></ExplanationFold>
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <div className="space-y-2">
           <Button size="sm" className="w-full" onClick={add}>+ Nueva clínica de casos</Button>

@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Empty, ScreenState } from "@/components/page";
 import { LISTENING_LEVELS, listeningStats, type ListeningLevel } from "@/lib/theory-u";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const LEVELS = [1, 2, 3, 4] as const;
 
@@ -48,8 +49,10 @@ export function Listening() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-3xl text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda.</p>
       <p className="max-w-3xl text-sm text-muted-foreground">Valora tu nivel después de cada reunión en el planificador de reuniones de <Link to="/accounts" className="underline hover:text-signal">cada cuenta</Link>.</p>
+      <ExplanationFold kind="metodo" className="max-w-3xl">
+        <p className="text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda.</p>
+      </ExplanationFold>
       <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
       <div className="grid gap-3 md:grid-cols-4">
         {LEVELS.map((l) => (
