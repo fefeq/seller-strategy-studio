@@ -421,5 +421,7 @@ Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 
+- **2026-11-08 (gate final sobre 5a74e15):** quedan dos caminos: `ai-gateway.ts` registra hasta 500 caracteres del cuerpo de error del proveedor en las llamadas de `draft_followup` y `prepare_meeting_brief` (que ahora llevan reglas, CA-5), y errores de red sin `statusCode` pasaban como «propios». Decisión: no registrar nunca el texto de esos errores (ni `message` ni cuerpo), solo tipo, estado, reintento, URL y longitud.
+
 - **2026-11-08 (gates independientes):** el primer gate sobre la integración vio que el log de error del proveedor llevaba el prompt con las reglas (`requestBodyValues`); arreglo `safeErrorLog` (merge 70c8444). El gate final sobre `535235f` dio FAIL: si el proveedor repite una regla en su `error.message`, el SDK la copia a `APICallError.message` y `safeErrorLog` la conservaba (recortada). Arreglo en curso: no registrar el `message` de errores del proveedor (CA-4, §10).
 —
