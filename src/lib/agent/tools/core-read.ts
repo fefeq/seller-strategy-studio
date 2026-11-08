@@ -13,6 +13,7 @@ import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
 import { FOLLOWUP_STEPS, followupDraft, followupStatus } from "@/lib/followup";
 import { ask } from "@/lib/ai-gateway";
+import { loadAgentRules, rulesBlock, RULES_READ_FAILED } from "@/lib/knowledge-rules";
 import { LEAD_STAGE_IDS } from "../tool-kit";
 import type { AgentTool } from "../tool-kit";
 
@@ -217,13 +218,16 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       const l = one(await c.db.from("leads").select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source").eq("org_id", c.orgId).eq("id", a.lead_id).single(), "el lead");
       const st = followupStatus(l, new Date());
       const step = a.step ? FOLLOWUP_STEPS.find((x) => x.id === a.step)! : st.due ?? st.next?.step ?? FOLLOWUP_STEPS[0];
-      const setup = await loadSetupData(c.db, c.orgId);
+      const [setup, rules] = await Promise.all([loadSetupData(c.db, c.orgId), loadAgentRules(c)]);
       const base = followupDraft(step, l, { positioning: setup.positioning, pillars: setup.pillars });
+      const block = rulesBlock(rules.rules);
       const text = await ask(
-        "Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.",
+        `Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.${block ? `\n${block}` : ""}`,
         JSON.stringify({ paso: `${step.label}: ${step.purpose}`, tono: a.tone ?? null, lead: { empresa: l.company, contacto: l.contact_name, cargo: l.title, origen: l.source, notas: (l.notes ?? "").slice(0, 600) }, posicionamiento: setup.positioning, pilares: setup.pillars, borrador_base: base }),
         { effort: "low" },
       );
+      // A failed read of the rules is said where the person reads the draft (SDD-20261106-agent-rules-reader, CA-5).
+      if (!rules.ok) return { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: `${RULES_READ_FAILED}\n\n${text.trim()}`, borrador_base: base, mensaje: RULES_READ_FAILED };
       return { paso: step.label, dias_sin_respuesta: st.daysSinceContact, borrador: text.trim(), borrador_base: base };
     },
   }),

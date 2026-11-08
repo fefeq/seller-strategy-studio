@@ -18,6 +18,7 @@ import { lineFromProduct, type Product } from "@/lib/deal-lines";
 import { leadStageLabel } from "@/lib/lead-funnel";
 import { isLostStage, LOSS_REASONS, lossLabel, parseLoss } from "@/lib/loss-reasons";
 import { ask } from "@/lib/ai-gateway";
+import { loadAgentRules, rulesBlock, RULES_READ_FAILED } from "@/lib/knowledge-rules";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
 import { CORE_READ_TOOLS } from "./core-read";
 import { LEAD_STAGE_IDS } from "../tool-kit";
@@ -417,16 +418,18 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
             account_id: m.account_id,
           })
         : {};
-      const [pos, pillars] = await Promise.all([
+      const [pos, pillars, rules] = await Promise.all([
         c.db
           .from("positioning")
           .select("one_liner,key_benefit,differentiator,competitive_alternative")
           .eq("org_id", c.orgId)
           .maybeSingle(),
         c.db.from("messaging_pillars").select("title,message,proof").eq("org_id", c.orgId),
+        loadAgentRules(c),
       ]);
+      const block = rulesBlock(rules.rules);
       const brief = await ask(
-        "Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.",
+        `Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.${block ? `\n${block}` : ""}`,
         JSON.stringify({
           reunion: m,
           contexto: acc,
@@ -443,7 +446,10 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
           .select("id")
           .single(),
       );
-      return { ok: true, meeting: m.title };
+      // decidePending shows `mensaje` after «Hecho: …»: a failed read of the rules is never silent (CA-5).
+      return rules.ok
+        ? { ok: true, meeting: m.title }
+        : { ok: true, meeting: m.title, mensaje: RULES_READ_FAILED };
     },
   }),
   def({
