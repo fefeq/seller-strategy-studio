@@ -92,6 +92,38 @@ describe("start rule", () => {
     expect(existsSync(lockPath(dir, "full"))).toBe(false);
   });
 
+  it.each([
+    ["runs as text", '{"runs":"x"}'],
+    ["runs as null", '{"runs":null}'],
+    ["runs as an object", '{"runs":{}}'],
+    ["a run entry that is not an object", '{"runs":[1]}'],
+    ["manual as text", '{"manual":"x"}'],
+    ["manual as null", '{"manual":null}'],
+    ["a manual entry that is not an object", '{"manual":["x"]}'],
+    ["noData as text", '{"noData":"x"}'],
+    ["noData without reason", '{"noData":{"at":"2026-11-02T10:00:00.000Z"}}'],
+  ])(
+    "a ledger file with %s does not start, names the file and leaves no lock (NK-0066)",
+    (_n, raw) => {
+      writeFileSync(ledgerPath(dir, "full"), raw);
+      const opened = openRun(dir, "full", { now: NOW, pid: 1 });
+      expect(opened.ok).toBe(false);
+      if (opened.ok) return;
+      expect(opened.message).toMatch(/registro de gasto/);
+      expect(opened.message).toContain(ledgerPath(dir, "full"));
+      expect(opened.message).not.toContain("undefined");
+      expect(existsSync(lockPath(dir, "full"))).toBe(false);
+    },
+  );
+
+  it("a well-formed noData still says its reason, never «undefined» (NK-0066)", () => {
+    seed("pilot", 0, { noData: { reason: "juez: coste nulo", at: "2026-11-02T10:00:00.000Z" } });
+    const opened = openRun(dir, "pilot", { now: NOW, pid: 1 });
+    expect(opened.ok).toBe(false);
+    if (opened.ok) return;
+    expect(opened.message).toContain("juez: coste nulo");
+  });
+
   it("does not start when the spend went past the approved amount", () => {
     seed("pilot", 1.03);
     expect(openRun(dir, "pilot", { now: NOW, pid: 1 }).ok).toBe(false);
@@ -255,6 +287,29 @@ describe("null cost («sin dato»)", () => {
     expect(recordManualCost(dir, "pilot", entry).ok).toBe(false);
     expect(loadLedger(dir, "pilot").manual).toEqual([]);
   });
+
+  it.each([
+    ["unreadable JSON", "{not json"],
+    ["runs as text", '{"runs":"x"}'],
+    ["a negative amount", '{"spentUsd":-1}'],
+  ])(
+    "a manual cost on a ledger with %s answers ok:false in Spanish and frees the lock (NK-0066)",
+    (_n, raw) => {
+      writeFileSync(ledgerPath(dir, "pilot"), raw);
+      const result = recordManualCost(dir, "pilot", {
+        costUsd: 0.05,
+        source: "panel",
+        approvedBy: "Fede",
+        date: "2026-11-02",
+      });
+      expect(result.ok).toBe(false);
+      if (result.ok) return;
+      expect(result.message).toMatch(/registro de gasto/);
+      expect(result.message).toContain(ledgerPath(dir, "pilot"));
+      expect(existsSync(lockPath(dir, "pilot"))).toBe(false);
+      expect(readFileSync(ledgerPath(dir, "pilot"), "utf8")).toBe(raw);
+    },
+  );
 
   it("a manual cost is refused while a run holds the lock", () => {
     const opened = openRun(dir, "pilot", { now: NOW, pid: 1 });

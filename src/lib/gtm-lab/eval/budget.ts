@@ -72,6 +72,23 @@ export function loadLedger(dir: string, pass: EvalPass): SpendLedger {
     !(typeof saved.spentUsd === "number" && Number.isFinite(saved.spentUsd) && saved.spentUsd >= 0)
   )
     throw new Error(`${path} tiene un gasto no válido`);
+  // runs and manual are appended to later; noData is shown to the user. A wrong shape would crash after the lock
+  // is taken (TypeError on push) or print «undefined»: refuse it here (NK-0066).
+  const isRecord = (v: unknown) => !!v && typeof v === "object" && !Array.isArray(v);
+  for (const key of ["runs", "manual"] as const)
+    if (key in saved && !(Array.isArray(saved[key]) && saved[key].every(isRecord)))
+      throw new Error(`${path} tiene «${key}» mal formado`);
+  const noData: unknown = saved.noData;
+  if (
+    noData !== undefined &&
+    noData !== null &&
+    !(
+      isRecord(noData) &&
+      typeof (noData as { reason?: unknown }).reason === "string" &&
+      typeof (noData as { at?: unknown }).at === "string"
+    )
+  )
+    throw new Error(`${path} tiene «noData» mal formado`);
   // The approved amount always comes from the code, never from the file.
   return { ...empty, ...saved, pass, approvedUsd: APPROVED_USD[pass] };
 }
@@ -80,6 +97,9 @@ function saveLedger(dir: string, ledger: SpendLedger) {
   mkdirSync(dir, { recursive: true });
   writeFileSync(ledgerPath(dir, ledger.pass), JSON.stringify(ledger, null, 2));
 }
+
+const unreadableLedger = (dir: string, pass: EvalPass) =>
+  `No se puede leer el registro de gasto de la pasada «${pass}» (${ledgerPath(dir, pass)}). Revísalo o restáuralo a mano antes de seguir.`;
 
 const remaining = (ledger: SpendLedger) => ledger.approvedUsd - ledger.spentUsd;
 
@@ -143,10 +163,7 @@ export function openRun(
     ledger = loadLedger(dir, pass);
   } catch {
     lock.release();
-    return {
-      ok: false,
-      message: `No se puede leer el registro de gasto de la pasada «${pass}» (${ledgerPath(dir, pass)}). Revísalo o restáuralo a mano antes de seguir.`,
-    };
+    return { ok: false, message: unreadableLedger(dir, pass) };
   }
   if (ledger.noData) {
     lock.release();
@@ -242,7 +259,12 @@ export function recordManualCost(
   const lock = takeLock(dir, pass, clock.pid, clock.now());
   if (!lock.ok) return lock;
   try {
-    const ledger = loadLedger(dir, pass);
+    let ledger: SpendLedger;
+    try {
+      ledger = loadLedger(dir, pass);
+    } catch {
+      return { ok: false, message: unreadableLedger(dir, pass) };
+    }
     ledger.manual.push({
       costUsd: entry.costUsd,
       source: entry.source,
