@@ -57,3 +57,16 @@ describe("Descubiertos search terms", () => {
     expect(parseIcpQuery("nope", fb)).toBe(fb);
   });
 });
+
+import { normalizeScope, scopeLabel } from "./discoveries";
+describe("Descubiertos scope", () => {
+  it("searches everything unless told otherwise, and ignores junk", () => {
+    expect(normalizeScope(undefined)).toEqual({ kinds: ["company", "contact", "competitor"], icpIds: null });
+    expect(normalizeScope({ kinds: ["nope"], icpIds: [] })).toEqual({ kinds: ["company", "contact", "competitor"], icpIds: null });
+    expect(normalizeScope({ kinds: ["contact", "company"], icpIds: ["a", 3, ""] })).toEqual({ kinds: ["company", "contact"], icpIds: ["a"] });
+  });
+  it("names what is being searched", () => {
+    expect(scopeLabel(normalizeScope({}))).toBe("empresas, contactos y competidores");
+    expect(scopeLabel(normalizeScope({ kinds: ["contact"] }))).toBe("contactos");
+  });
+});

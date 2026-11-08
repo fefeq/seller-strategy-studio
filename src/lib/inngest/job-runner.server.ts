@@ -164,8 +164,10 @@ async function runKind(db: Admin, job: Job, input: Record<string, any>, scope: {
     }
     case "discover": {
       const { discoverForOrg } = await import("@/lib/discoveries.server");
-      await step("Buscando empresas, contactos y competidores");
-      const r = await discoverForOrg(db, job.org_id, now, { force: true, trigger: "manual", userId: job.user_id });
+      const { normalizeScope, scopeLabel } = await import("@/lib/discoveries");
+      const scope = normalizeScope(input);
+      await step(`Buscando ${scopeLabel(scope)}`);
+      const r = await discoverForOrg(db, job.org_id, now, { force: true, trigger: "manual", userId: job.user_id, scope });
       const n = r.added.company + r.added.contact + r.added.competitor;
       const parts = [r.added.company && `${r.added.company} ${r.added.company === 1 ? "empresa" : "empresas"}`, r.added.contact && `${r.added.contact} ${r.added.contact === 1 ? "contacto" : "contactos"}`, r.added.competitor && `${r.added.competitor} ${r.added.competitor === 1 ? "competidor" : "competidores"}`].filter(Boolean);
       return { title: n ? `Descubiertos: ${parts.join(", ")} para revisar` : "Descubiertos: nada nuevo esta vez", body: r.notes.length ? r.notes.slice(0, 3).join(" ") : null, link: "/discoveries", needs_decision: n > 0, added: r.added, notes: r.notes };

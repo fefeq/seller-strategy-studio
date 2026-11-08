@@ -4,7 +4,7 @@
 // pauses at 100 %), every find is unique per company, and a dismissed one never returns.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
-import { companyReason, dedupeKey, discoveryDue, knownCompetitors, parseCompetitors, parseFitJudgments, parseIcpQuery, peopleTargets, sizeLabel, PER_ICP, COMPETITOR_SCHEMA, FIT_SCHEMA, QUERY_SCHEMA, type DiscoveryKind } from "@/lib/discoveries";
+import { companyReason, dedupeKey, discoveryDue, normalizeScope, knownCompetitors, parseCompetitors, parseFitJudgments, parseIcpQuery, peopleTargets, sizeLabel, PER_ICP, COMPETITOR_SCHEMA, FIT_SCHEMA, QUERY_SCHEMA, type DiscoveryKind } from "@/lib/discoveries";
 import { icpToQuery } from "@/lib/clay";
 
 type Admin = SupabaseClient<Database>;
@@ -14,12 +14,15 @@ const MAX = { company: 12, contact: 12, competitor: 5 };
 
 export type DiscoveryRun = { skipped?: string; added: Record<DiscoveryKind, number>; notes: string[] };
 
-export async function discoverForOrg(db: Admin, orgId: string, now = new Date(), opts: { force?: boolean; trigger?: "manual" | "automatic"; userId?: string | null } = {}): Promise<DiscoveryRun> {
+export async function discoverForOrg(db: Admin, orgId: string, now = new Date(), opts: { force?: boolean; trigger?: "manual" | "automatic"; userId?: string | null; scope?: { kinds?: unknown; icpIds?: unknown } } = {}): Promise<DiscoveryRun> {
   const added = { company: 0, contact: 0, competitor: 0 };
+  const scope = normalizeScope(opts.scope);
+  const wants = { company: scope.kinds.includes("company"), contact: scope.kinds.includes("contact"), competitor: scope.kinds.includes("competitor") };
   const { data: lock } = await db.from("job_locks").select("last_run_at").eq("name", LOCK(orgId)).maybeSingle();
   if (!opts.force && !discoveryDue(lock?.last_run_at, now)) return { skipped: "not_due", added, notes: [] };
   // Mark the week first: a failing provider must not make the hourly job retry every hour.
-  await db.from("job_locks").upsert({ name: LOCK(orgId), last_run_at: now.toISOString() }, { onConflict: "name" });
+  // A manual search («Buscar ahora», force) never moves the weekly clock (CA-11, Fede 2026-10-28).
+  if (!opts.force) await db.from("job_locks").upsert({ name: LOCK(orgId), last_run_at: now.toISOString() }, { onConflict: "name" });
 
   const trigger = opts.trigger ?? "automatic";
   const actor = opts.userId ?? (await db.from("org_members").select("user_id").eq("org_id", orgId).eq("role", "owner").limit(1).maybeSingle()).data?.user_id ?? null;
@@ -34,8 +37,10 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
 
   // 1 · Per ICP: companies that fit (not already accounts), then contacts for that ICP. The company search matches
   // loosely by keywords, so the AI judges each candidate against the ICP and only real fits (≥ 60) enter.
-  try {
-    const { data: icps } = await db.from("icp_profiles").select("*").eq("org_id", orgId).order("created_at").limit(3);
+  if (wants.company || wants.contact) try {
+    const { data: allIcps } = await db.from("icp_profiles").select("*").eq("org_id", orgId).order("created_at").limit(3);
+    const icps = scope.icpIds ? (allIcps ?? []).filter((i) => scope.icpIds!.includes(i.id)) : allIcps;
+    if (!icps?.length) notes.push(scope.icpIds ? "Empresas y contactos: no encuentro el ICP elegido." : "Empresas y contactos: define al menos un ICP para poder buscarlos.");
     const { data: pos0 } = await db.from("positioning").select("product_name,target_customer,best_customers").eq("org_id", orgId).limit(1).maybeSingle();
     const { icpBrief, icpCompanyQuery, icpForSegment, icpPeopleQuery } = await import("@/lib/icp");
     const { pickKeyPeople } = await import("@/lib/lead-flow");
@@ -50,7 +55,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
       const icpTag = { icp_id: icp.id, icp_name: icp.name };
       const found: { name: string; domain: string | null; fit: number }[] = [];
       let companies = 0;
-      try {
+      if (wants.company) try {
         const { ask } = await import("@/lib/ai-gateway");
         // Structured ICPs go straight to the databases; prose-only ones are translated to English terms first.
         const built = icpCompanyQuery(icp);
@@ -82,9 +87,10 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
       } catch (e) { notes.push(`Empresas de «${icp.name}»: ${(e as Error).message}`); }
 
       // Contacts for this ICP: who its titles/levels say, in its empty target accounts and then in the companies just found.
-      try {
-        const mine = (targets ?? []).filter((a) => icpForSegment(icps ?? [], a.segment_id)?.id === icp.id).map((a) => ({ ...a, people: mapped.get(a.id) ?? 0 }));
+      if (wants.contact) try {
+        const mine = (targets ?? []).filter((a) => icpForSegment(allIcps ?? [], a.segment_id)?.id === icp.id).map((a) => ({ ...a, people: mapped.get(a.id) ?? 0 }));
         const who = icpPeopleQuery(icp);
+        if (!wants.company && !mine.some((a) => a.people < 2)) notes.push(`Contactos de «${icp.name}»: no hay cuentas objetivo con el mapa de poder casi vacío. Incluye también empresas para buscar en las nuevas.`);
         let contacts = 0;
         for (const t of peopleTargets(mine, found)) {
           if (contacts >= PER_ICP.contact || added.contact >= MAX.contact) break;
@@ -105,7 +111,7 @@ export async function discoverForOrg(db: Admin, orgId: string, now = new Date(),
   } catch (e) { notes.push(`Empresas y contactos: ${(e as Error).message}`); }
 
   // 3 · Competitors from the web, read by the AI (only new names).
-  try {
+  if (wants.competitor) try {
     const { data: pos } = await db.from("positioning").select("product_name,category,competitive_alternative,target_customer").eq("org_id", orgId).limit(1).maybeSingle();
     const product = pos?.product_name?.trim() || org?.company_name?.trim() || org?.name || "";
     if (pos?.category?.trim() && product) {

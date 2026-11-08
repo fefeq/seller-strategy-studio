@@ -8,6 +8,18 @@ export const KIND_LABEL: Record<DiscoveryKind, { one: string; many: string }> = 
   contact: { one: "Contacto", many: "Contactos" },
   competitor: { one: "Competidor", many: "Competidores" },
 };
+export const ALL_KINDS: DiscoveryKind[] = ["company", "contact", "competitor"];
+
+/** What a search looks for: which kinds, and in which ICPs (null = all of them). */
+export type DiscoveryScope = { kinds: DiscoveryKind[]; icpIds: string[] | null };
+/** Anything unknown or empty falls back to «everything», so the weekly search and old jobs behave as before. */
+export function normalizeScope(input: { kinds?: unknown; icpIds?: unknown } | null | undefined): DiscoveryScope {
+  const kinds = ALL_KINDS.filter((k) => Array.isArray(input?.kinds) && input.kinds.includes(k));
+  const ids = Array.isArray(input?.icpIds) ? input.icpIds.filter((x): x is string => typeof x === "string" && x.length > 0) : [];
+  return { kinds: kinds.length ? kinds : [...ALL_KINDS], icpIds: ids.length ? ids : null };
+}
+export const scopeLabel = (s: DiscoveryScope) => s.kinds.map((k) => KIND_LABEL[k].many.toLowerCase()).join(", ").replace(/, ([^,]*)$/, " y $1");
+
 export const DISMISS_REASONS = ["No encaja con el ICP", "Ya lo conocemos", "Demasiado pequeña o grande", "No es relevante ahora"] as const;
 
 /** Company names compared without legal suffixes, accents or punctuation. */

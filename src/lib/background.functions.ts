@@ -34,7 +34,7 @@ const JobIn = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("key_people"), input: z.object({ accountId: uuid, titles: words, levels: z.array(z.string().max(20)).max(10).default([]), cursor: Cursor, prevJobId: uuid.optional() }), label }),
   z.object({ kind: z.literal("icp_companies"), input: z.object({ query: z.object({ keywords: words, countries: words, minEmployees: z.number().int().min(1).nullable().optional(), maxEmployees: z.number().int().min(1).nullable().optional() }), cursor: Cursor, prevJobId: uuid.optional() }), label }),
   z.object({ kind: z.literal("qualify_leads"), input: z.object({ ids: z.array(uuid).max(25).optional() }), label }),
-  z.object({ kind: z.literal("discover"), input: none, label }),
+  z.object({ kind: z.literal("discover"), input: z.object({ kinds: z.array(z.enum(["company", "contact", "competitor"])).min(1).max(3).optional(), icpIds: z.array(uuid).max(3).optional() }).default({}), label }),
   z.object({ kind: z.literal("autopilot_now"), input: none, label }),
   z.object({ kind: z.literal("weekly_report"), input: none, label }),
   z.object({ kind: z.literal("posthog_sync"), input: none, label }),
@@ -75,6 +75,10 @@ async function authorize(ctx: Ctx, data: JobArgs) {
   if (data.kind === "qualify_leads" && data.input.ids?.length) {
     const { data: rows } = await ctx.db.from("leads").select("id").eq("org_id", ctx.orgId).in("id", data.input.ids);
     if ((rows ?? []).length !== data.input.ids.length) throw new Error("Algún lead no es de esta empresa.");
+  }
+  if (data.kind === "discover" && data.input.icpIds?.length) {
+    const { data: rows } = await ctx.db.from("icp_profiles").select("id").eq("org_id", ctx.orgId).in("id", data.input.icpIds);
+    if ((rows ?? []).length !== data.input.icpIds.length) throw new Error("Algún ICP no es de esta empresa.");
   }
   if (data.kind === "debate") {
     const { canConvene, DEBATE_LEVELS } = await import("@/lib/bmad/teams");
