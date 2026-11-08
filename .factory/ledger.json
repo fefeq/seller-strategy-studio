@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 67,
+  "seq": 68,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1837,6 +1837,27 @@
           "state": "LOGGED",
           "at": "2026-11-06T21:32:55.435Z",
           "by": "phase0-decisions",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0068",
+      "title": "Métricas honestas: quitar la atribución inventada y dejar un único CAC y un único payback en /metrics",
+      "kind": "feature",
+      "source": "SDD-20261106-metrics-honest-data (Sprint 1, rama docs/sprint1-sdd); roadmap E-30. Registrado antes como NK-0066 en b93ca5e (PR #89) y perdido al fusionar el ledger con el NK-0066 del PR #90; vuelto a registrar el 2026-11-08",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T18:14:42.109Z",
+          "by": "Claude",
           "note": ""
         }
       ]
