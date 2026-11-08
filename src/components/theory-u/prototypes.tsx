@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,13 +37,15 @@ export function Prototypes() {
   const qc = useQueryClient();
   const [sel, setSel] = useState<any | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const { data } = useQuery({
+  const { data, isPending, isSuccess, error, refetch } = useQuery({
     queryKey: ["gtm_experiments"],
     queryFn: async () => {
       const [e, j] = await Promise.all([
         supabase.from("gtm_experiments").select("*").order("created_at", { ascending: false }),
         supabase.from("u_journeys").select("id,title").order("created_at", { ascending: false }),
       ]);
+      const failed = e.error ?? j.error;
+      if (failed) throw failed;
       return { exps: e.data ?? [], journeys: j.data ?? [] };
     },
   });
@@ -81,6 +83,7 @@ export function Prototypes() {
         <Button size="sm" onClick={add}>+ Prototipo</Button>
       </div>
       {/* Phones: the 5 status columns scroll sideways with snap instead of stacking. */}
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 sm:-mx-5 sm:px-5 md:mx-0 md:grid md:snap-none md:grid-cols-5 md:overflow-visible md:px-0 md:pb-0">
         {Object.entries(EXPERIMENT_STATUS).map(([k, label]) => {
           const col = exps.filter((e) => e.status === k);
@@ -97,6 +100,7 @@ export function Prototypes() {
           );
         })}
       </div>
+      </ScreenState>
       <div ref={editorRef} className="scroll-mt-20">
       {sel ? (
         <div className="space-y-4 rounded-lg border bg-card p-5">
@@ -130,7 +134,7 @@ export function Prototypes() {
             </div>
           )}
         </div>
-      ) : exps.length === 0 ? <Empty>Aún no hay prototipos GTM. Crea el primero.</Empty> : null}
+      ) : isSuccess && exps.length === 0 ? <Empty>Aún no hay prototipos GTM. Crea el primero.</Empty> : null}
       </div>
     </div>
   );

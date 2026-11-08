@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
+import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
 import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
@@ -35,6 +36,8 @@ export function useSegmentCoverageData(quarter: string) {
         supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
       ]);
+      const failed = s.error ?? d.error ?? t.error ?? c.error ?? b.error;
+      if (failed) throw failed;
       return {
         segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter, wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment), deals: d.data ?? [], costs: c.data ?? [],
         targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
@@ -50,7 +53,7 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
   const orgId = me?.currentOrg?.org_id;
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const qc = useQueryClient();
-  const { data } = useSegmentCoverageData(quarter);
+  const { data, isPending, error, refetch } = useSegmentCoverageData(quarter);
   const rows = useMemo(() => (data ? segmentCoverage(data.segments, data.deals, data.targets, quarterRange(quarter), data.costs) : []), [data, quarter]);
   const total = rows.reduce((a, r) => ({ target: a.target + r.target, pipeline: a.pipeline + r.pipeline, won: a.won + r.won.amount }), { target: 0, pipeline: 0, won: 0 });
 
@@ -74,10 +77,12 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
           </div>
         )}
       </div>
-      {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((r) => <SegmentCard key={r.segment.id} r={r} money={money} canEdit={!!canEdit} quarter={quarter} onTarget={(v) => setTarget(r.segment.id, v)} />)}
-      </div>
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
+        {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {rows.map((r) => <SegmentCard key={r.segment.id} r={r} money={money} canEdit={!!canEdit} quarter={quarter} onTarget={(v) => setTarget(r.segment.id, v)} />)}
+        </div>
+      </ScreenState>
     </section>
   );
 }

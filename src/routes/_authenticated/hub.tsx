@@ -1,12 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { HubScreen } from "@/components/hub/hub-screen";
 import { cleanQuery } from "@/lib/hub-search";
+import { HUB_SECTIONS, validSection } from "@/lib/screen-sections";
 
 export const Route = createFileRoute("/_authenticated/hub")({
   // doc: opened from a notice (an import or a battlecard made in the background). q: the search box (blank is dropped).
-  validateSearch: (s: Record<string, unknown>): { doc?: string; q?: string } => {
+  // seccion: the open section (an unknown id is dropped, so the screen opens the default).
+  validateSearch: (s: Record<string, unknown>): { doc?: string; q?: string; seccion?: string } => {
     const q = cleanQuery(s.q);
-    return { ...(typeof s.doc === "string" ? { doc: s.doc } : {}), ...(q ? { q } : {}) };
+    const seccion = validSection(HUB_SECTIONS, s.seccion);
+    return {
+      ...(typeof s.doc === "string" ? { doc: s.doc } : {}),
+      ...(q ? { q } : {}),
+      ...(seccion ? { seccion } : {}),
+    };
   },
   head: () => ({
     meta: [

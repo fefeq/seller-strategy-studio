@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScreenState } from "@/components/page";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { parseCsv, normEmail } from "@/lib/dedupe";
 import { cohort, funnelBySegment, funnelStats, parseDateCell, type FunnelStats } from "@/lib/self-service";
@@ -21,7 +22,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["trials", orgId],
     enabled: !!orgId,
     queryFn: async () => {
@@ -29,7 +30,8 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         supabase.from("trials").select("*").order("signed_up_at", { ascending: false }),
         supabase.from("segments").select("id,name").order("acv_min", { ascending: true }),
       ]);
-      if (t.error) throw t.error;
+      const failed = t.error ?? s.error;
+      if (failed) throw failed;
       return { trials: t.data ?? [], segments: s.data ?? [] };
     },
   });
@@ -63,6 +65,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         <ManageTrials trials={data?.trials ?? []} segments={data?.segments ?? []} />
       </div>
 
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
       {t && (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
@@ -123,6 +126,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
           </div>
         </>
       )}
+      </ScreenState>
     </section>
   );
 }

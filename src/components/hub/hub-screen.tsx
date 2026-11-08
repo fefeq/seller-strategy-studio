@@ -6,8 +6,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
+import { useUrlSection } from "@/hooks/use-url-section";
+import {
+  HUB_DEFAULT_SECTION,
+  HUB_SECTIONS,
+  nextSearchOnSectionChange,
+  searchWithSection,
+  sectionOf,
+} from "@/lib/screen-sections";
 import { canDelete } from "@/lib/roles";
-import { Page, Empty } from "@/components/page";
+import { Page, Empty, ScreenState } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
@@ -68,13 +76,12 @@ type DocsCache = { rows: Doc[]; truncated: boolean };
 export function HubScreen() {
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const [section, setSection] = useState<string>("company");
   const [selected, setSelected] = useState<Doc | null>(null);
   // Each «+ Nuevo» is a fresh editor, even when another unsaved draft was open.
   const [draftSeq, setDraftSeq] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   // Paged read (never stops silently at the backend row cap); the cache holds { rows, truncated }.
-  const { data, isSuccess } = useQuery({
+  const { data, isSuccess, isPending, error, refetch } = useQuery({
     queryKey: ["docs"],
     queryFn: (): Promise<DocsCache> =>
       fetchAll<Doc>((a, b) =>
@@ -87,9 +94,21 @@ export function HubScreen() {
       ),
   });
   const docs = data?.rows ?? NO_DOCS;
-  const list = docs.filter((d) => d.section === section);
-  const { doc: docParam, q: qParam } = useSearch({ from: "/_authenticated/hub" });
+  const { doc: docParam, q: qParam, seccion } = useSearch({ from: "/_authenticated/hub" });
   const navigate = useNavigate({ from: "/hub" });
+  const [section, setSection] = useUrlSection(
+    sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
+  );
+  const list = docs.filter((d) => d.section === section);
+  // A person changing section replaces the URL: seccion set (not the default), doc out (it only wins when the page opens), q kept.
+  function goToSection(id: string) {
+    setSection(id);
+    setSelected(null);
+    navigate({
+      search: (prev) => nextSearchOnSectionChange(prev, id, HUB_DEFAULT_SECTION),
+      replace: true,
+    });
+  }
   // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); every change is mirrored to the URL.
   const [text, setText] = useState(qParam ?? "");
   const active = cleanQuery(text);
@@ -105,9 +124,16 @@ export function HubScreen() {
     navigate({ search: (prev) => nextSearch(prev, value), replace: true });
   }
   // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
+  // The section of that document wins over ?seccion= at that moment and is written back, keeping doc.
   useOpenDocFromUrl(docParam, docs, (d) => {
     setSection(d.section);
     setSelected(d);
+    if (d.section !== sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion)) {
+      navigate({
+        search: (prev) => searchWithSection(prev, d.section, HUB_DEFAULT_SECTION),
+        replace: true,
+      });
+    }
   });
   /** After an import or a generated doc: refresh and open it. */
   async function openDoc(docId: string) {
@@ -230,23 +256,20 @@ export function HubScreen() {
             {SECTIONS.map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => {
-                  setSection(id);
-                  setSelected(null);
-                }}
+                onClick={() => goToSection(id)}
                 className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:block lg:w-full lg:whitespace-normal lg:border-0 ${section === id ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 {label}{" "}
-                <span className="ml-1 font-mono text-xs opacity-60 lg:float-right lg:ml-0">
-                  {counts[id] ?? 0}
-                </span>
+                {/* No number until the documents answer (never a 0 that looks like data). */}
+                {isSuccess && (
+                  <span className="ml-1 font-mono text-xs opacity-60 lg:float-right lg:ml-0">
+                    {counts[id] ?? 0}
+                  </span>
+                )}
               </button>
             ))}
             <button
-              onClick={() => {
-                setSection(DRIVE_TAB);
-                setSelected(null);
-              }}
+              onClick={() => goToSection(DRIVE_TAB)}
               className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
               Drive por cuenta
@@ -277,49 +300,51 @@ export function HubScreen() {
               </Button>
               <DriveImportButton section={section} onImported={openDoc} />
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
-              {data?.truncated && (
-                <p className="text-xs text-muted-foreground">{truncatedNotice(docs.length)}</p>
-              )}
-              <div data-testid="hub-results" className="space-y-2">
-                {(results ? results.map((r) => r.doc) : list).map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => {
-                      setSelected(d);
-                      revealOnMobile(editorRef.current);
-                    }}
-                    className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}
-                  >
-                    <span className="font-medium">{d.title}</span>
-                    {results && (
-                      <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground">
-                        {SECTIONS.find((s) => s[0] === d.section)?.[1]}
-                      </span>
-                    )}
-                    {d.scope === "personal" && (
-                      <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">
-                        personal
-                      </span>
-                    )}
-                    {d.scope === "team" && (d.mandatory || d.section === "rules") && (
-                      <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">
-                        obligatorio
-                      </span>
-                    )}
-                    {snippets.get(d.id) && (
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {snippets.get(d.id)}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {!results && list.length === 0 && (
-                <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>
-              )}
-              {results && results.length === 0 && isSuccess && active && (
-                <Empty>{emptySearchText(active)}</Empty>
-              )}
+              <ScreenState isPending={isPending} error={error} refetch={refetch}>
+                {data?.truncated && (
+                  <p className="text-xs text-muted-foreground">{truncatedNotice(docs.length)}</p>
+                )}
+                <div data-testid="hub-results" className="space-y-2">
+                  {(results ? results.map((r) => r.doc) : list).map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        setSelected(d);
+                        revealOnMobile(editorRef.current);
+                      }}
+                      className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}
+                    >
+                      <span className="font-medium">{d.title}</span>
+                      {results && (
+                        <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground">
+                          {SECTIONS.find((s) => s[0] === d.section)?.[1]}
+                        </span>
+                      )}
+                      {d.scope === "personal" && (
+                        <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">
+                          personal
+                        </span>
+                      )}
+                      {d.scope === "team" && (d.mandatory || d.section === "rules") && (
+                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">
+                          obligatorio
+                        </span>
+                      )}
+                      {snippets.get(d.id) && (
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {snippets.get(d.id)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {!results && list.length === 0 && (
+                  <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>
+                )}
+                {results && results.length === 0 && isSuccess && active && (
+                  <Empty>{emptySearchText(active)}</Empty>
+                )}
+              </ScreenState>
             </div>
             <div ref={editorRef} className="min-w-0 scroll-mt-20">
               {selected ? (

@@ -11,7 +11,7 @@ import { guideKey } from "@/lib/guide";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { Page } from "@/components/page";
+import { Page, ScreenState } from "@/components/page";
 import { Input } from "@/components/ui/input";
 import {
   daysInStage,
@@ -90,7 +90,7 @@ function Metrics() {
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [quarter, setQuarter] = useState(quarterOf(new Date()));
   const sec: Section = Route.useSearch().seccion ?? "resumen";
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["metrics", orgId],
     enabled: !!orgId,
     queryFn: async () => {
@@ -108,10 +108,14 @@ function Metrics() {
         supabase.from("quotas").select("*"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
       ]);
+      // Any answer with an error fails the read (deals and history already throw inside fetchAll).
+      const failed = q.error ?? p.error;
+      if (failed) throw failed;
       const ids = (p.data ?? []).map((x) => x.user_id);
-      const { data: profiles } = ids.length
+      const { data: profiles, error: profilesError } = ids.length
         ? await supabase.from("profiles").select("id,full_name").in("id", ids)
-        : { data: [] };
+        : { data: [], error: null };
+      if (profilesError) throw profilesError;
       return {
         deals: d.data ?? [],
         history: h.data ?? [],
@@ -216,148 +220,155 @@ function Metrics() {
           </Link>
         ))}
       </nav>
-      {m && data && (
-        <div className="space-y-8">
-          {sec === "embudo" && (
-            <RevopsFunnel
-              deals={m.funnel.deals}
-              history={m.funnel.history}
-              path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
-              label={lab}
-              quarter={quarter}
-            />
-          )}
-          {sec === "perdidos" && (
-            <RevopsLost
-              deals={m.lost.deals}
-              history={m.lost.history}
-              path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
-              label={lab}
-              quarter={quarter}
-            />
-          )}
-          {sec === "cohortes" && <RevopsCohorts deals={data.deals} />}
-          {sec === "tendencias" && <RevopsTrends deals={data.deals} />}
-          {sec === "resumen" && (
-            <>
-              <ResumenKpis
+      <ScreenState isPending={isPending} error={error} refetch={refetch}>
+        {m && data && (
+          <div className="space-y-8">
+            {sec === "embudo" && (
+              <RevopsFunnel
+                deals={m.funnel.deals}
+                history={m.funnel.history}
+                path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
+                label={lab}
                 quarter={quarter}
-                money={eur}
-                quota={m.quota}
-                cov={m.cov}
-                openPipe={m.openPipe}
-                actual={m.actual}
-                commit={m.commit}
-                acc={m.acc}
-                overall={m.overall}
               />
+            )}
+            {sec === "perdidos" && (
+              <RevopsLost
+                deals={m.lost.deals}
+                history={m.lost.history}
+                path={stagePath(stages).filter((k) => k !== "won" && k !== "lost")}
+                label={lab}
+                quarter={quarter}
+              />
+            )}
+            {sec === "cohortes" && <RevopsCohorts deals={data.deals} />}
+            {sec === "tendencias" && <RevopsTrends deals={data.deals} />}
+            {sec === "resumen" && (
+              <>
+                <ResumenKpis
+                  quarter={quarter}
+                  money={eur}
+                  quota={m.quota}
+                  cov={m.cov}
+                  openPipe={m.openPipe}
+                  actual={m.actual}
+                  commit={m.commit}
+                  acc={m.acc}
+                  overall={m.overall}
+                />
 
-              <StripeMetricsPanel />
-              <QuarterKpisPanel quarter={quarter} />
-              <SegmentCoverage quarter={quarter} />
-            </>
-          )}
-          {sec === "economia" && (
-            <>
-              <CacPanel quarter={quarter} />
-              <WonDealsPanel key={quarter} quarter={quarter} />
-              <BudgetPanel year={Number(quarter.slice(0, 4))} />
-            </>
-          )}
+                <StripeMetricsPanel />
+                <QuarterKpisPanel quarter={quarter} />
+                <SegmentCoverage quarter={quarter} />
+              </>
+            )}
+            {sec === "economia" && (
+              <>
+                <CacPanel quarter={quarter} />
+                <WonDealsPanel key={quarter} quarter={quarter} />
+                <BudgetPanel year={Number(quarter.slice(0, 4))} />
+              </>
+            )}
 
-          {sec === "rendimiento" && (
-            <>
-              <PipelineBoardPanel quarter={quarter} />
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Panel title="Conversión por etapa">
-                  {m.conv.map((c) => (
-                    <Bar
-                      key={c.from}
-                      label={`${lab(c.from)} → ${lab(c.to)}`}
-                      value={c.rate}
-                      right={`${pct(c.rate)} · ${c.count}`}
-                    />
-                  ))}
-                </Panel>
-                <Panel title="Velocidad: días medios por etapa">
-                  {openStages(stages).map(({ key: s }) => {
-                    const d = m.days[s] ?? 0;
-                    const max = Math.max(1, ...Object.values(m.days));
-                    return (
-                      <Bar key={s} label={lab(s)} value={d / max} right={`${d.toFixed(1)} días`} />
-                    );
-                  })}
-                </Panel>
-                <WinRatePanels quarter={quarter} bySource={m.bySource} byRep={m.byRep} />
-                <Panel
-                  title={`Deals que se han retrasado (${pct(m.slipRate)} del pipeline abierto)`}
-                >
-                  {m.slipped.length === 0 && (
-                    <Muted>Ningún deal ha movido su fecha de cierre.</Muted>
-                  )}
-                  {m.slipped.map((d) => (
-                    <div
-                      key={d.id}
-                      className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 border-b py-2 text-sm last:border-0"
-                    >
-                      <span className="min-w-0 break-words">{d.name}</span>
-                      <span className="ml-auto shrink-0 font-mono text-xs text-signal">
-                        {d.slip_count}× retrasado · cierre {d.close_date}
-                      </span>
-                    </div>
-                  ))}
-                </Panel>
-                <Panel title={`Cuotas ${quarter}`}>
-                  {data?.profiles.map((p) => {
-                    const q = data.quotas.find((x) => x.user_id === p.id && x.period === quarter);
-                    return (
+            {sec === "rendimiento" && (
+              <>
+                <PipelineBoardPanel quarter={quarter} />
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <Panel title="Conversión por etapa">
+                    {m.conv.map((c) => (
+                      <Bar
+                        key={c.from}
+                        label={`${lab(c.from)} → ${lab(c.to)}`}
+                        value={c.rate}
+                        right={`${pct(c.rate)} · ${c.count}`}
+                      />
+                    ))}
+                  </Panel>
+                  <Panel title="Velocidad: días medios por etapa">
+                    {openStages(stages).map(({ key: s }) => {
+                      const d = m.days[s] ?? 0;
+                      const max = Math.max(1, ...Object.values(m.days));
+                      return (
+                        <Bar
+                          key={s}
+                          label={lab(s)}
+                          value={d / max}
+                          right={`${d.toFixed(1)} días`}
+                        />
+                      );
+                    })}
+                  </Panel>
+                  <WinRatePanels quarter={quarter} bySource={m.bySource} byRep={m.byRep} />
+                  <Panel
+                    title={`Deals que se han retrasado (${pct(m.slipRate)} del pipeline abierto)`}
+                  >
+                    {m.slipped.length === 0 && (
+                      <Muted>Ningún deal ha movido su fecha de cierre.</Muted>
+                    )}
+                    {m.slipped.map((d) => (
                       <div
-                        key={p.id}
-                        className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-0"
+                        key={d.id}
+                        className="flex flex-wrap justify-between gap-x-3 gap-y-0.5 border-b py-2 text-sm last:border-0"
                       >
-                        <span className="min-w-0 break-words">{p.full_name}</span>
-                        {canEdit ? (
-                          <Input
-                            type="number"
-                            className="w-36 shrink-0"
-                            defaultValue={q?.amount ?? ""}
-                            key={`${p.id}-${quarter}`}
-                            onBlur={(e) =>
-                              e.target.value !== "" && setQuota(p.id, Number(e.target.value))
-                            }
-                          />
-                        ) : (
-                          <span className="font-mono">{q ? eur(Number(q.amount)) : "—"}</span>
-                        )}
+                        <span className="min-w-0 break-words">{d.name}</span>
+                        <span className="ml-auto shrink-0 font-mono text-xs text-signal">
+                          {d.slip_count}× retrasado · cierre {d.close_date}
+                        </span>
                       </div>
-                    );
-                  })}
-                  <Muted>
-                    {canEdit
-                      ? `Importe en ${currency} de deals ganados (ACV nuevo) que cada persona debe cerrar en ${quarter}. La cobertura compara el pipeline con cierre en el trimestre con esta suma.`
-                      : "Solo el Owner y el Sales Leader fijan las cuotas."}
-                  </Muted>
-                </Panel>
-              </div>
-            </>
-          )}
+                    ))}
+                  </Panel>
+                  <Panel title={`Cuotas ${quarter}`}>
+                    {data?.profiles.map((p) => {
+                      const q = data.quotas.find((x) => x.user_id === p.id && x.period === quarter);
+                      return (
+                        <div
+                          key={p.id}
+                          className="flex items-center justify-between gap-3 border-b py-2 text-sm last:border-0"
+                        >
+                          <span className="min-w-0 break-words">{p.full_name}</span>
+                          {canEdit ? (
+                            <Input
+                              type="number"
+                              className="w-36 shrink-0"
+                              defaultValue={q?.amount ?? ""}
+                              key={`${p.id}-${quarter}`}
+                              onBlur={(e) =>
+                                e.target.value !== "" && setQuota(p.id, Number(e.target.value))
+                              }
+                            />
+                          ) : (
+                            <span className="font-mono">{q ? eur(Number(q.amount)) : "—"}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    <Muted>
+                      {canEdit
+                        ? `Importe en ${currency} de deals ganados (ACV nuevo) que cada persona debe cerrar en ${quarter}. La cobertura compara el pipeline con cierre en el trimestre con esta suma.`
+                        : "Solo el Owner y el Sales Leader fijan las cuotas."}
+                    </Muted>
+                  </Panel>
+                </div>
+              </>
+            )}
 
-          {sec === "finanzas" &&
-            (canEdit ? (
-              <FinancePanel quarter={quarter} />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                Las finanzas solo las ven el Owner y el Sales Leader de la empresa.
-              </p>
-            ))}
-          {sec === "leads" && (
-            <>
-              <LeadFunnelPanel quarter={quarter} />
-              <SelfServiceFunnel quarter={quarter} />
-            </>
-          )}
-        </div>
-      )}
+            {sec === "finanzas" &&
+              (canEdit ? (
+                <FinancePanel quarter={quarter} />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Las finanzas solo las ven el Owner y el Sales Leader de la empresa.
+                </p>
+              ))}
+            {sec === "leads" && (
+              <>
+                <LeadFunnelPanel quarter={quarter} />
+                <SelfServiceFunnel quarter={quarter} />
+              </>
+            )}
+          </div>
+        )}
+      </ScreenState>
     </Page>
   );
 }

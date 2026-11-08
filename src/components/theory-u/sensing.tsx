@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,7 +22,7 @@ export function Sensing() {
   const [patterns, setPatterns] = useState("");
   const [busy, setBusy] = useState(false);
   const analyze = useServerFn(sensingPatterns);
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["sensing"],
     queryFn: async () => {
       const [n, a, j] = await Promise.all([
@@ -30,6 +30,8 @@ export function Sensing() {
         supabase.from("accounts").select("id,name").order("name"),
         supabase.from("u_journeys").select("id,title").order("created_at", { ascending: false }),
       ]);
+      const failed = n.error ?? a.error ?? j.error;
+      if (failed) throw failed;
       return { notes: n.data ?? [], accounts: a.data ?? [], journeys: j.data ?? [] };
     },
   });
@@ -70,6 +72,7 @@ export function Sensing() {
         <Button onClick={add}>Guardar nota</Button>
       </div>
 
+      <ScreenState isPending={isPending} error={error} refetch={refetch}>
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-full sm:w-56"><Pick value={filter} options={{ ...journeyOpts, "": "Todos los recorridos" }} onChange={setFilter} /></div>
@@ -90,6 +93,7 @@ export function Sensing() {
           </div>
         ))}
       </div>
+      </ScreenState>
     </div>
   );
 }

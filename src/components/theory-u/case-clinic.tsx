@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,13 +22,15 @@ export function CaseClinics() {
   const qc = useQueryClient();
   const [sel, setSel] = useState<any | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const { data } = useQuery({
+  const { data, isPending, isSuccess, error, refetch } = useQuery({
     queryKey: ["case_clinics"],
     queryFn: async () => {
       const [c, d] = await Promise.all([
         supabase.from("case_clinics").select("*, deals(name)").order("held_on", { ascending: false }),
         supabase.from("deals").select("id,name,stage").not("stage", "in", "(won,lost)").order("name"),
       ]);
+      const failed = c.error ?? d.error;
+      if (failed) throw failed;
       return { clinics: c.data ?? [], deals: d.data ?? [] };
     },
   });
@@ -55,12 +57,15 @@ export function CaseClinics() {
       <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
         <div className="space-y-2">
           <Button size="sm" className="w-full" onClick={add}>+ Nueva clínica de casos</Button>
+          <ScreenState isPending={isPending} error={error} refetch={refetch}>
+          {isSuccess && list.length === 0 && <Empty>Aún no hay clínicas de casos. Crea la primera con «+ Nueva clínica de casos».</Empty>}
           {list.map((c) => (
             <button key={c.id} onClick={() => { setSel(c); revealOnMobile(editorRef.current); }} className={`block w-full min-w-0 break-words rounded-md border bg-card p-3 text-left text-sm ${sel?.id === c.id ? "border-signal" : ""}`}>
               <span className="font-medium">{c.title}</span>
               <span className="block font-mono text-xs text-muted-foreground">{new Date(c.held_on).toLocaleDateString("es-ES")} · {c.status === "closed" ? "Cerrado" : "Abierto"}{c.deals?.name ? ` · ${c.deals.name}` : ""}</span>
             </button>
           ))}
+          </ScreenState>
         </div>
         <div ref={editorRef} className="min-w-0 scroll-mt-20">
         {sel ? (
