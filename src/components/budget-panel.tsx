@@ -5,6 +5,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { supabase } from "@/integrations/supabase/client";
 import { annualFromQuarters, quartersOfYear, segmentBudget, type SegmentBudgetRow } from "@/lib/segment-budget";
 import { Deviation } from "@/components/budget-quarters";
+import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, SHARED_EQUAL, acvMark, inferredMark } from "@/components/metrics/mark-text";
 
@@ -16,7 +17,7 @@ export function BudgetPanel({ year }: { year: number }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["segment-coverage", orgId, "budget-panel", year],
     enabled: !!orgId,
     queryFn: async () => {
@@ -26,6 +27,8 @@ export function BudgetPanel({ year }: { year: number }) {
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
         supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quartersOfYear(year)),
       ]);
+      const failed = s.error ?? d.error ?? b.error ?? c.error;
+      if (failed) throw failed;
       return { segments: s.data ?? [], deals: d.data ?? [], budgets: annualFromQuarters(b.data ?? [], year), costs: c.data ?? [] };
     },
   });
@@ -48,7 +51,8 @@ export function BudgetPanel({ year }: { year: number }) {
             El margen real (ingresos − coste de servir) sustituye al margen objetivo en todos los paybacks.
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
+        {/* No totals until the budget answers (never a 0 that looks like data). */}
+        {data && <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
           <div>
             <p className="font-mono">{money(realRev)} <span className="text-muted-foreground">/ {money(planRev)}</span></p>
             <p className="text-xs text-muted-foreground">ingresos reales / presupuesto{planRev ? ` · ${Math.round((realRev / planRev) * 100)}%` : ""}</p>
@@ -57,8 +61,9 @@ export function BudgetPanel({ year }: { year: number }) {
             <p className="font-mono">{pct(realMargin)}</p>
             <p className="text-xs text-muted-foreground">margen bruto real</p>
           </div>
-        </div>
+        </div>}
       </div>
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
       {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[760px] text-sm">
@@ -104,6 +109,7 @@ export function BudgetPanel({ year }: { year: number }) {
           </tbody>
         </table>
       </div>
+      </ScreenState>
     </section>
   );
 }

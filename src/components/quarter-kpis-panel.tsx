@@ -7,6 +7,7 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { quartersUpTo } from "@/lib/cac";
 import { quarterKpis, type KpiSide, type PaybackBasis, type QuarterKpis } from "@/lib/quarter-kpis";
 import { Deviation } from "@/components/budget-quarters";
+import { ScreenState } from "@/components/page";
 import type { SegLike } from "@/lib/segment-coverage";
 import { DataMark } from "@/components/metrics/data-mark";
 
@@ -44,7 +45,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
   const quarters = useMemo(() => quartersUpTo(quarter, 4), [quarter]);
   const years = [...new Set(quarters.map((q) => Number(q.slice(0, 4))))];
 
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     // "segment-coverage" is refreshed live when deals change (useLivePipeline) and when budgets/costs are saved.
     queryKey: ["segment-coverage", orgId, "quarter-kpis", quarter],
     enabled: !!orgId,
@@ -55,6 +56,8 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
         supabase.from("segment_budget_quarters").select("*").in("period", years.flatMap((y) => [1, 2, 3, 4].map((n) => `${y}-Q${n}`))),
         supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quarters),
       ]);
+      const failed = s.error ?? d.error ?? b.error ?? c.error;
+      if (failed) throw failed;
       return { segments: (s.data ?? []) as SegLike[], deals: d.data ?? [], budgets: b.data ?? [], costs: c.data ?? [] };
     },
   });
@@ -104,6 +107,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
         )}
       </div>
 
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[680px] text-sm">
           <thead>
@@ -144,6 +148,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           Para tener CAC y payback reales en {quarter} hacen falta costes en «<CacRealLink />» y deals ganados en ese trimestre.
         </p>
       )}
+      </ScreenState>
     </section>
   );
 }

@@ -11,6 +11,7 @@ import { quarterKpis } from "@/lib/quarter-kpis";
 import { boardMargin, closingIn, pipelineBoard, pipelineEconomics, type BoardColumn, type BoardGroup } from "@/lib/pipeline-board";
 import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
+import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_NON_POSITIVE, acvMark, boardMarginMark } from "@/components/metrics/mark-text";
 
@@ -22,9 +23,10 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const { data: leadsData } = useLeads(orgId);
+  const leads = useLeads(orgId);
+  const leadsData = leads.data;
   const year = Number(quarter.slice(0, 4));
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     // "segment-coverage" is refreshed live when deals or leads change (useLivePipeline).
     queryKey: ["segment-coverage", orgId, "pipeline-board", quarter],
     enabled: !!orgId,
@@ -35,6 +37,8 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
         supabase.from("segment_budget_quarters").select("*").in("period", [1, 2, 3, 4].map((n) => `${year}-Q${n}`)),
         supabase.from("cac_costs").select("segment_id,channel,amount,period").eq("period", quarter),
       ]);
+      const failed = d.error ?? s.error ?? b.error ?? c.error;
+      if (failed) throw failed;
       return { deals: d.data ?? [], segments: (s.data ?? []) as SegLike[], budgets: b.data ?? [], costs: c.data ?? [] };
     },
   });
@@ -58,7 +62,15 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     };
   }, [data, leadsData, quarter, stages]);
 
-  if (!view) return null;
+  // The panel's own read decides loading and error; the leads read (shared with Leads) only keeps it in loading until it answers.
+  if (!view) {
+    return (
+      <section className="rounded-lg border bg-card p-5">
+        <h3 className="mb-4 text-2xl">Pipeline · {quarter}</h3>
+        <ScreenState isPending={isPending || !!leads.isPending} error={error} refetch={refetch} skeleton="cards">{null}</ScreenState>
+      </section>
+    );
+  }
   const owner = (id: string | null) => (id ? leadsData?.members.find((m) => m.id === id)?.full_name ?? "—" : "Sin asignar");
   const late = view.board.reduce((s, g) => s + g.columns.reduce((t, c) => t + c.items.filter((i) => i.late).length, 0), 0);
   const months = (n: number | null) => (n == null ? "—" : `${fmt1(n)} m`);

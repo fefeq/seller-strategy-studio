@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import { closedAtFromDay, wonDealRows, wonSummary, WON_ISSUE_LABEL, type WonDealRow } from "@/lib/won-deals";
 import { errorText } from "@/lib/errors";
@@ -20,7 +21,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
   const orgId = me?.currentOrg?.org_id;
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["segment-coverage", orgId, "won-deals"],
     enabled: !!orgId,
     queryFn: async () => {
@@ -29,6 +30,8 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
         supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
         supabase.from("accounts").select("id,name"),
       ]);
+      const failed = d.error ?? s.error ?? a.error;
+      if (failed) throw failed;
       return { deals: d.data ?? [], segments: s.data ?? [], accounts: a.data ?? [] };
     },
   });
@@ -57,7 +60,8 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
             la fecha decide el trimestre, el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV del payback.
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
+        {/* No totals nor «Añadir» until the deals answer (never a 0 that looks like data). */}
+        {data && <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
           <div>
             <p className="font-mono">{summary.total.deals} · {money(summary.total.amount)}</p>
             <p className="text-xs text-muted-foreground">ganados en el trimestre</p>
@@ -65,9 +69,10 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
           <Button size="sm" variant={adding ? "ghost" : "default"} onClick={() => setAdding((x) => !x)}>
             {adding ? "Cerrar" : <>Añadir deal ganado</>}
           </Button>
-        </div>
+        </div>}
       </div>
 
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
       <div className="mb-4 flex flex-wrap gap-2 text-xs">
         {summary.bySegment.map((s) => (
           <span key={s.segment.id} className="rounded-none border px-3 py-1">
@@ -100,6 +105,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
           </table>
         </div>
       )}
+      </ScreenState>
     </section>
   );
 }

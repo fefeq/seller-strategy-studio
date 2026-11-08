@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScreenState } from "@/components/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
@@ -22,19 +23,25 @@ function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLi
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
   const quarters = quartersUpTo(quarter, 4);
-  const { data: costs = [] } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["segment-coverage", orgId, "cac-quarters", quarter],
     enabled: !!orgId,
-    queryFn: async () => (await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quarters)).data ?? [],
+    queryFn: async () => {
+      const { data: rows, error: failed } = await supabase.from("cac_costs").select("segment_id,channel,amount,period").in("period", quarters);
+      if (failed) throw failed;
+      return rows ?? [];
+    },
   });
-  const t = channelQuarterTable(costs, quarters);
+  // Drawn only once answered (ScreenState), so an empty list here is the real «no costs».
+  const t = channelQuarterTable(data ?? [], quarters);
   const won = Object.fromEntries(quarters.map((q) => {
     const { start, end } = quarterRange(q);
     return [q, deals.filter((d) => { const at = new Date(d.closed_at ?? d.updated_at); return d.stage === "won" && at >= start && at < end; }).length];
   }));
   const cell = (n: number) => (n ? money(n) : "—");
-  if (!t.rows.length) return <p className="py-6 text-sm text-muted-foreground">Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por segmento» de cada trimestre.</p>;
+  if (!t.rows.length) return <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table"><p className="py-6 text-sm text-muted-foreground">Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por segmento» de cada trimestre.</p></ScreenState>;
   return (
+    <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
     <div className="overflow-x-auto">
       <table className={`w-full min-w-[560px] text-sm ${STICKY_FIRST}`}>
         <thead>
@@ -76,6 +83,7 @@ function QuarterView({ quarter, deals, money }: { quarter: string; deals: DealLi
       </table>
       <p className="mt-2 text-[11px] text-muted-foreground">La calculadora de Estrategia GTM usa los 4 últimos trimestres para su CAC y payback reales; la cobertura usa el trimestre seleccionado.</p>
     </div>
+    </ScreenState>
   );
 }
 
@@ -88,7 +96,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
   const orgId = me?.currentOrg?.org_id;
   const canEdit = !!me?.roles.some((r) => r === "owner" || r === "sales_leader" || r === "marketing");
   const qc = useQueryClient();
-  const { data } = useSegmentCoverageData(quarter);
+  const { data, isPending, error, refetch } = useSegmentCoverageData(quarter);
   const [extra, setExtra] = useState<string[]>([]);
   const [newChannel, setNewChannel] = useState("");
   const [copying, setCopying] = useState(false);
@@ -148,7 +156,8 @@ export function CacPanel({ quarter }: { quarter: string }) {
             Los costes «Compartido» se reparten entre segmentos según los clientes ganados. El payback de la cobertura usa este CAC.
           </p>
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">
+        {/* No totals until the costs answer (never a 0 that looks like data). */}
+        {data && <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">
           <div>
             <p className="font-mono">{money(totalCost)}</p>
             <p className="text-xs text-muted-foreground">coste total</p>
@@ -162,9 +171,10 @@ export function CacPanel({ quarter }: { quarter: string }) {
               Copiar de {previousQuarter(quarter)}
             </Button>
           )}
-        </div>
+        </div>}
       </div>
 
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
       <Tabs defaultValue="segments">
       <TabsList className="mb-3">
         <TabsTrigger value="segments">Por segmento · {quarter}</TabsTrigger>
@@ -240,6 +250,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
           </div>
         )}
       </div>
+      </ScreenState>
     </section>
   );
 }
