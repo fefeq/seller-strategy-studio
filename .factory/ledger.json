@@ -265,19 +265,25 @@
       "title": "Descubiertos: alcance y búsqueda manual acotada",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "claude-nk0011",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261025-discoveries-scoped-manual-search.md",
       "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0011-discoveries-scope",
+      "base_commit": "9e30789575f6655a0ea670a31f50ad1f6e9f1344",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-10-28T20:23:14.081Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:45:47.017Z",
+          "by": "Fede",
+          "note": "owner=claude-nk0011"
         }
       ]
     },
