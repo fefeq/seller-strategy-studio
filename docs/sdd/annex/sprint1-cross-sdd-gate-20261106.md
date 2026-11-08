@@ -1,6 +1,6 @@
 # Revisión de coherencia entre los SDD del Sprint 1 (2026-11-06)
 
-> **Renumeración (2026-11-08):** al sincronizar con `main`, los tickets del sprint pasaron a la numeración de `main`: A = NK-0068, B = NK-0067, D = NK-0076, C1 = NK-0077, C2 = NK-0078 (ampliaciones de NK-0051, ya entregado en PR #91), bug falso rechazado = NK-0079, seguimientos y Sprint 2 = NK-0080 a NK-0086. El informe de abajo es copia literal y conservan la antigua (NK-0066→0079, 0067→0068, 0068→0067, 0069→0076, 0070…0075→0080…0085). Ramas, briefs y evidencias anteriores conservan los nombres de rama originales.
+> **Renumeración (2026-11-08):** los tickets del sprint usan la numeración de `main` (reservada en la PR #111): A = NK-0068, B = NK-0067, D = NK-0087, C1 = NK-0088, C2 = NK-0089 (ampliaciones de NK-0051, ya entregado en PR #91), bug falso rechazado = NK-0090, seguimientos, Sprint 2 y hallazgos previos = NK-0091 a NK-0103. El informe de abajo es copia literal y conservan la numeración con la que se escribieron (primera: NK-0066→0090, 0067→0068, 0068→0067, 0069→0087, 0070…0075→0091…0096). Ramas, briefs y evidencias anteriores conservan los nombres de rama originales.
 
 
 Revisión independiente (`nokko-gate`) de A, B, C1, C2 y D juntos. Copiada sin editar. Sus dos bloqueantes se corrigen en D v4 (dependencia de B, rutas de `/hub`, texto de la casilla ≤ 135 caracteres) y en el contrato común de los cinco SDD.

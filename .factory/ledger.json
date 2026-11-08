@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 92,
+  "seq": 103,
   "tickets": [
     {
       "id": "NK-0001",
@@ -265,19 +265,37 @@
       "title": "Descubiertos: alcance y búsqueda manual acotada",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "claude-nk0011",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261025-discoveries-scoped-manual-search.md",
       "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0011-discoveries-scope",
+      "base_commit": "9e30789575f6655a0ea670a31f50ad1f6e9f1344",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-10-28T20:23:14.081Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:45:47.017Z",
+          "by": "Fede",
+          "note": "owner=claude-nk0011"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T19:52:28.885Z",
+          "by": "Fede",
+          "note": "sha=6c1917c4a85ba25e827f7c8ebbd9c0867c10eaa6"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T20:37:35.111Z",
+          "by": "Fede",
+          "note": "CA-7 confirmado: «solo contactos» busca en las cuentas objetivo del segmento del ICP, con dominio y menos de 2 personas en el mapa de poder"
         }
       ]
     },
@@ -1864,13 +1882,13 @@
       "title": "Camino del founder de la estrategia a la cuenta: comité de compra frente al ICP, primer mensaje por stakeholder, seguimiento propio del stakeholder (días 3, 7 y 14) y guía de ejecución en Inicio",
       "kind": "feature",
       "source": "Validación del flujo del founder con Fede en sesión Claude Code, 2026-11-06; SDD v2.1 aprobado tras tres revisiones del gate; PR #88",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "nokko-author (sesión nueva NK-0066)",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-founder-account-execution-path.md",
       "prd": "docs/prd/PRD-20261106-founder-account-execution-path.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "fix/nk-0066-eval-ledger-shape",
+      "base_commit": "602ec4b1c6ea23863e6f206118766e4d1b73277f",
       "history": [
         {
           "state": "LOGGED",
@@ -1889,6 +1907,18 @@
           "at": "2026-11-08T19:24:33.122Z",
           "by": "fede-decisions-20261108",
           "note": "Decisión de Fede (2026-11-08): Fase 2, carril producto, tras «Ganado íntegro»"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:25.364Z",
+          "by": "Fede",
+          "note": "owner=nokko-author (sesión nueva NK-0066)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T20:48:25.416Z",
+          "by": "Fede",
+          "note": "sha=05d5f5cf35df5b3f1c87b3b1000a5bd7e45720eb"
         }
       ]
     },
@@ -1913,13 +1943,13 @@
         },
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:06.218Z",
+          "at": "2026-11-08T20:48:15.757Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261106-hub-search.md prd=-"
         },
         {
           "state": "PROMOTED",
-          "at": "2026-11-08T19:58:06.265Z",
+          "at": "2026-11-08T20:48:15.850Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0068"
         }
@@ -1946,13 +1976,13 @@
         },
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:06.109Z",
+          "at": "2026-11-08T20:48:14.201Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261106-metrics-honest-data.md prd=-"
         },
         {
           "state": "PROMOTED",
-          "at": "2026-11-08T19:58:06.170Z",
+          "at": "2026-11-08T20:48:14.268Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0067"
         }
@@ -2113,6 +2143,237 @@
     },
     {
       "id": "NK-0076",
+      "title": "Descubiertos: panel de última y próxima búsqueda, coste previo y herramienta del Agente (U-1, U-3 y U-4 del SDD de NK-0011)",
+      "kind": "feature",
+      "source": "SDD-20261025-discoveries-scoped-manual-search; decisión de Fede del 2026-11-08 de entregar solo U-2 en NK-0011",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:45:42.101Z",
+          "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0077",
+      "title": "Plays GTM 1: los 9 detectores reabren sugerencias cerradas en todas las empresas (sin filas en play_states), reenvían avisos de prioridad 1 por Telegram y pierden snooze al reanudar (decidir: aceptar o limitar a plays reanudados)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.059Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0078",
+      "title": "Plays GTM 1: CA-11 solo prueba detect(); falta prueba de que syncSuggestions sin filas en play_states no cambia nada",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.116Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0079",
+      "title": "Plays GTM 1: «Ver actividad» se queda en «Cargando…» si falla la consulta de play_runs (p. ej. antes de aplicar 0077)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.178Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0080",
+      "title": "Plays GTM 1: togglePlay devuelve error.message en crudo al Agente y a MCP (en pantalla pasa por errorText)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.240Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0081",
+      "title": "Plays GTM 1: RLS permite a un líder poner enabled=true en un play bloqueado escribiendo directo; CA-9 solo se cumple en código (CHECK/policy o aceptar y documentar)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.303Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0082",
+      "title": "Plays GTM 1: decidir si meeting_prepped, account_researched, account_cooling y lead_enriched pertenecen a algún play (§15.4 del SDD; hoy siguen activos con el play pausado)",
+      "kind": "feature",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.356Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0083",
+      "title": "Plays GTM 1: decisiones de Fede en §15 (nombre Plays GTM vs playbooks, activar solo Owner y Sales Leader, bloqueados visibles en /plays, retención de play_runs); §16 sin comprobar y §17 sin revisar",
+      "kind": "feature",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.418Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0084",
+      "title": "Proceso: NK-0063 marcado SHIPPED ~50 s después del merge de #96 y antes del gate independiente, con evidencia no versionada (misma clase que NK-0075 para NK-0030)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.470Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0085",
+      "title": "Migración 0079: verificar en la base viva si está aplicada (registro con 77 filas, max id 78) o pendiente, y cómo se mapea id↔idx del journal",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.527Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0086",
+      "title": "NK-0065: la rama del ledger (fix/nk-0065-nk-0048-followups) no es la de la PR #84 (fix/nk-0048-gate-minors); citas 56fc3fd, 1ba122c y docs/prd-gtm-lab-en-nokko no existen; decidir gate retroactivo sobre 26512d3",
+      "kind": "bug",
+      "source": "Gate independiente de NK-0065 (no ejecutado: el commit 56fc3fd no existe)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T20:34:44.589Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0087",
       "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2126,20 +2387,20 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:12.587Z",
+          "at": "2026-11-08T20:48:17.874Z",
           "by": "tracker",
           "note": ""
         },
         {
           "state": "PROMOTED",
-          "at": "2026-11-08T19:58:15.565Z",
+          "at": "2026-11-08T20:48:22.138Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0069"
         }
       ]
     },
     {
-      "id": "NK-0077",
+      "id": "NK-0088",
       "title": "Ampliación de NK-0051 (C1): estados de carga y error, sección en la URL, vacíos y pistas en Conocimiento, Theory U y Métricas",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2153,20 +2414,20 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:12.638Z",
+          "at": "2026-11-08T20:48:25.150Z",
           "by": "tracker",
           "note": ""
         },
         {
           "state": "PROMOTED",
-          "at": "2026-11-08T19:58:15.614Z",
+          "at": "2026-11-08T20:48:25.200Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0051-c1"
         }
       ]
     },
     {
-      "id": "NK-0078",
+      "id": "NK-0089",
       "title": "Ampliación de NK-0051 (C2): explicaciones plegadas y una sola forma para el estado de un dato",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2180,20 +2441,20 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:12.785Z",
+          "at": "2026-11-08T20:48:27.048Z",
           "by": "tracker",
           "note": ""
         },
         {
           "state": "PROMOTED",
-          "at": "2026-11-08T19:58:15.664Z",
+          "at": "2026-11-08T20:48:27.098Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0051-c2"
         }
       ]
     },
     {
-      "id": "NK-0079",
+      "id": "NK-0090",
       "title": "Agente: la búsqueda en Conocimiento no filtra documentos personales en Telegram (hallazgo de gate)",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2207,20 +2468,20 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.006Z",
+          "at": "2026-11-08T20:48:29.555Z",
           "by": "tracker",
           "note": ""
         },
         {
           "state": "REJECTED",
-          "at": "2026-11-08T19:58:21.910Z",
+          "at": "2026-11-08T20:48:29.610Z",
           "by": "Fede",
           "note": "No es un bug: src/lib/agent/tools/core-read.ts:236-237 ya filtra en memoria scope = team o created_by = userId (comentario sobre Telegram en :235), probado en src/lib/agent-tools.test.ts:584-596. Lo refutó la segunda pasada del gate de SDD-20261106-agent-rules-reader."
         }
       ]
     },
     {
-      "id": "NK-0080",
+      "id": "NK-0091",
       "title": "Asesor y agente: un deal sin origen cuenta como Outbound (advisor.ts:81)",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2234,14 +2495,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.055Z",
+          "at": "2026-11-08T20:48:34.004Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0081",
+      "id": "NK-0092",
       "title": "RevOps: un perdido sin transición se imputa a la primera etapa o a la más avanzada (revops.ts:26-27) y llega al titular de Perdidos",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2255,14 +2516,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.112Z",
+          "at": "2026-11-08T20:48:34.061Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0082",
+      "id": "NK-0093",
       "title": "Errores tragados fuera de Sprint 1: useLeads, useStripe y resúmenes de Drive (drive-core.ts:221) muestran vacío en vez de error",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2276,14 +2537,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.162Z",
+          "at": "2026-11-08T20:48:34.118Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0083",
+      "id": "NK-0094",
       "title": "Sprint 2: Métricas y Estrategia con Sin dato en todas las superficies y una sola fórmula de CAC y payback (resto de NK-0068)",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2297,14 +2558,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.216Z",
+          "at": "2026-11-08T20:48:34.176Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0084",
+      "id": "NK-0095",
       "title": "Sprint 2: solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2318,14 +2579,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.264Z",
+          "at": "2026-11-08T20:48:34.227Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0085",
+      "id": "NK-0096",
       "title": "Sprint 2: Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2339,14 +2600,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.311Z",
+          "at": "2026-11-08T20:48:34.277Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0086",
+      "id": "NK-0097",
       "title": "Legibilidad: marcas de dato de /metrics con text-[10px]/[11px] por debajo de 12 px (seguimiento de NK-0051)",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
@@ -2360,14 +2621,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T19:58:19.354Z",
+          "at": "2026-11-08T20:48:34.327Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0087",
+      "id": "NK-0098",
       "title": "Sesión: cada navegación ejecuta supabase.auth.getUser() en beforeLoad de _authenticated/route.tsx (una petición a /auth/v1/user por clic en cualquier pantalla)",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2381,14 +2642,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.573Z",
+          "at": "2026-11-08T20:48:37.574Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0088",
+      "id": "NK-0099",
       "title": "Peticiones duplicadas al cargar: datos de usuario y empresa 2 veces, /auth/v1/user 3 veces; segments y segment_budget_quarters 2-3 veces en /metrics; u_journeys al volver a Recorrido U",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2402,14 +2663,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.652Z",
+          "at": "2026-11-08T20:48:37.629Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0089",
+      "id": "NK-0100",
       "title": "URL: un ?seccion= desconocido o un q de solo espacios abre la sección por defecto pero no se limpia de la URL (/hub, /theory-u)",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2423,14 +2684,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.732Z",
+          "at": "2026-11-08T20:48:37.678Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0090",
+      "id": "NK-0101",
       "title": "/hub: en el estado de error siguen a la vista «+ Nuevo» e «Importar de Drive»",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2444,14 +2705,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.812Z",
+          "at": "2026-11-08T20:48:37.735Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0091",
+      "id": "NK-0102",
       "title": "Logs: los errores de proveedor de IA se registran con message recortado a 300 caracteres pero sin limpiar; un proveedor que repita el prompt en el error filtraría parte de él",
       "kind": "alert",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2465,14 +2726,14 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.888Z",
+          "at": "2026-11-08T20:48:37.791Z",
           "by": "tracker",
           "note": ""
         }
       ]
     },
     {
-      "id": "NK-0092",
+      "id": "NK-0103",
       "title": "Tests: src/lib/money-notices.pg.test.ts cae por timeout de 5 s con la máquina cargada (pasa 17/17 en solitario)",
       "kind": "alert",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
@@ -2486,7 +2747,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-08T20:47:09.954Z",
+          "at": "2026-11-08T20:48:37.846Z",
           "by": "tracker",
           "note": ""
         }

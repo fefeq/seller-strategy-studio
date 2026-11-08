@@ -295,6 +295,23 @@ describe("parsePinnedResponse (NK-0048 CA-8)", () => {
     expect(r.output).toEqual({ a: "x" });
   });
 
+  it("a content part without type is not text: the rejection stays, and it never reaches the output (NK-0066)", () => {
+    const body = JSON.stringify({
+      model: MODEL,
+      provider: "Anthropic",
+      choices: [
+        {
+          native_finish_reason: "end_turn",
+          message: { content: [{ text: '{"a":"x"}' }] },
+        },
+      ],
+      usage: {},
+    });
+    const r = parsePinnedResponse(body, true);
+    expect(r.text).toBe("");
+    expect(r.output).toBeNull();
+  });
+
   it("an invalid body is a provider error", () => {
     expect(() => parsePinnedResponse("<html>", true)).toThrow(/respuesta inválida/);
   });
