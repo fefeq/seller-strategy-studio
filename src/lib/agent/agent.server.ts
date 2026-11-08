@@ -19,6 +19,7 @@ import {
 } from "@/lib/gemini";
 import { openrouterErrorMessage } from "@/lib/ai-gateway";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
+import { safeErrorLog } from "./safe-error-log";
 import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
@@ -145,7 +146,7 @@ export async function runAgent(
         console.warn(`Agent provider ${kind} failed (${status}); trying ${chain[i + 1]}`);
         continue;
       }
-      console.error("Agent error", e);
+      console.error("Agent error", safeErrorLog(e));
       throw new Error(agentErrorMessage(kind, status, body));
     }
   }
@@ -306,7 +307,7 @@ async function runWith(
       maxRetries: kind === "lovable" ? 2 : 0,
       onError: ({ error }) => {
         streamError ??= error;
-        console.error("Agent stream error", error);
+        console.error("Agent stream error", safeErrorLog(error));
       },
       ...(kind === "lovable"
         ? {
