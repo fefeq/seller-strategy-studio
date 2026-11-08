@@ -136,10 +136,10 @@ Base de cada U: la rama integrada tras A, B, C1 y D.
 - Con Radix, el texto plegado no aparece al buscar en la página. Se acepta, porque es un texto de método y está a un clic.
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Umbral (abierta):** se pliega lo que pasa de 160 caracteres visibles. ¿Te vale? Con 160 se pliegan 9 bloques; si lo cambias, U-1 rehace la lista.
-2. **Textos de los botones (abierta):** propongo «Cómo se calcula» / «Ocultar cálculo» en `/metrics` y «Más sobre esto» / «Ocultar» en Theory U, porque allí son explicaciones de método y no cálculos. ¿Los apruebas?
-3. **X-4, KPI trimestrales (abierta):** la frase que contiene la pista mide 227 caracteres ella sola, así que el bloque no se pliega. ¿Lo dejamos visible, o le pedimos a A que separe en una frase propia de dónde sale cada cifra? Esas son palabras de A.
-4. **«—» que significan «falta el dato» (abierta):** quedan fuera de C2 porque necesitan palabras nuevas, que son de A. ¿Abrimos un ticket para Sprint 2?
+1. **Decidido por el coordinador el 2026-11-07 (ejecución delegada por Fede, «no me pidas permiso»):** umbral de 160 caracteres visibles. **Umbral (abierta):** se pliega lo que pasa de 160 caracteres visibles. ¿Te vale? Con 160 se pliegan 9 bloques; si lo cambias, U-1 rehace la lista.
+2. **Decidido por el coordinador el 2026-11-07 (ejecución delegada por Fede, «no me pidas permiso»):** «Cómo se calcula» / «Ocultar cálculo» en `/metrics` y «Más sobre esto» / «Ocultar» en Theory U. **Textos de los botones (abierta):** propongo «Cómo se calcula» / «Ocultar cálculo» en `/metrics` y «Más sobre esto» / «Ocultar» en Theory U, porque allí son explicaciones de método y no cálculos. ¿Los apruebas?
+3. **Decidido por el coordinador el 2026-11-07 (ejecución delegada por Fede, «no me pidas permiso»):** X-4 queda visible; separar la frase cambiaría palabras de A, fuera del sprint. **X-4, KPI trimestrales (abierta):** la frase que contiene la pista mide 227 caracteres ella sola, así que el bloque no se pliega. ¿Lo dejamos visible, o le pedimos a A que separe en una frase propia de dónde sale cada cifra? Esas son palabras de A.
+4. **Decidido por el coordinador el 2026-11-07 (ejecución delegada por Fede, «no me pidas permiso»):** se añade a NK-0073 (Sprint 2, «Sin dato» en todas las superficies), sin ticket nuevo. **«—» que significan «falta el dato» (abierta):** quedan fuera de C2 porque necesitan palabras nuevas, que son de A. ¿Abrimos un ticket para Sprint 2?
 5. **Instrucciones dentro de explicaciones (abierta):** en X-2 y X-7 la instrucción se pliega con el párrafo. ¿O prefieres que quede a la vista? Eso cambiaría la lista del §9.
 
 ## 16. Pendiente de verificar
