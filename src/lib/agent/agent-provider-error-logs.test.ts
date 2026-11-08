@@ -8,7 +8,12 @@ import type { ToolCtx } from "@/lib/agent/tools";
 
 const RULE_TEXT = "REGLA-FICTICIA-7f3a nunca regalamos la implantación sin aprobación.";
 
-const h = vi.hoisted(() => ({ fail: "none" as "none" | "api" | "retry" }));
+const h = vi.hoisted(() => ({
+  fail: "none" as "none" | "api" | "retry",
+  status: 500,
+  // NK-0087: @ai-sdk/openai copies the provider's error.message from the response body into APICallError.message.
+  ruleInMessage: false,
+}));
 
 vi.mock("ai", async (orig) => {
   const real = await orig<typeof import("ai")>();
@@ -22,13 +27,15 @@ vi.mock("ai", async (orig) => {
       if (h.fail === "none") return { text: Promise.resolve("Respuesta del modelo.") };
       // What @ai-sdk/openai throws on an HTTP error: the request body (system + messages) travels in the error.
       const api = new real.APICallError({
-        message: "Internal Server Error",
+        message: h.ruleInMessage
+          ? `Content rejected in messages[0]: ${o.system.slice(o.system.indexOf("REGLA-FICTICIA"))}`
+          : "Internal Server Error",
         url: "https://provider.invalid/v1/chat/completions",
         requestBodyValues: {
           model: "m",
           messages: [{ role: "system", content: o.system }, o.messages],
         },
-        statusCode: 500,
+        statusCode: h.status,
         responseBody: JSON.stringify({ error: "boom", echo: o.system }),
         isRetryable: false,
         cause: new Error("socket", { cause: { prompt: o.system } }),
@@ -138,6 +145,8 @@ let warnSpy: MockInstance<typeof console.warn>;
 beforeEach(() => {
   vi.restoreAllMocks();
   h.fail = "none";
+  h.status = 500;
+  h.ruleInMessage = false;
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
   vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -158,6 +167,27 @@ describe("provider failure: no rule text in any log argument (CA-4, §10)", () =
     const out = serialized(calls);
     expect(out).toContain("500");
     // ...but never the request body.
+    expect(out).not.toContain("REGLA-FICTICIA-7f3a");
+  });
+});
+
+describe("provider puts the rule in its error message (NK-0087, CA-4, §10)", () => {
+  it.each([
+    ["api", 400],
+    ["api", 500],
+    ["retry", 400],
+    ["retry", 500],
+  ] as const)("%s error, status %i", async (kind, status) => {
+    vi.stubEnv("LOVABLE_API_KEY", "test-not-a-key");
+    h.fail = kind;
+    h.status = status;
+    h.ruleInMessage = true;
+    await expect(turn()).rejects.toThrow();
+    const calls = [...errorSpy.mock.calls, ...warnSpy.mock.calls];
+    expect(errorSpy.mock.calls.map((c) => c[0])).toContain("Agent stream error");
+    expect(errorSpy.mock.calls.map((c) => c[0])).toContain("Agent error");
+    const out = serialized(calls);
+    expect(out).toContain(String(status));
     expect(out).not.toContain("REGLA-FICTICIA-7f3a");
   });
 });
