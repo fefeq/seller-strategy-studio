@@ -23,9 +23,30 @@ import { PLAY_TOOLS } from "./tools/plays";
 
 export type { AgentTool, ToolCtx } from "./tool-kit";
 
-const CORE_TOOLS: AgentTool[] = [...CORE_READ_TOOLS, ...CORE_WRITE_TOOLS, ...STRATEGY_TOOLS, ...FIELD_ACTION_TOOLS, ...CYCLE_TOOLS];
+const CORE_TOOLS: AgentTool[] = [
+  ...CORE_READ_TOOLS,
+  ...CORE_WRITE_TOOLS,
+  ...STRATEGY_TOOLS,
+  ...FIELD_ACTION_TOOLS,
+  ...CYCLE_TOOLS,
+];
 
-export const TOOLS: AgentTool[] = [...CORE_TOOLS, ...ACCOUNT_TOOLS, ...PIPELINE_TOOLS, ...MEETING_TOOLS, ...INBOX_TOOLS, ...CLAY_TOOLS, ...APOLLO_TOOLS, ...WEB_TOOLS, ...DRIVE_TOOLS, ...LINKEDIN_TOOLS, ...PRODUCT_TOOLS, ...PARALLEL_TOOLS, ...NEED_TOOLS, ...PLAY_TOOLS];
+export const TOOLS: AgentTool[] = [
+  ...CORE_TOOLS,
+  ...ACCOUNT_TOOLS,
+  ...PIPELINE_TOOLS,
+  ...MEETING_TOOLS,
+  ...INBOX_TOOLS,
+  ...CLAY_TOOLS,
+  ...APOLLO_TOOLS,
+  ...WEB_TOOLS,
+  ...DRIVE_TOOLS,
+  ...LINKEDIN_TOOLS,
+  ...PRODUCT_TOOLS,
+  ...PARALLEL_TOOLS,
+  ...NEED_TOOLS,
+  ...PLAY_TOOLS,
+];
 
 export function getTool(name: string) {
   return TOOLS.find((t) => t.name === name);
@@ -51,5 +72,9 @@ export async function executeTool(ctx: ToolCtx, name: string, rawArgs: unknown) 
 export function summarizeAction(name: string, args: unknown) {
   const tool = getTool(name);
   if (!tool) return name;
-  try { return tool.summarize ? tool.summarize(tool.input.parse(args)) : tool.description; } catch { return tool.description; }
+  try {
+    return tool.summarize ? tool.summarize(tool.input.parse(args)) : tool.description;
+  } catch {
+    return tool.description;
+  }
 }

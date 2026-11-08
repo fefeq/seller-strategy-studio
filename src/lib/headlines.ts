@@ -9,24 +9,48 @@ type Money = (n: number) => string;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** Inicio: the most urgent thing first — deals at risk, then changes awaiting approval, then today's meetings, then the open pipeline. */
-export function homeHeadline(p: { riskDeals: number; riskAmount: number; pendingApprovals: number; meetingsToday: number; openDeals: number; openAmount: number; money: Money; fallback: string }) {
-  if (p.riskDeals > 0) return `${plural(p.riskDeals, "deal en riesgo", "deals en riesgo")}: ${p.money(p.riskAmount)} en juego`;
-  if (p.pendingApprovals > 0) return `${plural(p.pendingApprovals, "cambio espera", "cambios esperan")} tu aprobación`;
+export function homeHeadline(p: {
+  riskDeals: number;
+  riskAmount: number;
+  pendingApprovals: number;
+  meetingsToday: number;
+  openDeals: number;
+  openAmount: number;
+  money: Money;
+  fallback: string;
+}) {
+  if (p.riskDeals > 0)
+    return `${plural(p.riskDeals, "deal en riesgo", "deals en riesgo")}: ${p.money(p.riskAmount)} en juego`;
+  if (p.pendingApprovals > 0)
+    return `${plural(p.pendingApprovals, "cambio espera", "cambios esperan")} tu aprobación`;
   if (p.meetingsToday > 0) return `Hoy tienes ${plural(p.meetingsToday, "reunión", "reuniones")}`;
-  if (p.openDeals > 0) return `${p.money(p.openAmount)} en ${plural(p.openDeals, "deal abierto", "deals abiertos")}, ninguno en riesgo`;
+  if (p.openDeals > 0)
+    return `${p.money(p.openAmount)} en ${plural(p.openDeals, "deal abierto", "deals abiertos")}, ninguno en riesgo`;
   return p.fallback;
 }
 
 /** Pipeline: open value, then deals past their close date, then deals gone cold. */
-export function pipelineHeadline(p: { openDeals: number; openAmount: number; overdue: number; cold?: number; money: Money }) {
+export function pipelineHeadline(p: {
+  openDeals: number;
+  openAmount: number;
+  overdue: number;
+  cold?: number;
+  money: Money;
+}) {
   if (p.openDeals === 0) return "Pipeline";
-  if (p.overdue > 0) return `${p.money(p.openAmount)} abiertos, ${plural(p.overdue, "deal con el cierre vencido", "deals con el cierre vencido")}`;
-  if (p.cold) return `${p.money(p.openAmount)} abiertos, ${plural(p.cold, "deal enfriado", "deals enfriados")} sin actividad`;
+  if (p.overdue > 0)
+    return `${p.money(p.openAmount)} abiertos, ${plural(p.overdue, "deal con el cierre vencido", "deals con el cierre vencido")}`;
+  if (p.cold)
+    return `${p.money(p.openAmount)} abiertos, ${plural(p.cold, "deal enfriado", "deals enfriados")} sin actividad`;
   return `${p.money(p.openAmount)} abiertos en ${plural(p.openDeals, "deal", "deals")}, todos en fecha y con actividad`;
 }
 
 /** Métricas: pipeline coverage of the quarter's quota (healthy band 3–4x). */
-export function metricsHeadline(p: { quota: number; ratio: number; status: "low" | "healthy" | "high" }) {
+export function metricsHeadline(p: {
+  quota: number;
+  ratio: number;
+  status: "low" | "healthy" | "high";
+}) {
   if (!p.quota) return "Métricas";
   const x = formatRatio(p.ratio);
   if (p.status === "low") return `Cobertura de ${x}: falta pipeline para la cuota del trimestre`;
@@ -37,7 +61,8 @@ export function metricsHeadline(p: { quota: number; ratio: number; status: "low"
 /** Leads: open leads that are stuck longer than their stage allows or with a follow-up overdue. */
 export function leadsHeadline(p: { open: number; late: number }) {
   if (p.open === 0) return "Leads";
-  if (p.late > 0) return `${plural(p.late, "lead lleva", "leads llevan")} más días de los previstos sin avanzar`;
+  if (p.late > 0)
+    return `${plural(p.late, "lead lleva", "leads llevan")} más días de los previstos sin avanzar`;
   return `${plural(p.open, "lead abierto", "leads abiertos")}, todos al día`;
 }
 
@@ -51,7 +76,8 @@ export function accountsHeadline(p: { total: number; atRisk: number }) {
 /** Sugerencias: what is waiting for a decision, and how much of it is urgent. */
 export function suggestionsHeadline(p: { pending: number; urgent: number }) {
   if (p.pending === 0) return "No hay sugerencias pendientes";
-  if (p.urgent > 0) return `${plural(p.pending, "sugerencia espera", "sugerencias esperan")} tu decisión, ${p.urgent} ${p.urgent === 1 ? "urgente" : "urgentes"}`;
+  if (p.urgent > 0)
+    return `${plural(p.pending, "sugerencia espera", "sugerencias esperan")} tu decisión, ${p.urgent} ${p.urgent === 1 ? "urgente" : "urgentes"}`;
   return `${plural(p.pending, "sugerencia espera", "sugerencias esperan")} tu decisión`;
 }
 
