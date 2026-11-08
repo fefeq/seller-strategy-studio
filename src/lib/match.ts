@@ -1,5 +1,6 @@
 // «Buscar o crear» (pure; tested): find what already exists before creating an account, person, partner or product.
 import { cleanDomain } from "@/lib/leads";
+import { foldText } from "@/lib/text-search";
 
 const LEGAL = /\b(s\.?\s?l\.?u?|s\.?\s?a\.?u?|s\.?\s?l\.?l|s\.?\s?coop|inc|llc|ltd|limited|gmbh|ag|bv|nv|plc|corp|corporation|co|company|sas|sarl|srl|spa|oy|ab|as|pty|group|grupo|holding)\b\.?/g;
 
@@ -64,10 +65,9 @@ export const duplicateOf = <C extends Candidate>(query: { name?: string | null; 
 
 /** Combobox filter: records whose name, domain or subtitle contains the text (accent/case-insensitive), similar ones after. */
 export function searchList<C extends Candidate>(text: string, list: C[], limit = 20): C[] {
-  const t = text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const t = foldText(text).trim();
   if (!t) return list.slice(0, limit);
-  const plain = (s: string | null | undefined) => (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const contains = list.filter((c) => plain(c.name).includes(t) || plain(c.domain).includes(t) || plain(c.sub).includes(t));
+  const contains = list.filter((c) => foldText(c.name).includes(t) || foldText(c.domain).includes(t) || foldText(c.sub).includes(t));
   const seen = new Set(contains.map((c) => c.id));
   const similar = findMatches({ name: text, domain: text }, list, limit).map((m) => m.item).filter((c) => !seen.has(c.id));
   return [...contains, ...similar].slice(0, limit);
