@@ -1,7 +1,7 @@
 # SDD-20261031-ux-palette-graphite · [Mejora] Nueva paleta «Grafito e índigo»
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (decisión de diseño de Fede, sin dato de uso detrás)
-**Estado:** Borrador (valores de §6 aprobados por Fede el 2026-10-31; decisiones de §15 cerradas el 2026-10-31; falta el gate técnico) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Estado:** Hecho (entregado en el PR #91, merge d149d10; gate mecánico PASS sobre 4c6b339; migración 0074 aplicada, verificada en la base el 2026-11-08; sin prueba manual con sesión, cerrado por decisión de Fede del 2026-11-08; antes: Borrador (valores de §6 aprobados por Fede el 2026-10-31; decisiones de §15 cerradas el 2026-10-31; falta el gate técnico)) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** — (va **antes** que `SDD-20261031-ux-legibility-contrast`, ver §14) · **Ticket:** por asignar
 **Base de trabajo:** `origin/main` (decidido por Fede el 2026-10-31). Este SDD se leyó sobre `feat/software-factory`: **[Por verificar]** que `src/styles.css` y los archivos citados coincidan en `origin/main`.
 

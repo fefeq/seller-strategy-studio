@@ -1,7 +1,7 @@
 # SDD-20261031-ux-legibility-contrast · [Mejora] Legibilidad, contraste y piezas compartidas
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Estado:** Hecho (entregado en el PR #91, merge d149d10; gate mecánico PASS sobre 4c6b339; migración 0074 aplicada, verificada en la base el 2026-11-08; sin prueba manual con sesión, cerrado por decisión de Fede del 2026-11-08; antes: Borrador) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** — (el SDD `ux-move-without-drag` se integra después de este, ver §14) · **Ticket:** por asignar
 **Base de trabajo:** `origin/main` (decidido por Fede el 2026-10-31). Este SDD se leyó sobre `feat/software-factory`, que puede estar desfasada: **[Por verificar]** que los recuentos (83 usos de texto pequeño, 25 selectores, copias de `Kpi`/`Panel`) coincidan en `origin/main`.
 
