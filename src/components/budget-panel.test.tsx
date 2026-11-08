@@ -102,6 +102,31 @@ describe("Presupuesto por segmento marks", () => {
     expectDataMarks(container);
   });
 
+  it("CA-7 margin 0 % on plan and actual: no Infinity, no deviation, both read «Sin dato» (gate pass 3, note 2)", async () => {
+    const { container } = await show({
+      segments: [
+        segRow({ id: "z", name: "Cero", acv_min: 0, gross_margin_pct: 0, payback_months: 12 }),
+      ],
+      deals: [
+        dealRow({
+          segment_id: "z",
+          amount: 12000,
+          stage: "won",
+          closed_at: "2026-05-10T10:00:00Z",
+        }),
+      ],
+      segment_budget_quarters: [
+        bq({ segment_id: "z", period: "2026-Q2", plan_acquisition: 3000, plan_new_customers: 1 }),
+      ],
+      cac_costs: [{ segment_id: "z", channel: "Eventos", amount: 6000, period: "2026-Q2" }],
+    });
+    const c = cell("Cero", PAYBACK);
+    expect(marksOf(c).filter((t) => t === "Sin dato · margen 0 % o negativo")).toHaveLength(2);
+    expect(c.textContent).not.toMatch(/Infinity|-\d[\d.,]* m|[+-]?\d+%|= presupuesto/);
+    expect(c.querySelector(".text-success, .text-signal")).toBeNull();
+    expect(container.textContent).not.toContain("Infinity");
+  });
+
   it("CA-8 acquisition spend split equally when nobody won in the year", async () => {
     const { container } = await show({
       segments: [

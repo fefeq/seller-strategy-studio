@@ -75,6 +75,9 @@ describe("coverage row labels (CA-5 to CA-8)", () => {
     expect(segmentAcv(seg({ id: "a", acv_min: 1000, acv_max: 3000 }), [])).toEqual({ acv: 2000, source: "rango", rangeBasis: "punto_medio" });
     expect(segmentAcv(seg({ id: "a", acv_min: 1000 }), [])).toEqual({ acv: 1500, source: "rango", rangeBasis: "minimo_x1_5" });
     expect(segmentAcv(seg({ id: "a" }), [])).toEqual({ acv: 0, source: "rango", rangeBasis: "sin_rango" });
+    // decided by the fields, not by the resulting ACV (gate pass 3, note 5)
+    expect(segmentAcv(seg({ id: "a", acv_min: 0 }), [])).toEqual({ acv: 0, source: "rango", rangeBasis: "minimo_x1_5" });
+    expect(segmentAcv(seg({ id: "a", acv_max: 4000 }), [])).toEqual({ acv: 2000, source: "rango", rangeBasis: "punto_medio" });
     expect(segmentAcv(seg({ id: "a" }), [dl({ amount: 500, stage: "won" })]).rangeBasis).toBeNull();
     expect(segmentAcv(seg({ id: "a" }), [dl({ amount: 500 })]).rangeBasis).toBeNull();
   });

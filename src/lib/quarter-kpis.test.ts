@@ -77,6 +77,12 @@ describe("quarterKpis paybackBasis (CA-7)", () => {
     expect(k.paybackBasis.plan).toBe("estimado");
     expect(k.paybackBasis.actual).toBeNull();
   });
+  it("estimado when a weighted segment takes its ACV from open deals (gate pass 3, note 1)", () => {
+    const s = seg({ id: "a", acv_min: 0, gross_margin_pct: 50 });
+    const open: DealLike = { segment_id: "a", amount: 12000, stage: "demo", close_date: "2026-06-30", closed_at: null, updated_at: "2026-05-01", created_at: "2026-04-01" };
+    const [k] = quarterKpis([s], [open], [plan("a")], [], ["2026-Q2"]);
+    expect(k.paybackBasis.plan).toBe("estimado");
+  });
   it("sin_dato when a weighted segment has margin 0 % or negative, even if the weighted value looks fine", () => {
     const good = seg({ id: "a", acv_min: 0, acv_max: 50000, gross_margin_pct: 50 });
     const bad = seg({ id: "b", acv_min: 50001, gross_margin_pct: -5 });

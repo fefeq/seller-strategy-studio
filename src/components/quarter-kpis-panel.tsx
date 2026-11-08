@@ -27,7 +27,7 @@ type Line = {
 /** sin_dato: a weighted segment has margin ≤ 0, so the figure (Infinity or negative) is never shown. */
 function basisMark(b: PaybackBasis) {
   if (b === "sin_dato") return <DataMark state="sin_dato" reason="un segmento tiene margen 0 % o negativo" />;
-  if (b === "estimado") return <DataMark state="estimado" reason="supuestos en algún segmento (ver Cobertura)" />;
+  if (b === "estimado") return <DataMark state="estimado" reason="supuestos en algún segmento" />;
   return null;
 }
 

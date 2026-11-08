@@ -18,13 +18,26 @@ vi.mock("@/hooks/use-me", async () => (await import("@/test/metrics-mocks")).fak
 
 import { QuarterKpisPanel } from "@/components/quarter-kpis-panel";
 
-const show = async (margin: number | null) => {
+const show = async (margin: number | null, withPlan = false) => {
   db.tables = {
     segments: [segRow({ id: "a", name: "Pyme", acv_min: 0, gross_margin_pct: margin })],
     deals: [
       dealRow({ segment_id: "a", amount: 12000, stage: "won", closed_at: "2026-11-10T10:00:00Z" }),
     ],
-    segment_budget_quarters: [],
+    segment_budget_quarters: withPlan
+      ? [
+          {
+            segment_id: "a",
+            period: "2026-Q4",
+            plan_revenue: null,
+            plan_cost_to_serve: null,
+            plan_acquisition: 3000,
+            plan_new_customers: 1,
+            actual_revenue: null,
+            actual_cost_to_serve: null,
+          },
+        ]
+      : [],
     cac_costs: [{ segment_id: "a", channel: "Eventos", amount: 6000, period: "2026-Q4" }],
   };
   const r = render(
@@ -46,7 +59,7 @@ const marksOf = (el: HTMLElement) =>
 describe("KPIs trimestrales payback marks (CA-7)", () => {
   it("estimado: the figure with «Estimado · supuestos en algún segmento (ver Cobertura)»", async () => {
     const { container } = await show(null);
-    const est = "Estimado · supuestos en algún segmento (ver Cobertura)";
+    const est = "Estimado · supuestos en algún segmento";
     expect(headline().textContent).toContain("6 m");
     expect(marksOf(headline())).toEqual([est]);
     expect(paybackCell().textContent).toContain("6 m");
@@ -69,6 +82,16 @@ describe("KPIs trimestrales payback marks (CA-7)", () => {
     const { container } = await show(0);
     expect(container.textContent).not.toContain("Infinity");
     expect(marksOf(headline())).toEqual(["Sin dato · un segmento tiene margen 0 % o negativo"]);
+  });
+
+  it("margin 0 % with a plan: no Infinity, no deviation, the plan payback reads «—» (gate pass 3, note 2)", async () => {
+    const { container } = await show(0, true);
+    const c = paybackCell();
+    expect(c.textContent).not.toMatch(/Infinity|-\d[\d.,]* m/);
+    expect(c.textContent).toContain("plan —");
+    expect(c.querySelector(".text-success, .text-signal")).toBeNull();
+    expect(container.textContent).not.toContain("Infinity");
+    expect(container.textContent).not.toContain("(ver Cobertura)");
   });
 
   it("dato: no mark on the payback", async () => {

@@ -162,8 +162,8 @@ function periodBudget(
       // Labels only (SDD-20261106-metrics-honest-data §13): top level, never inside plan / actual / payback.
       acvSource,
       acvRangeBasis: rangeBasis,
-      wonInQuarter: won.length,
-      inferredWon: won.filter((d) => assignedByAmount(d, segments)).length,
+      wonInPeriod: won.length,
+      inferredWonInPeriod: won.filter((d) => assignedByAmount(d, segments)).length,
       paybackMarginBasis: { plan: paybackMarginBasis(planCalc), actual: realCalc ? paybackMarginBasis(realCalc) : null },
       sharedSplit,
     };

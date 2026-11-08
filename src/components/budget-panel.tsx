@@ -87,7 +87,7 @@ export function BudgetPanel({ year }: { year: number }) {
                 <Cmp real={r.actual.revenue != null ? money(r.actual.revenue) : "—"} plan={r.plan.revenue != null ? money(r.plan.revenue) : "—"} dev={<Deviation real={r.actual.revenue} plan={r.plan.revenue} />} />
                 <Cmp real={pct(r.actual.margin)} plan={pct(r.plan.margin)} dev={<Deviation real={r.actual.margin} plan={r.plan.margin} points />} />
                 <Cmp real={r.actual.acquisition ? money(r.actual.acquisition) : "—"} plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "—"} dev={<Deviation real={r.actual.acquisition || null} plan={r.plan.acquisition} lowerIsBetter />} marks={r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />} />
-                <Cmp real={r.actual.cac != null ? money(r.actual.cac) : "—"} plan={r.plan.cac != null ? money(r.plan.cac) : "—"} dev={<Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />} marks={r.inferredWon > 0 && <Mark {...inferredMark(r.inferredWon, r.wonInQuarter)} />} />
+                <Cmp real={r.actual.cac != null ? money(r.actual.cac) : "—"} plan={r.plan.cac != null ? money(r.plan.cac) : "—"} dev={<Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />} marks={r.inferredWonInPeriod > 0 && <Mark {...inferredMark(r.inferredWonInPeriod, r.wonInPeriod)} />} />
                 <Cmp
                   real={noReal ? <DataMark {...MARGIN_NON_POSITIVE} /> : r.actual.payback != null ? `${fmt1(r.actual.payback)} m` : "—"}
                   plan={<>{noPlan ? <DataMark {...MARGIN_NON_POSITIVE} /> : r.plan.payback != null ? `${fmt1(r.plan.payback)} m` : "—"}{r.payback.target != null ? ` · obj. ${r.payback.target} m` : ""}</>}

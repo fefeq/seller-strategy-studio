@@ -13,7 +13,7 @@ export type KpiSide = {
   cac: number | null;
   payback: number | null;
 };
-/** dato · estimado (a weighted segment assumes the margin or takes its ACV from the range) · sin_dato (one has margin ≤ 0). */
+/** dato · estimado (a weighted segment assumes the margin or takes its ACV from the range or from open deals) · sin_dato (one has margin ≤ 0). */
 export type PaybackBasis = "dato" | "estimado" | "sin_dato" | null;
 export type QuarterKpis = { quarter: string; plan: KpiSide; actual: KpiSide & { wonAmount: number }; paybackBasis: { plan: PaybackBasis; actual: PaybackBasis } };
 
@@ -35,7 +35,7 @@ function paybackBasis(rows: SegmentBudgetRow[], k: "plan" | "actual"): PaybackBa
   const used = rows.filter((r) => r[k].payback != null && r[k].newCustomers);
   if (!used.length) return null;
   if (used.some((r) => r.paybackMarginBasis[k] === "no_positivo")) return "sin_dato";
-  if (used.some((r) => r.paybackMarginBasis[k] === "supuesto_100" || r.acvSource === "rango")) return "estimado";
+  if (used.some((r) => r.paybackMarginBasis[k] === "supuesto_100" || r.acvSource !== "ganados")) return "estimado";
   return "dato";
 }
 

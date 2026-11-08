@@ -382,8 +382,8 @@ const NEW_FIELDS = {
   budgetRow: [
     "acvSource",
     "acvRangeBasis",
-    "wonInQuarter",
-    "inferredWon",
+    "wonInPeriod",
+    "inferredWonInPeriod",
     "paybackMarginBasis",
     "sharedSplit",
   ],

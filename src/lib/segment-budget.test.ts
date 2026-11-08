@@ -123,7 +123,7 @@ describe("budget row labels (CA-5 to CA-8)", () => {
   const dl = (o: Partial<DealLike>): DealLike => ({ segment_id: null, amount: null, stage: "discovery", close_date: null, closed_at: null, updated_at: "2026-05-10", created_at: "2026-03-01", ...o });
   const qb = (o: Partial<QuarterBudgetLike> & { segment_id: string; period: string }): QuarterBudgetLike => ({ plan_revenue: null, plan_cost_to_serve: null, plan_acquisition: null, plan_new_customers: null, actual_revenue: null, actual_cost_to_serve: null, ...o });
 
-  it("CA-5 / CA-6: wonInQuarter, inferredWon, acvSource and acvRangeBasis of the period", () => {
+  it("CA-5 / CA-6: wonInPeriod, inferredWonInPeriod, acvSource and acvRangeBasis of the period", () => {
     const a = seg({ id: "a", acv_min: 0, acv_max: 10000 });
     const deals = [
       dl({ segment_id: "a", amount: 5000, stage: "won", closed_at: "2026-05-10" }),
@@ -132,11 +132,12 @@ describe("budget row labels (CA-5 to CA-8)", () => {
       dl({ amount: 3000, stage: "won", closed_at: "2025-11-10" }),
     ];
     const [y] = segmentBudget([a], deals, [], [], 2026);
-    expect(y).toMatchObject({ wonInQuarter: 3, inferredWon: 2, acvSource: "ganados", acvRangeBasis: null });
-    expect(y.wonInQuarter).toBe(y.actual.newCustomers);
+    expect(y).toMatchObject({ wonInPeriod: 3, inferredWonInPeriod: 2, acvSource: "ganados", acvRangeBasis: null });
+    expect(y.wonInPeriod).toBe(y.actual.newCustomers);
+    expect(y).not.toHaveProperty("wonInQuarter");
     const q = quarterlyBudget([a], deals, [], [], 2026);
-    expect(q.byQuarter["2026-Q3"][0]).toMatchObject({ wonInQuarter: 1, inferredWon: 1 });
-    expect(q.byQuarter["2026-Q1"][0]).toMatchObject({ wonInQuarter: 0, inferredWon: 0 });
+    expect(q.byQuarter["2026-Q3"][0]).toMatchObject({ wonInPeriod: 1, inferredWonInPeriod: 1 });
+    expect(q.byQuarter["2026-Q1"][0]).toMatchObject({ wonInPeriod: 0, inferredWonInPeriod: 0 });
     const [r] = segmentBudget([seg({ id: "r", acv_min: 1000, acv_max: 3000 })], [], [], [], 2026);
     expect(r).toMatchObject({ acvSource: "rango", acvRangeBasis: "punto_medio" });
     const [s] = segmentBudget([seg({ id: "s" })], [], [], [], 2026);

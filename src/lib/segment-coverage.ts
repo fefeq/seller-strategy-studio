@@ -18,7 +18,9 @@ export function segmentAcv(seg: SegLike, deals: DealLike[]) {
   const min = Number(seg.acv_min ?? 0);
   const max = seg.acv_max == null ? null : Number(seg.acv_max);
   const mid = max == null ? min * 1.5 : (min + max) / 2;
-  return { acv: mid, source: "rango" as const, rangeBasis: (!mid ? "sin_rango" : max == null ? "minimo_x1_5" : "punto_medio") as RangeBasis };
+  // Decided by the fields, not by the resulting ACV: acv_min 0 without max is a range (minimum × 1.5).
+  const rangeBasis: RangeBasis = seg.acv_min == null && seg.acv_max == null ? "sin_rango" : max == null ? "minimo_x1_5" : "punto_medio";
+  return { acv: mid, source: "rango" as const, rangeBasis };
 }
 
 export type RangeBasis = "punto_medio" | "minimo_x1_5" | "sin_rango" | null;
