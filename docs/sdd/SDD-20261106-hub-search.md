@@ -373,4 +373,6 @@ Informe de la tercera pasada (sobre v3; su bloqueante se corrige en v4), copiado
 Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
+
+- **2026-11-08 (walkthrough, capa 4):** escribir en la caja disparaba una navegación por tecla y, con ella, un `GET /auth/v1/user` por tecla (`beforeLoad` de `_authenticated/route.tsx`). Arreglo: `?q=` se escribe con debounce de ~300 ms y de inmediato con Escape, «Borrar búsqueda», cambio de sección y desmontaje. El test de CA-6 avanza el reloj antes de leer `navigate` (misma aserción); autorizado por el coordinador con la ejecución delegada por Fede. La comprobación de sesión en cada navegación es previa al sprint y queda fuera.
 —
