@@ -6,6 +6,7 @@ import { quarterOf } from "@/lib/metrics";
 import type { SetupData } from "@/lib/setup-schema";
 import type { FitKeyData, Snapshot } from "@/lib/proactive/types";
 import { disabledPlayIds } from "@/lib/plays/gating";
+import { CATALOG } from "@/lib/plays/catalog";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
@@ -368,8 +369,12 @@ async function loadFitKeyData(db: Db, orgId: string): Promise<FitKeyData> {
   return { accounts: accounts.rows, contacts };
 }
 
-/** Detectors whose suggestion reopens when it is found again after the system closed it as «resolved». */
-const REOPENABLE = new Set(["setup_incomplete"]);
+/**
+ * Detectors whose suggestion reopens when it is found again after the system closed it as «resolved»: the setup steps, and the rules
+ * of the plays. Pausing a play closes its suggestions and resuming it makes the same keys come back; without reopening, the unique
+ * (company, key) would keep them closed for good (review of Plays, 2026-11-08). Dismissed and done-by-the-user ones stay as they are.
+ */
+const REOPENABLE = new Set(["setup_incomplete", ...CATALOG.flatMap((p) => p.detectors)]);
 
 /**
  * Saves what the detectors found and closes what no longer applies. A pending suggestion the user worked
