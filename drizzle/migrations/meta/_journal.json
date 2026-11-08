@@ -554,6 +554,13 @@
       "when": 1794052800000,
       "tag": "0079_money_notices_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1794139200000,
+      "tag": "0080_unversioned_schema_capture",
+      "breakpoints": true
     }
   ]
 }
