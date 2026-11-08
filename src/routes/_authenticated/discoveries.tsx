@@ -188,7 +188,7 @@ function Item({ d }: { d: D }) {
           {facts.filter(Boolean).join(" · ")}
         </p>
         <p className="mt-1 text-sm">{d.reason}</p>
-        <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+        <p className="mt-1 font-mono text-xs text-muted-foreground">
           {d.source ? `${d.source.replace(/^Fuentes:\s*/i, "Fuente: ")} · ` : ""}
           {fmt(d.created_at)}
           {d.status !== "pending" && (

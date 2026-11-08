@@ -263,7 +263,7 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
             <p className="mt-1 text-sm text-muted-foreground">{rec.rationale}</p>
           </div>
         </div>
-        <div className="flex flex-wrap gap-1.5 font-mono text-[10px] uppercase">
+        <div className="flex flex-wrap gap-1.5 font-mono text-xs uppercase">
           <span className={`rounded px-1.5 py-0.5 ${TONE[rec.impact]}`}>
             Impacto {LEVELS[rec.impact]}
           </span>

@@ -1,3 +1,5 @@
+import { Kpi } from "@/components/page";
+import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,7 +11,13 @@ import { Input } from "@/components/ui/input";
 import { ScreenState } from "@/components/page";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { parseCsv, normEmail } from "@/lib/dedupe";
-import { cohort, funnelBySegment, funnelStats, parseDateCell, type FunnelStats } from "@/lib/self-service";
+import {
+  cohort,
+  funnelBySegment,
+  funnelStats,
+  parseDateCell,
+  type FunnelStats,
+} from "@/lib/self-service";
 import { quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
 import { DateField as SpanishDate } from "@/components/date-field";
@@ -43,15 +51,20 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
     return { total: funnelStats(c), bySeg: funnelBySegment(c) };
   }, [data, quarter]);
 
-  const segName = (id: string | null) => (id ? data?.segments.find((s) => s.id === id)?.name ?? "Segmento eliminado" : "Sin segmento");
+  const segName = (id: string | null) =>
+    id ? (data?.segments.find((s) => s.id === id)?.name ?? "Segmento eliminado") : "Sin segmento";
   const rows = view?.bySeg ?? [];
   const best = (k: keyof FunnelStats, low = false) => {
     const vals = rows.filter((r) => r.signups > 0 && r[k] != null).map((r) => r[k] as number);
     if (rows.length < 2 || !vals.length) return null;
     return low ? Math.min(...vals) : Math.max(...vals);
   };
-  const bestAct = best("activationRate"), bestPaid = best("trialToPaid"), bestA2P = best("activatedToPaid"), bestTtp = best("medianDaysToPurchase", true);
-  const mark = (v: number | null, b: number | null) => (b != null && v === b ? "font-medium text-primary" : "");
+  const bestAct = best("activationRate"),
+    bestPaid = best("trialToPaid"),
+    bestA2P = best("activatedToPaid"),
+    bestTtp = best("medianDaysToPurchase", true);
+  const mark = (v: number | null, b: number | null) =>
+    b != null && v === b ? "font-medium text-primary" : "";
 
   const t = view?.total;
   return (
@@ -60,7 +73,21 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         <div>
           <p className="eyebrow">Self-service · PLG</p>
           <h2 className="text-3xl">Funnel self-service {quarter}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Cohorte de registros del trimestre: cuántos se activan, cuántos pasan a pago y cuánto tardan. {(data?.trials ?? []).some((t) => t.source === "PostHog") ? "Las altas llegan solas desde tu PostHog." : <>Para llenarlo solo, <Link to="/integrations" className="underline">conecta tu PostHog en Conexiones</Link>.</>}</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Cohorte de registros del trimestre: cuántos se activan, cuántos pasan a pago y cuánto
+            tardan.{" "}
+            {(data?.trials ?? []).some((t) => t.source === "PostHog") ? (
+              "Las altas llegan solas desde tu PostHog."
+            ) : (
+              <>
+                Para llenarlo solo,{" "}
+                <Link to="/integrations" className="underline">
+                  conecta tu PostHog en Conexiones
+                </Link>
+                .
+              </>
+            )}
+          </p>
         </div>
         <ManageTrials trials={data?.trials ?? []} segments={data?.segments ?? []} />
       </div>
@@ -69,21 +96,48 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
       {t && (
         <>
           <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi label="Activación" v={t.signups ? pct(t.activationRate) : "—"} hint={`${t.activated} de ${t.signups} registros`} />
-            <Kpi label="Prueba → pago" v={t.signups ? pct(t.trialToPaid) : "—"} hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`} />
-            <Kpi label="Tiempo hasta la compra" v={dd(t.medianDaysToPurchase)} hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`} />
-            <Kpi label="MRR nuevo self-service" v={money(t.newMrr)} hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"} />
+            <Kpi
+              size="normal"
+              label="Activación"
+              value={t.signups ? pct(t.activationRate) : "—"}
+              hint={`${t.activated} de ${t.signups} registros`}
+            />
+            <Kpi
+              size="normal"
+              label="Prueba → pago"
+              value={t.signups ? pct(t.trialToPaid) : "—"}
+              hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`}
+            />
+            <Kpi
+              size="normal"
+              label="Tiempo hasta la compra"
+              value={dd(t.medianDaysToPurchase)}
+              hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`}
+            />
+            <Kpi
+              size="normal"
+              label="MRR nuevo self-service"
+              value={money(t.newMrr)}
+              hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"}
+            />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
             <div className="rounded-lg border bg-card p-5">
               <h3 className="mb-4 text-2xl">Embudo</h3>
               {t.signups === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin registros en {quarter}. Añádelos o importa un CSV desde «Gestionar registros».</p>
+                <p className="text-sm text-muted-foreground">
+                  Sin registros en {quarter}. Añádelos o importa un CSV desde «Gestionar registros».
+                </p>
               ) : (
                 <div className="space-y-3">
                   <Step label="Registros / pruebas" n={t.signups} ratio={1} />
-                  <Step label="Activados" n={t.activated} ratio={t.activationRate} note={pct(t.activationRate)} />
+                  <Step
+                    label="Activados"
+                    n={t.activated}
+                    ratio={t.activationRate}
+                    note={pct(t.activationRate)}
+                  />
                   <Step label="Pago" n={t.paid} ratio={t.trialToPaid} note={pct(t.trialToPaid)} />
                 </div>
               )}
@@ -111,17 +165,32 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
                       <tr key={r.segment_id ?? "none"} className="border-b last:border-0">
                         <td className="py-2 pr-3 font-sans text-sm">{segName(r.segment_id)}</td>
                         <td className="py-2 pr-3 text-right">{r.signups}</td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.activationRate, bestAct)}`}>{pct(r.activationRate)}</td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.trialToPaid, bestPaid)}`}>{pct(r.trialToPaid)}</td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.activatedToPaid, bestA2P)}`}>{r.activated ? pct(r.activatedToPaid) : "—"}</td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.medianDaysToPurchase, bestTtp)}`}>{dd(r.medianDaysToPurchase)}</td>
+                        <td className={`py-2 pr-3 text-right ${mark(r.activationRate, bestAct)}`}>
+                          {pct(r.activationRate)}
+                        </td>
+                        <td className={`py-2 pr-3 text-right ${mark(r.trialToPaid, bestPaid)}`}>
+                          {pct(r.trialToPaid)}
+                        </td>
+                        <td className={`py-2 pr-3 text-right ${mark(r.activatedToPaid, bestA2P)}`}>
+                          {r.activated ? pct(r.activatedToPaid) : "—"}
+                        </td>
+                        <td
+                          className={`py-2 pr-3 text-right ${mark(r.medianDaysToPurchase, bestTtp)}`}
+                        >
+                          {dd(r.medianDaysToPurchase)}
+                        </td>
                         <td className="py-2 text-right">{money(r.newMrr)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               )}
-              {rows.length > 1 && <p className="mt-3 text-xs text-muted-foreground">En color, el mejor segmento de cada columna. Días a compra = mediana desde el registro hasta el pago.</p>}
+              {rows.length > 1 && (
+                <p className="mt-3 text-xs text-muted-foreground">
+                  En color, el mejor segmento de cada columna. Días a compra = mediana desde el
+                  registro hasta el pago.
+                </p>
+              )}
             </div>
           </div>
         </>
@@ -131,20 +200,47 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
   );
 }
 
-function Step({ label, n, ratio, note }: { label: string; n: number; ratio: number; note?: string }) {
+function Step({
+  label,
+  n,
+  ratio,
+  note,
+}: {
+  label: string;
+  n: number;
+  ratio: number;
+  note?: string;
+}) {
   return (
     <div>
-      <div className="flex justify-between gap-3 text-sm"><span className="min-w-0">{label}</span><span className="shrink-0 font-mono text-xs text-muted-foreground">{n}{note ? ` · ${note}` : ""}</span></div>
-      <div className="mt-1 h-7 rounded bg-muted"><div className="h-full rounded bg-primary transition-all" style={{ width: `${Math.max(n ? 2 : 0, Math.round(ratio * 100))}%` }} /></div>
+      <div className="flex justify-between gap-3 text-sm">
+        <span className="min-w-0">{label}</span>
+        <span className="shrink-0 font-mono text-xs text-muted-foreground">
+          {n}
+          {note ? ` · ${note}` : ""}
+        </span>
+      </div>
+      <div className="mt-1 h-7 rounded bg-muted">
+        <div
+          className="h-full rounded bg-primary transition-all"
+          style={{ width: `${Math.max(n ? 2 : 0, Math.round(ratio * 100))}%` }}
+        />
+      </div>
     </div>
   );
 }
 
-function Kpi({ label, v, hint }: { label: string; v: string; hint: string }) {
-  return <div className="min-w-0 rounded-lg border bg-card p-5"><p className="eyebrow">{label}</p><p className="mt-2 break-words font-display text-2xl md:text-3xl">{v}</p><p className="mt-1 text-xs text-muted-foreground">{hint}</p></div>;
-}
-
-type TrialRow = { id: string; email: string; company: string; segment_id: string | null; source: string; signed_up_at: string; activated_at: string | null; converted_at: string | null; mrr: number | null };
+type TrialRow = {
+  id: string;
+  email: string;
+  company: string;
+  segment_id: string | null;
+  source: string;
+  signed_up_at: string;
+  activated_at: string | null;
+  converted_at: string | null;
+  mrr: number | null;
+};
 type Seg = { id: string; name: string };
 
 function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[] }) {
@@ -152,14 +248,27 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
   const { data: me } = useMe();
   const isOwner = me?.roles.includes("owner");
   const [q, setQ] = useState("");
-  const [form, setForm] = useState({ email: "", company: "", segment_id: "", signed_up_at: new Date().toISOString().slice(0, 10) });
+  const [form, setForm] = useState({
+    email: "",
+    company: "",
+    segment_id: "",
+    signed_up_at: new Date().toISOString().slice(0, 10),
+  });
   const refresh = () => qc.invalidateQueries({ queryKey: ["trials"] });
 
   async function add() {
     const signed = parseDateCell(form.signed_up_at);
     if (!signed) return toast.error("Fecha de alta no válida.");
-    const { error } = await supabase.from("trials").insert({ email: normEmail(form.email) ?? "", company: form.company.trim(), segment_id: form.segment_id || null, signed_up_at: signed });
-    if (error) return toast.error(error.code === "23505" ? "Ya existe un registro con ese email" : errorText(error));
+    const { error } = await supabase.from("trials").insert({
+      email: normEmail(form.email) ?? "",
+      company: form.company.trim(),
+      segment_id: form.segment_id || null,
+      signed_up_at: signed,
+    });
+    if (error)
+      return toast.error(
+        error.code === "23505" ? "Ya existe un registro con ese email" : errorText(error),
+      );
     setForm((f) => ({ ...f, email: "", company: "" }));
     toast.success("Registro añadido.");
     refresh();
@@ -167,7 +276,10 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
 
   async function patch(id: string, values: Partial<TrialRow>) {
     const { error } = await supabase.from("trials").update(values).eq("id", id);
-    if (error) return toast.error(error.code === "23514" ? "La fecha no puede ser anterior al alta" : errorText(error));
+    if (error)
+      return toast.error(
+        error.code === "23514" ? "La fecha no puede ser anterior al alta" : errorText(error),
+      );
     refresh();
   }
 
@@ -179,8 +291,12 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
 
   async function onFile(file: File) {
     const segByName = new Map(segments.map((s) => [s.name.trim().toLowerCase(), s.id]));
-    const byEmail = new Map(trials.filter((t) => t.email).map((t) => [t.email.toLowerCase(), t.id]));
-    let inserted = 0, updated = 0, skipped = 0;
+    const byEmail = new Map(
+      trials.filter((t) => t.email).map((t) => [t.email.toLowerCase(), t.id]),
+    );
+    let inserted = 0,
+      updated = 0,
+      skipped = 0;
     for (const r of parseCsv(await file.text())) {
       const email = normEmail(r.email || r.correo) ?? "";
       const signed = parseDateCell(r.alta || r.signup || r.signed_up_at || r.registro);
@@ -188,7 +304,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
       const row = {
         email,
         company: (r.empresa || r.company || "").trim(),
-        segment_id: segRaw ? segByName.get(segRaw) ?? null : null,
+        segment_id: segRaw ? (segByName.get(segRaw) ?? null) : null,
         source: (r.fuente || r.source || "").trim(),
         plan: (r.plan || "").trim(),
         activated_at: parseDateCell(r.activacion || r["activación"] || r.activated_at),
@@ -197,12 +313,20 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
       };
       const existing = email ? byEmail.get(email) : undefined;
       if (existing) {
-        const { error } = await supabase.from("trials").update({ ...row, ...(signed ? { signed_up_at: signed } : {}) }).eq("id", existing);
-        error ? skipped++ : updated++;
+        const { error } = await supabase
+          .from("trials")
+          .update({ ...row, ...(signed ? { signed_up_at: signed } : {}) })
+          .eq("id", existing);
+        if (error) skipped++;
+        else updated++;
       } else {
-        if (!signed) { skipped++; continue; }
+        if (!signed) {
+          skipped++;
+          continue;
+        }
         const { error } = await supabase.from("trials").insert({ ...row, signed_up_at: signed });
-        error ? skipped++ : inserted++;
+        if (error) skipped++;
+        else inserted++;
         if (!error && email) byEmail.set(email, "pending");
       }
     }
@@ -210,56 +334,144 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
     refresh();
   }
 
-  const list = trials.filter((t) => !q || `${t.email} ${t.company}`.toLowerCase().includes(q.toLowerCase())).slice(0, 100);
+  const list = trials
+    .filter((t) => !q || `${t.email} ${t.company}`.toLowerCase().includes(q.toLowerCase()))
+    .slice(0, 100);
 
   return (
     <Sheet>
-      <SheetTrigger asChild><Button variant="outline">Gestionar registros</Button></SheetTrigger>
+      <SheetTrigger asChild>
+        <Button variant="outline">Gestionar registros</Button>
+      </SheetTrigger>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-3xl">
-        <SheetHeader><SheetTitle>Registros self-service</SheetTitle></SheetHeader>
+        <SheetHeader>
+          <SheetTitle>Registros self-service</SheetTitle>
+        </SheetHeader>
         <div className="mt-4 space-y-6">
           <div className="space-y-2 rounded-lg border p-4">
             <p className="eyebrow">Añadir registro</p>
             <div className="grid gap-2 sm:grid-cols-4">
-              <Input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <Input placeholder="Empresa" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} />
-              <select className="h-10 rounded-md border bg-card px-2 text-sm md:h-9" value={form.segment_id} onChange={(e) => setForm({ ...form, segment_id: e.target.value })}>
+              <Input
+                placeholder="Email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+              />
+              <Input
+                placeholder="Empresa"
+                value={form.company}
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+              />
+              <NativeSelect
+                aria-label="Segmento del registro"
+                value={form.segment_id}
+                onChange={(e) => setForm({ ...form, segment_id: e.target.value })}
+              >
                 <option value="">Sin segmento</option>
-                {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-              </select>
-              <SpanishDate aria-label="Fecha de alta" value={form.signed_up_at || null} onChange={(iso) => setForm({ ...form, signed_up_at: iso ?? "" })} />
+                {segments.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </NativeSelect>
+              <SpanishDate
+                aria-label="Fecha de alta"
+                value={form.signed_up_at || null}
+                onChange={(iso) => setForm({ ...form, signed_up_at: iso ?? "" })}
+              />
             </div>
-            <Button size="sm" onClick={add}>Añadir</Button>
+            <Button size="sm" onClick={add}>
+              Añadir
+            </Button>
           </div>
 
           <div className="space-y-2 rounded-lg border p-4">
             <p className="eyebrow">Importar CSV</p>
-            <p className="text-xs text-muted-foreground">Columnas: email, empresa, segmento (nombre exacto), fuente, plan, alta, activacion, pago, mrr. Fechas AAAA-MM-DD o DD/MM/AAAA. Si el email ya existe, se actualiza.</p>
-            <Input type="file" accept=".csv" onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); e.target.value = ""; }} />
+            <p className="text-xs text-muted-foreground">
+              Columnas: email, empresa, segmento (nombre exacto), fuente, plan, alta, activacion,
+              pago, mrr. Fechas AAAA-MM-DD o DD/MM/AAAA. Si el email ya existe, se actualiza.
+            </p>
+            <Input
+              type="file"
+              accept=".csv"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) onFile(f);
+                e.target.value = "";
+              }}
+            />
           </div>
 
           <div className="space-y-2">
-            <Input placeholder="Buscar por email o empresa" value={q} onChange={(e) => setQ(e.target.value)} />
+            <Input
+              placeholder="Buscar por email o empresa"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
             {list.length === 0 && <p className="text-sm text-muted-foreground">Sin registros.</p>}
             {list.map((t) => (
-              <div key={t.id} className="grid grid-cols-2 items-end gap-2 border-b py-2 text-sm sm:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto] sm:items-center">
+              <div
+                key={t.id}
+                className="grid grid-cols-2 items-end gap-2 border-b py-2 text-sm sm:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto] sm:items-center"
+              >
                 <div className="col-span-2 min-w-0 sm:col-span-1">
                   <p className="truncate">{t.company || t.email || "Sin nombre"}</p>
-                  <select className="mt-1 h-10 w-full rounded border bg-card px-1 text-xs md:h-7" value={t.segment_id ?? ""} onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}>
+                  <NativeSelect
+                    aria-label="Segmento del registro"
+                    density="compact"
+                    className="mt-1 w-full"
+                    value={t.segment_id ?? ""}
+                    onChange={(e) => patch(t.id, { segment_id: e.target.value || null })}
+                  >
                     <option value="">Sin segmento</option>
-                    {segments.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-                  </select>
+                    {segments.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
                 </div>
-                <DateField label="Alta" value={t.signed_up_at} onSave={(v) => v && patch(t.id, { signed_up_at: v })} />
-                <DateField label="Activación" value={t.activated_at} onSave={(v) => patch(t.id, { activated_at: v })} />
-                <DateField label="Pago" value={t.converted_at} onSave={(v) => patch(t.id, { converted_at: v })} />
-                <label className="text-xs text-muted-foreground">MRR
-                  <Input type="number" min={0} className="h-10 md:h-8" defaultValue={t.mrr ?? ""} key={`${t.id}-${t.mrr}`} onBlur={(e) => patch(t.id, { mrr: e.target.value === "" ? null : Number(e.target.value) })} />
+                <DateField
+                  label="Alta"
+                  value={t.signed_up_at}
+                  onSave={(v) => v && patch(t.id, { signed_up_at: v })}
+                />
+                <DateField
+                  label="Activación"
+                  value={t.activated_at}
+                  onSave={(v) => patch(t.id, { activated_at: v })}
+                />
+                <DateField
+                  label="Pago"
+                  value={t.converted_at}
+                  onSave={(v) => patch(t.id, { converted_at: v })}
+                />
+                <label className="text-xs text-muted-foreground">
+                  MRR
+                  <Input
+                    type="number"
+                    min={0}
+                    className="h-10 md:h-8"
+                    defaultValue={t.mrr ?? ""}
+                    key={`${t.id}-${t.mrr}`}
+                    onBlur={(e) =>
+                      patch(t.id, { mrr: e.target.value === "" ? null : Number(e.target.value) })
+                    }
+                  />
                 </label>
-                {isOwner ? <Button variant="ghost" size="sm" onClick={() => remove(t.id)}>Borrar</Button> : <span />}
+                {isOwner ? (
+                  <Button variant="ghost" size="sm" onClick={() => remove(t.id)}>
+                    Borrar
+                  </Button>
+                ) : (
+                  <span />
+                )}
               </div>
             ))}
-            {trials.length > 100 && <p className="text-xs text-muted-foreground">Mostrando 100 de {trials.length}. Usa la búsqueda.</p>}
+            {trials.length > 100 && (
+              <p className="text-xs text-muted-foreground">
+                Mostrando 100 de {trials.length}. Usa la búsqueda.
+              </p>
+            )}
           </div>
         </div>
       </SheetContent>
@@ -267,10 +479,23 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
   );
 }
 
-function DateField({ label, value, onSave }: { label: string; value: string | null; onSave: (iso: string | null) => void }) {
+function DateField({
+  label,
+  value,
+  onSave,
+}: {
+  label: string;
+  value: string | null;
+  onSave: (iso: string | null) => void;
+}) {
   return (
-    <label className="text-xs text-muted-foreground">{label}
-      <SpanishDate className="h-10 md:h-8" value={toDateInput(value) || null} onChange={(iso) => onSave(iso ? parseDateCell(iso) : null)} />
+    <label className="text-xs text-muted-foreground">
+      {label}
+      <SpanishDate
+        className="h-10 md:h-8"
+        value={toDateInput(value) || null}
+        onChange={(iso) => onSave(iso ? parseDateCell(iso) : null)}
+      />
     </label>
   );
 }

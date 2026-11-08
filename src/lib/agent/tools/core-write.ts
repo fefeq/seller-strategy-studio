@@ -23,6 +23,13 @@ import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/l
 import { CORE_READ_TOOLS } from "./core-read";
 import { LEAD_STAGE_IDS } from "../tool-kit";
 import type { AgentTool } from "../tool-kit";
+import {
+  WON_COPY,
+  blockedByPendingWon,
+  pendingStageChanges,
+  requestWonApproval,
+  type ApprovalRow,
+} from "@/lib/won-approval";
 
 export const CORE_WRITE_TOOLS: AgentTool[] = [
   def({
@@ -266,21 +273,39 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
       }
       if (!Object.keys(patch).length && !wonKey)
         throw new Error("No has indicado qué cambiar del deal.");
-      // The approval goes first: if it cannot be created, nothing of the deal has changed either.
+      // Same rules as the Pipeline screen (SDD-20261031-deal-won-duplicate-approvals): one pending request per deal, and
+      // no other stage change while it is pending. The approval goes first: if it cannot be created, nothing of the deal changes.
+      const pendingRows = ok(
+        await c.db
+          .from("approvals")
+          .select("id,kind,status,evidence")
+          .eq("org_id", c.orgId)
+          .eq("kind", "stage_change")
+          .eq("status", "pending"),
+      );
+      const pendingForDeal = pendingStageChanges((pendingRows ?? []) as ApprovalRow[], deal_id);
+      if (
+        (wonKey || patch.stage !== undefined) &&
+        blockedByPendingWon(pendingForDeal.length, wonKey ? "won" : String(patch.stage))
+      )
+        throw new Error(WON_COPY.blockedByPending);
       if (wonKey) {
-        ok(
-          await c.db
-            .from("approvals")
-            .insert({
-              org_id: c.orgId,
-              kind: "stage_change",
-              title: `Marcar como Ganado: ${cur.name}`,
-              evidence: JSON.stringify({ deal_id, stage: wonKey }),
-            })
-            .select("id")
-            .single(),
+        const r = await requestWonApproval(c.db as never, {
+          dealId: deal_id,
+          dealName: String(cur.name),
+          dealStage: String(cur.stage ?? ""),
+          wonKey,
+          pending: pendingForDeal,
+          orgId: c.orgId,
+        });
+        if (r.result === "error") throw new Error(r.error.message);
+        notes.push(
+          r.result === "created"
+            ? "Pasar a Ganado requiere aprobación: lo he enviado a Aprobaciones."
+            : r.result === "already-pending"
+              ? WON_COPY.alreadyPending
+              : WON_COPY.alreadyWon,
         );
-        notes.push("Pasar a Ganado requiere aprobación: lo he enviado a Aprobaciones.");
       }
       const row = Object.keys(patch).length
         ? ok(
@@ -493,18 +518,16 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
       );
       // Same call-log row the meeting screen writes, so the account history and the call prep see it.
       if (log.hasContent)
-        await c.db
-          .from("calls")
-          .upsert({
-            id: m.id,
-            org_id: c.orgId,
-            account_id: m.account_id,
-            deal_id: m.deal_id,
-            title: m.title,
-            occurred_at: m.scheduled_at,
-            summary: log.summary,
-            next_steps: log.next_steps,
-          });
+        await c.db.from("calls").upsert({
+          id: m.id,
+          org_id: c.orgId,
+          account_id: m.account_id,
+          deal_id: m.deal_id,
+          title: m.title,
+          occurred_at: m.scheduled_at,
+          summary: log.summary,
+          next_steps: log.next_steps,
+        });
       return { ok: true, meeting: m.title, lineas: filledCount(call_notes) };
     },
   }),

@@ -3340,6 +3340,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          dedupe_key: string | null
           id: string
           job_id: string | null
           kind: string
@@ -3353,6 +3354,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           job_id?: string | null
           kind: string
@@ -3366,6 +3368,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           job_id?: string | null
           kind?: string
@@ -3798,6 +3801,85 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      play_runs: {
+        Row: {
+          created_at: string
+          drop_reason: string | null
+          gate_key: string | null
+          id: string
+          org_id: string
+          outcome: string
+          play_id: string
+          subject_id: string
+          subject_table: string
+        }
+        Insert: {
+          created_at?: string
+          drop_reason?: string | null
+          gate_key?: string | null
+          id?: string
+          org_id?: string
+          outcome: string
+          play_id: string
+          subject_id: string
+          subject_table: string
+        }
+        Update: {
+          created_at?: string
+          drop_reason?: string | null
+          gate_key?: string | null
+          id?: string
+          org_id?: string
+          outcome?: string
+          play_id?: string
+          subject_id?: string
+          subject_table?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "play_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      play_states: {
+        Row: {
+          enabled: boolean
+          org_id: string
+          play_id: string
+          settings: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          enabled: boolean
+          org_id?: string
+          play_id: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          enabled?: boolean
+          org_id?: string
+          play_id?: string
+          settings?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "play_states_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

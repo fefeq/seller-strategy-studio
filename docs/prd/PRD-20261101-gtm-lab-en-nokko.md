@@ -1,7 +1,7 @@
 # PRD-20261101-gtm-lab-en-nokko · [Iniciativa] NOKKO evoluciona a GTM Lab: el recorrido de estrategia guiado como columna vertebral
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Alta (Fede lo pide como la dirección del producto; hoy NOKKO tiene dos recorridos de estrategia, Ciclo GTM y el contexto del control tower, y ninguno lleva paso a paso hasta un plan y unas tareas)
-**Estado:** Aprobado por Fede el 2026-11-01; enmendado el 2026-11-06 (lector de Reglas, `SDD-20261106-agent-rules-reader` §15.5, aprobado por Fede en el chat) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
+**Estado:** Aprobado por Fede el 2026-11-01; el paso 8 se parte en 8a (Ciclo GTM y Debates fuera del menú en solo lectura, tras el paso 7) y 8b (archivar, tras el SDD 5a), y el SDD 2 de este orden enmienda la Torre 1b sin sustituirla (D-4 y D-1, decisión de Fede del 2026-11-06); enmendado el 2026-11-06 (lector de Reglas, `SDD-20261106-agent-rules-reader` §15.5, aprobado por Fede en el chat) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-01
 **SDD que lo desarrollan:** pendiente (orden en §8)
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.

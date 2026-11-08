@@ -154,5 +154,5 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
 }
 
 function Headline({ label, value, mark }: { label: string; value: string; mark?: ReactNode }) {
-  return <div><p className="font-display text-2xl">{value}</p><p className="text-xs text-muted-foreground">{label}</p>{mark && <p className="text-[11px] text-muted-foreground">{mark}</p>}</div>;
+  return <div><p className="font-display text-2xl">{value}</p><p className="text-xs text-muted-foreground">{label}</p>{mark && <p className="text-xs text-muted-foreground">{mark}</p>}</div>;
 }

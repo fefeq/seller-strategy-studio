@@ -1,3 +1,4 @@
+import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   RevopsCohorts,
@@ -11,7 +12,7 @@ import { guideKey } from "@/lib/guide";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { Page, ScreenState } from "@/components/page";
+import { Page, Panel, ScreenState } from "@/components/page";
 import { Input } from "@/components/ui/input";
 import {
   daysInStage,
@@ -39,13 +40,7 @@ import { StripeMetricsPanel } from "@/components/stripe-panel";
 import { fetchAll } from "@/lib/fetch-all";
 import { pct } from "@/lib/money";
 import { funnelInQuarter, lostInQuarter, quarterWinRates } from "@/lib/metrics-quarter";
-import {
-  Bar,
-  Muted,
-  Panel,
-  ResumenKpis,
-  WinRatePanels,
-} from "@/components/metrics/performance-panels";
+import { Bar, Muted, ResumenKpis, WinRatePanels } from "@/components/metrics/performance-panels";
 
 export const Route = createFileRoute("/_authenticated/metrics")({
   head: () => ({
@@ -191,9 +186,8 @@ function Metrics() {
           : "Métricas"
       }
       actions={
-        <select
+        <NativeSelect
           aria-label="Trimestre"
-          className="h-10 rounded-md border bg-card px-3 text-sm md:h-9"
           value={quarter}
           onChange={(e) => setQuarter(e.target.value)}
         >
@@ -202,7 +196,7 @@ function Metrics() {
               {q}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       }
     >
       <nav
@@ -214,7 +208,7 @@ function Metrics() {
             key={x.id}
             to="/metrics"
             search={x.id === "resumen" ? {} : { seccion: x.id }}
-            className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime text-lime-foreground" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}
+            className={`shrink-0 rounded-full px-3 py-1.5 text-sm transition-colors ${sec === x.id ? "bg-lime-soft text-ink font-medium" : "text-ink-mid hover:bg-paper-sunk hover:text-ink"}`}
           >
             {x.label}
           </Link>

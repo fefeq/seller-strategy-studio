@@ -173,7 +173,7 @@ export function AiFill({
           onChange={(e) => setText(e.target.value)}
         />
         <p
-          className={`mt-1 text-right font-mono text-[11px] ${text.length > TEXT_LIMIT * 0.9 ? "text-destructive" : "text-muted-foreground"}`}
+          className={`mt-1 text-right font-mono text-xs ${text.length > TEXT_LIMIT * 0.9 ? "text-destructive" : "text-muted-foreground"}`}
         >
           {text.length.toLocaleString("es-ES")} / {TEXT_LIMIT.toLocaleString("es-ES")} caracteres
         </p>

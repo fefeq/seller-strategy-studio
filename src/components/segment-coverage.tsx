@@ -13,10 +13,20 @@ import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segme
 import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
 import { DataMark } from "@/components/metrics/data-mark";
-import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, acvMark, inferredMark } from "@/components/metrics/mark-text";
+import {
+  MARGIN_ASSUMED,
+  MARGIN_NON_POSITIVE,
+  acvMark,
+  inferredMark,
+} from "@/components/metrics/mark-text";
 import { ExplanationFold } from "@/components/explanation-fold";
 
-const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", deals: "margen de los deals ganados", plan: "margen presupuestado", objetivo: "margen objetivo" };
+const MARGIN_LABEL: Record<MarginSource, string> = {
+  real: "margen real",
+  deals: "margen de los deals ganados",
+  plan: "margen presupuestado",
+  objetivo: "margen objetivo",
+};
 
 /**
  * Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels.
@@ -31,8 +41,17 @@ export function useSegmentCoverageData(quarter: string) {
     enabled: !!orgId,
     queryFn: async () => {
       const [s, d, t, c, b] = await Promise.all([
-        supabase.from("segments").select("id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months").order("acv_min"),
-        supabase.from("deals").select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin"),
+        supabase
+          .from("segments")
+          .select(
+            "id,name,acv_min,acv_max,win_rate_target,cac_target,gross_margin_pct,payback_months",
+          )
+          .order("acv_min"),
+        supabase
+          .from("deals")
+          .select(
+            "segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin",
+          ),
         supabase.from("segment_targets").select("segment_id,amount").eq("period", quarter),
         supabase.from("cac_costs").select("id,segment_id,channel,amount").eq("period", quarter),
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
@@ -40,8 +59,17 @@ export function useSegmentCoverageData(quarter: string) {
       const failed = s.error ?? d.error ?? t.error ?? c.error ?? b.error;
       if (failed) throw failed;
       return {
-        segments: withPeriodMargin(s.data ?? [], b.data ?? [], quarter, wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment), deals: d.data ?? [], costs: c.data ?? [],
-        targets: Object.fromEntries((t.data ?? []).map((x) => [x.segment_id, Number(x.amount)])) as Record<string, number>,
+        segments: withPeriodMargin(
+          s.data ?? [],
+          b.data ?? [],
+          quarter,
+          wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment,
+        ),
+        deals: d.data ?? [],
+        costs: c.data ?? [],
+        targets: Object.fromEntries(
+          (t.data ?? []).map((x) => [x.segment_id, Number(x.amount)]),
+        ) as Record<string, number>,
       };
     },
   });
@@ -55,11 +83,35 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const qc = useQueryClient();
   const { data, isPending, error, refetch } = useSegmentCoverageData(quarter);
-  const rows = useMemo(() => (data ? segmentCoverage(data.segments, data.deals, data.targets, quarterRange(quarter), data.costs) : []), [data, quarter]);
-  const total = rows.reduce((a, r) => ({ target: a.target + r.target, pipeline: a.pipeline + r.pipeline, won: a.won + r.won.amount }), { target: 0, pipeline: 0, won: 0 });
+  const rows = useMemo(
+    () =>
+      data
+        ? segmentCoverage(
+            data.segments,
+            data.deals,
+            data.targets,
+            quarterRange(quarter),
+            data.costs,
+          )
+        : [],
+    [data, quarter],
+  );
+  const total = rows.reduce(
+    (a, r) => ({
+      target: a.target + r.target,
+      pipeline: a.pipeline + r.pipeline,
+      won: a.won + r.won.amount,
+    }),
+    { target: 0, pipeline: 0, won: 0 },
+  );
 
   async function setTarget(segmentId: string, amount: number) {
-    const { error } = await supabase.from("segment_targets").upsert({ org_id: orgId!, segment_id: segmentId, period: quarter, amount }, { onConflict: "org_id,segment_id,period" });
+    const { error } = await supabase
+      .from("segment_targets")
+      .upsert(
+        { org_id: orgId!, segment_id: segmentId, period: quarter, amount },
+        { onConflict: "org_id,segment_id,period" },
+      );
     if (error) return toast.error(errorText(error));
     qc.invalidateQueries({ queryKey: ["segment-coverage"] });
   }
@@ -69,28 +121,71 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-2xl">Cobertura por segmento · {quarter}</h3>
-          <ExplanationFold kind="calculo" className="mt-1"><p className="text-xs text-muted-foreground">Real frente a objetivo. Cobertura = pipeline abierto que cierra este trimestre / objetivo del segmento (sana entre 3x y 4x). Los deals sin segmento se asignan por su importe.</p></ExplanationFold>
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Real frente a objetivo. Cobertura = pipeline abierto que cierra este trimestre /
+              objetivo del segmento (sana entre 3x y 4x). Los deals sin segmento se asignan por su
+              importe.
+            </p>
+          </ExplanationFold>
         </div>
         {total.target > 0 && (
           <div className="text-right text-sm">
             <p className="font-mono">{(total.pipeline / total.target).toFixed(1)}x total</p>
-            <p className="text-xs text-muted-foreground">{money(total.won)} ganado de {money(total.target)}</p>
+            <p className="text-xs text-muted-foreground">
+              {money(total.won)} ganado de {money(total.target)}
+            </p>
           </div>
         )}
       </div>
       <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
-        {rows.length === 0 && <p className="text-sm text-muted-foreground">No hay segmentos. Créalos en <Link to="/strategy" className="underline">Estrategia GTM</Link>.</p>}
+        {rows.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            No hay segmentos. Créalos en{" "}
+            <Link to="/strategy" className="underline">
+              Estrategia GTM
+            </Link>
+            .
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {rows.map((r) => <SegmentCard key={r.segment.id} r={r} money={money} canEdit={!!canEdit} quarter={quarter} onTarget={(v) => setTarget(r.segment.id, v)} />)}
+          {rows.map((r) => (
+            <SegmentCard
+              key={r.segment.id}
+              r={r}
+              money={money}
+              canEdit={!!canEdit}
+              quarter={quarter}
+              onTarget={(v) => setTarget(r.segment.id, v)}
+            />
+          ))}
         </div>
       </ScreenState>
     </section>
   );
 }
 
-function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCoverageRow; money: (n: number) => string; canEdit: boolean; quarter: string; onTarget: (v: number) => void }) {
+function SegmentCard({
+  r,
+  money,
+  canEdit,
+  quarter,
+  onTarget,
+}: {
+  r: SegmentCoverageRow;
+  money: (n: number) => string;
+  canEdit: boolean;
+  quarter: string;
+  onTarget: (v: number) => void;
+}) {
   const cov = r.coverage;
-  const tone = !cov ? "text-muted-foreground" : cov.status === "low" ? "text-signal" : cov.status === "healthy" ? "text-success" : "text-foreground";
+  const tone = !cov
+    ? "text-muted-foreground"
+    : cov.status === "low"
+      ? "text-signal"
+      : cov.status === "healthy"
+        ? "text-success"
+        : "text-foreground";
   const acv = acvMark(r.acvSource, r.acvRangeBasis);
   // Margin 0 % or below: the payback (Infinity or negative) is replaced by «Sin dato», never green or red.
   const nonPositive = r.paybackMarginBasis === "no_positivo";
@@ -99,55 +194,163 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="break-words font-medium">{r.segment.name}</p>
-          {r.inferredDeals > 0 && <DataMark {...inferredMark(r.inferredDeals, r.assignedDeals, true)} className="block text-[11px] text-muted-foreground" />}
-          <p className="text-[11px] text-muted-foreground">ACV {money(r.acv)}{acv && <> · <DataMark {...acv} /></>}</p>
+          {r.inferredDeals > 0 && (
+            <DataMark
+              {...inferredMark(r.inferredDeals, r.assignedDeals, true)}
+              className="block text-xs text-muted-foreground"
+            />
+          )}
+          <p className="text-xs text-muted-foreground">
+            ACV {money(r.acv)}
+            {acv && (
+              <>
+                {" "}
+                · <DataMark {...acv} />
+              </>
+            )}
+          </p>
         </div>
         <div className="shrink-0 text-right">
-          <p className={`font-display text-3xl ${tone}`}>{cov ? `${cov.ratio.toFixed(1)}x` : "—"}</p>
-          <p className={`text-[11px] ${tone}`}>{!cov ? "Sin objetivo" : cov.status === "low" ? "Baja (<3x)" : cov.status === "healthy" ? "Sana (3–4x)" : "Alta (>4x)"}</p>
+          <p className={`font-display text-3xl ${tone}`}>
+            {cov ? `${cov.ratio.toFixed(1)}x` : "—"}
+          </p>
+          <p className={`text-xs ${tone}`}>
+            {!cov
+              ? "Sin objetivo"
+              : cov.status === "low"
+                ? "Baja (<3x)"
+                : cov.status === "healthy"
+                  ? "Sana (3–4x)"
+                  : "Alta (>4x)"}
+          </p>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between gap-2 text-sm">
         <span className="whitespace-nowrap text-muted-foreground">Objetivo {quarter}</span>
-        {canEdit
-          ? <Input type="number" min={0} className="h-10 w-32 text-right md:h-8" defaultValue={r.target || ""} key={`${r.segment.id}-${quarter}-${r.target}`} placeholder="Importe" onBlur={(e) => e.target.value !== "" && Number(e.target.value) !== r.target && onTarget(Number(e.target.value))} />
-          : <span className="font-mono">{r.target ? money(r.target) : "—"}</span>}
+        {canEdit ? (
+          <Input
+            type="number"
+            min={0}
+            className="h-10 w-32 text-right md:h-8"
+            defaultValue={r.target || ""}
+            key={`${r.segment.id}-${quarter}-${r.target}`}
+            placeholder="Importe"
+            onBlur={(e) =>
+              e.target.value !== "" &&
+              Number(e.target.value) !== r.target &&
+              onTarget(Number(e.target.value))
+            }
+          />
+        ) : (
+          <span className="font-mono">{r.target ? money(r.target) : "—"}</span>
+        )}
       </div>
       <div className="mt-3 space-y-2">
-        <Metric label="Pipeline abierto" real={money(r.pipeline)} target={r.target ? money(r.target * 3) + " (3x)" : null} progress={r.target ? r.pipeline / (r.target * 3) : null} />
-        <Metric label="Deals ganados" real={`${r.won.deals} · ${money(r.won.amount)}`} target={r.won.target != null ? `${r.won.target} deals` : null} progress={r.won.target ? r.won.deals / r.won.target : null} hint={r.won.attainment != null ? `${pct(r.won.attainment)} del objetivo` : undefined} />
-        <Metric label="Oportunidades creadas" real={`${r.opps.created} (${r.opps.open} abiertas)`} target={r.opps.target != null ? `${r.opps.target}` : null} progress={r.opps.target ? r.opps.created / r.opps.target : null} hint={r.opps.target == null && r.target ? "Falta win rate objetivo" : undefined} />
-        <Metric label="Win rate" real={r.winRate.real != null ? pct(r.winRate.real) : "—"} target={r.winRate.target != null ? `${r.winRate.target}%` : null} progress={r.winRate.real != null && r.winRate.target ? r.winRate.real / (r.winRate.target / 100) : null} />
+        <Metric
+          label="Pipeline abierto"
+          real={money(r.pipeline)}
+          target={r.target ? money(r.target * 3) + " (3x)" : null}
+          progress={r.target ? r.pipeline / (r.target * 3) : null}
+        />
+        <Metric
+          label="Deals ganados"
+          real={`${r.won.deals} · ${money(r.won.amount)}`}
+          target={r.won.target != null ? `${r.won.target} deals` : null}
+          progress={r.won.target ? r.won.deals / r.won.target : null}
+          hint={r.won.attainment != null ? `${pct(r.won.attainment)} del objetivo` : undefined}
+        />
+        <Metric
+          label="Oportunidades creadas"
+          real={`${r.opps.created} (${r.opps.open} abiertas)`}
+          target={r.opps.target != null ? `${r.opps.target}` : null}
+          progress={r.opps.target ? r.opps.created / r.opps.target : null}
+          hint={r.opps.target == null && r.target ? "Falta win rate objetivo" : undefined}
+        />
+        <Metric
+          label="Win rate"
+          real={r.winRate.real != null ? pct(r.winRate.real) : "—"}
+          target={r.winRate.target != null ? `${r.winRate.target}%` : null}
+          progress={
+            r.winRate.real != null && r.winRate.target
+              ? r.winRate.real / (r.winRate.target / 100)
+              : null
+          }
+        />
         <div className="flex items-center justify-between gap-2 border-t pt-2 text-sm">
           <span>CAC</span>
           <span className="font-mono text-xs">
             {r.cac.real != null ? money(r.cac.real) : "—"}
-            <span className="text-muted-foreground"> / obj. {r.cac.target != null ? money(r.cac.target) : "—"}</span>
+            <span className="text-muted-foreground">
+              {" "}
+              / obj. {r.cac.target != null ? money(r.cac.target) : "—"}
+            </span>
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 text-sm">
-          <span>Payback {r.payback.source === "real" ? "real" : r.payback.source === "objetivo" ? "estimado" : ""}</span>
+          <span>
+            Payback{" "}
+            {r.payback.source === "real"
+              ? "real"
+              : r.payback.source === "objetivo"
+                ? "estimado"
+                : ""}
+          </span>
           <span className="font-mono text-xs">
-            {nonPositive
-              ? <DataMark {...MARGIN_NON_POSITIVE} />
-              : <span className={r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""}>{r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}</span>}
-            <span className="text-muted-foreground"> / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}</span>
+            {nonPositive ? (
+              <DataMark {...MARGIN_NON_POSITIVE} />
+            ) : (
+              <span
+                className={
+                  r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""
+                }
+              >
+                {r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}
+              </span>
+            )}
+            <span className="text-muted-foreground">
+              {" "}
+              / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}
+            </span>
           </span>
         </div>
-        {r.paybackMarginBasis === "supuesto_100" && <DataMark {...MARGIN_ASSUMED} className="block text-[11px] text-muted-foreground" />}
+        {r.paybackMarginBasis === "supuesto_100" && (
+          <DataMark {...MARGIN_ASSUMED} className="block text-xs text-muted-foreground" />
+        )}
         {(() => {
           const s = r.segment as SegLike & { margin_source?: MarginSource | null };
-          return s.margin_source && s.gross_margin_pct != null
-            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? <> · apunta ingresos y coste de servir en «<Link to="/strategy" search={{ tab: "budget" }} className="underline">Presupuesto por segmento</Link>»</> : ""}</p>
-            : null;
+          return s.margin_source && s.gross_margin_pct != null ? (
+            <p className="text-xs text-muted-foreground">
+              Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%
+              {s.margin_source === "objetivo" ? (
+                <>
+                  {" "}
+                  · apunta ingresos y coste de servir en «
+                  <Link to="/strategy" search={{ tab: "budget" }} className="underline">
+                    Presupuesto por segmento
+                  </Link>
+                  »
+                </>
+              ) : (
+                ""
+              )}
+            </p>
+          ) : null;
         })()}
         {r.payback.source !== "real" && (
-          <p className="text-[11px] text-muted-foreground">
-            {r.cac.cost > 0 && r.cac.customers === 0
-              ? "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
-              : r.payback.source === "objetivo"
-                ? <>Calculado con el CAC objetivo. Introduce los costes en «<CacRealLink />» para verlo real.</>
-                : <>Introduce los costes en «<CacRealLink />» o un CAC objetivo para calcular el payback.</>}
+          <p className="text-xs text-muted-foreground">
+            {r.cac.cost > 0 && r.cac.customers === 0 ? (
+              "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
+            ) : r.payback.source === "objetivo" ? (
+              <>
+                Calculado con el CAC objetivo. Introduce los costes en «<CacRealLink />» para verlo
+                real.
+              </>
+            ) : (
+              <>
+                Introduce los costes en «<CacRealLink />» o un CAC objetivo para calcular el
+                payback.
+              </>
+            )}
           </p>
         )}
       </div>
@@ -155,17 +358,44 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
   );
 }
 
-function Metric({ label, real, target, progress, hint }: { label: string; real: string; target: string | null; progress: number | null; hint?: string }) {
+function Metric({
+  label,
+  real,
+  target,
+  progress,
+  hint,
+}: {
+  label: string;
+  real: string;
+  target: string | null;
+  progress: number | null;
+  hint?: string;
+}) {
   return (
     <div className="text-sm">
-      <div className="flex flex-wrap justify-between gap-x-2"><span className="min-w-0">{label}</span><span className="ml-auto font-mono text-xs">{real}<span className="text-muted-foreground"> / {target ?? "—"}</span></span></div>
-      <div className="mt-1 h-1.5 rounded bg-muted"><div className={`h-full rounded ${progress != null && progress >= 1 ? "bg-success" : "bg-primary"}`} style={{ width: `${progress != null ? Math.min(100, Math.round(progress * 100)) : 0}%` }} /></div>
-      {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
+      <div className="flex flex-wrap justify-between gap-x-2">
+        <span className="min-w-0">{label}</span>
+        <span className="ml-auto font-mono text-xs">
+          {real}
+          <span className="text-muted-foreground"> / {target ?? "—"}</span>
+        </span>
+      </div>
+      <div className="mt-1 h-1.5 rounded bg-muted">
+        <div
+          className={`h-full rounded ${progress != null && progress >= 1 ? "bg-success" : "bg-primary"}`}
+          style={{ width: `${progress != null ? Math.min(100, Math.round(progress * 100)) : 0}%` }}
+        />
+      </div>
+      {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
     </div>
   );
 }
 
 /** «CAC real» lives in Métricas › CAC y presupuesto (SDD-20261106-metrics-honest-data CA-11). */
 function CacRealLink() {
-  return <Link to="/metrics" search={{ seccion: "economia" }} className="underline">CAC real</Link>;
+  return (
+    <Link to="/metrics" search={{ seccion: "economia" }} className="underline">
+      CAC real
+    </Link>
+  );
 }

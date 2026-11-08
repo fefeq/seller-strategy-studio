@@ -1,7 +1,7 @@
 # SDD-20261030-gtm-control-tower-5a-agent-memory · [Feature] Agente único, conversaciones privadas, memoria y autonomía (fase 5a)
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-10-31 (v4, tras tres pasadas del gate; sin cuarta pasada; con los riesgos declarados del §14) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Estado:** Aprobado por Fede el 2026-10-31 (v4, tras tres pasadas del gate; sin cuarta pasada; con los riesgos declarados del §14); absorbe el Asesor GTM como modo del agente (D-10, decisión de Fede del 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** `docs/prd/PRD-20261030-gtm-control-tower.md` · **Depende de:** SDD 1a (retirada de la lectura de LinkedIn: U-0; roles, Consejo y activación por rol: U-1; objetivos y resultados clave: U-2 y U-3; ratificación, versiones y auditoría: U-7), SDD 1b (tareas: U-5; puertas: U-6; Inicio y menú: U-8), SDD 3 (fichas de conversación sin nombres: U-6), SDD 4a (coste previo: U-8; estado de conexiones: U-1), SDD 4b (registro de reuniones y borradores de correo: U-1, U-2 y U-3) y los SDD de salida de Lovable A y B para construir · **Coordinar con:** `SDD-20261025-connections-bring-your-own-account` y `SDD-20261029-lovable-exit-b-servicios-y-corte` (claves propias de IA y correo) · **Continúa en:** `SDD-20261030-gtm-control-tower-5b-notices-checkin.md` y `SDD-20261030-gtm-control-tower-5c-assistant-server.md`
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.

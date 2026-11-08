@@ -327,17 +327,17 @@ export function HubScreen() {
                     >
                       <span className="font-medium">{d.title}</span>
                       {results && (
-                        <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground">
+                        <span className="ml-2 font-mono text-xs uppercase text-muted-foreground">
                           {SECTIONS.find((s) => s[0] === d.section)?.[1]}
                         </span>
                       )}
                       {d.scope === "personal" && (
-                        <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">
+                        <span className="ml-2 rounded bg-accent px-1.5 font-mono text-xs uppercase">
                           personal
                         </span>
                       )}
                       {d.scope === "team" && (d.mandatory || d.section === "rules") && (
-                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">
+                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">
                           obligatorio
                         </span>
                       )}

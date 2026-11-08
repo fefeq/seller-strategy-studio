@@ -1,7 +1,7 @@
 # SDD-20261031-ux-palette-graphite · [Mejora] Nueva paleta «Grafito e índigo»
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (decisión de diseño de Fede, sin dato de uso detrás)
-**Estado:** Borrador (valores de §6 aprobados por Fede el 2026-10-31; decisiones de §15 cerradas el 2026-10-31; falta el gate técnico) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
+**Estado:** Hecho (entregado en el PR #91, merge d149d10; gate mecánico PASS sobre 4c6b339; migración 0074 aplicada, verificada en la base el 2026-11-08; sin prueba manual con sesión, cerrado por decisión de Fede del 2026-11-08; antes: Borrador (valores de §6 aprobados por Fede el 2026-10-31; decisiones de §15 cerradas el 2026-10-31; falta el gate técnico)) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-31
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** — (va **antes** que `SDD-20261031-ux-legibility-contrast`, ver §14) · **Ticket:** por asignar
 **Base de trabajo:** `origin/main` (decidido por Fede el 2026-10-31). Este SDD se leyó sobre `feat/software-factory`: **[Por verificar]** que `src/styles.css` y los archivos citados coincidan en `origin/main`.
 
@@ -148,11 +148,37 @@ Orden: U-1 → U-2 → U-3. Cada bloque de la prueba se añade en la unidad que 
 - Guía de voz y kit de marca de Nokko: no revisados.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Veredicto del gate: No revisado
+- Veredicto del gate: PASS (`gate.mjs`, ticket NK-0051, commit 8ee3543f3b80; informe literal debajo)
 - CA sin prueba posible o sin G-n: no revisado
 - [Por verificar] que sigue sin comprobarse: ver §16
 - Contradicciones con el código o con decisiones previas: no revisado
-- Lo que esta revisión NO demuestra: todo; aún no hay revisión del gate ni auditoría independiente de este SDD.
+- Lo que esta revisión NO demuestra: el gate automático no evalúa los CA uno a uno, ni la app en vivo, ni claro/oscuro, táctil, Safari/Firefox ni lectores de pantalla; no hay segunda máquina ni soak (ver informe).
+
+Informe del gate, sin editar:
+
+```
+PASS  clean tree on exact commit  8ee3543f3b80b0f6847f1ba1ae784a1735b52bee
+PASS  canary: runner detects failure
+PASS  guard: no `as any`
+PASS  guard: no window.confirm/prompt
+PASS  guard: no committed secrets
+PASS  guard: no secret in VITE_ vars
+PASS  guard: no .only/.skip in tests
+PASS  guard: no raw error.message toasts
+PASS  guard: .env untouched
+PASS  guard: assertions not weakened
+PASS  guard: no longer timeouts in tests
+PASS  typecheck
+PASS  lint (touched files, 75)
+PASS  release build (outside network best-effort blocked)
+PASS  full unit suite  2936/2936 passed; known failures 0; unexpected 0; files with no assertion run 0
+PASS  touched test files, whole (10)
+PASS  second-machine full run  NOT RUN: no second runner configured; canary + secret guard above are the local substitute
+PASS  artifact size recorded  NOT A SOAK: file handles, memory and restarts are not measured here
+PASS  extra: bunx vitest run src/lib/won-approval.pg.test.ts src/lib/board-move.pg.test.ts
+
+VERDICT PASS on 8ee3543f3b80  evidence: /Users/fedecosentino/NOKKO GTM BRAIN/seller-strategy-studio/.factory/evidence/NK-0051/8ee3543f3b80
+```
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

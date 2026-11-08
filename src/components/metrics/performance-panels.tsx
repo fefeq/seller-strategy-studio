@@ -1,6 +1,7 @@
 // Resumen KPI row and win rate panels of /metrics, plus the small building blocks the route reuses
-// (Kpi, Panel, Bar, Muted). Extracted from metrics.tsx by SDD-20261106-metrics-honest-data U-2 without
-// changing their markup; the win rates are those of the selected quarter (src/lib/metrics-quarter.ts).
+// (Bar, Muted). Extracted from metrics.tsx by SDD-20261106-metrics-honest-data U-2; Kpi and Panel are
+// the shared ones in components/page.tsx (NK-0051 legibility). The win rates are those of the selected
+// quarter (src/lib/metrics-quarter.ts).
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import type { QuarterCoverage } from "@/lib/coverage";
@@ -8,6 +9,7 @@ import { formatRatio } from "@/lib/coverage";
 import { pct } from "@/lib/money";
 import type { WinGroup } from "@/lib/metrics-quarter";
 import { DataMark } from "@/components/metrics/data-mark";
+import { Kpi, Panel } from "@/components/page";
 
 const SOURCE_LABEL: Record<string, string> = {
   outbound: "Outbound",
@@ -45,8 +47,9 @@ export function ResumenKpis({
   return (
     <div className="grid gap-4 md:grid-cols-4">
       <Kpi
+        size="normal"
         label="Cobertura de pipeline"
-        v={quota ? formatRatio(cov.ratio) : "—"}
+        value={quota ? formatRatio(cov.ratio) : "—"}
         hint={
           quota ? (
             `${cov.status === "healthy" ? "Sana (3–4x)" : cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${cov.undated.count ? ` · ${cov.undated.count} ${cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${money(cov.undated.amount)}) no cuentan` : ""}`
@@ -59,26 +62,29 @@ export function ResumenKpis({
             </>
           )
         }
-        tone={cov.status === "low" && quota ? "bad" : undefined}
+        hintTone={cov.status === "low" && quota ? "signal" : undefined}
       />
       <Kpi
+        size="normal"
         label="Pipeline que cierra este trimestre"
-        v={money(openPipe)}
+        value={money(openPipe)}
         hint={`Cuota total ${money(quota)}`}
       />
       <Kpi
+        size="normal"
         label="Forecast comprometido vs real"
-        v={`${money(actual)} / ${money(commit)}`}
+        value={`${money(actual)} / ${money(commit)}`}
         hint={
           commit
             ? `${acc.diff >= 0 ? "+" : ""}${pct(acc.diff)} · ${acc.accurate ? "dentro del 10%" : "fuera del 10%"}`
             : "Marca deals como Commit"
         }
-        tone={commit && !acc.accurate ? "bad" : undefined}
+        hintTone={commit && !acc.accurate ? "signal" : undefined}
       />
       <Kpi
+        size="normal"
         label="Win rate global"
-        v={overall.rate == null ? "—" : pct(overall.rate)}
+        value={overall.rate == null ? "—" : pct(overall.rate)}
         hint={
           overall.rate == null ? (
             <DataMark state="sin_dato" reason={`sin deals cerrados en ${quarter}`} />
@@ -129,35 +135,6 @@ export function WinRatePanels({
   );
 }
 
-export function Kpi({
-  label,
-  v,
-  hint,
-  tone,
-}: {
-  label: string;
-  v: string;
-  hint: ReactNode;
-  tone?: "bad";
-}) {
-  return (
-    <div className="min-w-0 rounded-lg border bg-card p-5">
-      <p className="eyebrow">{label}</p>
-      <p className="mt-2 break-words font-display text-3xl">{v}</p>
-      <p className={`mt-1 text-xs ${tone === "bad" ? "text-signal" : "text-muted-foreground"}`}>
-        {hint}
-      </p>
-    </div>
-  );
-}
-export function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card p-5">
-      <h3 className="mb-3 text-2xl">{title}</h3>
-      {children}
-    </div>
-  );
-}
 export function Bar({ label, value, right }: { label: string; value: number; right: string }) {
   return (
     <div className="py-1.5 text-sm">

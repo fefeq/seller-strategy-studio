@@ -230,6 +230,12 @@
           "at": "2026-10-28T20:23:13.987Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-9: revalidar contra GTM Lab antes de GTM Lab SDD 3; lo cubierto se absorbe y el resto va a la épica de encaje de personas"
         }
       ]
     },
@@ -374,6 +380,12 @@
           "at": "2026-10-28T20:23:14.260Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-9: revalidar contra GTM Lab antes de GTM Lab SDD 3; lo cubierto se absorbe y el resto va a la épica de encaje de personas"
         }
       ]
     },
@@ -395,6 +407,12 @@
           "at": "2026-10-28T20:23:14.305Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-7: superado por GTM Lab; su idea entra en la ayuda de IA por paso (GTM Lab SDD 4). No construir este SDD"
         }
       ]
     },
@@ -416,6 +434,12 @@
           "at": "2026-10-28T20:23:14.352Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-3: el PR #32 se cerró sin fusionar; se rehace sobre main en la Fase 3, tras NK-0058, con el SDD revisado"
         }
       ]
     },
@@ -707,6 +731,12 @@
           "at": "2026-10-31T18:25:33.652Z",
           "by": "Fede",
           "note": "owner=Claude"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-6: la U-0 (retirar la lectura de posts de personas en LinkedIn) se adelanta como épica propia tras NK-0058"
         }
       ]
     },
@@ -728,6 +758,12 @@
           "at": "2026-10-30T20:35:43.153Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-1: se enmienda (no se sustituye); conserva puertas, torre, Plan e Inicio y lee las tareas del tablero de GTM Lab"
         }
       ]
     },
@@ -749,6 +785,12 @@
           "at": "2026-10-30T21:34:02.600Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
         }
       ]
     },
@@ -778,7 +820,7 @@
       "title": "Avisos por momentos de dinero: respuesta positiva, llamada reservada o cancelada y deal ganado avisan; el resto queda en el registro sin ping",
       "kind": "feature",
       "source": "análisis Anfloy + auditoría de avisos (jobs.ts), sesión de Fede 2026-10-30",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "Claude",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261030-money-moment-notices.md",
@@ -803,6 +845,12 @@
           "at": "2026-10-31T15:52:44.217Z",
           "by": "Fede",
           "note": "owner=Claude"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:23:11.009Z",
+          "by": "Fede",
+          "note": "sha=a7334705cda33ff4507653afad729dc58fdf7071"
         }
       ]
     },
@@ -851,6 +899,18 @@
           "at": "2026-10-30T22:15:32.650Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261030-gtm-control-tower-4a-data-sources.md prd=docs/prd/PRD-20261030-gtm-control-tower.md"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-2: se parte; U-1 a U-4 antes de NK-0052, y la U-5 la cierra NK-0052 (rompe la dependencia circular con la Torre 8)"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "2026-11-08: sin la U-5 de Postin (NK-0052 descartado); enmendar el SDD 4a antes de construir"
         }
       ]
     },
@@ -1255,7 +1315,7 @@
       "title": "El gate de lint falla al tocar src/integrations/supabase/types.ts (archivo generado por Lovable sin punto y coma): eslint debe ignorarlo",
       "kind": "bug",
       "source": "gate NK-0030 2026-11-01",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nk-0047-author",
       "duplicate_of": null,
       "sdd": null,
@@ -1274,6 +1334,12 @@
           "at": "2026-11-01T17:33:25.529Z",
           "by": "Fede",
           "note": "owner=nk-0047-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:22:55.303Z",
+          "by": "Fede",
+          "note": "sha=faf8cf19d89e"
         }
       ]
     },
@@ -1381,12 +1447,12 @@
       "title": "UX 2026-10-31: paleta Grafito e índigo, legibilidad y contraste, duplicados de «Ganado» y mover sin arrastrar (4 SDD, 8 commits sobre 47ec72c)",
       "kind": "feature",
       "source": "",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "claude-nk0051-integration",
       "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
+      "sdd": "docs/sdd/SDD-20261031-ux-palette-graphite.md",
       "prd": null,
-      "branch": null,
+      "branch": "integration/20261106-nk0051",
       "base_commit": null,
       "history": [
         {
@@ -1397,9 +1463,27 @@
         },
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:32.050Z",
-          "by": "tracker",
-          "note": "docs: sdd=docs/sdd/SDD-20261106-ux-core-screens-pattern.md prd=-"
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Fase 2 en SDD-20261106-ux-coherence-nk0051-phase2 (aún fuera de main); sin ticket nuevo"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:21:00.131Z",
+          "by": "Claude",
+          "note": "docs: sdd=docs/sdd/SDD-20261031-ux-palette-graphite.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:21:00.178Z",
+          "by": "Fede",
+          "note": "owner=claude-nk0051-integration"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T19:21:00.224Z",
+          "by": "Fede",
+          "note": "sha=4c6b339e3eb2330ff17be084961a7a357b2f38fc"
         }
       ]
     },
@@ -1421,6 +1505,18 @@
           "at": "2026-11-02T23:47:57.260Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-2: va después de NK-0032 U-1 a U-4 y cierra su U-5"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Descartado por Fede el 2026-11-08: la Torre no leerá vistas de Postin; «Activa» y «Publicó» se apuntan a mano. No construir"
         }
       ]
     },
@@ -1442,6 +1538,12 @@
           "at": "2026-11-02T23:48:23.541Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-10: el Asesor GTM pasa a ser un modo de este agente. Absorbe además los requisitos del Sprint 1 (SDD-20261106-sprint1-requirements-gtm-lab-nk0053, aún fuera de main)"
         }
       ]
     },
@@ -1595,6 +1697,12 @@
           "at": "2026-11-06T16:02:40.668Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
         }
       ]
     },
@@ -1616,6 +1724,12 @@
           "at": "2026-11-06T16:02:40.717Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Descartado por Fede el 2026-11-08: no se pide a Dani. No construir"
         }
       ]
     },
@@ -1645,19 +1759,43 @@
       "title": "Plays GTM 1: catálogo de 28 plays, puertas, estado y pantalla /plays",
       "kind": "feature",
       "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; SDD y PRD en PR #75, código en PR #76 (SDD-20261106-plays-library-core)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "claude-plays-integration",
       "duplicate_of": null,
-      "sdd": null,
-      "prd": null,
+      "sdd": "docs/sdd/SDD-20261106-plays-library-core.md",
+      "prd": "docs/prd/PRD-20261106-plays-gtm.md",
       "branch": null,
-      "base_commit": null,
+      "base_commit": "494e78bfd5b8e460e61a2c156e023e9904a8ccb7",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-06T16:02:40.817Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:27.263Z",
+          "by": "fede-decisions-20261106",
+          "note": "D-5: Plays SDD 4, 5 y 6 se adelantan a la Fase 4 (solo dependen de Plays 1); el resto de Plays espera a NK-0054"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T18:23:21.937Z",
+          "by": "Claude",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-plays-library-core.md prd=docs/prd/PRD-20261106-plays-gtm.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T18:23:21.985Z",
+          "by": "Fede",
+          "note": "owner=claude-plays-integration"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:23:22.033Z",
+          "by": "Fede",
+          "note": "sha=0f4099bb997b4108f711b61fc5bee442a8da549d"
         }
       ]
     },
@@ -1693,28 +1831,73 @@
       "title": "NK-0048 seguimiento: cinco objeciones bajas del gate (lock huérfano en openRun, result.md contradictorio, evidencia de fail-first, §18 y base_commit, mensajes de askPinned) y fixture «VeriDoc API» por un nombre ficticio",
       "kind": "bug",
       "source": "Gate independiente de NK-0048 sobre 0a290d0, f854d61 y 7d8c53a (2026-11-06); objeciones 2 a 6; decisión de §16 pendiente de Fede",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "nokko-author (sesión nueva NK-0065)",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "fix/nk-0065-nk-0048-followups",
+      "base_commit": "7d8c53ae87ae2abe4032688b5f69dd6f8bb34a38",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-06T16:25:19.318Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-06T17:41:43.126Z",
+          "by": "Fede",
+          "note": "owner=nokko-author (sesión nueva NK-0065)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-06T21:03:04.494Z",
+          "by": "Fede",
+          "note": "sha=26512d3a5688c9f333e142a520c8efa1d7e1e8bd"
         }
       ]
     },
     {
       "id": "NK-0066",
-      "title": "Agente: la búsqueda en Conocimiento no filtra documentos personales; en Telegram devuelve los de otros miembros",
-      "kind": "bug",
-      "source": "Gate de docs/sdd/SDD-20261106-agent-rules-reader.md (§14), 2026-11-06",
-      "state": "REJECTED",
+      "title": "Camino del founder de la estrategia a la cuenta: comité de compra frente al ICP, primer mensaje por stakeholder, seguimiento propio del stakeholder (días 3, 7 y 14) y guía de ejecución en Inicio",
+      "kind": "feature",
+      "source": "Validación del flujo del founder con Fede en sesión Claude Code, 2026-11-06; SDD v2.1 aprobado tras tres revisiones del gate; PR #88",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261106-founder-account-execution-path.md",
+      "prd": "docs/prd/PRD-20261106-founder-account-execution-path.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:32:50.522Z",
+          "by": "phase0-decisions",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-06T21:53:38.027Z",
+          "by": "Claude",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Decisión de Fede (2026-11-08): Fase 2, carril producto, tras «Ganado íntegro»"
+        }
+      ]
+    },
+    {
+      "id": "NK-0067",
+      "title": "Buscar en Conocimiento: búsqueda por texto en /hub y contrato de URL con la sección de Drive",
+      "kind": "feature",
+      "source": "SDD-20261106-hub-search (Sprint 1, rama docs/sprint1-sdd); roadmap E-31",
+      "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -1724,82 +1907,49 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:20:03.271Z",
-          "by": "tracker",
+          "at": "2026-11-06T21:32:55.435Z",
+          "by": "phase0-decisions",
           "note": ""
-        },
-        {
-          "state": "REJECTED",
-          "at": "2026-11-06T21:36:56.504Z",
-          "by": "Fede",
-          "note": "No es un bug: src/lib/agent/tools/core-read.ts:236-237 ya filtra en memoria scope = team o created_by = userId tras la consulta (comentario sobre Telegram en :235), probado en src/lib/agent-tools.test.ts:584-596. El hallazgo vino de la primera pasada del gate de SDD-20261106-agent-rules-reader y lo refutó la segunda."
-        }
-      ]
-    },
-    {
-      "id": "NK-0067",
-      "title": "Métricas con datos honestos: el trimestre filtra y cada supuesto se ve",
-      "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "PROMOTED",
-      "owner": "nokko-author-nk0067",
-      "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261106-metrics-honest-data.md",
-      "prd": null,
-      "branch": "feat/nk-0067-metrics-honest-data",
-      "base_commit": "91749f4c29dc33609975bafb2a631ef6872576e6",
-      "history": [
-        {
-          "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.604Z",
-          "by": "tracker",
-          "note": ""
-        },
-        {
-          "state": "PROMOTED",
-          "at": "2026-11-06T21:55:36.761Z",
-          "by": "Fede",
-          "note": "owner=nokko-author-nk0067"
         }
       ]
     },
     {
       "id": "NK-0068",
-      "title": "Conocimiento: buscar en todas las secciones",
+      "title": "Métricas honestas: quitar la atribución inventada y dejar un único CAC y un único payback en /metrics",
       "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "source": "SDD-20261106-metrics-honest-data (Sprint 1, rama docs/sprint1-sdd); roadmap E-30. Registrado antes como NK-0066 en b93ca5e (PR #89) y perdido al fusionar el ledger con el NK-0066 del PR #90; vuelto a registrar el 2026-11-08",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261106-hub-search.md",
+      "sdd": null,
       "prd": null,
       "branch": null,
       "base_commit": null,
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.650Z",
-          "by": "tracker",
+          "at": "2026-11-08T18:14:42.109Z",
+          "by": "Claude",
           "note": ""
         }
       ]
     },
     {
       "id": "NK-0069",
-      "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
-      "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "title": "Migración 0078 (avisos por momentos de dinero) no reejecutable: falla con notifications_user_dedupe_key ya existente; hacerla idempotente y revisar el orden del journal (0077 tiene when mayor que 0078)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9). Pide: 0078 idempotente (if not exists o guard) y revisar el orden del journal; verificar contra __drizzle_migrations viva. Pendiente de verificar (nota de este ticket, sin ticket aparte): definiciones vivas de lead_stage_change, track_deal_changes y deals_stage_check en la base vs repo. Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261106-agent-rules-reader.md",
+      "sdd": null,
       "prd": null,
       "branch": null,
       "base_commit": null,
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.701Z",
+          "at": "2026-11-08T19:04:59.394Z",
           "by": "tracker",
           "note": ""
         }
@@ -1807,9 +1957,9 @@
     },
     {
       "id": "NK-0070",
-      "title": "Asesor y agente: un deal sin origen cuenta como Outbound (advisor.ts:81)",
+      "title": "Avisos: cualquier miembro puede reescribir el dedupe_key de sus propios avisos (policy own mark read de la 0049 y grant update a nivel de tabla); limitar el UPDATE a read_at (grant por columna o trigger)",
       "kind": "bug",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), hallazgo de severidad baja. Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1820,7 +1970,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.757Z",
+          "at": "2026-11-08T19:04:59.440Z",
           "by": "tracker",
           "note": ""
         }
@@ -1828,9 +1978,9 @@
     },
     {
       "id": "NK-0071",
-      "title": "RevOps: un perdido sin transición se imputa a la primera etapa o a la más avanzada (revops.ts:26-27) y llega al titular de Perdidos",
+      "title": "CA-13 de money-notices no detecta que el aviso de fallo filtre el UUID de la fila (mutante G16 sobrevive); ampliar CA-13 para rechazar new.id en el raise warning",
       "kind": "bug",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), hueco de test de severidad baja (mutation-summary). Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1841,7 +1991,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.805Z",
+          "at": "2026-11-08T19:04:59.490Z",
           "by": "tracker",
           "note": ""
         }
@@ -1849,9 +1999,9 @@
     },
     {
       "id": "NK-0072",
-      "title": "Errores tragados fuera de Sprint 1: useLeads, useStripe y resúmenes de Drive (drive-core.ts:221) muestran vacío en vez de error",
+      "title": "money-notices.pg.test.ts sigue diciendo «migration 0074» en describe y cabeceras; renombrar a 0078 (cosmético)",
       "kind": "bug",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9). Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1862,7 +2012,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.862Z",
+          "at": "2026-11-08T19:04:59.551Z",
           "by": "tracker",
           "note": ""
         }
@@ -1870,9 +2020,9 @@
     },
     {
       "id": "NK-0073",
-      "title": "Sprint 2: Métricas y Estrategia con Sin dato en todas las superficies y una sola fórmula de CAC y payback",
-      "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "title": "PR #93 declara que pasó check-migration-journal.mjs, que no existe en el repo (sí pasa src/lib/migrations-journal.test.ts): corregir la referencia o añadir el script",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), proceso/doc. Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1883,7 +2033,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.913Z",
+          "at": "2026-11-08T19:04:59.600Z",
           "by": "tracker",
           "note": ""
         }
@@ -1891,9 +2041,9 @@
     },
     {
       "id": "NK-0074",
-      "title": "Sprint 2: solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios",
-      "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "title": "Deal Ganado con closed_at en el futuro genera 2 avisos, caso no cubierto por el SDD: decidir si es comportamiento aceptado y documentarlo",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), informativo. Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1904,17 +2054,23 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:31.959Z",
+          "at": "2026-11-08T19:04:59.656Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:24:33.122Z",
+          "by": "fede-decisions-20261108",
+          "note": "Decisión de Fede (2026-11-08): un deal ganado no puede tener fecha de cierre futura; se valida al marcar Ganado. Va con la épica «Ganado íntegro»"
         }
       ]
     },
     {
       "id": "NK-0075",
-      "title": "Sprint 2: Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP",
-      "kind": "feature",
-      "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
+      "title": "Proceso: la migración 0078 se mergeó y aplicó antes del gate independiente (la PR decía «No hay revisión independiente»); añadir regla en GROUND-RULES de no aplicar migración de producción sin gate PASS, o registrar excepción",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), proceso. Evidencia: .factory/evidence/NK-0030/",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -1925,7 +2081,7 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-06T21:52:32.006Z",
+          "at": "2026-11-08T19:04:59.703Z",
           "by": "tracker",
           "note": ""
         }
