@@ -247,7 +247,7 @@ describe("Theory U · Escucha", () => {
     expect(screen.getByRole("link", { name: "una cuenta" })).toHaveAttribute("href", "/accounts");
   });
 
-  it("the hint is its own line, always visible, with «cada cuenta» linking to /accounts, outside the Scharmer paragraph (CA-5)", async () => {
+  it("the hint is its own line, always visible, with «cada cuenta» linking to /accounts, outside the Scharmer paragraph (CA-5) (C2 CA-3: opens the fold first)", async () => {
     const release = hold();
     mount();
     openTab("Escucha");
@@ -257,6 +257,7 @@ describe("Theory U · Escucha", () => {
     expect(link.parentElement?.textContent).toBe(
       "Valora tu nivel después de cada reunión en el planificador de reuniones de cada cuenta.",
     );
+    fireEvent.click(screen.getByRole("button", { name: "Más sobre esto" }));
     const scharmer = screen.getByText(/Según Scharmer/);
     expect(scharmer.textContent).not.toMatch(/Valora tu nivel/);
     expect(scharmer.contains(link)).toBe(false);
