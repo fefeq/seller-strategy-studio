@@ -1,7 +1,7 @@
 // @vitest-environment node
-// SDD-20261030 money-moment-notices (NK-0030): runs migration 0074 (money notices for a lead reaching SQL and a deal turning Ganado)
+// SDD-20261030 money-moment-notices (NK-0030): runs migration 0078 (money notices for a lead reaching SQL and a deal turning Ganado)
 // on an in-process Postgres (PGlite) with fictional companies and people. Never touches a real database.
-// The harness (src/test/pg-harness.ts) is a replica. Everything below it is defined here, reduced to what 0074 touches:
+// The harness (src/test/pg-harness.ts) is a replica. Everything below it is defined here, reduced to what 0078 touches:
 // notifications (0049/0050 + the live CHECK names), leads (0012), deals (0000/0001), deal_stage_history, and the functions
 // lead_stage_change, track_deal_changes and deals_stage_check. The three functions are a RECONSTRUCTION from migrations 0012 and
 // 0002 plus the deltas of SDD §3 (the live text is not kept in the repo and was not read), not the live definitions.
@@ -13,6 +13,7 @@ import { as, build, REPO, seed, U } from "@/test/pg-harness";
 type Db = Awaited<ReturnType<typeof build>>;
 type Row = Record<string, string | number | boolean | Date | null>;
 const MIGRATION = "0078_money_moment_notices.sql";
+const HARDENING = "0079_money_notices_hardening.sql";
 
 const V = {
   slA: "00000000-0000-4000-8000-0000000000a3", // Sales Leader of A
@@ -34,7 +35,7 @@ const DEAL = {
 const SCHEMA = `
   alter table public.organizations add column archived_at timestamptz;
   -- Supabase also grants EXECUTE on new public functions to anon, authenticated and service_role: mimic it, so a migration cannot
-  -- rely on the bare PUBLIC default (the revoke in 0074 must name each role).
+  -- rely on the bare PUBLIC default (the revoke in 0078 must name each role).
   alter default privileges in schema public grant execute on functions to anon, authenticated, service_role;
 
   create table public.notifications (
@@ -152,7 +153,10 @@ async function world(withMigration: boolean) {
   ).id;
   await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${V.slA}','sales_leader'),('${A}','${V.repA}','ae'),('${C}','${V.ownerC}','owner');
     insert into profiles (id, current_org_id) values ('${V.slA}','${A}'),('${V.repA}','${A}'),('${V.exA}','${A}'),('${V.ownerC}','${C}');`);
-  if (withMigration) await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
+  if (withMigration) {
+    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
+    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${HARDENING}`, "utf8"));
+  }
   return { db, A, B, C, D };
 }
 
@@ -198,7 +202,7 @@ describe("U-1 harness smoke (runs without the migration)", () => {
   });
 });
 
-describe("money notices (migration 0074)", () => {
+describe("money notices (migration 0078)", () => {
   let db: Db;
   let A: string, B: string, C: string, D: string;
   const rows = async (sql: string, params?: unknown[]) => (await db.query<Row>(sql, params)).rows;
@@ -384,6 +388,34 @@ describe("money notices (migration 0074)", () => {
       )[0]!.old,
     ).toBe(true);
     expect(await who()).toEqual(sorted(U.ownerA, V.slA, U.aeA));
+  });
+
+  it("0079: the trigger functions are closed to public, anon and authenticated, and the triggers still notify", async () => {
+    for (const fn of ["money_lead_sql_trg()", "money_deal_won_trg()"]) {
+      for (const role of ["anon", "authenticated"]) {
+        const r = await db.query<Row>("select has_function_privilege($1, $2, 'execute') as ok", [
+          role,
+          `public.${fn}`,
+        ]);
+        expect(r.rows[0]!["ok"]).toBe(false);
+      }
+    }
+    // control: a write by authenticated still reaches money_notify through the triggers
+    await write(
+      U.ownerA,
+      "insert into leads (org_id, company, stage) values ($1, 'Lead ficticio', 'sql')",
+      [A],
+    );
+    expect((await notices()).length).toBeGreaterThan(0);
+  });
+
+  it("0078 and 0079 can be applied again without failing and leave one trigger of each", async () => {
+    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8"));
+    await db.exec(readFileSync(`${REPO}/drizzle/migrations/${HARDENING}`, "utf8"));
+    const n = await db.query<Row>(
+      "select count(*)::int as n from pg_trigger where tgname like 'money\\_%' and not tgisinternal",
+    );
+    expect(n.rows[0]!["n"]).toBe(4);
   });
 
   it("money_notify cannot be executed by authenticated or anon (the revoke is what keeps callers from forging notices)", async () => {
@@ -600,7 +632,7 @@ describe("money notices (migration 0074)", () => {
   });
 });
 
-describe("migration 0074: the CHECK rewrite is scoped to notifications.kind (N-4)", () => {
+describe("migration 0078: the CHECK rewrite is scoped to notifications.kind (N-4)", () => {
   it("replaces the kind CHECK even under another name, and keeps any other CHECK that merely mentions kind", async () => {
     const { db, A, B } = await world(false);
     await db.exec(`alter table public.notifications rename constraint notifications_kind_check to legacy_kind_check;

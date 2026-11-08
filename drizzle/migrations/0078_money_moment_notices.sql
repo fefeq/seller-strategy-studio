@@ -16,7 +16,11 @@ alter table public.notifications add constraint notifications_kind_check
 
 -- 2. one notice per (person, key); existing rows have a null key and never collide.
 alter table public.notifications add column if not exists dedupe_key text;
-alter table public.notifications add constraint notifications_user_dedupe_key unique (user_id, dedupe_key);
+do $$ begin
+  if not exists (select 1 from pg_constraint where conrelid = 'public.notifications'::regclass and conname = 'notifications_user_dedupe_key') then
+    alter table public.notifications add constraint notifications_user_dedupe_key unique (user_id, dedupe_key);
+  end if;
+end $$;
 
 -- 3. the notice itself. _kind is 'lead_sql' or 'deal_won'; _at picks the hour of the key (now() by default; explicit only in tests).
 -- Recipients: Owner and Sales Leader of the company plus the responsible if a member; archived companies and rows without company are ignored.
@@ -77,11 +81,15 @@ begin
   return null;
 end $$;
 
+drop trigger if exists money_lead_sql_ins on public.leads;
 create trigger money_lead_sql_ins after insert on public.leads
   for each row when (new.stage = 'sql') execute function public.money_lead_sql_trg();
+drop trigger if exists money_lead_sql_upd on public.leads;
 create trigger money_lead_sql_upd after update on public.leads
   for each row when (new.stage = 'sql' and old.stage is distinct from new.stage) execute function public.money_lead_sql_trg();
+drop trigger if exists money_deal_won_ins on public.deals;
 create trigger money_deal_won_ins after insert on public.deals
   for each row when (new.stage = 'won') execute function public.money_deal_won_trg();
+drop trigger if exists money_deal_won_upd on public.deals;
 create trigger money_deal_won_upd after update on public.deals
   for each row when (new.stage = 'won' and old.stage is distinct from new.stage) execute function public.money_deal_won_trg();

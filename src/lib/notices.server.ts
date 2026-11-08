@@ -17,6 +17,25 @@ type Notice = {
   job_id: string | null;
 };
 
+const MEMBERS_PAGE = 1000; // PostgREST caps a response; page so a long membership list is never silently cut
+
+/** Memberships of these users, all pages. A cut list would make `member.has` false and drop legitimate notices without a trace. */
+async function membershipsOf(db: Admin, users: string[]) {
+  const all: { org_id: string; user_id: string }[] = [];
+  for (let from = 0; ; from += MEMBERS_PAGE) {
+    const { data, error } = await db
+      .from("org_members")
+      .select("org_id,user_id")
+      .in("user_id", users)
+      .order("org_id")
+      .order("user_id")
+      .range(from, from + MEMBERS_PAGE - 1);
+    if (error) return { data: null, error };
+    all.push(...(data ?? []));
+    if ((data ?? []).length < MEMBERS_PAGE) return { data: all, error: null };
+  }
+}
+
 async function deliver(db: Admin, list: Notice[], now: Date) {
   const { telegramConfigured, sendText } = await import("@/lib/telegram.server");
   if (!list.length || !telegramConfigured()) return 0;
@@ -37,7 +56,7 @@ async function deliver(db: Admin, list: Notice[], now: Date) {
       jobIds.length
         ? db.from("background_jobs").select("id,kind").in("id", jobIds)
         : Promise.resolve({ data: [] as { id: string; kind: string }[] }),
-      db.from("org_members").select("org_id,user_id").in("user_id", users),
+      membershipsOf(db, users),
     ]);
   if (membersError) {
     console.error("telegram notices skipped: membership query failed", membersError.message);
