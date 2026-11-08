@@ -38,7 +38,7 @@ Lo que no existe:
 | ID | Objetivo | Cómo se mide | Línea base | Fuente |
 |---|---|---|---|---|
 | G-1 | El founder siempre ve cuál es su siguiente acción con las cuentas objetivo | Mientras haya cuentas objetivo con trabajo pendiente, Inicio muestra una siguiente acción concreta | sin dato (no existe) | Prueba automática de la guía; uso, sin dato hasta que haya instrumentación |
-| G-2 | Las cuentas objetivo tienen cubierto el comité de compra | Cuentas objetivo con al menos un Decisor y con todos los cargos del ICP mapeados, sobre el total de cuentas objetivo | sin dato **[Por verificar: consulta de solo lectura antes de construir]** | Base de datos: `accounts`, `stakeholders`, `icp_profiles` |
+| G-2 | Las cuentas objetivo tienen cubierto el comité de compra | Cuentas objetivo con al menos un Decisor y con todos los cargos del ICP mapeados, sobre el total de cuentas objetivo | 0 cuentas objetivo, así que el cociente aún no se puede calcular (consulta de solo lectura en producción, 2026-11-08) | Base de datos: `accounts`, `stakeholders`, `icp_profiles` |
 | G-3 | El founder escribe a los stakeholders desde NOKKO | Stakeholders con primer contacto registrado por semana | sin dato (no se registra hoy) | Base de datos tras la entrega |
 | G-4 | Nadie se queda sin seguimiento | Stakeholders contactados sin respuesta a los que no se les hizo el toque del día 3, 7 o 14 en su fecha | sin dato | Base de datos tras la entrega |
 | G-5 | Ningún mensaje sale sin el founder | Mensajes enviados automáticamente | 0 por diseño | Prueba automática |
@@ -93,5 +93,5 @@ No aplica: es una sola Feature. Las unidades de trabajo están en el SDD.
 - **Esperar a GTM Lab:** su tablero tendría estas tareas. Se descarta como única vía: llega después de la salida de Lovable y no cubre el estado de contacto de cada persona.
 
 ### Pendiente de verificar
-- Línea base de G-2: cuántas cuentas objetivo hay hoy con stakeholders y con Decisor. Lo comprueba una consulta de solo lectura en producción.
+- ~~Línea base de G-2~~. Medida el 2026-11-08 con una consulta de solo lectura en producción: 1 empresa, 0 cuentas (0 objetivo), 0 stakeholders, 0 toques y 0 ICP. No hay uso real que medir todavía (ver criterio de descarte).
 - Número de migración libre. Lo comprueba quien implemente al fusionar la migración, contra `drizzle/migrations` y todas las ramas tras `git fetch`.
