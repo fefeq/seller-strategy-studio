@@ -1,7 +1,7 @@
 # SDD-20261106-metrics-honest-data · [Mejora] Métricas con datos honestos: el trimestre filtra y cada supuesto se ve
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Aprobado por Fede el 2026-11-06 (v4; «OK a todo» en el chat, tras tres pasadas del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Hecho (entregado en la PR #113, merge `6dc4371`, gate PASS sobre `ad9261c`; 2026-11-08; antes Aprobado por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **Ticket:** NK-0068
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 / `SDD-20261106-ux-metrics-data-state` (SDD-C2: pone la forma visual, `DataState`, a las palabras que fija este SDD); `SDD-20261106-ux-core-screens-pattern` (SDD-C1: estados de carga y error de `/metrics`); NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado; su CA-18 documenta las fórmulas vivas de CAC, payback y win rate: hoy hay tres ventanas de win rate, ver §14); `SDD-20261030-gtm-control-tower-5c-assistant-server` (CA-1: el asistente y MCP leen las mismas funciones; con este SDD su salida no cambia, CA-12); PR #76 de Plays (toca `src/lib/headlines.ts`, que este SDD no toca)
 

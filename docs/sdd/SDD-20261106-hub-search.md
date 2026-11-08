@@ -1,7 +1,7 @@
 # SDD-20261106-hub-search · [Mejora] Buscar en Conocimiento
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Hecho (entregado en la PR #113, merge `6dc4371`, gate PASS sobre `ad9261c`; 2026-11-08; antes Aprobado por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **Ticket:** NK-0067
 **PRD:** No aplica (mejora acotada de una pantalla, sin esquema nuevo) · **Depende de:** — · **Coordinar con:** NK-0051 (SDD-C1 `SDD-20261106-ux-core-screens-pattern` y SDD-C2 `SDD-20261106-ux-metrics-data-state` de este sprint; C1 amplía el test de pantalla que crea este SDD), SDD-D `SDD-20261106-agent-rules-reader` (toca los textos de la sección Reglas y de la casilla «obligatorio», que este SDD mueve de archivo; ver §13), NK-0053 (`SDD-20261030-gtm-control-tower-5a-agent-memory`, toca `memory.tsx`)
 
