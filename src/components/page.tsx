@@ -24,7 +24,7 @@ export function Empty({ children }: { children: ReactNode }) {
   return <div className="border-t border-hairline py-8 text-sm text-ink-mid">{children}</div>;
 }
 
-const SKELETON_ROWS = { list: 4, cards: 3, table: 5 } as const;
+const SKELETON_ROWS = { list: 4, cards: 3, table: 5, line: 1 } as const;
 
 /**
  * Loading and error of a screen block (SDD-20261106-ux-core-screens-pattern, U-1). Takes what useQuery gives:
@@ -60,7 +60,7 @@ export function ScreenState({
       <div role="status" aria-busy="true" data-skeleton={skeleton} className="space-y-3 py-4">
         <span className="sr-only">Cargando…</span>
         {Array.from({ length: rows }, (_, i) => (
-          <Skeleton key={i} className={skeleton === "cards" ? "h-24 w-full" : "h-10 w-full"} />
+          <Skeleton key={i} className={skeleton === "cards" ? "h-24 w-full" : skeleton === "line" ? "h-4 w-56" : "h-10 w-full"} />
         ))}
       </div>
     );

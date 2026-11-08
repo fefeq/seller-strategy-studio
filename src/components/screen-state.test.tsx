@@ -24,7 +24,7 @@ describe("ScreenState", () => {
   });
 
   it("draws a skeleton per kind of block", () => {
-    for (const kind of ["list", "cards", "table"] as const) {
+    for (const kind of ["list", "cards", "table", "line"] as const) {
       const { container, unmount } = render(
         <ScreenState isPending error={null} refetch={vi.fn()} skeleton={kind}>
           {body}

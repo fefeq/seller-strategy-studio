@@ -1,9 +1,9 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, type UseQueryResult } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { Field } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,15 +23,23 @@ function revealOnMobile(el: HTMLElement | null) {
   }
 }
 
+const NO_JOURNEYS: { id: string; title: string; phase: string }[] = [];
+
 export function UJourney() {
   const qc = useQueryClient();
   const [selId, setSelId] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
-  const { data: list = [] } = useQuery({
+  const journeys = useQuery({
     queryKey: ["u_journeys"],
-    queryFn: async () => (await supabase.from("u_journeys").select("*").order("created_at", { ascending: false })).data ?? [],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("u_journeys").select("*").order("created_at", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
   });
-  const { data: counts } = useQuery({
+  // Only read once answered: ScreenState draws the empty text and the list after the first answer.
+  const list = journeys.data ?? NO_JOURNEYS;
+  const counts = useQuery({
     queryKey: ["u_counts", selId],
     enabled: !!selId,
     queryFn: async () => {
@@ -39,6 +47,8 @@ export function UJourney() {
         supabase.from("sensing_notes").select("id", { count: "exact", head: true }).eq("journey_id", selId!),
         supabase.from("gtm_experiments").select("id", { count: "exact", head: true }).eq("journey_id", selId!),
       ]);
+      const failed = n.error ?? e.error;
+      if (failed) throw failed;
       return { notes: n.count ?? 0, experiments: e.count ?? 0 };
     },
   });
@@ -54,6 +64,7 @@ export function UJourney() {
   }
 
   return (
+    <ScreenState isPending={journeys.isPending} error={journeys.error} refetch={journeys.refetch} skeleton="cards">
     <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
       <div className="space-y-2">
         <Button size="sm" className="w-full" onClick={add}>+ Nuevo recorrido</Button>
@@ -70,10 +81,13 @@ export function UJourney() {
         )}
       </div>
     </div>
+    </ScreenState>
   );
 }
 
-function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: number; experiments: number } }) {
+type Counts = Pick<UseQueryResult<{ notes: number; experiments: number }>, "data" | "isPending" | "error" | "refetch">;
+
+function JourneyEditor({ journey, counts }: { journey: any; counts: Counts }) {
   const qc = useQueryClient();
   const [title, setTitle] = useState(journey.title);
   const [intention, setIntention] = useState(journey.intention);
@@ -132,8 +146,9 @@ function JourneyEditor({ journey, counts }: { journey: any; counts?: { notes: nu
         <div>
           <h3 className="text-2xl">{phase.label}</h3>
           <p className="max-w-3xl text-sm text-muted-foreground">{phase.description}</p>
-          {phase.key === "co_sensing" && <p className="mt-2 font-mono text-xs text-muted-foreground">{counts?.notes ?? 0} notas de sensing vinculadas · regístralas en la pestaña Sensing</p>}
-          {phase.key === "co_creating" && <p className="mt-2 font-mono text-xs text-muted-foreground">{counts?.experiments ?? 0} prototipos vinculados · gestiónalos en la pestaña Prototipos</p>}
+          {/* No number until u_counts answers; a failed count says so instead of showing 0. */}
+          {phase.key === "co_sensing" && <ScreenState isPending={counts.isPending} error={counts.error} refetch={counts.refetch} skeleton="line"><p className="mt-2 font-mono text-xs text-muted-foreground">{counts.data?.notes} notas de sensing vinculadas · regístralas en la pestaña Sensing</p></ScreenState>}
+          {phase.key === "co_creating" && <ScreenState isPending={counts.isPending} error={counts.error} refetch={counts.refetch} skeleton="line"><p className="mt-2 font-mono text-xs text-muted-foreground">{counts.data?.experiments} prototipos vinculados · gestiónalos en la pestaña Prototipos</p></ScreenState>}
         </div>
         {phase.prompts.map((q, i) => {
           const k = `${phase.key}.${i}`;

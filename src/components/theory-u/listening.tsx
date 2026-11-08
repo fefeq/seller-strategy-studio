@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { LISTENING_LEVELS, listeningStats, type ListeningLevel } from "@/lib/theory-u";
 
 const LEVELS = [1, 2, 3, 4] as const;
@@ -30,13 +30,15 @@ export function LevelPicker({ value, onChange }: { value: number | null | undefi
 }
 
 export function Listening() {
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["listening"],
     queryFn: async () => {
       const [m, n] = await Promise.all([
         supabase.from("meetings").select("id,title,scheduled_at,listening_level,listening_coaching,account_id,accounts(name)").not("listening_level", "is", null).order("scheduled_at", { ascending: false }),
         supabase.from("sensing_notes").select("listening_level").not("listening_level", "is", null),
       ]);
+      const failed = m.error ?? n.error;
+      if (failed) throw failed;
       return { meetings: m.data ?? [], notes: n.data ?? [] };
     },
   });
@@ -46,7 +48,9 @@ export function Listening() {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-3xl text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda. Valora tu nivel después de cada reunión en el planificador de reuniones de cada cuenta.</p>
+      <p className="max-w-3xl text-sm text-muted-foreground">Según Scharmer, la calidad de los resultados depende de la calidad de la atención. En ventas, pasar de la descarga a la escucha empática o generativa es lo que convierte un pitch en una conversación que el cliente recuerda.</p>
+      <p className="max-w-3xl text-sm text-muted-foreground">Valora tu nivel después de cada reunión en el planificador de reuniones de <Link to="/accounts" className="underline hover:text-signal">cada cuenta</Link>.</p>
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
       <div className="grid gap-3 md:grid-cols-4">
         {LEVELS.map((l) => (
           <div key={l} className="rounded-lg border bg-card p-4">
@@ -68,7 +72,7 @@ export function Listening() {
       </div>
       <div className="space-y-2">
         <p className="eyebrow">Reuniones valoradas</p>
-        {meetings.length === 0 && <Empty>Aún no hay reuniones con nivel de escucha. Ábrelas desde Cuentas → Planificador de reuniones.</Empty>}
+        {meetings.length === 0 && <Empty>Aún no hay reuniones con nivel de escucha. Ábrelas desde <Link to="/accounts" className="underline hover:text-signal">una cuenta</Link>, en su pestaña «Planificador de reuniones».</Empty>}
         {meetings.map((m) => (
           <div key={m.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-3 text-sm">
             <div className="min-w-0 break-words">
@@ -83,6 +87,7 @@ export function Listening() {
           </div>
         ))}
       </div>
+      </ScreenState>
     </div>
   );
 }
