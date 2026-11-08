@@ -77,17 +77,13 @@ export function HubScreen() {
   const { data, isSuccess } = useQuery({
     queryKey: ["docs"],
     queryFn: (): Promise<DocsCache> =>
-      fetchAll<Doc>(
-        (a, b) =>
-          supabase
-            .from("knowledge_docs")
-            .select("*")
-            .order("updated_at", { ascending: false })
-            .order("id")
-            .range(a, b) as unknown as PromiseLike<{
-            data: Doc[] | null;
-            error: { message: string } | null;
-          }>,
+      fetchAll<Doc>((a, b) =>
+        supabase
+          .from("knowledge_docs")
+          .select("*")
+          .order("updated_at", { ascending: false })
+          .order("id")
+          .range(a, b),
       ),
   });
   const docs = data?.rows ?? NO_DOCS;
