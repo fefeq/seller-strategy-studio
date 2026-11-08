@@ -22,6 +22,7 @@ const updates: { id: unknown; patch: Row }[] = [];
 function query(table: string) {
   let rows = table === "notifications" ? notifications : (tables[table] ?? []);
   let patch: Row | null = null;
+  let ranged = false;
   const q: Record<string, unknown> = {};
   const chain = () => q;
   Object.assign(q, {
@@ -30,6 +31,11 @@ function query(table: string) {
     order: chain,
     limit: chain,
     gte: chain,
+    range: (from: number, to: number) => {
+      ranged = true;
+      rows = rows.slice(from, to + 1);
+      return q;
+    },
     is: (col: string, v: unknown) => {
       rows = rows.filter((r) => (r[col] ?? null) === v);
       return q;
@@ -55,7 +61,10 @@ function query(table: string) {
       Promise.resolve(
         table === "org_members" && membersFail
           ? { data: null, error: { message: "connection reset" } }
-          : { data: patch ? [] : rows, error: null },
+          : {
+              data: patch ? [] : table === "org_members" && !ranged ? rows.slice(0, 1000) : rows,
+              error: null,
+            }, // an unpaged read is cut at 1000, like PostgREST
       ).then(ok),
   });
   return q;
@@ -121,4 +130,15 @@ it("N-6: if the membership query fails nothing is sent and the failure is logged
   } finally {
     log.mockRestore();
   }
+});
+
+it("a membership list longer than one page is read whole: the legitimate notice still goes out", async () => {
+  notifications = [money("n1", MEMBER)];
+  const filler = Array.from({ length: 1500 }, (_, i) => ({
+    org_id: `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`, // sorts before ORG, so ORG lands past the first page
+    user_id: MEMBER,
+  }));
+  tables["org_members"] = [...filler, { org_id: ORG, user_id: MEMBER }];
+  expect(await flushHeldNotices(admin, NOW)).toBe(1);
+  expect(sendText).toHaveBeenCalledTimes(1);
 });

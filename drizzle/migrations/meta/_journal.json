@@ -547,6 +547,13 @@
       "when": 1793966400000,
       "tag": "0077_plays_library_core",
       "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1794052800000,
+      "tag": "0079_money_notices_hardening",
+      "breakpoints": true
     }
   ]
 }
