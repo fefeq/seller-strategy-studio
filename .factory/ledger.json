@@ -1882,13 +1882,13 @@
       "title": "Camino del founder de la estrategia a la cuenta: comité de compra frente al ICP, primer mensaje por stakeholder, seguimiento propio del stakeholder (días 3, 7 y 14) y guía de ejecución en Inicio",
       "kind": "feature",
       "source": "Validación del flujo del founder con Fede en sesión Claude Code, 2026-11-06; SDD v2.1 aprobado tras tres revisiones del gate; PR #88",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "nokko-author (sesión nueva NK-0066)",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-founder-account-execution-path.md",
       "prd": "docs/prd/PRD-20261106-founder-account-execution-path.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "fix/nk-0066-eval-ledger-shape",
+      "base_commit": "602ec4b1c6ea23863e6f206118766e4d1b73277f",
       "history": [
         {
           "state": "LOGGED",
@@ -1907,6 +1907,18 @@
           "at": "2026-11-08T19:24:33.122Z",
           "by": "fede-decisions-20261108",
           "note": "Decisión de Fede (2026-11-08): Fase 2, carril producto, tras «Ganado íntegro»"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T20:48:25.364Z",
+          "by": "Fede",
+          "note": "owner=nokko-author (sesión nueva NK-0066)"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T20:48:25.416Z",
+          "by": "Fede",
+          "note": "sha=05d5f5cf35df5b3f1c87b3b1000a5bd7e45720eb"
         }
       ]
     },
