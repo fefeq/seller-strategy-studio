@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { closingIn, pipelineBoard, pipelineEconomics, type BoardDeal, type BoardLead } from "./pipeline-board";
 import { DEFAULT_LEAD_SLA } from "./lead-funnel";
 import { quarterRange } from "./metrics";
+import { boardMargin } from "./pipeline-board";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
 const q4 = quarterRange("2026-Q4");
@@ -71,5 +72,30 @@ describe("pipelineEconomics", () => {
     expect(pipelineEconomics({ cost: null, won: 2, closing: 1, winRatePct: 50, acv: 1000, marginPct: 80 }).realCac).toBeNull();
     expect(pipelineEconomics({ cost: 5000, won: 0, closing: 0, winRatePct: 50, acv: 1000, marginPct: 80 }).realCac).toBeNull();
     expect(pipelineEconomics({ cost: 5000, won: 1, closing: 0, winRatePct: 50, acv: 1000, marginPct: null }).realPayback).toBeNull();
+  });
+});
+
+// SDD-20261106-metrics-honest-data U-3 · CA-9: boardMargin is the chain the board used (same pct) plus where it came from.
+describe("boardMargin (CA-9)", () => {
+  const k = (actual: number | null, plan: number | null) => ({ actual: { margin: actual }, plan: { margin: plan } });
+  const segs = [{ gross_margin_pct: 60 }, { gross_margin_pct: 80 }, { gross_margin_pct: null }];
+  it("real margin of the books first", () => {
+    expect(boardMargin(k(30, 50), { pct: 40 }, segs)).toEqual({ pct: 30, source: "real", marginNonPositive: false });
+  });
+  it("then the won deals with product lines", () => {
+    expect(boardMargin(k(null, 50), { pct: 40 }, segs)).toEqual({ pct: 40, source: "deals", marginNonPositive: false });
+  });
+  it("then the plan", () => {
+    expect(boardMargin(k(null, 50), null, segs)).toEqual({ pct: 50, source: "plan", marginNonPositive: false });
+  });
+  it("then the unweighted mean of the segment target margins", () => {
+    expect(boardMargin(k(null, null), undefined, segs)).toEqual({ pct: 70, source: "media_objetivos", marginNonPositive: false });
+  });
+  it("null without any margin", () => {
+    expect(boardMargin(k(null, null), null, [{ gross_margin_pct: null }])).toEqual({ pct: null, source: null, marginNonPositive: false });
+  });
+  it("a real 0 % margin is kept (?? chain) and flagged non-positive, like a negative one", () => {
+    expect(boardMargin(k(0, 50), { pct: 40 }, segs)).toEqual({ pct: 0, source: "real", marginNonPositive: true });
+    expect(boardMargin(k(null, -5), null, segs)).toEqual({ pct: -5, source: "plan", marginNonPositive: true });
   });
 });

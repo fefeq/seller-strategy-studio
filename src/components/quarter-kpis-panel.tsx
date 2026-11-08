@@ -5,9 +5,10 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { quartersUpTo } from "@/lib/cac";
-import { quarterKpis, type KpiSide, type QuarterKpis } from "@/lib/quarter-kpis";
+import { quarterKpis, type KpiSide, type PaybackBasis, type QuarterKpis } from "@/lib/quarter-kpis";
 import { Deviation } from "@/components/budget-quarters";
 import type { SegLike } from "@/lib/segment-coverage";
+import { DataMark } from "@/components/metrics/data-mark";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const pct = (n: number | null) => (n == null ? "—" : `${fmt1(n)}%`);
@@ -19,7 +20,21 @@ type Line = {
   lowerIsBetter?: boolean;
   points?: boolean;
   hint?: (k: QuarterKpis) => ReactNode;
+  /** The weighted payback: labelled by quarterKpis().paybackBasis (SDD-20261106-metrics-honest-data CA-7). */
+  payback?: true;
 };
+
+/** sin_dato: a weighted segment has margin ≤ 0, so the figure (Infinity or negative) is never shown. */
+function basisMark(b: PaybackBasis) {
+  if (b === "sin_dato") return <DataMark state="sin_dato" reason="un segmento tiene margen 0 % o negativo" />;
+  if (b === "estimado") return <DataMark state="estimado" reason="supuestos en algún segmento" />;
+  return null;
+}
+
+/** «CAC real» lives in Métricas › CAC y presupuesto (CA-11). */
+function CacRealLink() {
+  return <Link to="/metrics" search={{ seccion: "economia" }} className="underline">CAC real</Link>;
+}
 
 /** Company KPIs for the selected quarter and the three before it: real vs plan, deviations in green/red. */
 export function QuarterKpisPanel({ quarter }: { quarter: string }) {
@@ -54,7 +69,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
     { label: "Gasto de captación", value: (s) => s.acquisition, show: money0, lowerIsBetter: true },
     { label: "Clientes nuevos", value: (s) => s.newCustomers, show: (n) => (n == null ? "—" : String(n)) },
     { label: "CAC", value: (s) => s.cac, show: money0, lowerIsBetter: true },
-    { label: "Payback", value: (s) => s.payback, show: (n) => (n == null ? "—" : `${fmt1(n)} m`), lowerIsBetter: true },
+    { label: "Payback", value: (s) => s.payback, show: (n) => (n == null ? "—" : `${fmt1(n)} m`), lowerIsBetter: true, payback: true },
   ];
 
   if (data && data.segments.length === 0) {
@@ -73,14 +88,18 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           <h3 className="text-2xl">KPIs trimestrales</h3>
           <p className="mt-1 text-xs text-muted-foreground">
             Toda la empresa, real frente a presupuesto. Ingresos y coste de servir salen de lo apuntado en{" "}
-            <Link to="/strategy" className="underline">Estrategia GTM → Presupuesto vs real</Link>; el CAC, de los costes de «CAC real» entre los deals ganados del trimestre;
+            <Link to="/strategy" search={{ tab: "budget" }} className="underline">Estrategia GTM → Presupuesto vs real</Link>; el CAC, de los costes de «<CacRealLink />» entre los deals ganados del trimestre;
             el payback es la media de los segmentos ponderada por clientes. Verde = mejor que el plan; rojo = peor.
           </p>
         </div>
         {current && (
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-right text-sm">
             <Headline label={`CAC ${quarter}`} value={money0(current.actual.cac)} />
-            <Headline label={`Payback ${quarter}`} value={current.actual.payback == null ? "—" : `${fmt1(current.actual.payback)} m`} />
+            <Headline
+              label={`Payback ${quarter}`}
+              value={current.actual.payback == null || current.paybackBasis.actual === "sin_dato" ? "—" : `${fmt1(current.actual.payback)} m`}
+              mark={basisMark(current.paybackBasis.actual)}
+            />
           </div>
         )}
       </div>
@@ -100,13 +119,15 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
               <tr key={l.label} className="border-b align-top last:border-0">
                 <td className="sticky left-0 z-10 bg-background py-3 pr-4 font-medium">{l.label}</td>
                 {kpis.map((k) => {
-                  const real = l.value(k.actual), plan = l.value(k.plan);
-                  const hint = l.hint?.(k);
+                  const hideReal = l.payback && k.paybackBasis.actual === "sin_dato";
+                  const hidePlan = l.payback && k.paybackBasis.plan === "sin_dato";
+                  const real = hideReal ? null : l.value(k.actual), plan = l.value(k.plan);
+                  const hint = l.payback ? basisMark(k.paybackBasis.actual) : l.hint?.(k);
                   return (
                     <td key={k.quarter} className={`px-3 py-3 text-right ${k.quarter === quarter ? "bg-muted/40" : ""}`}>
                       <p className="font-mono">{l.show(real)}</p>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {plan != null ? <>plan {l.show(plan)} · <Deviation real={real} plan={plan} lowerIsBetter={l.lowerIsBetter} points={l.points} /></> : "sin plan"}
+                        {hidePlan ? "plan —" : plan != null ? <>plan {l.show(plan)} · <Deviation real={real} plan={plan} lowerIsBetter={l.lowerIsBetter} points={l.points} /></> : "sin plan"}
                       </p>
                       {hint && <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>}
                     </td>
@@ -120,13 +141,13 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
 
       {current && current.actual.cac == null && (
         <p className="mt-3 text-xs text-muted-foreground">
-          Para tener CAC y payback reales en {quarter} hacen falta costes en «CAC real» (más abajo) y deals ganados en ese trimestre.
+          Para tener CAC y payback reales en {quarter} hacen falta costes en «<CacRealLink />» y deals ganados en ese trimestre.
         </p>
       )}
     </section>
   );
 }
 
-function Headline({ label, value }: { label: string; value: string }) {
-  return <div><p className="font-display text-2xl">{value}</p><p className="text-xs text-muted-foreground">{label}</p></div>;
+function Headline({ label, value, mark }: { label: string; value: string; mark?: ReactNode }) {
+  return <div><p className="font-display text-2xl">{value}</p><p className="text-xs text-muted-foreground">{label}</p>{mark && <p className="text-[11px] text-muted-foreground">{mark}</p>}</div>;
 }

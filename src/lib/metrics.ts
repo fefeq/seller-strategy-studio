@@ -32,6 +32,8 @@ export function matchSegment<T extends { acv_min: number | null; acv_max: number
  * Capacity per AE from the segment benchmarks:
  * deals/year = annual AE quota / ACV; opportunities/year = deals / win rate;
  * CAC payback (months) = CAC / (ACV × gross margin / 12). Missing inputs yield null.
+ * Without a margin the payback assumes 100 % (`marginAssumed`); a margin of 0 % or below gives Infinity or a
+ * negative payback (`marginNonPositive`). The flags only label the value, they never change it.
  */
 export function capacityPlan(p: { acv: number; quota?: number | null; winRatePct?: number | null; cac?: number | null; grossMarginPct?: number | null }) {
   const acv = p.acv > 0 ? p.acv : 0;
@@ -39,7 +41,11 @@ export function capacityPlan(p: { acv: number; quota?: number | null; winRatePct
   const oppsPerYear = dealsPerYear != null && p.winRatePct ? dealsPerYear / (p.winRatePct / 100) : null;
   const margin = (p.grossMarginPct ?? 100) / 100;
   const paybackMonths = acv && p.cac ? p.cac / ((acv * margin) / 12) : null;
-  return { dealsPerYear, oppsPerYear, oppsPerMonth: oppsPerYear != null ? oppsPerYear / 12 : null, paybackMonths };
+  return {
+    dealsPerYear, oppsPerYear, oppsPerMonth: oppsPerYear != null ? oppsPerYear / 12 : null, paybackMonths,
+    marginAssumed: p.grossMarginPct == null,
+    marginNonPositive: p.grossMarginPct != null && p.grossMarginPct <= 0,
+  };
 }
 
 /** Pipeline coverage = open pipeline / quota. Healthy band is 3x–4x. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { costByChannel, previousQuarter, segmentCac } from "./cac";
 import { segmentCoverage, type DealLike, type SegLike } from "./segment-coverage";
+import { sharedSplitBasis } from "./cac";
 
 const range = { start: new Date("2026-10-01"), end: new Date("2027-01-01") };
 const mid: SegLike = { id: "mid", name: "Mid-market", acv_min: 5000, acv_max: 50000, win_rate_target: 25, cac_target: 10000, gross_margin_pct: 80, payback_months: 12 };
@@ -109,5 +110,24 @@ describe("real payback by quarter", () => {
     const { quarterRange } = await import("./metrics");
     const [row] = paybackByQuarter([mid], [], [{ segment_id: "mid", channel: "Eventos", amount: 5000, period: "2026-Q4" }], ["2026-Q4"], quarterRange);
     expect(row.byQuarter["2026-Q4"]).toMatchObject({ payback: null, status: "no_wins" });
+  });
+});
+
+// SDD-20261106-metrics-honest-data U-3 · CA-8: how the shared cost was split, with the rule of segmentCac.
+describe("sharedSplitBasis (CA-8)", () => {
+  const shared = [{ segment_id: null, channel: "Paid media", amount: 9000 }];
+  it("by customers when someone was won", () => {
+    expect(sharedSplitBasis(shared, { a: 1, b: 0 }, ["a", "b"])).toBe("clientes");
+  });
+  it("equally when nobody was won, and segmentCac indeed splits it equally", () => {
+    expect(sharedSplitBasis(shared, { a: 0, b: 0 }, ["a", "b"])).toBe("partes_iguales");
+    expect(sharedSplitBasis(shared, {}, ["a", "b"])).toBe("partes_iguales");
+    const r = segmentCac(shared, {}, ["a", "b"]);
+    expect(r.a.shared).toBe(4500);
+  });
+  it("null without shared cost or without segments", () => {
+    expect(sharedSplitBasis([{ segment_id: "a", channel: "Eventos", amount: 100 }], {}, ["a"])).toBeNull();
+    expect(sharedSplitBasis([{ segment_id: null, channel: "Eventos", amount: 0 }], {}, ["a"])).toBeNull();
+    expect(sharedSplitBasis(shared, {}, [])).toBeNull();
   });
 });

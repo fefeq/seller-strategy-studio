@@ -2,8 +2,8 @@
 // (the year is the sum of its 4 quarters). The real gross margin it yields feeds every payback in the app.
 // Pure so dashboards, MCP and tests agree.
 import { capacityPlan, quarterRange } from "@/lib/metrics";
-import { segmentCac, type CostLike } from "@/lib/cac";
-import { assignSegment, segmentAcv, type DealLike, type SegLike } from "@/lib/segment-coverage";
+import { segmentCac, sharedSplitBasis, type CostLike } from "@/lib/cac";
+import { assignSegment, assignedByAmount, paybackMarginBasis, segmentAcv, type DealLike, type SegLike } from "@/lib/segment-coverage";
 
 export const BUDGET_FIELDS = ["plan_revenue", "plan_cost_to_serve", "plan_acquisition", "plan_new_customers", "actual_revenue", "actual_cost_to_serve"] as const;
 export type BudgetField = (typeof BUDGET_FIELDS)[number];
@@ -121,11 +121,13 @@ function periodBudget(
     const t = new Date(d.closed_at ?? d.updated_at).getTime();
     return d.stage === "won" && t >= range.start.getTime() && t < range.end.getTime() && assignSegment(d, segments) === id;
   });
-  const cacs = segmentCac(costs, Object.fromEntries(segments.map((s) => [s.id, wonIn(s.id).length])), segments.map((s) => s.id));
+  const customers = Object.fromEntries(segments.map((s) => [s.id, wonIn(s.id).length]));
+  const cacs = segmentCac(costs, customers, segments.map((s) => s.id));
+  const sharedSplit = sharedSplitBasis(costs, customers, segments.map((s) => s.id));
 
   return segments.map((seg) => {
     const b = values(seg.id);
-    const { acv } = segmentAcv(seg, deals.filter((d) => assignSegment(d, segments) === seg.id));
+    const { acv, source: acvSource, rangeBasis } = segmentAcv(seg, deals.filter((d) => assignSegment(d, segments) === seg.id));
     const target = seg.payback_months != null ? Number(seg.payback_months) : null;
 
     const planRevenue = num(b?.plan_revenue);
@@ -133,14 +135,16 @@ function periodBudget(
     const planNew = num(b?.plan_new_customers);
     const planMargin = budgetMargin(b, "plan");
     const planCac = planAcq != null && planNew ? planAcq / planNew : null;
-    const planPayback = capacityPlan({ acv, cac: planCac, grossMarginPct: planMargin ?? seg.gross_margin_pct }).paybackMonths;
+    const planCalc = capacityPlan({ acv, cac: planCac, grossMarginPct: planMargin ?? seg.gross_margin_pct });
+    const planPayback = planCalc.paybackMonths;
 
     const won = wonIn(seg.id);
     const actualRevenue = num(b?.actual_revenue);
     const realMargin = budgetMargin(b, "actual");
     const used = marginFor(seg, ...marginChain(seg.id));
     const cac = cacs[seg.id];
-    const realPayback = cac.cac != null ? capacityPlan({ acv, cac: cac.cac, grossMarginPct: used.pct }).paybackMonths : null;
+    const realCalc = cac.cac != null ? capacityPlan({ acv, cac: cac.cac, grossMarginPct: used.pct }) : null;
+    const realPayback = realCalc ? realCalc.paybackMonths : null;
 
     return {
       segment: seg,
@@ -155,6 +159,13 @@ function periodBudget(
       revenueAttainment: planRevenue && actualRevenue != null ? actualRevenue / planRevenue : null,
       spendVsPlan: planAcq ? cac.cost / planAcq : null,
       payback: { target, planOk: planPayback != null && target != null ? planPayback <= target : null, realOk: realPayback != null && target != null ? realPayback <= target : null },
+      // Labels only (SDD-20261106-metrics-honest-data §13): top level, never inside plan / actual / payback.
+      acvSource,
+      acvRangeBasis: rangeBasis,
+      wonInPeriod: won.length,
+      inferredWonInPeriod: won.filter((d) => assignedByAmount(d, segments)).length,
+      paybackMarginBasis: { plan: paybackMarginBasis(planCalc), actual: realCalc ? paybackMarginBasis(realCalc) : null },
+      sharedSplit,
     };
   });
 }

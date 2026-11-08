@@ -11,10 +11,10 @@ import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/se
 import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
+import { DataMark } from "@/components/metrics/data-mark";
+import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, acvMark, inferredMark } from "@/components/metrics/mark-text";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", deals: "margen de los deals ganados", plan: "margen presupuestado", objetivo: "margen objetivo" };
-
-const ACV_SOURCE = { ganados: "media de ganados", abiertos: "media de abiertos", rango: "punto medio del rango" };
 
 /**
  * Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels.
@@ -85,12 +85,16 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
 function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCoverageRow; money: (n: number) => string; canEdit: boolean; quarter: string; onTarget: (v: number) => void }) {
   const cov = r.coverage;
   const tone = !cov ? "text-muted-foreground" : cov.status === "low" ? "text-signal" : cov.status === "healthy" ? "text-success" : "text-foreground";
+  const acv = acvMark(r.acvSource, r.acvRangeBasis);
+  // Margin 0 % or below: the payback (Infinity or negative) is replaced by «Sin dato», never green or red.
+  const nonPositive = r.paybackMarginBasis === "no_positivo";
   return (
     <div className="rounded-md border p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="break-words font-medium">{r.segment.name}</p>
-          <p className="text-[11px] text-muted-foreground">ACV {money(r.acv)} · {ACV_SOURCE[r.acvSource]}</p>
+          {r.inferredDeals > 0 && <DataMark {...inferredMark(r.inferredDeals, r.assignedDeals, true)} className="block text-[11px] text-muted-foreground" />}
+          <p className="text-[11px] text-muted-foreground">ACV {money(r.acv)}{acv && <> · <DataMark {...acv} /></>}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className={`font-display text-3xl ${tone}`}>{cov ? `${cov.ratio.toFixed(1)}x` : "—"}</p>
@@ -118,14 +122,17 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
         <div className="flex items-center justify-between gap-2 text-sm">
           <span>Payback {r.payback.source === "real" ? "real" : r.payback.source === "objetivo" ? "estimado" : ""}</span>
           <span className="font-mono text-xs">
-            <span className={r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""}>{r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}</span>
+            {nonPositive
+              ? <DataMark {...MARGIN_NON_POSITIVE} />
+              : <span className={r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""}>{r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}</span>}
             <span className="text-muted-foreground"> / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}</span>
           </span>
         </div>
+        {r.paybackMarginBasis === "supuesto_100" && <DataMark {...MARGIN_ASSUMED} className="block text-[11px] text-muted-foreground" />}
         {(() => {
           const s = r.segment as SegLike & { margin_source?: MarginSource | null };
           return s.margin_source && s.gross_margin_pct != null
-            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? " · apunta ingresos y coste de servir en «Presupuesto por segmento»" : ""}</p>
+            ? <p className="text-[11px] text-muted-foreground">Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%{s.margin_source === "objetivo" ? <> · apunta ingresos y coste de servir en «<Link to="/strategy" search={{ tab: "budget" }} className="underline">Presupuesto por segmento</Link>»</> : ""}</p>
             : null;
         })()}
         {r.payback.source !== "real" && (
@@ -133,8 +140,8 @@ function SegmentCard({ r, money, canEdit, quarter, onTarget }: { r: SegmentCover
             {r.cac.cost > 0 && r.cac.customers === 0
               ? "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
               : r.payback.source === "objetivo"
-                ? "Calculado con el CAC objetivo. Introduce los costes en «CAC real» para verlo real."
-                : "Introduce los costes en «CAC real» o un CAC objetivo para calcular el payback."}
+                ? <>Calculado con el CAC objetivo. Introduce los costes en «<CacRealLink />» para verlo real.</>
+                : <>Introduce los costes en «<CacRealLink />» o un CAC objetivo para calcular el payback.</>}
           </p>
         )}
       </div>
@@ -150,4 +157,9 @@ function Metric({ label, real, target, progress, hint }: { label: string; real: 
       {hint && <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>}
     </div>
   );
+}
+
+/** «CAC real» lives in Métricas › CAC y presupuesto (SDD-20261106-metrics-honest-data CA-11). */
+function CacRealLink() {
+  return <Link to="/metrics" search={{ seccion: "economia" }} className="underline">CAC real</Link>;
 }
