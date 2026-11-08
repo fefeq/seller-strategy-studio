@@ -164,16 +164,14 @@ export const agentMcpTools = TOOLS.map((t) =>
           `Datos no válidos: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
         );
       const summary = summarizeAction(t.name, parsed.data);
-      const { error } = await c.db
-        .from("agent_pending_actions")
-        .insert({
-          org_id: c.orgId,
-          user_id: c.userId,
-          tool: t.name,
-          args: parsed.data as never,
-          summary,
-          source: "mcp",
-        });
+      const { error } = await c.db.from("agent_pending_actions").insert({
+        org_id: c.orgId,
+        user_id: c.userId,
+        tool: t.name,
+        args: parsed.data as never,
+        summary,
+        source: "mcp",
+      });
       if (error) throw new ToolError(errorText(error));
       return text(
         `Acción preparada en ${c.orgName}: «${summary}». El usuario debe confirmarla en Nokko → Sugerencias (${APP_URL}).`,
