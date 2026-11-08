@@ -533,6 +533,13 @@
       "when": 1793749700002,
       "tag": "0074_one_pending_won_request_per_deal",
       "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1793749800002,
+      "tag": "0078_money_moment_notices",
+      "breakpoints": true
     }
   ]
 }

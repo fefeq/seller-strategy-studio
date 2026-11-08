@@ -3340,6 +3340,7 @@ export type Database = {
         Row: {
           body: string | null
           created_at: string
+          dedupe_key: string | null
           id: string
           job_id: string | null
           kind: string
@@ -3353,6 +3354,7 @@ export type Database = {
         Insert: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           job_id?: string | null
           kind: string
@@ -3366,6 +3368,7 @@ export type Database = {
         Update: {
           body?: string | null
           created_at?: string
+          dedupe_key?: string | null
           id?: string
           job_id?: string | null
           kind?: string
