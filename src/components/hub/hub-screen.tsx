@@ -34,6 +34,7 @@ import { DriveImportButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 import { DriveAccountsPanel } from "@/components/drive-overview";
 import { Editor } from "@/components/hub/doc-editor";
+import { AGENT_RULE_LIMITS, rulesCoverage, rulesNotice } from "@/lib/knowledge-rules";
 
 export const SECTIONS = [
   ["company", "Empresa", "Servicios, ICP, buyer personas, ofertas, precios, propuesta de valor"],
@@ -46,7 +47,11 @@ export const SECTIONS = [
   ["methodology", "Metodología", "MEDDPICC y plantillas de cualificación"],
   ["campaigns", "Campañas", "Lista, copy y qué consiguió"],
   ["skills", "Skills", "Tareas repetibles: de equipo y personales"],
-  ["rules", "Reglas", "Lo que los agentes no pueden hacer sin una persona"],
+  [
+    "rules",
+    "Reglas",
+    "Lo que los agentes no pueden hacer sin una persona. El agente lee estas reglas en cada conversación y al redactar seguimientos y briefs de reunión.",
+  ],
 ] as const;
 
 /** Not a knowledge section: the documents saved in each account's Google Drive folder. */
@@ -100,6 +105,11 @@ export function HubScreen() {
     sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
   );
   const list = docs.filter((d) => d.section === section);
+  // How many rules the agent reads, counted with the reader's own function (SDD-20261106-agent-rules-reader, CA-6).
+  const rulesWarning =
+    section === "rules" && data
+      ? rulesNotice(rulesCoverage(data.rows, AGENT_RULE_LIMITS), data.truncated)
+      : null;
   // A person changing section replaces the URL: seccion set (not the default), doc out (it only wins when the page opens), q kept.
   function goToSection(id: string) {
     setSection(id);
@@ -304,6 +314,7 @@ export function HubScreen() {
                 {data?.truncated && (
                   <p className="text-xs text-muted-foreground">{truncatedNotice(docs.length)}</p>
                 )}
+                {rulesWarning && <p className="text-xs text-muted-foreground">{rulesWarning}</p>}
                 <div data-testid="hub-results" className="space-y-2">
                   {(results ? results.map((r) => r.doc) : list).map((d) => (
                     <button

@@ -539,3 +539,93 @@ describe("HubScreen · ?seccion= (CA-3)", () => {
     expect(applyLast({ doc: "d4", seccion: "objections" }).next).toEqual({ seccion: "rules" });
   });
 });
+
+// SDD-20261106-agent-rules-reader (NK-0069), U-4 · CA-6 (pantalla): Conocimiento › Reglas says the agent reads the rules and
+// how many enter complete, counted from data.rows with the reader's own function; the «obligatorio» box names the agent.
+describe("HubScreen · Reglas que lee el agente (CA-6)", () => {
+  const LEE =
+    "El agente lee estas reglas en cada conversación y al redactar seguimientos y briefs de reunión.";
+  const BOX =
+    "El agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.";
+  const rules = (n: number) =>
+    Array.from({ length: n }, (_, i) => row(`r${i + 1}`, "rules", `Regla ${i + 1}`));
+
+  it("the Reglas section says the agent reads them, and no warning when every rule enters", async () => {
+    h.search = { seccion: "rules" };
+    h.docs = rules(3);
+    mount();
+    await screen.findByText("Regla 1");
+    expect(screen.getByText(new RegExp(LEE.replace(/[.()]/g, "\\$&")))).toBeInTheDocument();
+    expect(screen.queryByText(/El agente lee \d+ de \d+/)).not.toBeInTheDocument();
+  });
+
+  it("L < N: counts only team rules with text, marked ones of other sections included", async () => {
+    h.search = { seccion: "rules" };
+    h.docs = [
+      ...rules(13),
+      { ...row("m1", "company", "Marcada"), mandatory: true },
+      { ...row("p1", "rules", "Personal"), scope: "personal" },
+      row("e1", "rules", "Vacía", "   "),
+    ];
+    mount();
+    expect(
+      await screen.findByText(
+        "El agente lee 12 de 14 reglas completas (las más recientes). Junta o acorta las que puedas.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("a rule cut by the character limit does not count as read", async () => {
+    h.search = { seccion: "rules" };
+    h.docs = [row("r1", "rules", "Corta"), row("r2", "rules", "Larga", "x".repeat(13_000))];
+    mount();
+    expect(
+      await screen.findByText(
+        "El agente lee 1 de 2 reglas completas (las más recientes). Junta o acorta las que puedas.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("truncated: no «L de N», says more rules may exist", async () => {
+    h.search = { seccion: "rules" };
+    h.docs = rules(14);
+    h.truncated = true;
+    mount();
+    expect(
+      await screen.findByText("Puede haber más reglas de las que se han cargado."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/El agente lee \d+ de \d+/)).not.toBeInTheDocument();
+  });
+
+  it("no count before the documents answer", async () => {
+    let release: () => void = () => {};
+    h.gate = new Promise<void>((r) => {
+      release = r;
+    });
+    h.search = { seccion: "rules" };
+    h.docs = rules(14);
+    mount();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.queryByText(/El agente lee \d+ de \d+/)).not.toBeInTheDocument();
+    release();
+    expect(await screen.findByText(/El agente lee 12 de 14/)).toBeInTheDocument();
+  });
+
+  it("the «De obligado cumplimiento» box names the agent, in both branches, within 135 characters", async () => {
+    expect(BOX.length).toBeLessThanOrEqual(135);
+    h.docs = [row("d1", "company", "Propuesta de valor"), row("r1", "rules", "Regla 1")];
+    h.search = { doc: "d1" };
+    mount();
+    await screen.findByDisplayValue("Propuesta de valor");
+    expect(screen.getByText(BOX)).toBeInTheDocument();
+    cleanup();
+    h.search = { doc: "r1" };
+    mount();
+    await screen.findByDisplayValue("Regla 1");
+    expect(
+      screen.getByText(
+        "Todo lo de Reglas lo es: el agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.",
+      ),
+    ).toBeInTheDocument();
+  });
+});

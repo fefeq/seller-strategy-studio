@@ -53,8 +53,8 @@ export function Editor({
           <span>
             De obligado cumplimiento
             <span className="block text-xs text-muted-foreground">
-              {isRules ? "Todo lo de Reglas lo es: " : ""}los agentes lo leen siempre al redactar el
-              brief, el plan y los demás documentos del Ciclo GTM, y aparece en sus fuentes.
+              {isRules ? "Todo lo de Reglas lo es: el" : "El"} agente lo lee en cada conversación y
+              al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.
             </span>
           </span>
         </label>

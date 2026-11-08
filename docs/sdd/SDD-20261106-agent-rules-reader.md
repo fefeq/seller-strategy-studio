@@ -420,4 +420,11 @@ Informe de la tercera pasada (sobre v3; sus bloqueantes se corrigen en v4), copi
 Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-—
+Rama `feat/nk-0069-agent-rules-reader` sobre `731b651` (NK-0069). Decisiones que el SDD dejaba abiertas, para que el gate las valide:
+- **Qué cuenta en `maxChars`:** título + texto de cada regla (lo que escribe el equipo); no cuenta el texto fijo del bloque (`MANDATORY_RULE`, cabecera, formato JSON). La regla que no cabe entra cortada y cierra la lista; las posteriores no entran.
+- **Literal del aviso:** se usa el de CA-6, con «completas» («El agente lee {L} de {N} reglas completas (las más recientes). Junta o acorta las que puedas.»); el §6 conserva la versión sin «completas».
+- **Texto de la sección Reglas:** se añade al de `SECTIONS` («Lo que los agentes no pueden hacer sin una persona.») la frase del §6, sin quitar la promesa existente.
+- **Casilla:** `{isRules ? "Todo lo de Reglas lo es: el" : "El"} agente lo lee…`; rama sin Reglas 126 caracteres, rama de Reglas 151 visibles en pantalla; con el método de C2 (expresión = 1) el bloque mide 149 (cuenta a mano, no recorrido del árbol de TypeScript).
+- **Consulta del lector:** sin `.limit()` (las vacías o de otras secciones no ocupan huecos); queda acotada por el máximo de filas por defecto de PostgREST.
+- **Memoria:** `learnFrom` aprende de la respuesta del modelo sin el aviso de CA-4.
+- **Alcance real de CA-5:** al ir dentro de las herramientas, las reglas también llegan cuando MCP o la aprobación de Sugerencias (`meeting-no-prep`) ejecutan esas dos herramientas (nota 6 de la tercera pasada).
