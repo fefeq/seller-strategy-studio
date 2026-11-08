@@ -141,6 +141,71 @@ describe("loadAgentRules filters explicitly (CA-2)", () => {
   });
 });
 
+describe("same order as the Conocimiento screen (CA-6, tie on updated_at)", () => {
+  type Dated = Row & { id: string; updated_at: string };
+  /** A fake that sorts like PostgREST by the .order() calls it receives (ascending unless told otherwise). */
+  function sortingDb(rows: Dated[]) {
+    const from = () => {
+      const orders: [keyof Dated, boolean][] = [];
+      const proxy: object = new Proxy(
+        {},
+        {
+          get(_t, prop: string) {
+            if (prop === "then") {
+              const sorted = rows.slice().sort((a, b) => {
+                for (const [col, asc] of orders) {
+                  const c = String(a[col]).localeCompare(String(b[col]));
+                  if (c) return asc ? c : -c;
+                }
+                return 0;
+              });
+              return (ok: (v: unknown) => unknown) =>
+                Promise.resolve({ data: sorted, error: null }).then(ok);
+            }
+            return (...args: unknown[]) => {
+              if (prop === "order")
+                orders.push([
+                  args[0] as keyof Dated,
+                  (args[1] as { ascending?: boolean } | undefined)?.ascending ?? true,
+                ]);
+              return proxy;
+            };
+          },
+        },
+      );
+      return proxy;
+    };
+    return { from } as unknown as Parameters<typeof loadAgentRules>[0]["db"];
+  }
+
+  it("breaks a tie on updated_at by id, as the screen does, so both pick the same rule", async () => {
+    const at = "2026-11-01T00:00:00Z";
+    // The client returns them in the opposite order of the screen's id tiebreak.
+    const rows: Dated[] = [
+      {
+        ...rule(2, { title: "Regla B" }),
+        id: "bbbbbbbb-0000-4000-8000-000000000002",
+        updated_at: at,
+      },
+      {
+        ...rule(1, { title: "Regla A" }),
+        id: "aaaaaaaa-0000-4000-8000-000000000001",
+        updated_at: at,
+      },
+    ];
+    const limits = { maxRules: 1, maxChars: 12_000 };
+    const r = await loadAgentRules({ db: sortingDb(rows), orgId: ORG }, limits);
+    // The screen reads .order("updated_at", desc).order("id") (hub-screen.tsx) and counts with pickRules.
+    const screen = rows
+      .slice()
+      .sort((a, b) => b.updated_at.localeCompare(a.updated_at) || a.id.localeCompare(b.id));
+    expect(r.ok && r.rules.map((x) => x.titulo)).toEqual(
+      pickRules(screen, limits).rules.map((x) => x.titulo),
+    );
+    expect(r.ok && r.rules[0]?.titulo).toBe("Regla A");
+  });
+});
+
 describe("agent limits (CA-3)", () => {
   it("are the ones Fede decided: 12 rules and 12 000 characters in total", () => {
     expect(AGENT_RULE_LIMITS).toEqual({ maxRules: 12, maxChars: 12_000 });
