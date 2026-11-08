@@ -251,8 +251,8 @@ describe("Metrics page (CA-6)", () => {
   const nav = () => screen.getByRole("navigation", { name: "Secciones de Métricas" });
   async function mountPage() {
     const { Route } = await import("@/routes/_authenticated/metrics");
-    const Page = (Route as unknown as { options: { component: () => ReactNode } }).options
-      .component;
+    const Page = Route.options.component;
+    if (!Page) throw new Error("The metrics route has no component");
     return wrap(<Page />);
   }
   const title = () => screen.getByRole("heading", { level: 1 });
