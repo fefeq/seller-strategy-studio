@@ -290,6 +290,12 @@
           "at": "2026-11-08T19:52:28.885Z",
           "by": "Fede",
           "note": "sha=6c1917c4a85ba25e827f7c8ebbd9c0867c10eaa6"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T20:37:35.111Z",
+          "by": "Fede",
+          "note": "CA-7 confirmado: «solo contactos» busca en las cuentas objetivo del segmento del ICP, con dominio y menos de 2 personas en el mapa de poder"
         }
       ]
     },
