@@ -146,7 +146,7 @@ No hay tests en `src/routes/`.
 - La rama local de NK-0051 se perdió: sus 8 commits hay que rehacerlos desde los 4 SDD de NK-0051 (en «Borrador»).
 
 ## 15. Preguntas para Fede y para la revisión técnica
-1. **Ids de sección en la URL de `/hub` y `/theory-u` (pendiente de Fede):** propuesta por defecto, los internos (`company` … `rules`, `drive`; `journey` … `prototypes`), por estabilidad y sin tabla de traducción. CA-3 está escrito con esta propuesta. ¿Te valen, o prefieres español como en `/metrics` (`?seccion=objeciones`)? Si cambian, solo cambian las constantes de `src/lib/screen-sections.ts` y los casos de CA-3.
+1. **Decidido por Fede (2026-11-06, «OK a todo»): ids internos en inglés.** Ids de sección en la URL de `/hub` y `/theory-u`: propuesta por defecto, los internos (`company` … `rules`, `drive`; `journey` … `prototypes`), por estabilidad y sin tabla de traducción. CA-3 está escrito con esta propuesta. ¿Te valen, o prefieres español como en `/metrics` (`?seccion=objeciones`)? Si cambian, solo cambian las constantes de `src/lib/screen-sections.ts` y los casos de CA-3.
 2. **Titulares con conclusión** para Conocimiento y Theory U: ¿los quieres? Irían en `headlines.ts` después de integrar el PR #76.
 3. **Resumen de Métricas en 4-5 KPI** (punto 15 del informe UX): ¿SDD propio o se espera a tener uso real?
 4. **Decidido (Fede, 2026-11-06): la rama local de NK-0051 se perdió.** C1 parte de `main` y no depende de ella; los 4 SDD de NK-0051 siguen en «Borrador» sin código.
