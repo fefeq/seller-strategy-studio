@@ -13,6 +13,7 @@ import { DateField } from "@/components/date-field";
 import { useMe } from "@/hooks/use-me";
 import { CHANGE_ELEMENTS, CHANGE_LABEL, DECISION_LABEL, missingCriteria, suggestedReviewOn, type ChangeElement, type ExperimentDecision } from "@/lib/experiments";
 import { decideExperiment } from "@/lib/experiments-core";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 // Below lg the list/editor stack, so bring the editor into view after a tap.
 function revealOnMobile(el: HTMLElement | null) {
@@ -79,7 +80,7 @@ export function Prototypes() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="max-w-3xl text-sm text-muted-foreground">Co-crear en Theory U es explorar el futuro haciendo: prototipos pequeños, feedback temprano y aprender rápido en vez de planificar de más. Lo que funciona pasa a los playbooks y a la estrategia.</p>
+        <ExplanationFold kind="metodo" className="max-w-3xl"><p className="text-sm text-muted-foreground">Co-crear en Theory U es explorar el futuro haciendo: prototipos pequeños, feedback temprano y aprender rápido en vez de planificar de más. Lo que funciona pasa a los playbooks y a la estrategia.</p></ExplanationFold>
         <Button size="sm" onClick={add}>+ Prototipo</Button>
       </div>
       {/* Phones: the 5 status columns scroll sideways with snap instead of stacking. */}

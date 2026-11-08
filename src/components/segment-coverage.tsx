@@ -14,6 +14,7 @@ import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
 import { DataMark } from "@/components/metrics/data-mark";
 import { MARGIN_ASSUMED, MARGIN_NON_POSITIVE, acvMark, inferredMark } from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const MARGIN_LABEL: Record<MarginSource, string> = { real: "margen real", deals: "margen de los deals ganados", plan: "margen presupuestado", objetivo: "margen objetivo" };
 
@@ -68,7 +69,7 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div>
           <h3 className="text-2xl">Cobertura por segmento · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">Real frente a objetivo. Cobertura = pipeline abierto que cierra este trimestre / objetivo del segmento (sana entre 3x y 4x). Los deals sin segmento se asignan por su importe.</p>
+          <ExplanationFold kind="calculo" className="mt-1"><p className="text-xs text-muted-foreground">Real frente a objetivo. Cobertura = pipeline abierto que cierra este trimestre / objetivo del segmento (sana entre 3x y 4x). Los deals sin segmento se asignan por su importe.</p></ExplanationFold>
         </div>
         {total.target > 0 && (
           <div className="text-right text-sm">
