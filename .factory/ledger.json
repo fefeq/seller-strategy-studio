@@ -1384,7 +1384,7 @@
       "state": "PROMOTED",
       "owner": "nokko-author-nk0051-c1",
       "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
+      "sdd": "docs/sdd/SDD-20261106-ux-metrics-data-state.md",
       "prd": null,
       "branch": "feat/nk-0051-c1-screen-states",
       "base_commit": "a3ba34c6cfa7787fb846de243b68ff3e550cbe82",
@@ -1406,6 +1406,12 @@
           "at": "2026-11-08T18:32:50.939Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0051-c1"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T19:29:38.806Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-ux-metrics-data-state.md prd=-"
         }
       ]
     },
