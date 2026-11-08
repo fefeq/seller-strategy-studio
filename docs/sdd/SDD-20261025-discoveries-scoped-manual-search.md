@@ -141,7 +141,7 @@ Informe del gate recibido el 2026-10-28, copiado sin editar. El veredicto no apr
 - CA-7: «solo contactos» busca en las cuentas objetivo del ICP con el mapa de poder casi vacío y avisa si no hay ninguna.
 - CA-8 ya se cumplía: los competidores se añaden al posicionamiento solo al pulsar «Añadir a competidores».
 - Tras el gate independiente: sin ICP, el selector enlaza a crearlo en Estrategia GTM; el aviso «define al menos un ICP» solo sale en la búsqueda manual (la semanal sigue callada); test de CA-5 con un ICP de otra empresa; la entrada de los trabajos en segundo plano (`job-runner.server.ts`) pasa de `any` a lectores tipados, porque el gate exige cada archivo tocado limpio.
-- Interpretación de CA-7 pendiente de confirmar por Fede: «empresas ya guardadas de ese ICP» = cuentas objetivo del segmento del ICP, con dominio y con el mapa de poder casi vacío (menos de 2 personas).
+- Interpretación de CA-7 confirmada por Fede el 2026-11-08: «empresas ya guardadas de ese ICP» = cuentas objetivo del segmento del ICP, con dominio y con el mapa de poder casi vacío (menos de 2 personas).
 - Sin migraciones. Sin prueba manual con sesión iniciada.
 
 ---
