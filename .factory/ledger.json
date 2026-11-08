@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 103,
+  "seq": 105,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1927,7 +1927,7 @@
       "title": "Buscar en Conocimiento: búsqueda por texto en /hub y contrato de URL con la sección de Drive",
       "kind": "feature",
       "source": "SDD-20261106-hub-search (Sprint 1, rama docs/sprint1-sdd); roadmap E-31",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author-nk0068",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-hub-search.md",
@@ -1952,6 +1952,12 @@
           "at": "2026-11-08T20:48:15.850Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0068"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T22:41:43.996Z",
+          "by": "Fede",
+          "note": "sha=ad9261c0f2117dc638c1ddff4e5a3f005e3f372e"
         }
       ]
     },
@@ -1960,7 +1966,7 @@
       "title": "Métricas honestas: quitar la atribución inventada y dejar un único CAC y un único payback en /metrics",
       "kind": "feature",
       "source": "SDD-20261106-metrics-honest-data (Sprint 1, rama docs/sprint1-sdd); roadmap E-30. Registrado antes como NK-0066 en b93ca5e (PR #89) y perdido al fusionar el ledger con el NK-0066 del PR #90; vuelto a registrar el 2026-11-08",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author-nk0067",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-metrics-honest-data.md",
@@ -1985,6 +1991,12 @@
           "at": "2026-11-08T20:48:14.268Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0067"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T22:41:43.945Z",
+          "by": "Fede",
+          "note": "sha=ad9261c0f2117dc638c1ddff4e5a3f005e3f372e"
         }
       ]
     },
@@ -2377,7 +2389,7 @@
       "title": "Las Reglas de Conocimiento llegan al agente (requisito para retirar Ciclo GTM)",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author-nk0069",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-agent-rules-reader.md",
@@ -2396,6 +2408,12 @@
           "at": "2026-11-08T20:48:22.138Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0069"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T22:41:44.088Z",
+          "by": "Fede",
+          "note": "sha=ad9261c0f2117dc638c1ddff4e5a3f005e3f372e"
         }
       ]
     },
@@ -2404,7 +2422,7 @@
       "title": "Ampliación de NK-0051 (C1): estados de carga y error, sección en la URL, vacíos y pistas en Conocimiento, Theory U y Métricas",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author-nk0051-c1",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-ux-core-screens-pattern.md",
@@ -2423,6 +2441,12 @@
           "at": "2026-11-08T20:48:25.200Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0051-c1"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T22:41:44.039Z",
+          "by": "Fede",
+          "note": "sha=ad9261c0f2117dc638c1ddff4e5a3f005e3f372e"
         }
       ]
     },
@@ -2431,7 +2455,7 @@
       "title": "Ampliación de NK-0051 (C2): explicaciones plegadas y una sola forma para el estado de un dato",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nokko-author-nk0051-c2",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261106-ux-metrics-data-state.md",
@@ -2450,6 +2474,12 @@
           "at": "2026-11-08T20:48:27.098Z",
           "by": "Fede",
           "note": "owner=nokko-author-nk0051-c2"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T22:41:44.141Z",
+          "by": "Fede",
+          "note": "sha=ad9261c0f2117dc638c1ddff4e5a3f005e3f372e"
         }
       ]
     },
@@ -2748,6 +2778,48 @@
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:37.846Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0104",
+      "title": "Logs: memory.server.ts registra el error entero en memory load/learn/decision failed; un SyntaxError de JSON.parse llevaría un trozo de la respuesta del modelo",
+      "kind": "bug",
+      "source": "Sprint 1: gate final 2026-11-08",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T22:41:47.268Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0105",
+      "title": "Depuración de IA: tras NK-0087 los logs de ai-gateway solo guardan estado y longitud del cuerpo; registrar códigos cerrados del proveedor (p. ej. error.status de Gemini), nunca error.message",
+      "kind": "feature",
+      "source": "Sprint 1: gate final 2026-11-08",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T22:41:47.319Z",
           "by": "tracker",
           "note": ""
         }
