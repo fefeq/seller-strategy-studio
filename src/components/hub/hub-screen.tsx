@@ -149,7 +149,7 @@ export function HubScreen() {
     },
     [],
   );
-  // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); every change is mirrored to the URL.
+  // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); the URL gets q after a typing pause (see typeQuery) and at once on clear, section change or unmount.
   const [text, setText] = useState(qParam ?? "");
   const active = cleanQuery(text);
   const results = useMemo(() => (active ? searchDocs(docs, active) : null), [docs, active]);
