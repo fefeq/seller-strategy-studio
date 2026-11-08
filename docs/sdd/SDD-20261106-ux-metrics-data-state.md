@@ -1,7 +1,7 @@
 # SDD-20261106-ux-metrics-data-state · [Mejora] NK-0051 ampliado, C2: explicaciones plegadas y una sola forma para las marcas de dato
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación)
+**Estado:** Hecho (entregado en la PR #113, merge `6dc4371`, gate PASS sobre `ad9261c`; 2026-11-08; antes Aprobado por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación)
 **Ticket:** NK-0089 (ampliación C2 de NK-0051)
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`, punto 7) · **Depende de:** `SDD-20261106-metrics-honest-data` (SDD-A: crea las marcas con `data-mark`, el envoltorio `DataMark` y la comprobación `src/test/data-marks.ts`) y `SDD-20261106-ux-core-screens-pattern` (C1: saca la pista de `listening.tsx:49` a una línea propia, su §9). C2 se integra el último. · **Coordinar con:** `SDD-20261106-agent-rules-reader` (SDD-D: reescribe el texto de `hub.tsx:161-164`, que hoy no llega al umbral, §14); `SDD-20261031-ux-legibility-contrast` (mismos archivos de `/metrics`; conflicto de archivo, no de función, §14); `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`)
 

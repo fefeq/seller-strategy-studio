@@ -1,7 +1,7 @@
 # SDD-20261106-agent-rules-reader · [Mejora] Las Reglas de Conocimiento llegan al agente (requisito previo para retirar Ciclo GTM)
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta (bloquea la pieza 8 y la decisión A-3 del PRD de GTM Lab)
-**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**Estado:** Hecho (entregado en la PR #113, merge `6dc4371`, gate PASS sobre `ad9261c`; 2026-11-08; antes Aprobado por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
 **Ticket:** NK-0087
 **PRD:** No aplica para el lector (mejora acotada). Propone enmiendas a `docs/prd/PRD-20261101-gtm-lab-en-nokko.md` y a `docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md` (NK-0053), §15 · **Depende de:** SDD-B U-0 (mueve `/hub` a `src/components/hub/hub-screen.tsx` y `doc-editor.tsx`, y cambia la caché `["docs"]` a `{ rows, truncated }`); se integra después de C1 · **Bloquea:** pieza 8 del PRD de GTM Lab (retirada de Ciclo GTM y Debates) y A-3 (menú «Estrategia»)
 
