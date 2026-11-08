@@ -191,10 +191,10 @@ Sin tablas, columnas, RLS ni GRANT nuevos. Mismas consultas. Tests con datos fic
 ## 15. Preguntas para Fede y para la revisión técnica
 1. **Decidido por Fede (2026-11-06): rotular.** Este SDD marca los supuestos y no cambia cifras, para no romper `/strategy`, el asistente y MCP mientras `/strategy` está congelada.
    - **Pregunta abierta derivada:** ¿abrimos en Sprint 2 el cambio a «Sin dato» en todas las superficies a la vez, junto con unificar CAC y payback?
-2. **Cohortes (abierta):** propongo rotularla «Todo el histórico» (CA-2). ¿O prefieres que también filtre por trimestre?
-3. **Win rate al trimestre (abierta):** propongo que el win rate global, por origen y por rep sea del trimestre (CA-3). ¿De acuerdo, o prefieres «histórico» rotulado?
-4. **Fuera de alcance, ¿ticket aparte? (abierta):** `advisor.ts:81` (el asesor y el agente reciben «sin origen = Outbound»); A8 (imputación de perdidos en `revops.ts`); A9 (ex miembros como «Sin asignar»).
-5. **Comentario de `quarter-kpis.ts:2` (abierta):** sigue siendo cierto con «rotular» (las cifras coinciden). Propongo dejarlo como está.
+2. **Decidido por Fede (2026-11-06, «OK a todo»): Cohortes se rotula «Todo el histórico»** (CA-2).
+3. **Decidido por Fede (2026-11-06): win rate del trimestre, con recuentos** (CA-3).
+4. **Decidido por Fede (2026-11-06): dos tickets** — `advisor.ts:81` (NK-0070) y A8 (NK-0071); A9 sin ticket por ahora.
+5. **Decidido por Fede (2026-11-06): se mantiene el comentario de `quarter-kpis.ts:2`.**
 
 Nota: el «2 OK, 3 sí, 5 OK» de Fede del 2026-11-06 respondía a otra lista, no a estas preguntas. Por eso la 2, la 3 y la 5 siguen abiertas y los CA se escriben con la propuesta.
 
