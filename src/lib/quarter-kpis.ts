@@ -1,6 +1,11 @@
 // Company-wide quarterly KPIs (revenue, cost to serve, margin, acquisition, CAC, payback) built from the
 // per-segment budget rows, so Métricas shows the same numbers as Estrategia GTM → Presupuesto vs real.
-import { grossMargin, quarterlyBudget, type QuarterBudgetLike, type SegmentBudgetRow } from "@/lib/segment-budget";
+import {
+  grossMargin,
+  quarterlyBudget,
+  type QuarterBudgetLike,
+  type SegmentBudgetRow,
+} from "@/lib/segment-budget";
 import type { DealLike, SegLike } from "@/lib/segment-coverage";
 import type { CostLike } from "@/lib/cac";
 
@@ -13,7 +18,14 @@ export type KpiSide = {
   cac: number | null;
   payback: number | null;
 };
-export type QuarterKpis = { quarter: string; plan: KpiSide; actual: KpiSide & { wonAmount: number } };
+/** dato · estimado (a weighted segment assumes the margin or takes its ACV from the range or from open deals) · sin_dato (one has margin ≤ 0). */
+export type PaybackBasis = "dato" | "estimado" | "sin_dato" | null;
+export type QuarterKpis = {
+  quarter: string;
+  plan: KpiSide;
+  actual: KpiSide & { wonAmount: number };
+  paybackBasis: { plan: PaybackBasis; actual: PaybackBasis };
+};
 
 /** Sum that stays null when no segment has the value (so "no data" never reads as 0). */
 function sumOrNull(xs: (number | null)[]) {
@@ -26,6 +38,16 @@ function weightedPayback(pairs: { payback: number | null; customers: number | nu
   const ok = pairs.filter((p) => p.payback != null && p.customers);
   const w = ok.reduce((s, p) => s + p.customers!, 0);
   return w ? ok.reduce((s, p) => s + p.payback! * p.customers!, 0) / w : null;
+}
+
+/** What the weighted payback rests on, over the same segments weightedPayback uses (payback and customers). */
+function paybackBasis(rows: SegmentBudgetRow[], k: "plan" | "actual"): PaybackBasis {
+  const used = rows.filter((r) => r[k].payback != null && r[k].newCustomers);
+  if (!used.length) return null;
+  if (used.some((r) => r.paybackMarginBasis[k] === "no_positivo")) return "sin_dato";
+  if (used.some((r) => r.paybackMarginBasis[k] === "supuesto_100" || r.acvSource !== "ganados"))
+    return "estimado";
+  return "dato";
 }
 
 /** Company totals of one period from its per-segment budget rows. */
@@ -42,24 +64,40 @@ export function kpiTotals(rows: SegmentBudgetRow[]): Omit<QuarterKpis, "quarter"
     return {
       revenue,
       costToServe,
-      margin: paired.length ? grossMargin(paired.reduce((s, r) => s + r[k].revenue!, 0), paired.reduce((s, r) => s + r[k].costToServe!, 0)) : null,
+      margin: paired.length
+        ? grossMargin(
+            paired.reduce((s, r) => s + r[k].revenue!, 0),
+            paired.reduce((s, r) => s + r[k].costToServe!, 0),
+          )
+        : null,
       acquisition,
       newCustomers,
       cac: acquisition && newCustomers ? acquisition / newCustomers : null,
-      payback: weightedPayback(rows.map((r) => ({ payback: r[k].payback, customers: r[k].newCustomers }))),
+      payback: weightedPayback(
+        rows.map((r) => ({ payback: r[k].payback, customers: r[k].newCustomers })),
+      ),
     };
   };
-  return { plan: side("plan"), actual: { ...side("actual"), wonAmount: rows.reduce((s, r) => s + r.actual.wonAmount, 0) } };
+  return {
+    plan: side("plan"),
+    actual: { ...side("actual"), wonAmount: rows.reduce((s, r) => s + r.actual.wonAmount, 0) },
+    paybackBasis: { plan: paybackBasis(rows, "plan"), actual: paybackBasis(rows, "actual") },
+  };
 }
 
 /** KPIs for each quarter asked for (they may span two years). */
 export function quarterKpis(
-  segments: SegLike[], deals: DealLike[], budgetRows: QuarterBudgetLike[], costs: (CostLike & { period: string })[], quarters: string[],
+  segments: SegLike[],
+  deals: DealLike[],
+  budgetRows: QuarterBudgetLike[],
+  costs: (CostLike & { period: string })[],
+  quarters: string[],
 ): QuarterKpis[] {
   const byYear = new Map<number, ReturnType<typeof quarterlyBudget>>();
   return quarters.map((q) => {
     const year = Number(q.slice(0, 4));
-    if (!byYear.has(year)) byYear.set(year, quarterlyBudget(segments, deals, budgetRows, costs, year));
+    if (!byYear.has(year))
+      byYear.set(year, quarterlyBudget(segments, deals, budgetRows, costs, year));
     return { quarter: q, ...kpiTotals(byYear.get(year)!.byQuarter[q] ?? []) };
   });
 }

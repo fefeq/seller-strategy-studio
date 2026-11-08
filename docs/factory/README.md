@@ -7,7 +7,7 @@ Entrada: skill `nokko-factory`. Reglas base: `GROUND-RULES.md`.
 ## Mapa del README original a NOKKO
 | Original | En NOKKO | Estado |
 |---|---|---|
-| 1 Intake, ledger LOGGED→PROMOTED→SHIPPED→VERIFIED | `nokko-intake`, `scripts/factory/ledger.mjs`, `.factory/ledger.json` | Hecho y probado (ID único, duplicados, owner solo con `--go`) |
+| 1 Intake, ledger LOGGED→PROMOTED→SHIPPED→VERIFIED (o LOGGED→REJECTED) | `nokko-intake`, `scripts/factory/ledger.mjs`, `.factory/ledger.json` | Hecho y probado (ID único, duplicados, owner solo con `--go`) |
 | 1b Shape (PRD y SDD por niveles; añadido en NOKKO) | `nokko-shape`, `templates/prd.md`, `templates/sdd.md` | Hecho; el ledger enlaza `--sdd` y `--prd` con `ledger.mjs doc` y `promote` exige SDD (y PRD, si está enlazado) en Aprobado; una feature sin SDD no se promueve (pruebas en `src/test/factory-ledger.test.ts`) |
 | 2 Brief | `nokko-brief`, `templates/brief.md` | Hecho |
 | 3 Fan-out, worktrees, balance por uso, supervisión | `nokko-fanout`, `scripts/factory/worktree.mjs` | Hecho; la supervisión es manual con `list_sessions` (sin tarea programada) |

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ScreenState } from "@/components/page";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { parseCsv, normEmail } from "@/lib/dedupe";
 import {
@@ -29,7 +30,7 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["trials", orgId],
     enabled: !!orgId,
     queryFn: async () => {
@@ -37,7 +38,8 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         supabase.from("trials").select("*").order("signed_up_at", { ascending: false }),
         supabase.from("segments").select("id,name").order("acv_min", { ascending: true }),
       ]);
-      if (t.error) throw t.error;
+      const failed = t.error ?? s.error;
+      if (failed) throw failed;
       return { trials: t.data ?? [], segments: s.data ?? [] };
     },
   });
@@ -90,108 +92,113 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
         <ManageTrials trials={data?.trials ?? []} segments={data?.segments ?? []} />
       </div>
 
-      {t && (
-        <>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-            <Kpi
-              size="normal"
-              label="Activación"
-              value={t.signups ? pct(t.activationRate) : "—"}
-              hint={`${t.activated} de ${t.signups} registros`}
-            />
-            <Kpi
-              size="normal"
-              label="Prueba → pago"
-              value={t.signups ? pct(t.trialToPaid) : "—"}
-              hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`}
-            />
-            <Kpi
-              size="normal"
-              label="Tiempo hasta la compra"
-              value={dd(t.medianDaysToPurchase)}
-              hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`}
-            />
-            <Kpi
-              size="normal"
-              label="MRR nuevo self-service"
-              value={money(t.newMrr)}
-              hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"}
-            />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-            <div className="rounded-lg border bg-card p-5">
-              <h3 className="mb-4 text-2xl">Embudo</h3>
-              {t.signups === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Sin registros en {quarter}. Añádelos o importa un CSV desde «Gestionar registros».
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  <Step label="Registros / pruebas" n={t.signups} ratio={1} />
-                  <Step
-                    label="Activados"
-                    n={t.activated}
-                    ratio={t.activationRate}
-                    note={pct(t.activationRate)}
-                  />
-                  <Step label="Pago" n={t.paid} ratio={t.trialToPaid} note={pct(t.trialToPaid)} />
-                </div>
-              )}
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
+        {t && (
+          <>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <Kpi
+                size="normal"
+                label="Activación"
+                value={t.signups ? pct(t.activationRate) : "—"}
+                hint={`${t.activated} de ${t.signups} registros`}
+              />
+              <Kpi
+                size="normal"
+                label="Prueba → pago"
+                value={t.signups ? pct(t.trialToPaid) : "—"}
+                hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`}
+              />
+              <Kpi
+                size="normal"
+                label="Tiempo hasta la compra"
+                value={dd(t.medianDaysToPurchase)}
+                hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`}
+              />
+              <Kpi
+                size="normal"
+                label="MRR nuevo self-service"
+                value={money(t.newMrr)}
+                hint={t.paid ? `${money(t.newMrr / t.paid)} por cliente` : "Sin pagos todavía"}
+              />
             </div>
 
-            <div className="overflow-x-auto rounded-lg border bg-card p-5">
-              <h3 className="mb-3 text-2xl">Comparativa por segmento</h3>
-              {rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sin datos para comparar.</p>
-              ) : (
-                <table className="w-full text-sm [&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background">
-                  <thead>
-                    <tr className="border-b text-left text-xs text-muted-foreground">
-                      <th className="py-2 pr-3 font-normal">Segmento</th>
-                      <th className="py-2 pr-3 text-right font-normal">Registros</th>
-                      <th className="py-2 pr-3 text-right font-normal">Activación</th>
-                      <th className="py-2 pr-3 text-right font-normal">Prueba→pago</th>
-                      <th className="py-2 pr-3 text-right font-normal">Activado→pago</th>
-                      <th className="py-2 pr-3 text-right font-normal">Días a compra</th>
-                      <th className="py-2 text-right font-normal">MRR nuevo</th>
-                    </tr>
-                  </thead>
-                  <tbody className="font-mono text-xs">
-                    {rows.map((r) => (
-                      <tr key={r.segment_id ?? "none"} className="border-b last:border-0">
-                        <td className="py-2 pr-3 font-sans text-sm">{segName(r.segment_id)}</td>
-                        <td className="py-2 pr-3 text-right">{r.signups}</td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.activationRate, bestAct)}`}>
-                          {pct(r.activationRate)}
-                        </td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.trialToPaid, bestPaid)}`}>
-                          {pct(r.trialToPaid)}
-                        </td>
-                        <td className={`py-2 pr-3 text-right ${mark(r.activatedToPaid, bestA2P)}`}>
-                          {r.activated ? pct(r.activatedToPaid) : "—"}
-                        </td>
-                        <td
-                          className={`py-2 pr-3 text-right ${mark(r.medianDaysToPurchase, bestTtp)}`}
-                        >
-                          {dd(r.medianDaysToPurchase)}
-                        </td>
-                        <td className="py-2 text-right">{money(r.newMrr)}</td>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+              <div className="rounded-lg border bg-card p-5">
+                <h3 className="mb-4 text-2xl">Embudo</h3>
+                {t.signups === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Sin registros en {quarter}. Añádelos o importa un CSV desde «Gestionar
+                    registros».
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <Step label="Registros / pruebas" n={t.signups} ratio={1} />
+                    <Step
+                      label="Activados"
+                      n={t.activated}
+                      ratio={t.activationRate}
+                      note={pct(t.activationRate)}
+                    />
+                    <Step label="Pago" n={t.paid} ratio={t.trialToPaid} note={pct(t.trialToPaid)} />
+                  </div>
+                )}
+              </div>
+
+              <div className="overflow-x-auto rounded-lg border bg-card p-5">
+                <h3 className="mb-3 text-2xl">Comparativa por segmento</h3>
+                {rows.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sin datos para comparar.</p>
+                ) : (
+                  <table className="w-full text-sm [&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background">
+                    <thead>
+                      <tr className="border-b text-left text-xs text-muted-foreground">
+                        <th className="py-2 pr-3 font-normal">Segmento</th>
+                        <th className="py-2 pr-3 text-right font-normal">Registros</th>
+                        <th className="py-2 pr-3 text-right font-normal">Activación</th>
+                        <th className="py-2 pr-3 text-right font-normal">Prueba→pago</th>
+                        <th className="py-2 pr-3 text-right font-normal">Activado→pago</th>
+                        <th className="py-2 pr-3 text-right font-normal">Días a compra</th>
+                        <th className="py-2 text-right font-normal">MRR nuevo</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {rows.length > 1 && (
-                <p className="mt-3 text-xs text-muted-foreground">
-                  En color, el mejor segmento de cada columna. Días a compra = mediana desde el
-                  registro hasta el pago.
-                </p>
-              )}
+                    </thead>
+                    <tbody className="font-mono text-xs">
+                      {rows.map((r) => (
+                        <tr key={r.segment_id ?? "none"} className="border-b last:border-0">
+                          <td className="py-2 pr-3 font-sans text-sm">{segName(r.segment_id)}</td>
+                          <td className="py-2 pr-3 text-right">{r.signups}</td>
+                          <td className={`py-2 pr-3 text-right ${mark(r.activationRate, bestAct)}`}>
+                            {pct(r.activationRate)}
+                          </td>
+                          <td className={`py-2 pr-3 text-right ${mark(r.trialToPaid, bestPaid)}`}>
+                            {pct(r.trialToPaid)}
+                          </td>
+                          <td
+                            className={`py-2 pr-3 text-right ${mark(r.activatedToPaid, bestA2P)}`}
+                          >
+                            {r.activated ? pct(r.activatedToPaid) : "—"}
+                          </td>
+                          <td
+                            className={`py-2 pr-3 text-right ${mark(r.medianDaysToPurchase, bestTtp)}`}
+                          >
+                            {dd(r.medianDaysToPurchase)}
+                          </td>
+                          <td className="py-2 text-right">{money(r.newMrr)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+                {rows.length > 1 && (
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    En color, el mejor segmento de cada columna. Días a compra = mediana desde el
+                    registro hasta el pago.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </ScreenState>
     </section>
   );
 }

@@ -5,7 +5,7 @@ description: Estación 1 de la factory NOKKO. Registra bugs, features y alertas 
 
 # Intake y triage
 
-Un solo escritor del ledger: `scripts/factory/ledger.mjs` (archivo `.factory/ledger.json`). Estados: `LOGGED → PROMOTED → SHIPPED → VERIFIED`.
+Un solo escritor del ledger: `scripts/factory/ledger.mjs` (archivo `.factory/ledger.json`). Estados: `LOGGED → PROMOTED → SHIPPED → VERIFIED`, o `LOGGED → REJECTED` si Fede decide que el reporte no es válido: `node scripts/factory/ledger.mjs reject NK-xxxx --by Fede --note "<por qué, con evidencia>"` (solo desde `LOGGED` y solo con su decisión explícita en el chat).
 
 ## Pasos
 1. Reformula el reporte en una línea clara en español, sin datos de clientes (ni nombres, ni emails, ni textos suyos).

@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import {
   closedAtFromDay,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/won-deals";
 import { errorText } from "@/lib/errors";
 import { DateField } from "@/components/date-field";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const STICKY_FIRST =
   "[&_tr>*:first-child]:sticky [&_tr>*:first-child]:left-0 [&_tr>*:first-child]:z-10 [&_tr>*:first-child]:bg-background";
@@ -27,7 +29,7 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
   const orgId = me?.currentOrg?.org_id;
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["segment-coverage", orgId, "won-deals"],
     enabled: !!orgId,
     queryFn: async () => {
@@ -45,6 +47,8 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
           .order("acv_min"),
         supabase.from("accounts").select("id,name"),
       ]);
+      const failed = d.error ?? s.error ?? a.error;
+      if (failed) throw failed;
       return { deals: d.data ?? [], segments: s.data ?? [], accounts: a.data ?? [] };
     },
   });
@@ -85,94 +89,102 @@ export function WonDealsPanel({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">Deals ganados · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Son los clientes nuevos entre los que se divide el gasto de «CAC real». Revisa que cada
-            uno tenga su fecha de cierre real, su valor y su segmento: la fecha decide el trimestre,
-            el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV del payback.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
-          <div>
-            <p className="font-mono">
-              {summary.total.deals} · {money(summary.total.amount)}
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Son los clientes nuevos entre los que se divide el gasto de «CAC real». Revisa que
+              cada uno tenga su fecha de cierre real, su valor y su segmento: la fecha decide el
+              trimestre, el segmento decide a quién se le imputa el CAC y el valor alimenta el ACV
+              del payback.
             </p>
-            <p className="text-xs text-muted-foreground">ganados en el trimestre</p>
+          </ExplanationFold>
+        </div>
+        {/* No totals nor «Añadir» until the deals answer (never a 0 that looks like data). */}
+        {data && (
+          <div className="flex flex-wrap items-center justify-end gap-x-5 gap-y-2 text-right text-sm">
+            <div>
+              <p className="font-mono">
+                {summary.total.deals} · {money(summary.total.amount)}
+              </p>
+              <p className="text-xs text-muted-foreground">ganados en el trimestre</p>
+            </div>
+            <Button
+              size="sm"
+              variant={adding ? "ghost" : "default"}
+              onClick={() => setAdding((x) => !x)}
+            >
+              {adding ? "Cerrar" : <>Añadir deal ganado</>}
+            </Button>
           </div>
-          <Button
-            size="sm"
-            variant={adding ? "ghost" : "default"}
-            onClick={() => setAdding((x) => !x)}
-          >
-            {adding ? "Cerrar" : <>Añadir deal ganado</>}
-          </Button>
-        </div>
+        )}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2 text-xs">
-        {summary.bySegment.map((s) => (
-          <span key={s.segment.id} className="rounded-none border px-3 py-1">
-            {s.segment.name}:{" "}
-            <span className="font-mono">
-              {s.deals} · {money(s.amount)}
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
+        <div className="mb-4 flex flex-wrap gap-2 text-xs">
+          {summary.bySegment.map((s) => (
+            <span key={s.segment.id} className="rounded-none border px-3 py-1">
+              {s.segment.name}:{" "}
+              <span className="font-mono">
+                {s.deals} · {money(s.amount)}
+              </span>
             </span>
-          </span>
-        ))}
-        {summary.unassigned > 0 && (
-          <span className="rounded-none border border-signal px-3 py-1 text-signal">
-            Sin segmento: {summary.unassigned}
-          </span>
-        )}
-        {summary.withIssues > 0 && (
-          <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-signal">
-            {summary.withIssues} por revisar
-          </span>
-        )}
-      </div>
-
-      {adding && (
-        <AddWon
-          quarter={quarter}
-          segments={segments}
-          openDeals={openDeals}
-          onDone={() => {
-            setAdding(false);
-            refresh();
-          }}
-        />
-      )}
-
-      {rows.length === 0 ? (
-        <p className="py-4 text-sm text-muted-foreground">
-          Ningún deal ganado en {quarter}. Sin clientes nuevos no hay CAC real: añade los que
-          cerraste o márcalos como ganados en Pipeline.
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className={`w-full min-w-[720px] text-sm ${STICKY_FIRST}`}>
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-3 font-normal">Deal</th>
-                <th className="px-2 py-2 font-normal">Fecha de cierre</th>
-                <th className="px-2 py-2 text-right font-normal">Valor</th>
-                <th className="px-2 py-2 font-normal">Segmento</th>
-                <th className="px-2 py-2 font-normal">Avisos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r) => (
-                <WonRow
-                  key={r.deal.id}
-                  r={r}
-                  account={accountName(r.deal.account_id ?? null)}
-                  segments={segments}
-                  segName={segName}
-                  onUpdate={(p) => update(r.deal.id, p)}
-                />
-              ))}
-            </tbody>
-          </table>
+          ))}
+          {summary.unassigned > 0 && (
+            <span className="rounded-none border border-signal px-3 py-1 text-signal">
+              Sin segmento: {summary.unassigned}
+            </span>
+          )}
+          {summary.withIssues > 0 && (
+            <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-signal">
+              {summary.withIssues} por revisar
+            </span>
+          )}
         </div>
-      )}
+
+        {adding && (
+          <AddWon
+            quarter={quarter}
+            segments={segments}
+            openDeals={openDeals}
+            onDone={() => {
+              setAdding(false);
+              refresh();
+            }}
+          />
+        )}
+
+        {rows.length === 0 ? (
+          <p className="py-4 text-sm text-muted-foreground">
+            Ningún deal ganado en {quarter}. Sin clientes nuevos no hay CAC real: añade los que
+            cerraste o márcalos como ganados en Pipeline.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className={`w-full min-w-[720px] text-sm ${STICKY_FIRST}`}>
+              <thead>
+                <tr className="border-b text-left text-xs text-muted-foreground">
+                  <th className="py-2 pr-3 font-normal">Deal</th>
+                  <th className="px-2 py-2 font-normal">Fecha de cierre</th>
+                  <th className="px-2 py-2 text-right font-normal">Valor</th>
+                  <th className="px-2 py-2 font-normal">Segmento</th>
+                  <th className="px-2 py-2 font-normal">Avisos</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <WonRow
+                    key={r.deal.id}
+                    r={r}
+                    account={accountName(r.deal.account_id ?? null)}
+                    segments={segments}
+                    segName={segName}
+                    onUpdate={(p) => update(r.deal.id, p)}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ScreenState>
     </section>
   );
 }

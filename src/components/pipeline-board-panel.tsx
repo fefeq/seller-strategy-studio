@@ -1,6 +1,5 @@
-import { Kpi } from "@/components/page";
 import { wonDealsMargin } from "@/lib/deal-lines";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +9,7 @@ import { quarterRange } from "@/lib/metrics";
 import { actuals } from "@/lib/pipeline-real";
 import { quarterKpis } from "@/lib/quarter-kpis";
 import {
+  boardMargin,
   closingIn,
   pipelineBoard,
   pipelineEconomics,
@@ -18,6 +18,10 @@ import {
 } from "@/lib/pipeline-board";
 import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
+import { Kpi, ScreenState } from "@/components/page";
+import { DataMark } from "@/components/metrics/data-mark";
+import { MARGIN_NON_POSITIVE, acvMark, boardMarginMark } from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 const SHOW = 5;
@@ -27,9 +31,10 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
   const { money } = useCurrency();
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
-  const { data: leadsData } = useLeads(orgId);
+  const leads = useLeads(orgId);
+  const leadsData = leads.data;
   const year = Number(quarter.slice(0, 4));
-  const { data } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     // "segment-coverage" is refreshed live when deals or leads change (useLivePipeline).
     queryKey: ["segment-coverage", orgId, "pipeline-board", quarter],
     enabled: !!orgId,
@@ -55,6 +60,8 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
           ),
         supabase.from("cac_costs").select("segment_id,channel,amount,period").eq("period", quarter),
       ]);
+      const failed = d.error ?? s.error ?? b.error ?? c.error;
+      if (failed) throw failed;
       return {
         deals: d.data ?? [],
         segments: (s.data ?? []) as SegLike[],
@@ -78,16 +85,9 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     );
     const [k] = quarterKpis(data.segments, data.deals, data.budgets, data.costs, [quarter]);
     const real = actuals(data.deals);
-    const segMargins = data.segments
-      .map((s) => s.gross_margin_pct)
-      .filter((x): x is number => x != null)
-      .map(Number);
-    // Real margin of the books first, then what the won deals with product lines actually carried.
-    const margin =
-      k.actual.margin ??
-      wonDealsMargin(data.deals, range.end).all?.pct ??
-      k.plan.margin ??
-      (segMargins.length ? segMargins.reduce((a, b) => a + b, 0) / segMargins.length : null);
+    // Real margin of the books first, then what the won deals with product lines actually carried (boardMargin, same chain).
+    const bm = boardMargin(k, wonDealsMargin(data.deals, range.end).all, data.segments);
+    const margin = bm.pct;
     const cost = data.costs.reduce((s, c) => s + Number(c.amount || 0), 0) || null;
     const closing = closingIn(data.deals, range);
     const won = board.find((g) => g.id === "won")!.count;
@@ -98,6 +98,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       closing,
       real,
       margin,
+      bm,
       eco: pipelineEconomics({
         cost,
         won,
@@ -109,7 +110,22 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     };
   }, [data, leadsData, quarter, stages]);
 
-  if (!view) return null;
+  // The panel's own read decides loading and error; the leads read (shared with Leads) only keeps it in loading until it answers.
+  if (!view) {
+    return (
+      <section className="rounded-lg border bg-card p-5">
+        <h3 className="mb-4 text-2xl">Pipeline · {quarter}</h3>
+        <ScreenState
+          isPending={isPending || !!leads.isPending}
+          error={error}
+          refetch={refetch}
+          skeleton="cards"
+        >
+          {null}
+        </ScreenState>
+      </section>
+    );
+  }
   const owner = (id: string | null) =>
     id ? (leadsData?.members.find((m) => m.id === id)?.full_name ?? "—") : "Sin asignar";
   const late = view.board.reduce(
@@ -117,17 +133,21 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     0,
   );
   const months = (n: number | null) => (n == null ? "—" : `${fmt1(n)} m`);
+  const acv = acvMark(view.real.acvSource);
+  const marginMark = boardMarginMark(view.bm.source);
 
   return (
     <section className="rounded-lg border bg-card p-5">
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">Pipeline · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los que
-            dividen el gasto de captación en el CAC real; las oportunidades que cierran este
-            trimestre, al win rate real, dan el CAC y el payback proyectados.
-          </p>
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los
+              que dividen el gasto de captación en el CAC real; las oportunidades que cierran este
+              trimestre, al win rate real, dan el CAC y el payback proyectados.
+            </p>
+          </ExplanationFold>
         </div>
         {late > 0 && (
           <span className="flex items-center gap-1 rounded-none bg-signal/10 px-3 py-1 text-xs text-signal">
@@ -147,7 +167,17 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
           size="inline"
           label="Gasto de captación del trimestre"
           value={view.cost ? money(view.cost) : "—"}
-          hint={view.cost ? "costes de «CAC real»" : "Apúntalo en «CAC real», más abajo"}
+          hint={
+            view.cost ? (
+              <>
+                costes de «<CacRealLink />»
+              </>
+            ) : (
+              <>
+                Apúntalo en «<CacRealLink />»
+              </>
+            )
+          }
         />
         <Kpi
           size="inline"
@@ -161,18 +191,41 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
           value={view.eco.projectedCac != null ? money(view.eco.projectedCac) : "—"}
           hint={
             view.real.winRate != null
-              ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate ≈ ${fmt1(view.eco.expectedWins)} clientes`
-              : "Sin deals cerrados no hay win rate real"
+              ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate (Últimos 365 días) ≈ ${fmt1(view.eco.expectedWins)} clientes`
+              : "Sin deals cerrados en los últimos 365 días no hay win rate real"
           }
         />
         <Kpi
           size="inline"
           label="Payback real → proyectado"
-          value={`${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`}
+          value={
+            view.bm.marginNonPositive ? (
+              <DataMark {...MARGIN_NON_POSITIVE} />
+            ) : (
+              `${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`
+            )
+          }
           hint={
-            view.real.acv != null && view.margin != null
-              ? `ACV real ${money(view.real.acv)} · margen ${fmt1(view.margin)}%`
-              : "Falta ACV o margen"
+            view.real.acv != null && view.margin != null ? (
+              <>
+                ACV {money(view.real.acv)}
+                {acv && (
+                  <>
+                    {" "}
+                    · <DataMark {...acv} />
+                  </>
+                )}{" "}
+                · margen {fmt1(view.margin)}%
+                {marginMark && (
+                  <>
+                    {" "}
+                    · <DataMark {...marginMark} />
+                  </>
+                )}
+              </>
+            ) : (
+              "Falta ACV o margen"
+            )
           }
         />
       </div>
@@ -269,5 +322,14 @@ function Column({
         </button>
       )}
     </div>
+  );
+}
+
+/** «CAC real» lives in Métricas › CAC y presupuesto (SDD-20261106-metrics-honest-data CA-11). */
+function CacRealLink() {
+  return (
+    <Link to="/metrics" search={{ seccion: "economia" }} className="underline">
+      CAC real
+    </Link>
   );
 }

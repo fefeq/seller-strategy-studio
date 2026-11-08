@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ScreenState } from "@/components/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type DealLike } from "@/lib/segment-coverage";
@@ -17,6 +18,14 @@ import {
 } from "@/lib/cac";
 import { useSegmentCoverageData } from "@/components/segment-coverage";
 import { errorText } from "@/lib/errors";
+import { DataMark } from "@/components/metrics/data-mark";
+import {
+  MARGIN_ASSUMED,
+  MARGIN_NON_POSITIVE,
+  SHARED_EQUAL,
+  inferredMark,
+} from "@/components/metrics/mark-text";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
 const STICKY_FIRST =
@@ -35,18 +44,20 @@ function QuarterView({
   const { data: me } = useMe();
   const orgId = me?.currentOrg?.org_id;
   const quarters = quartersUpTo(quarter, 4);
-  const { data: costs = [] } = useQuery({
+  const { data, isPending, error, refetch } = useQuery({
     queryKey: ["segment-coverage", orgId, "cac-quarters", quarter],
     enabled: !!orgId,
-    queryFn: async () =>
-      (
-        await supabase
-          .from("cac_costs")
-          .select("segment_id,channel,amount,period")
-          .in("period", quarters)
-      ).data ?? [],
+    queryFn: async () => {
+      const { data: rows, error: failed } = await supabase
+        .from("cac_costs")
+        .select("segment_id,channel,amount,period")
+        .in("period", quarters);
+      if (failed) throw failed;
+      return rows ?? [];
+    },
   });
-  const t = channelQuarterTable(costs, quarters);
+  // Drawn only once answered (ScreenState), so an empty list here is the real «no costs».
+  const t = channelQuarterTable(data ?? [], quarters);
   const won = Object.fromEntries(
     quarters.map((q) => {
       const { start, end } = quarterRange(q);
@@ -62,95 +73,99 @@ function QuarterView({
   const cell = (n: number) => (n ? money(n) : "—");
   if (!t.rows.length)
     return (
-      <p className="py-6 text-sm text-muted-foreground">
-        Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por segmento»
-        de cada trimestre.
-      </p>
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
+        <p className="py-6 text-sm text-muted-foreground">
+          Aún no hay costes en {quarters[0]}–{quarters[3]}. Introdúcelos en la pestaña «Por
+          segmento» de cada trimestre.
+        </p>
+      </ScreenState>
     );
   return (
-    <div className="overflow-x-auto">
-      <table className={`w-full min-w-[560px] text-sm ${STICKY_FIRST}`}>
-        <thead>
-          <tr className="border-b text-left text-xs text-muted-foreground">
-            <th className="py-2 pr-3 font-normal">Canal</th>
-            {quarters.map((q) => (
-              <th
-                key={q}
-                className={`px-2 py-2 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}
-              >
-                {q}
-              </th>
-            ))}
-            <th className="px-2 py-2 text-right font-normal">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {t.rows.map((r) => (
-            <tr key={r.channel} className="border-b border-dashed">
-              <td className="py-1.5 pr-3">{r.channel}</td>
+    <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
+      <div className="overflow-x-auto">
+        <table className={`w-full min-w-[560px] text-sm ${STICKY_FIRST}`}>
+          <thead>
+            <tr className="border-b text-left text-xs text-muted-foreground">
+              <th className="py-2 pr-3 font-normal">Canal</th>
               {quarters.map((q) => (
-                <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
-                  {cell(r.byQuarter[q])}
+                <th
+                  key={q}
+                  className={`px-2 py-2 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}
+                >
+                  {q}
+                </th>
+              ))}
+              <th className="px-2 py-2 text-right font-normal">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {t.rows.map((r) => (
+              <tr key={r.channel} className="border-b border-dashed">
+                <td className="py-1.5 pr-3">{r.channel}</td>
+                {quarters.map((q) => (
+                  <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
+                    {cell(r.byQuarter[q])}
+                  </td>
+                ))}
+                <td className="px-2 py-1.5 text-right font-mono text-xs">{money(r.total)}</td>
+              </tr>
+            ))}
+            <tr className="border-b font-medium">
+              <td className="py-2 pr-3">Total</td>
+              {quarters.map((q) => (
+                <td key={q} className="px-2 py-2 text-right font-mono text-xs">
+                  {money(t.total[q])}
                 </td>
               ))}
-              <td className="px-2 py-1.5 text-right font-mono text-xs">{money(r.total)}</td>
+              <td className="px-2 py-2 text-right font-mono text-xs">
+                {money(quarters.reduce((s, q) => s + t.total[q], 0))}
+              </td>
             </tr>
-          ))}
-          <tr className="border-b font-medium">
-            <td className="py-2 pr-3">Total</td>
-            {quarters.map((q) => (
-              <td key={q} className="px-2 py-2 text-right font-mono text-xs">
-                {money(t.total[q])}
+            <tr className="text-muted-foreground">
+              <td className="py-1.5 pr-3">de ello, compartido</td>
+              {quarters.map((q) => (
+                <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
+                  {cell(t.shared[q])}
+                </td>
+              ))}
+              <td className="px-2 py-1.5 text-right font-mono text-xs">
+                {cell(quarters.reduce((s, q) => s + t.shared[q], 0))}
               </td>
-            ))}
-            <td className="px-2 py-2 text-right font-mono text-xs">
-              {money(quarters.reduce((s, q) => s + t.total[q], 0))}
-            </td>
-          </tr>
-          <tr className="text-muted-foreground">
-            <td className="py-1.5 pr-3">de ello, compartido</td>
-            {quarters.map((q) => (
-              <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
-                {cell(t.shared[q])}
+            </tr>
+            <tr>
+              <td className="py-1.5 pr-3">Deals ganados</td>
+              {quarters.map((q) => (
+                <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
+                  {won[q]}
+                </td>
+              ))}
+              <td className="px-2 py-1.5 text-right font-mono text-xs">
+                {quarters.reduce((s, q) => s + won[q], 0)}
               </td>
-            ))}
-            <td className="px-2 py-1.5 text-right font-mono text-xs">
-              {cell(quarters.reduce((s, q) => s + t.shared[q], 0))}
-            </td>
-          </tr>
-          <tr>
-            <td className="py-1.5 pr-3">Deals ganados</td>
-            {quarters.map((q) => (
-              <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
-                {won[q]}
+            </tr>
+            <tr className="font-medium">
+              <td className="py-1.5 pr-3">CAC medio</td>
+              {quarters.map((q) => (
+                <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
+                  {won[q] && t.total[q] ? money(t.total[q] / won[q]) : "—"}
+                </td>
+              ))}
+              <td className="px-2 py-1.5 text-right font-mono text-xs">
+                {(() => {
+                  const w = quarters.reduce((s, q) => s + won[q], 0);
+                  const c = quarters.reduce((s, q) => s + t.total[q], 0);
+                  return w && c ? money(c / w) : "—";
+                })()}
               </td>
-            ))}
-            <td className="px-2 py-1.5 text-right font-mono text-xs">
-              {quarters.reduce((s, q) => s + won[q], 0)}
-            </td>
-          </tr>
-          <tr className="font-medium">
-            <td className="py-1.5 pr-3">CAC medio</td>
-            {quarters.map((q) => (
-              <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
-                {won[q] && t.total[q] ? money(t.total[q] / won[q]) : "—"}
-              </td>
-            ))}
-            <td className="px-2 py-1.5 text-right font-mono text-xs">
-              {(() => {
-                const w = quarters.reduce((s, q) => s + won[q], 0);
-                const c = quarters.reduce((s, q) => s + t.total[q], 0);
-                return w && c ? money(c / w) : "—";
-              })()}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p className="mt-2 text-xs text-muted-foreground">
-        La calculadora de Estrategia GTM usa los 4 últimos trimestres para su CAC y payback reales;
-        la cobertura usa el trimestre seleccionado.
-      </p>
-    </div>
+            </tr>
+          </tbody>
+        </table>
+        <p className="mt-2 text-xs text-muted-foreground">
+          La calculadora de Estrategia GTM usa los 4 últimos trimestres para su CAC y payback
+          reales; la cobertura usa el trimestre seleccionado.
+        </p>
+      </div>
+    </ScreenState>
   );
 }
 
@@ -165,7 +180,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
     (r) => r === "owner" || r === "sales_leader" || r === "marketing",
   );
   const qc = useQueryClient();
-  const { data } = useSegmentCoverageData(quarter);
+  const { data, isPending, error, refetch } = useSegmentCoverageData(quarter);
   const [extra, setExtra] = useState<string[]>([]);
   const [newChannel, setNewChannel] = useState("");
   const [copying, setCopying] = useState(false);
@@ -258,180 +273,220 @@ export function CacPanel({ quarter }: { quarter: string }) {
       <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
         <div className="max-w-2xl">
           <h3 className="text-2xl">CAC real · {quarter}</h3>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Introduce lo que gastaste para captar clientes, por canal y segmento. CAC = coste /
-            deals ganados en el trimestre. Los costes «Compartido» se reparten entre segmentos según
-            los clientes ganados. El payback de la cobertura usa este CAC.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">
-          <div>
-            <p className="font-mono">{money(totalCost)}</p>
-            <p className="text-xs text-muted-foreground">coste total</p>
-          </div>
-          <div>
-            <p className="font-mono">
-              {totalCustomers && totalCost ? money(totalCost / totalCustomers) : "—"}
+          <ExplanationFold kind="calculo" className="mt-1">
+            <p className="text-xs text-muted-foreground">
+              Introduce lo que gastaste para captar clientes, por canal y segmento. CAC = coste /
+              deals ganados en el trimestre. Los costes «Compartido» se reparten entre segmentos
+              según los clientes ganados. El payback de la cobertura usa este CAC.
             </p>
-            <p className="text-xs text-muted-foreground">CAC medio · {totalCustomers} clientes</p>
+          </ExplanationFold>
+        </div>
+        {/* No totals until the costs answer (never a 0 that looks like data). */}
+        {data && (
+          <div className="flex flex-wrap items-center justify-end gap-4 text-right text-sm">
+            <div>
+              <p className="font-mono">{money(totalCost)}</p>
+              <p className="text-xs text-muted-foreground">coste total</p>
+            </div>
+            <div>
+              <p className="font-mono">
+                {totalCustomers && totalCost ? money(totalCost / totalCustomers) : "—"}
+              </p>
+              <p className="text-xs text-muted-foreground">CAC medio · {totalCustomers} clientes</p>
+            </div>
+            {canEdit && totalCost === 0 && (
+              <Button variant="outline" size="sm" onClick={copyPrevious} disabled={copying}>
+                Copiar de {previousQuarter(quarter)}
+              </Button>
+            )}
           </div>
-          {canEdit && totalCost === 0 && (
-            <Button variant="outline" size="sm" onClick={copyPrevious} disabled={copying}>
-              Copiar de {previousQuarter(quarter)}
-            </Button>
+        )}
+      </div>
+
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
+        <Tabs defaultValue="segments">
+          <TabsList className="mb-3">
+            <TabsTrigger value="segments">Por segmento · {quarter}</TabsTrigger>
+            <TabsTrigger value="quarters">Por trimestre</TabsTrigger>
+          </TabsList>
+          <TabsContent value="segments">
+            <div className="overflow-x-auto">
+              <table className={`w-full min-w-[640px] text-sm ${STICKY_FIRST}`}>
+                <thead>
+                  <tr className="border-b text-left text-xs text-muted-foreground">
+                    <th className="py-2 pr-3 font-normal">Canal</th>
+                    {columns.map((c) => (
+                      <th key={c.id} className="px-2 py-2 text-right font-normal">
+                        {c.name}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {channels.map((ch) => (
+                    <tr key={ch} className="border-b border-dashed">
+                      <td className="py-1.5 pr-3">{ch}</td>
+                      {columns.map((col) => {
+                        const v = cell(ch, col.id);
+                        return (
+                          <td key={col.id} className="px-2 py-1 text-right">
+                            {canEdit ? (
+                              <Input
+                                type="number"
+                                min={0}
+                                aria-label={`${ch} · ${col.name}`}
+                                className="ml-auto h-10 w-28 text-right md:h-8"
+                                key={`${ch}-${col.id}-${quarter}-${v?.amount ?? ""}`}
+                                defaultValue={v && Number(v.amount) ? Number(v.amount) : ""}
+                                placeholder="0"
+                                onBlur={(e) => save(ch, col.id, e.target.value)}
+                              />
+                            ) : (
+                              <span className="font-mono text-xs">
+                                {v && Number(v.amount) ? money(Number(v.amount)) : "—"}
+                              </span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                  <tr className="border-b font-medium">
+                    <td className="py-2 pr-3">Total directo</td>
+                    {columns.map((c) => (
+                      <td key={c.id} className="px-2 py-2 text-right font-mono text-xs">
+                        {money(colTotal(c.id))}
+                      </td>
+                    ))}
+                  </tr>
+                  <SummaryRow
+                    label="+ Compartido asignado"
+                    cells={rows.map((r) => (
+                      <>
+                        {money(r.cac.shared)}
+                        {r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}
+                      </>
+                    ))}
+                  />
+                  <SummaryRow
+                    label="Coste total"
+                    cells={rows.map((r) => (
+                      <>
+                        {money(r.cac.cost)}
+                        {r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}
+                      </>
+                    ))}
+                    strong
+                  />
+                  <SummaryRow
+                    label="Deals ganados"
+                    cells={rows.map((r) => (
+                      <>
+                        {String(r.cac.customers)}
+                        {r.inferredWon > 0 && (
+                          <Mark {...inferredMark(r.inferredWon, r.wonInQuarter)} />
+                        )}
+                      </>
+                    ))}
+                  />
+                  <SummaryRow
+                    label="CAC real"
+                    cells={rows.map((r) => (r.cac.real != null ? money(r.cac.real) : "—"))}
+                    strong
+                  />
+                  <SummaryRow
+                    label="CAC objetivo"
+                    cells={rows.map((r) => (r.cac.target != null ? money(r.cac.target) : "—"))}
+                    muted
+                  />
+                  <SummaryRow
+                    label="Payback real"
+                    cells={rows.map((r) =>
+                      r.payback.source !== "real" || r.payback.real == null ? (
+                        "—"
+                      ) : r.paybackMarginBasis === "no_positivo" ? (
+                        <Mark {...MARGIN_NON_POSITIVE} />
+                      ) : (
+                        <>
+                          {`${r.payback.real.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`}
+                          {r.paybackMarginBasis === "supuesto_100" && <Mark {...MARGIN_ASSUMED} />}
+                        </>
+                      ),
+                    )}
+                    tones={rows.map((r) =>
+                      r.payback.source !== "real" || r.paybackMarginBasis === "no_positivo"
+                        ? ""
+                        : r.payback.ok === false
+                          ? "text-signal"
+                          : r.payback.ok
+                            ? "text-success"
+                            : "",
+                    )}
+                    strong
+                  />
+                </tbody>
+              </table>
+            </div>
+          </TabsContent>
+          <TabsContent value="quarters">
+            <QuarterView quarter={quarter} deals={data?.deals ?? []} money={money} />
+          </TabsContent>
+        </Tabs>
+
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+          {canEdit ? (
+            <form
+              className="flex w-full flex-wrap items-center gap-2 sm:w-auto"
+              onSubmit={(e) => {
+                e.preventDefault();
+                addChannel();
+              }}
+            >
+              <Input
+                value={newChannel}
+                onChange={(e) => setNewChannel(e.target.value)}
+                placeholder="Otro canal (p. ej. LinkedIn Ads)"
+                className="h-10 w-full sm:w-56 md:h-8"
+              />
+              <Button type="submit" size="sm" variant="ghost" disabled={!newChannel.trim()}>
+                Añadir canal
+              </Button>
+            </form>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Solo Owner, Sales Leader y Marketing pueden introducir costes.
+            </p>
+          )}
+          {byChannel.length > 0 && (
+            <div className="w-full max-w-sm space-y-1.5">
+              <p className="text-xs text-muted-foreground">Peso de cada canal</p>
+              {byChannel.slice(0, 5).map((c) => (
+                <div key={c.channel} className="text-xs">
+                  <div className="flex justify-between gap-3">
+                    <span className="min-w-0 truncate">{c.channel}</span>
+                    <span className="shrink-0 font-mono">
+                      {money(c.amount)} · {Math.round(c.share * 100)}%
+                    </span>
+                  </div>
+                  <div className="mt-0.5 h-1.5 rounded bg-muted">
+                    <div
+                      className="h-full rounded bg-primary"
+                      style={{ width: `${Math.round(c.share * 100)}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
-      </div>
-
-      <Tabs defaultValue="segments">
-        <TabsList className="mb-3">
-          <TabsTrigger value="segments">Por segmento · {quarter}</TabsTrigger>
-          <TabsTrigger value="quarters">Por trimestre</TabsTrigger>
-        </TabsList>
-        <TabsContent value="segments">
-          <div className="overflow-x-auto">
-            <table className={`w-full min-w-[640px] text-sm ${STICKY_FIRST}`}>
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-3 font-normal">Canal</th>
-                  {columns.map((c) => (
-                    <th key={c.id} className="px-2 py-2 text-right font-normal">
-                      {c.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {channels.map((ch) => (
-                  <tr key={ch} className="border-b border-dashed">
-                    <td className="py-1.5 pr-3">{ch}</td>
-                    {columns.map((col) => {
-                      const v = cell(ch, col.id);
-                      return (
-                        <td key={col.id} className="px-2 py-1 text-right">
-                          {canEdit ? (
-                            <Input
-                              type="number"
-                              min={0}
-                              aria-label={`${ch} · ${col.name}`}
-                              className="ml-auto h-10 w-28 text-right md:h-8"
-                              key={`${ch}-${col.id}-${quarter}-${v?.amount ?? ""}`}
-                              defaultValue={v && Number(v.amount) ? Number(v.amount) : ""}
-                              placeholder="0"
-                              onBlur={(e) => save(ch, col.id, e.target.value)}
-                            />
-                          ) : (
-                            <span className="font-mono text-xs">
-                              {v && Number(v.amount) ? money(Number(v.amount)) : "—"}
-                            </span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-                <tr className="border-b font-medium">
-                  <td className="py-2 pr-3">Total directo</td>
-                  {columns.map((c) => (
-                    <td key={c.id} className="px-2 py-2 text-right font-mono text-xs">
-                      {money(colTotal(c.id))}
-                    </td>
-                  ))}
-                </tr>
-                <SummaryRow
-                  label="+ Compartido asignado"
-                  cells={rows.map((r) => money(r.cac.shared))}
-                />
-                <SummaryRow label="Coste total" cells={rows.map((r) => money(r.cac.cost))} strong />
-                <SummaryRow
-                  label="Deals ganados"
-                  cells={rows.map((r) => String(r.cac.customers))}
-                />
-                <SummaryRow
-                  label="CAC real"
-                  cells={rows.map((r) => (r.cac.real != null ? money(r.cac.real) : "—"))}
-                  strong
-                />
-                <SummaryRow
-                  label="CAC objetivo"
-                  cells={rows.map((r) => (r.cac.target != null ? money(r.cac.target) : "—"))}
-                  muted
-                />
-                <SummaryRow
-                  label="Payback real"
-                  cells={rows.map((r) =>
-                    r.payback.source === "real" && r.payback.real != null
-                      ? `${r.payback.real.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`
-                      : "—",
-                  )}
-                  tones={rows.map((r) =>
-                    r.payback.source !== "real"
-                      ? ""
-                      : r.payback.ok === false
-                        ? "text-signal"
-                        : r.payback.ok
-                          ? "text-success"
-                          : "",
-                  )}
-                  strong
-                />
-              </tbody>
-            </table>
-          </div>
-        </TabsContent>
-        <TabsContent value="quarters">
-          <QuarterView quarter={quarter} deals={data?.deals ?? []} money={money} />
-        </TabsContent>
-      </Tabs>
-
-      <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
-        {canEdit ? (
-          <form
-            className="flex w-full flex-wrap items-center gap-2 sm:w-auto"
-            onSubmit={(e) => {
-              e.preventDefault();
-              addChannel();
-            }}
-          >
-            <Input
-              value={newChannel}
-              onChange={(e) => setNewChannel(e.target.value)}
-              placeholder="Otro canal (p. ej. LinkedIn Ads)"
-              className="h-10 w-full sm:w-56 md:h-8"
-            />
-            <Button type="submit" size="sm" variant="ghost" disabled={!newChannel.trim()}>
-              Añadir canal
-            </Button>
-          </form>
-        ) : (
-          <p className="text-xs text-muted-foreground">
-            Solo Owner, Sales Leader y Marketing pueden introducir costes.
-          </p>
-        )}
-        {byChannel.length > 0 && (
-          <div className="w-full max-w-sm space-y-1.5">
-            <p className="text-xs text-muted-foreground">Peso de cada canal</p>
-            {byChannel.slice(0, 5).map((c) => (
-              <div key={c.channel} className="text-xs">
-                <div className="flex justify-between gap-3">
-                  <span className="min-w-0 truncate">{c.channel}</span>
-                  <span className="shrink-0 font-mono">
-                    {money(c.amount)} · {Math.round(c.share * 100)}%
-                  </span>
-                </div>
-                <div className="mt-0.5 h-1.5 rounded bg-muted">
-                  <div
-                    className="h-full rounded bg-primary"
-                    style={{ width: `${Math.round(c.share * 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      </ScreenState>
     </section>
   );
+}
+
+/** A data mark under a table figure, in the muted small type of the table hints. */
+function Mark(p: React.ComponentProps<typeof DataMark>) {
+  return <DataMark {...p} className="block font-sans text-xs font-normal text-muted-foreground" />;
 }
 
 function SummaryRow({
@@ -442,7 +497,7 @@ function SummaryRow({
   tones,
 }: {
   label: string;
-  cells: string[];
+  cells: ReactNode[];
   strong?: boolean;
   muted?: boolean;
   tones?: string[];

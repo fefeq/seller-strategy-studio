@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
 import { connectStripe, syncStripeNow } from "@/lib/stripe.functions";
+import { ExplanationFold } from "@/components/explanation-fold";
 
 /** Connection status and the latest Stripe read of the current company. Key "stripe". */
 export function useStripe() {
@@ -289,25 +290,34 @@ export function StripeMetricsPanel() {
           `Churn ${pctText(s.logo_churn_pct == null ? null : Number(s.logo_churn_pct))} de clientes · ${pctText(s.revenue_churn_pct == null ? null : Number(s.revenue_churn_pct))} del MRR`,
         )}
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">
-        Cuenta como cliente de pago quien tiene una suscripción activa o con un pago pendiente,
-        igual que Stripe; las pruebas van aparte y una prueba cancelada no es una baja. Un cambio de
-        plan no cuenta como alta ni como baja. Las suscripciones impagadas o pausadas dejan de
-        contar como clientes de pago, pero no como bajas. Los precios anuales o trimestrales se
-        pasan a mes.
-        {d.unpriced_items
-          ? ` ${d.unpriced_items} conceptos con precio por tramos o por uso no se han podido sumar.`
-          : ""}
-        {d.truncated ? " Hay más de 5.000 suscripciones: las cifras son parciales." : ""}
-        {d.other_currencies && Object.keys(d.other_currencies).length
-          ? ` Suscripciones en otras monedas, sin convertir: ${Object.entries(d.other_currencies)
-              .map(
-                ([k, v]) =>
-                  `${v.customers} clientes y ${v.mrr.toLocaleString("es-ES")} ${k} de MRR`,
-              )
-              .join("; ")}.`
-          : ""}
-      </p>
+      {/* Warnings that depend on the data stay in view; only the fixed counting rules fold. */}
+      {d.unpriced_items ||
+      d.truncated ||
+      (d.other_currencies && Object.keys(d.other_currencies).length) ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {d.unpriced_items
+            ? ` ${d.unpriced_items} conceptos con precio por tramos o por uso no se han podido sumar.`
+            : ""}
+          {d.truncated ? " Hay más de 5.000 suscripciones: las cifras son parciales." : ""}
+          {d.other_currencies && Object.keys(d.other_currencies).length
+            ? ` Suscripciones en otras monedas, sin convertir: ${Object.entries(d.other_currencies)
+                .map(
+                  ([k, v]) =>
+                    `${v.customers} clientes y ${v.mrr.toLocaleString("es-ES")} ${k} de MRR`,
+                )
+                .join("; ")}.`
+            : ""}
+        </p>
+      ) : null}
+      <ExplanationFold kind="calculo" className="mt-2">
+        <p className="text-xs text-muted-foreground">
+          Cuenta como cliente de pago quien tiene una suscripción activa o con un pago pendiente,
+          igual que Stripe; las pruebas van aparte y una prueba cancelada no es una baja. Un cambio
+          de plan no cuenta como alta ni como baja. Las suscripciones impagadas o pausadas dejan de
+          contar como clientes de pago, pero no como bajas. Los precios anuales o trimestrales se
+          pasan a mes.
+        </p>
+      </ExplanationFold>
     </section>
   );
 }

@@ -140,3 +140,43 @@ describe("ledger ship flags", () => {
     expect(r.out).toMatch(/ship needs --approved-by/);
   });
 });
+
+describe("ledger reject", () => {
+  it("rejects a logged report with who decided and why", () => {
+    const t = id(run("log", "Agent search leaks personal docs", "--kind", "bug").out);
+    const r = run("reject", t, "--by", "Fede", "--note", "Not a bug: filtered in memory");
+    expect(r.code).toBe(0);
+    const shown = JSON.parse(run("show", t).out);
+    expect(shown.state).toBe("REJECTED");
+    expect(shown.owner).toBeNull();
+    expect(shown.history.at(-1)).toMatchObject({
+      state: "REJECTED",
+      by: "Fede",
+      note: "Not a bug: filtered in memory",
+    });
+  });
+
+  it("needs a human and a reason", () => {
+    const t = id(run("log", "Some report", "--kind", "bug").out);
+    expect(run("reject", t, "--note", "why").out).toMatch(/needs --by/);
+    expect(run("reject", t, "--by", "Fede").out).toMatch(/needs --note/);
+    expect(JSON.parse(run("show", t).out).state).toBe("LOGGED");
+  });
+
+  it("only rejects what has not been promoted", () => {
+    const t = id(run("log", "Fix typo in empty state", "--kind", "bug").out);
+    run("promote", t, ...GO);
+    const r = run("reject", t, "--by", "Fede", "--note", "late");
+    expect(r.code).toBe(1);
+    expect(r.out).toMatch(/expected LOGGED/);
+  });
+
+  it("never promotes a rejected ticket and lists it by state", () => {
+    const t = id(run("log", "Some report", "--kind", "bug").out);
+    run("reject", t, "--by", "Fede", "--note", "invalid");
+    expect(run("promote", t, ...GO).code).toBe(1);
+    const listed = run("list", "--state", "REJECTED");
+    expect(listed.code).toBe(0);
+    expect(listed.out).toContain(t);
+  });
+});

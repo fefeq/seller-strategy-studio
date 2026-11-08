@@ -62,16 +62,19 @@ const Empty = ({ children }: { children: React.ReactNode }) => (
   <p className="text-sm text-muted-foreground">{children}</p>
 );
 
+/** Deals created in `quarter` (filtered by the caller, src/lib/metrics-quarter.ts); `quarter` only names the empty state. */
 export function RevopsFunnel({
   deals,
   history,
   path,
   label,
+  quarter,
 }: {
   deals: RDeal[];
   history: RHistory[];
   path: string[];
   label: (k: string) => string;
+  quarter: string;
 }) {
   const { money } = useCurrency();
   const f = useMemo(() => reconciledFunnel(deals, history, path), [deals, history, path]);
@@ -80,7 +83,7 @@ export function RevopsFunnel({
   if (!top)
     return (
       <Card title="Embudo conciliado">
-        <Empty>Aún no hay deals. El embudo aparece al crear el primero.</Empty>
+        <Empty>Sin deals creados en {quarter}</Empty>
       </Card>
     );
   return (
@@ -124,16 +127,19 @@ export function RevopsFunnel({
   );
 }
 
+/** Deals lost in `quarter` (filtered by the caller); `quarter` only names the empty state. */
 export function RevopsLost({
   deals,
   history,
   path,
   label,
+  quarter,
 }: {
   deals: RDeal[];
   history: RHistory[];
   path: string[];
   label: (k: string) => string;
+  quarter: string;
 }) {
   const { money } = useCurrency();
   const seg = useSegmentNames();
@@ -141,7 +147,7 @@ export function RevopsLost({
   if (!l.total)
     return (
       <Card title="Deals perdidos">
-        <Empty>Ningún deal perdido todavía.</Empty>
+        <Empty>Ningún deal perdido en {quarter}</Empty>
       </Card>
     );
   const List = ({
@@ -191,6 +197,10 @@ export function RevopsLost({
   );
 }
 
+// Cohortes and Tendencias do not follow the quarter selector, and say so (SDD-20261106-metrics-honest-data CA-2).
+const COHORTS_WINDOW = "Todo el histórico · no depende del trimestre";
+const TRENDS_WINDOW = "Últimas 12 semanas · no depende del trimestre";
+
 export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
   const { money } = useCurrency();
   const seg = useSegmentNames();
@@ -234,14 +244,19 @@ export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
       </table>
     </div>
   );
+  const windowNote = <p className="text-sm text-ink-mid">{COHORTS_WINDOW}</p>;
   if (!deals.length)
     return (
-      <Card title="Cohortes">
-        <Empty>Aún no hay deals.</Empty>
-      </Card>
+      <div className="space-y-5">
+        {windowNote}
+        <Card title="Cohortes">
+          <Empty>Aún no hay deals.</Empty>
+        </Card>
+      </div>
     );
   return (
     <div className="space-y-5">
+      {windowNote}
       <Card title="Por origen">
         <Table rows={bySource} name={(k) => SOURCE[k] ?? k} />
       </Card>
@@ -258,7 +273,7 @@ export function RevopsTrends({ deals }: { deals: RDeal[] }) {
     [deals],
   );
   return (
-    <Card title="Últimas 12 semanas" sub="Deals creados, ganados y perdidos por semana.">
+    <Card title={TRENDS_WINDOW} sub="Deals creados, ganados y perdidos por semana.">
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={w}>
