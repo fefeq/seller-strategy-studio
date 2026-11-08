@@ -23,6 +23,9 @@ const h = vi.hoisted(() => ({
   navigate: vi.fn(),
   importId: "d2",
   truncated: false,
+  // SDD-20261106-ux-core-screens-pattern, U-2: a read error to return, and how many times the documents were read.
+  error: null as { message: string } | null,
+  reads: 0,
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -34,10 +37,13 @@ vi.mock("@/integrations/supabase/client", () => {
           p === "then"
             ? (f: (v: unknown) => unknown, r?: (e: unknown) => unknown) =>
                 (h.gate ?? Promise.resolve())
-                  .then(() => ({
-                    data: table === "knowledge_docs" ? h.docs.slice() : [],
-                    error: null,
-                  }))
+                  .then(() => {
+                    if (table === "knowledge_docs") h.reads += 1;
+                    return {
+                      data: table === "knowledge_docs" && !h.error ? h.docs.slice() : [],
+                      error: table === "knowledge_docs" ? h.error : null,
+                    };
+                  })
                   .then(f, r)
             : () => chain(table),
       },
@@ -86,6 +92,7 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 
 import { HubScreen } from "./hub-screen";
+import { errorText } from "@/lib/errors";
 
 const row = (id: string, section: string, title: string, body = "Texto de prueba."): Row => ({
   id,
@@ -119,6 +126,8 @@ beforeEach(() => {
   h.search = {};
   h.navigate.mockReset();
   h.truncated = false;
+  h.error = null;
+  h.reads = 0;
 });
 afterEach(cleanup);
 
@@ -346,5 +355,79 @@ describe("HubScreen · búsqueda", () => {
     h.docs = [...h.docs, row("d2", "company", "Importado de Drive")];
     fireEvent.click(screen.getByRole("button", { name: "Importar de Drive" }));
     expect(await screen.findByDisplayValue("Importado de Drive")).toBeInTheDocument();
+  });
+});
+
+// SDD-20261106-ux-core-screens-pattern, U-2 · CA-1, CA-2, CA-4 on «Conocimiento».
+const sectionLabels = [
+  "Empresa",
+  "Objeciones y battlecards",
+  "Playbooks",
+  "Metodología",
+  "Campañas",
+  "Skills",
+  "Reglas",
+];
+const sectionButtons = () =>
+  sectionLabels.map((l) => screen.getByRole("button", { name: new RegExp(`^${l}`) }));
+
+describe("HubScreen · carga, error y vacío (CA-1, CA-2, CA-4)", () => {
+  it("while the documents have not answered: loading, no empty text and no number in the counters (CA-1)", async () => {
+    let release: () => void = () => {};
+    h.gate = new Promise<void>((r) => {
+      release = r;
+    });
+    mount();
+    await new Promise((r) => setTimeout(r, 30));
+    expect(screen.getByRole("status")).toHaveTextContent("Cargando…");
+    expect(screen.queryByText(/Sin documentos todavía/)).not.toBeInTheDocument();
+    for (const b of sectionButtons()) expect(b.textContent).not.toMatch(/\d/);
+    release();
+    await screen.findByText("Propuesta de valor");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("answered with no documents: the empty text and 0 in every counter (CA-1, CA-4)", async () => {
+    h.docs = [];
+    mount();
+    expect(
+      await screen.findByText("Sin documentos todavía. Crea el primero con «+ Nuevo»."),
+    ).toBeInTheDocument();
+    for (const b of sectionButtons()) expect(b.textContent).toMatch(/0$/);
+  });
+
+  it("answered with no match: the search empty text of the search spec, inside the state (CA-4)", async () => {
+    h.docs = [];
+    h.search = { q: "zzz" };
+    mount();
+    expect(
+      await screen.findByText(
+        "Nada coincide con «zzz». Prueba con otra palabra o crea un documento con «+ Nuevo».",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it("with an error: errorText and «Reintentar», never the empty text nor numbers; retry reads again (CA-2)", async () => {
+    h.error = { message: "Failed to fetch" };
+    h.search = { q: "zzz" };
+    mount();
+    expect(await screen.findByText(errorText(new Error("Failed to fetch")))).toBeInTheDocument();
+    expect(screen.queryByText(/Sin documentos todavía/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Nada coincide/)).not.toBeInTheDocument();
+    for (const b of sectionButtons()) expect(b.textContent).not.toMatch(/\d/);
+    const before = h.reads;
+    h.error = null;
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByText(/Nada coincide con «zzz»/)).toBeInTheDocument();
+    expect(h.reads).toBeGreaterThan(before);
+    expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
+  });
+
+  it("the Drive tab keeps its own panel when the documents fail", async () => {
+    h.error = { message: "Failed to fetch" };
+    mount();
+    await screen.findByRole("button", { name: "Reintentar" });
+    fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
+    expect(screen.getByText("panel-drive-por-cuenta")).toBeInTheDocument();
   });
 });

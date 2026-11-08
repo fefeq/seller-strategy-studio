@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
 import { canDelete } from "@/lib/roles";
-import { Page, Empty } from "@/components/page";
+import { Page, Empty, ScreenState } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
@@ -74,7 +74,7 @@ export function HubScreen() {
   const [draftSeq, setDraftSeq] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
   // Paged read (never stops silently at the backend row cap); the cache holds { rows, truncated }.
-  const { data, isSuccess } = useQuery({
+  const { data, isSuccess, isPending, error, refetch } = useQuery({
     queryKey: ["docs"],
     queryFn: (): Promise<DocsCache> =>
       fetchAll<Doc>((a, b) =>
@@ -237,9 +237,12 @@ export function HubScreen() {
                 className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:block lg:w-full lg:whitespace-normal lg:border-0 ${section === id ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 {label}{" "}
-                <span className="ml-1 font-mono text-xs opacity-60 lg:float-right lg:ml-0">
-                  {counts[id] ?? 0}
-                </span>
+                {/* No number until the documents answer (never a 0 that looks like data). */}
+                {isSuccess && (
+                  <span className="ml-1 font-mono text-xs opacity-60 lg:float-right lg:ml-0">
+                    {counts[id] ?? 0}
+                  </span>
+                )}
               </button>
             ))}
             <button
@@ -277,49 +280,51 @@ export function HubScreen() {
               </Button>
               <DriveImportButton section={section} onImported={openDoc} />
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
-              {data?.truncated && (
-                <p className="text-xs text-muted-foreground">{truncatedNotice(docs.length)}</p>
-              )}
-              <div data-testid="hub-results" className="space-y-2">
-                {(results ? results.map((r) => r.doc) : list).map((d) => (
-                  <button
-                    key={d.id}
-                    onClick={() => {
-                      setSelected(d);
-                      revealOnMobile(editorRef.current);
-                    }}
-                    className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}
-                  >
-                    <span className="font-medium">{d.title}</span>
-                    {results && (
-                      <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground">
-                        {SECTIONS.find((s) => s[0] === d.section)?.[1]}
-                      </span>
-                    )}
-                    {d.scope === "personal" && (
-                      <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">
-                        personal
-                      </span>
-                    )}
-                    {d.scope === "team" && (d.mandatory || d.section === "rules") && (
-                      <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">
-                        obligatorio
-                      </span>
-                    )}
-                    {snippets.get(d.id) && (
-                      <span className="mt-1 block text-xs text-muted-foreground">
-                        {snippets.get(d.id)}
-                      </span>
-                    )}
-                  </button>
-                ))}
-              </div>
-              {!results && list.length === 0 && (
-                <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>
-              )}
-              {results && results.length === 0 && isSuccess && active && (
-                <Empty>{emptySearchText(active)}</Empty>
-              )}
+              <ScreenState isPending={isPending} error={error} refetch={refetch}>
+                {data?.truncated && (
+                  <p className="text-xs text-muted-foreground">{truncatedNotice(docs.length)}</p>
+                )}
+                <div data-testid="hub-results" className="space-y-2">
+                  {(results ? results.map((r) => r.doc) : list).map((d) => (
+                    <button
+                      key={d.id}
+                      onClick={() => {
+                        setSelected(d);
+                        revealOnMobile(editorRef.current);
+                      }}
+                      className={`block w-full min-w-0 break-words rounded-md border p-3 text-left text-sm ${selected?.id === d.id ? "border-signal bg-card" : "bg-card/50 hover:bg-card"}`}
+                    >
+                      <span className="font-medium">{d.title}</span>
+                      {results && (
+                        <span className="ml-2 font-mono text-[10px] uppercase text-muted-foreground">
+                          {SECTIONS.find((s) => s[0] === d.section)?.[1]}
+                        </span>
+                      )}
+                      {d.scope === "personal" && (
+                        <span className="ml-2 rounded bg-accent px-1.5 font-mono text-[10px] uppercase">
+                          personal
+                        </span>
+                      )}
+                      {d.scope === "team" && (d.mandatory || d.section === "rules") && (
+                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-[10px] uppercase text-signal">
+                          obligatorio
+                        </span>
+                      )}
+                      {snippets.get(d.id) && (
+                        <span className="mt-1 block text-xs text-muted-foreground">
+                          {snippets.get(d.id)}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                {!results && list.length === 0 && (
+                  <Empty>Sin documentos todavía. Crea el primero con «+ Nuevo».</Empty>
+                )}
+                {results && results.length === 0 && isSuccess && active && (
+                  <Empty>{emptySearchText(active)}</Empty>
+                )}
+              </ScreenState>
             </div>
             <div ref={editorRef} className="min-w-0 scroll-mt-20">
               {selected ? (
