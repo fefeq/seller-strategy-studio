@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { decideDiscovery } from "@/lib/discoveries.functions";
 import { DISMISS_REASONS, KIND_LABEL, tallyByIcp, type DiscoveryKind } from "@/lib/discoveries";
+import { SearchScope } from "@/components/discoveries/search-scope";
 import { IcpPanel, type IcpRow } from "@/components/discoveries/icp-panel";
 import { errorText } from "@/lib/errors";
 
@@ -98,7 +99,7 @@ function DiscoveriesPage() {
           (discover.running ? (
             <JobProgress job={discover.job} onCancel={discover.cancel} />
           ) : (
-            <Button onClick={() => discover.start({})}>Buscar ahora</Button>
+            <SearchScope icps={icps} onStart={(input) => discover.start(input)} />
           ))}
         <button type="button" className="text-sm text-signal" onClick={() => setHistory((h) => !h)}>
           {history ? "Ver pendientes" : `Ver lo decidido (${decided.length})`}

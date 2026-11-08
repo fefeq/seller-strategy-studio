@@ -1,8 +1,8 @@
 # SDD-20261025-discoveries-scoped-manual-search · [Mejora] Descubiertos: qué busca, cuándo, y búsqueda manual acotada
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
-**PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-7) · **Depende de:** SDD-20261025-field-actions-edit-delete-confirm (confirmar competidores)
+**Estado:** Aprobado por Fede el 2026-11-08 solo para la U-2 (alcance e ICP en la búsqueda manual, con el reloj semanal intacto); U-1, U-3 y U-4 pasan a un ticket aparte (antes: Borrador) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-10-25
+**PRD:** docs/prd/PRD-20261028-ux-onboarding-coherencia.md (cubre G-7) · **Depende de:** SDD-20261025-field-actions-edit-delete-confirm (confirmar competidores; NK-0007 ya en producción)
 
 ## 1. Resumen
 Tres cosas: (a) dejar claro al usuario **qué busca** Descubiertos y **cuándo**; (b) poder lanzar una búsqueda manual **eligiendo qué buscar** (solo empresas, solo contactos, solo competidores o combinaciones); (c) que la búsqueda manual no altere sin avisar el ritmo semanal.
@@ -47,9 +47,9 @@ Founder que dispara una búsqueda manual y no puede decidir el alcance, no sabe 
 - CA-3: SI la búsqueda está pausada por presupuesto, ENTONCES el sistema DEBE indicarlo con el motivo y cómo reanudar · cubre G-7 · prueba: por nombrar en el brief
 
 ### H-2: Como founder, quiero elegir qué buscar al lanzar manualmente.
-- CA-4: CUANDO lanzo una búsqueda manual, el sistema DEBE permitirme elegir uno o varios tipos: empresas, contactos, competidores · cubre G-7 · prueba: por nombrar en el brief
-- CA-5: CUANDO lanzo una búsqueda manual, el sistema DEBE permitirme elegir qué ICP incluir · cubre G-7 · prueba: por nombrar en el brief
-- CA-6: CUANDO elijo un alcance, el sistema DEBE ejecutar y gastar presupuesto solo en los tipos elegidos · cubre G-7 · prueba: por nombrar en el brief
+- CA-4: CUANDO lanzo una búsqueda manual, el sistema DEBE permitirme elegir uno o varios tipos: empresas, contactos, competidores · cubre G-7 · prueba: `src/lib/discoveries.test.ts` («Descubiertos scope»)
+- CA-5: CUANDO lanzo una búsqueda manual, el sistema DEBE permitirme elegir qué ICP incluir · cubre G-7 · prueba: `src/lib/discoveries-scope.test.ts` (ICP de esta empresa)
+- CA-6: CUANDO elijo un alcance, el sistema DEBE ejecutar y gastar presupuesto solo en los tipos elegidos · cubre G-7 · prueba: `src/lib/discoveries-scope.test.ts` («only competitors»)
 - CA-7: SI elijo contactos sin empresas, ENTONCES el sistema DEBE usar las empresas ya guardadas de ese ICP y avisar si no hay ninguna. **[Por verificar viabilidad]** · cubre G-7 · prueba: por nombrar en el brief
 - CA-8: SI elijo competidores, ENTONCES el sistema DEBE mostrarme los candidatos y NO añadirlos al posicionamiento hasta que los confirme · cubre G-7 · prueba: por nombrar en el brief
 
@@ -58,7 +58,7 @@ Founder que dispara una búsqueda manual y no puede decidir el alcance, no sabe 
 - CA-10: SI el coste estimado supera el presupuesto restante, ENTONCES el sistema DEBE avisar y ofrecer reducir el alcance · cubre G-7 · prueba: por nombrar en el brief
 
 ### H-4: Como founder, quiero controlar el ritmo semanal.
-- CA-11: CUANDO lanzo una búsqueda manual, el sistema DEBE dejar el reloj de la búsqueda automática intacto, siempre (decidido por Fede, 2026-10-28: sin excepción) · cubre G-7 · prueba: por nombrar en el brief
+- CA-11: CUANDO lanzo una búsqueda manual, el sistema DEBE dejar el reloj de la búsqueda automática intacto, siempre (decidido por Fede, 2026-10-28: sin excepción) · cubre G-7 · prueba: `src/lib/discoveries-scope.test.ts` («never moves the weekly clock»)
 - CA-12: Retirado (decidido por Fede, 2026-10-28): el reloj semanal nunca se reinicia desde una búsqueda manual; lo cubre CA-11. · cubre G-7 · prueba: no aplica
 
 ### H-5: Como founder, quiero lanzarlo desde el Agente.
@@ -90,7 +90,7 @@ Una llamada no declarada aquí no se implementa.
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | Panel de qué y cuándo (H-1) | CA-1, CA-2, CA-3 | por nombrar en el brief |
-| U-2 | Alcance y selector de ICP en manual (H-2, H-4) | CA-4, CA-5, CA-6, CA-7, CA-8, CA-11 | por nombrar en el brief |
+| U-2 | Alcance y selector de ICP en manual (H-2, H-4). **Entregada en NK-0011** | CA-4, CA-5, CA-6, CA-7, CA-8, CA-11 | `src/lib/discoveries-scope.test.ts` |
 | U-3 | Estimación de coste y presupuesto (H-3) | CA-9, CA-10 | por nombrar en el brief |
 | U-4 | Herramienta del Agente (H-5; depende de U-2) | CA-13, CA-14 | por nombrar en el brief |
 
@@ -135,7 +135,14 @@ Informe del gate recibido el 2026-10-28, copiado sin editar. El veredicto no apr
 - **Lo que esta revisión NO demuestra:** No he visto producción ni las políticas reales de `job_locks` en la base de datos (solo la migración 0007, sin policies). Tampoco los costes reales de los proveedores ni la viabilidad de UX de la estimación de coste. No he ejecutado tests.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Sin entrega todavía.
+**U-2, entregada en NK-0011 (2026-11-08).** Alcance aprobado por Fede: solo U-2; U-1 (panel de última y próxima), U-3 (coste previo) y U-4 (herramienta del Agente) pasan a un ticket aparte.
+- «Buscar ahora» abre un selector (`src/components/discoveries/search-scope.tsx`): tipos (empresas, contactos, competidores) y, si hay más de un ICP, en cuáles. El job `discover` recibe `{ kinds, icpIds }`, validado con zod; el servidor comprueba que cada ICP es de la empresa (`background.functions.ts`).
+- `discoverForOrg` solo ejecuta las ramas elegidas (CA-6) y **una búsqueda manual nunca mueve el reloj semanal** (CA-11): el bloqueo semanal solo lo escribe la búsqueda automática. El código rescatado de octubre lo movía si el alcance era completo; se corrigió para cumplir la decisión de Fede.
+- CA-7: «solo contactos» busca en las cuentas objetivo del ICP con el mapa de poder casi vacío y avisa si no hay ninguna.
+- CA-8 ya se cumplía: los competidores se añaden al posicionamiento solo al pulsar «Añadir a competidores».
+- Tras el gate independiente: sin ICP, el selector enlaza a crearlo en Estrategia GTM; el aviso «define al menos un ICP» solo sale en la búsqueda manual (la semanal sigue callada); test de CA-5 con un ICP de otra empresa; la entrada de los trabajos en segundo plano (`job-runner.server.ts`) pasa de `any` a lectores tipados, porque el gate exige cada archivo tocado limpio.
+- Interpretación de CA-7 pendiente de confirmar por Fede: «empresas ya guardadas de ese ICP» = cuentas objetivo del segmento del ICP, con dominio y con el mapa de poder casi vacío (menos de 2 personas).
+- Sin migraciones. Sin prueba manual con sesión iniciada.
 
 ---
 Validación: migrado a la plantilla de NOKKO el 2026-10-28. Revisión técnica: ver sección 17. `AUDIT-20261025.md` es el registro histórico anterior.
