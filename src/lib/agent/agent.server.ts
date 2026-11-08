@@ -10,6 +10,7 @@ import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
+import { loadAgentRules, rulesBlock, RULES_READ_FAILED } from "@/lib/knowledge-rules";
 import type { Json } from "@/integrations/supabase/types";
 
 const MODEL = "openai/gpt-6-astra";
@@ -27,7 +28,7 @@ function personaPrompt(personaId?: string | null, workflowId?: string | null) {
   return s;
 }
 
-function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null, memory = "") {
+function systemPrompt(ctx: ToolCtx, channel: AgentChannel, mode: AgentMode, orgName: string, personaId?: string | null, workflowId?: string | null, memory = "", rules = "") {
   const role = ctx.roles.map((r) => ROLES[r as Role]?.label ?? r).join(", ");
   const today = new Date().toISOString().slice(0, 10);
   const base = `Eres Nokko, el copiloto comercial de ${orgName}. Hablas en español neutro (tú), directo y breve; empiezas por la conclusión, sin signos de exclamación ni emoji. Hoy es ${today}. El usuario es ${role}. Moneda: ${ctx.currency}.${personaPrompt(personaId, workflowId)}
@@ -38,7 +39,7 @@ Reglas:
 - Si necesitas un id, búscalo primero con "search" o "list_deals".
 - Sé proactivo: al final, si ves un riesgo o un siguiente paso evidente, propónlo en una línea.
 - Cuando se complete un paso de la configuración de la estrategia (posicionamiento, ICP, segmentos, benchmarks, pilares, cuota, cuentas, deals), llama a get_setup_status, confirma lo hecho en una frase y propón el siguiente con su motivo tal como lo devuelve guia.mensaje. No elijas tú el siguiente paso: es el que devuelve la herramienta.
-${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas; usa listas simples." : "- Puedes usar markdown (listas, negritas, tablas pequeñas)."}${memory ? `\n${memory}` : ""}`;
+${channel === "telegram" ? "- Estás en Telegram: respuestas cortas, sin tablas; usa listas simples." : "- Puedes usar markdown (listas, negritas, tablas pequeñas)."}${memory ? `\n${memory}` : ""}${rules ? `\n${rules}` : ""}`;
   if (mode !== "interview") return base;
   return `${base}
 MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de la empresa con la mínima fricción.
@@ -57,9 +58,10 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
   const history: ModelMessage[] = (hist ?? []).reverse().map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
   await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "user", content: opts.text });
 
-  const memory = await memoryBlock(ctx);
+  // The team's rules from Conocimiento, every turn and every mode (SDD-20261106-agent-rules-reader).
+  const [memory, rules] = await Promise.all([memoryBlock(ctx), loadAgentRules(ctx)]);
   const pending: PendingAction[] = [];
-  const system = systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId, memory);
+  const system = systemPrompt(ctx, opts.channel, opts.mode, opts.orgName, opts.personaId, opts.workflowId, memory, rulesBlock(rules.rules));
   const messages: ModelMessage[] = [...history, { role: "user", content: opts.text }];
 
   // Own keys first; when one runs out of quota or fails before doing anything, the next provider answers.
@@ -79,12 +81,15 @@ export async function runAgent(ctx: ToolCtx, opts: { conversationId: string; tex
     }
   }
   if (!text) text = pending.length ? "He preparado estas acciones. Confírmalas para ejecutarlas." : "No he podido generar respuesta.";
+  const reply = text;
+  // Fixed text, not left to the model: the person must know this answer did not follow the team's rules.
+  if (!rules.ok) text = `${RULES_READ_FAILED}\n\n${text}`;
 
   await ctx.db.from("agent_messages").insert({ conversation_id: opts.conversationId, role: "assistant", content: text });
   await ctx.db.from("agent_conversations").update({ updated_at: new Date().toISOString() }).eq("id", opts.conversationId);
   // Learn from what the user said (the reply gives context) after the answer is returned: never adds latency.
   if (opts.text.trim().length >= 40) {
-    const learnText = `Usuario: ${opts.text}\nNokko: ${text.slice(0, 1500)}`;
+    const learnText = `Usuario: ${opts.text}\nNokko: ${reply.slice(0, 1500)}`;
     afterResponse("chat memory", () => learnFrom(ctx, { source: "chat", text: learnText }));
   }
   return { text, pending };
