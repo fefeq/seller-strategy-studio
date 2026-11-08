@@ -333,3 +333,42 @@ describe("Theory U · Prototipos", () => {
     await waitFor(() => expect(screen.getAllByText("(0)")).toHaveLength(5));
   });
 });
+
+// SDD-20261106-ux-core-screens-pattern, U-4 · CA-3: ?seccion= on Theory U.
+describe("Theory U · ?seccion= (CA-3)", () => {
+  const selectedTab = () =>
+    screen.getAllByRole("tab").filter((t) => t.getAttribute("aria-selected") === "true");
+
+  it("opens the tab named by seccion", async () => {
+    h.search = { seccion: "listening" };
+    mount();
+    await screen.findByText(/Aún no hay reuniones con nivel de escucha/);
+    expect(selectedTab().map((t) => t.textContent)).toEqual(["Escucha"]);
+  });
+
+  it("an unknown id or none opens Recorrido U", async () => {
+    h.search = { seccion: "nope" };
+    mount();
+    await screen.findByText(/Un recorrido U guía al equipo/);
+    expect(selectedTab().map((t) => t.textContent)).toEqual(["Recorrido U"]);
+  });
+
+  it("changing tab navigates with replace and the new seccion, and removes it for Recorrido U", async () => {
+    h.search = { seccion: "listening" };
+    mount();
+    await screen.findByText(/Aún no hay reuniones con nivel de escucha/);
+    openTab("Clínica de casos");
+    const call = h.navigate.mock.calls.at(-1)?.[0] as {
+      search: (p: Record<string, unknown>) => unknown;
+      replace?: boolean;
+    };
+    expect(call.replace).toBe(true);
+    expect(call.search({ seccion: "listening" })).toEqual({ seccion: "clinic" });
+    expect(selectedTab().map((t) => t.textContent)).toEqual(["Clínica de casos"]);
+    openTab("Recorrido U");
+    const back = h.navigate.mock.calls.at(-1)?.[0] as {
+      search: (p: Record<string, unknown>) => unknown;
+    };
+    expect(back.search({ seccion: "clinic" })).toEqual({});
+  });
+});
