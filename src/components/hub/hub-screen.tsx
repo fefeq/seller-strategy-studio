@@ -6,6 +6,14 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
+import { useUrlSection } from "@/hooks/use-url-section";
+import {
+  HUB_DEFAULT_SECTION,
+  HUB_SECTIONS,
+  nextSearchOnSectionChange,
+  searchWithSection,
+  sectionOf,
+} from "@/lib/screen-sections";
 import { canDelete } from "@/lib/roles";
 import { Page, Empty, ScreenState } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -68,7 +76,6 @@ type DocsCache = { rows: Doc[]; truncated: boolean };
 export function HubScreen() {
   const qc = useQueryClient();
   const { data: me } = useMe();
-  const [section, setSection] = useState<string>("company");
   const [selected, setSelected] = useState<Doc | null>(null);
   // Each «+ Nuevo» is a fresh editor, even when another unsaved draft was open.
   const [draftSeq, setDraftSeq] = useState(0);
@@ -87,9 +94,21 @@ export function HubScreen() {
       ),
   });
   const docs = data?.rows ?? NO_DOCS;
-  const list = docs.filter((d) => d.section === section);
-  const { doc: docParam, q: qParam } = useSearch({ from: "/_authenticated/hub" });
+  const { doc: docParam, q: qParam, seccion } = useSearch({ from: "/_authenticated/hub" });
   const navigate = useNavigate({ from: "/hub" });
+  const [section, setSection] = useUrlSection(
+    sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
+  );
+  const list = docs.filter((d) => d.section === section);
+  // A person changing section replaces the URL: seccion set (not the default), doc out (it only wins when the page opens), q kept.
+  function goToSection(id: string) {
+    setSection(id);
+    setSelected(null);
+    navigate({
+      search: (prev) => nextSearchOnSectionChange(prev, id, HUB_DEFAULT_SECTION),
+      replace: true,
+    });
+  }
   // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); every change is mirrored to the URL.
   const [text, setText] = useState(qParam ?? "");
   const active = cleanQuery(text);
@@ -105,9 +124,16 @@ export function HubScreen() {
     navigate({ search: (prev) => nextSearch(prev, value), replace: true });
   }
   // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
+  // The section of that document wins over ?seccion= at that moment and is written back, keeping doc.
   useOpenDocFromUrl(docParam, docs, (d) => {
     setSection(d.section);
     setSelected(d);
+    if (d.section !== sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion)) {
+      navigate({
+        search: (prev) => searchWithSection(prev, d.section, HUB_DEFAULT_SECTION),
+        replace: true,
+      });
+    }
   });
   /** After an import or a generated doc: refresh and open it. */
   async function openDoc(docId: string) {
@@ -230,10 +256,7 @@ export function HubScreen() {
             {SECTIONS.map(([id, label]) => (
               <button
                 key={id}
-                onClick={() => {
-                  setSection(id);
-                  setSelected(null);
-                }}
+                onClick={() => goToSection(id)}
                 className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:block lg:w-full lg:whitespace-normal lg:border-0 ${section === id ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
               >
                 {label}{" "}
@@ -246,10 +269,7 @@ export function HubScreen() {
               </button>
             ))}
             <button
-              onClick={() => {
-                setSection(DRIVE_TAB);
-                setSelected(null);
-              }}
+              onClick={() => goToSection(DRIVE_TAB)}
               className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
               Drive por cuenta

@@ -93,6 +93,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 import { HubScreen } from "./hub-screen";
 import { errorText } from "@/lib/errors";
+import { HUB_SECTIONS } from "@/lib/screen-sections";
 
 const row = (id: string, section: string, title: string, body = "Texto de prueba."): Row => ({
   id,
@@ -316,14 +317,18 @@ describe("HubScreen · búsqueda", () => {
     expect(screen.queryByText(/la búsqueda no incluye el resto/)).not.toBeInTheDocument();
   });
 
-  it("the box is hidden on the Drive tab and q stays in the URL (spec §8)", async () => {
+  it("the box is hidden on the Drive tab and q stays in the URL (spec §8) (C1 CA-3: writes seccion, keeps q)", async () => {
     h.search = { q: "decision" };
     mount();
     await screen.findByText("Es caro");
     fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
     expect(screen.queryByLabelText("Buscar en Conocimiento")).not.toBeInTheDocument();
     expect(screen.getByText("panel-drive-por-cuenta")).toBeInTheDocument();
-    expect(h.navigate).not.toHaveBeenCalled();
+    // B's version asserted «navigate never called»; that was the behaviour before C1 CA-3. The protected property (q stays) holds.
+    expect(h.navigate).toHaveBeenCalledTimes(1);
+    const { next, replace } = lastSearch({ q: "decision" });
+    expect(replace).toBe(true);
+    expect(next).toEqual({ q: "decision", seccion: "drive" });
     fireEvent.click(sectionButton("Empresa"));
     expect(box().value).toBe("decision");
   });
@@ -429,5 +434,108 @@ describe("HubScreen · carga, error y vacío (CA-1, CA-2, CA-4)", () => {
     await screen.findByRole("button", { name: "Reintentar" });
     fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
     expect(screen.getByText("panel-drive-por-cuenta")).toBeInTheDocument();
+  });
+});
+
+// SDD-20261106-ux-core-screens-pattern, U-4 · CA-3: ?seccion= on «Conocimiento».
+type Applied = { next: Record<string, unknown>; replace?: boolean };
+const applyLast = (prev: Record<string, unknown>): Applied => {
+  const call = h.navigate.mock.calls.at(-1)?.[0] as {
+    search: (p: Record<string, unknown>) => Record<string, unknown>;
+    replace?: boolean;
+  };
+  return { next: call.search(prev), replace: call.replace };
+};
+const selected = () =>
+  sectionLabels.concat("Drive por cuenta").filter((l) => {
+    const b = screen.getByRole("button", { name: new RegExp(`^${l}`) });
+    return b.className.includes("bg-primary");
+  });
+
+describe("HubScreen · ?seccion= (CA-3)", () => {
+  it("every section of the screen has its id in screen-sections", () => {
+    expect([...HUB_SECTIONS]).toEqual([
+      "company",
+      "objections",
+      "playbooks",
+      "methodology",
+      "campaigns",
+      "skills",
+      "rules",
+      "drive",
+    ]);
+  });
+
+  it("opens the section named by seccion", async () => {
+    h.search = { seccion: "objections" };
+    mount();
+    expect(await screen.findByText("Es caro")).toBeInTheDocument();
+    expect(screen.queryByText("Propuesta de valor")).not.toBeInTheDocument();
+    expect(selected()).toEqual(["Objeciones y battlecards"]);
+  });
+
+  it("opens Drive por cuenta with seccion=drive", async () => {
+    h.search = { seccion: "drive" };
+    mount();
+    expect(await screen.findByText("panel-drive-por-cuenta")).toBeInTheDocument();
+  });
+
+  it("an unknown id or none opens Empresa", async () => {
+    h.search = { seccion: "nope" };
+    mount();
+    expect(await screen.findByText("Propuesta de valor")).toBeInTheDocument();
+    expect(selected()).toEqual(["Empresa"]);
+  });
+
+  it("?doc= of another section rewrites seccion, keeping doc, with replace", async () => {
+    h.search = { doc: "d4", seccion: "company" };
+    mount();
+    expect(await screen.findByDisplayValue("Es caro")).toBeInTheDocument();
+    expect(selected()).toEqual(["Objeciones y battlecards"]);
+    const { next, replace } = applyLast({ doc: "d4", seccion: "company" });
+    expect(next).toEqual({ doc: "d4", seccion: "objections" });
+    expect(replace).toBe(true);
+  });
+
+  it("?doc= of a document that is not in the list is ignored and seccion rules", async () => {
+    h.search = { doc: "borrado", seccion: "rules" };
+    mount();
+    await screen.findByText(/Sin documentos todavía/);
+    expect(selected()).toEqual(["Reglas"]);
+    expect(h.navigate).not.toHaveBeenCalled();
+  });
+
+  it("?doc= in the section already shown does not touch the URL", async () => {
+    h.search = { doc: "d1" };
+    mount();
+    expect(await screen.findByDisplayValue("Propuesta de valor")).toBeInTheDocument();
+    expect(h.navigate).not.toHaveBeenCalled();
+  });
+
+  it("changing section by hand: replace, doc out, q kept, seccion set", async () => {
+    h.search = { doc: "d1", q: "caro", seccion: "objections" };
+    mount();
+    await screen.findByText("Es caro");
+    h.navigate.mockClear();
+    fireEvent.click(sectionButton("Playbooks"));
+    const a = applyLast({ doc: "d1", q: "caro", seccion: "objections" });
+    expect(a.replace).toBe(true);
+    expect(a.next).toEqual({ q: "caro", seccion: "playbooks" });
+    fireEvent.click(sectionButton("Empresa"));
+    expect(applyLast({ doc: "d1", q: "caro", seccion: "playbooks" }).next).toEqual({
+      q: "caro",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Drive por cuenta" }));
+    expect(applyLast({ q: "caro" }).next).toEqual({ q: "caro", seccion: "drive" });
+  });
+
+  it("after ?doc= opens a document and the person changes section, the URL keeps the chosen section and no doc", async () => {
+    h.search = { doc: "d4" };
+    mount();
+    await screen.findByDisplayValue("Es caro");
+    h.navigate.mockClear();
+    fireEvent.click(sectionButton("Reglas"));
+    expect(selected()).toEqual(["Reglas"]);
+    expect(applyLast({ doc: "d4", seccion: "objections" }).next).toEqual({ seccion: "rules" });
   });
 });
