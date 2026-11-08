@@ -1,13 +1,15 @@
 # SDD-20261106-agent-rules-reader · [Mejora] Las Reglas de Conocimiento llegan al agente (requisito previo para retirar Ciclo GTM)
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta (bloquea la pieza 8 y la decisión A-3 del PRD de GTM Lab)
-**Estado:** Borrador (v3, corregido tras la segunda pasada del gate; tope y enmiendas aprobados por Fede el 2026-11-06) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
-**PRD:** No aplica para el lector (mejora acotada). Propone enmiendas a `docs/prd/PRD-20261101-gtm-lab-en-nokko.md` y a `docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md` (NK-0053), §15 · **Depende de:** — · **Bloquea:** pieza 8 del PRD de GTM Lab (retirada de Ciclo GTM y Debates) y A-3 (menú «Estrategia»)
+**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06
+**PRD:** No aplica para el lector (mejora acotada). Propone enmiendas a `docs/prd/PRD-20261101-gtm-lab-en-nokko.md` y a `docs/sdd/SDD-20261030-gtm-control-tower-5a-agent-memory.md` (NK-0053), §15 · **Depende de:** SDD-B U-0 (mueve `/hub` a `src/components/hub/hub-screen.tsx` y `doc-editor.tsx`, y cambia la caché `["docs"]` a `{ rows, truncated }`); se integra después de C1 · **Bloquea:** pieza 8 del PRD de GTM Lab (retirada de Ciclo GTM y Debates) y A-3 (menú «Estrategia»)
 
 > Sprint 1 de mejoras en pantallas core, bloque D. Rehecho el 2026-11-06 tras perderse la versión anterior (no llegó a subirse).
 > Decisión de Fede en la Fase 1 del sprint (chat del 2026-11-06, no registrada aún en `docs/`): las Reglas tendrán un lector real en el agente, y Ciclo GTM no se retira hasta que exista. Este SDD la deja por escrito.
 
-**Contrato del sprint:** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.
+> **Números de línea:** citan `f76f639`; tras B, la pantalla de `/hub` vive en `src/components/hub/` (B U-0) y el brief debe reescribir las referencias.
+
+**Contrato del sprint:** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca la pantalla de /hub (`src/components/hub/` tras B) solo en los textos de la sección Reglas y de la casilla «obligatorio». Orden de integración: A → B → C1 → D → C2.
 
 ## 1. Resumen
 Conocimiento tiene una sección «Reglas» que promete «Lo que los agentes no pueden hacer sin una persona», pero solo Ciclo GTM las trata como obligatorias. El agente (app y Telegram) no las ve salvo que busque por texto. Este cambio hace que el agente lea las reglas del equipo en cada turno, y también las dos herramientas suyas que redactan textos para clientes. El lector es un módulo único que no depende de Ciclo GTM, y Conocimiento dice cuántas reglas lee. Así, retirar Ciclo GTM ya no deja las Reglas sin lector **en el agente**. La biblioteca de playbooks queda pendiente (§14).
@@ -63,7 +65,7 @@ Leído en `main` @ `f76f639` y revisado por el gate (§17).
 - **CA-2** La lectura filtra de forma explícita por `org_id = ctx.orgId`, `scope = 'team'` y (`section = 'rules'` o `mandatory = true`), sin depender del RLS; y, si el cliente devolviera filas de otra organización o personales, no entra ninguna (filtro también en memoria). · prueba: `src/lib/knowledge-rules.test.ts` (con `db` falso que comprueba los filtros y devuelve filas ajenas)
 - **CA-3** El agente lee como máximo `maxRules` reglas y `maxChars` caracteres en total (valores en §15.1), las más recientes por `updated_at` entre **todas** las reglas de la organización (no dentro de una ventana de documentos de otras secciones). BMAD conserva sus valores actuales (12 reglas, 4000 caracteres por regla, sin tope total). · prueba: `src/lib/knowledge-rules.test.ts`
 - **CA-4** Si la lectura falla (error devuelto por Supabase o excepción), el turno sigue sin reglas, el agente dice «No he podido leer las reglas del equipo. Respondo sin ellas; vuelve a intentarlo en un momento.» (igual que 5a CA-18 con la memoria) y el log del servidor no incluye el texto de ninguna regla. · prueba: `src/lib/agent/agent-rules.test.ts` (los dos tipos de fallo)
-- **CA-5** `draft_followup` y `prepare_meeting_brief` pasan el mismo bloque de reglas a su llamada a la IA. Si la lectura de reglas falla dentro de la herramienta, la herramienta sigue sin reglas y devuelve el aviso de CA-4 en un campo `aviso` de su resultado. · prueba: `src/lib/agent/agent-rules.test.ts` (prompt capturado y los dos tipos de fallo)
+- **CA-5** `draft_followup` y `prepare_meeting_brief` pasan el mismo bloque de reglas a su llamada a la IA. Si la lectura de reglas falla dentro de la herramienta, la herramienta sigue sin reglas y devuelve el aviso de CA-4 en el campo `mensaje` (la convención que `decidePending` copia al resultado y a `agent_messages`, `agent.functions.ts:144-153`); `draft_followup` además lo antepone a su `borrador`. · prueba: `src/lib/agent/agent-rules.test.ts` (prompt capturado, los dos tipos de fallo, y un caso de `prepare_meeting_brief` que pasa por `decidePending` y comprueba que el `result` contiene «No he podido leer las reglas del equipo…»)
 
 ### H-2: Como Owner o Sales Leader, quiero saber qué reglas lee el agente.
 - **CA-6** El texto de la sección Reglas dice que el agente las lee. N = reglas obligatorias de equipo con texto (las vacías no cuentan, como hoy `bmad/sources.ts:19`); L = reglas que entran **completas** con los topes. Si L < N, avisa «El agente lee {L} de {N} reglas completas (las más recientes). Junta o acorta las que puedas.» · prueba: `src/lib/knowledge-rules.test.ts` (incluido el caso de una regla cortada por el tope de caracteres)
@@ -97,7 +99,7 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 | U-1 | `src/lib/knowledge-rules.ts` (lector con filtros explícitos y límites, `rulesBlock`, texto del aviso); `bmad/sources.ts` reexporta | CA-1a, CA-2, CA-3, CA-6, CA-7 | `src/lib/knowledge-rules.test.ts` |
 | U-2 | `runAgent` carga y pasa las reglas; aviso si fallan | CA-1b, CA-4 | `src/lib/agent/agent-rules.test.ts` |
 | U-3 | Reglas en `draft_followup` y `prepare_meeting_brief` | CA-5 | `src/lib/agent/agent-rules.test.ts` |
-| U-4 | Textos de `hub.tsx`: sección Reglas (CA-6) y casilla «De obligado cumplimiento» (`hub.tsx:163`, hoy «los agentes lo leen siempre al redactar el brief, el plan y los demás documentos del Ciclo GTM»), que pasa a «El agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión; también los documentos del Ciclo GTM, y aparece en sus fuentes.» | CA-6 (pantalla) | walkthrough |
+| U-4 | Textos de la pantalla de `/hub` tras B: sección Reglas en `src/components/hub/hub-screen.tsx` (`SECTIONS`, equivale a `hub.tsx:35` de `f76f639`) y casilla «De obligado cumplimiento» en `src/components/hub/doc-editor.tsx` (equivale a `hub.tsx:161-164`). Casilla, dos ramas, ≤ 135 caracteres de explicación para que el bloque no pase de 160 (umbral de C2): sin Reglas «El agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.»; en Reglas «Todo lo de Reglas lo es: el agente…» con la misma frase en minúscula. Aviso de CA-6 en pantalla: N y L salen de `data.rows` de la caché `["docs"]`, solo reglas de equipo, con la misma función pura del lector; se muestra solo tras responder la consulta (dentro de `ScreenState` de C1); si `truncated`, no muestra «{L} de {N}» y dice «Puede haber más reglas de las que se han cargado.» | CA-6 (pantalla) | `src/components/hub/hub-screen.test.tsx` (caso L < N y caso `truncated`) |
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - Cargar las reglas junto a `memoryBlock(ctx)` (`agent.server.ts:60`) y pasarlas a `systemPrompt` como la memoria. El bloque va en una función aparte para que 5a solo tenga que conservarla.
@@ -126,6 +128,8 @@ Sin tablas ni columnas nuevas. La lectura filtra de forma explícita por organiz
 ## 16. Pendiente de verificar
 - Número y longitud reales de reglas por organización; coste real por turno: producción y proveedor.
 - Que el modelo cumpla las reglas: eval aparte.
+
+**Versión 4 (2026-11-06):** tercera pasada del gate: aviso de fallo de herramientas en `mensaje` y probado por `decidePending` (bloqueante 1); texto de la casilla ≤ 135 caracteres con sus dos ramas (2); dependencia de B U-0, rutas nuevas de `/hub`, aviso de CA-6 sobre `data.rows` y `truncated` (3 y coherencia 1); contrato común actualizado.
 
 **Versión 3 (2026-11-06):** corregido tras la segunda pasada: retirado el falso hallazgo de seguridad y NK-0066 propuesto para cierre (objeción nueva 1), L = reglas completas y N sin vacías (2), texto de la casilla de `hub.tsx:163` en U-4 y en el contrato (3), modo `interview` en CA-1b, fallo dentro de herramientas en CA-5 y «textos que redacta el agente» en §4 (4).
 
@@ -321,6 +325,99 @@ Informe de la segunda pasada (sobre v2), copiado sin editar:
      - CA-1a: quitar «canal y modos», o hacer que `rulesBlock` los reciba.
      - CA-5: definir el fallo. Por ejemplo, la herramienta sigue sin reglas y devuelve el mismo aviso que CA-4 en un campo `aviso`. Probarlo en `agent-rules.test.ts`.
    - Menor: `prepare_meeting_brief` genera una preparación interna, no un texto para el cliente. Ajustar en §4 «textos para clientes» a «textos que redacta el agente».
+
+
+Informe de la tercera pasada (sobre v3; sus bloqueantes se corrigen en v4), copiado sin editar:
+
+- **Veredicto del gate (tercera pasada):** Objeciones
+- **Objeciones de la segunda pasada:**
+  1. Resuelta. El falso hallazgo sale del §14 y del §5, la retractación está en el §15.3 y NK-0066 consta como `REJECTED` en `.factory/ledger.json:1717`. La constancia está en el §15.3 y no en el §17, lo que basta.
+  2. Parcial. CA-6 define L como reglas completas y N como reglas con texto, y prueba el caso de la regla cortada. Pero el §6 (línea 55) mantiene el texto viejo, «El agente lee {L} de {N} reglas (las más recientes)», sin «completas». Ahora hay dos textos del aviso distintos.
+  3. Resuelta en este documento: U-4 y el contrato incluyen la casilla de `hub.tsx:163`. El texto nuevo, en cambio, crea dos problemas con B y C2 (bloqueantes 2 y 3).
+  4. Resuelta en su redacción. CA-1b añade el modo `interview`, CA-1a no depende de canal ni modo, CA-5 define qué pasa si falla la lectura y el §4 habla de «textos que redacta el agente». Pero el campo `aviso` de CA-5 no llega al usuario (bloqueante 1).
+  - Contradicciones de la segunda pasada:
+    - La 3 no está corregida: la línea 8 sigue diciendo «no registrada aún en `docs/`», y está registrada en PRD `:4` y `:105`.
+    - La 4 está resuelta en parte: el §3 avisa de que se leyó sobre `f76f639`, pero las citas siguen siendo `:133` (en la rama es `:134`) y 5a `:80` (en la rama es `:82`).
+- **CA sin prueba posible o sin G-n:** ninguno imposible de probar. Hay dos matices:
+  - La prueba de CA-5 pasaría, pero no demuestra que el aviso llegue al usuario (bloqueante 1).
+  - CA-6 depende de cómo cuenta `maxChars`, que no está definido (nota 2).
+  - Sin PRD propio, no se exige G-n.
+- **[Por verificar] que sigue sin comprobarse:**
+  - Número y longitud reales de las reglas por organización (producción).
+  - Coste real por turno.
+  - Que el modelo cumpla las reglas (solo con un eval).
+  - Las políticas RLS en producción.
+- **Contradicciones con el código o con decisiones previas:**
+  1. El campo `aviso` de CA-5 no existe en el contrato de resultados: `decidePending` solo muestra `mensaje` (`src/lib/agent.functions.ts:144-148`), y la aprobación de Sugerencias igual (`:369-374`).
+  2. El texto nuevo de la casilla mide 181 caracteres visibles. C2 fija el umbral en 160 y cuenta en `/hub` «ninguno» (`SDD-20261106-ux-metrics-data-state.md:38`, `:5`).
+  3. B extrae `hub.tsx` a `src/components/hub/hub-screen.tsx` y `doc-editor.tsx` (`SDD-20261106-hub-search.md:115`) y se integra antes que D. Aun así, D cita `hub.tsx:35` y `:163` y dice «Depende de: —» (línea 5).
+  4. Línea 8: «no registrada aún en `docs/`» es falso (PRD `:4`, `:105`).
+  5. El §5 excluye «los asistentes externos por MCP», pero CA-5 mete las reglas dentro de las propias herramientas. Por tanto también les llegan a MCP (`src/lib/mcp/tools/agent-tools.ts:142`) y a la aprobación de Sugerencias de `meeting-no-prep` (`src/lib/proactive/detectors/meeting-no-prep.ts:18` → `agent.functions.ts:368`).
+- **Lo que esta revisión NO demuestra:**
+  - No ejecuté nada: ni Vitest, ni tipos, ni build, ni `gate.mjs` ni `flake.mjs`.
+  - Segunda máquina y soak: NOT RUN.
+  - No comprobé el RLS ni los datos en producción, ni medí coste o latencia.
+  - No hay evidencia de que el modelo obedezca las reglas.
+  - Los 181 caracteres son una cuenta a mano con el método de C2 (24 de «De obligado cumplimiento» + 1 de la expresión + 156 del texto nuevo), no el recorrido del árbol de TypeScript.
+  - Comparé con los SDD hermanos solo en lo que toca a `/hub` y a la casilla.
+
+**Objeciones bloqueantes**
+
+1. **El aviso de CA-5 en un campo `aviso` no llega al usuario en `prepare_meeting_brief`.**
+   - Evidencia:
+     - `prepare_meeting_brief` es una herramienta de escritura (`core-write.ts:401`). Se ejecuta al confirmar, en `decidePending`, que solo copia `mensaje` al resultado y a `agent_messages` (`agent.functions.ts:144-153`).
+     - En Sugerencias pasa lo mismo (`agent.functions.ts:369-374`).
+     - En `draft_followup` (lectura) el resultado va al modelo, que puede no repetirlo.
+     - El test de CA-5 pasaría y el usuario no vería nada. Va contra el propio CA-4, que es justo evitar un fallo silencioso.
+   - Corrección:
+     - En CA-5, usar el campo `mensaje`, que es la convención existente. En `draft_followup`, además, anteponer el aviso al `borrador` o devolverlo en `mensaje`.
+     - Añadir a la prueba un caso que pase por `decidePending` y compruebe que `result` contiene «No he podido leer las reglas del equipo…».
+
+2. **El texto nuevo de la casilla rompe la medición de C2.**
+   - Evidencia:
+     - U-4 (línea 100) cambia el texto a 156 caracteres. El bloque `hub.tsx:161-164` pasa de 146 a 181 visibles.
+     - C2 pliega lo que pasa de 160, cuenta «/hub: ninguno» (`ux-metrics-data-state.md:38`) y su U-1 se para y escala a Fede si la nueva medición difiere (`:121`).
+     - El orden de integración es D → C2.
+   - Corrección:
+     - Acortar el texto a 135 caracteres o menos, de modo que el bloque quede en 160 o menos. Por ejemplo: «El agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.» (151 en total).
+     - O acordar con C2 que ese bloque entra en su lista.
+     - Decirlo en el §14.
+
+3. **D no declara su dependencia de B y cita archivos que B mueve.**
+   - Evidencia:
+     - `SDD-20261106-hub-search.md:115`: tras U-0, `SECTIONS` y la casilla viven en `src/components/hub/hub-screen.tsx` y `src/components/hub/doc-editor.tsx`.
+     - El informe de la tercera pasada de B lo pide (`hub-search.md:333`, `:367`).
+     - D sigue con «Depende de: —» (línea 5) y U-4 cita `hub.tsx:35` y `:163`.
+   - Corrección:
+     - «Depende de: SDD-B U-0».
+     - En U-4 y en el §3, citar las dos rutas nuevas con su equivalencia en `hub.tsx` de `f76f639`.
+     - Añadir a la cabecera la misma advertencia que tiene C1.
+
+**Notas para el brief**
+
+1. **Un solo texto del aviso.** Unificar el §6 (línea 55) con CA-6 en «El agente lee {L} de {N} reglas completas (las más recientes). Junta o acorta las que puedas.». Los tests y el walkthrough comprueban un único literal.
+2. **Definir qué cuenta en `maxChars`.** Decir si es solo `body` o también el título y el formato de `reglas_obligatorias`. De eso depende cuándo una regla «entra completa», y con ello L en CA-6.
+3. **Que el lector y el contador vean el mismo conjunto.**
+   - El lector no debe aplicar `.limit(maxRules)` en la consulta antes de descartar las reglas sin texto. Si lo hace, las vacías ocupan huecos y el agente lee menos de lo que cuenta la pantalla.
+   - Hay que nombrar la función pura que calcula L y N, por ejemplo `rulesCoverage(docs, {maxRules, maxChars})`, y añadirla a U-1. `hub.tsx:60` ya carga todos los documentos ordenados por `updated_at`, así que la pantalla puede usarla tal cual.
+4. **Copy de la casilla:** con reglas se lee «Todo lo de Reglas lo es: El agente…», con mayúscula tras los dos puntos. Ajustar el prefijo o pasar a minúscula.
+5. **Unificar el nombre:** el §6 dice «briefs de reunión» y U-4 «preparaciones de reunión». El glosario usa «Preparación de llamada».
+6. **Declarar el alcance real de CA-5.** Al ir dentro de las herramientas, las reglas también llegan por MCP y por Sugerencias (contradicción 5). Hay que matizar el §5 («No incluye» se refiere a las herramientas propias de MCP, no a las del agente que MCP reutiliza) o declararlo como efecto aceptado.
+7. **Arreglar referencias del documento:**
+   - Línea 8: quitar «no registrada aún» y citar PRD `:4` y `:105`.
+   - Actualizar las citas que se han movido en la rama: PRD pieza 8 `:134`, 5a CA-18 `:82`, 5a CA-38 `:66`.
+   - Añadir «Ticket: NK-0069» a la cabecera (`.factory/ledger.json:1788`).
+8. **Enlazar las preguntas abiertas con sus tickets.** Las §15.2 y §15.4 ya tienen ticket en el ledger: NK-0074 («solo Owner y Sales Leader escriben Reglas…») y NK-0075 («Reglas… en ai-core, biblioteca de playbooks y MCP»), ambos `LOGGED`. Siguen siendo preguntas abiertas a Fede; enlazarlas.
+9. **Mocks del test de CA-1b.** El §13 no lista todos los que necesita `runAgent`. Además de `ai`, `@/lib/gemini` y `memory.server`, hacen falta:
+   - `@/lib/after-response.server`;
+   - `./run-id` y `./tools` (o un `ToolCtx` con roles reales);
+   - variables de entorno para `aiProviders`, porque si falta `LOVABLE_API_KEY` lanza error en `agent.server.ts:56`.
+10. **Dónde se emite el aviso de CA-4.** Concretar que va en el `text` devuelto por `runAgent` y guardado en `agent_messages` (`agent.server.ts:83`), para que Telegram y la app lo muestren. Hoy, si el modelo no devuelve texto, se sustituye por un texto por defecto (`:81`); el aviso debe ir antepuesto después de ese paso.
+11. **Nombre del módulo.** `knowledgeForAgents` también devuelve `conocimiento_empresa` (`bmad/sources.ts:21-27`). Al moverlo a `knowledge-rules.ts`, ese módulo cubre más que reglas. No es un problema, pero conviene decirlo en el §6 «Modificado».
+12. **5a CA-38** (`SDD-20261030-…-5a-agent-memory.md:66`) exige conservar CA-1a a CA-4, no CA-5. Es coherente, porque las herramientas no dependen de los modos. Basta mencionarlo en el §14.
+
+
+Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

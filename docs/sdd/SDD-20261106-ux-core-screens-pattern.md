@@ -1,14 +1,14 @@
 # SDD-20261106-ux-core-screens-pattern · [Mejora] NK-0051 ampliado, C1: estados de pantalla en Conocimiento, Theory U y Métricas; sección en la URL, vacíos y pistas en Conocimiento y Theory U
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** Borrador (v3, corregido tras la segunda pasada del gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación decidida por Fede: no se abre ticket aparte)
+**Estado:** Aprobado por Fede el 2026-11-06 («OK a todo» en el chat, tras tres pasadas del gate y la revisión de coherencia) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-06 · **Ticket:** NK-0051 (ampliación decidida por Fede: no se abre ticket aparte)
 **PRD:** No aplica (mejora acotada; contexto en `docs/UX-INFORME-20261031.md`) · **Depende de:** `SDD-20261106-hub-search` (SDD-B: extrae `/hub` a `src/components/hub/hub-screen.tsx`, pasa su lectura a `fetchAll` y crea `src/components/hub/hub-screen.test.tsx`) y `SDD-20261106-metrics-honest-data` (SDD-A: cambia textos de los paneles de `/metrics` y crea sus tests); los dos se integran antes · **Coordinar con:** `SDD-20261106-agent-rules-reader` (SDD-D, se integra después de C1 y toca textos de `/hub`), `SDD-20261106-ux-metrics-data-state` (SDD-C2, se integra después; ver §14 sobre `listening.tsx:49`), los 4 SDD de NK-0051 según el ledger (`.factory/ledger.json:1381`): `SDD-20261031-ux-palette-graphite`, `SDD-20261031-ux-legibility-contrast` (su §13 permite poner `Kpi`/`Panel` en `src/components/page.tsx`, el mismo archivo que `ScreenState`), `SDD-20261031-ux-move-without-drag`, `SDD-20261031-deal-won-duplicate-approvals`; `SDD-20261025-theory-u-proactive-decision-support` (toca `src/components/theory-u/*`: C1 va antes, por ser más pequeño); PR #76 de Plays (`headlines.ts`, `nav.ts`, que no se tocan)
 
 > Sprint 1 de mejoras en pantallas core, bloque C1. Nació al partir la v1 conjunta tras la primera pasada del gate (C2 está en `SDD-20261106-ux-metrics-data-state.md`). En la v3 asume también carga, error y vacío de `/metrics`, que no tenían dueño (objeción nueva 1 de la segunda pasada de C2).
 > **Base:** la rama local de NK-0051 (`feat/ux-graphite-legibility-move`, «8 commits sobre 47ec72c» según el ledger) se perdió (confirmado por Fede, 2026-11-06). C1 parte de `main` @ `f76f639` y no depende de ella.
 > **Números de línea:** todos son de `main` @ `f76f639`. B mueve el código de `src/routes/_authenticated/hub.tsx` a `src/components/hub/hub-screen.tsx` y A cambia los paneles de `/metrics`: el brief los vuelve a localizar sobre la rama integrada.
 
-**Contrato entre los SDD del sprint (el mismo texto en A, B, C1 y C2):** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca hub.tsx solo en los textos de la sección Reglas y de la casilla «obligatorio» (hub.tsx:163). Orden de integración: A → B → C1 → D → C2.
+**Contrato entre los SDD del sprint (el mismo texto en A, B, C1, C2 y D):** A cambia datos y textos de datos de /metrics (las palabras de cada marca); B, la búsqueda de /hub; C1, estados de pantalla (carga, error, vacío) de /hub, /theory-u y /metrics, sección en la URL de /hub y /theory-u, vacíos y pistas de /hub y /theory-u; C2, el plegado de explicaciones en las tres pantallas y la forma visual (componente DataState) de las marcas de dato de /metrics. D toca la pantalla de /hub (`src/components/hub/` tras B) solo en los textos de la sección Reglas y de la casilla «obligatorio». Orden de integración: A → B → C1 → D → C2.
 
 ## 1. Resumen
 En Conocimiento, Theory U y Métricas, la pantalla dice «vacío» o muestra contadores a 0 mientras carga, se traga los errores (o se queda en blanco), y en Conocimiento y Theory U pierde la pestaña al volver atrás o compartir el enlace y alguna pista nombra un sitio sin llevar a él. C1 añade un estado de pantalla común (carga, error con «Reintentar»), hace que las consultas del alcance lancen su error, pone la sección en la URL de `/hub` y `/theory-u`, da a cada vacío una acción y convierte las pistas en enlaces. No cambia datos ni textos de datos.
@@ -439,6 +439,9 @@ Ninguna.
    - Es correcto (hoy enseña vacíos falsos), pero conviene decirlo en §8 para que el walkthrough no lo marque como fallo.
 8. **Lo que se queda fuera.** `SelfServiceFunnel` muestra mientras carga «conecta tu PostHog en Conexiones» (`self-service-funnel.tsx:61`), porque `trials` está vacío. Es una pista que depende del dato. No entra en C1; anotarlo en §15.5 o como ticket aparte.
 9. **Simulacros del test de Theory U.** Las pestañas usan funciones de servidor: `synth` en `journey.tsx:102`, `analyze` en `sensing.tsx:49` y `decideExperiment` en `prototypes.tsx:58`. Además, `TabsContent` desmonta las pestañas inactivas, así que cada caso de CA-1 y CA-2 por pestaña tiene que abrirse con su `?seccion=`.
+
+
+Revisión de coherencia entre los cinco SDD del sprint: `docs/sdd/annex/sprint1-cross-sdd-gate-20261106.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
