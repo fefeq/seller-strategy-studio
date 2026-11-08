@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 68,
+  "seq": 75,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1888,6 +1888,153 @@
           "state": "LOGGED",
           "at": "2026-11-08T18:14:42.109Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0069",
+      "title": "Migración 0078 (avisos por momentos de dinero) no reejecutable: falla con notifications_user_dedupe_key ya existente; hacerla idempotente y revisar el orden del journal (0077 tiene when mayor que 0078)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9). Pide: 0078 idempotente (if not exists o guard) y revisar el orden del journal; verificar contra __drizzle_migrations viva. Pendiente de verificar (nota de este ticket, sin ticket aparte): definiciones vivas de lead_stage_change, track_deal_changes y deals_stage_check en la base vs repo. Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.394Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0070",
+      "title": "Avisos: cualquier miembro puede reescribir el dedupe_key de sus propios avisos (policy own mark read de la 0049 y grant update a nivel de tabla); limitar el UPDATE a read_at (grant por columna o trigger)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), hallazgo de severidad baja. Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.440Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0071",
+      "title": "CA-13 de money-notices no detecta que el aviso de fallo filtre el UUID de la fila (mutante G16 sobrevive); ampliar CA-13 para rechazar new.id en el raise warning",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), hueco de test de severidad baja (mutation-summary). Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.490Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0072",
+      "title": "money-notices.pg.test.ts sigue diciendo «migration 0074» en describe y cabeceras; renombrar a 0078 (cosmético)",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9). Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.551Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0073",
+      "title": "PR #93 declara que pasó check-migration-journal.mjs, que no existe en el repo (sí pasa src/lib/migrations-journal.test.ts): corregir la referencia o añadir el script",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), proceso/doc. Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.600Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0074",
+      "title": "Deal Ganado con closed_at en el futuro genera 2 avisos, caso no cubierto por el SDD: decidir si es comportamiento aceptado y documentarlo",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), informativo. Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.656Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0075",
+      "title": "Proceso: la migración 0078 se mergeó y aplicó antes del gate independiente (la PR decía «No hay revisión independiente»); añadir regla en GROUND-RULES de no aplicar migración de producción sin gate PASS, o registrar excepción",
+      "kind": "bug",
+      "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), proceso. Evidencia: .factory/evidence/NK-0030/",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T19:04:59.703Z",
+          "by": "tracker",
           "note": ""
         }
       ]
