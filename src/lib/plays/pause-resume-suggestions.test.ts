@@ -69,7 +69,7 @@ function fakeDb(store: Row[]): Db {
 const sug = (detector: string, key: string) => ({
   detector,
   dedupe_key: key,
-  priority: 2,
+  priority: 2 as const,
   title: "t",
   body: "",
   link: null,
