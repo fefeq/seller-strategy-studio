@@ -820,7 +820,7 @@
       "title": "Avisos por momentos de dinero: respuesta positiva, llamada reservada o cancelada y deal ganado avisan; el resto queda en el registro sin ping",
       "kind": "feature",
       "source": "análisis Anfloy + auditoría de avisos (jobs.ts), sesión de Fede 2026-10-30",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "Claude",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261030-money-moment-notices.md",
@@ -845,6 +845,12 @@
           "at": "2026-10-31T15:52:44.217Z",
           "by": "Fede",
           "note": "owner=Claude"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:23:11.009Z",
+          "by": "Fede",
+          "note": "sha=a7334705cda33ff4507653afad729dc58fdf7071"
         }
       ]
     },
@@ -1303,7 +1309,7 @@
       "title": "El gate de lint falla al tocar src/integrations/supabase/types.ts (archivo generado por Lovable sin punto y coma): eslint debe ignorarlo",
       "kind": "bug",
       "source": "gate NK-0030 2026-11-01",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "nk-0047-author",
       "duplicate_of": null,
       "sdd": null,
@@ -1322,6 +1328,12 @@
           "at": "2026-11-01T17:33:25.529Z",
           "by": "Fede",
           "note": "owner=nk-0047-author"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:22:55.303Z",
+          "by": "Fede",
+          "note": "sha=faf8cf19d89e"
         }
       ]
     },
@@ -1711,13 +1723,13 @@
       "title": "Plays GTM 1: catálogo de 28 plays, puertas, estado y pantalla /plays",
       "kind": "feature",
       "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; SDD y PRD en PR #75, código en PR #76 (SDD-20261106-plays-library-core)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "claude-plays-integration",
       "duplicate_of": null,
-      "sdd": null,
-      "prd": null,
+      "sdd": "docs/sdd/SDD-20261106-plays-library-core.md",
+      "prd": "docs/prd/PRD-20261106-plays-gtm.md",
       "branch": null,
-      "base_commit": null,
+      "base_commit": "494e78bfd5b8e460e61a2c156e023e9904a8ccb7",
       "history": [
         {
           "state": "LOGGED",
@@ -1730,6 +1742,24 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "D-5: Plays SDD 4, 5 y 6 se adelantan a la Fase 4 (solo dependen de Plays 1); el resto de Plays espera a NK-0054"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-08T18:23:21.937Z",
+          "by": "Claude",
+          "note": "docs: sdd=docs/sdd/SDD-20261106-plays-library-core.md prd=docs/prd/PRD-20261106-plays-gtm.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-08T18:23:21.985Z",
+          "by": "Fede",
+          "note": "owner=claude-plays-integration"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-08T18:23:22.033Z",
+          "by": "Fede",
+          "note": "sha=0f4099bb997b4108f711b61fc5bee442a8da549d"
         }
       ]
     },
