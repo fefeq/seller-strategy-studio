@@ -16,15 +16,22 @@ import {
   type AskOpts,
 } from "@/lib/gemini";
 
-/** Error from an own-key provider, with the HTTP status so the caller can decide to fall back. */
+/** Error from an own-key provider, with the HTTP status so the caller can decide to fall back.
+ *  The response body may quote the prompt (the team's rules, SDD-20261106-agent-rules-reader §10): it lives in a private
+ *  field read through `body`, so logging or serializing the error never prints it. */
 export class ProviderError extends Error {
+  readonly #body: string;
   constructor(
     message: string,
     readonly status: number,
-    readonly body = "",
+    body = "",
     readonly provider: AiProvider = "gemini",
   ) {
     super(message);
+    this.#body = body;
+  }
+  get body() {
+    return this.#body;
   }
 }
 
@@ -85,7 +92,7 @@ async function askGemini(system: string, user: string, opts: AskOpts) {
   }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error("Gemini error", res.status, body.slice(0, 500));
+    console.error("Gemini error", res.status, { bodyLength: body.length });
     throw new ProviderError(geminiErrorMessage(res.status, body), res.status, body, "gemini");
   }
   return extractText(await res.json());
@@ -137,7 +144,7 @@ async function askOpenRouter(system: string, user: string, opts: AskOpts) {
   }
   const body = await res.text().catch(() => "");
   if (!res.ok) {
-    console.error("OpenRouter error", res.status, body.slice(0, 500));
+    console.error("OpenRouter error", res.status, { bodyLength: body.length });
     throw new ProviderError(openrouterErrorMessage(res.status), res.status, body, "openrouter");
   }
   try {
@@ -221,13 +228,15 @@ async function askLovable(system: string, user: string, opts: AskOpts) {
     );
   if (res.status === 403) {
     const body = await res.text().catch(() => "");
-    console.error("AI gateway 403", body.slice(0, 500));
+    console.error("AI gateway 403", { bodyLength: body.length });
     throw new Error(
       "El uso de IA está bloqueado para este espacio de trabajo (límite o permisos). Revisa la configuración de IA.",
     );
   }
   if (!res.ok || !res.body) {
-    console.error("AI gateway error", res.status, (await res.text().catch(() => "")).slice(0, 500));
+    console.error("AI gateway error", res.status, {
+      bodyLength: (await res.text().catch(() => "")).length,
+    });
     throw new Error("La IA no respondió");
   }
   const reader = res.body.getReader();

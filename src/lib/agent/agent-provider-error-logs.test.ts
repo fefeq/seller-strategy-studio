@@ -9,7 +9,7 @@ import type { ToolCtx } from "@/lib/agent/tools";
 const RULE_TEXT = "REGLA-FICTICIA-7f3a nunca regalamos la implantación sin aprobación.";
 
 const h = vi.hoisted(() => ({
-  fail: "none" as "none" | "api" | "retry",
+  fail: "none" as "none" | "api" | "retry" | "reject-plain" | "reject-custom",
   status: 500,
   // NK-0087: @ai-sdk/openai copies the provider's error.message from the response body into APICallError.message.
   ruleInMessage: false,
@@ -40,14 +40,23 @@ vi.mock("ai", async (orig) => {
         isRetryable: false,
         cause: new Error("socket", { cause: { prompt: o.system } }),
       });
+      // NK-0087: a failing fetch rejects with a plain or custom-named error whose message quotes the request.
+      const quote = o.system.slice(o.system.indexOf("REGLA-FICTICIA"));
       const err =
-        h.fail === "retry"
-          ? new real.RetryError({
-              message: "Failed after 3 attempts",
-              reason: "maxRetriesExceeded",
-              errors: [api],
-            })
-          : api;
+        h.fail === "reject-plain"
+          ? new Error(`socket hang up while sending: ${quote}`)
+          : h.fail === "reject-custom"
+            ? Object.assign(new Error(`upstream refused prompt: ${quote}`), {
+                name: "ProviderRefusal",
+                body: quote,
+              })
+            : h.fail === "retry"
+              ? new real.RetryError({
+                  message: "Failed after 3 attempts",
+                  reason: "maxRetriesExceeded",
+                  errors: [api],
+                })
+              : api;
       o.onError?.({ error: err });
       const text = Promise.reject(err);
       text.catch(() => undefined);
@@ -189,5 +198,17 @@ describe("provider puts the rule in its error message (NK-0087, CA-4, §10)", ()
     const out = serialized(calls);
     expect(out).toContain(String(status));
     expect(out).not.toContain("REGLA-FICTICIA-7f3a");
+  });
+});
+
+describe("fetch rejects with an error whose message quotes the rule (NK-0087, CA-4, §10)", () => {
+  it.each(["reject-plain", "reject-custom"] as const)("%s", async (kind) => {
+    vi.stubEnv("LOVABLE_API_KEY", "test-not-a-key");
+    h.fail = kind;
+    await expect(turn()).rejects.toThrow();
+    const calls = [...errorSpy.mock.calls, ...warnSpy.mock.calls];
+    expect(errorSpy.mock.calls.map((c) => c[0])).toContain("Agent stream error");
+    expect(errorSpy.mock.calls.map((c) => c[0])).toContain("Agent error");
+    expect(serialized(calls)).not.toContain("REGLA-FICTICIA-7f3a");
   });
 });
