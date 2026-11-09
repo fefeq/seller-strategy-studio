@@ -2515,19 +2515,25 @@
       "title": "Asesor y agente: un deal sin origen cuenta como Outbound (advisor.ts:81)",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0091",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0091-advisor-no-source",
+      "base_commit": "f59681f0e47d0f375da3a30ae31ff204db64bfb1",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:34.004Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T13:02:05.736Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0091"
         }
       ]
     },
@@ -2557,19 +2563,25 @@
       "title": "Errores tragados fuera de Sprint 1: useLeads, useStripe y resúmenes de Drive (drive-core.ts:221) muestran vacío en vez de error",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0093",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0093-swallowed-errors",
+      "base_commit": "f59681f0e47d0f375da3a30ae31ff204db64bfb1",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:34.118Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T13:02:06.501Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0093"
         }
       ]
     },
@@ -2662,19 +2674,25 @@
       "title": "Sesión: cada navegación ejecuta supabase.auth.getUser() en beforeLoad de _authenticated/route.tsx (una petición a /auth/v1/user por clic en cualquier pantalla)",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0098",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0098-session-check",
+      "base_commit": "f59681f0e47d0f375da3a30ae31ff204db64bfb1",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:37.574Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T13:02:04.905Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0098"
         }
       ]
     },
