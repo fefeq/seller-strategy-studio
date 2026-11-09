@@ -3,7 +3,7 @@
 **Tipo:** Bug (con migración: quita un valor por defecto) · **Prioridad propuesta:** Media (falsea el win rate por origen de Métricas y del Asesor)
 **Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0107 (valor por defecto `'outbound'`), NK-0108 (el formulario muestra y puede guardar «Outbound»), NK-0109 (el Asesor envía «—»)
-**PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, no un texto, y la prueba de NK-0106 la permite.
+**PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, y `src/lib/deal-source.ts` la importa (nunca escribe el literal «—»). **Orden de integración: este SDD antes que NK-0106**, para que la lista cerrada de métricas nazca sin las claves K que este SDD elimina; no un texto, y la prueba de NK-0106 la permite.
 
 > Nivel elegido: SDD corto. Lleva una migración (cambia el esquema de `deals`), así que según la tabla de `nokko-shape` exige SDD.
 > Números de línea comprobados en `main` `1fef724`.
@@ -47,8 +47,8 @@ Owner y Sales Leader leen el win rate por origen en Métricas (Cohortes, Perdido
 
 ## 5. Alcance
 **Incluye:**
-- Migración `drizzle/migrations/0084_deals_source_no_default.sql` (número provisional, §13) + entrada en `meta/_journal.json` + prueba PGlite.
-- Módulo puro `src/lib/deal-source.ts` (con test): `DEAL_SOURCE_LABELS` (los seis de hoy), `NO_SOURCE` (re-exportado desde `metrics-quarter.ts`, misma clave «—»), `dealSourceLabel(key)` y `dealSourceOptions(current)`.
+- Migración `drizzle/migrations/0083_deals_source_no_default.sql` (número provisional, §13) + entrada en `meta/_journal.json` + prueba PGlite.
+- Módulo puro `src/lib/deal-source.ts` (con test): `DEAL_SOURCE_LABELS` (los seis de hoy), `NO_SOURCE` (importado y re-exportado desde `metrics-quarter.ts`; el módulo nunca escribe el literal «—»), `dealSourceLabel(key)` y `dealSourceOptions(current)`.
 - `deals.tsx` (campo «Fuente»), `revops-panels.tsx` y `performance-panels.tsx` (etiquetas desde el módulo), `revops.ts:87` y `revops-panels.tsx:207` (usar `NO_SOURCE`), `advisor.ts:146` (etiqueta para la IA) y su test.
 
 **No incluye** (el brief lo copia a «Movimientos prohibidos»):
@@ -70,17 +70,19 @@ Owner y Sales Leader leen el win rate por origen en Métricas (Cohortes, Perdido
 
 ## 7. Historias y criterios de aceptación
 ### H-1: Como Owner o Sales Leader, quiero que un deal sin origen se vea y cuente como «Sin origen», para leer el win rate por origen sin un Outbound inventado.
-- **CA-1** (base) Con `0084` aplicada, un `insert into deals` sin `source` deja `source` nulo; con `source = 'inbound'` lo guarda; el disparador de 0012 sigue escribiendo `'Entrada de leads'` cuando el lead no trae origen; ninguna fila existente cambia (huella antes/después); aplicarla dos veces no falla. · prueba: `src/lib/deals-source-default.pg.test.ts` (nuevo; falla hoy: el `insert` deja `outbound`)
-- **CA-2** (vuelta atrás) El guion comentado de `0084` devuelve `default 'outbound'` y la prueba lo ejecuta en la misma base. · prueba: mismo archivo
+- **CA-1** (base) El test crea `deals` con `source text default 'outbound'` y, **antes** de aplicar `0083`, comprueba que un `insert` sin `source` deja `outbound` (control: así el fallo en la base es de comportamiento, no de archivo ausente). Con `0083` aplicada, un `insert` sin `source` deja `source` nulo; con `source = 'inbound'` lo guarda; ninguna fila existente cambia (huella antes/después); aplicarla dos veces no falla. El disparador de 0012 queda fuera de esta prueba: la migración no toca la función y `coalesce(new.source, 'Entrada de leads')` no depende del valor por defecto. · prueba: `src/lib/deals-source-default.pg.test.ts` (nuevo; falla hoy en la aserción posterior a la migración: el `insert` deja `outbound`)
+- **CA-2** (vuelta atrás) El guion comentado de `0083` devuelve `default 'outbound'` y la prueba lo ejecuta en la misma base. · prueba: mismo archivo
 - **CA-3** (regla pura) `dealSourceLabel(null)` y `dealSourceLabel(NO_SOURCE)` = «Sin origen»; `dealSourceLabel("plg")` = «Producto (PLG)»; un texto desconocido se devuelve tal cual. `dealSourceOptions(null)` empieza por `{ "": "Sin origen" }` seguido de los seis; `dealSourceOptions("Entrada de leads")` añade esa opción con su texto; nunca devuelve una opción `outbound` elegida por defecto. · prueba: `src/lib/deal-source.test.ts` (nuevo; el módulo no existe)
-- **CA-4** (formulario) En el detalle de un deal con `source` nulo, «Fuente» muestra «Sin origen»; «Guardar» sin tocar «Fuente» envía `source: null`; elegir «Inbound» envía `"inbound"`; volver a «Sin origen» envía `null`; un deal con `source = "Entrada de leads"` muestra ese texto y lo envía igual al guardar. · prueba: `src/components/deal-source-field.test.tsx` (nuevo; `deals.tsx` no tiene prueba, así que el campo se extrae a `src/components/deal-source-field.tsx` y `deals.tsx` lo usa)
-- **CA-5** (Asesor) `buildSnapshot` (`src/lib/advisor.ts:79`) agrupa los deals sin origen en `grupo: "sin origen"` y nunca en `"—"` ni en `outbound`. · prueba: `src/lib/advisor.test.ts` (cambia la aserción de `:200-201`; falla hoy)
+- **CA-4a** (campo) `DealSourceField` con valor `null` muestra «Sin origen»; elegir «Inbound» llama a `onChange("inbound")`; volver a «Sin origen» llama a `onChange(null)`, nunca con `""`; con `"Entrada de leads"` muestra ese texto como opción propia y seleccionada. · prueba: `src/components/deal-source-field.test.tsx` (nuevo; `deals.tsx` no tiene prueba, así que el campo se extrae a `src/components/deal-source-field.tsx` y `deals.tsx:556-569` lo usa; falla hoy: el componente no existe)
+- **CA-4b** (guardar) Lo que envía «Guardar» (`save()` de `deals.tsx:444-458`) no se prueba con un test unitario: «Guardar sin tocar Fuente envía `null`» ya pasa hoy y no fallaría primero. Lo comprueba el walkthrough (§16): deal sin origen → Guardar sin tocar «Fuente» → sigue nulo; elegir «Inbound» → guarda `inbound`; volver a «Sin origen» → guarda `null`; deal con «Entrada de leads» → Guardar lo conserva.
+- **CA-5** (Asesor) `buildSnapshot` (`src/lib/advisor.ts:79`) agrupa los deals sin origen en `grupo: AI_NO_SOURCE` (`"sin origen"`) y nunca en `"—"` ni en `outbound`. Un deal con `source = "sin origen"` escrito a mano cae en el mismo grupo (límite aceptado, §8) y un caso lo fija. · prueba: `src/lib/advisor.test.ts`: cambian la aserción de `:200-201` y el título del `it` de `:198` («counts them under the same key /metrics uses…» → «groups them as «sin origen» for the AI, never as outbound»); la aserción de `outbound` (`:206-211`) y la comparación del resto del snapshot (`:215-216`) no se tocan (falla hoy)
 - **CA-6** (Métricas, sin regresión) Cohortes por origen y Rendimiento siguen mostrando «Sin origen» para la clave `NO_SOURCE`; `revops.ts` agrupa con `NO_SOURCE` (no con un literal). · prueba: `src/lib/revops.test.ts` (añade el caso de origen nulo con `NO_SOURCE`) y `src/lib/metrics-quarter.test.ts` (guarda)
 
 ## 8. Casos límite y errores
 - **Deals ya guardados con `outbound` por defecto:** se quedan como `outbound`. No hay forma de saber cuáles lo eligió una persona (la columna no tiene marca de origen y `deals_audit` [Por verificar si guarda el valor inicial] no se lee aquí). Se dice en la entrega; si Fede quiere revisarlos, es otra decisión (§15).
 - **Texto libre en `source`:** se muestra y se guarda tal cual; no se normaliza.
 - **Cadena vacía:** el formulario nunca envía `""`; «Sin origen» es `null`.
+- **Texto libre «sin origen»:** un deal cuyo `source` escrito a mano sea literalmente «sin origen» se suma en el Asesor al grupo de los nulos. Límite aceptado (caso improbable; un caso de CA-5 fija el comportamiento).
 - **IA:** «sin origen» en minúscula, como el resto de valores que lee el modelo (`origen`, `forecast`); no cambia el esquema JSON de la respuesta.
 - **Otra empresa:** sin cambios (solo se quita un valor por defecto).
 
@@ -109,17 +111,17 @@ Solo cambia un valor del snapshot (`grupo`), no la llamada.
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-1 | `0084_deals_source_no_default.sql` + journal + prueba .pg (crea `deals` como `money-notices.pg.test.ts:55-58`, con `source text default 'outbound'`, y la función de 0012 si se prueba el disparador) | CA-1, CA-2 | `src/lib/deals-source-default.pg.test.ts` |
+| U-1 | `0083_deals_source_no_default.sql` + journal (`when` mayor que el de `0082`, U-2 de NK-0070) + prueba .pg (crea `deals` como `money-notices.pg.test.ts:55-58`, con `source text default 'outbound'`; sin el disparador de 0012) | CA-1, CA-2 | `src/lib/deals-source-default.pg.test.ts` |
 | U-2 | `src/lib/deal-source.ts` + uso en `revops-panels.tsx`, `performance-panels.tsx`, `revops.ts:87`, `revops-panels.tsx:207` | CA-3, CA-6 | `src/lib/deal-source.test.ts` |
-| U-3 | Campo «Fuente» extraído a `src/components/deal-source-field.tsx` con `dealSourceOptions` y `null` para «Sin origen»; `deals.tsx:556-569` lo usa | CA-4 | `src/components/deal-source-field.test.tsx` |
-| U-4 | `advisor.ts:146` con `dealSourceLabel` en minúscula para la IA (o una constante `AI_NO_SOURCE = "sin origen"`) | CA-5 | `src/lib/advisor.test.ts` |
+| U-3 | Campo «Fuente» extraído a `src/components/deal-source-field.tsx` con `dealSourceOptions` y `null` para «Sin origen»; `deals.tsx:556-569` lo usa | CA-4a (CA-4b en el walkthrough) | `src/components/deal-source-field.test.tsx` |
+| U-4 | `advisor.ts:146` con la constante `AI_NO_SOURCE = "sin origen"` de `deal-source.ts` | CA-5 | `src/lib/advisor.test.ts` |
 
 U-1 es independiente del resto. U-3 y U-4 usan U-2.
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- **Numeración:** `main` termina en `0081` (`when` 1794225600000). El Sprint 3 propone `0082` y `0083` en `SDD-20261109-rls-price-suggestions-and-notices.md`; aquí `0084` (`when` 1794484800000). Se fija al integrar; lo comprueba `src/lib/migrations-journal.test.ts`.
+- **Numeración:** `main` termina en `0081` (`when` 1794225600000). En el Sprint 3 solo hay dos migraciones: `0082` = NK-0070 (U-2 de `SDD-20261109-rls-price-suggestions-and-notices.md`; su U-1 está aplazada y no reserva número) y aquí `0083` (`when` mayor que el de `0082`, p. ej. 1794398400000). Se fija al integrar; lo comprueba `src/lib/migrations-journal.test.ts`.
 - **Sin backfill (decisión D-1):** cualquier criterio para «adivinar» qué `outbound` vino del valor por defecto (fecha de creación, `created_by`, ausencia de lead) sería una estimación; la regla del proyecto lo prohíbe.
-- **Clave vs. texto:** `NO_SOURCE` se queda «—» porque es la clave con la que agrupan `metrics-quarter.ts`, `revops.ts` y las pantallas; lo que cambia es dónde se traduce a texto. La prueba de NK-0106 debe permitir `NO_SOURCE` y las claves de agrupación, y no el «—» pintado.
+- **Clave vs. texto:** `NO_SOURCE` se queda «—» porque es la clave con la que agrupan `metrics-quarter.ts`, `revops.ts` y las pantallas; lo que cambia es dónde se traduce a texto. La prueba de NK-0106 debe permitir `NO_SOURCE` y las claves de agrupación, y no el «—» pintado. Su lista cerrada es un **techo** (máximo por fragmento), así que las entradas K que este SDD elimina (`revops-panels.tsx:32`, `performance-panels.tsx:21`, el literal de `revops.ts:87` y de `revops-panels.tsx:207`) no la rompen. `src/lib/deal-source.ts` no escribe el literal «—». Se integra antes que NK-0106.
 - **Asesor:** cambiar la clave a «sin origen» solo en el snapshot del Asesor, no en `metrics-quarter.ts`, para no tocar Métricas.
 
 ## 14. Riesgos y dependencias
@@ -134,12 +136,14 @@ U-1 es independiente del resto. U-3 y U-4 usan U-2.
 - **D-3.** El Asesor recibe «sin origen»; Métricas mantiene la clave «—» y su etiqueta «Sin origen».
 - **D-4.** No se añade «Fuente» a «Nuevo deal» en este ticket.
 
-**Para Fede:**
-1. ¿Quieres que «Nuevo deal» pida el origen (D-4)? Recomiendo un ticket aparte: hoy nadie lo pide y no es parte del bug.
+**Decisión del coordinador (delegación de Fede, 2026-11-09):** pedir el origen en «Nuevo deal» es un ticket aparte (D-4 confirmada). Este SDD se integra antes que NK-0106.
+
+**Para Fede:** ninguna.
 
 ## 16. Pendiente de verificar
 - [Por verificar] Valor por defecto vivo de `deals.source` (§10).
-- [Por verificar] Qué pinta `Pick` en el navegador con un valor que no está en las opciones (CA-4 lo fija en la prueba).
+- [Por verificar] Qué pinta `Pick` en el navegador con un valor que no está en las opciones (CA-4a lo fija en la prueba del campo).
+- [Por verificar, walkthrough] CA-4b: lo que guarda «Guardar» en el detalle de un deal (sin origen, «Inbound», vuelta a «Sin origen», «Entrada de leads»).
 
 **Lo que NO se afirma:**
 - No se corrigen los `outbound` ya guardados ni se afirma cuántos son.
@@ -148,11 +152,19 @@ U-1 es independiente del resto. U-3 y U-4 usan U-2.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: pendiente
-- [Por verificar] que sigue sin comprobarse: pendiente
-- Contradicciones con el código o con decisiones previas: pendiente
-- Lo que esta revisión NO demuestra: pendiente
+- Veredicto del gate (pasada 1, 2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass1.md`): CAMBIOS (0 bloqueantes, 1 mayor, 5 menores).
+
+### §17 Gate · pasada 1: hallazgos y resolución
+| Hallazgo | Resolución |
+|---|---|
+| **MAYOR D-M1** CA-4 no se puede probar con `deal-source-field.test.tsx` (el `update` vive en `save()`) y «Guardar sin tocar» ya pasa hoy | CA-4 partido: CA-4a (campo: `onChange("inbound")`, `onChange(null)` nunca `""`, texto libre visible) en `deal-source-field.test.tsx`; CA-4b (lo que envía «Guardar») pasa al walkthrough y se apunta en §16. |
+| **MENOR D-m1** Numeración | `0084` → `0083` (`when` mayor que el de `0082`, NK-0070), en §5, §7, §10, §12 y §13. |
+| **MENOR D-m2** CA-1 y U-1 se contradicen sobre el disparador de 0012 | Sacado de CA-1 y de U-1, con el motivo (la migración no toca la función; `coalesce` no depende del valor por defecto). |
+| **MENOR D-m3** CA-1 «falla hoy» solo porque falta el archivo | CA-1 comprueba antes de la migración que el `insert` deja `outbound` (control) y después `null`. |
+| **MENOR D-m4** El test del Asesor cambia de intención | CA-5 nombra el título del `it` de `:198` que cambia y deja intactas `:206-211` y `:215-216`. |
+| **MENOR D-m5** Colisión con texto libre «sin origen» | §8 lo anota como límite aceptado; U-4 usa `AI_NO_SOURCE` y un caso de CA-5 fija el comportamiento. |
+| Coherencia con NK-0106 (gate §«Coherencia» 1) | Cabecera y §13: `deal-source.ts` importa `NO_SOURCE` y no escribe «—»; la lista de métricas es un techo; este SDD se integra antes que NK-0106. |
+| Decisión del coordinador: «Nuevo deal» pide origen = ticket aparte | Registrada en §15. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.
