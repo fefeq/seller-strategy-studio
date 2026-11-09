@@ -1,11 +1,26 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { cohorts, lostAnalysis, reconciledFunnel, weeklyTrend, type RDeal, type RHistory } from "./revops";
+import {
+  cohorts,
+  lostAnalysis,
+  reconciledFunnel,
+  weeklyTrend,
+  type RDeal,
+  type RHistory,
+} from "./revops";
 import { NO_SOURCE } from "./metrics-quarter";
 
 const path = ["discovery", "proposal", "negotiation"];
-const d = (id: string, stage: string, amount = 100, extra: Partial<RDeal> = {}): RDeal =>
-  ({ id, stage, amount, created_at: "2026-01-05T12:00:00Z", closed_at: null, source: "inbound", segment_id: "s1", ...extra });
+const d = (id: string, stage: string, amount = 100, extra: Partial<RDeal> = {}): RDeal => ({
+  id,
+  stage,
+  amount,
+  created_at: "2026-01-05T12:00:00Z",
+  closed_at: null,
+  source: "inbound",
+  segment_id: "s1",
+  ...extra,
+});
 const deals = [
   d("a", "won", 1000, { closed_at: "2026-01-26T12:00:00Z" }),
   d("b", "lost", 500, { closed_at: "2026-01-20T12:00:00Z", source: "outbound" }),
@@ -13,7 +28,12 @@ const deals = [
   d("e", "discovery", 100, { updated_at: "2026-01-05T12:00:00Z" }),
 ];
 const history: RHistory[] = [
-  { deal_id: "b", from_stage: "discovery", to_stage: "proposal", changed_at: "2026-01-10T12:00:00Z" },
+  {
+    deal_id: "b",
+    from_stage: "discovery",
+    to_stage: "proposal",
+    changed_at: "2026-01-10T12:00:00Z",
+  },
   { deal_id: "b", from_stage: "proposal", to_stage: "lost", changed_at: "2026-01-20T12:00:00Z" },
 ];
 
