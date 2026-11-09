@@ -3577,10 +3577,10 @@
       "title": "Nuevo deal: pedir el origen al crear (Pipeline, cuenta, create_deal)",
       "kind": "feature",
       "source": "Fede (ledger Sprint 3); contexto en sprint3-gate/gate-08c5b9a.md §5 (origen nulo)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-new-deal-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3590,6 +3590,18 @@
           "at": "2026-11-09T22:37:48.861Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T23:22:13.667Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-new-deal-source.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:22:13.759Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
