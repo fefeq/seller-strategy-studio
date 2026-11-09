@@ -51,6 +51,7 @@ vi.mock("@/integrations/supabase/client", () => {
 const x: Sess = { access_token: "user-x:1", user: { id: "user-x" } };
 let meQuery: typeof import("@/hooks/use-me").meQuery;
 let handleAuthEvent: typeof import("./session-cache").handleAuthEvent;
+let lastValidatedUserId: typeof import("./session").lastValidatedUserId;
 let dropUserCache: typeof import("./session-cache").dropUserCache;
 let signOutAndClear: typeof import("./session-cache").signOutAndClear;
 
@@ -61,6 +62,7 @@ beforeEach(async () => {
   h.gate = null;
   h.session = x;
   ({ meQuery } = await import("@/hooks/use-me"));
+  ({ lastValidatedUserId } = await import("./session"));
   ({ handleAuthEvent, signOutAndClear, dropUserCache } = await import("./session-cache"));
   const { supabase } = await import("@/integrations/supabase/client");
   supabase.auth.onAuthStateChange(() => undefined);
@@ -131,5 +133,16 @@ describe("mutations are user-scoped too (NK-0115)", () => {
     const qc = await withMutations();
     handleAuthEvent(qc, "SIGNED_IN", { user: { id: "user-y" } }, "user-x");
     expect(qc.getMutationCache().getAll()).toEqual([]);
+  });
+});
+
+describe("sign-out forgets the last validated user (NK-0111)", () => {
+  it("signOutAndClear leaves no last validated user, so the next login in this tab is not «another user»", async () => {
+    const qc = new QueryClient();
+    await qc.fetchQuery(meQuery);
+    expect(lastValidatedUserId()).toBe("user-x");
+    const { supabase } = await import("@/integrations/supabase/client");
+    await signOutAndClear(qc, supabase.auth);
+    expect(lastValidatedUserId()).toBeNull();
   });
 });
