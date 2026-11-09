@@ -857,3 +857,49 @@ describe("HubScreen · quién escribe reglas y obligatorios (NK-0095, CA-8)", ()
     expect(importButton()).toBeEnabled();
   });
 });
+
+// NK-0101: «+ Nuevo» and «Importar de Drive» are not offered while the documents failed to load.
+describe("HubScreen · sin crear ni importar con el error de lectura (NK-0101, CA-3)", () => {
+  const newBtn = () => screen.queryByRole("button", { name: "+ Nuevo" });
+  const importBtn = () => screen.queryByRole("button", { name: "Importar de Drive" });
+
+  it("with an error: neither button, in any role; «Reintentar» stays", async () => {
+    for (const roles of [["owner"], ["ae"]]) {
+      h.me = { ...OWNER, roles };
+      h.error = { message: "Failed to fetch" };
+      mount();
+      await screen.findByRole("button", { name: "Reintentar" });
+      expect(newBtn()).not.toBeInTheDocument();
+      expect(importBtn()).not.toBeInTheDocument();
+      cleanup();
+    }
+  });
+
+  it("with the error in Reglas the buttons are gone too, and they return after a retry", async () => {
+    h.error = { message: "Failed to fetch" };
+    h.search = { seccion: "rules" };
+    mount();
+    await screen.findByRole("button", { name: "Reintentar" });
+    expect(newBtn()).not.toBeInTheDocument();
+    expect(importBtn()).not.toBeInTheDocument();
+    h.error = null;
+    fireEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(await screen.findByRole("button", { name: "+ Nuevo" })).toBeInTheDocument();
+    expect(importBtn()).toBeInTheDocument();
+  });
+
+  it("while loading and with data they are shown as before", async () => {
+    let release: () => void = () => {};
+    h.gate = new Promise<void>((r) => {
+      release = r;
+    });
+    mount();
+    await screen.findByRole("status");
+    expect(newBtn()).toBeInTheDocument();
+    expect(importBtn()).toBeInTheDocument();
+    release();
+    await screen.findByText("Propuesta de valor");
+    expect(newBtn()).toBeInTheDocument();
+    expect(importBtn()).toBeInTheDocument();
+  });
+});
