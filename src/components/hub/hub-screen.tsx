@@ -34,7 +34,13 @@ import { DriveImportButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 import { DriveAccountsPanel } from "@/components/drive-overview";
 import { Editor } from "@/components/hub/doc-editor";
-import { AGENT_RULE_LIMITS, rulesCoverage, rulesNotice } from "@/lib/knowledge-rules";
+import {
+  AGENT_RULE_LIMITS,
+  BINDING_SECTION_READ_ONLY,
+  canWriteBinding,
+  rulesCoverage,
+  rulesNotice,
+} from "@/lib/knowledge-rules";
 
 export const SECTIONS = [
   ["company", "Empresa", "Servicios, ICP, buyer personas, ofertas, precios, propuesta de valor"],
@@ -198,6 +204,9 @@ export function HubScreen() {
   }
   const isOwner = canDelete(me?.roles ?? []);
   const canLibrary = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
+  // Reglas: only the Owner or a Sales Leader write it (NK-0095); disabled until the role is known, the reason once it is.
+  const rulesLocked = section === "rules" && !canWriteBinding(me?.roles);
+  const rulesReason = rulesLocked && me ? BINDING_SECTION_READ_ONLY : undefined;
   const missing = missingPlays(docs);
   const library = useJob("playbook_library", {
     onDone: () => qc.invalidateQueries({ queryKey: ["docs"] }),
@@ -338,10 +347,12 @@ export function HubScreen() {
               <p className="text-xs text-muted-foreground">
                 {SECTIONS.find((s) => s[0] === section)?.[2]}
               </p>
+              {rulesReason && <p className="text-xs text-muted-foreground">{rulesReason}</p>}
               <Button
                 size="sm"
                 variant="outline"
                 className="w-full"
+                disabled={rulesLocked}
                 onClick={() => {
                   setDraftSeq((n) => n + 1);
                   setSelected(draft());
@@ -350,7 +361,12 @@ export function HubScreen() {
               >
                 + Nuevo
               </Button>
-              <DriveImportButton section={section} onImported={openDoc} />
+              <DriveImportButton
+                section={section}
+                onImported={openDoc}
+                disabled={rulesLocked}
+                reason={rulesReason}
+              />
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
               <ScreenState isPending={isPending} error={error} refetch={refetch}>
                 {data?.truncated && (
@@ -404,6 +420,7 @@ export function HubScreen() {
                 <Editor
                   key={selected.id || `draft-${draftSeq}`}
                   doc={selected}
+                  roles={me?.roles}
                   isOwner={isOwner}
                   saving={save.isPending}
                   onSave={(d) => save.mutate(d)}
