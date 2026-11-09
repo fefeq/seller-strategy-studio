@@ -122,4 +122,18 @@ describe("setup-extract.server logs length and error name, not the model output 
     expect(logs.length).toBeGreaterThan(0);
     expect(serialized(logs.flat())).not.toContain(WITNESS);
   });
+
+  it("output that starts with the witness: a JSON.parse error message would quote it", async () => {
+    h.askImpl = async () => `${WITNESS} not json`;
+    // V8 quotes only about the first 10 characters of the text, so the witness prefix is what a leaked message carries.
+    const prefix = WITNESS.slice(0, 8);
+    // Precondition: the SyntaxError message really contains the prefix, so logging e.message would leak it.
+    expect(() => JSON.parse(`${WITNESS} not json`)).toThrow(prefix);
+    await expect(
+      extractSetupCore({ orgName: "Acme", currency: "EUR" }, { url: "", site: "", text: "x" }),
+    ).rejects.toThrow();
+    expect(logs.length).toBeGreaterThan(0);
+    expect(serialized(logs.flat())).not.toContain(prefix);
+    expect(serialized(logs.flat())).not.toContain(WITNESS);
+  });
 });
