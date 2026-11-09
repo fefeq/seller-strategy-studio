@@ -100,7 +100,9 @@ export async function runBackgroundJob(db: Admin, jobId: string, opts: { final?:
       return { cancelled: true };
     }
     const { errorText } = await import("@/lib/errors");
-    console.error("background job failed", job.kind, (e as Error)?.message ?? e);
+    // Never the error's text: it may quote a prompt with the team's rules (SDD-20261109-rules-in-ai-readers, CA-6).
+    const { safeErrorLog } = await import("@/lib/agent/safe-error-log");
+    console.error("background job failed", job.kind, safeErrorLog(e));
     if (!final) {
       await db.from("background_jobs").update({ step: "Reintentando…" }).eq("id", jobId);
       throw e;
@@ -173,8 +175,11 @@ async function runKind(
       if (!s) throw new Error("No encuentro esa persona en esta empresa.");
       await step("Investigando");
       const r = await researchStakeholderCore(db, String(input.stakeholderId), scope);
+      // A failed read of the rules is said in the notice (CA-5); with a correct read the result is today's.
+      const { RULES_READ_FAILED } = await import("@/lib/knowledge-rules");
       return {
         title: `Research de ${r.name} listo`,
+        ...(r.rulesRead ? {} : { body: RULES_READ_FAILED }),
         link: `/accounts/${s.account_id}?tab=stakeholders`,
       };
     }
@@ -416,11 +421,13 @@ async function runKind(
       if (r.skipped)
         return { title: "Ya tenías todas las jugadas de la biblioteca", link: "/hub", ...r };
       const adapted = r.created.filter((x) => x.adapted).length;
+      const body = r.hasContext
+        ? `${adapted} adaptados a tu empresa.`
+        : "Sin contexto aprobado: van con el texto base. Completa el posicionamiento y vuelve a lanzarlo para adaptarlos.";
       return {
         title: `${r.created.length} jugadas añadidas al hub`,
-        body: r.hasContext
-          ? `${adapted} adaptados a tu empresa.`
-          : "Sin contexto aprobado: van con el texto base. Completa el posicionamiento y vuelve a lanzarlo para adaptarlos.",
+        // The library's mensaje is RULES_READ_FAILED when the rules could not be read (CA-7).
+        body: "mensaje" in r && r.mensaje ? `${body} ${r.mensaje}` : body,
         link: "/hub",
         ...r,
       };
