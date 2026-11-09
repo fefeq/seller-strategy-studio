@@ -147,7 +147,7 @@ Orden **en serie, nunca en paralelo**: U-1 → U-2 → U-3 (unidad A); después 
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decisiones tomadas (autor, dentro del alcance del coordinador):**
-- **D-1.** Con red caída o 5xx, la app no redirige a `/auth`: muestra el estado en la URL pedida. Se cambia la aserción `finalPath = "/auth"` de esos dos casos en `auth-no-bounce.test.tsx`.
+- **D-1.** Con red caída o 5xx, la app no redirige a `/auth`: muestra el estado en la URL pedida. Se cambia la aserción `finalPath = "/auth"` de `auth-no-bounce.test.tsx:116` solo para esos dos casos; `:117` no cambia.
 - **D-2.** Sin reintento automático: solo «Reintentar».
 - **D-3** (decisión del coordinador, delegación de Fede, 2026-11-09). Sin «gracia» tras renovar el token: el aviso «No he podido comprobar tu sesión» sale aunque el mismo usuario se validara antes en la misma carga.
 - **D-4.** Un error sin `status` cuenta como «sin poder comprobar» (no cierra sesión ni manda a `/auth`).
