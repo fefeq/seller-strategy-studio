@@ -1242,6 +1242,8 @@ describe("get_funnel_diagnosis", () => {
         "cac_costs",
         "posthog_connections",
         "stripe_snapshots",
+        // SDD-20261109 CA-10 (authorised by the coordinator): the year's budget rows feed the one margin chain.
+        "segment_budget_quarters",
       ]),
     );
     expectScoped(log);
@@ -1389,6 +1391,38 @@ describe("NK-0094 get_funnel_diagnosis: one margin chain, no costs in the output
     )!;
     // 6000 / (6000 × 25 % / 12) = 48
     expect(payback.value).toBe(48);
+    expectScoped(log);
+  });
+
+  it("CA-10: the budget's real margin of the quarter beats the deals' one; the budget read is scoped and of the year", async () => {
+    const budget = {
+      segment_id: ID(5),
+      period: "2026-Q3",
+      plan_revenue: null,
+      plan_cost_to_serve: null,
+      plan_acquisition: null,
+      plan_new_customers: null,
+      actual_revenue: 100,
+      actual_cost_to_serve: 50,
+    };
+    const { db, log } = fakeDb((q) =>
+      q.table === "segment_budget_quarters" ? { data: [budget] } : reply(q),
+    );
+    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", {
+      quarter: "2026-Q3",
+    })) as Out;
+    const payback = r.segments[0]!.phases.find((p) => p.id === "revenue")!.measures.find(
+      (m) => m.id === "payback",
+    )!;
+    // 6000 / (6000 × 50 % / 12) = 24
+    expect(payback.value).toBe(24);
+    const q = log.find((x) => x.table === "segment_budget_quarters")!;
+    expect(eq(q, "org_id", ORG)).toBe(true);
+    expect(q.filters).toContainEqual([
+      "in",
+      "period",
+      ["2026-Q1", "2026-Q2", "2026-Q3", "2026-Q4"],
+    ]);
     expectScoped(log);
   });
 
