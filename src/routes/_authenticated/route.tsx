@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { createSessionCheck } from "@/lib/session-check";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
 import { canUseAdvisor } from "@/lib/advisor";
@@ -27,11 +28,13 @@ import { Isotipo, Lockup } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
+// One GET /auth/v1/user per session token, not per navigation (NK-0098, src/lib/session-check.ts).
+const isSignedIn = createSessionCheck(supabase.auth);
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
+    if (!(await isSignedIn())) throw redirect({ to: "/auth" });
   },
   component: Shell,
 });
