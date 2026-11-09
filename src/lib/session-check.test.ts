@@ -5,6 +5,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   createSessionCheck,
+  createLastValidatedUserId,
   createSessionState,
   createSessionUser,
   type SessionAuth,
@@ -291,6 +292,43 @@ describe("checkSession: three states (NK-0112)", () => {
     expect(c).toBe(true);
     await createSessionState(f.auth)();
     expect(f.calls.getUser).toBe(1);
+  });
+});
+
+describe("lastValidatedUserId (NK-0110, NK-0111)", () => {
+  it("is null until a user has been validated, and a failed check does not set it", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    expect(last()).toBeNull();
+    f.setOffline(true);
+    await createSessionUser(f.auth)();
+    expect(last()).toBeNull();
+  });
+
+  it("is the user the shared validator validated last", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    await createSessionUser(f.auth)();
+    expect(last()).toBe("user-ana");
+  });
+
+  it("survives TOKEN_REFRESHED and a failing check of the next token, and is replaced only by another validated user", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    const check = createSessionState(f.auth);
+    await check();
+    f.setSession(ana2);
+    f.emit("TOKEN_REFRESHED", ana2);
+    expect(last()).toBe("user-ana");
+    f.setOffline(true);
+    expect((await check()).status).toBe("unverified");
+    expect(last()).toBe("user-ana");
+    f.setOffline(false);
+    f.setSession(leo1);
+    f.emit("SIGNED_IN", leo1);
+    expect(last(), "not replaced before the other user is validated").toBe("user-ana");
+    await check();
+    expect(last()).toBe("user-leo");
   });
 });
 

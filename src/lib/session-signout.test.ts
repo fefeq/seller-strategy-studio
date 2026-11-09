@@ -1,6 +1,6 @@
 // NK-0098 round 3: after sign-out, meQuery never queries with the previous user's id.
 // Fake Supabase client recording every data request with the session it was made under.
-import { QueryClient } from "@tanstack/react-query";
+import { MutationObserver, QueryClient } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Sess = { access_token: string; user: { id: string } };
@@ -51,6 +51,7 @@ vi.mock("@/integrations/supabase/client", () => {
 const x: Sess = { access_token: "user-x:1", user: { id: "user-x" } };
 let meQuery: typeof import("@/hooks/use-me").meQuery;
 let handleAuthEvent: typeof import("./session-cache").handleAuthEvent;
+let dropUserCache: typeof import("./session-cache").dropUserCache;
 let signOutAndClear: typeof import("./session-cache").signOutAndClear;
 
 beforeEach(async () => {
@@ -60,7 +61,7 @@ beforeEach(async () => {
   h.gate = null;
   h.session = x;
   ({ meQuery } = await import("@/hooks/use-me"));
-  ({ handleAuthEvent, signOutAndClear } = await import("./session-cache"));
+  ({ handleAuthEvent, signOutAndClear, dropUserCache } = await import("./session-cache"));
   const { supabase } = await import("@/integrations/supabase/client");
   supabase.auth.onAuthStateChange(() => undefined);
 });
@@ -99,5 +100,36 @@ describe("signing out while meQuery works (NK-0098 round 3)", () => {
     expect(sessionWhenDropped.every((s) => s === null)).toBe(true);
     expect(h.requests).toEqual([]);
     expect(qc.getQueryData(["me"])).toBeUndefined();
+  });
+});
+
+describe("mutations are user-scoped too (NK-0115)", () => {
+  async function withMutations() {
+    const qc = new QueryClient();
+    await new MutationObserver(qc, { mutationFn: async () => "done" }).mutate();
+    void new MutationObserver(qc, {
+      mutationFn: () => new Promise<string>(() => undefined),
+    }).mutate();
+    expect(qc.getMutationCache().getAll()).toHaveLength(2);
+    return qc;
+  }
+
+  it("dropUserCache empties the mutation cache", async () => {
+    const qc = await withMutations();
+    dropUserCache(qc);
+    expect(qc.getMutationCache().getAll()).toEqual([]);
+  });
+
+  it("signOutAndClear does too", async () => {
+    const qc = await withMutations();
+    const { supabase } = await import("@/integrations/supabase/client");
+    await signOutAndClear(qc, supabase.auth);
+    expect(qc.getMutationCache().getAll()).toEqual([]);
+  });
+
+  it("so does the other-user branch of handleAuthEvent", async () => {
+    const qc = await withMutations();
+    handleAuthEvent(qc, "SIGNED_IN", { user: { id: "user-y" } }, "user-x");
+    expect(qc.getMutationCache().getAll()).toEqual([]);
   });
 });

@@ -23,6 +23,9 @@ export function isDefinitiveRejection(error: unknown): boolean {
   return status === 401 || status === 403;
 }
 
+/** Shown when an action needs the signed-in user and the shared validator has none (NK-0110). */
+export const SESSION_CHECK_FAILED = "No he podido comprobar tu sesión. Vuelve a intentarlo.";
+
 /** Thrown by the /_authenticated guard when the session could not be checked (network, 5xx, 429); shown as a retry screen, never as a redirect. */
 export class SessionUnverifiedError extends Error {
   constructor() {
@@ -40,8 +43,8 @@ type Outcome<U> = { user: U } | { reason: "none" | "unverified" };
 type Shared<U extends AuthUser> = {
   user: () => Promise<U | null>;
   check: () => Promise<SessionState<U>>;
-  /** Filled by the last-validated-user work (SDD-20261109-session-hardening, unit B); unused in unit A. */
-  last: string | null;
+  /** Id of the last user the validator validated (NK-0111): survives refreshed tokens and failed checks. */
+  readonly last: string | null;
 };
 
 const shared = new WeakMap<object, Shared<AuthUser>>();
@@ -51,6 +54,8 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
   if (existing) return existing as unknown as Shared<U>;
   let saved: { token: string; valid: Promise<Outcome<U>> } | null = null;
   let listening = false;
+
+  let last: string | null = null;
 
   const run = async function run(): Promise<Outcome<U>> {
     // Subscribe on first use (client only), not at import time.
@@ -89,6 +94,7 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     }
     const entry = saved;
     const outcome = await entry.valid;
+    if ("user" in outcome) last = outcome.user.id;
     // Never keep a refusal or a failed attempt: the next navigation asks again.
     if (!("user" in outcome) && saved === entry) saved = null;
     return outcome;
@@ -103,7 +109,9 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
       const o = await run();
       return "user" in o ? { status: "valid", user: o.user } : { status: o.reason };
     },
-    last: null,
+    get last() {
+      return last;
+    },
   };
   shared.set(auth, state as unknown as Shared<AuthUser>);
   return state;
@@ -119,6 +127,14 @@ export function createSessionUser<U extends AuthUser>(
   auth: SessionAuth<U>,
 ): () => Promise<U | null> {
   return share(auth).user;
+}
+
+/** Id of the last user validated by the shared validator, or null before any (NK-0111). Never clears on its own. */
+export function createLastValidatedUserId<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => string | null {
+  const box = share(auth);
+  return () => box.last;
 }
 
 /** Same validation with the three answers (NK-0112): valid, none (go to /auth) or unverified (retry screen). */
