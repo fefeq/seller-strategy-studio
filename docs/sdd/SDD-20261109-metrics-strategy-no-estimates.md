@@ -460,4 +460,6 @@ Informe de la segunda pasada (v2), copiado sin editar:
 - **Citas de pies de texto:** el de `budget-quarters.tsx` está en `:406-408` y el de `payback-quarters.tsx` en `:87-91`. Diferencia de una línea.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
+
+- **2026-11-09 (construcción, decisiones del coordinador por delegación de Fede):** (1) CA-10: se autoriza cambiar la aserción de `agent-tools.test.ts` que fija las tablas de `get_funnel_diagnosis` para añadir `segment_budget_quarters`. (2) D9 frente a CA-1/CA-3/CA-7: prevalecen CA-1/CA-3/CA-7; Cobertura muestra el motivo del CAC («sin costes en {T}», «ningún deal ganado en {T}») en vez de «falta CAC real». (3) El texto del tablero se corrige para hablar solo del CAC proyectado (D10) y su aserción se actualiza. (4) Se aceptan textos fuera de la lista del §9: «sin plan de captación en {periodo}», «sin clientes presupuestados en {periodo}», «sin win rate de los últimos 365 días», «ningún deal cerrado en {ventana}», «falta CAC objetivo», «sin plan». El escaneo encontró 10 cálculos de CAC fuera del módulo (no 5): los «CAC medio» de `cac-panel` pasan por la regla común. La guarda de MCP es más estricta que la app.
 —
