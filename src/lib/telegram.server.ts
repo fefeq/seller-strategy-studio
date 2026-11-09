@@ -25,18 +25,36 @@ export async function tg(method: string, body: Record<string, unknown>) {
 
 /** Plain text (no parse_mode) so model markdown never breaks delivery. */
 export function toPlain(md: string) {
-  return md.replace(/\*\*(.+?)\*\*/g, "$1").replace(/^#+\s*/gm, "").replace(/`([^`]+)`/g, "$1").slice(0, 4000);
+  return md
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^#+\s*/gm, "")
+    .replace(/`([^`]+)`/g, "$1")
+    .slice(0, 4000);
 }
 
-export async function sendText(chatId: string | number, text: string, buttons?: { text: string; data: string }[][]) {
+export async function sendText(
+  chatId: string | number,
+  text: string,
+  buttons?: { text: string; data: string }[][],
+) {
   return tg("sendMessage", {
     chat_id: chatId,
     text: toPlain(text),
-    ...(buttons?.length ? { reply_markup: { inline_keyboard: buttons.map((row) => row.map((b) => ({ text: b.text, callback_data: b.data }))) } } : {}),
+    ...(buttons?.length
+      ? {
+          reply_markup: {
+            inline_keyboard: buttons.map((row) =>
+              row.map((b) => ({ text: b.text, callback_data: b.data })),
+            ),
+          },
+        }
+      : {}),
   });
 }
 
 export async function webhookSecret() {
   const { createHash } = await import("node:crypto");
-  return createHash("sha256").update(`telegram-webhook:${process.env["TELEGRAM_API_KEY"] ?? ""}`).digest("base64url");
+  return createHash("sha256")
+    .update(`telegram-webhook:${process.env["TELEGRAM_API_KEY"] ?? ""}`)
+    .digest("base64url");
 }

@@ -9,9 +9,15 @@ type Ctx = { waitUntil?: (p: Promise<unknown>) => void };
 export const requestCtx = new AsyncLocalStorage<Ctx>();
 
 export function afterResponse(label: string, work: () => Promise<unknown>) {
-  const p = Promise.resolve().then(work).catch((e) => console.error(`afterResponse ${label}`, safeErrorLog(e)));
+  const p = Promise.resolve()
+    .then(work)
+    .catch((e) => console.error(`afterResponse ${label}`, safeErrorLog(e)));
   const waitUntil = requestCtx.getStore()?.waitUntil;
   if (waitUntil) {
-    try { waitUntil(p); } catch (e) { console.error("waitUntil", safeErrorLog(e)); }
+    try {
+      waitUntil(p);
+    } catch (e) {
+      console.error("waitUntil", safeErrorLog(e));
+    }
   }
 }

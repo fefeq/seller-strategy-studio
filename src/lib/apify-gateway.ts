@@ -4,14 +4,28 @@ import { apifyErrorText } from "@/lib/apify";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/apify";
 
-export async function runActor(actor: { id: string; maxUsd: number }, input: object, opts: { maxItems: number; timeoutSecs?: number }): Promise<unknown[]> {
+export async function runActor(
+  actor: { id: string; maxUsd: number },
+  input: object,
+  opts: { maxItems: number; timeoutSecs?: number },
+): Promise<unknown[]> {
   const lovable = process.env["LOVABLE_API_KEY"];
   const key = process.env["APIFY_API_KEY"];
-  if (!lovable || !key) throw new Error("Apify no está conectado en este proyecto. Conéctalo en Integraciones.");
-  const p = new URLSearchParams({ timeout: String(opts.timeoutSecs ?? 75), memory: "1024", maxItems: String(opts.maxItems), maxTotalChargeUsd: String(actor.maxUsd) });
+  if (!lovable || !key)
+    throw new Error("Apify no está conectado en este proyecto. Conéctalo en Integraciones.");
+  const p = new URLSearchParams({
+    timeout: String(opts.timeoutSecs ?? 75),
+    memory: "1024",
+    maxItems: String(opts.maxItems),
+    maxTotalChargeUsd: String(actor.maxUsd),
+  });
   const res = await fetch(`${GATEWAY}/acts/${actor.id}/run-sync-get-dataset-items?${p}`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": key, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${lovable}`,
+      "X-Connection-Api-Key": key,
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(input),
   });
   if (!res.ok) {
