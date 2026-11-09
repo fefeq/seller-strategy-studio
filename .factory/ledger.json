@@ -3016,8 +3016,8 @@
       "title": "Métricas: los «—» que significan falta el dato en Finanzas, RevOps, ciclo, cobertura de pipeline, Embudo, Perdidos, Cohortes y Tendencias pasan a «Sin dato · motivo» (resto de la decisión 4 del §15 de NK-0089, fuera de NK-0094)",
       "kind": "feature",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261109-metrics-sin-dato-rest.md",
       "prd": null,
@@ -3035,6 +3035,12 @@
           "at": "2026-11-09T18:39:21.510Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261109-metrics-sin-dato-rest.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.084Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
@@ -3436,8 +3442,8 @@
       "title": "Logs: 11 llamadas en email, posthog-sync, telegram, inngest/send, weekly-report, daily-email, notices y after-response siguen registrando trozo de cuerpo o error entero (lista de excepciones «pendiente» en src/lib/server-log-scan.test.ts)",
       "kind": "bug",
       "source": "tracker: Sprint 3 intake, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3449,6 +3455,12 @@
           "at": "2026-11-09T18:39:21.897Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.120Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
@@ -3457,8 +3469,8 @@
       "title": "Sesión: si una navegación valida a Y antes de que llegue su SIGNED_IN y no hay me en caché, los datos de X siguen en caché unos milisegundos (gate Sprint 3, observación 1)",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, observación 1 (sprint3-gate/gate-db23383.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3470,6 +3482,12 @@
           "at": "2026-11-09T22:37:48.699Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.154Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
@@ -3478,8 +3496,8 @@
       "title": "Cambio de cuenta: un diálogo de confirmación abierto con texto de X queda visible sobre «Cambiando de cuenta…» hasta la recarga",
       "kind": "bug",
       "source": "gate Sprint 3 295c22e, observación nueva (sprint3-gate/gate-295c22e.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3491,6 +3509,12 @@
           "at": "2026-11-09T22:37:48.739Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.187Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
@@ -3499,8 +3523,8 @@
       "title": "Logs: 8 llamadas fuera de *.server.ts registran trozos de respuesta de proveedor o de IA (firecrawl, apollo-gateway, perplexity, apify-gateway, clay-gateway, parallel-gateway, google-drive, ai.functions.ts:145)",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, ticket propuesto de logs (sprint3-gate/gate-db23383.md); relacionado con NK-0118",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3512,6 +3536,12 @@
           "at": "2026-11-09T22:37:48.778Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.218Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
@@ -3520,8 +3550,8 @@
       "title": "OAuth: aprobar el consentimiento no vuelve a validar la sesión (decide())",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, observación OAuth (sprint3-gate/gate-db23383.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3533,6 +3563,12 @@
           "at": "2026-11-09T22:37:48.817Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.253Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
         }
       ]
     },
