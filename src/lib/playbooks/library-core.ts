@@ -2,6 +2,8 @@
 import { ask } from "@/lib/ai-gateway";
 import { companyContext } from "@/lib/bmad/drafting";
 import type { ToolCtx } from "@/lib/agent/tool-kit";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { loadAgentRules, RULES_READ_FAILED, rulesBlock } from "@/lib/knowledge-rules";
 import {
   ADAPT_SYSTEM,
   acceptableAdaptation,
@@ -12,6 +14,8 @@ import {
 /**
  * Adds Nokko's playbooks the company still lacks, each adapted by the AI to the approved context. When the
  * adaptation loses the structure, keeps markers or the AI fails, the base text goes in instead.
+ * The team's rules come from the common reader (SDD-20261109-rules-in-ai-readers, CA-7): read once per job, only when
+ * there is an AI call, as a block after ADAPT_SYSTEM; Ciclo GTM's reglas_obligatorias stay out of contexto_empresa.
  */
 export async function createLibraryCore(
   ctx: ToolCtx & { orgName: string },
@@ -31,6 +35,10 @@ export async function createLibraryCore(
   const cc = await companyContext(ctx.db, ctx.orgId);
   const hasContext =
     !!cc.setup.positioning || cc.setup.pillars.length > 0 || cc.setup.icps.length > 0;
+  const rules = hasContext ? await loadAgentRules({ db: ctx.db, orgId: ctx.orgId }) : null;
+  const block = rulesBlock(rules?.rules ?? []);
+  const system = block ? `${ADAPT_SYSTEM}\n${block}` : ADAPT_SYSTEM;
+  const { reglas_obligatorias: _rules, ...context } = cc;
   const created: { title: string; adapted: boolean }[] = [];
   for (const [i, play] of plays.entries()) {
     await step(`Jugada ${i + 1} de ${plays.length}: ${play.title}`);
@@ -38,7 +46,7 @@ export async function createLibraryCore(
     let adapted = false;
     if (hasContext) {
       try {
-        const text = await ask(ADAPT_SYSTEM, adaptPrompt(play, { empresa: ctx.orgName, ...cc }), {
+        const text = await ask(system, adaptPrompt(play, { empresa: ctx.orgName, ...context }), {
           effort: "low",
         });
         if (acceptableAdaptation(play, text)) {
@@ -46,7 +54,8 @@ export async function createLibraryCore(
           adapted = true;
         }
       } catch (e) {
-        console.error("playbook adaptation failed", play.id, e);
+        // Never the error or its message: it may quote the prompt, rules included (NK-0087, CA-8).
+        console.error("playbook adaptation failed", play.id, safeErrorLog(e));
       }
     }
     const { error } = await ctx.db.from("knowledge_docs").insert({
@@ -61,5 +70,8 @@ export async function createLibraryCore(
     if (error) throw new Error(error.message);
     created.push({ title: play.title, adapted });
   }
-  return { created, skipped: false, hasContext };
+  // A failed read is said in the job's notice (CA-7); the plays went in without the rules.
+  return rules && !rules.ok
+    ? { created, skipped: false, hasContext, mensaje: RULES_READ_FAILED }
+    : { created, skipped: false, hasContext };
 }
