@@ -15,6 +15,7 @@ import { BUYING_ROLES } from "@/lib/roles";
 import { firstOpenStage, stagePath } from "@/lib/stages";
 import { TRACKS, stageGate } from "@/lib/bmad/tracks";
 import { lineFromProduct, type Product } from "@/lib/deal-lines";
+import { DEAL_SOURCE_KEYS, DEAL_SOURCE_LABELS, dealSourceLabel } from "@/lib/deal-source";
 import { leadStageLabel } from "@/lib/lead-funnel";
 import { isLostStage, LOSS_REASONS, lossLabel, parseLoss } from "@/lib/loss-reasons";
 import { ask } from "@/lib/ai-gateway";
@@ -73,9 +74,18 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
           "Producto del catálogo (list_products): añade una línea y el importe pasa a ser el de sus líneas",
         ),
       quantity: z.number().positive().optional(),
+      source: z
+        .enum(DEAL_SOURCE_KEYS)
+        .nullable()
+        .optional()
+        .describe(
+          `Origen del deal. Uno de: ${Object.entries(DEAL_SOURCE_LABELS)
+            .map(([k, l]) => `${k} (${l})`)
+            .join(", ")}. Si no lo sabes, no lo pases: queda «Sin origen».`,
+        ),
     }),
     summarize: (a) =>
-      `Crear el deal «${a.name}»${a.product_id ? ` con ${a.quantity ?? 1} × un producto del catálogo (el importe sale de su precio)` : a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}`,
+      `Crear el deal «${a.name}»${a.product_id ? ` con ${a.quantity ?? 1} × un producto del catálogo (el importe sale de su precio)` : a.amount ? ` por ${a.amount}` : ""}${a.stage ? ` en la etapa «${a.stage}»` : ""}${a.source ? `, origen ${dealSourceLabel(a.source)}` : ""}`,
     run: async (c, a) => {
       // Every way of creating a deal ends with an account, so the asistente, the pipeline and the CSV
       // produce the same data (a deal created here used to have no account; one from the CSV did).
@@ -108,6 +118,7 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
           .from("deals")
           .insert({
             ...deal,
+            source: a.source ?? null, // always explicit: the database default must never pick an origin
             account_id,
             stage: st?.key ?? first!.key,
             probability: st?.probability ?? first!.probability,
