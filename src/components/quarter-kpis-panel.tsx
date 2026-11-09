@@ -10,6 +10,7 @@ import { Deviation } from "@/components/budget-quarters";
 import { ScreenState } from "@/components/page";
 import type { SegLike } from "@/lib/segment-coverage";
 import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
+import { DataMark } from "@/components/metrics/data-mark";
 import { noData, real } from "@/lib/unit-economics";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
@@ -19,7 +20,9 @@ type Fig = { value: number | null; state: string; reason: string | null };
 type Line = {
   label: string;
   value: (s: KpiSide) => number | null;
-  show: (n: number | null) => string;
+  show: (n: number) => string;
+  /** Why the real value is missing (NK-0106): «Sin dato · motivo». Lines with a Figure carry their own. */
+  missing?: string;
   lowerIsBetter?: boolean;
   points?: boolean;
   hint?: (k: QuarterKpis) => ReactNode;
@@ -95,16 +98,22 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
   );
   const current = kpis[kpis.length - 1];
 
-  const money0 = (n: number | null) => (n == null ? "—" : money(n));
   const months = (n: number) => `${fmt1(n)} m`;
   const lines: Line[] = [
     {
       label: "Ingresos",
       value: (s) => s.revenue,
-      show: money0,
+      show: money,
+      missing: "sin ingresos del trimestre",
       hint: (k) => (k.actual.wonAmount ? `${money(k.actual.wonAmount)} ganado en deals` : null),
     },
-    { label: "Coste de servir", value: (s) => s.costToServe, show: money0, lowerIsBetter: true },
+    {
+      label: "Coste de servir",
+      value: (s) => s.costToServe,
+      show: money,
+      missing: "sin coste de servir apuntado",
+      lowerIsBetter: true,
+    },
     {
       label: "Margen bruto",
       value: (s) => s.margin,
@@ -113,11 +122,18 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
       figure: (k) => ({ real: marginFig(k.actual.margin), plan: marginFig(k.plan.margin) }),
       fmt: pct,
     },
-    { label: "Gasto de captación", value: (s) => s.acquisition, show: money0, lowerIsBetter: true },
+    {
+      label: "Gasto de captación",
+      value: (s) => s.acquisition,
+      show: money,
+      missing: "sin gasto de captación apuntado",
+      lowerIsBetter: true,
+    },
     {
       label: "Clientes nuevos",
       value: (s) => s.newCustomers,
-      show: (n) => (n == null ? "—" : String(n)),
+      show: String,
+      missing: "sin deals ganados en el trimestre",
       // SDD-20261109 D11: the won deals without segment count in the company CAC; say how many.
       hint: (k) =>
         k.unsegmentedWon
@@ -226,7 +242,13 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
                         className={`px-3 py-3 text-right ${k.quarter === quarter ? "bg-muted/40" : ""}`}
                       >
                         <p className="font-mono">
-                          {fig && l.fmt ? <FigureValue f={fig.real} show={l.fmt} /> : l.show(real)}
+                          {fig && l.fmt ? (
+                            <FigureValue f={fig.real} show={l.fmt} />
+                          ) : real != null ? (
+                            l.show(real)
+                          ) : (
+                            <DataMark state="sin_dato" reason={l.missing ?? "falta el dato"} />
+                          )}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {fig && l.fmt ? (

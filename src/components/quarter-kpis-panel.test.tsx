@@ -162,7 +162,8 @@ describe("NK-0094 KPIs trimestrales: company CAC and payback from the Figures", 
       screen.getByText(label, { selector: "td" }).closest("tr") as HTMLElement;
     expect(marksOf(row("Ingresos"))).toContain("Sin dato · sin ingresos del trimestre");
     expect(marksOf(row("Coste de servir"))).toContain("Sin dato · sin coste de servir apuntado");
-    expect(marksOf(row("Gasto de captación"))).toEqual([]);
+    // The quarter has 6000 of costs: its cell (5th column) is the figure; the quarters before have none.
+    expect(marksOf(row("Gasto de captación").querySelectorAll("td")[4] as HTMLElement)).toEqual([]);
     expectDataMarks(container);
   });
 });

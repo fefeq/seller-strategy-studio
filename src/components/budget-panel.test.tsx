@@ -142,6 +142,8 @@ describe("Presupuesto por segmento marks", () => {
     const equal = "Sin dato · nadie ganó: el compartido no se reparte";
     expect(marksOf(cell("Pyme", SPEND))).toEqual([equal]);
     expect(marksOf(cell("Mid", SPEND))).toEqual([equal]);
+    // The reason is the shared one, never «sin gasto apuntado» (costs exist), and no stray «0».
+    expect(cell("Pyme", SPEND).textContent).toBe(`${equal}presup. sin plan`);
     expectDataMarks(container);
   });
 });
