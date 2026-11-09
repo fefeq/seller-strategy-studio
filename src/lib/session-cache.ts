@@ -1,6 +1,7 @@
 // NK-0098: what the query cache does on an auth event. `me` is cached for minutes, so another user must
 // never be served the previous user's data (name, company, org_id) while their own loads.
 import type { QueryClient } from "@tanstack/react-query";
+import { beginAccountSwitch } from "@/lib/account-switch";
 
 type AuthSession = { user: { id: string } } | null;
 
@@ -35,11 +36,19 @@ export function handleAuthEvent(
     !!session &&
     ((last != null && last !== session.user.id) ||
       (cached !== undefined && cached?.user.id !== session.user.id));
-  if (event === "SIGNED_OUT" || otherUser) {
+  if (otherUser) {
+    // D-S3-3: the app blocks first (synchronously, before anything re-renders or refetches with the previous
+    // user's ids), then every query goes, observed or not, and the page reloads as the new user. No reset and
+    // no refetch: they would re-run the old keys (X's org and user ids) before Y's `me` exists.
+    beginAccountSwitch();
+    void qc.cancelQueries();
+    qc.removeQueries();
+    qc.getMutationCache().clear();
+    return false;
+  }
+  if (event === "SIGNED_OUT") {
     dropUserCache(qc);
-    // Mounted screens were reset: with a session they load again as the new user (no session: nothing to ask).
-    if (session) void qc.refetchQueries({ type: "active" });
-    return event === "SIGNED_OUT" || event === "SIGNED_IN";
+    return true;
   }
   if (event === "TOKEN_REFRESHED") void qc.invalidateQueries({ queryKey: ["me"] });
   if (event === "SIGNED_IN" || event === "USER_UPDATED") {
