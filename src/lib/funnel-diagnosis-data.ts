@@ -6,7 +6,7 @@ import type { Db } from "@/lib/org-data";
 import { fetchAll } from "@/lib/fetch-all";
 import { quarterRange } from "@/lib/metrics";
 import { funnelDiagnosis, type FunnelDiagnosis, type SegmentInput } from "@/lib/funnel-diagnosis";
-import { quartersOfYear, type QuarterBudgetLike } from "@/lib/segment-budget";
+import { quartersOfYear } from "@/lib/segment-budget";
 import type { DealLike } from "@/lib/segment-coverage";
 
 const must = <T>(r: { data: T; error: { message: string } | null }) => {
@@ -80,7 +80,7 @@ export async function loadFunnelDiagnosis(
     leads: leads.rows,
     trials: trials.rows,
     costs: must(costs) ?? [],
-    budgetRows: (must(budgets) ?? []) as QuarterBudgetLike[],
+    budgetRows: must(budgets) ?? [],
     activationEvent: must(posthog)?.activation_event ?? null,
     stripe: must(stripe),
   });
