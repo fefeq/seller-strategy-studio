@@ -54,3 +54,27 @@ export function nextSearchOnSectionChange(
   const { doc: _doc, ...rest } = prev;
   return searchWithSection(rest, id, fallback);
 }
+
+/** True when the raw URL search carries a ?seccion= the screen does not know, or (query screens) a blank ?q=: it should be rewritten clean. */
+export function needsUrlClean(
+  raw: Record<string, unknown>,
+  ids: readonly string[],
+  withQuery: boolean,
+): boolean {
+  if (raw.seccion !== undefined && validSection(ids, raw.seccion) === undefined) return true;
+  return withQuery && raw.q !== undefined && !(typeof raw.q === "string" && raw.q.trim() !== "");
+}
+
+/** The search without the unknown seccion and the blank q; every other parameter stays (a valid seccion, even the default, is kept as is). */
+export function cleanUrlSearch<S extends Record<string, unknown>>(
+  raw: S,
+  ids: readonly string[],
+  withQuery: boolean,
+): S {
+  const next: Record<string, unknown> = { ...raw };
+  if (next.seccion !== undefined && validSection(ids, next.seccion) === undefined)
+    delete next.seccion;
+  if (withQuery && next.q !== undefined && !(typeof next.q === "string" && next.q.trim() !== ""))
+    delete next.q;
+  return next as S;
+}

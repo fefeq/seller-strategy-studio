@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { Page, HealthDot, Kpi } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
+import { DealSourceField } from "@/components/deal-source-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -554,18 +555,7 @@ function DealDetail({
           />
         </Field>
         <Field label="Fuente">
-          <Pick
-            value={d.source ?? "outbound"}
-            options={{
-              outbound: "Outbound",
-              inbound: "Inbound",
-              partner: "Partner",
-              plg: "Producto (PLG)",
-              event: "Evento",
-              referral: "Referido",
-            }}
-            onChange={(v) => setD({ ...d, source: v })}
-          />
+          <DealSourceField value={d.source ?? null} onChange={(v) => setD({ ...d, source: v })} />
         </Field>
         <Field label="Segmento">
           <Pick

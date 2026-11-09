@@ -21,16 +21,7 @@ import {
   type RHistory,
 } from "@/lib/revops";
 import { pct } from "@/lib/money";
-
-const SOURCE: Record<string, string> = {
-  outbound: "Outbound",
-  inbound: "Inbound",
-  partner: "Partner",
-  plg: "Producto (PLG)",
-  event: "Evento",
-  referral: "Referido",
-  "—": "Sin origen",
-};
+import { NO_SOURCE, dealSourceLabel } from "@/lib/deal-source";
 
 function useSegmentNames() {
   const { data } = useQuery({
@@ -190,7 +181,7 @@ export function RevopsLost({
           <List rows={l.bySegment} name={seg} />
         </Card>
         <Card title="Por origen">
-          <List rows={l.bySource} name={(k) => SOURCE[k] ?? k} />
+          <List rows={l.bySource} name={dealSourceLabel} />
         </Card>
       </div>
     </div>
@@ -204,7 +195,7 @@ const TRENDS_WINDOW = "Últimas 12 semanas · no depende del trimestre";
 export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
   const { money } = useCurrency();
   const seg = useSegmentNames();
-  const bySource = useMemo(() => cohorts(deals, (d) => d.source ?? "—"), [deals]);
+  const bySource = useMemo(() => cohorts(deals, (d) => d.source ?? NO_SOURCE), [deals]);
   const bySeg = useMemo(() => cohorts(deals, (d) => d.segment_id ?? "—"), [deals]);
   const Table = ({
     rows,
@@ -258,7 +249,7 @@ export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
     <div className="space-y-5">
       {windowNote}
       <Card title="Por origen">
-        <Table rows={bySource} name={(k) => SOURCE[k] ?? k} />
+        <Table rows={bySource} name={dealSourceLabel} />
       </Card>
       <Card title="Por segmento">
         <Table rows={bySeg} name={seg} />

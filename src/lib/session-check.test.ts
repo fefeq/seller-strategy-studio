@@ -3,7 +3,13 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createSessionCheck, type SessionAuth } from "./session-check";
+import {
+  createSessionCheck,
+  createLastValidatedUserId,
+  createSessionState,
+  createSessionUser,
+  type SessionAuth,
+} from "./session-check";
 
 type FakeSession = { access_token: string; user: { id: string } };
 type Listener = (event: string, session: FakeSession | null) => void;
@@ -196,13 +202,164 @@ describe("createSessionCheck (NK-0098)", () => {
   });
 });
 
+describe("checkSession: three states (NK-0112)", () => {
+  const failing = (status: number | undefined, f = fakeAuth(ana1)) => {
+    let fail = true;
+    const auth: SessionAuth = {
+      ...f.auth,
+      getUser: async (jwt?: string) => {
+        f.calls.getUser++;
+        await Promise.resolve();
+        if (fail) {
+          const e = new Error("boom");
+          return {
+            data: { user: null },
+            error: status === undefined ? e : Object.assign(e, { status }),
+          };
+        }
+        return { data: { user: { id: (jwt ?? "").split(":")[0] } }, error: null };
+      },
+    };
+    return { f, auth, heal: () => (fail = false) };
+  };
+
+  it("valid carries the user the server validated", async () => {
+    const f = fakeAuth(ana1);
+    expect(await createSessionState(f.auth)()).toEqual({
+      status: "valid",
+      user: { id: "user-ana" },
+    });
+  });
+
+  it("none without a local session", async () => {
+    const f = fakeAuth(null);
+    expect(await createSessionState(f.auth)()).toEqual({ status: "none" });
+  });
+
+  it("none when the server answers with another user", async () => {
+    const f = fakeAuth({ access_token: "user-leo:9", user: { id: "user-ana" } });
+    expect(await createSessionState(f.auth)()).toEqual({ status: "none" });
+  });
+
+  for (const status of [401, 403]) {
+    it(`none on ${status}, and the local session is closed`, async () => {
+      const { f, auth } = failing(status);
+      let signOut = 0;
+      const withSignOut: SessionAuth = { ...auth, signOut: async () => void signOut++ };
+      expect(await createSessionState(withSignOut)()).toEqual({ status: "none" });
+      expect(signOut).toBe(1);
+      expect(f.calls.getUser).toBe(1);
+    });
+  }
+
+  for (const status of [0, 500, 503, 429, undefined]) {
+    it(`unverified on ${status ?? "an error without status"}, never signs out`, async () => {
+      const { auth } = failing(status);
+      let signOut = 0;
+      const withSignOut: SessionAuth = { ...auth, signOut: async () => void signOut++ };
+      expect(await createSessionState(withSignOut)()).toEqual({ status: "unverified" });
+      expect(signOut).toBe(0);
+    });
+  }
+
+  it("unverified when the request throws", async () => {
+    const f = fakeAuth(ana1);
+    f.setOffline(true);
+    expect(await createSessionState(f.auth)()).toEqual({ status: "unverified" });
+  });
+
+  it("unverified is never saved: the next call asks again and can succeed", async () => {
+    const { f, auth, heal } = failing(503);
+    const check = createSessionState(auth);
+    expect((await check()).status).toBe("unverified");
+    expect((await check()).status).toBe("unverified");
+    expect(f.calls.getUser).toBe(2);
+    heal();
+    expect((await check()).status).toBe("valid");
+    expect((await check()).status).toBe("valid");
+    expect(f.calls.getUser).toBe(3);
+  });
+
+  it("shares the saved answer and the in-flight request with createSessionUser and createSessionCheck", async () => {
+    const f = fakeAuth(ana1);
+    const [a, b, c] = await Promise.all([
+      createSessionState(f.auth)(),
+      createSessionUser(f.auth)(),
+      createSessionCheck(f.auth)(),
+    ]);
+    expect(a.status).toBe("valid");
+    expect(b).toEqual({ id: "user-ana" });
+    expect(c).toBe(true);
+    await createSessionState(f.auth)();
+    expect(f.calls.getUser).toBe(1);
+  });
+});
+
+describe("lastValidatedUserId (NK-0110, NK-0111)", () => {
+  it("is null until a user has been validated, and a failed check does not set it", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    expect(last()).toBeNull();
+    f.setOffline(true);
+    await createSessionUser(f.auth)();
+    expect(last()).toBeNull();
+  });
+
+  it("is the user the shared validator validated last", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    await createSessionUser(f.auth)();
+    expect(last()).toBe("user-ana");
+  });
+
+  it("survives TOKEN_REFRESHED and a failing check of the next token, and is replaced only by another validated user", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    const check = createSessionState(f.auth);
+    await check();
+    f.setSession(ana2);
+    f.emit("TOKEN_REFRESHED", ana2);
+    expect(last()).toBe("user-ana");
+    f.setOffline(true);
+    expect((await check()).status).toBe("unverified");
+    expect(last()).toBe("user-ana");
+    f.setOffline(false);
+    f.setSession(leo1);
+    f.emit("SIGNED_IN", leo1);
+    expect(last(), "not replaced before the other user is validated").toBe("user-ana");
+    await check();
+    expect(last()).toBe("user-leo");
+  });
+
+  it("is forgotten on SIGNED_OUT, so the next user of this tab is not «another user»", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    await createSessionUser(f.auth)();
+    expect(last()).toBe("user-ana");
+    f.setSession(null);
+    f.emit("SIGNED_OUT", null);
+    expect(last()).toBeNull();
+  });
+
+  it("a validation that finishes after SIGNED_OUT does not bring the user back", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    const pending = createSessionUser(f.auth)();
+    f.emit("SIGNED_OUT", null);
+    await pending;
+    expect(last()).toBeNull();
+  });
+});
+
 describe("/_authenticated beforeLoad uses the cached check (source guard)", () => {
   const src = readFileSync(path.resolve(__dirname, "../routes/_authenticated/route.tsx"), "utf8");
   it("never calls supabase.auth.getUser() on each navigation", () => {
     expect(src).not.toMatch(/auth\.getUser\(/);
   });
-  it("redirects to /auth when the cached check says no", () => {
-    expect(src).toMatch(/createSessionCheck\(supabase\.auth\)/);
-    expect(src).toMatch(/if \(!\(await \w+\(\)\)\) throw redirect\(\{ to: "\/auth" \}\)/);
+  it("redirects to /auth only when the check says none", () => {
+    expect(src).toMatch(/checkSession\(\)/);
+    expect(src).toMatch(/status === "none"\)\s*throw redirect\(\{ to: "\/auth" \}\)/);
+    expect(src.match(/redirect\(\{ to: "\/auth" \}\)/g)).toHaveLength(1);
+    expect(src).toMatch(/status === "unverified"\)\s*throw new SessionUnverifiedError\(\)/);
   });
 });

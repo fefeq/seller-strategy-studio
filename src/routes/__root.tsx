@@ -15,7 +15,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { reloadOnceForStaleModule } from "@/lib/stale-module";
 import { handleAuthEvent } from "@/lib/session-cache";
+import { lastValidatedUserId } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountSwitchGate } from "@/components/account-switch-gate";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -154,14 +156,16 @@ function RootComponent() {
   const router = useRouter();
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (handleAuthEvent(queryClient, event, session)) router.invalidate();
+      if (handleAuthEvent(queryClient, event, session, lastValidatedUserId())) router.invalidate();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AccountSwitchGate>
+        <Outlet />
+      </AccountSwitchGate>
       <Toaster />
       <DialogHost />
       <CookieBanner />

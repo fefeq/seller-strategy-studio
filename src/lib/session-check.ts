@@ -1,7 +1,9 @@
 // NK-0098: the guard of /_authenticated. getSession() reads the local session (no network) on every
 // navigation; getUser() validates it against the server once per access token. A refreshed token, another
 // user, USER_UPDATED or SIGNED_OUT (also from another tab) drops the saved answer; a refusal is never saved.
-// Data security stays with RLS; this only decides whether to show the app or send to /auth.
+// NK-0112: the check has three answers: valid (the user), none (no session, or the server refused it) and
+// unverified (network, 5xx, 429: could not ask). Only "none" sends to /auth; "unverified" keeps the session
+// and shows a retry screen. Data security stays with RLS; this only decides what to show.
 
 type Session = { access_token: string; user: { id: string } };
 type AuthUser = { id: string };
@@ -21,63 +23,134 @@ export function isDefinitiveRejection(error: unknown): boolean {
   return status === 401 || status === 403;
 }
 
-const shared = new WeakMap<object, () => Promise<unknown>>();
+/** Shown when an action needs the signed-in user and the shared validator has none (NK-0110). */
+export const SESSION_CHECK_FAILED = "No he podido comprobar tu sesión. Vuelve a intentarlo.";
+
+/** Thrown by the /_authenticated guard when the session could not be checked (network, 5xx, 429); shown as a retry screen, never as a redirect. */
+export class SessionUnverifiedError extends Error {
+  constructor() {
+    super("session_unverified");
+    this.name = "SessionUnverifiedError";
+  }
+}
+
+/** The three answers of the session check (NK-0112). */
+export type SessionState<U extends AuthUser = AuthUser> =
+  { status: "valid"; user: U } | { status: "none" } | { status: "unverified" };
+
+type Outcome<U> = { user: U } | { reason: "none" | "unverified" };
+
+type Shared<U extends AuthUser> = {
+  user: () => Promise<U | null>;
+  check: () => Promise<SessionState<U>>;
+  /** Id of the last user the validator validated (NK-0111): survives refreshed tokens and failed checks. */
+  readonly last: string | null;
+};
+
+const shared = new WeakMap<object, Shared<AuthUser>>();
+
+function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
+  const existing = shared.get(auth);
+  if (existing) return existing as unknown as Shared<U>;
+  let saved: { token: string; valid: Promise<Outcome<U>> } | null = null;
+  let listening = false;
+
+  let last: string | null = null;
+  // Bumped on SIGNED_OUT: a validation that started before it must not bring the signed-out user back.
+  let epoch = 0;
+
+  const run = async function run(): Promise<Outcome<U>> {
+    // Subscribe on first use (client only), not at import time.
+    if (!listening) {
+      listening = true;
+      auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_OUT") {
+          // Signing out ends the user of this tab: the next sign-in (maybe someone else) is a plain login, not
+          // «another user in another tab» (NK-0111). Another tab's sign-in never passes through here.
+          last = null;
+          epoch++;
+        }
+        if (event === "SIGNED_OUT" || event === "USER_UPDATED") saved = null;
+        else if (saved && session?.access_token !== saved.token) saved = null;
+      });
+    }
+    const startedAt = epoch;
+    const { data } = await auth.getSession();
+    const session = data.session;
+    if (!session) {
+      saved = null;
+      return { reason: "none" };
+    }
+    if (saved?.token !== session.access_token) {
+      const valid = auth.getUser(session.access_token).then(
+        async ({ data: u, error }): Promise<Outcome<U>> => {
+          if (error) {
+            // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
+            // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
+            // Network errors, 5xx and 429 are not definitive: they never sign anyone out (unverified).
+            if (!isDefinitiveRejection(error)) return { reason: "unverified" };
+            // Only if the stored session is still the one that was refused (another tab may have signed in).
+            const now = (await auth.getSession()).data.session;
+            if (now?.access_token === session.access_token)
+              await auth.signOut?.({ scope: "local" }).catch(() => undefined);
+            return { reason: "none" };
+          }
+          return u.user && u.user.id === session.user.id ? { user: u.user } : { reason: "none" };
+        },
+        (): Outcome<U> => ({ reason: "unverified" }),
+      );
+      saved = { token: session.access_token, valid };
+    }
+    const entry = saved;
+    const outcome = await entry.valid;
+    if ("user" in outcome && epoch === startedAt) last = outcome.user.id;
+    // Never keep a refusal or a failed attempt: the next navigation asks again.
+    if (!("user" in outcome) && saved === entry) saved = null;
+    return outcome;
+  };
+
+  const state: Shared<U> = {
+    user: async () => {
+      const o = await run();
+      return "user" in o ? o.user : null;
+    },
+    check: async () => {
+      const o = await run();
+      return "user" in o ? { status: "valid", user: o.user } : { status: o.reason };
+    },
+    get last() {
+      return last;
+    },
+  };
+  shared.set(auth, state as unknown as Shared<AuthUser>);
+  return state;
+}
 
 /**
  * The validated user per access token, shared by the route guard and by meQuery (NK-0098), so both cost
  * one GET /auth/v1/user per token. One validator per auth client, so createSessionCheck(auth) in the
  * route and createSessionUser(auth) in meQuery share the same saved answer.
- * Returns null without a session or when the server refuses it.
+ * Returns null without a session, when the server refuses it or when it could not be asked.
  */
 export function createSessionUser<U extends AuthUser>(
   auth: SessionAuth<U>,
 ): () => Promise<U | null> {
-  const existing = shared.get(auth);
-  if (existing) return existing as () => Promise<U | null>;
-  let saved: { token: string; valid: Promise<U | null> } | null = null;
-  let listening = false;
+  return share(auth).user;
+}
 
-  const validatedUser = async function validatedUser() {
-    // Subscribe on first use (client only), not at import time.
-    if (!listening) {
-      listening = true;
-      auth.onAuthStateChange((event, session) => {
-        if (event === "SIGNED_OUT" || event === "USER_UPDATED") saved = null;
-        else if (saved && session?.access_token !== saved.token) saved = null;
-      });
-    }
-    const { data } = await auth.getSession();
-    const session = data.session;
-    if (!session) {
-      saved = null;
-      return null;
-    }
-    if (saved?.token !== session.access_token) {
-      const valid = auth.getUser(session.access_token).then(
-        async ({ data: u, error }) => {
-          // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
-          // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
-          // Network errors and 5xx are not definitive: they never sign anyone out.
-          if (error && isDefinitiveRejection(error)) {
-            // Only if the stored session is still the one that was refused (another tab may have signed in).
-            const now = (await auth.getSession()).data.session;
-            if (now?.access_token === session.access_token)
-              await auth.signOut?.({ scope: "local" }).catch(() => undefined);
-          }
-          return !error && u.user?.id === session.user.id ? u.user : null;
-        },
-        () => null,
-      );
-      saved = { token: session.access_token, valid };
-    }
-    const entry = saved;
-    const user = await entry.valid;
-    // Never keep a refusal: the next navigation asks again.
-    if (!user && saved === entry) saved = null;
-    return user;
-  };
-  shared.set(auth, validatedUser);
-  return validatedUser;
+/** Id of the last user validated by the shared validator, or null before any (NK-0111). Never clears on its own. */
+export function createLastValidatedUserId<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => string | null {
+  const box = share(auth);
+  return () => box.last;
+}
+
+/** Same validation with the three answers (NK-0112): valid, none (go to /auth) or unverified (retry screen). */
+export function createSessionState<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => Promise<SessionState<U>> {
+  return share(auth).check;
 }
 
 export function createSessionCheck(auth: SessionAuth): () => Promise<boolean> {

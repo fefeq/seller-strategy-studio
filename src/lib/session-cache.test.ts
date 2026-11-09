@@ -1,6 +1,8 @@
 // NK-0098 round 2: after sign-out of X and sign-in as Y, nothing of X is ever served to Y.
 // Fake Supabase client, fictional ids, no network. Behavioural: real QueryClient, real meQuery observers.
 import { QueryClient, QueryObserver } from "@tanstack/react-query";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 type Sess = { access_token: string; user: { id: string } };
@@ -151,5 +153,62 @@ describe("loader with nothing observing (NK-0098 round 2)", () => {
     emit(qc, "SIGNED_OUT", null);
     expect(qc.getQueryData(["me"])).toBeUndefined();
     expect(await qc.ensureQueryData(meQuery)).toBeNull();
+  });
+});
+
+describe("other user without «me» in cache (NK-0111)", () => {
+  const leads = ["leads", "org-of-user-x"];
+  const seeded = () => {
+    const qc = new QueryClient();
+    qc.setQueryData(leads, ["lead of X"]);
+    return qc;
+  };
+
+  it("SIGNED_IN of Y while X was the validated user removes X's queries (not just invalidates)", async () => {
+    const qc = seeded();
+    expect(qc.getQueryData(["me"])).toBeUndefined();
+    // D-S3-3: no loader re-run; the app blocks and reloads instead.
+    expect(handleAuthEvent(qc, "SIGNED_IN", y, "user-x")).toBe(false);
+    expect(qc.getQueryCache().find({ queryKey: leads })).toBeUndefined();
+    const served = await qc.ensureQueryData({
+      queryKey: leads,
+      queryFn: async () => ["lead of Y"],
+    });
+    expect(served).toEqual(["lead of Y"]);
+
+    // The same X signing in again (tab focus) removes nothing.
+    const again = seeded();
+    handleAuthEvent(again, "SIGNED_IN", x, "user-x");
+    expect(again.getQueryData(leads)).toEqual(["lead of X"]);
+  });
+
+  it("with no validated user yet it is not another user; with one it is, whatever the event", async () => {
+    const qc = new QueryClient();
+    const loading = qc.fetchQuery({
+      queryKey: leads,
+      queryFn: async () => {
+        await new Promise((r) => setTimeout(r, 0));
+        return ["lead of X"];
+      },
+    });
+    handleAuthEvent(qc, "INITIAL_SESSION", x, null);
+    expect(await loading).toEqual(["lead of X"]);
+
+    handleAuthEvent(qc, "INITIAL_SESSION", y, "user-x");
+    expect(qc.getQueryCache().find({ queryKey: leads })).toBeUndefined();
+  });
+});
+
+describe("the root listener gives handleAuthEvent the last validated user (source guard, NK-0111)", () => {
+  it("passes lastValidatedUserId() as the fourth argument", () => {
+    const src = readFileSync(path.resolve(__dirname, "../routes/__root.tsx"), "utf8");
+    expect(src).toMatch(
+      /handleAuthEvent\(\s*queryClient,\s*event,\s*session,\s*lastValidatedUserId\(\)\s*\)/,
+    );
+  });
+
+  it("wraps the outlet in AccountSwitchGate so another user's session replaces the app (D-S3-3)", () => {
+    const src = readFileSync(path.resolve(__dirname, "../routes/__root.tsx"), "utf8");
+    expect(src).toMatch(/<AccountSwitchGate>\s*<Outlet \/>\s*<\/AccountSwitchGate>/);
   });
 });

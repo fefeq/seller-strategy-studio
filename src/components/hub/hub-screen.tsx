@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
 import { useUrlSection } from "@/hooks/use-url-section";
+import { useCleanUrl } from "@/hooks/use-clean-url";
 import {
   HUB_DEFAULT_SECTION,
   HUB_SECTIONS,
@@ -109,6 +110,8 @@ export function HubScreen() {
   const docs = data?.rows ?? NO_DOCS;
   const { doc: docParam, q: qParam, seccion } = useSearch({ from: "/_authenticated/hub" });
   const navigate = useNavigate({ from: "/hub" });
+  // NK-0100: a stale ?seccion= or a blank ?q= in the address bar is rewritten clean (replace).
+  useCleanUrl(HUB_SECTIONS, true);
   const [section, setSection] = useUrlSection(
     sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
   );
@@ -156,7 +159,7 @@ export function HubScreen() {
     [],
   );
   // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); the URL gets q after a typing pause (see typeQuery) and at once on clear, section change or unmount.
-  const [text, setText] = useState(qParam ?? "");
+  const [text, setText] = useState(cleanQuery(qParam) ?? "");
   const active = cleanQuery(text);
   const results = useMemo(() => (active ? searchDocs(docs, active) : null), [docs, active]);
   const counts = sectionCounts(
@@ -171,6 +174,8 @@ export function HubScreen() {
     takePending();
     const timer = setTimeout(() => {
       pending.current = null;
+      // A blank box has no meaning: once its q is written (dropped), the box empties too.
+      if (cleanQuery(value) === undefined) setText("");
       navigate({ search: (prev) => nextSearch(prev, value), replace: true });
     }, SEARCH_URL_DEBOUNCE_MS);
     pending.current = { value, timer };
@@ -348,25 +353,30 @@ export function HubScreen() {
                 {SECTIONS.find((s) => s[0] === section)?.[2]}
               </p>
               {rulesReason && <p className="text-xs text-muted-foreground">{rulesReason}</p>}
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                disabled={rulesLocked}
-                onClick={() => {
-                  setDraftSeq((n) => n + 1);
-                  setSelected(draft());
-                  revealOnMobile(editorRef.current);
-                }}
-              >
-                + Nuevo
-              </Button>
-              <DriveImportButton
-                section={section}
-                onImported={openDoc}
-                disabled={rulesLocked}
-                reason={rulesReason}
-              />
+              {/* NK-0101: no way to create or import while the read failed (loading and data keep them). */}
+              {!error && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    disabled={rulesLocked}
+                    onClick={() => {
+                      setDraftSeq((n) => n + 1);
+                      setSelected(draft());
+                      revealOnMobile(editorRef.current);
+                    }}
+                  >
+                    + Nuevo
+                  </Button>
+                  <DriveImportButton
+                    section={section}
+                    onImported={openDoc}
+                    disabled={rulesLocked}
+                    reason={rulesReason}
+                  />
+                </>
+              )}
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
               <ScreenState isPending={isPending} error={error} refetch={refetch}>
                 {data?.truncated && (

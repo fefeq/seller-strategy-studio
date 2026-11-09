@@ -101,7 +101,7 @@ Motor de sugerencias estratégicas: `strategy_decisions` (0068), `strategy_chang
 ### GRANT
 - 0000/0002/0003 dan CRUD a `authenticated` y ALL a `service_role`.
 - Desde 0060 (y 0062, 0068, 0070, 0072) se hace `REVOKE ALL ... FROM anon, authenticated` y se concede lo mínimo. Motivo: Supabase da todos los privilegios a una tabla nueva y `TRUNCATE` se salta RLS.
-- **Grants por columna**: `discoveries` (solo `status`, `dismiss_reason`, `decided_by`, `decided_at`, `result_id`) y `posthog_connections` (SELECT sin la clave cifrada).
+- **Grants por columna**: `discoveries` (solo `status`, `dismiss_reason`, `decided_by`, `decided_at`, `result_id`) y `posthog_connections` (SELECT sin la clave cifrada), y `notifications` (0082, no aplicada: `authenticated` solo actualiza `read_at`; el servidor escribe con `service_role` o funciones `security definer`).
 
 ### Familias de tablas
 - **Por persona** (`user_id = auth.uid()`): `agent_*`, `channel_links`, `background_jobs`, `notifications`, `notification_prefs`, `onboarding_sessions`.
