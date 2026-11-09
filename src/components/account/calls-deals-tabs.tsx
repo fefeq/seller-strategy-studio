@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { firstOpenStage, stageLabel } from "@/lib/stages";
 import { useStages } from "@/components/stage-settings";
 import { errorText } from "@/lib/errors";
+import { DealSourceField } from "@/components/deal-source-field";
 
 export function CallsTab({
   accountId,
@@ -89,6 +90,7 @@ export function DealsTab({
 }) {
   const { stages } = useStages();
   const { money: eur } = useCurrency();
+  const [source, setSource] = useState<string | null>(null);
   async function add() {
     const user = await validatedUser();
     if (!user) return toast.error(SESSION_CHECK_FAILED);
@@ -97,15 +99,23 @@ export function DealsTab({
       name: "Nuevo deal",
       stage: firstOpenStage(stages).key,
       owner_id: user.id,
+      source, // explicit: null is «Sin origen» and the database default never picks one
     });
     if (error) return toast.error(errorText(error));
+    setSource(null);
     onChange();
   }
   return (
     <div className="space-y-3">
-      <Button size="sm" onClick={add}>
-        + Nuevo deal
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="eyebrow">Fuente</span>
+        <div className="min-w-0 flex-1 sm:max-w-56">
+          <DealSourceField aria-label="Fuente" value={source} onChange={setSource} />
+        </div>
+        <Button size="sm" onClick={add}>
+          + Nuevo deal
+        </Button>
+      </div>
       {list.length === 0 && <Empty>Esta cuenta no tiene deals. Crea uno con «+ Nuevo deal».</Empty>}
       {list.map((d) => (
         <Link

@@ -1,7 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { TOOLS, canUseTool, executeTool, getTool, type ToolCtx } from "@/lib/agent/tools";
+import {
+  TOOLS,
+  canUseTool,
+  executeTool,
+  getTool,
+  summarizeAction,
+  type ToolCtx,
+} from "@/lib/agent/tools";
 import { TITLES } from "@/lib/mcp/tools/agent-tools";
+import { DEAL_SOURCE_KEYS, DEAL_SOURCE_LABELS } from "@/lib/deal-source";
 import { canActOnSuggestion } from "@/lib/suggestion-board";
 
 // A fake Supabase client: records every query (table, operation, filters, payload) and answers from `reply`.
@@ -1550,5 +1558,88 @@ describe("drive_import_to_knowledge: Reglas only for the Owner or a Sales Leader
       (t) => t.name === "drive_import_to_knowledge",
     );
     expect(m?.description).toContain(description);
+  });
+});
+
+// SDD-20261109-new-deal-source U-1 (NK-0123) CA-1, CA-2, CA-3, CA-4, CA-7: create_deal takes an optional, validated origin and
+// always sends it (null when unknown), so the database default never decides it.
+describe("create_deal source", () => {
+  // The registry types its shape as the zod core type; the schema is a regular z.object, so this cast only reaches .description.
+  const registrySource = () =>
+    (getTool("create_deal")!.input as unknown as z.ZodObject<{ source: z.ZodType }>).shape.source;
+  const dealInsert = (log: Q[]) => writes(log, "deals")[0]!.payload;
+  const run = (args: Record<string, unknown>) => {
+    const h = fakeDb((q) =>
+      q.table === "deals" && q.op === "insert"
+        ? { data: { id: ID(50), name: "Acme", account_id: ID(3) } }
+        : q.op === "select"
+          ? { data: { id: ID(3) } }
+          : undefined,
+    );
+    return executeTool(ctxWith(h.db), "create_deal", {
+      name: "Acme",
+      account_id: ID(3),
+      ...args,
+    }).then(() => h.log);
+  };
+  it("CA-1: saves the origin it is given", async () => {
+    const log = await run({ source: "inbound" });
+    expect(dealInsert(log)).toMatchObject({ source: "inbound" });
+    expectScoped(log);
+  });
+  it("CA-1: sends null, with the key present, for null and for no source", async () => {
+    for (const args of [{ source: null }, {}]) {
+      const log = await run(args);
+      expect(dealInsert(log)).toHaveProperty("source", null);
+      expectScoped(log);
+    }
+  });
+  it("CA-2: refuses anything that is not one of the six keys and writes nothing", async () => {
+    for (const source of ["outbound ", "Sin origen", "—", "Entrada de leads"]) {
+      // The account exists, so only the source can make it fail.
+      const { db, log } = fakeDb((q) => (q.op === "select" ? { data: { id: ID(3) } } : undefined));
+      await expect(
+        executeTool(ctxWith(db), "create_deal", { name: "Acme", account_id: ID(3), source }),
+      ).rejects.toThrow();
+      expect(writes(log), source).toEqual([]);
+    }
+  });
+  it("CA-3: the pending action says the origin, and says nothing without it", () => {
+    expect(summarizeAction("create_deal", { name: "Acme", source: "partner" })).toContain(
+      "origen Partner",
+    );
+    expect(summarizeAction("create_deal", { name: "Acme" })).not.toMatch(/origen/i);
+    expect(summarizeAction("create_deal", { name: "Acme", source: null })).not.toMatch(/origen/i);
+  });
+  it("CA-7: the description lists every key with its label", () => {
+    const d = registrySource().description!;
+    for (const [k, l] of Object.entries(DEAL_SOURCE_LABELS)) {
+      expect(d).toContain(k);
+      expect(d).toContain(l);
+    }
+  });
+  it("CA-4: the MCP manifest has source with exactly the six keys, the same description, optional, title kept", async () => {
+    const { readFileSync } = await import("node:fs");
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const t = (
+      manifest.mcp.tools as {
+        name: string;
+        title: string;
+        inputSchema: {
+          required?: string[];
+          properties: Record<
+            string,
+            { description?: string; enum?: string[]; anyOf?: { enum?: string[] }[] }
+          >;
+        };
+      }[]
+    ).find((x) => x.name === "create_deal")!;
+    const s = t.inputSchema.properties.source;
+    expect(s).toBeDefined();
+    const keys = s!.enum ?? s!.anyOf?.flatMap((a) => a.enum ?? []) ?? [];
+    expect([...keys].sort()).toEqual([...DEAL_SOURCE_KEYS].sort());
+    expect(s!.description).toBe(registrySource().description);
+    expect(t.title).toBe("Crear deal");
+    expect(t.inputSchema.required ?? []).not.toContain("source");
   });
 });
