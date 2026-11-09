@@ -69,6 +69,7 @@ export const structureIcp = createServerFn({ method: "POST" })
 
 // ---------- Theory U ----------
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the caller passes the request-scoped client; its table chain is read untyped here (pre-existing)
 async function strategyContext(supabase: any) {
   const [pos, pillars, icp, segments] = await Promise.all([
     supabase

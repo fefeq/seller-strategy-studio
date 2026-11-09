@@ -4,6 +4,7 @@ import { firecrawlErrorText } from "@/lib/web-research";
 
 const FIRECRAWL_V2 = "https://api.firecrawl.dev/v2";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the Firecrawl response is untyped JSON; callers read the fields they need
 async function call(path: string, body: unknown, timeoutMs = 45_000): Promise<any> {
   const key = process.env["FIRECRAWL_API_KEY"];
   if (!key)
