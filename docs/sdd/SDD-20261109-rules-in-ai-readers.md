@@ -1,7 +1,7 @@
 # SDD-20261109-rules-in-ai-readers · [Mejora] Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15.1) · **Prioridad propuesta:** Alta (cierra el hueco que NK-0087 dejó fuera de alcance en su §5 y §15.4)
-**Estado:** Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), gate sin objeciones · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho (entregado en la PR #115, merge `e75f846`, integración `d0f4252`, gate PASS sobre `d0f4252`; 2026-11-09; antes Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), gate sin objeciones; NK-0096 no es efectivo hasta que la migración 0081 de NK-0095 esté aplicada en la base real) · **Pide:** Fede Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0096
 **PRD:** No aplica (mejora acotada: extiende a más llamadas un lector ya aprobado y entregado; la decisión de hacerlo es de Fede, 2026-11-06, y el alcance del Sprint 2, 2026-11-09) · **Depende de:** NK-0095 (`SDD-20261109-rules-write-permissions.md`: código y migración 0081 aplicada en la base real; revisión de coherencia del Sprint 2). Antes: `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho: `src/lib/knowledge-rules.ts`)· **Coordina con:** NK-0095 (`SDD-20261109-rules-write-permissions.md`), que añade exportaciones a `knowledge-rules.ts`; este SDD **no modifica** ese módulo, solo lo importa.
 
