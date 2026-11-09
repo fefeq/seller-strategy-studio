@@ -17,6 +17,37 @@ export const COMPANY_LIMIT = 5;
 
 export const isMandatory = (d: KnowledgeDoc) => !!d.mandatory || d.section === "rules";
 
+// SDD-20261109-rules-write-permissions (NK-0095): who writes what the agent of the whole team obeys. The database says the same
+// (knowledge_doc_is_binding and the restrictive policies of migration 0081); the code repeats it where the privileged client
+// skips RLS (Drive import, background jobs, agent). The screen uses canEditDoc and the four texts below.
+export type BindingFields = Pick<KnowledgeDoc, "section" | "scope" | "mandatory">;
+
+/** A team document of Reglas or marked mandatory: the agent reads it as a rule. Personal documents never are. */
+export const isBindingDoc = (d: BindingFields) =>
+  d.scope === "team" && isMandatory({ title: "", body: "", ...d });
+
+/** Roles of org_members that write binding documents (not imported from agent/tool-kit: the screen uses this module). */
+export const BINDING_WRITERS = ["owner", "sales_leader"] as const;
+export const canWriteBinding = (roles: readonly string[] | undefined) =>
+  (roles ?? []).some((r) => (BINDING_WRITERS as readonly string[]).includes(r));
+
+export const BINDING_SECTION_READ_ONLY = "Solo el Owner o un Sales Leader pueden escribir reglas.";
+export const BINDING_READ_ONLY =
+  "Solo lectura: las reglas y los documentos obligatorios los escriben el Owner o un Sales Leader.";
+export const BINDING_MARK_ONLY_LEADERS =
+  "Solo el Owner o un Sales Leader pueden marcarlo como obligatorio.";
+export const BINDING_WRITE_DENIED =
+  "Solo el Owner o un Sales Leader pueden escribir en Reglas o marcar documentos como obligatorios. Pídeselo a uno de ellos.";
+
+/** Whether these roles may edit this document; roles not loaded yet (undefined) may not edit a binding one. */
+export function canEditDoc(
+  d: BindingFields,
+  roles: readonly string[] | undefined,
+): { allowed: boolean; reason: string | null } {
+  if (!isBindingDoc(d) || canWriteBinding(roles)) return { allowed: true, reason: null };
+  return { allowed: false, reason: BINDING_READ_ONLY };
+}
+
 /** Ciclo GTM's context (drafts and debates): 12 rules cut at 4000 characters each, no total limit. */
 export function knowledgeForAgents(docs: KnowledgeDoc[]) {
   const team = docs.filter((d) => d.scope === "team" && d.body.trim());

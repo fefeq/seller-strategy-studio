@@ -21,6 +21,8 @@ import {
   rulesCoverage,
   rulesNotice,
 } from "@/lib/knowledge-rules";
+import * as binding from "@/lib/knowledge-rules";
+import { BINDING_CASES, BINDING_WRITER_CASES } from "@/test/knowledge-binding-cases";
 
 const CONFIRM =
   "Las reglas no cambian que tus escrituras sean propuestas que una persona confirma.";
@@ -315,5 +317,85 @@ describe("independent of Ciclo GTM (CA-7)", () => {
     expect(bmadSources.MANDATORY_RULE).toBe(MANDATORY_RULE);
     expect(bmadSources.MANDATORY_LIMIT).toBe(MANDATORY_LIMIT);
     expect(bmadSources.COMPANY_LIMIT).toBe(COMPANY_LIMIT);
+  });
+});
+
+// SDD-20261109-rules-write-permissions (NK-0095) U-2 · CA-7: what a binding document is and who may write it. The same table of
+// cases runs through knowledge_doc_is_binding and the RLS policies in src/lib/knowledge-binding.pg.test.ts.
+describe("binding documents: only owner and sales_leader write them (NK-0095, CA-7)", () => {
+  const { isBindingDoc, canWriteBinding, canEditDoc } = binding;
+  const doc = (c: { section: string; scope: string; mandatory: boolean }) => ({
+    title: "Doc",
+    body: "Texto ficticio.",
+    ...c,
+  });
+
+  it.each(BINDING_CASES)("isBindingDoc «$name» → $binding", (c) => {
+    expect(isBindingDoc(doc(c))).toBe(c.binding);
+  });
+
+  it("reads a missing or null mandatory as not marked", () => {
+    expect(isBindingDoc({ section: "company", scope: "team" })).toBe(false);
+    expect(isBindingDoc({ section: "company", scope: "team", mandatory: null })).toBe(false);
+    expect(isBindingDoc({ section: "rules", scope: "team", mandatory: null })).toBe(true);
+  });
+
+  it.each(BINDING_WRITER_CASES)("canWriteBinding($roles) → $canWrite", ({ roles, canWrite }) => {
+    expect(canWriteBinding(roles)).toBe(canWrite);
+  });
+
+  it("any leader role among several is enough; roles not loaded yet are not", () => {
+    expect(canWriteBinding(["ae", "sales_leader"])).toBe(true);
+    expect(canWriteBinding(undefined)).toBe(false);
+  });
+
+  it("canEditDoc: binding documents only for owner and sales_leader, with the read-only reason for the rest", () => {
+    for (const c of BINDING_CASES)
+      for (const r of BINDING_WRITER_CASES) {
+        const got = canEditDoc(doc(c), r.roles);
+        const allowed = !c.binding || r.canWrite;
+        expect(got, `${c.name} / ${r.roles.join(",")}`).toEqual({
+          allowed,
+          reason: allowed ? null : binding.BINDING_READ_ONLY,
+        });
+      }
+    expect(canEditDoc(doc(BINDING_CASES[0]!), undefined)).toEqual({
+      allowed: false,
+      reason: binding.BINDING_READ_ONLY,
+    });
+  });
+
+  it("the four texts say it in Spanish, what happened and what to do (§9)", () => {
+    expect(binding.BINDING_SECTION_READ_ONLY).toBe(
+      "Solo el Owner o un Sales Leader pueden escribir reglas.",
+    );
+    expect(binding.BINDING_READ_ONLY).toBe(
+      "Solo lectura: las reglas y los documentos obligatorios los escriben el Owner o un Sales Leader.",
+    );
+    expect(binding.BINDING_MARK_ONLY_LEADERS).toBe(
+      "Solo el Owner o un Sales Leader pueden marcarlo como obligatorio.",
+    );
+    expect(binding.BINDING_WRITE_DENIED).toBe(
+      "Solo el Owner o un Sales Leader pueden escribir en Reglas o marcar documentos como obligatorios. Pídeselo a uno de ellos.",
+    );
+  });
+
+  it("BINDING_WRITE_DENIED passes errorText unchanged (it is our own Spanish text)", async () => {
+    const { errorText } = await import("@/lib/errors");
+    expect(errorText(new Error(binding.BINDING_WRITE_DENIED))).toBe(binding.BINDING_WRITE_DENIED);
+  });
+
+  it("keeps the exports NK-0096 relies on", () => {
+    expect(binding.isMandatory({ title: "", body: "", section: "rules", scope: "team" })).toBe(
+      true,
+    );
+    for (const k of [
+      "pickRules",
+      "loadAgentRules",
+      "rulesBlock",
+      "AGENT_RULE_LIMITS",
+      "RULES_READ_FAILED",
+    ])
+      expect(binding[k as keyof typeof binding], k).toBeDefined();
   });
 });
