@@ -114,3 +114,51 @@ describe("funnelDiagnosis", () => {
     expect(run({ stripe: { logo_churn_pct: null, churned_customers: null, window_days: 30, taken_at: "2026-09-20T08:00:00Z" } }).company.retention.status).toBe("sin_datos");
   });
 });
+
+// SDD-20261109-metrics-strategy-no-estimates · U-2 · CA-5, CA-10 (D2, D8, D15): Diagnóstico takes its payback margin
+// from the one chain (budget rows and won deals with lines), says why there is none, and judges nothing without it.
+describe("NK-0094: payback of the diagnosis with the one margin chain", () => {
+  const costs = [{ segment_id: "a", channel: "Eventos", amount: 6000 }];
+  const slg = (o: Partial<SegmentInput> = {}) =>
+    seg("a", { acquisition_motion: "slg", payback_months: 12, ...o });
+  it("D15: the margin of the won deals with lines beats the target margin", () => {
+    const withLines = { ...deal("a", "won"), gross_margin: 1500 } as DealLike;
+    const d = run({ segments: [slg()], deals: [withLines], costs });
+    // 6000 / (6000 × 25 % / 12) = 48
+    expect(measure(d, "a", "revenue", "payback")).toMatchObject({ value: 48, verdict: "fuga" });
+  });
+  it("D15: the budget's real margin of the quarter comes first", () => {
+    const budgetRows = [
+      {
+        segment_id: "a",
+        period: Q,
+        plan_revenue: null,
+        plan_cost_to_serve: null,
+        plan_acquisition: null,
+        plan_new_customers: null,
+        actual_revenue: 100,
+        actual_cost_to_serve: 50,
+      },
+    ];
+    const d = run({ segments: [slg()], deals: [deal("a", "won")], costs, budgetRows });
+    // 6000 / (6000 × 50 % / 12) = 24
+    expect(measure(d, "a", "revenue", "payback")).toMatchObject({ value: 24 });
+  });
+  it("D1 / D2: no margin or margin ≤ 0 → «sin datos» with the reason, no verdict", () => {
+    for (const [m, why] of [
+      [null, "falta margen"],
+      [0, "margen 0 % o negativo"],
+      [-10, "margen 0 % o negativo"],
+    ] as const) {
+      const d = run({ segments: [slg({ gross_margin_pct: m })], deals: [deal("a", "won")], costs });
+      const p = measure(d, "a", "revenue", "payback");
+      expect(p).toMatchObject({ status: "sin_datos", value: null, verdict: null });
+      expect(p.missing).toContain(why);
+    }
+  });
+  it("D8: the segment says how many of its won deals were assigned by amount", () => {
+    const byAmount = { ...deal("a", "won"), segment_id: null } as DealLike;
+    const d = run({ segments: [slg()], deals: [deal("a", "won"), byAmount], costs });
+    expect(d.segments[0]).toMatchObject({ won_in_quarter: 2, inferred_won: 1 });
+  });
+});

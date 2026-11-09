@@ -1,3 +1,5 @@
+import { noData, paybackOf, real } from "@/lib/unit-economics";
+
 export type Motion = "plg" | "inside" | "field" | "strategic";
 
 type Range = [number, number | null];
@@ -76,10 +78,9 @@ export function matchSegment<T extends { acv_min: number | null; acv_max: number
 
 /**
  * Capacity per AE from the segment benchmarks:
- * deals/year = annual AE quota / ACV; opportunities/year = deals / win rate;
- * CAC payback (months) = CAC / (ACV × gross margin / 12). Missing inputs yield null.
- * Without a margin the payback assumes 100 % (`marginAssumed`); a margin of 0 % or below gives Infinity or a
- * negative payback (`marginNonPositive`). The flags only label the value, they never change it.
+ * deals/year = annual AE quota / ACV; opportunities/year = deals / win rate. Missing inputs yield null.
+ * The CAC payback comes from paybackOf (src/lib/unit-economics.ts, SDD-20261109): without a margin, or with a margin
+ * of 0 % or below, there is no payback (never a 100 % margin, Infinity or a negative number); the flags say which.
  */
 export function capacityPlan(p: {
   acv: number;
@@ -92,13 +93,17 @@ export function capacityPlan(p: {
   const dealsPerYear = acv && p.quota ? p.quota / acv : null;
   const oppsPerYear =
     dealsPerYear != null && p.winRatePct ? dealsPerYear / (p.winRatePct / 100) : null;
-  const margin = (p.grossMarginPct ?? 100) / 100;
-  const paybackMonths = acv && p.cac ? p.cac / ((acv * margin) / 12) : null;
+  const payback = paybackOf({
+    cac: p.cac ? real(p.cac) : noData("falta CAC"),
+    acv: acv ? real(acv) : noData("falta ACV"),
+    margin: p.grossMarginPct != null ? real(p.grossMarginPct) : noData("falta margen"),
+  });
   return {
     dealsPerYear,
     oppsPerYear,
     oppsPerMonth: oppsPerYear != null ? oppsPerYear / 12 : null,
-    paybackMonths,
+    paybackMonths: payback.value,
+    payback,
     marginAssumed: p.grossMarginPct == null,
     marginNonPositive: p.grossMarginPct != null && p.grossMarginPct <= 0,
   };

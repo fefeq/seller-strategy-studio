@@ -1,4 +1,5 @@
 // Real CAC per segment and quarter from entered acquisition costs. Pure so the dashboard, MCP and tests agree.
+import { cacOf, type Figure } from "@/lib/unit-economics";
 
 export const CAC_CHANNELS = [
   "Paid media",
@@ -16,22 +17,26 @@ export type CostLike = { segment_id: string | null; channel: string; amount: num
 export type SegmentCac = {
   /** Costs entered directly for the segment. */
   direct: number;
-  /** Share of shared (no-segment) costs assigned to the segment. */
+  /** Share of shared (no-segment) costs assigned to the segment; 0 when nobody was won (never split equally). */
   shared: number;
   cost: number;
   customers: number;
-  /** cost / new customers; null without customers or without costs. */
+  /** cost / new customers; null without customers or without costs (= figure.value). */
   cac: number | null;
+  /** The same CAC as a Figure from cacOf, with its reason when there is none. */
+  figure: Figure;
 };
 
 /**
- * Shared costs (segment_id null) are split by each segment's share of new customers in the quarter;
- * when nobody was won, they are split equally so the cost is never lost.
+ * Shared costs (segment_id null) are split by each segment's share of new customers in the period. When nobody was
+ * won they are not split (SDD-20261109 D7): every segment keeps 0 and the company total still counts them.
+ * `period` is the text of the reasons («2026-Q3», «los últimos 4 trimestres»).
  */
 export function segmentCac(
   costs: CostLike[],
   customersBySegment: Record<string, number>,
   segmentIds: string[],
+  period = "el periodo",
 ): Record<string, SegmentCac> {
   const sharedTotal = costs
     .filter((c) => !c.segment_id)
@@ -43,38 +48,34 @@ export function segmentCac(
       .filter((c) => c.segment_id === id)
       .reduce((s, c) => s + Number(c.amount || 0), 0);
     const customers = customersBySegment[id] ?? 0;
-    const shared = !segmentIds.length
-      ? 0
-      : totalCustomers
-        ? sharedTotal * (customers / totalCustomers)
-        : sharedTotal / segmentIds.length;
+    const shared = totalCustomers ? sharedTotal * (customers / totalCustomers) : 0;
     const cost = direct + shared;
-    out[id] = {
-      direct,
-      shared,
-      cost,
-      customers,
-      cac: customers > 0 && cost > 0 ? cost / customers : null,
-    };
+    // With nobody won the shared cost was still spent: the reason is «ningún deal ganado», not «sin costes».
+    const figure = cacOf({
+      cost: cost || (totalCustomers ? 0 : sharedTotal),
+      won: customers,
+      period,
+    });
+    out[id] = { direct, shared, cost, customers, cac: figure.value, figure };
   }
   return out;
 }
 
 /**
- * How segmentCac split the shared cost, with its same rule: "clientes" (by customers won), "partes_iguales"
- * (nobody won) or null (no shared cost or no segments). Labels the split; segmentCac is unchanged.
+ * How segmentCac split the shared cost, with its same rule: "clientes" (by customers won), "sin_reparto"
+ * (nobody won: not split, D7) or null (no shared cost or no segments).
  */
 export function sharedSplitBasis(
   costs: CostLike[],
   customersBySegment: Record<string, number>,
   segmentIds: string[],
-): "clientes" | "partes_iguales" | null {
+): "clientes" | "sin_reparto" | null {
   const sharedTotal = costs
     .filter((c) => !c.segment_id)
     .reduce((s, c) => s + Number(c.amount || 0), 0);
   if (!segmentIds.length || !sharedTotal) return null;
   const totalCustomers = segmentIds.reduce((s, id) => s + (customersBySegment[id] ?? 0), 0);
-  return totalCustomers ? "clientes" : "partes_iguales";
+  return totalCustomers ? "clientes" : "sin_reparto";
 }
 
 /** Cost per channel (all segments + shared), largest first, with its share of the total. */

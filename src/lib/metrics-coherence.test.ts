@@ -199,6 +199,8 @@ describe("CA-3 coherence: one company CAC and one company payback", () => {
       value: null,
       state: "sin_dato",
       reason: "ningún segmento con payback",
+      k: 0,
+      m: 0,
     });
   });
 });

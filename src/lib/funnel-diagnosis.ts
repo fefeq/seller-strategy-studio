@@ -5,6 +5,7 @@
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type DealLike, type SegLike } from "@/lib/segment-coverage";
 import type { CostLike } from "@/lib/cac";
+import type { QuarterBudgetLike } from "@/lib/segment-budget";
 import { cohort, type Trial } from "@/lib/self-service";
 import { readAcquisitionMotion, type AcquisitionMotion } from "@/lib/acquisition-motion";
 
@@ -29,7 +30,8 @@ export type Measure = {
   missing: string | null;
 };
 export type Phase = { id: PhaseId; label: string; status: MeasureStatus; measures: Measure[] };
-export type SegmentDiagnosis = { segment_id: string; name: string; acquisition_motion: AcquisitionMotion | null; phases: Phase[] };
+/** won_in_quarter / inferred_won: deals won in the quarter and how many of them were assigned by amount (D8). */
+export type SegmentDiagnosis = { segment_id: string; name: string; acquisition_motion: AcquisitionMotion | null; won_in_quarter: number; inferred_won: number; phases: Phase[] };
 export type FunnelDiagnosis = { quarter: string; segments: SegmentDiagnosis[]; company: { retention: Measure } };
 
 export type SegmentInput = SegLike & { acquisition_motion?: string | null };
@@ -45,6 +47,8 @@ export type DiagnosisInput = {
   /** Trials of any date: the cohort of the quarter is cut here. */
   trials: Trial[];
   costs: CostLike[];
+  /** segment_budget_quarters of the quarter's year: the payback margin follows the one chain (segmentMargin). */
+  budgetRows?: QuarterBudgetLike[];
   /** posthog_connections.activation_event; null when the company set none or has no connection. */
   activationEvent: string | null;
   stripe: StripeLike | null;
@@ -94,11 +98,14 @@ function dealMeasures(row: ReturnType<typeof segmentCoverage>[number], judged: b
   return [wonM, { id: "win_rate", label: "Win rate", status: "ok", value, unit: "%", numerator: won, denominator: closed, target: judged ? target : null, verdict, source, missing: null }];
 }
 
-/** Payback is judged only on a real CAC: with the target CAC it would compare the target with itself. */
+/**
+ * Payback is judged only on a real CAC: with the target CAC it would compare the target with itself. CAC, ACV and
+ * margin are Cobertura's (unit-economics.ts, one margin chain); without a payback the measure says why and has no verdict.
+ */
 function paybackMeasure(row: ReturnType<typeof segmentCoverage>[number]): Measure {
-  const { real, source: from, target } = row.payback;
-  const source = "Payback con el CAC real del trimestre (costes introducidos / deals ganados) y el margen del segmento";
-  if (real == null || from !== "real") return noData("payback", "Payback", "meses", source, "Falta el CAC real: no hay costes del trimestre o ningún deal ganado.");
+  const { real, target } = row.payback;
+  const source = "Payback con el CAC real del trimestre (costes introducidos / deals ganados), el ACV del segmento y su margen (presupuesto real, deals con líneas, plan u objetivo)";
+  if (real == null) return noData("payback", "Payback", "meses", source, `Sin dato: ${row.payback.reason ?? "falta CAC real"}.`);
   const value = round1(real);
   const verdict: Verdict | null = target != null ? (real > target ? "fuga" : "en_objetivo") : null;
   return { id: "payback", label: "Payback", status: "ok", value, unit: "meses", numerator: null, denominator: null, target, verdict, source, missing: null };
@@ -119,7 +126,7 @@ export function companyRetention(stripe: StripeLike | null): Measure {
 export function funnelDiagnosis(input: DiagnosisInput): FunnelDiagnosis | null {
   const range = quarterRange(input.quarter);
   if (!/^\d{4}-Q[1-4]$/.test(input.quarter) || Number.isNaN(range.start.getTime())) return null;
-  const rows = segmentCoverage(input.segments, input.deals, {}, range, input.costs);
+  const rows = segmentCoverage(input.segments, input.deals, {}, range, input.costs, input.budgetRows ?? []);
   const cohortOf = cohort(input.trials, range.start, range.end);
   const leadsIn = input.leads.filter((l) => { const d = new Date(l.created_at); return d >= range.start && d < range.end; });
   const segments = input.segments.map((seg, i): SegmentDiagnosis => {
@@ -130,7 +137,7 @@ export function funnelDiagnosis(input: DiagnosisInput): FunnelDiagnosis | null {
       : motion === "slg" ? [...dealMeasures(row, true), paybackMeasure(row)]
       : [trialToPaid(trials), ...dealMeasures(row, false)];
     return {
-      segment_id: seg.id, name: seg.name, acquisition_motion: motion,
+      segment_id: seg.id, name: seg.name, acquisition_motion: motion, won_in_quarter: row.wonInQuarter, inferred_won: row.inferredWon,
       phases: [
         phase("acquisition", [acquisition(leadsIn.filter((l) => l.segment_id === seg.id).length)]),
         phase("activation", [activation(trials, input.activationEvent)]),

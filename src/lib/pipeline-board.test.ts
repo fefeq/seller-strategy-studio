@@ -8,7 +8,6 @@ import {
 } from "./pipeline-board";
 import { DEFAULT_LEAD_SLA } from "./lead-funnel";
 import { quarterRange } from "./metrics";
-import { boardMargin } from "./pipeline-board";
 
 const NOW = new Date("2026-10-20T10:00:00Z");
 const q4 = quarterRange("2026-Q4");
@@ -91,6 +90,8 @@ describe("closingIn", () => {
   });
 });
 
+// SDD-20261109 D10: the board has no payback of its own (no acv / marginPct inputs, no realPayback /
+// projectedPayback); each call names its period for the reasons.
 describe("pipelineEconomics", () => {
   it("real CAC divides the cost by won deals; projected adds open deals at the win rate", () => {
     const e = pipelineEconomics({
@@ -98,24 +99,20 @@ describe("pipelineEconomics", () => {
       won: 2,
       closing: 4,
       winRatePct: 25,
-      acv: 12000,
-      marginPct: 80,
+      period: "2026-Q4",
     });
     expect(e.realCac).toBe(6000);
     expect(e.expectedWins).toBe(3);
     expect(e.projectedCac).toBe(4000);
-    expect(e.realPayback).toBeCloseTo(6000 / ((12000 * 0.8) / 12));
-    expect(e.projectedPayback).toBeCloseTo(5);
   });
-  it("no costs, no wins or no margin leave the figures empty", () => {
+  it("no costs or no wins leave the figures empty", () => {
     expect(
       pipelineEconomics({
         cost: null,
         won: 2,
         closing: 1,
         winRatePct: 50,
-        acv: 1000,
-        marginPct: 80,
+        period: "2026-Q4",
       }).realCac,
     ).toBeNull();
     expect(
@@ -124,75 +121,50 @@ describe("pipelineEconomics", () => {
         won: 0,
         closing: 0,
         winRatePct: 50,
-        acv: 1000,
-        marginPct: 80,
+        period: "2026-Q4",
       }).realCac,
-    ).toBeNull();
-    expect(
-      pipelineEconomics({
-        cost: 5000,
-        won: 1,
-        closing: 0,
-        winRatePct: 50,
-        acv: 1000,
-        marginPct: null,
-      }).realPayback,
     ).toBeNull();
   });
 });
 
-// SDD-20261106-metrics-honest-data U-3 · CA-9: boardMargin is the chain the board used (same pct) plus where it came from.
-describe("boardMargin (CA-9)", () => {
-  const k = (actual: number | null, plan: number | null) => ({
-    actual: { margin: actual },
-    plan: { margin: plan },
-  });
-  const segs = [{ gross_margin_pct: 60 }, { gross_margin_pct: 80 }, { gross_margin_pct: null }];
-  it("real margin of the books first", () => {
-    expect(boardMargin(k(30, 50), { pct: 40 }, segs)).toEqual({
-      pct: 30,
-      source: "real",
-      marginNonPositive: false,
+// SDD-20261109-metrics-strategy-no-estimates · U-2 · CA-2, CA-5 (D10, D11): the board's CACs go through the one
+// formula; the projected one is «Estimado» with its window; the board has no payback of its own.
+describe("NK-0094: pipelineEconomics through cacOf", () => {
+  it("real CAC is the company CAC; projected CAC is «Estimado · proyección con win rate de los últimos 365 días»", () => {
+    const e = pipelineEconomics({
+      cost: 12000,
+      won: 2,
+      closing: 4,
+      winRatePct: 25,
+      period: "2026-Q4",
+    });
+    expect(e.figures.realCac).toEqual({ value: 6000, state: "real", reason: null });
+    expect(e.figures.projectedCac).toEqual({
+      value: 4000,
+      state: "estimado",
+      reason: "proyección con win rate de los últimos 365 días",
     });
   });
-  it("then the won deals with product lines", () => {
-    expect(boardMargin(k(null, 50), { pct: 40 }, segs)).toEqual({
-      pct: 40,
-      source: "deals",
-      marginNonPositive: false,
+  it("D10: no payback of its own (realPayback / projectedPayback are gone)", () => {
+    const e = pipelineEconomics({
+      cost: 12000,
+      won: 2,
+      closing: 4,
+      winRatePct: 25,
+      period: "2026-Q4",
     });
+    expect(e).not.toHaveProperty("realPayback");
+    expect(e).not.toHaveProperty("projectedPayback");
   });
-  it("then the plan", () => {
-    expect(boardMargin(k(null, 50), null, segs)).toEqual({
-      pct: 50,
-      source: "plan",
-      marginNonPositive: false,
+  it("without costs both CACs say why", () => {
+    const e = pipelineEconomics({
+      cost: null,
+      won: 2,
+      closing: 1,
+      winRatePct: 50,
+      period: "2026-Q4",
     });
-  });
-  it("then the unweighted mean of the segment target margins", () => {
-    expect(boardMargin(k(null, null), undefined, segs)).toEqual({
-      pct: 70,
-      source: "media_objetivos",
-      marginNonPositive: false,
-    });
-  });
-  it("null without any margin", () => {
-    expect(boardMargin(k(null, null), null, [{ gross_margin_pct: null }])).toEqual({
-      pct: null,
-      source: null,
-      marginNonPositive: false,
-    });
-  });
-  it("a real 0 % margin is kept (?? chain) and flagged non-positive, like a negative one", () => {
-    expect(boardMargin(k(0, 50), { pct: 40 }, segs)).toEqual({
-      pct: 0,
-      source: "real",
-      marginNonPositive: true,
-    });
-    expect(boardMargin(k(null, -5), null, segs)).toEqual({
-      pct: -5,
-      source: "plan",
-      marginNonPositive: true,
-    });
+    expect(e.figures.realCac.reason).toBe("sin costes en 2026-Q4");
+    expect(e.figures.projectedCac.reason).toBe("sin costes en 2026-Q4");
   });
 });

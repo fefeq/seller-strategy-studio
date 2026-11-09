@@ -35,13 +35,18 @@ export const WIN_RATE_WINDOWS = {
 /** The period of the calculator's CAC, as it reads inside a reason. */
 export const LAST_4_QUARTERS = "los últimos 4 trimestres";
 
-const real = (value: number, reason: string | null = null): Figure => ({
+/** Constructors, so a caller holding a plain number (a typed ACV, a margin %) hands it over as a Figure. */
+export const real = (value: number, reason: string | null = null): Figure => ({
   value,
   state: "real",
   reason,
 });
-const estimated = (value: number, reason: string): Figure => ({ value, state: "estimado", reason });
-const noData = (reason: string): Figure => ({ value: null, state: "sin_dato", reason });
+export const estimated = (value: number, reason: string): Figure => ({
+  value,
+  state: "estimado",
+  reason,
+});
+export const noData = (reason: string): Figure => ({ value: null, state: "sin_dato", reason });
 const has = (f: { value: number | null; state: string }) =>
   f.state !== "sin_dato" && f.value != null;
 
@@ -175,8 +180,21 @@ export function segmentMargin(
           : undefined,
         annualFromQuarters(p.rows ?? [], year).find((b) => b.segment_id === seg.id),
       ];
-  const m = marginFor(seg, ...chain);
   const sold = wonDealsMargin(p.deals, periodEnd(p.period), p.segments).bySegment[seg.id];
+  return marginOfChain(seg, chain, sold);
+}
+
+/**
+ * Core of the chain once the budgets (in priority order) and the margin of the won deals with lines are known: a
+ * real budget margin → the deals' margin → a planned margin → the target. segmentMargin and the older helpers
+ * withPeriodMargin / withBudgetMargin (segment-budget.ts) all end here, so there is one chain.
+ */
+export function marginOfChain(
+  seg: SegLike,
+  budgets: (BudgetValues | undefined)[],
+  sold?: { pct: number } | null,
+): MarginFigure {
+  const m = marginFor(seg, ...budgets);
   const used = m.source !== "real" && sold ? { pct: sold.pct, source: "deals" as const } : m;
   if (used.pct == null || used.source == null) return { ...noData("falta margen"), source: null };
   return { ...real(used.pct, MARGIN_REASON[used.source]), source: used.source };
@@ -212,11 +230,10 @@ export function companyPayback(
   const w = ok.reduce((s, r) => s + r.customers!, 0);
   const value = ok.reduce((s, r) => s + r.payback.value! * r.customers!, 0) / w;
   const partial = k < m ? `calculado sobre ${k} de ${m} segmentos con clientes` : null;
+  // Real paybacks carry no reason; estimated and planned ones carry the reasons of their inputs.
+  const reasons = [...new Set(ok.map((r) => r.payback.reason).filter((x): x is string => !!x))];
   if (ok.some((r) => r.payback.state === "plan"))
-    return { value, state: "plan", reason: partial, k, m };
+    return { value, state: "plan", reason: partial ?? (reasons.join(", ") || null), k, m };
   if (partial) return { ...estimated(value, partial), k, m };
-  const reasons = [
-    ...new Set(ok.filter((r) => r.payback.state === "estimado").map((r) => r.payback.reason!)),
-  ];
   return { ...(reasons.length ? estimated(value, reasons.join(", ")) : real(value)), k, m };
 }

@@ -129,12 +129,22 @@ describe("segment budget", () => {
     expect(after.payback.ok).toBe(false);
   });
 
+  // SDD-20261109 D15: paybackByQuarter takes the budget rows and runs the one margin chain itself (no segmentsFor).
   it("quarterly payback uses each quarter's year budget", () => {
     const costs = [{ segment_id: "mid", channel: "Eventos", amount: 10000, period: "2026-Q2" }];
-    const budgets = [budget({ year: 2026, actual_revenue: 1000, actual_cost_to_serve: 500 })];
-    const [r] = paybackByQuarter([mid], [won()], costs, ["2026-Q2"], quarterRange, (q) =>
-      withBudgetMargin([mid], budgets, Number(q.slice(0, 4))),
-    );
+    const rows: QuarterBudgetLike[] = [
+      {
+        segment_id: "mid",
+        period: "2026-Q1",
+        plan_revenue: null,
+        plan_cost_to_serve: null,
+        plan_acquisition: null,
+        plan_new_customers: null,
+        actual_revenue: 1000,
+        actual_cost_to_serve: 500,
+      },
+    ];
+    const [r] = paybackByQuarter([mid], [won()], costs, ["2026-Q2"], quarterRange, rows);
     // 10 000 / (20 000 × 50% / 12) = 12
     expect(r.byQuarter["2026-Q2"].payback).toBeCloseTo(12);
   });
@@ -294,7 +304,7 @@ describe("budget row labels (CA-5 to CA-8)", () => {
     expect(s).toMatchObject({ acvSource: "rango", acvRangeBasis: "sin_rango" });
   });
 
-  it("CA-7 paybackMarginBasis { plan, actual }", () => {
+  it("CA-7 payback figures { plan, actual }", () => {
     const deal = (id: string) =>
       dl({ segment_id: id, amount: 12000, stage: "won", closed_at: "2026-05-10" });
     const costs = ["falta", "neg", "dato"].map((id) => ({
@@ -333,12 +343,17 @@ describe("budget row labels (CA-5 to CA-8)", () => {
     const q2 = quarterlyBudget(segs, ["falta", "neg", "dato"].map(deal), rows, costs, 2026)
       .byQuarter["2026-Q2"];
     const by = Object.fromEntries(q2.map((r) => [r.segment.id, r]));
-    expect(by.falta.paybackMarginBasis).toEqual({ plan: "supuesto_100", actual: "supuesto_100" });
-    expect(by.falta.actual.payback).toBe(6);
-    expect(by.neg.paybackMarginBasis).toEqual({ plan: "no_positivo", actual: "no_positivo" });
-    expect(by.neg.actual.payback).toBeLessThan(0);
-    expect(by.dato.paybackMarginBasis).toEqual({ plan: "dato", actual: "dato" });
-    expect(by.vacio.paybackMarginBasis).toEqual({ plan: null, actual: null });
+    // SDD-20261109 D1, D2: paybackMarginBasis gives way to the payback Figures; no margin and margin ≤ 0 give none.
+    expect(by.falta.figures.payback.reason).toBe("falta margen");
+    expect(by.falta.figures.planPayback.reason).toBe("falta margen");
+    expect(by.falta.actual.payback).toBeNull();
+    expect(by.neg.figures.payback.reason).toBe("margen 0 % o negativo");
+    expect(by.neg.figures.planPayback.reason).toBe("margen 0 % o negativo");
+    expect(by.neg.actual.payback).toBeNull();
+    expect(by.dato.figures.payback.state).toBe("real");
+    expect(by.dato.figures.planPayback.state).toBe("plan");
+    expect(by.vacio.figures.payback.reason).toBe("sin costes en 2026-Q2");
+    expect(by.vacio.figures.planPayback.reason).toBe("sin plan de captación en 2026-Q2");
     expect(Object.keys(by.dato.payback).sort()).toEqual(["planOk", "realOk", "target"]);
   });
 
@@ -356,11 +371,85 @@ describe("budget row labels (CA-5 to CA-8)", () => {
       2026,
     );
     expect(q.byQuarter["2026-Q1"].map((r) => r.sharedSplit)).toEqual(["clientes", "clientes"]);
+    // SDD-20261109 D7: nobody won in Q2 → the shared cost is not split.
     expect(q.byQuarter["2026-Q2"].map((r) => r.sharedSplit)).toEqual([
-      "partes_iguales",
-      "partes_iguales",
+      "sin_reparto",
+      "sin_reparto",
     ]);
     expect(q.byQuarter["2026-Q3"].map((r) => r.sharedSplit)).toEqual([null, null]);
     expect(q.year.map((r) => r.sharedSplit)).toEqual(["clientes", "clientes"]);
+  });
+});
+
+// SDD-20261109-metrics-strategy-no-estimates · U-2 · CA-5, D15: Presupuesto vs real and the KPI use the one margin
+// chain (with the won deals with lines), never a 100 % margin, and a margin ≤ 0 gives no payback and no colour.
+describe("NK-0094 CA-5: periodBudget without assumptions", () => {
+  const q = (period: string, o: Partial<QuarterBudgetLike> = {}): QuarterBudgetLike => ({
+    segment_id: "mid",
+    period,
+    plan_revenue: null,
+    plan_cost_to_serve: null,
+    plan_acquisition: null,
+    plan_new_customers: null,
+    actual_revenue: null,
+    actual_cost_to_serve: null,
+    ...o,
+  });
+  const noMargin: SegLike = { ...mid, gross_margin_pct: null };
+  const costs = [{ segment_id: "mid", channel: "Eventos", amount: 10000, period: "2026-Q2" }];
+
+  it("D15: the real payback uses the margin of the won deals with lines when the budget has no real one", () => {
+    const deal = { ...won(), gross_margin: 5000 };
+    const r = quarterlyBudget([noMargin], [deal], [], costs, 2026).byQuarter["2026-Q2"][0];
+    expect(r.figures.margin).toMatchObject({ value: 25, source: "deals" });
+    expect(r.margin).toEqual({ pct: 25, source: "deals" });
+    // 10 000 / (20 000 × 25 % / 12) = 24
+    expect(r.actual.payback).toBeCloseTo(24);
+  });
+  it("D1: nothing in the chain → no real payback and no planned payback (never 100 %)", () => {
+    const rows = [q("2026-Q2", { plan_acquisition: 6000, plan_new_customers: 3 })];
+    const r = quarterlyBudget([noMargin], [won()], rows, costs, 2026).byQuarter["2026-Q2"][0];
+    expect(r.actual.payback).toBeNull();
+    expect(r.plan.payback).toBeNull();
+    expect(r.figures.payback).toEqual({ value: null, state: "sin_dato", reason: "falta margen" });
+    expect(r.figures.planPayback).toEqual({
+      value: null,
+      state: "sin_dato",
+      reason: "falta margen",
+    });
+    expect(r.payback).toMatchObject({ planOk: null, realOk: null });
+  });
+  it("D2: margin ≤ 0 → no payback, planOk and realOk null", () => {
+    const rows = [
+      q("2026-Q2", {
+        plan_revenue: 100,
+        plan_cost_to_serve: 120,
+        plan_acquisition: 6000,
+        plan_new_customers: 3,
+        actual_revenue: 100,
+        actual_cost_to_serve: 130,
+      }),
+    ];
+    const r = quarterlyBudget([mid], [won()], rows, costs, 2026).byQuarter["2026-Q2"][0];
+    expect(r.actual.payback).toBeNull();
+    expect(r.plan.payback).toBeNull();
+    expect(r.payback).toMatchObject({ planOk: null, realOk: null });
+    expect(r.figures.payback.reason).toBe("margen 0 % o negativo");
+  });
+  it("D3: minimum without maximum → no ACV behind the paybacks", () => {
+    const open = { ...mid, acv_max: null };
+    const r = quarterlyBudget([open], [{ ...won(), amount: null }], [], costs, 2026).byQuarter[
+      "2026-Q2"
+    ][0];
+    expect(r.acv).toBeNull();
+    expect(r.figures.payback.reason).toBe("falta el máximo del rango de ACV");
+  });
+  it("D7: shared cost with nobody won is not split; the plan CAC has its own «plan» state", () => {
+    const shared = [{ segment_id: null, channel: "Paid media", amount: 4000, period: "2026-Q3" }];
+    const rows = [q("2026-Q3", { plan_acquisition: 6000, plan_new_customers: 3 })];
+    const r = quarterlyBudget([mid], [], rows, shared, 2026).byQuarter["2026-Q3"][0];
+    expect(r.actual.acquisition).toBe(0);
+    expect(r.sharedSplit).toBe("sin_reparto");
+    expect(r.figures.planCac).toEqual({ value: 2000, state: "plan", reason: null });
   });
 });

@@ -1,8 +1,15 @@
 // Whole pipeline on one board: open leads → opportunities → deals in progress → won in the quarter,
-// plus what it means for the real CAC and payback. Pure so the panel and future AI snapshots agree.
+// plus what it means for the real CAC. Pure so the panel and future AI snapshots agree. The board's CAC is the
+// company CAC of the KPI and its payback is the KPI's (src/lib/unit-economics.ts, SDD-20261109 D10, D11).
 import { delayText, leadDelay, type LeadSla } from "@/lib/lead-funnel";
-import { capacityPlan } from "@/lib/metrics";
+import { quarterRange } from "@/lib/metrics";
 import { openStages, type Stage } from "@/lib/stages";
+import { actuals } from "@/lib/pipeline-real";
+import { quarterKpis } from "@/lib/quarter-kpis";
+import type { QuarterBudgetLike } from "@/lib/segment-budget";
+import type { DealLike, SegLike } from "@/lib/segment-coverage";
+import type { CostLike } from "@/lib/cac";
+import { cacOf, companyCac, estimated, noData, type Figure } from "@/lib/unit-economics";
 
 export type BoardLead = {
   id: string;
@@ -184,7 +191,10 @@ export function pipelineBoard(
 }
 
 /** Open deals (any open stage) whose close date falls in the quarter: the ones that can still lower its CAC. */
-export function closingIn(deals: BoardDeal[], range: { start: Date; end: Date }) {
+export function closingIn<T extends { stage: string; close_date: string | null }>(
+  deals: T[],
+  range: { start: Date; end: Date },
+) {
   return deals.filter(
     (d) =>
       d.stage !== "won" &&
@@ -194,60 +204,77 @@ export function closingIn(deals: BoardDeal[], range: { start: Date; end: Date })
   );
 }
 
-export type BoardMarginSource = "real" | "deals" | "plan" | "media_objetivos" | null;
+export const PROJECTION_REASON = "proyección con win rate de los últimos 365 días";
 
 /**
- * Margin of the board's payback: real margin of the books → won deals with product lines → plan → unweighted
- * mean of the segment target margins (the chain the panel used, same pct), plus which one it was and whether it
- * is 0 % or negative (then the payback is Infinity or negative and the screen shows «Sin dato»).
- */
-export function boardMargin(
-  k: { actual: { margin: number | null }; plan: { margin: number | null } },
-  wonAll: { pct: number } | null | undefined,
-  segments: { gross_margin_pct: number | string | null }[],
-): { pct: number | null; source: BoardMarginSource; marginNonPositive: boolean } {
-  const segMargins = segments
-    .map((s) => s.gross_margin_pct)
-    .filter((x): x is number | string => x != null)
-    .map(Number);
-  const [pct, source]: [number | null, BoardMarginSource] =
-    k.actual.margin != null
-      ? [k.actual.margin, "real"]
-      : wonAll?.pct != null
-        ? [wonAll.pct, "deals"]
-        : k.plan.margin != null
-          ? [k.plan.margin, "plan"]
-          : segMargins.length
-            ? [segMargins.reduce((a, b) => a + b, 0) / segMargins.length, "media_objetivos"]
-            : [null, null];
-  return { pct, source, marginNonPositive: pct != null && pct <= 0 };
-}
-
-/**
- * Real CAC = acquisition cost of the quarter / deals won in it. Projected CAC adds the open deals closing
- * in the quarter at the real win rate. Payback = CAC / (ACV × margin / 12); null without ACV or margin.
+ * Real CAC = acquisition cost of the quarter / every deal won in it (companyCac). Projected CAC = the same cost over
+ * the deals won plus the open ones closing in the quarter at the real win rate of the last 365 days: cacOf, then
+ * «Estimado · proyección con win rate de los últimos 365 días». No payback of its own (D10): the board shows the KPI's.
  */
 export function pipelineEconomics(p: {
   cost: number | null;
   won: number;
   closing: number;
   winRatePct: number | null;
-  acv: number | null;
-  marginPct: number | null;
+  period: string;
 }) {
   const expectedWins = p.won + (p.winRatePct != null ? (p.closing * p.winRatePct) / 100 : 0);
-  const realCac = p.cost && p.won ? p.cost / p.won : null;
-  const projectedCac =
-    p.cost && expectedWins && p.winRatePct != null && p.closing ? p.cost / expectedWins : null;
-  const payback = (cac: number | null) =>
-    cac != null && p.acv && p.marginPct != null
-      ? capacityPlan({ acv: p.acv, cac, grossMarginPct: p.marginPct }).paybackMonths
-      : null;
+  const realCac = companyCac({ cost: p.cost, won: p.won, period: p.period });
+  const projection = cacOf({ cost: p.cost, won: expectedWins, period: p.period });
+  const projectedCac: Figure =
+    projection.value == null
+      ? projection
+      : p.winRatePct == null
+        ? noData("sin win rate de los últimos 365 días")
+        : estimated(projection.value, PROJECTION_REASON);
   return {
     expectedWins,
-    realCac,
-    projectedCac,
-    realPayback: payback(realCac),
-    projectedPayback: payback(projectedCac),
+    realCac: realCac.value,
+    projectedCac: projectedCac.value,
+    figures: { realCac, projectedCac },
+  };
+}
+
+/**
+ * What the board's economics strip shows for a quarter, in one pure function: spend (every cost of the quarter),
+ * won deals, open deals closing in it, real figures of the last 365 days, real and projected CAC, and the company
+ * payback of the KPI (quarterKpis), so the board and the KPI can never disagree (CA-3).
+ */
+export function boardEconomics(p: {
+  deals: DealLike[];
+  segments: SegLike[];
+  budgets: QuarterBudgetLike[];
+  costs: (CostLike & { period?: string })[];
+  quarter: string;
+  now?: Date;
+}) {
+  const range = quarterRange(p.quarter);
+  const costs = p.costs
+    .filter((c) => c.period == null || c.period === p.quarter)
+    .map((c) => ({ ...c, period: p.quarter }));
+  const [kpi] = quarterKpis(p.segments, p.deals, p.budgets, costs, [p.quarter]);
+  const cost = costs.reduce((s, c) => s + Number(c.amount || 0), 0) || null;
+  const won = p.deals.filter(
+    (d) => d.stage === "won" && inRange(new Date(d.closed_at ?? d.updated_at).getTime(), range),
+  ).length;
+  const closing = closingIn(p.deals, range);
+  const real = actuals(p.deals, p.now);
+  const eco = pipelineEconomics({
+    cost,
+    won,
+    closing: closing.length,
+    winRatePct: real.winRate,
+    period: p.quarter,
+  });
+  return {
+    kpi,
+    cost,
+    won,
+    closing,
+    real,
+    expectedWins: eco.expectedWins,
+    realCac: eco.figures.realCac,
+    projectedCac: eco.figures.projectedCac,
+    payback: kpi.figures.payback,
   };
 }

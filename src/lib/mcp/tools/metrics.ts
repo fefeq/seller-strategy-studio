@@ -1,11 +1,10 @@
-import { wonDealsMargin } from "@/lib/deal-lines";
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { segmentActuals } from "@/lib/pipeline-real";
 import { segmentCoverage, type SegLike } from "@/lib/segment-coverage";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { costByChannel } from "@/lib/cac";
-import { quarterlyBudget, quartersOfYear, withPeriodMargin } from "@/lib/segment-budget";
+import { quarterlyBudget, quartersOfYear } from "@/lib/segment-budget";
 import { mcpCtx, json } from "../context";
 
 const round = (n: number | null | undefined) => (n == null ? null : Math.round(n * 10) / 10);
@@ -52,18 +51,18 @@ export const segmentCoverageTool = defineTool({
     ]);
     const costs = (yearCosts ?? []).filter((x) => x.period === q);
     const t = Object.fromEntries((targets ?? []).map((x) => [x.segment_id, Number(x.amount)]));
-    const rows = segmentCoverage(withPeriodMargin((segs ?? []) as SegLike[], budgets ?? [], q, wonDealsMargin(deals ?? [], range.end, (segs ?? []) as SegLike[]).bySegment), deals ?? [], t, range, costs);
+    const rows = segmentCoverage((segs ?? []) as SegLike[], deals ?? [], t, range, costs, budgets ?? []);
     const qb = quarterlyBudget((segs ?? []) as SegLike[], deals ?? [], budgets ?? [], yearCosts ?? [], year);
     const quarterB = qb.byQuarter[q], budget = qb.year;
     return json({
       quarter: q, currency: c.currency, cost_by_channel: costByChannel(costs),
       segments: rows.map((r, i) => ({
         name: r.segment.name, motion: (r.segment as { motion?: string | null }).motion ?? null, acquisition_motion: (r.segment as { acquisition_motion?: string | null }).acquisition_motion ?? null, target: r.target, pipeline: r.pipeline, coverage: r.coverage, won: r.won, opportunities: r.opps, win_rate: r.winRate,
-        cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target },
+        cac: { cost: r.cac.cost, deals_won: r.cac.customers, real: round(r.cac.real), target: r.cac.target, state: r.figures.cac.state, reason: r.figures.cac.reason },
         // The margin the payback above used (budget actuals → won deals with lines → plan → target).
-        gross_margin: { pct: round((r.segment as { gross_margin_pct: number | null }).gross_margin_pct), source: (r.segment as { margin_source?: string | null }).margin_source ?? null },
+        gross_margin: { pct: round(r.figures.margin.value), source: r.figures.margin.source },
         budget_quarter: { plan: quarterB[i].plan, actual: quarterB[i].actual, revenue_attainment: quarterB[i].revenueAttainment },
-        payback: { ...r.payback, real: round(r.payback.real) },
+        payback: { real: round(r.payback.real), state: r.payback.state, reason: r.payback.reason, target: r.payback.target, ok: r.payback.ok },
         budget_year: { year, plan: budget[i].plan, actual: budget[i].actual, revenue_attainment: budget[i].revenueAttainment },
       })),
     });

@@ -3,6 +3,7 @@
 import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-coverage";
 import { previousQuarter, segmentCac, type CostLike } from "@/lib/cac";
 import { quarterOf, quarterRange } from "@/lib/metrics";
+import { LAST_4_QUARTERS } from "@/lib/unit-economics";
 
 export type Actuals = {
   /** Average amount of won deals; falls back to open deals when nothing is won yet. */
@@ -65,7 +66,8 @@ export function lastQuarters(now = new Date(), n = 4) {
 
 /**
  * Real CAC per segment over the last 4 quarters (current included): entered costs of those quarters
- * divided by deals won since the start of the oldest one. Used by the strategy calculator's payback.
+ * divided by deals won since the start of the oldest one, through segmentCac → cacOf (the one formula; the window
+ * is data: «los últimos 4 trimestres»). Used by the strategy calculator's payback.
  */
 export function trailingCac(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], now = new Date()) {
   const quarters = lastQuarters(now, 4);
@@ -78,5 +80,6 @@ export function trailingCac(segments: SegLike[], deals: DealLike[], costs: (Cost
     costs.filter((c) => quarters.includes(c.period)),
     Object.fromEntries(segments.map((s) => [s.id, won(s.id)])),
     segments.map((s) => s.id),
+    LAST_4_QUARTERS,
   );
 }
