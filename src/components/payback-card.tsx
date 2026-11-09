@@ -3,7 +3,7 @@ import { usePaybackQuarters } from "@/components/payback-quarters";
 import { paybackHeadline, paybackSummary } from "@/lib/segment-coverage";
 import { fmtMonths } from "@/lib/unit-economics";
 import { DataMark } from "@/components/metrics/data-mark";
-import { figureMark, figureTone } from "@/components/metrics/mark-text";
+import { figureMark, figureTone, inferredMark } from "@/components/metrics/mark-text";
 
 /** Dashboard card: real payback per segment over the last 4 quarters vs each segment's target. */
 export function PaybackCard() {
@@ -104,6 +104,13 @@ export function PaybackCard() {
                                 {f.state === "estimado" && (
                                   <DataMark
                                     {...figureMark(f)!}
+                                    className="block text-xs text-muted-foreground"
+                                  />
+                                )}
+                                {c.inferredWon > 0 && (
+                                  // CA-7: same «Estimado · asignados por importe» mark as Payback real.
+                                  <DataMark
+                                    {...inferredMark(c.inferredWon, c.wonInQuarter)}
                                     className="block text-xs text-muted-foreground"
                                   />
                                 )}
