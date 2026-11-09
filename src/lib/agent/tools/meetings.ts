@@ -2,6 +2,7 @@
 // (same core as the meeting screen) and calls logged without a meeting.
 import { z } from "zod";
 import { callLogEntry, filledCount, needsCallNotes, normalizeCallNotes } from "@/lib/call-notes";
+import { RULES_READ_FAILED } from "@/lib/knowledge-rules";
 import { accountNames, clip, def, defined, mustFind, ok, type AgentTool } from "../tool-kit";
 
 const FORM_FIELDS = [
@@ -165,7 +166,9 @@ export const MEETING_TOOLS: AgentTool[] = [
       await mustFind(c, "meetings", a.meeting_id, "esa reunión");
       const { callTeardownCore } = await import("@/lib/ai-core");
       const r = await callTeardownCore(c.db, a.meeting_id, scope(c));
-      return { ok: true, mensaje: `Revisión de «${r.title}» guardada en la reunión.` };
+      // A failed read of the rules is never silent (SDD-20261109-rules-in-ai-readers, CA-4).
+      const done = `Revisión de «${r.title}» guardada en la reunión.`;
+      return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
     },
   }),
   def({
@@ -179,7 +182,8 @@ export const MEETING_TOOLS: AgentTool[] = [
       await mustFind(c, "meetings", a.meeting_id, "esa reunión");
       const { listeningCoachingCore } = await import("@/lib/ai-core");
       const r = await listeningCoachingCore(c.db, a.meeting_id, scope(c));
-      return { ok: true, mensaje: `Coaching de escucha de «${r.title}» guardado en la reunión.` };
+      const done = `Coaching de escucha de «${r.title}» guardado en la reunión.`;
+      return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
     },
   }),
   def({

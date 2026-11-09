@@ -338,3 +338,65 @@ describe.each(CORES)("$name: no server log carries a rule (CA-6)", (core) => {
     expect(logs.join("\n")).not.toContain(MARK);
   });
 });
+
+// ---------- U-2: the agent tools that wrap those cores (CA-4) ----------
+const ctxWith = (db: ToolCtx["db"]): ToolCtx => ({
+  db,
+  orgId: ORG,
+  userId: ME,
+  roles: ["ae"],
+  currency: "EUR",
+});
+type ToolOut = { ok?: boolean; mensaje?: string; borrador?: string };
+const WRITE_TOOLS = [
+  [
+    "research_stakeholder",
+    { stakeholder_id: PERSON },
+    "Investigación de Ana Prueba guardada en su ficha.",
+  ],
+  [
+    "review_call",
+    { meeting_id: MEETING },
+    "Revisión de «Reunión ficticia» guardada en la reunión.",
+  ],
+  [
+    "listening_coaching",
+    { meeting_id: MEETING },
+    "Coaching de escucha de «Reunión ficticia» guardado en la reunión.",
+  ],
+] as const;
+
+describe("agent tools say when the rules were not read (CA-4)", () => {
+  it.each(WRITE_TOOLS)(
+    "%s: same result as today when the rules were read",
+    async (tool, args, today) => {
+      const out = (await executeTool(ctxWith(fakeDb(world("ok")).db), tool, args)) as ToolOut;
+      expect(out).toEqual({ ok: true, mensaje: today });
+    },
+  );
+
+  it.each(WRITE_TOOLS)(
+    "%s: mensaje carries the warning and today's text",
+    async (tool, args, today) => {
+      const out = (await executeTool(ctxWith(fakeDb(world("throws")).db), tool, args)) as ToolOut;
+      expect(out.ok).toBe(true);
+      expect(out.mensaje).toContain(RULES_READ_FAILED);
+      expect(out.mensaje).toContain(today);
+    },
+  );
+
+  it("draft_proposal: same result as today when the rules were read", async () => {
+    const out = (await executeTool(ctxWith(fakeDb(world("ok")).db), "draft_proposal", {
+      account_id: ACCOUNT,
+    })) as ToolOut;
+    expect(out).toEqual({ borrador: "Texto del modelo." });
+  });
+
+  it("draft_proposal: the draft starts with the warning once and mensaje is the warning", async () => {
+    const out = (await executeTool(ctxWith(fakeDb(world("error")).db), "draft_proposal", {
+      account_id: ACCOUNT,
+    })) as ToolOut;
+    expect(out.borrador).toBe(`${RULES_READ_FAILED}\n\nTexto del modelo.`);
+    expect(out.mensaje).toBe(RULES_READ_FAILED);
+  });
+});
