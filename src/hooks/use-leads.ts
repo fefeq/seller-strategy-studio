@@ -26,29 +26,54 @@ export function useLeads(orgId: string | null | undefined) {
 }
 
 /** Same query as useLeads, for the route loader to prepare before the screen opens. */
-export const leadsQuery = (orgId: string) => queryOptions({
+export const leadsQuery = (orgId: string) =>
+  queryOptions({
     queryKey: ["leads", orgId],
     queryFn: async (): Promise<LeadsData> => {
       const [l, d, s, seg, m, icp, acc] = await Promise.all([
-        fetchAll((a, b) => supabase.from("leads").select("*").order("created_at", { ascending: false }).order("id").range(a, b)).then((r) => ({ data: r.rows, error: null, truncated: r.truncated })),
-        fetchAll((a, b) => supabase.from("deals").select("id,stage,closed_at").order("id").range(a, b)).then((r) => ({ data: r.rows })),
+        fetchAll((a, b) =>
+          supabase
+            .from("leads")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .order("id")
+            .range(a, b),
+        ).then((r) => ({ data: r.rows, error: null, truncated: r.truncated })),
+        fetchAll((a, b) =>
+          supabase.from("deals").select("id,stage,closed_at").order("id").range(a, b),
+        ).then((r) => ({ data: r.rows })),
         supabase.from("lead_settings").select("sla,qualification").maybeSingle(),
         supabase.from("segments").select("id,name").order("acv_min"),
         supabase.from("org_members").select("user_id").eq("org_id", orgId!),
-        supabase.from("icp_profiles").select("id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords"),
-        fetchAll((a, b) => supabase.from("accounts").select("id,segment_id,industry,size,tier,name").order("id").range(a, b)).then((r) => ({ data: r.rows })),
+        supabase
+          .from("icp_profiles")
+          .select(
+            "id,segment_id,industries,company_size,geography,anti_icp,min_employees,max_employees,search_keywords",
+          ),
+        fetchAll((a, b) =>
+          supabase
+            .from("accounts")
+            .select("id,segment_id,industry,size,tier,name")
+            .order("id")
+            .range(a, b),
+        ).then((r) => ({ data: r.rows })),
       ]);
       const ids = (m.data ?? []).map((x) => x.user_id);
-      const { data: profiles } = ids.length ? await supabase.from("profiles").select("id,full_name").in("id", ids) : { data: [] };
+      const { data: profiles } = ids.length
+        ? await supabase.from("profiles").select("id,full_name").in("id", ids)
+        : { data: [] };
       return {
         leads: l.data ?? [],
         deals: d.data ?? [],
         sla: readSla(s.data?.sla),
         qualSettings: readQualSettings(s.data?.qualification),
         segments: seg.data ?? [],
-        members: (profiles ?? []).map((p) => ({ id: p.id, full_name: p.full_name ?? "Sin nombre" })),
+        members: (profiles ?? []).map((p) => ({
+          id: p.id,
+          full_name: p.full_name ?? "Sin nombre",
+        })),
         icps: icp.data ?? [],
         accounts: new Map((acc.data ?? []).map((a) => [a.id, a])),
       };
     },
-});
+  });
