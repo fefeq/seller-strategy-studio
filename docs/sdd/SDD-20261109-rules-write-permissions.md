@@ -415,4 +415,6 @@ Ninguna.
 Archivo revisado: `/home/user/seller-strategy-studio-s2docs/docs/sdd/SDD-20261109-rules-write-permissions.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
+
+- **2026-11-09 (integración, merge 809f8fd):** `checkImportAllowed` en `drive-core.ts` aplicada en `importToKnowledge`, `authorize`, el ejecutor (con `jobCtx`) y la herramienta del agente; `authorize` y `enqueue` exportadas para la prueba de CA-10a. En `hub-screen.test.tsx` el mock de Supabase además registra escrituras (tercer mock, no cambia lo que devuelve ni ninguna aserción; aceptado por el revisor). Migración 0081 no aplicada: antes de aplicarla, comprobar en la base viva la columna `mandatory`, las políticas de `knowledge_docs` y la firma de `has_org_role`. «Promover a equipo» sigue visible para un AE sobre datos antiguos vinculantes: la RLS lo rechaza (detalle de experiencia, ticket aparte si molesta).
 —
