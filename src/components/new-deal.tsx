@@ -61,12 +61,13 @@ export function NewDealButton() {
   });
   async function create() {
     const typed = product || f.amount === "" ? null : normalizeAmount(f.amount);
-    if (typed && typed.status !== "ok") return toast.error("No entiendo ese importe. Escríbelo como 12000 o 12.000,50.");
+    if (typed && typed.status !== "ok")
+      return toast.error("No entiendo ese importe. Escríbelo como 12000 o 12.000,50.");
     setBusy(true);
     try {
-      const existing = (accountId ? data?.accounts.find((a) => a.id === accountId) : null) ?? data?.accounts.find(
-        (a) => a.name.trim().toLowerCase() === f.account.trim().toLowerCase(),
-      );
+      const existing =
+        (accountId ? data?.accounts.find((a) => a.id === accountId) : null) ??
+        data?.accounts.find((a) => a.name.trim().toLowerCase() === f.account.trim().toLowerCase());
       const args = Object.fromEntries(
         Object.entries({
           name: f.name.trim(),
@@ -110,7 +111,19 @@ export function NewDealButton() {
             </Field>
           </div>
           <Field label="Cuenta">
-            <EntityCombobox items={data?.accounts ?? []} value={f.account} selectedId={accountId} onChange={(t, a) => { setF({ ...f, account: t }); setAccountId(a?.id ?? null); }} placeholder="Busca entre tus cuentas o escribe una nueva" noun="cuenta nueva" logos ariaLabel="Cuenta" />
+            <EntityCombobox
+              items={data?.accounts ?? []}
+              value={f.account}
+              selectedId={accountId}
+              onChange={(t, a) => {
+                setF({ ...f, account: t });
+                setAccountId(a?.id ?? null);
+              }}
+              placeholder="Busca entre tus cuentas o escribe una nueva"
+              noun="cuenta nueva"
+              logos
+              ariaLabel="Cuenta"
+            />
           </Field>
           <Field label="Segmento">
             <Pick
@@ -132,13 +145,34 @@ export function NewDealButton() {
           <Field label="Producto (opcional)">
             <Pick
               value={f.product}
-              options={{ "": "Sin producto", ...Object.fromEntries(products.filter((p) => p.active).map((p) => [p.id, `${p.name} · ${money(Number(p.price))}${BILLING_SUFFIX[p.billing as Billing]}`])) }}
-              onChange={(v) => setF({ ...f, product: v, name: f.name || products.find((p) => p.id === v)?.name || "" })}
+              options={{
+                "": "Sin producto",
+                ...Object.fromEntries(
+                  products
+                    .filter((p) => p.active)
+                    .map((p) => [
+                      p.id,
+                      `${p.name} · ${money(Number(p.price))}${BILLING_SUFFIX[p.billing as Billing]}`,
+                    ]),
+                ),
+              }}
+              onChange={(v) =>
+                setF({
+                  ...f,
+                  product: v,
+                  name: f.name || products.find((p) => p.id === v)?.name || "",
+                })
+              }
             />
           </Field>
           <Field label={`Importe (ACV, ${symbol})`}>
             {productTotals ? (
-              <p className="flex h-10 items-center font-mono text-sm md:h-9">{money(productTotals.amount)}{productTotals.oneOff ? ` + ${money(productTotals.oneOff)} pago único` : " · del producto"}</p>
+              <p className="flex h-10 items-center font-mono text-sm md:h-9">
+                {money(productTotals.amount)}
+                {productTotals.oneOff
+                  ? ` + ${money(productTotals.oneOff)} pago único`
+                  : " · del producto"}
+              </p>
             ) : (
               <Input
                 type="number"
