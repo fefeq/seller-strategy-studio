@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 117,
+  "seq": 118,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2035,7 +2035,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-rls-price-suggestions-and-notices.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2051,6 +2051,12 @@
           "at": "2026-11-09T18:06:54.278Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.613Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-rls-price-suggestions-and-notices.md prd=-"
         }
       ]
     },
@@ -2194,7 +2200,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-plays-no-reopen.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2210,6 +2216,12 @@
           "at": "2026-11-09T18:06:54.067Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.548Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-plays-no-reopen.md prd=-"
         }
       ]
     },
@@ -2221,7 +2233,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-plays-no-reopen.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2237,6 +2249,12 @@
           "at": "2026-11-09T18:06:54.104Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.582Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-plays-no-reopen.md prd=-"
         }
       ]
     },
@@ -2965,7 +2983,7 @@
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-metrics-sin-dato-rest.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2975,6 +2993,12 @@
           "at": "2026-11-09T13:37:51.260Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T18:39:21.510Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-metrics-sin-dato-rest.md prd=-"
         }
       ]
     },
@@ -2986,7 +3010,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3002,6 +3026,12 @@
           "at": "2026-11-09T18:06:54.494Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.643Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -3013,7 +3043,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3029,6 +3059,12 @@
           "at": "2026-11-09T18:06:54.527Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.679Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -3040,7 +3076,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3056,6 +3092,12 @@
           "at": "2026-11-09T18:06:54.560Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.711Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -3067,7 +3109,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3083,6 +3125,12 @@
           "at": "2026-11-09T18:06:54.388Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.807Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3094,7 +3142,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3110,6 +3158,12 @@
           "at": "2026-11-09T18:06:54.423Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.836Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3121,7 +3175,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3137,6 +3191,12 @@
           "at": "2026-11-09T18:06:54.318Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.744Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3148,7 +3208,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3164,6 +3224,12 @@
           "at": "2026-11-09T18:06:54.354Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.775Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3202,7 +3268,7 @@
       "state": "PROMOTED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3218,6 +3284,12 @@
           "at": "2026-11-09T18:06:54.460Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.865Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3266,6 +3338,27 @@
           "at": "2026-11-09T18:06:54.195Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        }
+      ]
+    },
+    {
+      "id": "NK-0118",
+      "title": "Logs: 11 llamadas en email, posthog-sync, telegram, inngest/send, weekly-report, daily-email, notices y after-response siguen registrando trozo de cuerpo o error entero (lista de excepciones «pendiente» en src/lib/server-log-scan.test.ts)",
+      "kind": "bug",
+      "source": "tracker: Sprint 3 intake, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T18:39:21.897Z",
+          "by": "tracker",
+          "note": ""
         }
       ]
     }
