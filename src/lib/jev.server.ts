@@ -28,7 +28,7 @@ async function askLovableJev(request: { model: string; state: unknown; questions
   });
   if (res.ok) return res.json();
   const body = await res.text().catch(() => "");
-  console.error(`Jev request failed [${res.status}]: ${body.slice(0, 500)}`);
+  console.error(`Jev request failed [${res.status}] (body ${body.length} chars)`);
   let msg = "";
   try { msg = (JSON.parse(body) as { message?: string; error?: { message?: string } }).message ?? (JSON.parse(body) as { error?: { message?: string } }).error?.message ?? ""; } catch { /* not JSON */ }
   if (res.status === 402) throw new JevError("Sin créditos de IA disponibles. Añade créditos en Ajustes → Planes y créditos.", 402);

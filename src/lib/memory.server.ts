@@ -3,6 +3,7 @@
 // because Telegram and jobs run with the privileged client.
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import { ask } from "@/lib/ai-gateway";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { decisionMemory, memoryPrompt, mergeFacts, relevantMemories, type Fact, type Memory } from "@/lib/memory";
 
 const COLS = "id,scope,kind,content,user_id,account_id,pinned,learned,source,updated_at";
@@ -24,7 +25,7 @@ export async function memoryBlock(c: ToolCtx, accountIds: string[] = []) {
     const { data: accs } = accIds.length ? await c.db.from("accounts").select("id,name").eq("org_id", c.orgId).in("id", accIds) : { data: [] };
     return memoryPrompt(list, Object.fromEntries((accs ?? []).map((a: { id: string; name: string }) => [a.id, a.name])));
   } catch (e) {
-    console.error("memory load failed", e);
+    console.error("memory load failed", safeErrorLog(e));
     return "";
   }
 }
@@ -90,12 +91,12 @@ export async function learnFrom(c: ToolCtx, a: { source: "chat" | "meeting" | "d
     const facts = ((JSON.parse(raw) as { facts: Fact[] }).facts ?? []).map((f) => ({ ...f, account_id: f.scope === "account" ? (a.accountId ?? null) : null }));
     return await saveFacts(c, facts.filter((f) => f.scope !== "account" || f.account_id), a.source, existing);
   } catch (e) {
-    console.error("memory learn failed", e);
+    console.error("memory learn failed", safeErrorLog(e));
     return { added: 0, replaced: 0 };
   }
 }
 
 /** Remembers how a suggestion was decided (no AI). */
 export async function rememberDecision(c: ToolCtx, s: { title: string; account_id?: string | null }, decision: "approve" | "dismiss") {
-  try { await saveFacts(c, [decisionMemory(s, decision)], "suggestion"); } catch (e) { console.error("memory decision failed", e); }
+  try { await saveFacts(c, [decisionMemory(s, decision)], "suggestion"); } catch (e) { console.error("memory decision failed", safeErrorLog(e)); }
 }

@@ -39,8 +39,8 @@ export async function extractSetupCore(
     // "low": the proposal is reviewed block by block anyway, and a long call gets cut by mobile browsers (~60 s).
     { effort: "low", schema: { name: "gtm_setup", schema: SETUP_EXTRACTION_SCHEMA }, files: data.files },
   );
-  try { return JSON.parse(raw) as SetupProposal; } catch {
-    console.error("extractSetup invalid JSON", raw.slice(0, 300));
+  try { return JSON.parse(raw) as SetupProposal; } catch (e) {
+    console.error("extractSetup invalid JSON", { name: e instanceof Error ? e.name : typeof e, outputLength: raw.length });
     throw new Error("La IA no devolvió una propuesta válida. Inténtalo de nuevo.");
   }
 }
