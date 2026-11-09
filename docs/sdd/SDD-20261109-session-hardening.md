@@ -22,7 +22,7 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 - `src/routes/_authenticated/route.tsx:34`, `:38-40`: `if (!(await isSignedIn())) throw redirect({ to: "/auth" })`. No hay `errorComponent` en esa ruta.
 - `src/lib/session-check.ts:44-47`: un token renovado (`TOKEN_REFRESHED`) o distinto borra la respuesta guardada, así que la siguiente navegación vuelve a llamar a `/auth/v1/user` (correcto: una vez por token); con un 5xx persistente esa llamada falla y la guarda manda a `/auth`.
 - `src/routes/auth.tsx:63-87` (efecto de entrada): `validatedUser()` solo sigue con usuario validado (`:70-75`), pero el oyente `onAuthStateChange` (`:76-82`) llama a `goOn()` con cualquier evento con sesión que no sea `INITIAL_SESSION`, **sin validar**. Con 5xx persistente: `/auth` → evento → `/home` → guarda falla → `/auth`, una vez por evento.
-- `src/test/auth-no-bounce.test.tsx:108-120`: hoy fija que red caída, 503 persistente y 401 **terminan en `/auth`** con ≤3 llamadas a `/auth/v1/user` en 1 s. Esa aserción cambia para red y 503 (D-1, §15).
+- `src/test/auth-no-bounce.test.tsx:108-119` (el archivo tiene 119 líneas): hoy fija que red caída, 503 persistente y 401 **terminan en `/auth`** con ≤3 llamadas a `/auth/v1/user` en 1 s. Esa aserción cambia para red y 503 (D-1, §15).
 
 **Unidad B:**
 - Llamadas directas a `getUser()` (búsqueda en `src`, sin tests): `src/components/org-create.tsx:36` (`enter`), `src/components/org-onboarding.tsx:11` (`pick`), `src/components/account/calls-deals-tabs.tsx:48` (`add`), `src/routes/[.]lovable.oauth.consent.tsx:26` (loader). Las tres primeras usan `user!.id` sin comprobar nulo. `src/hooks/use-me.ts` ya usa `validatedUser` (`:33`) desde NK-0098, aunque NK-0110 lo cita.
@@ -42,7 +42,7 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 | Ningún consumidor de `me` ni loader recibe al usuario anterior tras `SIGNED_OUT` o `SIGNED_IN` de otro | `src/lib/session-cache.test.ts:84-155`; `src/hooks/use-me-failure.test.ts:90-111` |
 | Cerrar sesión no deja ventana con sesión a medias | `src/lib/session-signout.test.ts:68-103` |
 | La guarda no llama a `getUser()` en cada navegación (guarda de fuente) | `src/lib/session-check.test.ts:199-209` |
-| Sin rebote `/home` ↔ `/auth` | `src/test/auth-no-bounce.test.tsx:108-120` |
+| Sin rebote `/home` ↔ `/auth` | `src/test/auth-no-bounce.test.tsx:108-119` (`:117`, ≤3 llamadas/s, no cambia; `:116` cambia para red y 503, D-1) |
 
 **Uso real:** sin dato (no hay medición de fallos de `/auth/v1/user` en producción). Lo vio el walkthrough del Sprint 2 sobre `d0f4252` con fallos simulados.
 
@@ -71,7 +71,7 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 **Modificado:**
 - Guarda de `/_authenticated`: fallo de red/5xx → redirige a `/auth` → muestra el estado «sin poder comprobar» en la URL pedida, sin redirigir ni cerrar sesión. «Sin sesión» y 401/403 → `/auth` como hoy.
 - `/auth`: cualquier evento con sesión (salvo `INITIAL_SESSION`) → `/home` → solo con `validatedUser()` no nulo.
-- `handleAuthEvent`: «otro usuario» = distinto de `me` en caché → distinto del último usuario validado **o** de `me` en caché.
+- `handleAuthEvent(qc, event, session, last)`: «otro usuario» = distinto de `me` en caché → `(last != null && last !== session.user.id) || (cached !== undefined && cached?.user.id !== session.user.id)`, con `last = lastValidatedUserId()` pasado como parámetro (la función sigue siendo pura). Sin usuario validado todavía (`last == null`, carga de página) **no** es otro usuario.
 - `meQuery` con sesión cambiada a mitad de carga: `null` → error.
 - `dropUserCache`: consultas → consultas y mutaciones.
 - `org-create`, `org-onboarding`, `calls-deals-tabs`, consentimiento OAuth: `getUser()` → `validatedUser()`; sin usuario validado, mensaje en vez de `user!.id`.
@@ -81,16 +81,16 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 ## 7. Historias y criterios de aceptación
 ### Unidad A. H-1: Como persona con sesión abierta, si no se puede comprobar mi sesión quiero saberlo y reintentar, sin perder la sesión.
 - **CA-1** (tres estados) `checkSession()` devuelve `valid` con el usuario si el servidor lo valida; `none` sin sesión local, con 401/403 (y cierra la sesión local como hoy) o si el servidor devuelve otro usuario; `unverified` con error de red, 5xx, 429 o error sin `status`. `unverified` nunca se guarda. Comparte la misma respuesta guardada y la misma petición en vuelo que `createSessionUser`/`createSessionCheck` (una sola llamada por token). · prueba: `src/lib/session-check.test.ts` (`describe` nuevo; falla hoy: la función no existe)
-- **CA-2** (guarda) Con sesión guardada y `/auth/v1/user` respondiendo red caída o 503 persistente, abrir `/home` termina en `/home` (no en `/auth`), se ve «No he podido comprobar tu sesión» y el botón «Reintentar», `signOut` no se llama, la sesión sigue guardada y hay ≤3 llamadas a `/auth/v1/user` en 1 s. Con 401 definitivo, termina en `/auth` como hoy. · prueba: `src/test/auth-no-bounce.test.tsx` (cambia la aserción `finalPath` de red y 503; falla hoy)
+- **CA-2** (guarda) Con sesión guardada y `/auth/v1/user` respondiendo red caída o 503 persistente, abrir `/home` termina en `/home` (no en `/auth`), se ve «No he podido comprobar tu sesión» y el botón «Reintentar», `signOut` no se llama (`signOut === 0`), la sesión sigue guardada y hay ≤3 llamadas a `/auth/v1/user` en 1 s. Con 401 definitivo, termina en `/auth` como hoy. · prueba: `src/test/auth-no-bounce.test.tsx`: cambia **solo** la aserción `finalPath` de `:116` (`expect(r.finalPath, "no /home <-> /auth loop").toBe("/auth")`) para los modos `network` y `503`, que pasan a esperar `/home`; el caso 401 sigue esperando `/auth`; `:117` (`getUserPerSecond` ≤ 3) no cambia; se permite cambiar los títulos de `:108` («settles on /auth») y `:114` («ends on /auth»); se añaden como aserciones nuevas, más fuertes, `signOut === 0` y el texto visible (falla hoy)
 - **CA-3** (reintentar) Con el estado «sin poder comprobar» en pantalla, al volver el servidor y pulsar «Reintentar», la ruta pedida se carga (una llamada más a `/auth/v1/user`); si sigue fallando, se queda en el estado, sin bucle. · prueba: `src/test/auth-no-bounce.test.tsx` (caso nuevo)
-- **CA-4** (rebote por eventos, NK-0113) En `/auth` con sesión guardada y 503 persistente, emitir 5 veces `TOKEN_REFRESHED` y 5 veces `SIGNED_IN` no produce ninguna navegación a `/home` y la ruta final es `/auth`; con validación correcta, un `SIGNED_IN` sí lleva a `/home` (o a `next`). · prueba: `src/test/auth-no-bounce.test.tsx` (caso nuevo; falla hoy)
-- **CA-5** (garantías NK-0098) Todos los tests de la tabla de §3 siguen en verde sin cambiar sus aserciones, salvo `auth-no-bounce.test.tsx:118` (D-1) y la guarda de fuente `session-check.test.ts:204-208`, que se reescribe para exigir: `redirect({ to: "/auth" })` solo cuando el estado es `none`, y ningún `getUser(` en la ruta. · prueba: la suite (`npx vitest run src/lib/session-*.test.ts src/hooks/use-me*.test.ts src/test/auth-no-bounce.test.tsx`)
+- **CA-4** (rebote por eventos, NK-0113) En `/auth` con sesión guardada y 503 persistente, emitir 5 veces `TOKEN_REFRESHED` y 5 veces `SIGNED_IN` no produce ninguna navegación a `/home` y la ruta final es `/auth`; con validación correcta, un `SIGNED_IN` sí lleva a `/home` (o a `next`). Como mucho una llamada a `/auth/v1/user` por evento con token distinto, y ninguna con el mismo token en vuelo (la petición en vuelo se comparte). · prueba: `src/test/auth-no-bounce.test.tsx` (caso nuevo; falla hoy)
+- **CA-5** (garantías NK-0098) Todos los tests de la tabla de §3 siguen en verde sin cambiar sus aserciones, salvo `auth-no-bounce.test.tsx:116` para red y 503 (D-1, ver CA-2; `:117` no cambia) y la guarda de fuente `session-check.test.ts:204-207`, que se sustituye entera (incluida `:205`, `createSessionCheck(supabase.auth)`, que deja de ser cierta si la ruta usa `checkSession`) para exigir: `redirect({ to: "/auth" })` solo cuando el estado es `none`. `:201-203` («no `getUser(`» en la ruta) se mantiene igual. `session-cache.test.ts:138-145` («INITIAL_SESSION with nothing cached does not cancel in-flight loader queries») sigue igual gracias a la regla de «sin usuario validado» de CA-8. · prueba: la suite (`npx vitest run src/lib/session-*.test.ts src/hooks/use-me*.test.ts src/test/auth-no-bounce.test.tsx`)
 
 ### Unidad B. H-2: Como persona con una o varias cuentas, quiero que la app use siempre el mismo usuario validado y nunca me sirva datos de otro.
 - **CA-6** (sin `getUser` sueltos, NK-0110/NK-0114) Ningún archivo de `src` (excepto `src/lib/session-check.ts` y los tests) contiene `auth.getUser(`. · prueba: `src/lib/session-getuser-guard.test.ts` (nuevo; falla hoy con los cuatro archivos de §3)
-- **CA-7** (comportamiento de los cuatro) `pick` de `OrgOnboarding` y `enter` de `OrgCreateForm` actualizan `profiles.current_org_id` con el id de `validatedUser()`; `add` de la pestaña Deals inserta con `owner_id` de `validatedUser()`; sin usuario validado los tres muestran «No he podido comprobar tu sesión. Vuelve a intentarlo.» y no escriben. El consentimiento OAuth toma el email de `validatedUser()`; sin usuario validado muestra su error con ese mismo texto. Ninguno llama a `/auth/v1/user` si la validación ya está guardada. · prueba: `src/components/session-consumers.test.tsx` (nuevo, con `@/lib/session` simulado)
-- **CA-8** (cambio de usuario sin `me`, NK-0111) Con el usuario X validado, sin `["me"]` en caché y otras consultas de X en caché, un `SIGNED_IN` de Y borra esas consultas (no solo las invalida) y `ensureQueryData` de una de ellas no devuelve datos de X. Un `SIGNED_IN` del mismo X (foco) sigue sin borrar nada. · prueba: `src/lib/session-cache.test.ts` (`describe` nuevo; falla hoy)
-- **CA-9** (último validado) `lastValidatedUserId()` es el id del último usuario validado por el validador compartido; sobrevive a `TOKEN_REFRESHED`; se sustituye solo tras validar otro usuario. · prueba: `src/lib/session-check.test.ts`
+- **CA-7** (comportamiento de los cuatro) `pick` de `OrgOnboarding` y `enter` de `OrgCreateForm` actualizan `profiles.current_org_id` con el id de `validatedUser()`; `add` de la pestaña Deals inserta con `owner_id` de `validatedUser()`; sin usuario validado los tres muestran «No he podido comprobar tu sesión. Vuelve a intentarlo.» y no escriben. El loader del consentimiento OAuth usa `checkSession()` (de U-1): con `valid` toma el email del usuario; con `none` redirige a `/auth?next=…`; con `unverified` muestra en su `errorComponent` el texto de §9. Ninguno llama a `/auth/v1/user` si la validación ya está guardada. · prueba: `src/components/session-consumers.test.tsx` (nuevo, con `@/lib/session` simulado)
+- **CA-8** (cambio de usuario sin `me`, NK-0111) Con el usuario X validado, sin `["me"]` en caché y otras consultas de X en caché, un `SIGNED_IN` de Y borra esas consultas (no solo las invalida) y `ensureQueryData` de una de ellas no devuelve datos de X. Un `SIGNED_IN` del mismo X (foco) sigue sin borrar nada. «Otro usuario» = `(last != null && last !== session.user.id) || (cached !== undefined && cached?.user.id !== session.user.id)`, con `last` recibido como parámetro. · prueba: `src/lib/session-cache.test.ts` (`describe` nuevo; falla hoy)
+- **CA-9** (último validado) `lastValidatedUserId()` es el id del último usuario validado por el validador compartido; sobrevive a `TOKEN_REFRESHED`; se sustituye solo tras validar otro usuario. Sin ningún usuario validado aún, es `null` y `handleAuthEvent(qc, "INITIAL_SESSION", x, null)` con la caché vacía **no** cuenta como otro usuario ni cancela consultas. · prueba: `src/lib/session-check.test.ts` y `src/lib/session-cache.test.ts` (caso «sin usuario validado → no es otro usuario»)
 - **CA-10** (`meQuery` coherente, NK-0115) Si la sesión cambia de usuario o se cierra entre la validación y `accept_invites`, o entre `accept_invites` y la carga, `meQuery` rechaza con error y no deja `null` en `["me"]`. · prueba: `src/hooks/use-me-failure.test.ts` (caso nuevo; falla hoy)
 - **CA-11** (mutaciones) Tras `dropUserCache` (y por tanto `signOutAndClear` y el cambio de usuario), `qc.getMutationCache().getAll()` está vacío. · prueba: `src/lib/session-signout.test.ts` (caso nuevo; falla hoy)
 
@@ -100,7 +100,7 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 - **401/403 mientras se ve el estado:** «Reintentar» recibe `none`, cierra la sesión local (como hoy) y lleva a `/auth`.
 - **Otra pestaña cierra sesión:** `SIGNED_OUT` → `none` → `/auth`, como hoy.
 - **Error de otra ruta hija:** la pantalla de «sin poder comprobar» solo aparece para el error propio de la guarda (`SessionUnverifiedError`); el resto de errores siguen su camino actual.
-- **Consentimiento OAuth:** su `beforeLoad` sigue mirando la sesión local para mandar a `/auth?next=…`; el loader valida. Sin validación, su `errorComponent` actual muestra el texto.
+- **Consentimiento OAuth:** su `beforeLoad` sigue mirando la sesión local para mandar a `/auth?next=…`; el loader usa `checkSession()`: `none` → `/auth?next=…`; `unverified` → su `errorComponent` actual con el texto de §9.
 - **Varias empresas:** sin cambios; `current_org_id` sigue saliendo de `profiles`.
 
 ## 9. Experiencia y copy
@@ -124,36 +124,38 @@ Sin tablas, columnas, RLS ni GRANT. La seguridad de los datos sigue en la RLS; e
 | U-1 (A) | `checkSession()` de tres estados en `session-check.ts`, compartiendo la respuesta guardada | CA-1 | `src/lib/session-check.test.ts` (`describe` «three states») |
 | U-2 (A) | Guarda de `/_authenticated` con `checkSession()`: `none` → `/auth`; `unverified` → lanza `SessionUnverifiedError` y `errorComponent` con `src/components/session-unverified.tsx` | CA-2, CA-3, CA-5 | `src/test/auth-no-bounce.test.tsx` (red y 503 terminan hoy en `/auth`) |
 | U-3 (A) | `/auth`: el oyente llama a `validatedUser()` y sigue solo con usuario | CA-4 | `src/test/auth-no-bounce.test.tsx` (caso de eventos) |
-| U-4 (B) | `lastValidatedUserId()` y `handleAuthEvent` comparando con él; `dropUserCache` limpia mutaciones | CA-8, CA-9, CA-11 | `src/lib/session-cache.test.ts` (CA-8) y `src/lib/session-signout.test.ts` (CA-11) |
+| U-4 (B) | `lastValidatedUserId()` (campo `last` del objeto del `WeakMap`) y `handleAuthEvent(qc, event, session, last)` comparando con él (regla de CA-8); `dropUserCache` limpia mutaciones | CA-8, CA-9, CA-11 | `src/lib/session-cache.test.ts` (CA-8) y `src/lib/session-signout.test.ts` (CA-11) |
 | U-5 (B) | `meQuery` lanza error al cambiar la sesión a mitad de carga | CA-10 | `src/hooks/use-me-failure.test.ts` |
-| U-6 (B) | Cuatro sitios con `validatedUser()` + guarda de fuente | CA-6, CA-7 | `src/lib/session-getuser-guard.test.ts` |
+| U-6 (B) | Tres sitios con `validatedUser()` y el consentimiento OAuth con `checkSession()` + guarda de fuente | CA-6, CA-7 | `src/lib/session-getuser-guard.test.ts` |
 
-Orden: U-1 → U-2 → U-3 (unidad A, una rama); U-4, U-5 y U-6 (unidad B) pueden ir en otra rama sobre `main`, pero U-4 toca `session-check.ts` como U-1: si van en paralelo, contrato: U-1 solo añade `checkSession`; U-4 solo añade `lastValidatedUserId`; ninguna cambia `createSessionUser` ni sus tests existentes. Quien integre segundo resuelve el archivo.
+Orden **en serie, nunca en paralelo**: U-1 → U-2 → U-3 (unidad A); después U-4 → U-5 → U-6 (unidad B), construida **sobre la rama con la unidad A ya integrada**. Contrato: A cambia el interior de `createSessionUser` (resultado guardado y `WeakMap` con un objeto `{ user, check, last }`) sin cambiar su firma ni la de `createSessionCheck`; B solo rellena el campo `last` y añade su exportación (`lastValidatedUserId`). U-6 usa `checkSession()` de U-1.
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - En `session-check.ts`, guardar en `saved.valid` un resultado (`{ user } | { reason: "none" | "unverified" }`) y que `createSessionUser` lo reduzca a `U | null`, para que los tests actuales sigan igual. `unverified` y `none` no se guardan (como hoy `:76`).
 - La guarda de fuente actual (`session-check.test.ts:204-208`) busca el texto exacto `if (!(await \w+\(\)\)) throw redirect…`; se reescribe con la nueva forma, manteniendo «no `getUser(`» (`:201-203`).
 - `SessionUnverifiedError` como clase exportada; `errorComponent` de `/_authenticated` comprueba `instanceof` y, si no lo es, re-lanza o pinta el error por defecto [Por verificar el comportamiento de TanStack Router con `errorComponent` en una ruta de diseño].
 - `/auth`: el oyente puede reutilizar el mismo `validatedUser().then(...)` del montaje; cuidado con varias llamadas concurrentes: comparten la petición en vuelo por token.
-- `lastValidatedUserId` vive en el cierre de `createSessionUser` (uno por cliente, `WeakMap` de `:24`), exportado desde `src/lib/session.ts` para `__root`.
+- `lastValidatedUserId` vive en el objeto `{ user, check, last }` que guarda el `WeakMap` de `:24` (uno por cliente; hoy guarda solo una función, U-1 lo cambia a objeto), exportado desde `src/lib/session.ts` para `__root`, que lo pasa a `handleAuthEvent`.
 - Unidad B: `calls-deals-tabs.tsx:48` puede tomar el id de `useMe()` en vez de validar; se prefiere `validatedUser()` por coherencia con los otros tres y porque es gratis con la validación guardada.
-- Alternativa descartada (unidad A): seguir como el último usuario validado durante un fallo transitorio tras renovar el token («gracia»). Mantiene la app usable en una caída, pero muestra la app sin saber si la sesión sigue siendo válida; se deja como pregunta (§15).
+- Alternativa descartada (unidad A): seguir como el último usuario validado durante un fallo transitorio tras renovar el token («gracia»). Mantiene la app usable en una caída, pero muestra la app sin saber si la sesión sigue siendo válida; descartada por decisión del coordinador (D-3, §15).
 
 ## 14. Riesgos y dependencias
-- **Cambia una aserción entregada en el Sprint 2** (`auth-no-bounce.test.tsx:118` para red y 503). Es un cambio de comportamiento decidido (D-1), no un relajamiento: se mantienen «sin bucle», «≤3 llamadas/s» y «sin cerrar sesión», y se añade «se ve el estado».
+- **Cambia una aserción entregada en el Sprint 2** (`auth-no-bounce.test.tsx:116` para red y 503; `:117` no cambia). Es un cambio de comportamiento decidido (D-1), no un relajamiento: se mantienen «sin bucle», «≤3 llamadas/s» y «sin cerrar sesión», y se añade «se ve el estado».
 - **Walkthrough a repetir** (`nokko-walkthrough`, móvil y escritorio, claro y oscuro, consola y red): (1) entrar con sesión válida; (2) `/auth/v1/user` bloqueado (red) y luego 503 persistente al abrir `/home` → estado y «Reintentar», sin `/auth`; (3) servidor vuelve → «Reintentar» entra; (4) 401 → `/auth` y sesión local borrada; (5) en `/auth` con 503 persistente: volver el foco a la pestaña y forzar renovación de token → sin rebotes; (6) cerrar sesión y entrar con otro usuario en la misma pestaña y en otra → nunca datos del anterior; (7) crear empresa, elegir empresa en la pantalla sin empresa, añadir deal desde una cuenta, consentimiento OAuth: una sola llamada a `/auth/v1/user` por carga de página; (8) navegar N veces: una llamada por token (garantía NK-0098).
+- **Unidades en serie:** B depende de A integrada (S-M3 del gate); retrasa B, pero evita dos ramas reescribiendo `session-check.ts:32-81`.
 - **Archivos compartidos en el Sprint 3:** `calls-deals-tabs.tsx` no lo toca otro SDD del sprint; `AGENTS.md`, cada uno su línea.
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decisiones tomadas (autor, dentro del alcance del coordinador):**
 - **D-1.** Con red caída o 5xx, la app no redirige a `/auth`: muestra el estado en la URL pedida. Se cambia la aserción `finalPath = "/auth"` de esos dos casos en `auth-no-bounce.test.tsx`.
 - **D-2.** Sin reintento automático: solo «Reintentar».
-- **D-3.** Sin «gracia» tras renovar el token: un fallo transitorio muestra el estado aunque el mismo usuario se validara antes en la misma carga.
+- **D-3** (decisión del coordinador, delegación de Fede, 2026-11-09). Sin «gracia» tras renovar el token: el aviso «No he podido comprobar tu sesión» sale aunque el mismo usuario se validara antes en la misma carga.
 - **D-4.** Un error sin `status` cuenta como «sin poder comprobar» (no cierra sesión ni manda a `/auth`).
 - **D-5.** NK-0114 se trata dentro de NK-0110 (duplicado enlazado en el ledger); el consentimiento OAuth entra en U-6.
 
+**Decisión del coordinador (delegación de Fede, 2026-11-09):** D-3 tal como está escrita; unidades en serie (B sobre A).
+
 **Para Fede:**
-1. ¿Te vale D-3, o prefieres que, si ya te validó en esta carga y solo falla la renovación, la app siga funcionando y avise de forma discreta? Recomiendo D-3 (más simple y honesto); la alternativa es un ticket aparte.
 2. ¿Añadimos en el estado un enlace secundario «Cerrar sesión»? Recomiendo no en este ticket: el ticket pide conservar la sesión, y cerrar sesión ya está en el menú cuando la app carga.
 
 **Para la revisión técnica:**
@@ -170,11 +172,18 @@ Orden: U-1 → U-2 → U-3 (unidad A, una rama); U-4, U-5 y U-6 (unidad B) puede
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: pendiente
-- [Por verificar] que sigue sin comprobarse: pendiente
-- Contradicciones con el código o con decisiones previas: pendiente
-- Lo que esta revisión NO demuestra: pendiente
+- Veredicto del gate (pasada 1, 2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass1.md`): CAMBIOS (0 bloqueantes, 3 mayores, 3 menores). El gate no ejecutó `auth-no-bounce.test.tsx` (fallo de importación de su entorno, no del test).
+
+### §17 Gate · pasada 1: hallazgos y resolución
+| Hallazgo | Resolución |
+|---|---|
+| **MAYOR S-M1** CA-5 autoriza cambiar la línea equivocada de `auth-no-bounce.test.tsx` (`:118` es `});`) | CA-2, CA-5, §3, §14 y D-1 citan `:116` (aserción `finalPath`, solo modos `network` y `503`; 401 sigue en `/auth`); `:117` (≤3 llamadas/s) no cambia; se permiten los títulos de `:108` y `:114`; se añaden `signOut === 0` y el texto visible. Rango corregido a `:108-119`. |
+| **MAYOR S-M2** CA-8 rompe `session-cache.test.ts:138-145` si no se define «sin usuario validado» | §6, CA-8 y CA-9: «otro usuario» = `(last != null && last !== session.user.id) \|\| (cached !== undefined && cached?.user.id !== session.user.id)`; `last` entra como parámetro de `handleAuthEvent`; CA-9 añade «sin usuario validado → no es otro usuario»; CA-5 nombra `:138-145` como test que sigue igual. |
+| **MAYOR S-M3** El contrato para A y B en paralelo se contradice | §12: en serie, B sobre la rama con A integrada; A cambia el interior de `createSessionUser` (`WeakMap` con `{ user, check, last }`) sin cambiar firmas; B solo añade `last` y su exportación. §13 y §14 alineados. |
+| **MENOR S-m1** CA-4 sin límite de llamadas | CA-4: como mucho una llamada por evento con token distinto y ninguna con el mismo token en vuelo. |
+| **MENOR S-m2** La guarda de fuente omite `:205` | CA-5: `:204-207` se sustituye entera (incluida `:205`); `:201-203` se mantiene. |
+| **MENOR S-m3** El consentimiento OAuth no distingue «sin sesión» de «sin poder comprobar» | CA-7, §8 y U-6: el loader usa `checkSession()`; `none` → `/auth?next=…`; `unverified` → texto de §9. |
+| Decisión del coordinador: D-3 y unidades en serie | Registradas en §15; pregunta 1 retirada. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.
