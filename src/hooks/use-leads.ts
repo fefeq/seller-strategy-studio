@@ -29,6 +29,8 @@ export function useLeads(orgId: string | null | undefined) {
 export const leadsQuery = (orgId: string) =>
   queryOptions({
     queryKey: ["leads", orgId],
+    // The loader just fetched it: do not refetch on mount. Invalidation still refreshes it live.
+    staleTime: 30_000,
     queryFn: async (): Promise<LeadsData> => {
       const [l, d, s, seg, m, icp, acc] = await Promise.all([
         fetchAll((a, b) =>

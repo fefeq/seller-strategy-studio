@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { LeadsPending } from "@/components/leads/leads-pending";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { AutoEnrichSwitch, NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
 import {
@@ -71,6 +72,9 @@ export const Route = createFileRoute("/_authenticated/leads/")({
     ],
   }),
   loader: ({ context }) => prepareLeads(context.queryClient),
+  // The loader waits for the data: show the loading state at once instead of a blank page (NK-0093).
+  pendingComponent: LeadsPending,
+  pendingMs: 0,
   component: LeadsPage,
 });
 
