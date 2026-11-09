@@ -1,6 +1,7 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Page } from "@/components/page";
 import { useUrlSection } from "@/hooks/use-url-section";
+import { useCleanUrl } from "@/hooks/use-clean-url";
 import {
   THEORY_U_DEFAULT_SECTION,
   THEORY_U_SECTIONS,
@@ -17,6 +18,8 @@ import { Prototypes } from "@/components/theory-u/prototypes";
 export function TheoryUScreen() {
   const { seccion } = useSearch({ from: "/_authenticated/theory-u" });
   const navigate = useNavigate({ from: "/theory-u" });
+  // NK-0100: a stale ?seccion= in the address bar is rewritten clean (replace).
+  useCleanUrl(THEORY_U_SECTIONS, false);
   const [tab, setTab] = useUrlSection(
     sectionOf(THEORY_U_SECTIONS, THEORY_U_DEFAULT_SECTION, seccion),
   );
