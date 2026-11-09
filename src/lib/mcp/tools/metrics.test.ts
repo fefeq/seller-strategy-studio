@@ -125,3 +125,18 @@ describe("CA-11: get_real_metrics says its windows and the origin of the ACV", (
     expect(d).toMatch(/todo el histórico/);
   });
 });
+
+describe("CA-11 / CA-15: .lovable/mcp/manifest.json matches the code", () => {
+  it("both descriptions in the manifest are the ones of the code", async () => {
+    const { readFileSync } = await import("node:fs");
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8")) as {
+      mcp: { tools: { name: string; description: string }[] };
+    };
+    for (const tool of [realMetrics, segmentCoverageTool]) {
+      const t = tool as unknown as { name: string; description: string };
+      expect(manifest.mcp.tools.find((m) => m.name === t.name)?.description, t.name).toBe(
+        t.description,
+      );
+    }
+  });
+});
