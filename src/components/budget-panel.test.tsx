@@ -142,6 +142,8 @@ describe("Presupuesto por segmento marks", () => {
     const equal = "Sin dato · nadie ganó: el compartido no se reparte";
     expect(marksOf(cell("Pyme", SPEND))).toEqual([equal]);
     expect(marksOf(cell("Mid", SPEND))).toEqual([equal]);
+    // The reason is the shared one, never «sin gasto apuntado» (costs exist), and no stray «0».
+    expect(cell("Pyme", SPEND).textContent).toBe(`${equal}presup. sin plan`);
     expectDataMarks(container);
   });
 });
@@ -171,7 +173,7 @@ describe("NK-0094 Presupuesto por segmento: one margin chain, Sin dato instead o
     expect(cell("Pyme", PAYBACK).textContent).toContain("12 m");
   });
 
-  it("CA-13: only revenue and spend nobody typed keep a «—»", async () => {
+  it("CA-13: revenue and spend nobody typed say what is missing", async () => {
     const { container } = await show({
       segments: [segRow({ id: "a", name: "Pyme", acv_min: 0, acv_max: 20000 })],
       deals: [],
@@ -181,7 +183,16 @@ describe("NK-0094 Presupuesto por segmento: one margin chain, Sin dato instead o
     expect(marksOf(cell("Pyme", CAC))).toEqual(["Sin dato · sin costes en 2026"]);
     expect(cell("Pyme", CAC).textContent).toContain("presup. sin plan");
     expect(marksOf(rowOf("Pyme"))).toEqual(expect.arrayContaining(["Sin dato · falta margen"]));
-    expectNoBareDash(container, ["Pyme: —", "presup. —"]);
+    // NK-0106: revenue and spend nobody typed say «Sin dato · motivo» / «sin plan»; nothing keeps a «—».
+    expectNoBareDash(container, []);
+    expect(marksOf(rowOf("Pyme"))).toEqual(
+      expect.arrayContaining([
+        "Sin dato · sin ingresos del trimestre",
+        "Sin dato · sin gasto de captación apuntado",
+      ]),
+    );
+    expect(cell("Pyme", 1).textContent).toContain("presup. sin plan");
+    expect(cell("Pyme", SPEND).textContent).toContain("presup. sin plan");
     expectDataMarks(container);
   });
 });

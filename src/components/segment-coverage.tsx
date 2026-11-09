@@ -209,7 +209,11 @@ function SegmentCard({
         </div>
         <div className="shrink-0 text-right">
           <p className={`font-display text-3xl ${tone}`}>
-            {cov ? `${cov.ratio.toFixed(1)}x` : "—"}
+            {cov ? (
+              `${cov.ratio.toFixed(1)}x`
+            ) : (
+              <DataMark state="sin_dato" reason="sin objetivo de ventas del trimestre" />
+            )}
           </p>
           <p className={`text-xs ${tone}`}>
             {!cov

@@ -132,7 +132,9 @@ describe("NK-0094 Cobertura: Sin dato instead of «—», win rate window", () =
       </QueryClientProvider>,
     );
     await screen.findByText("Pyme");
-    expectNoBareDash(container, ["/ obj. —", "/ —", "— Sin objetivo"]);
+    // NK-0106: the coverage nobody can compute says why («— Sin objetivo» is gone from the allowed list).
+    expectNoBareDash(container, ["/ obj. —", "/ —"]);
+    expect(marksOf(card("Rango"))).toContain("Sin dato · sin objetivo de ventas del trimestre");
     expect(screen.getAllByText("Win rate · Trimestre 2026-Q4")).toHaveLength(7);
     expect(marksOf(card("Rango"))).toContain("Sin dato · ningún deal cerrado en 2026-Q4");
     expect(marksOf(card("Rango"))).toContain("Sin dato · sin costes en 2026-Q4");
