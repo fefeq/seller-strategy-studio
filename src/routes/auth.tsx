@@ -67,18 +67,19 @@ function AuthPage() {
     // check (network, 5xx) must leave /auth in place instead of bouncing to /home and back.
     // The validator is the guard's own, per token: no extra /auth/v1/user in the normal path.
     let alive = true;
-    validatedUser().then((user) => {
-      if (alive && user) {
-        trackGoogleReturn(user.created_at);
-        goOn();
-      }
-    });
+    // Same rule for the first check and for every later event: only a validated user goes on (NK-0113).
+    // Concurrent calls for one token share the in-flight request inside the validator.
+    const goIfValid = () =>
+      validatedUser().then((user) => {
+        if (alive && user) {
+          trackGoogleReturn(user.created_at);
+          goOn();
+        }
+      });
+    goIfValid();
     const { data } = supabase.auth.onAuthStateChange((e, s) => {
-      // INITIAL_SESSION just replays the stored (maybe stale) session: validatedUser above covers it.
-      if (s && e !== "INITIAL_SESSION") {
-        trackGoogleReturn(s.user.created_at);
-        goOn();
-      }
+      // INITIAL_SESSION just replays the stored (maybe stale) session: the call above covers it.
+      if (s && e !== "INITIAL_SESSION") goIfValid();
     });
     return () => {
       alive = false;

@@ -12,7 +12,9 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { signOutAndClear } from "@/lib/session-cache";
-import { createSessionCheck } from "@/lib/session-check";
+import { SessionUnverifiedError } from "@/lib/session-check";
+import { checkSession } from "@/lib/session";
+import { SessionUnverified } from "@/components/session-unverified";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
 import { canUseAdvisor } from "@/lib/advisor";
@@ -30,13 +32,19 @@ import { AppPending } from "@/components/app-pending";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
-// One GET /auth/v1/user per session token, not per navigation (NK-0098, src/lib/session-check.ts).
-const isSignedIn = createSessionCheck(supabase.auth);
-
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
+  // One GET /auth/v1/user per session token, not per navigation (NK-0098, src/lib/session-check.ts).
+  // Only "none" goes to /auth; "unverified" (network, 5xx) keeps the session and shows a retry screen (NK-0112).
   beforeLoad: async () => {
-    if (!(await isSignedIn())) throw redirect({ to: "/auth" });
+    const session = await checkSession();
+    if (session.status === "none") throw redirect({ to: "/auth" });
+    if (session.status === "unverified") throw new SessionUnverifiedError();
+  },
+  // Only the guard's own error is handled here; any other error keeps going to the root boundary as before.
+  errorComponent: ({ error }) => {
+    if (error instanceof SessionUnverifiedError) return <SessionUnverified />;
+    throw error;
   },
   // First load or reload: this route is client-only, so without a pending state nothing paints until the guard answers.
   pendingComponent: AppPending,
