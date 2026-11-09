@@ -231,3 +231,42 @@ describe("CA-3 coherence: the strategy calculator", () => {
     expect(a.margin).toMatchObject({ value: 60, source: "deals" });
   });
 });
+
+// Coherence is not enough if every surface makes the same assumption: a segment with no margin anywhere (Pyme without
+// its deal with lines) must have no payback on any surface, with the same reason (D1); the brief's mutation check.
+describe("CA-3 coherence: an assumption never becomes a number on any surface", () => {
+  it("Pyme without any margin: no payback on Cobertura, Payback real, Presupuesto vs real, KPI or Diagnóstico", () => {
+    const deals = EXT_DEALS.map((d) => ({ ...d, gross_margin: null }));
+    const range = quarterRange(Q);
+    const i = segs.findIndex((s) => s.id === "s-pyme");
+    const none = { value: null, state: "sin_dato", reason: "falta margen" };
+    const cov = segmentCoverage(segs, deals, TARGETS, range, costsOf(Q), BUDGET_ROWS)[i];
+    expect(cov.figures.cac.value, "Pyme has a real CAC").not.toBeNull();
+    expect(cov.figures.payback).toEqual(none);
+    expect(
+      paybackByQuarter(segs, deals, COSTS, [Q], quarterRange, BUDGET_ROWS)[i].byQuarter[Q].figures
+        .payback,
+    ).toEqual(none);
+    expect(
+      quarterlyBudget(segs, deals, BUDGET_ROWS, COSTS, 2026).byQuarter[Q][i].figures.payback,
+    ).toEqual(none);
+    const [k] = quarterKpis(segs, deals, BUDGET_ROWS, COSTS, [Q]);
+    expect(k.figures.payback.k).toBeLessThan(k.figures.payback.m);
+    const d = funnelDiagnosis({
+      quarter: Q,
+      segments: SEGMENTS,
+      deals,
+      leads: [],
+      trials: [],
+      costs: costsOf(Q),
+      budgetRows: BUDGET_ROWS,
+      activationEvent: null,
+      stripe: null,
+    })!;
+    const p = d.segments[i].phases
+      .find((x) => x.id === "revenue")!
+      .measures.find((m) => m.id === "payback")!;
+    expect(p).toMatchObject({ value: null, verdict: null });
+    expect(p.missing).toContain("falta margen");
+  });
+});

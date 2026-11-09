@@ -5,19 +5,30 @@ import { segmentCoverage, type SegLike } from "@/lib/segment-coverage";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { costByChannel } from "@/lib/cac";
 import { quarterlyBudget, quartersOfYear } from "@/lib/segment-budget";
+import { isLeader } from "@/lib/agent/tool-kit";
+import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
 import { mcpCtx, json } from "../context";
 
 const round = (n: number | null | undefined) => (n == null ? null : Math.round(n * 10) / 10);
+
+/**
+ * SDD-20261109-metrics-strategy-no-estimates CA-15: costs, margin and CAC only for Owner and Sales Leader, checked
+ * right after mcpCtx and before any table is read (same error text as the agent tools exposed by MCP).
+ */
+function requireFinanceRole(c: { roles: string[] }) {
+  if (!isLeader(c.roles)) throw new ToolError("Tu rol en esta empresa no permite esta acción");
+}
 
 export const realMetrics = defineTool({
   name: "get_real_metrics",
   title: "Métricas reales de pipeline",
   description:
-    "ACV, win rate y ciclo de venta reales (últimos 12 meses), total y por segmento, frente a los objetivos del segmento.",
+    "ACV, win rate y ciclo de venta reales, total y por segmento, frente a los objetivos del segmento. El win rate y el ciclo son de los últimos 365 días (win_rate_window); el ACV es la media de todo el histórico de deals ganados o, sin ganados, de los abiertos (acv_window, acv_source). Solo Owner y Sales Leader.",
   inputSchema: {},
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async (_a, ctx) => {
     const c = await mcpCtx(ctx);
+    requireFinanceRole(c);
     const [{ data: segs }, { data: deals }] = await Promise.all([
       c.db.from("segments").select("*").eq("org_id", c.orgId),
       c.db
@@ -31,14 +42,20 @@ export const realMetrics = defineTool({
       currency: c.currency,
       overall: {
         acv: round(r.overall.acv),
+        acv_source: r.overall.acvSource,
+        acv_window: WIN_RATE_WINDOWS.historico.id,
         win_rate_pct: round(r.overall.winRate),
+        win_rate_window: WIN_RATE_WINDOWS.ultimos365.id,
         cycle_days: r.overall.cycleDays,
         closed_deals: r.overall.closedSample,
       },
       segments: (segs ?? []).map((s) => ({
         name: s.name,
         acv_real: round(r.bySegment[s.id]?.acv),
+        acv_source: r.bySegment[s.id]?.acvSource ?? null,
+        acv_window: WIN_RATE_WINDOWS.historico.id,
         win_rate_real: round(r.bySegment[s.id]?.winRate),
+        win_rate_window: WIN_RATE_WINDOWS.ultimos365.id,
         win_rate_target: s.win_rate_target,
         cycle_real: r.bySegment[s.id]?.cycleDays,
         cycle_target: s.cycle_days,
@@ -51,7 +68,7 @@ export const segmentCoverageTool = defineTool({
   name: "get_segment_coverage",
   title: "Cobertura por segmento",
   description:
-    "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
+    "Cobertura de pipeline, deals ganados, oportunidades, win rate del trimestre, ACV, CAC real (costes introducidos / deals ganados), margen bruto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real). ACV, CAC y payback traen state (real, estimado, sin_dato) y reason: un dato que falta es null con su motivo, nunca un supuesto; el payback solo se calcula con el CAC real, nunca con el CAC objetivo. payback.window y win_rate.window dicen la ventana (trimestre). Solo Owner y Sales Leader.",
   inputSchema: {
     quarter: z
       .string()
@@ -62,6 +79,7 @@ export const segmentCoverageTool = defineTool({
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ quarter }, ctx) => {
     const c = await mcpCtx(ctx);
+    requireFinanceRole(c);
     const q = quarter ?? quarterOf(new Date());
     const range = quarterRange(q);
     if (!range) throw new ToolError("Trimestre no válido");
@@ -127,7 +145,12 @@ export const segmentCoverageTool = defineTool({
         coverage: r.coverage,
         won: r.won,
         opportunities: r.opps,
-        win_rate: r.winRate,
+        win_rate: { ...r.winRate, window: WIN_RATE_WINDOWS.trimestre.id },
+        acv: {
+          value: round(r.figures.acv.value),
+          state: r.figures.acv.state,
+          reason: r.figures.acv.reason,
+        },
         cac: {
           cost: r.cac.cost,
           deals_won: r.cac.customers,
@@ -149,6 +172,7 @@ export const segmentCoverageTool = defineTool({
           reason: r.payback.reason,
           target: r.payback.target,
           ok: r.payback.ok,
+          window: WIN_RATE_WINDOWS.trimestre.id,
         },
         budget_year: {
           year,
