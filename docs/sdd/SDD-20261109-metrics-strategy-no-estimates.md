@@ -1,7 +1,7 @@
 # SDD-20261109-metrics-strategy-no-estimates · [Feature] Métricas y Estrategia sin cifras supuestas: «Sin dato» en todas las superficies y una sola fórmula de CAC y payback
 
 **Tipo:** Feature · **Prioridad propuesta:** Alta
-**Estado:** Borrador (v2, corregido tras el gate) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), tras dos pasadas del gate · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0094
 **PRD:** No aplica (continuación de NK-0068 con alcance aprobado por Fede el 2026-11-09: no añade capacidad nueva, cambia cómo se calculan y rotulan cifras que ya existen; ver §15.1) · **Depende de:** `SDD-20261106-metrics-honest-data` (NK-0068, Hecho) y `SDD-20261106-ux-metrics-data-state` (NK-0089, Hecho: `DataState`)
 **Coordinar con:** NK-0029 / `SDD-20261030-gtm-control-tower-3-attribution-metrics` (aprobado, LOGGED; su CA-18 documenta en el diccionario las fórmulas de CAC, payback y win rate: con este SDD hay una de cada, §14); `SDD-20261030-gtm-control-tower-5c-assistant-server` (aprobado; CA-1: el asistente y MCP leen las mismas funciones; este SDD cambia la salida de `get_real_metrics`, `get_segment_coverage` y `get_funnel_diagnosis`, §14); NK-0091 (asesor: deals sin origen aparte de Outbound; ya integrado en `integration/sprint2-20261109`, mismo archivo `advisor.ts`); NK-0093 (estado de carga y error de leads en `pipeline-board-panel.tsx`; ya integrado, mismo archivo); NK-0097 (tamaño de las marcas de dato; mismas marcas); NK-0096 (Reglas en MCP; mismo `.lovable/mcp/manifest.json`)
@@ -251,6 +251,8 @@ Orden: U-0 → U-1 → U-2 → (U-3, U-4, U-5). U-2 cambia cifras y borra la red
 - **U-5:** ampliar en `src/lib/advisor.test.ts` el test de NK-0091 «changes nothing else in the snapshot» (`:214-222` de la rama de integración) si las claves nuevas de CA-12 lo rompen, citando CA-12.
 - **Fuera de estas listas:** si un test existente no listado falla, se para y se informa; no se cambia.
 
+**Cláusula de tests ampliada (decisión del coordinador tras la segunda pasada del gate, 2026-11-09):** además de las líneas listadas arriba, U-2 y U-3 pueden cambiar aserciones existentes de `src/lib/cac.test.ts`, `src/lib/segment-coverage.test.ts`, `src/lib/metrics.test.ts`, `src/lib/pipeline-board.test.ts`, `src/lib/segment-budget.test.ts`, `src/lib/quarter-kpis.test.ts`, `src/lib/funnel-diagnosis.test.ts` y `src/components/quarter-kpis-panel.test.tsx` **solo** cuando fijan una cifra, un texto o una forma que cambia por una D-n o un CA de este SDD; cada cambio cita su D-n o CA en el mensaje del commit, y ninguna comprobación de otra cosa se quita ni se afloja. Cualquier otro test existente que falle, se para y se explica.
+
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - **Módulo.** `src/lib/unit-economics.ts`, sin dependencias de pantalla. `Figure` lleva estado y motivo; `mark-text.ts` (`src/components/metrics/mark-text.ts`) pasa a ser un adaptador `figureMark(f) → DataMarkProps` y deja de componer motivos por su cuenta. Como `/strategy` e Inicio no están en `src/components/metrics/`, el adaptador y `DataMark` se mueven a un sitio común (p. ej. `src/components/data-mark.tsx`) o se usa `DataState` directamente; `DataMarkProps` vive hoy en `src/components/metrics/data-mark.tsx`, y si se mueve, la marca sigue pintando `data-slot="data-state"` y un solo nodo de texto, que es lo que comprueba `src/test/data-marks.ts`. Ese archivo no cambia salvo la aserción nueva de CA-13.
 - **Ventana como dato, fórmula única.** `trailingCac` pasa a ser `cacOf({ cost, won, period: "los últimos 4 trimestres" })` con costes y ganados de esa ventana; `segmentCac` reparte el compartido y llama a `cacOf` por segmento con `period` = el trimestre. El CAC proyectado del tablero (`pipeline-board.ts:241`) llama a `cacOf({ cost, won: expectedWins, period })` y `pipelineEconomics` lo marca «estimado» con su motivo (CA-2, CA-6).
@@ -393,6 +395,69 @@ Informe de la primera pasada (v1), copiado sin editar:
 
 
 Revisión de coherencia entre los SDD del Sprint 2: `docs/sdd/annex/sprint2-cross-sdd-gate-20261109.md`.
+
+
+Informe de la segunda pasada (v2), copiado sin editar:
+
+- **Veredicto del gate (segunda pasada):** Objeciones
+
+- **Objeciones de la primera pasada:**
+  - 1: resuelta. D14a y D14b, CA-3 y CA-9 cubren la fila de `motions.tsx:505`, que he comprobado en el código (`:168-183`, `:504-529`). Queda un hueco menor: base «real» sin CAC real (ver notas).
+  - 2: resuelta. El §10 dice el estado real y CA-15 añade la guarda con prueba que falla primero (`mcp/tools/metrics.ts:19-20`, `:40-41`). Coincide con 5c CA-1 aprobado («métricas y cobertura solo para Owner y Sales leader», `SDD-20261030-gtm-control-tower-5c-assistant-server.md:50`).
+  - 3: parcial. La decisión 13 del §15 asigna esos «—» a un ticket nuevo, pero ese ticket no existe en `.factory/ledger.json` (el último es NK-0105 y ninguno trata los «—» del resto de `/metrics`). No impide construir NK-0094.
+  - 4: resuelta. Las tres consultas ampliadas y la nueva de `loadFunnelDiagnosis` están en §8 y §10. Lo he comprobado: `budget-quarters.tsx:74`, `quarter-kpis-panel.tsx:67` y `budget-panel.tsx:45` no leen hoy `gross_margin`; `pipeline-board-panel.tsx` (rama de integración, `:46`) y `motions.tsx:120` ya lo leen. No hay exposición nueva: `deals.gross_margin` ya lo leen Payback real y Cobertura, y `segment_budget_quarters` tiene la política «org read» (`0017_segment_budget_quarters.sql:21-22`).
+
+- **CA sin prueba posible o sin G-n:** ninguno. No hay PRD, así que no se exige G-n. Dos CA tienen una prueba que no se puede escribir tal como están redactados:
+  - CA-1: la firma `segmentMargin(seg, { quarter, year, deals })` no recibe las filas de presupuesto, la lista de segmentos ni el fin del periodo. `withPeriodMargin` los necesita (`segment-budget.ts:163-181`) y `wonDealsMargin` también (`deal-lines.ts:94`).
+  - CA-15: «sin leer ninguna tabla» solo se cumple con `mcpCtx` simulado, porque `mcpCtx` ya lee `profiles`, `org_members` y `organizations` (`mcp/context.ts:11-16`).
+
+- **[Por verificar] que sigue sin comprobarse:**
+  - Datos de producción que pasan a «Sin dato».
+  - Uso externo de `payback.source` y roles de quien usa el MCP de métricas.
+  - Clasificación de los «—» (la hace U-0).
+  - Que los dos tests nuevos fallan primero en la base.
+  - Que el extractor del manifiesto corre en el worktree.
+  - `periodBudget` del año con su ventana de 12 meses: CA-3 solo compara `byQuarter[T]`, así que sigue abierto.
+
+- **Contradicciones con el código o con decisiones previas:**
+  - §12, lista cerrada de tests que se pueden cambiar, contra los tests que existen: queda incompleta (objeción bloqueante 1).
+  - H-4 dice «como en la app», pero en la app cualquier miembro ve CAC, costes y payback en Cobertura, CAC real, KPI y Presupuesto. Solo Finanzas está restringida (`metrics.tsx:85`, `:206`), y `cac_costs` tiene «org read» para cualquier miembro (`0015_cac_costs.sql`). La guarda es más estricta que la app. No es un riesgo de seguridad; el texto debe decirlo así (5c ya lo reconoce en la línea 482).
+  - Decisión 13 contra NK-0089 §15.4 («sin ticket nuevo»): corrección tomada por delegación, pero falta el ticket.
+  - Con NK-0095, NK-0096 y la revisión de coherencia del sprint no hay contradicciones. El orden de integración y el contrato del manifiesto coinciden. Las citas de la rama de integración (`advisor.ts:112`, `:139`, `:187-189`, `:209`; `advisor.test.ts:214-222`; `pipeline-board-panel.tsx`, desplazamiento de +3 desde `:110`; `leads-stripe-states.test.tsx:164`) son exactas.
+
+- **Lo que esta revisión NO demuestra:**
+  - No he ejecutado tests, fail-first, mutaciones ni el extractor.
+  - No he visto ninguna pantalla renderizada.
+  - No he consultado producción ni el uso del MCP.
+  - No he vuelto a comprobar una a una todas las citas del §3: solo las de MCP, Modelos de venta, asesor, consultas, tablero, Diagnóstico y tests.
+  - No he leído las ramas de NK-0095 ni de NK-0096.
+
+**Objeciones bloqueantes**
+
+1. **La lista cerrada de tests autorizados del §12 no incluye aserciones que U-2 y U-3 rompen con toda seguridad. Por la regla «si un test existente no listado falla, se para», la construcción se detiene.**
+   - Sin listar en U-2:
+     - `src/lib/cac.test.ts:64-67`: «falls back to the target CAC», `source: "objetivo"` (D9).
+     - `src/lib/segment-coverage.test.ts:141-145`: `acv: 0` con `sin_rango` (D4).
+     - `src/lib/segment-coverage.test.ts:192-217`: `supuesto_100`, `payback.real` 6 y `Infinity`, y las claves de `payback` `["ok","real","source","target"]` (D1, D2, D9 y CA-11).
+     - `src/lib/segment-coverage.test.ts:220-227`: `sharedSplit` «partes_iguales» (D7).
+     - `src/lib/pipeline-board.test.ts:104`, `:106`, `:119`, `:129`, si `realCac` o `projectedCac` pasan a ser `Figure` como pide el §13.
+     - `src/lib/metrics.test.ts:115-120`, si cambian `marginAssumed` y `marginNonPositive`.
+   - Sin listar en U-3:
+     - `src/components/quarter-kpis-panel.test.tsx:60-84`: fija «Estimado · supuestos en algún segmento» y «Sin dato · un segmento tiene margen 0 % o negativo», que el §9 sustituye.
+   - Corrección: añadir esas líneas a U-2 y U-3 con su D-n. También vale ampliar la cláusula de reserva que ya existe para `segment-budget.test.ts`, `quarter-kpis.test.ts` y `funnel-diagnosis.test.ts` a `cac.test.ts`, `segment-coverage.test.ts`, `metrics.test.ts`, `pipeline-board.test.ts` y `quarter-kpis-panel.test.tsx`, con la misma condición: solo aserciones que fijan una cifra, un texto o una forma que cambia por una D-n o un CA, citándolo.
+
+**Notas para el brief**
+
+- **Ticket de los «—» del resto de `/metrics`:** hay que registrarlo antes del GO y anotar la corrección en NK-0089 §15.4 (decisión 13).
+- **D14, base «real» sin CAC real:** el §13 dice «si no, el escenario», pero CA-9 no lo cubre. Fijar en CA-9 que ese caso usa el escenario (D14b) con su marca.
+- **D14b:** el escenario usa `cac_target`, y la marca solo declara el ACV. Valorar «Estimado · con el ACV de la calculadora y el CAC objetivo». El juicio Dentro/Fuera compara entonces contra un objetivo calculado con otro objetivo, el mismo problema que justificó D9.
+- **CA-1:** completar la firma de `segmentMargin` (filas de presupuesto, segmentos, fin del periodo) y decidir cómo se calcula el CAC del plan. Hoy `planAcq / planNew` está prohibido fuera del módulo, y `cacOf` daría el motivo «ningún deal ganado» y el estado «real» a una cifra de plan.
+- **CA-15:**
+  - Reutilizar `isLeader` (`src/lib/agent/tool-kit.ts:37`) en vez de crear `requireFinanceRole`.
+  - Precisar «cero lecturas en la `db` tras `mcpCtx` simulado».
+  - Corregir en H-4 «como en la app».
+- **Tests que reciben datos de `PipelineBoardPanel`:** si U-3 cambia sus consultas, hay que mantener en verde los mocks de `leads-stripe-states.test.tsx` y del test «metrics-states».
+- **Citas de pies de texto:** el de `budget-quarters.tsx` está en `:406-408` y el de `payback-quarters.tsx` en `:87-91`. Diferencia de una línea.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —

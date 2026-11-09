@@ -1,7 +1,7 @@
 # SDD-20261109-rules-write-permissions · [Mejora] Solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15.1) · **Prioridad propuesta:** Alta (desde NK-0087 una regla de equipo es instrucción para el agente de todos)
-**Estado:** Borrador (v2, corregido tras el gate) · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), segunda pasada del gate sin objeciones · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0095
 **PRD:** No aplica (mejora acotada de permisos; la decisión de qué hacer ya la tomó Fede el 2026-11-06 y el alcance del Sprint 2 el 2026-11-09) · **Depende de:** `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho: define qué cuenta como regla, `isMandatory`) · **Coordina con:** NK-0096 (Reglas en ai-core, biblioteca y MCP), que también toca `src/lib/knowledge-rules.ts` y `.lovable/mcp/manifest.json` y **depende de esta entrega** (§14); NK-0094, que comparte `src/lib/agent-tools.test.ts` y el manifiesto; NK-0093 (ya integrado), que cambió `src/lib/drive-core.ts`
 
@@ -327,6 +327,92 @@ Informe de la primera pasada (v1), copiado sin editar:
 
 
 Revisión de coherencia entre los SDD del Sprint 2: `docs/sdd/annex/sprint2-cross-sdd-gate-20261109.md`.
+
+
+Informe de la segunda pasada (v2), copiado sin editar:
+
+**Veredicto del gate (segunda pasada): Sin objeciones**
+
+**Objeciones de la primera pasada:**
+- 1 (CA-10 sin prueba posible en el ejecutor): **resuelta.** CA-10 se parte en dos tramos:
+  - (a) Lanzamiento, probado en `background-authorize.test.ts`.
+  - (b) Ejecución, probado en `src/lib/inngest/job-runner.test.ts`. El `db` falso devuelve `org_members` → `ae`, y se comprueban `status: "failed"`, `error = BINDING_WRITE_DENIED`, que no hay inserción y que no hay llamadas a Drive. Hay además un caso positivo con `sales_leader`.
+  - U-3 cambia el caso `drive_import` para que llame a `jobCtx(db, job)` y pase `ctx.roles`. Lo he comprobado: hoy `job-runner.server.ts:192-201` construye `{ db, orgId, userId }` sin roles, y `jobCtx` (`:29-47`) sí lee `roles`. Si el ejecutor fijara `["owner"]`, el caso `ae` fallaría. La prueba distingue de verdad.
+- 2 (manifiesto MCP desfasado y sin contrato con NK-0096): **resuelta.**
+  - `.lovable/mcp/manifest.json` entra en §5 y en U-3, regenerado con el extractor.
+  - §13 está corregido: la copia está en `:3822`, con el sufijo de MCP.
+  - §14 fija el orden NK-0095 → NK-0096 → NK-0094 y la regla de regenerar tras el merge, nunca a mano. Es coherente con NK-0094 §14 (`metrics-strategy-no-estimates.md:274`) y con NK-0096 §14 (`rules-in-ai-readers.md:184`).
+- Contradicción no bloqueante (2) de la primera pasada (migraciones de NK-0094 y NK-0096): **resuelta** en §14.
+- Notas de la primera pasada: todas incorporadas:
+  - cita de `authorize`: `:191-253`;
+  - «los cuatro» textos en §9;
+  - llamadores de `executeTool`;
+  - mocks de `useMe` y `DriveImportButton`;
+  - fixture compartido;
+  - `drive.ts:9` tipado con `ToolCtx`;
+  - umbral de 160 caracteres de C2.
+
+**CA sin prueba posible o sin G-n:**
+- Ninguno sin prueba posible. Sin PRD no se exige G-n.
+- CA-10 (a) promete «sin crear el trabajo». Si solo se prueba `authorize`, esa aserción es trivial. Va como nota.
+
+**[Por verificar] que sigue sin comprobarse:**
+- Políticas vivas de `knowledge_docs` (`pg_policies`).
+- Tipo y valor por defecto vivos de `mandatory`.
+- Versión viva de `create_organization`.
+- Que la RLS restrictiva se comporte igual en Supabase que en PGlite 18.6.
+
+Ninguno bloquea: la migración es aditiva e idempotente (`create or replace`, `drop policy if exists`, `add column if not exists`).
+
+**Contradicciones con el código o con decisiones previas:**
+- Ninguna que bloquee. He re-comprobado en `integration/sprint2-20261109` (`19beb33`):
+  - `drive-core.ts`: `:35`, `:270`, `:271`, `:275`, `:280`, `:286`;
+  - `job-runner.server.ts`: `:29-47`, `:38`, `:75`, `:108-117`, `:192-201`;
+  - `background.functions.ts:191-253`;
+  - `agent/tools/drive.ts:6`, `:9`, `:44-54`;
+  - `manifest.json:3822`;
+  - `0000:208`;
+  - `0002`: `:127-130`, `:201`, `:226-230`;
+  - `hub-screen.test.tsx:64-73`;
+  - `hub-screen.tsx:199-200`;
+  - `drive.tsx:102`;
+  - las migraciones que tocan `knowledge_docs` (0000, 0002, 0020, 0022, 0028);
+  - el journal (máximo `when` = `1794139200000`).
+- `drive-core.test.ts` no existe en la rama de integración. Lo confirmo, así que la nota del anexo («lo crea NK-0093») queda superada por la v2.
+- Inexactitud de texto heredada: la cabecera (línea 10) sigue diciendo que NK-0096 «también toca `src/lib/knowledge-rules.ts`». NK-0096 lo excluye (`rules-in-ai-readers.md:73`) y el anexo pedía corregirlo (nota 7).
+
+**Lo que esta revisión NO demuestra:**
+- No consulté la base viva.
+- No reproduje la RLS en Supabase.
+- No ejecuté el extractor del manifiesto. El gate de NK-0096 lo ejecutó y dio salida idéntica byte a byte.
+- No hay código ni tests del cambio que ejecutar.
+- No revisé la pantalla en móvil, escritorio ni tema.
+- No medí los textos contra el umbral de 160 caracteres de C2.
+- No comprobé el SDD contra la plantilla apartado por apartado.
+
+## Objeciones bloqueantes
+
+Ninguna.
+
+## Notas para el brief
+
+1. **Cabecera de la línea 10.** Corregir «NK-0096, que también toca `src/lib/knowledge-rules.ts`»: NK-0096 solo lo importa.
+2. **`errorText` y `BINDING_WRITE_DENIED`.** `errorText` (`errors.ts:68-79`) aplica las reglas de Postgres antes que la heurística del español. El texto actual no coincide con ninguna, así que pasa tal cual y CA-10 (b) se puede afirmar. Si alguien reescribe el texto, que no meta «not allowed», «not found», «quota», «credits» ni «timeout». Conviene que CA-10 (b) compare `error` con la constante exportada.
+3. **Caso positivo de CA-10 (b), `sales_leader` llega a la inserción.** `readFile` pasa por `insideCompany`/`companyFolder` (`drive-core.ts:100`, `:208-209`). El `db` falso y el mock de `@/lib/google-drive` tienen que resolver la carpeta de la empresa y devolver un archivo legible. Además, `step()` exige la cadena `update().eq().select().maybeSingle()`. Si pesa demasiado, que el brief permita la alternativa del SDD (exportar `runKind`).
+4. **CA-10 (a), «sin inserción en `background_jobs`».** Solo tiene sentido si la prueba pasa por `enqueue`, que llama a `authorize` en la primera línea antes de `supabaseAdmin`. Si solo se prueba `authorize` exportada, el brief debe decir que la garantía viene de ese orden de llamadas.
+5. **CA-11 y el manifiesto.** La descripción del manifiesto lleva el sufijo «(Queda pendiente: el usuario la confirma en Nokko.)». La prueba debe usar `startsWith` o `toContain` de la descripción de la herramienta, no igualdad.
+6. **CA-11 y el mock de `drive-core`.** `agent-tools.test.ts` no tiene hoy ningún `vi.mock`. Un `vi.mock("@/lib/drive-core")` se aplica a todo el archivo, que comparte NK-0094. Con `drive-core` simulado, el caso `ae` solo se rechaza si el chequeo vive en la herramienta, como dice §5.
+7. **Cambio en `drive_import` a otras secciones.** Al pasar a `jobCtx`, `drive_import` falla con «Ya no perteneces a esta empresa.» también fuera de Reglas, si el lanzador dejó de ser miembro. Está declarado en §6 y es deseable. Que el brief lo trate como cambio esperado, no como regresión.
+8. **Propuestas del agente.** Un AE puede proponer importar a Reglas, y si la confirma un Owner o un Sales Leader se ejecuta con sus roles. Es coherente con §15.4 (aprobación humana de un líder), pero conviene escribirlo en §8.
+9. **`migrations.pg.test.ts`.** No aplica todas las migraciones: cada test elige las suyas. La 0081 no rompe tests existentes aunque el arnés no cree `knowledge_docs`.
+10. **Seguridad.** Sin cambios respecto a la primera pasada:
+    - las políticas son `to authenticated`;
+    - `service_role` las salta y por eso la doble comprobación en código;
+    - `has_org_role(_org uuid, _role app_role)` acepta los literales;
+    - CA-4 queda cubierto por `is_org_member` más `has_org_role` sobre la fila;
+    - no hay otros escritores de vinculantes (re-comprobado con grep de `knowledge_docs` en `src`).
+
+Archivo revisado: `/home/user/seller-strategy-studio-s2docs/docs/sdd/SDD-20261109-rules-write-permissions.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
