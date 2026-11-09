@@ -287,7 +287,7 @@ function periodBudget(
         payback,
         planCac,
         planPayback,
-      } as BudgetFigures,
+      } satisfies BudgetFigures,
       acvSource: acv.source,
       acvRangeBasis: acv.rangeBasis,
       wonInPeriod: won.length,

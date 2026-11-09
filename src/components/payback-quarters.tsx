@@ -7,7 +7,6 @@ import { Pick } from "@/components/fields";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { quartersUpTo } from "@/lib/cac";
 import { paybackByQuarter, type QuarterPayback, type SegLike } from "@/lib/segment-coverage";
-import type { QuarterBudgetLike } from "@/lib/segment-budget";
 import { DataMark } from "@/components/metrics/data-mark";
 import { FigureNote, FigureValue } from "@/components/metrics/figure";
 import { figureTone, inferredMark } from "@/components/metrics/mark-text";
@@ -62,14 +61,7 @@ export function usePaybackQuarters(count: number) {
   const rows = useMemo(
     () =>
       // One margin chain (SDD-20261109 D15): budget rows and the deals' margins, inside paybackByQuarter.
-      paybackByQuarter(
-        segs as SegLike[],
-        deals,
-        costs,
-        quarters,
-        quarterRange,
-        budgets as QuarterBudgetLike[],
-      ),
+      paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, budgets),
     [segs, deals, costs, budgets, quarters],
   );
   return { quarters, rows, segs };

@@ -151,7 +151,7 @@ export function segmentCoverage(
         target: paybackTarget,
         ok: payback.value != null && paybackTarget != null ? payback.value <= paybackTarget : null,
       },
-      figures: { acv: acv.figure, margin, cac: cac.figure, payback } as RowFigures,
+      figures: { acv: acv.figure, margin, cac: cac.figure, payback } satisfies RowFigures,
       acvRangeBasis: acv.rangeBasis,
       assignedDeals: ds.length,
       inferredDeals: ds.filter((d) => assignedByAmount(d, segments)).length,

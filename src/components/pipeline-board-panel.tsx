@@ -11,7 +11,6 @@ import {
   type BoardColumn,
   type BoardGroup,
 } from "@/lib/pipeline-board";
-import type { QuarterBudgetLike } from "@/lib/segment-budget";
 import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
 import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
@@ -61,7 +60,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       return {
         deals: d.data ?? [],
         segments: (s.data ?? []) as SegLike[],
-        budgets: (b.data ?? []) as QuarterBudgetLike[],
+        budgets: b.data ?? [],
         costs: c.data ?? [],
       };
     },

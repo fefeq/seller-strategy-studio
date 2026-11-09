@@ -7,8 +7,8 @@ import { useCurrency, useMe } from "@/hooks/use-me";
 import { Input } from "@/components/ui/input";
 import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
-import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
-import { quartersOfYear, type MarginSource, type QuarterBudgetLike } from "@/lib/segment-budget";
+import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage";
+import { quartersOfYear, type MarginSource } from "@/lib/segment-budget";
 import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
 import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
@@ -56,8 +56,8 @@ export function useSegmentCoverageData(quarter: string) {
       const failed = s.error ?? d.error ?? t.error ?? c.error ?? b.error;
       if (failed) throw failed;
       return {
-        segments: (s.data ?? []) as SegLike[],
-        budgetRows: (b.data ?? []) as QuarterBudgetLike[],
+        segments: s.data ?? [],
+        budgetRows: b.data ?? [],
         deals: d.data ?? [],
         costs: c.data ?? [],
         targets: Object.fromEntries(
