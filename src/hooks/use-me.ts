@@ -38,13 +38,16 @@ export const meQuery = queryOptions({
       if (data.session) throw new Error("No se pudo validar la sesión. Vuelve a intentarlo.");
       return null;
     }
-    // Signed out (or switched) while we were validating: never query with the old user's id.
+    // Signed out (or switched) while we were validating: never query with the old user's id, and never
+    // cache «no user» for the stale window: reject, and the session event that caused it refetches (NK-0115).
     const stillSame = async () =>
       (await supabase.auth.getSession()).data.session?.user.id === user.id;
-    if (!(await stillSame())) return null;
+    const changed = () =>
+      new Error("La sesión ha cambiado mientras se cargaba. Vuelve a intentarlo.");
+    if (!(await stillSame())) throw changed();
     // Joins any company that invited this email before loading memberships.
     await supabase.rpc("accept_invites");
-    if (!(await stillSame())) return null;
+    if (!(await stillSame())) throw changed();
     const [{ data: profile }, { data: members }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase

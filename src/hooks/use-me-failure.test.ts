@@ -8,6 +8,9 @@ const h = vi.hoisted(() => ({
   getUser: 0,
   failNext: 0,
   listeners: [] as ((e: string, s: unknown) => void)[],
+  // Test hooks: run inside the fake server calls to change the session mid-load.
+  onGetUser: null as (() => void) | null,
+  onRpc: null as (() => void) | null,
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -21,7 +24,10 @@ vi.mock("@/integrations/supabase/client", () => {
   };
   return {
     supabase: {
-      rpc: async () => ({ data: null }),
+      rpc: async () => {
+        h.onRpc?.();
+        return { data: null };
+      },
       from: (t: string) =>
         rows(
           t === "org_members"
@@ -44,6 +50,7 @@ vi.mock("@/integrations/supabase/client", () => {
         getUser: async (jwt?: string) => {
           h.getUser++;
           await Promise.resolve();
+          h.onGetUser?.();
           // supabase-js returns (does not throw) AuthRetryableFetchError on a network blip.
           if (h.failNext > 0) {
             h.failNext--;
@@ -84,6 +91,8 @@ beforeEach(async () => {
   h.session = ana;
   h.getUser = 0;
   h.failNext = 0;
+  h.onGetUser = null;
+  h.onRpc = null;
 });
 
 describe("gate extra NK-0098: meQuery cache", () => {
@@ -107,5 +116,25 @@ describe("gate extra NK-0098: meQuery cache", () => {
     // The shell (useMe) mounts again inside the 5-minute window: does it get the user or the cached null?
     const again = await qc.fetchQuery(meQuery);
     expect(again?.user.id, "me after a transient refusal and a successful guard").toBe("user-ana");
+  });
+});
+
+describe("a session that changes mid-load is an error, never «no user» (NK-0115)", () => {
+  it("another user between the validation and accept_invites: rejects and caches nothing", async () => {
+    const qc = new QueryClient();
+    h.onGetUser = () => {
+      h.session = bea;
+    };
+    await expect(qc.fetchQuery(meQuery)).rejects.toThrow();
+    expect(qc.getQueryData(["me"])).toBeUndefined();
+  });
+
+  it("session closed between accept_invites and the load: rejects and caches nothing", async () => {
+    const qc = new QueryClient();
+    h.onRpc = () => {
+      h.session = null;
+    };
+    await expect(qc.fetchQuery(meQuery)).rejects.toThrow();
+    expect(qc.getQueryData(["me"])).toBeUndefined();
   });
 });
