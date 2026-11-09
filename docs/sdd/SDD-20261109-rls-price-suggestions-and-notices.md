@@ -1,17 +1,18 @@
 # SDD-20261109-rls-price-suggestions-and-notices · [Bug] La base de datos aplica la regla de las sugerencias de precio y deja tocar de un aviso solo «leído»
 
 **Tipo:** Bug (permisos, con dos migraciones) · **Prioridad propuesta:** Media (NK-0044: hoy el servidor ya filtra; NK-0070: severidad baja según su gate)
-**Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** U-1 (NK-0044) **Aplazada** (decisión de Fede, 2026-11-01, «hasta decidir el destino de la base»; confirmada por el coordinador el 2026-11-09: fuera del Sprint 3) · U-2 (NK-0070) Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0044 (U-1) y NK-0070 (U-2), independientes entre sí
 **PRD:** No aplica (bugs de permisos) · **Depende de:** NK-0042 (`SDD-20261101-price-suggestions-visibility-server.md`, en `main`: regla en código)
-**Sustituye a:** `SDD-20261101-price-suggestions-rls.md` (Aplazado el 2026-11-01). Este SDD recoge sus dos bloqueantes (B-1, B-2) y tres importantes (I-1 a I-3) del gate y los resuelve; aquel queda como historia y no se construye.
+**Relación con:** `SDD-20261101-price-suggestions-rls.md` (Aplazado el 2026-11-01). La U-1 de este SDD es una propuesta para cuando NK-0044 se desbloquee: recoge los bloqueantes B-1, B-2 y los importantes I-1 a I-3 de aquel gate, pero no sustituye a aquel SDD ni entra en el Sprint 3. Solo U-2 se construye ahora.
 
+> **En el Sprint 3 solo entra U-2 (NK-0070).** U-1 queda escrita como propuesta aplazada; no tiene número de migración ni brief.
 > Nivel elegido: SDD corto con dos unidades. Las dos tocan RLS o GRANT (tabla de `nokko-shape`: exige SDD). Van juntas porque las dos son migraciones de permisos con la misma comprobación previa en la base viva; cada una se puede integrar, aplicar y revertir sola.
 > Números de línea comprobados en `main` `1fef724`.
 
 ## 1. Resumen
-**U-1 (NK-0044).** La regla «una sugerencia de precio solo la ven y deciden Owner, Sales Leader y Deal Desk» vive solo en código (`canViewStrategy`). La migración `0082` la copia en la base: políticas restrictivas de lectura y actualización en `suggestions`, un disparador que descarta en silencio la inserción de una fila de precio hecha por quien no tiene esos roles (así la sincronización no falla, B-1 del gate anterior) y políticas restrictivas en `strategy_changes` y `strategy_links` que cuelgan de la sugerencia de origen, no del elemento (B-2).
-**U-2 (NK-0070).** Un miembro puede reescribir cualquier columna de sus avisos (`dedupe_key`, `title`, `body`, `link`, `org_id`…). La migración `0083` deja a `authenticated` actualizar solo `read_at` (permiso por columna), que es lo único que la aplicación cambia desde el navegador.
+**U-1 (NK-0044), aplazada.** La regla «una sugerencia de precio solo la ven y deciden Owner, Sales Leader y Deal Desk» vive solo en código (`canViewStrategy`). La migración propuesta (número por fijar cuando se desbloquee) la copiaría en la base: políticas restrictivas de lectura y actualización en `suggestions`, un disparador que descarta en silencio la inserción de una fila de precio hecha por quien no tiene esos roles (así la sincronización no falla, B-1 del gate anterior) y políticas restrictivas en `strategy_changes` y `strategy_links` que cuelgan de la sugerencia de origen, no del elemento (B-2).
+**U-2 (NK-0070), Sprint 3.** Un miembro puede reescribir cualquier columna de sus avisos (`dedupe_key`, `title`, `body`, `link`, `org_id`…). La migración `0082` deja a `authenticated` actualizar solo `read_at` (permiso por columna), que es lo único que la aplicación cambia desde el navegador.
 
 ## 2. Problema y para quién
 - U-1: un miembro sin rol de precios puede leer, con el cliente del navegador y su sesión, el título y el cuerpo de una sugerencia de precio, y aceptarla, aplazarla o descartarla con `decide_strategy_suggestion`, saltándose el filtro de la aplicación.
@@ -43,7 +44,7 @@
 
 **Uso real:** sin dato para las dos (el 2026-11-01 se midieron 0 sugerencias de precio; no se ha vuelto a medir).
 
-**Por qué ahora:** Sprint 3. NK-0044 estaba aplazado «hasta decidir el destino de la base»; ver P-1.
+**Por qué ahora:** U-2 entra en el Sprint 3. NK-0044 (U-1) sigue aplazado «hasta decidir el destino de la base» (decisión de Fede del 2026-11-01, confirmada por el coordinador el 2026-11-09).
 
 ## 4. Resultado buscado
 - U-1: con la sesión del navegador, un miembro sin `owner`, `sales_leader` ni `deal_desk` no lee, no decide y no crea una sugerencia de precio, ni ve sus decisiones, cambios propuestos o enlaces; el resto de sugerencias y la sincronización funcionan igual.
@@ -52,12 +53,13 @@
 
 ## 5. Alcance
 **Incluye:**
-- U-1: `drizzle/migrations/0082_price_suggestions_rls.sql`, entrada en `meta/_journal.json`, `src/lib/price-suggestions-rls.pg.test.ts` y una línea en `src/lib/AGENTS.md` (entrada de sugerencias) y `docs/BASE-DE-DATOS.md`.
-- U-2: `drizzle/migrations/0083_notifications_read_only.sql`, entrada en `meta/_journal.json`, `src/lib/notifications-grants.pg.test.ts` y una línea en `docs/BASE-DE-DATOS.md`.
-- El guion de vuelta atrás comentado al final de cada migración.
+- U-1 (**aplazada, no se construye en el Sprint 3**): migración de número por fijar, `src/lib/price-suggestions-rls.pg.test.ts` y una línea en `src/lib/AGENTS.md` y `docs/BASE-DE-DATOS.md`.
+- U-2: `drizzle/migrations/0082_notifications_read_only.sql`, entrada en `meta/_journal.json`, `src/lib/notifications-grants.pg.test.ts` y una línea en `docs/BASE-DE-DATOS.md`.
+- El guion de vuelta atrás comentado al final de la migración.
 
 **No incluye** (el brief lo copia a «Movimientos prohibidos»):
-- Aplicar las migraciones en la base de Lovable: lo hace Fede, o el coordinador con su OK, tras las comprobaciones de §13.
+- U-1 entera en el Sprint 3 (aplazada).
+- Aplicar la migración en la base de Lovable: lo hace Fede, o el coordinador con su OK, tras las comprobaciones de §13.
 - Cambiar código de la aplicación (`canViewStrategy`, `syncStrategySuggestions`, `proposeChange`, `notification-center.tsx`), salvo que el gate demuestre que hace falta; si hace falta, se para y se vuelve a este SDD.
 - Ampliar la regla de precio a otras causas del detector (`review:`, `experiment:`, NK-0045) o a `catalog:unsold`.
 - Cambiar `PRICE_ROLES`.
@@ -72,8 +74,8 @@
 **Eliminado:** nada.
 
 ## 7. Historias y criterios de aceptación
-### H-1 (U-1): Como Owner, quiero que la base impida a un miembro sin rol de precios ver o decidir una sugerencia de precio, para no depender solo de la aplicación.
-Prueba de todos: `src/lib/price-suggestions-rls.pg.test.ts` (nuevo, PGlite). Ejecuta los archivos reales `0068`, `0070`, `0073` y `0082` sobre una tabla `suggestions` creada como en `strategy-f0.pg.test.ts:57-68` pero con la política «org update» **exacta** de `0013:7-10` (la de ese test no lo es, según el gate anterior); siembra un `ae`, un `sales_leader` y un `deal_desk` en la empresa A, más el `owner` del arnés.
+### H-1 (U-1, aplazada): Como Owner, quiero que la base impida a un miembro sin rol de precios ver o decidir una sugerencia de precio, para no depender solo de la aplicación.
+Prueba de todos: `src/lib/price-suggestions-rls.pg.test.ts` (nuevo, PGlite). Ejecuta los archivos reales `0068`, `0070`, `0073` y la migración de U-1 (número por fijar) sobre una tabla `suggestions` creada como en `strategy-f0.pg.test.ts:57-68` pero con la política «org update» **exacta** de `0013:7-10` (la de ese test no lo es, según el gate anterior); siembra un `ae`, un `sales_leader` y un `deal_desk` en la empresa A, más el `owner` del arnés.
 - **CA-1** (lectura) Un `ae` no recibe las filas de precio (`detector = 'strategy_product_price'` y `dedupe_key` que empieza por `strategy_product_price:price:`) aunque estén sin asignar o asignadas a él; sí recibe una de `strategy_product_price` con `catalog:unsold:…` y las de otros detectores. Falla hoy.
 - **CA-2** (roles que sí) `owner`, `sales_leader` y `deal_desk` leen las de precio como hoy, sujetos a la asignación de 0013 (un `deal_desk` no ve una de precio asignada a otra persona, igual que hoy con cualquier sugerencia). Guarda.
 - **CA-3** (decidir) Un `ae` que llama a `decide_strategy_suggestion` sobre una de precio recibe `NULL`; no cambia el estado ni crea fila en `strategy_decisions`. Un `UPDATE` directo de esa fila afecta 0 filas. Falla hoy.
@@ -83,15 +85,15 @@ Prueba de todos: `src/lib/price-suggestions-rls.pg.test.ts` (nuevo, PGlite). Eje
 - **CA-7** (rol revocado) Al pasar el `sales_leader` a `ae` en `org_members`, la siguiente consulta ya no devuelve las de precio. Falla hoy.
 - **CA-8** (cliente privilegiado y empresas) `service_role` lee, inserta y decide filas de precio como hoy (el disparador no actúa sin `auth.uid()`); el `owner` de la empresa B no ve las de A. Guarda.
 - **CA-9** (equivalencia con el código) Una tabla de casos compartida `src/test/price-suggestion-cases.ts` (detector, clave, roles → visible) da lo mismo con `canViewStrategy` en TS (`src/lib/strategy-suggestions.test.ts`, `describe` nuevo) que con las políticas en PGlite; incluye claves con `_` y `%` en posiciones de comodín (`strategy_product_priceXprice:…`), que deben ser **no** precio en los dos lados (la RLS usa `starts_with`, no `LIKE`).
-- **CA-10** (migración) Aplicar `0082` dos veces no falla y no cambia ninguna fila de `suggestions`, `strategy_changes` ni `strategy_links` (huella `md5(string_agg(...))` antes y después). Y `src/lib/migrations-journal.test.ts` sigue en verde con la entrada nueva.
+- **CA-10** (migración) Aplicar la migración de U-1 dos veces no falla y no cambia ninguna fila de `suggestions`, `strategy_changes` ni `strategy_links` (huella `md5(string_agg(...))` antes y después). Y `src/lib/migrations-journal.test.ts` sigue en verde con la entrada nueva.
 
 ### H-2 (U-2): Como miembro, puedo marcar mis avisos como leídos y nada más.
-Prueba de todos: `src/lib/notifications-grants.pg.test.ts` (nuevo, PGlite). Crea `notifications` con las columnas de 0049 + 0050 + 0078 (`dedupe_key` y su `unique`) y aplica tal cual los `grant` y políticas de `0049:21-28`, como `money-notices.pg.test.ts:41-53` (que hoy no copia «own mark read»), y luego `0083`.
+Prueba de todos: `src/lib/notifications-grants.pg.test.ts` (nuevo, PGlite). Crea `notifications` con las columnas de 0049 + 0050 + 0078 (`dedupe_key` y su `unique`) y aplica tal cual los `grant` y políticas de `0049:21-28`, como `money-notices.pg.test.ts:41-53` (que hoy no copia «own mark read»), y luego `0082`. Cada CA se ejecuta en **dos variantes**: (a) los permisos del repo (`0049:21`); (b) los permisos por defecto de Supabase, con `grant all on public.notifications to anon, authenticated` y un permiso de columna extra antes de U-2 (como la sonda del gate, `probe-u2-column-grant.mjs`), para probar la configuración viva y no solo la del repo.
 - **CA-11** Un miembro con su sesión actualiza `read_at` de su aviso (como `notification-center.tsx:139-142`, con `.in("id", ids)`): 1 fila cambiada. Guarda.
 - **CA-12** Ese miembro no puede actualizar `dedupe_key`, `title`, `body`, `link`, `kind`, `job_id`, `org_id`, `user_id`, `telegram_sent_at` ni `created_at` de su aviso: `permission denied` (42501) y la fila sigue igual. Un `update` que mezcla `read_at` y otra columna también falla entero. Falla hoy.
 - **CA-13** No puede insertar ni borrar avisos (como hoy: sin políticas de inserción ni borrado); `anon` no puede actualizar nada. Guarda.
 - **CA-14** `service_role` sigue actualizando `telegram_sent_at` e insertando; `money_notify` y `notify_job_end` (security definer) siguen insertando. Guarda (la prueba ejecuta `0078`/`0079` como `money-notices.pg.test.ts`, o al menos un `insert` como `service_role`).
-- **CA-15** Aplicar `0083` dos veces no falla; ninguna fila cambia; `src/lib/migrations-journal.test.ts` en verde.
+- **CA-15** Aplicar `0082` dos veces no falla; ninguna fila cambia; `src/lib/migrations-journal.test.ts` en verde.
 
 ## 8. Casos límite y errores
 - **U-1, `deal_desk` y asignación:** `deal_desk` no es líder en 0013, así que solo ve las sin asignar o suyas. Es lo que hace hoy el código (`canActOnSuggestion` + `canViewStrategy`); no se amplía.
@@ -101,13 +103,13 @@ Prueba de todos: `src/lib/notifications-grants.pg.test.ts` (nuevo, PGlite). Crea
 - **U-1, `LIKE` con `_`:** se usa `starts_with(dedupe_key, 'strategy_product_price:price:')`, igual que `startsWith` en TS (CA-9).
 - **U-2, la pantalla:** `markRead` (`notification-center.tsx:137-143`) no comprueba el error; si la base viva tuviera otra política o GRANT, fallaría en silencio. Lo cubre la comprobación previa de §13.
 - **U-2, `org_id` del aviso:** hoy se puede mover un aviso propio a otra empresa (la `with check` no mira `org_id`); con U-2 deja de poderse por la columna.
-- **Otra empresa:** las dos migraciones mantienen el filtro por `org_id`/`current_org()` de las políticas existentes; CA-8 lo fija para U-1.
+- **Otra empresa:** las dos migraciones (U-1 cuando se desbloquee, U-2) mantienen el filtro por `org_id`/`current_org()` de las políticas existentes; CA-8 lo fija para U-1.
 
 ## 9. Experiencia y copy
 Sin textos nuevos. Para quien no tiene el rol, una sugerencia de precio sigue sin existir en pantalla. Los avisos se marcan como leídos igual que hoy.
 
 ## 10. Datos, permisos y privacidad
-**U-1, SQL propuesto (el autor lo escribe y lo prueba; todo dentro de `begin; … commit;`):**
+**U-1, SQL propuesto (aplazado; ver §17 «pendiente para cuando se desbloquee», que lista lo que falta en este SQL):**
 ```sql
 create or replace function public.is_price_suggestion(_detector text, _dedupe_key text)
 returns boolean language sql immutable set search_path = public as $$
@@ -152,18 +154,17 @@ create trigger suggestions_price_insert_guard before insert on public.suggestion
 - `has_org_role` acepta `deal_desk` (`0070` ya lo usa en `strategy_changes`) [el test lo confirma].
 - El disparador se llama `suggestions_price_insert_guard`, que en orden alfabético va antes de `suggestions_strategy_guard` (0073): si devuelve `NULL`, el otro no corre. Sin `security definer`: corre como quien inserta y solo lee `org_members` por `has_org_role`.
 
-**U-2, SQL propuesto:**
+**U-2, SQL propuesto (`0082_notifications_read_only.sql`, sin `begin`/`commit` propios, como el resto de migraciones del repo):**
 ```sql
-begin;
 revoke update on public.notifications from authenticated, anon;
 grant update (read_at) on public.notifications to authenticated;
-commit;
 ```
+El `revoke update` de tabla quita también cualquier permiso `UPDATE` por columna que hubiera (comprobado por el gate en PGlite).
 La política «own mark read» no cambia; con el permiso por columna basta (un `UPDATE` que nombra otra columna falla con 42501 antes de mirar la política).
 
 **Vuelta atrás (comentada al final de cada archivo):**
-- `0082`: `drop trigger if exists suggestions_price_insert_guard on public.suggestions; drop function if exists public.suggestions_price_insert_guard(); drop policy if exists "price read" on public.suggestions; drop policy if exists "price update" on public.suggestions; drop policy if exists "price read" on public.strategy_changes; drop policy if exists "price read" on public.strategy_links; drop function if exists public.suggestion_is_price(uuid); drop function if exists public.can_see_prices(uuid); drop function if exists public.is_price_suggestion(text, text);`. Deja la base como en `0081`; no hay datos que restaurar.
-- `0083`: `revoke update (read_at) on public.notifications from authenticated; grant update on public.notifications to authenticated;` (vuelve exactamente a `0049:21`).
+- U-1 (aplazada): `drop trigger if exists suggestions_price_insert_guard on public.suggestions; drop function if exists public.suggestions_price_insert_guard(); drop policy if exists "price read" on public.suggestions; drop policy if exists "price update" on public.suggestions; drop policy if exists "price read" on public.strategy_changes; drop policy if exists "price read" on public.strategy_links; drop function if exists public.suggestion_is_price(uuid); drop function if exists public.can_see_prices(uuid); drop function if exists public.is_price_suggestion(text, text);`. Deja la base como en `0081`; no hay datos que restaurar.
+- `0082` (U-2): la vuelta atrás reaplica **exactamente lo que anotó la comprobación previa 3** para `authenticated` y `anon` (permisos de tabla y de columna), no el `0049:21` del repo. El guion comentado lo dice y deja como ejemplo el caso del repo: `revoke update (read_at) on public.notifications from authenticated; grant update on public.notifications to authenticated;`, más los `grant` que la comprobación 3 haya mostrado (por ejemplo `grant update on public.notifications to anon;` si `anon` lo tenía).
 
 **Privacidad:** pruebas con empresas, personas y textos ficticios del arnés; nada de clientes.
 
@@ -175,14 +176,15 @@ La política «own mark read» no cambia; con el permiso por columna basta (un `
 ## 12. Unidades de trabajo
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
-| U-1 | `0082_price_suggestions_rls.sql` (+ journal, `when` mayor que el máximo de `main`), tabla de casos `src/test/price-suggestion-cases.ts`, `describe` en `strategy-suggestions.test.ts`, línea en `src/lib/AGENTS.md` y `docs/BASE-DE-DATOS.md` | CA-1 a CA-10 | `src/lib/price-suggestions-rls.pg.test.ts` (sin la migración, un `ae` lee una de precio: CA-1 falla) |
-| U-2 | `0083_notifications_read_only.sql` (+ journal), línea en `docs/BASE-DE-DATOS.md` | CA-11 a CA-15 | `src/lib/notifications-grants.pg.test.ts` (sin la migración, un miembro cambia `dedupe_key`: CA-12 falla) |
+| U-1 (**Aplazada**) | Migración de precio (número por fijar al desbloquear), tabla de casos `src/test/price-suggestion-cases.ts`, `describe` en `strategy-suggestions.test.ts`, línea en `src/lib/AGENTS.md` y `docs/BASE-DE-DATOS.md` | CA-1 a CA-10 | `src/lib/price-suggestions-rls.pg.test.ts` (sin la migración, un `ae` lee una de precio: CA-1 falla) |
+| U-2 | `0082_notifications_read_only.sql` (+ journal, `when` mayor que 1794225600000), línea en `docs/BASE-DE-DATOS.md` | CA-11 a CA-15 (dos variantes de permisos) | `src/lib/notifications-grants.pg.test.ts` (sin la migración, un miembro cambia `dedupe_key`: CA-12 falla) |
 
-U-1 y U-2 son independientes (archivos distintos, solo comparten `meta/_journal.json`): pueden ir en ramas separadas; quien integre segundo re-sella su `when`.
+En el Sprint 3 solo se construye U-2. U-1 no tiene brief hasta que Fede la desbloquee; entonces tomará el siguiente número libre.
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
-- **Numeración:** `main` termina en `0081_knowledge_binding_writers` (`idx` 80, `when` 1794225600000). Propuesta: `0082` (U-1, `when` 1794312000000) y `0083` (U-2, `when` 1794398400000). El Sprint 3 también propone `0084` en `SDD-20261109-deals-no-source.md`. Números y `when` se fijan al integrar (`src/lib/AGENTS.md:58`; lo comprueba `src/lib/migrations-journal.test.ts`).
-- **Comprobación previa en la base viva (la ejecuta Fede, solo lectura, antes de aplicar; como la de la 0081):**
+- **Numeración:** `main` termina en `0081_knowledge_binding_writers` (`idx` 80, `when` 1794225600000). En el Sprint 3: `0082` = U-2 (`0082_notifications_read_only.sql`, `when` 1794312000000) y `0083` = deals (`SDD-20261109-deals-no-source.md`, `when` mayor que el de U-2). U-1 no reserva número: cuando se desbloquee toma el siguiente libre, para que el journal no quede en orden 0083 → 0084 → 0082 (`src/lib/AGENTS.md:58`). Números y `when` se re-sellan al integrar; lo comprueba `src/lib/migrations-journal.test.ts`.
+- **Aplicación:** el archivo no abre transacción propia; se aplica a mano en el editor SQL (lo hace Fede) o con el agente de Lovable.
+- **Comprobación previa en la base viva (la ejecuta Fede, solo lectura, antes de aplicar; como la de la 0081). Para U-2 bastan la 3 y la 1 (fila de `notifications`); el resto queda para U-1:**
   1. `select polname, polpermissive, polcmd, pg_get_expr(polqual, polrelid), pg_get_expr(polwithcheck, polrelid) from pg_policy where polrelid in ('public.suggestions'::regclass, 'public.strategy_changes'::regclass, 'public.strategy_links'::regclass, 'public.notifications'::regclass);` → deben salir las de `0013`, `0007:99`, `0070` y `0049`, sin políticas «price …» ni otras.
   2. `select tgname from pg_trigger where tgrelid = 'public.suggestions'::regclass and not tgisinternal;` → no existe `suggestions_price_insert_guard`.
   3. `select grantee, privilege_type from information_schema.role_table_grants where table_name = 'notifications';` y `select grantee, column_name, privilege_type from information_schema.column_privileges where table_name = 'notifications' and privilege_type = 'UPDATE';` → anotar qué tiene `authenticated` y `anon` hoy.
@@ -198,7 +200,7 @@ U-1 y U-2 son independientes (archivos distintos, solo comparten `meta/_journal.
 - **El disparador descarta filas sin error:** un fallo del predicado podría descartar sugerencias que no son de precio. Lo cubren CA-5 (la fila que no es de precio entra) y CA-9 (equivalencia con TS).
 - **`suggestion_is_price` es `security definer`:** solo devuelve un booleano sobre un id; quien llama ya ve el `suggestion_id` en la fila. Revela «esta id es de precio» solo a quien puede leer la fila de `strategy_changes`, que es justo lo que la política oculta.
 - **Rendimiento:** `suggestion_is_price` se evalúa por fila de `strategy_changes`/`strategy_links` (tablas pequeñas; sin dato de tamaño real). `suggestions.id` es clave primaria.
-- **U-2 y la base viva:** si `authenticated` tuviera hoy permisos por columna además del de tabla, el `revoke` de tabla no los quita; la comprobación 3 lo detecta.
+- **U-2 y la base viva:** el `revoke` de tabla también quita los permisos de columna previos (comprobado por el gate en PGlite); la comprobación 3 sirve para anotar el punto de partida, que es lo que restaura la vuelta atrás.
 - **Aplicación:** las migraciones no se aplican solas (`docs/BASE-DE-DATOS.md`); se entregan sin aplicar y la entrega dice si lo están.
 
 ## 15. Preguntas para Fede y para la revisión técnica
@@ -208,9 +210,10 @@ U-1 y U-2 son independientes (archivos distintos, solo comparten `meta/_journal.
 - **D-3.** B-2: `strategy_changes` y `strategy_links` se ocultan por la sugerencia de origen (`suggestion_is_price`), nunca por `element`.
 - **D-4.** NK-0070 con permiso por columna, no con disparador.
 
+**Decisión del coordinador (delegación de Fede, 2026-11-09):** NK-0044 (U-1) queda fuera del Sprint 3; sigue aplazada «hasta decidir el destino de la base», como decidió Fede el 2026-11-01. Solo U-2 entra. Las migraciones se escriben en el repo, pero solo Fede las aplica.
+
 **Para Fede:**
-1. **P-1.** El 2026-11-01 aplazaste NK-0044 «hasta decidir el destino de la base». Al meterlo en el Sprint 3, ¿das esa condición por cumplida o retirada? Si no, U-1 se queda en Borrador y solo sigue U-2.
-2. **P-2.** ¿Aplicas tú las dos migraciones en la base viva tras el gate, con las comprobaciones de §13? Recomiendo sí, cada una por separado.
+1. ¿Aplicas tú `0082` (U-2) en la base viva tras el gate, con la comprobación previa 3 de §13 y su vuelta atrás? Recomiendo sí.
 
 **Para la revisión técnica:**
 3. Confirmar en PGlite que un `BEFORE INSERT` que devuelve `NULL` evita el `42501` de `ON CONFLICT` con la política restrictiva de lectura (lo vio la sonda del gate anterior, no una prueba del repo).
@@ -229,11 +232,23 @@ U-1 y U-2 son independientes (archivos distintos, solo comparten `meta/_journal.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: pendiente
-- [Por verificar] que sigue sin comprobarse: pendiente
-- Contradicciones con el código o con decisiones previas: pendiente
-- Lo que esta revisión NO demuestra: pendiente
+- Veredicto del gate (pasada 1, 2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass1.md`): CAMBIOS (0 bloqueantes, 1 mayor, 4 menores). **El gate solo revisó U-2**; U-1 está fuera del Sprint 3 y solo se anotó lo que bloquearía su gate.
+
+### §17 Gate · pasada 1: hallazgos y resolución (U-2)
+| Hallazgo | Resolución |
+|---|---|
+| **MAYOR R-M1** El SDD no refleja que U-1 está aplazada y numera como si entrara | Estado «U-1 Aplazada / U-2 Borrador»; quitado «Sustituye a» (ahora «Relación con»); P-1 cerrada con la decisión; U-2 = `0082_notifications_read_only.sql` (`when` > 1794225600000), deals = `0083`; U-1 tomará el siguiente número libre; esta sección dice que el gate solo cubrió U-2. |
+| **MENOR R-m1** Afirmación falsa en §14 sobre permisos por columna | §14 corregido: el `revoke` de tabla también quita los permisos de columna; la comprobación 3 anota el punto de partida. |
+| **MENOR R-m2** La vuelta atrás vuelve a `0049:21`, no al estado vivo | §10: la vuelta atrás reaplica exactamente lo anotado en la comprobación 3 para `authenticated` y `anon`, y el guion comentado lo dice. |
+| **MENOR R-m3** `begin; … commit;` dentro de la migración | Quitado; §13 dice que el archivo no abre transacción propia y se aplica a mano. |
+| **MENOR R-m4** CA-13 y CA-15 en PGlite no reproducen los permisos por defecto de Supabase | H-2: cada CA se ejecuta en dos variantes, la del repo y otra con `grant all ... to anon, authenticated` y un permiso de columna extra antes de U-2. |
+| Decisión del coordinador: U-1 fuera del Sprint 3 | Registrada en §15 y en la cabecera. |
+
+### Pendiente para cuando se desbloquee U-1 (notas del gate, no gateadas ahora)
+1. El SQL de §10 no incluye los `drop policy if exists` ni el `drop trigger if exists` que el texto promete; `create trigger` sin `drop` hace fallar CA-10 en la segunda pasada.
+2. El revoke y grant de las tres funciones nuevas va en un comentario, no en SQL. `suggestion_is_price` es `security definer` y, con los EXECUTE por defecto de Supabase, la podría llamar `anon`: tiene que ser SQL explícito, con su CA.
+3. El brief debe fijar la versión viva de `has_org_role` con `deal_desk` (`0070:60` lo usa, pero solo en `strategy_changes`).
+4. La pregunta 3 de §15 (PGlite frente a Supabase con disparador `BEFORE INSERT` que devuelve NULL y `ON CONFLICT`) sigue sin probarse en el repo.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.
