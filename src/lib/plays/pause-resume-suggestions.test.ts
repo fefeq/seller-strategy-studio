@@ -181,6 +181,7 @@ describe("closed suggestions of a play's rules (SDD-20261109-plays-no-reopen)", 
     const db = fakeDb(store, { plays });
     at(8);
     await syncSuggestions(db, "o1", [sug("meeting_no_prep", KEY)]);
+    expect(byKey(store, KEY)?.status).toBe("pending");
     byKey(store, KEY)!.notified_at = NOTIFIED;
     plays.push(play(false, T(9))); // paused
     at(10);
