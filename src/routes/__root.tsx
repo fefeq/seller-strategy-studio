@@ -17,7 +17,7 @@ import { reloadOnceForStaleModule } from "@/lib/stale-module";
 import { handleAuthEvent, handleOtherUserValidated } from "@/lib/session-cache";
 import { lastValidatedUserId, onOtherUserValidated } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
-import { AccountSwitchGate } from "@/components/account-switch-gate";
+import { AccountSwitchGate, HideWhileSwitching } from "@/components/account-switch-gate";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -171,7 +171,9 @@ function RootComponent() {
       <AccountSwitchGate>
         <Outlet />
       </AccountSwitchGate>
-      <Toaster />
+      <HideWhileSwitching>
+        <Toaster />
+      </HideWhileSwitching>
       <DialogHost />
       <CookieBanner />
     </QueryClientProvider>

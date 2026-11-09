@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { isSwitchingAccount, useSwitchingAccount } from "@/lib/account-switch";
 
 /**
  * Nokko-styled replacements for window.confirm / window.prompt.
@@ -48,6 +49,13 @@ type UnsavedRequest = {
 type Request = ConfirmRequest | TextRequest | UnsavedRequest;
 
 let push: ((r: Request) => void) | null = null;
+
+/** What each kind of question answers when it is dismissed. */
+function cancel(r: Request) {
+  if (r.kind === "confirm") r.resolve(false);
+  else if (r.kind === "unsaved") r.resolve("stay");
+  else r.resolve(null);
+}
 
 export type ConfirmOptions = { body?: string; confirmLabel?: string; cancelLabel?: string };
 /** multiline: a tall text area for pasted documents; maxLength: shows a counter and blocks sending above it. */
@@ -99,10 +107,21 @@ export function DialogHost() {
   const [text, setText] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
   const areaRef = useRef<HTMLTextAreaElement>(null);
-  const current = queue[0];
+  // NK-0120: while the tab changes account nothing of the previous user may stay on screen.
+  const switching = useSwitchingAccount();
+  const current = switching ? undefined : queue[0];
 
   useEffect(() => {
-    push = (r) => setQueue((q) => [...q, r]);
+    if (!switching || queue.length === 0) return;
+    queue.forEach(cancel);
+    setQueue([]);
+  }, [switching, queue]);
+
+  useEffect(() => {
+    push = (r) => {
+      if (isSwitchingAccount()) cancel(r);
+      else setQueue((q) => [...q, r]);
+    };
     return () => {
       push = null;
     };
