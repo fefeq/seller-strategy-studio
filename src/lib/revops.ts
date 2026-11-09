@@ -3,6 +3,8 @@
  * Pure and tested: reconciled stage funnel, closed-lost analysis, cohorts and weekly trends.
  */
 
+import { NO_SOURCE } from "@/lib/metrics-quarter";
+
 export type RDeal = {
   id: string; stage: string; amount: number | null; created_at: string; closed_at: string | null;
   updated_at?: string | null; source: string | null; segment_id: string | null;
@@ -84,7 +86,7 @@ export function lostAnalysis(deals: RDeal[], history: RHistory[], path: string[]
     amount: lost.reduce((s, d) => s + Number(d.amount ?? 0), 0),
     byStage: tally((d) => journey(d, h.get(d.id) ?? [], path).lostFrom ?? "—"),
     bySegment: tally((d) => d.segment_id ?? "—"),
-    bySource: tally((d) => d.source ?? "—"),
+    bySource: tally((d) => d.source ?? NO_SOURCE),
   };
 }
 

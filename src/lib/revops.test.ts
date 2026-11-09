@@ -1,5 +1,7 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { cohorts, lostAnalysis, reconciledFunnel, weeklyTrend, type RDeal, type RHistory } from "./revops";
+import { NO_SOURCE } from "./metrics-quarter";
 
 const path = ["discovery", "proposal", "negotiation"];
 const d = (id: string, stage: string, amount = 100, extra: Partial<RDeal> = {}): RDeal =>
@@ -51,5 +53,27 @@ describe("weeklyTrend", () => {
     expect(w[0].created).toBe(4);
     expect(w[2]).toMatchObject({ lost: 1 });
     expect(w[3]).toMatchObject({ won: 1, wonAmount: 1000 });
+  });
+});
+
+// SDD-20261109-deals-no-source U-2 (NK-0107) CA-6: a deal without source is grouped under NO_SOURCE, written once, never as a literal.
+describe("deals without source", () => {
+  const nullSource = [d("n1", "lost", 700, { closed_at: "2026-01-20T12:00:00Z", source: null })];
+  it("lostAnalysis and cohorts group a null source under NO_SOURCE", () => {
+    expect(lostAnalysis(nullSource, [], path).bySource).toEqual([
+      { key: NO_SOURCE, count: 1, amount: 700 },
+    ]);
+    expect(cohorts(nullSource, (x) => x.source ?? NO_SOURCE).map((c) => c.key)).toEqual([
+      NO_SOURCE,
+    ]);
+  });
+  it("revops.ts, the panels and the label maps use NO_SOURCE, not a «—» literal for the source", () => {
+    const read = (f: string) => readFileSync(`${process.cwd()}/${f}`, "utf8");
+    expect(read("src/lib/revops.ts")).not.toMatch(/source \?\? "—"/);
+    expect(read("src/components/metrics/revops-panels.tsx")).not.toMatch(/source \?\? "—"/);
+    expect(read("src/components/metrics/revops-panels.tsx")).not.toContain('"—": "Sin origen"');
+    expect(read("src/components/metrics/performance-panels.tsx")).not.toContain(
+      '"—": "Sin origen"',
+    );
   });
 });
