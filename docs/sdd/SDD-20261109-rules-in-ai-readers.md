@@ -1,9 +1,9 @@
 # SDD-20261109-rules-in-ai-readers · [Mejora] Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15.1) · **Prioridad propuesta:** Alta (cierra el hueco que NK-0087 dejó fuera de alcance en su §5 y §15.4)
-**Estado:** Borrador · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), gate sin objeciones · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0096
-**PRD:** No aplica (mejora acotada: extiende a más llamadas un lector ya aprobado y entregado; la decisión de hacerlo es de Fede, 2026-11-06, y el alcance del Sprint 2, 2026-11-09) · **Depende de:** `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho: `src/lib/knowledge-rules.ts`) · **Coordina con:** NK-0095 (`SDD-20261109-rules-write-permissions.md`), que añade exportaciones a `knowledge-rules.ts`; este SDD **no modifica** ese módulo, solo lo importa.
+**PRD:** No aplica (mejora acotada: extiende a más llamadas un lector ya aprobado y entregado; la decisión de hacerlo es de Fede, 2026-11-06, y el alcance del Sprint 2, 2026-11-09) · **Depende de:** NK-0095 (`SDD-20261109-rules-write-permissions.md`: código y migración 0081 aplicada en la base real; revisión de coherencia del Sprint 2). Antes: `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho: `src/lib/knowledge-rules.ts`)· **Coordina con:** NK-0095 (`SDD-20261109-rules-write-permissions.md`), que añade exportaciones a `knowledge-rules.ts`; este SDD **no modifica** ese módulo, solo lo importa.
 
 > Números de línea comprobados en `f59681f` (worktree `seller-strategy-studio-s2docs`, rama `docs/sprint2-sdds-20261109`; `git diff f59681f HEAD -- src` está vacío).
 
@@ -181,6 +181,8 @@ Orden: U-1 → U-2 → U-3 → U-4 → U-5 (U-4 usa `rulesRead` de U-1 y `mensaj
 - **Choque con NK-0095:** ninguno en `knowledge-rules.ts` (este SDD no lo modifica). Si NK-0095 cambia `loadAgentRules`, este SDD se reajusta.
 - **Choque con NK-0053 (5a):** no toca `agent.server.ts`; 5a CA-38 sigue igual.
 
+- **Dependencia de seguridad (decisión del coordinador, 2026-11-09):** este SDD multiplica los sitios donde el texto de una regla pasa a ser instrucción. No se entrega a producción antes de que la entrega de NK-0095 confirme la migración aplicada; ambos se entregan en la misma PR y el mensaje de entrega a Fede lo dice. El manifiesto MCP lo regenera este ticket sobre la rama con NK-0095 integrado.
+
 ## 15. Preguntas para Fede y para la revisión técnica
 1. **Tipo:** el ledger dice `feature`; este SDD la trata como mejora acotada sin PRD (extiende un lector ya aprobado a más llamadas, sin esquema). **Recomendación:** mejora, sin PRD.
 2. **Texto de Conocimiento:** la sección Reglas dice «El agente lee estas reglas en cada conversación y al redactar seguimientos y briefs de reunión.» (`hub-screen.tsx:53`), que tras este cambio se queda corto (no falso). **Recomendación:** no tocarlo en este SDD (NK-0095 cambia esa pantalla y C2 mide la casilla); si quieres el texto completo, un ticket aparte tras NK-0095.
@@ -205,6 +207,9 @@ Orden: U-1 → U-2 → U-3 → U-4 → U-5 (U-4 usa `rulesRead` de U-1 y `mensaj
 - [Por verificar] que sigue sin comprobarse: —
 - Contradicciones con el código o con decisiones previas: —
 - Lo que esta revisión NO demuestra: —
+
+
+Revisión de coherencia entre los SDD del Sprint 2: `docs/sdd/annex/sprint2-cross-sdd-gate-20261109.md`.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
