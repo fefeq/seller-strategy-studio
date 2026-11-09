@@ -4,10 +4,16 @@ import type { QueryClient } from "@tanstack/react-query";
 
 type AuthSession = { user: { id: string } } | null;
 
-/** Drop everything user- or company-scoped: in-flight requests first, then the cached answers. */
+/**
+ * Drop everything user- or company-scoped: in-flight requests and cached answers. A query with a mounted
+ * observer is reset (back to «no data», in-flight request cancelled without reverting) instead of removed:
+ * a removed query is left behind in the observer, which would keep rendering the previous user's result
+ * until the next remount (NK-0111, other tab). The rest is removed.
+ */
 export function dropUserCache(qc: QueryClient) {
-  void qc.cancelQueries();
-  qc.removeQueries();
+  const cache = qc.getQueryCache();
+  for (const q of cache.getAll()) if (q.getObserversCount() > 0) q.reset();
+  qc.removeQueries({ predicate: (q) => q.getObserversCount() === 0 });
   // Mutations carry the previous user's variables and results too (NK-0115).
   qc.getMutationCache().clear();
 }
@@ -31,6 +37,8 @@ export function handleAuthEvent(
       (cached !== undefined && cached?.user.id !== session.user.id));
   if (event === "SIGNED_OUT" || otherUser) {
     dropUserCache(qc);
+    // Mounted screens were reset: with a session they load again as the new user (no session: nothing to ask).
+    if (session) void qc.refetchQueries({ type: "active" });
     return event === "SIGNED_OUT" || event === "SIGNED_IN";
   }
   if (event === "TOKEN_REFRESHED") void qc.invalidateQueries({ queryKey: ["me"] });
