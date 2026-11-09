@@ -412,10 +412,12 @@ export async function accountsOverview(s: DriveScope) {
       )),
     );
   }
-  const { data: summaries } = await s.db
+  const { data: summaries, error: sumError } = await s.db
     .from("drive_doc_summaries")
     .select("file_id,summary,file_modified_at")
     .eq("org_id", s.orgId);
+  // A failed read must not look like «no summaries yet»: the caller gets an error it can tell apart.
+  if (sumError) throw new Error(sumError.message);
   return { root: await companyFolder(s, false), ...buildOverview(listings, summaries ?? []) };
 }
 
