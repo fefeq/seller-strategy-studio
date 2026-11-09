@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 116,
+  "seq": 118,
   "tickets": [
     {
       "id": "NK-0001",
@@ -1258,8 +1258,8 @@
       "title": "Sugerencias de precio: la base de datos deja leerlas a cualquier miembro (RLS de suggestions); el filtro por rol es solo de interfaz y servidor. Requiere migración",
       "kind": "bug",
       "source": "",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -1271,6 +1271,12 @@
           "at": "2026-10-31T23:40:49.153Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.238Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
         }
       ]
     },
@@ -2026,10 +2032,10 @@
       "title": "Avisos: cualquier miembro puede reescribir el dedupe_key de sus propios avisos (policy own mark read de la 0049 y grant update a nivel de tabla); limitar el UPDATE a read_at (grant por columna o trigger)",
       "kind": "bug",
       "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), hallazgo de severidad baja. Evidencia: .factory/evidence/NK-0030/",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-rls-price-suggestions-and-notices.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2039,6 +2045,18 @@
           "at": "2026-11-08T19:04:59.440Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.278Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.613Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-rls-price-suggestions-and-notices.md prd=-"
         }
       ]
     },
@@ -2179,10 +2197,10 @@
       "title": "Plays GTM 1: los 9 detectores reabren sugerencias cerradas en todas las empresas (sin filas en play_states), reenvían avisos de prioridad 1 por Telegram y pierden snooze al reanudar (decidir: aceptar o limitar a plays reanudados)",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-plays-no-reopen.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2192,6 +2210,18 @@
           "at": "2026-11-08T20:34:44.059Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.067Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.548Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-plays-no-reopen.md prd=-"
         }
       ]
     },
@@ -2200,10 +2230,10 @@
       "title": "Plays GTM 1: CA-11 solo prueba detect(); falta prueba de que syncSuggestions sin filas en play_states no cambia nada",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-plays-no-reopen.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2213,6 +2243,18 @@
           "at": "2026-11-08T20:34:44.116Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.104Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.582Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-plays-no-reopen.md prd=-"
         }
       ]
     },
@@ -2794,8 +2836,8 @@
       "title": "URL: un ?seccion= desconocido o un q de solo espacios abre la sección por defecto pero no se limpia de la URL (/hub, /theory-u)",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -2807,6 +2849,12 @@
           "at": "2026-11-08T20:48:37.678Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.625Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
         }
       ]
     },
@@ -2815,8 +2863,8 @@
       "title": "/hub: en el estado de error siguen a la vista «+ Nuevo» e «Importar de Drive»",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -2828,6 +2876,12 @@
           "at": "2026-11-08T20:48:37.735Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.658Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
         }
       ]
     },
@@ -2878,8 +2932,8 @@
       "title": "Logs: memory.server.ts registra el error entero en memory load/learn/decision failed; un SyntaxError de JSON.parse llevaría un trozo de la respuesta del modelo",
       "kind": "bug",
       "source": "Sprint 1: gate final 2026-11-08",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -2891,6 +2945,12 @@
           "at": "2026-11-08T22:41:47.268Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.144Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
         }
       ]
     },
@@ -2923,7 +2983,7 @@
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-metrics-sin-dato-rest.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2933,6 +2993,12 @@
           "at": "2026-11-09T13:37:51.260Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T18:39:21.510Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-metrics-sin-dato-rest.md prd=-"
         }
       ]
     },
@@ -2941,10 +3007,10 @@
       "title": "Deals: la columna deals.source tiene default 'outbound' (migración 0001), así que un deal nuevo sin origen se guarda como outbound",
       "kind": "bug",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2954,6 +3020,18 @@
           "at": "2026-11-09T13:37:51.318Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.494Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.643Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -2962,10 +3040,10 @@
       "title": "Deals: el formulario muestra «Outbound» para un deal sin origen (deals.tsx:558) y al editar puede guardarlo",
       "kind": "bug",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2975,6 +3053,18 @@
           "at": "2026-11-09T13:37:51.364Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.527Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.679Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -2983,10 +3073,10 @@
       "title": "Asesor: el snapshot envía el grupo sin origen como \"—\" en vez de una etiqueta legible para la IA",
       "kind": "bug",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-deals-no-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2996,6 +3086,18 @@
           "at": "2026-11-09T13:37:51.412Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.560Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.711Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-deals-no-source.md prd=-"
         }
       ]
     },
@@ -3004,10 +3106,10 @@
       "title": "Sesión: use-me.ts, org-create.tsx, org-onboarding.tsx y account/calls-deals-tabs.tsx siguen llamando a getUser() por su cuenta (fuera de NK-0098)",
       "kind": "bug",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3017,6 +3119,18 @@
           "at": "2026-11-09T13:37:51.457Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.388Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.807Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3025,10 +3139,10 @@
       "title": "Sesión: un cambio de usuario sin SIGNED_OUT previo y sin me en caché invalida la caché del usuario anterior, pero un loader puede servirla hasta el refetch; comparar con el último usuario validado y no con me cacheado",
       "kind": "bug",
       "source": "Sprint 2: walkthrough d0f4252, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3038,6 +3152,18 @@
           "at": "2026-11-09T18:02:24.205Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.423Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.836Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3046,10 +3172,10 @@
       "title": "Sesión: un fallo transitorio de la comprobación (red o 5xx) en el guard de _authenticated manda a /auth con el formulario de login sin aviso; debe mostrar «no he podido comprobar la sesión» con «Reintentar» y conservar la sesión",
       "kind": "bug",
       "source": "Sprint 2: walkthrough d0f4252, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3059,6 +3185,18 @@
           "at": "2026-11-09T18:02:24.255Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.318Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.744Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3067,10 +3205,10 @@
       "title": "Sesión: TOKEN_REFRESHED o SIGNED_IN al volver el foco con 5xx persistente en /auth/v1/user provoca un rebote /auth → /home → /auth por evento",
       "kind": "bug",
       "source": "Sprint 2: walkthrough d0f4252, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3080,6 +3218,18 @@
           "at": "2026-11-09T18:02:24.301Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.354Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.775Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3115,10 +3265,10 @@
       "title": "Sesión: meQuery puede guardar null si la sesión cambia a mitad de la carga (debería lanzar error por coherencia), y «Cerrar sesión» no limpia la caché de mutaciones",
       "kind": "bug",
       "source": "Sprint 2: walkthrough d0f4252, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-session-hardening.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3128,6 +3278,18 @@
           "at": "2026-11-09T18:02:24.383Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.460Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:39:21.865Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-session-hardening.md prd=-"
         }
       ]
     },
@@ -3147,6 +3309,54 @@
         {
           "state": "LOGGED",
           "at": "2026-11-09T18:02:24.439Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0117",
+      "title": "Logs: jev.server.ts:31 registra body.slice(0,500) del proveedor y setup-extract.server.ts:43 registra raw.slice(0,300) de la salida del modelo; pasar a safeErrorLog/longitud",
+      "kind": "bug",
+      "source": "Remanente de NK-0102 (NK-0087 cubrió en gran parte; NK-0102 queda como alerta de origen)",
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint3",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T18:06:51.272Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T18:06:54.195Z",
+          "by": "Fede (delegado al coordinador)",
+          "note": "owner=coordinador-sprint3"
+        }
+      ]
+    },
+    {
+      "id": "NK-0118",
+      "title": "Logs: 11 llamadas en email, posthog-sync, telegram, inngest/send, weekly-report, daily-email, notices y after-response siguen registrando trozo de cuerpo o error entero (lista de excepciones «pendiente» en src/lib/server-log-scan.test.ts)",
+      "kind": "bug",
+      "source": "tracker: Sprint 3 intake, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T18:39:21.897Z",
           "by": "tracker",
           "note": ""
         }
