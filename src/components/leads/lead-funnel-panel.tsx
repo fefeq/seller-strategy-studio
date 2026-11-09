@@ -5,9 +5,15 @@ import { useLeads } from "@/hooks/use-leads";
 import { funnelBy, leadCohort, leadFunnel, leadDelay } from "@/lib/lead-funnel";
 import { quarterRange } from "@/lib/metrics";
 import { ScreenState } from "@/components/page";
+import { DataMark } from "@/components/metrics/data-mark";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
-const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
+const dd = (n: number | null) =>
+  n == null ? (
+    <DataMark state="sin_dato" reason="ningún lead llegó a esta etapa" />
+  ) : (
+    `${n.toFixed(1)} d`
+  );
 
 /** Full funnel Lead → Contactado → MQL → SQL → Oportunidad → Ganado for the leads that entered in the quarter. */
 export function LeadFunnelPanel({ quarter }: { quarter: string }) {
