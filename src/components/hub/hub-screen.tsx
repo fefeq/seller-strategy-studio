@@ -159,7 +159,7 @@ export function HubScreen() {
     [],
   );
   // The box is local state seeded from ?q= (typing never waits for the router, so spaces survive); the URL gets q after a typing pause (see typeQuery) and at once on clear, section change or unmount.
-  const [text, setText] = useState(qParam ?? "");
+  const [text, setText] = useState(cleanQuery(qParam) ?? "");
   const active = cleanQuery(text);
   const results = useMemo(() => (active ? searchDocs(docs, active) : null), [docs, active]);
   const counts = sectionCounts(
@@ -174,6 +174,8 @@ export function HubScreen() {
     takePending();
     const timer = setTimeout(() => {
       pending.current = null;
+      // A blank box has no meaning: once its q is written (dropped), the box empties too.
+      if (cleanQuery(value) === undefined) setText("");
       navigate({ search: (prev) => nextSearch(prev, value), replace: true });
     }, SEARCH_URL_DEBOUNCE_MS);
     pending.current = { value, timer };
