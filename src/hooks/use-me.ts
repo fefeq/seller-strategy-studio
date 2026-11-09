@@ -38,8 +38,13 @@ export const meQuery = queryOptions({
       if (data.session) throw new Error("No se pudo validar la sesión. Vuelve a intentarlo.");
       return null;
     }
+    // Signed out (or switched) while we were validating: never query with the old user's id.
+    const stillSame = async () =>
+      (await supabase.auth.getSession()).data.session?.user.id === user.id;
+    if (!(await stillSame())) return null;
     // Joins any company that invited this email before loading memberships.
     await supabase.rpc("accept_invites");
+    if (!(await stillSame())) return null;
     const [{ data: profile }, { data: members }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase

@@ -26,3 +26,13 @@ export function handleAuthEvent(qc: QueryClient, event: string, session: AuthSes
   }
   return false;
 }
+
+/**
+ * Sign out without a window where a mounted screen refetches with a half-cleared session (NK-0098):
+ * stop in-flight requests, end the session first, only then drop the cache.
+ */
+export async function signOutAndClear(qc: QueryClient, auth: { signOut(): Promise<unknown> }) {
+  await qc.cancelQueries();
+  await auth.signOut();
+  dropUserCache(qc);
+}

@@ -11,6 +11,7 @@ import {
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutAndClear } from "@/lib/session-cache";
 import { createSessionCheck } from "@/lib/session-check";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
@@ -48,9 +49,7 @@ function Shell() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
+    await signOutAndClear(qc, supabase.auth);
     navigate({ to: "/auth", replace: true });
   }
   const role = me?.roles[0] as Role | undefined;
