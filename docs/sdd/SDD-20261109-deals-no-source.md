@@ -1,7 +1,7 @@
 # SDD-20261109-deals-no-source · [Bug] Un deal sin origen se queda «Sin origen» en la base, en el formulario y en lo que lee el Asesor
 
 **Tipo:** Bug (con migración: quita un valor por defecto) · **Prioridad propuesta:** Media (falsea el win rate por origen de Métricas y del Asesor)
-**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #117 (ccd37fb) · Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0107 (valor por defecto `'outbound'`), NK-0108 (el formulario muestra y puede guardar «Outbound»), NK-0109 (el Asesor envía «—»)
 **PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, no un texto, y la prueba de NK-0106 la permite; `src/lib/deal-source.ts` la importa y nunca escribe el literal «—». **Orden de integración: este SDD antes que NK-0106**, para que la lista cerrada de métricas nazca sin las claves K que este SDD elimina.
 
@@ -174,4 +174,5 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR D2-m1** Frase rota en «Coordina con» | Cabecera reescrita: clave de agrupación, no un texto; la prueba de NK-0106 la permite; `deal-source.ts` la importa y no escribe «—»; deals antes que NK-0106. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+Entregado en PR #117 (ccd37fb), integrado en db23383 con gate PASS (NK-0107, NK-0108, NK-0109).
+**Migración 0083 (`0083_deals_source_no_default.sql`): NO aplicada a ninguna base viva.** Solo probada en PGlite.

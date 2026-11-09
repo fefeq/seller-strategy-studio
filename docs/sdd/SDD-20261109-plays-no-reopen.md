@@ -1,7 +1,7 @@
 # SDD-20261109-plays-no-reopen · [Bug] Las sugerencias cerradas de los plays solo se reabren cuando el play se reanudó
 
 **Tipo:** Bug (comportamiento de sugerencias y avisos, sin migración) · **Prioridad propuesta:** Alta (en todas las empresas, hoy reabre sugerencias cerradas y reenvía avisos de prioridad 1 por Telegram)
-**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #117 (ccd37fb) · Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0077 (reapertura sin pausa) y NK-0078 (falta la prueba de `syncSuggestions` sin filas en `play_states`)
 **PRD:** No aplica (bug) · **Depende de:** `SDD-20261106-plays-library-core.md` (Plays GTM 1, en `main`)
 
@@ -154,4 +154,4 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | Observación (sin hallazgo): el caso de carrera de CA-6 es una guarda y el fake necesita un gancho entre la lectura de las `resolved` y el `update` | El brief lo nombra; el SDD ya lo rotula como guarda. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+Entregado en PR #117 (ccd37fb), integrado en db23383 con gate PASS (NK-0077, NK-0078). Sin migraciones.
