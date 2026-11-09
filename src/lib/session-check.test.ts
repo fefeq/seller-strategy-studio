@@ -330,6 +330,25 @@ describe("lastValidatedUserId (NK-0110, NK-0111)", () => {
     await check();
     expect(last()).toBe("user-leo");
   });
+
+  it("is forgotten on SIGNED_OUT, so the next user of this tab is not «another user»", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    await createSessionUser(f.auth)();
+    expect(last()).toBe("user-ana");
+    f.setSession(null);
+    f.emit("SIGNED_OUT", null);
+    expect(last()).toBeNull();
+  });
+
+  it("a validation that finishes after SIGNED_OUT does not bring the user back", async () => {
+    const f = fakeAuth(ana1);
+    const last = createLastValidatedUserId(f.auth);
+    const pending = createSessionUser(f.auth)();
+    f.emit("SIGNED_OUT", null);
+    await pending;
+    expect(last()).toBeNull();
+  });
 });
 
 describe("/_authenticated beforeLoad uses the cached check (source guard)", () => {

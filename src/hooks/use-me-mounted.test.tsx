@@ -70,6 +70,7 @@ let supabase: typeof import("@/integrations/supabase/client").supabase;
 let useMe: typeof import("@/hooks/use-me").useMe;
 let useQuery: typeof import("@tanstack/react-query").useQuery;
 let AccountSwitchGate: typeof import("@/components/account-switch-gate").AccountSwitchGate;
+let isSwitchingAccount: typeof import("@/lib/account-switch").isSwitchingAccount;
 let accountSwitch: typeof import("@/lib/account-switch").accountSwitch;
 
 beforeEach(async () => {
@@ -83,7 +84,7 @@ beforeEach(async () => {
   ({ useMe } = await import("@/hooks/use-me"));
   ({ useQuery } = await import("@tanstack/react-query"));
   ({ AccountSwitchGate } = await import("@/components/account-switch-gate"));
-  ({ accountSwitch } = await import("@/lib/account-switch"));
+  ({ accountSwitch, isSwitchingAccount } = await import("@/lib/account-switch"));
 });
 afterEach(cleanup);
 
@@ -166,6 +167,18 @@ describe("a mounted app when the session changes (NK-0111, D-S3-3)", () => {
     await emit("SIGNED_OUT", null);
     await waitFor(() => expect(screen.getByTestId("who").textContent).toBe("loading"));
     expect(rendered.slice(before).filter((t) => t.includes("user-x"))).toEqual([]);
+    expect(screen.queryByText("Cambiando de cuenta…")).toBeNull();
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it("same tab: logout of X then login as Y is a normal login, no switch screen and no reload", async () => {
+    const { emit, reload } = setup();
+    await waitFor(() => expect(screen.getByTestId("who").textContent).toBe("user-x | Co user-x"));
+    await emit("SIGNED_OUT", null);
+    await waitFor(() => expect(screen.getByTestId("who").textContent).toBe("loading"));
+    await emit("SIGNED_IN", y);
+    await waitFor(() => expect(screen.getByTestId("who").textContent).toBe("user-y | Co user-y"));
+    expect(isSwitchingAccount()).toBe(false);
     expect(screen.queryByText("Cambiando de cuenta…")).toBeNull();
     expect(reload).not.toHaveBeenCalled();
   });

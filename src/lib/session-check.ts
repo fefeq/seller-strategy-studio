@@ -56,16 +56,25 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
   let listening = false;
 
   let last: string | null = null;
+  // Bumped on SIGNED_OUT: a validation that started before it must not bring the signed-out user back.
+  let epoch = 0;
 
   const run = async function run(): Promise<Outcome<U>> {
     // Subscribe on first use (client only), not at import time.
     if (!listening) {
       listening = true;
       auth.onAuthStateChange((event, session) => {
+        if (event === "SIGNED_OUT") {
+          // Signing out ends the user of this tab: the next sign-in (maybe someone else) is a plain login, not
+          // «another user in another tab» (NK-0111). Another tab's sign-in never passes through here.
+          last = null;
+          epoch++;
+        }
         if (event === "SIGNED_OUT" || event === "USER_UPDATED") saved = null;
         else if (saved && session?.access_token !== saved.token) saved = null;
       });
     }
+    const startedAt = epoch;
     const { data } = await auth.getSession();
     const session = data.session;
     if (!session) {
@@ -94,7 +103,7 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     }
     const entry = saved;
     const outcome = await entry.valid;
-    if ("user" in outcome) last = outcome.user.id;
+    if ("user" in outcome && epoch === startedAt) last = outcome.user.id;
     // Never keep a refusal or a failed attempt: the next navigation asks again.
     if (!("user" in outcome) && saved === entry) saved = null;
     return outcome;
