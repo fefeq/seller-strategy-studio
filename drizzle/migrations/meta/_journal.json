@@ -561,6 +561,13 @@
       "when": 1794139200000,
       "tag": "0080_unversioned_schema_capture",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1794225600000,
+      "tag": "0081_knowledge_binding_writers",
+      "breakpoints": true
     }
   ]
 }
