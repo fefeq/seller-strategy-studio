@@ -31,6 +31,7 @@ import {
   type DriveFile,
 } from "@/lib/google-drive";
 import { driveQ } from "@/lib/drive";
+import { BINDING_WRITE_DENIED, canWriteBinding, isBindingDoc } from "@/lib/knowledge-rules";
 
 export type DriveScope = { db: Db; orgId: string; userId: string };
 export type FolderRef = { id: string; name: string; url: string | null };
@@ -266,8 +267,26 @@ export async function readFile(s: DriveScope, ref: string) {
   };
 }
 
+const importScope = (section: string) => (section === "skills" ? "personal" : "team");
+
+/**
+ * Importing into a binding place (Reglas: what the whole team's agent obeys) needs Owner or Sales Leader
+ * (SDD-20261109-rules-write-permissions). The background runner and Telegram use the admin client, where RLS does
+ * not apply, so the rule is checked here, before reading the file (no Drive call, no AI transcription).
+ */
+export function checkImportAllowed(section: string, roles: readonly string[]) {
+  if (isBindingDoc({ section, scope: importScope(section) }) && !canWriteBinding(roles))
+    throw new Error(BINDING_WRITE_DENIED);
+}
+
 /** Reads a file and saves it as a knowledge document of the section (team-wide; skills stay personal). */
-export async function importToKnowledge(s: DriveScope, ref: string, section: string) {
+export async function importToKnowledge(
+  s: DriveScope,
+  ref: string,
+  section: string,
+  roles: readonly string[],
+) {
+  checkImportAllowed(section, roles);
   const r = await readFile(s, ref);
   const body = `${r.text}\n\nFuente: Google Drive — ${r.url ?? r.name}${r.truncated ? " (texto recortado: el original es más largo)" : ""}`;
   const { data, error } = await s.db
@@ -277,7 +296,7 @@ export async function importToKnowledge(s: DriveScope, ref: string, section: str
       section,
       title: safeName(r.name.replace(/\.[a-z0-9]{2,5}$/i, "")),
       body,
-      scope: section === "skills" ? "personal" : "team",
+      scope: importScope(section),
       created_by: s.userId,
       updated_by: s.userId,
     })

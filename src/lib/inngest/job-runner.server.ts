@@ -191,11 +191,14 @@ async function runKind(
     }
     case "drive_import": {
       const { importToKnowledge } = await import("@/lib/drive-core");
+      // The launcher's roles as they are now (admin client, no RLS): Reglas only for the Owner or a Sales Leader (NK-0095).
+      const c = await jobCtx(db, job);
       await step("Importando");
       const r = await importToKnowledge(
         { db, orgId: job.org_id, userId: job.user_id },
         String(input.file),
         String(input.section),
+        c.roles,
       );
       return { title: `«${r.title}» importado al hub`, link: `/hub?doc=${r.docId}` };
     }

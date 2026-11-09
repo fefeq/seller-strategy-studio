@@ -36,7 +36,14 @@ export const driveImport = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ file: Ref, section: z.enum(SECTIONS) }).parse(d))
   .handler(async ({ data, context }) => {
     const { importToKnowledge } = await import("@/lib/drive-core");
-    return importToKnowledge(await scope(context), data.file, data.section);
+    // Roles of the active company: Reglas only for the Owner or a Sales Leader (also enforced by RLS, migration 0081).
+    const c = await userCtx(context.supabase as Db, context.userId);
+    return importToKnowledge(
+      { db: c.db, orgId: c.orgId, userId: c.userId },
+      data.file,
+      data.section,
+      c.roles,
+    );
   });
 
 /** Text of one file for the AI setup (nothing is saved). */

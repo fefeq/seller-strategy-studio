@@ -3819,7 +3819,7 @@
       {
         "name": "drive_import_to_knowledge",
         "title": "Importar archivo de Drive al hub",
-        "description": "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. En la sección Reglas (rules) solo pueden importar el Owner o un Sales Leader. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,

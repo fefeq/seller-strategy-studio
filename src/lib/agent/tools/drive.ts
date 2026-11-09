@@ -1,7 +1,7 @@
 // Google Drive (the connected Drive, each company limited to its own "Nokko / <empresa>" folder).
 // Same cores as the screens (drive-core.ts).
 import { z } from "zod";
-import { clip, def, mustFind, type AgentTool } from "../tool-kit";
+import { clip, def, mustFind, type AgentTool, type ToolCtx } from "../tool-kit";
 
 const SECTION = z
   .enum(["company", "objections", "playbooks", "methodology", "campaigns", "skills", "rules"])
@@ -13,7 +13,7 @@ const FILE = z
   .min(5)
   .max(500)
   .describe("Enlace de Google Drive o id del archivo (de drive_search o drive_list_account_files)");
-const scope = (c: { db: any; orgId: string; userId: string }) => ({
+const scope = (c: ToolCtx) => ({
   db: c.db,
   orgId: c.orgId,
   userId: c.userId,
@@ -95,12 +95,14 @@ export const DRIVE_TOOLS: AgentTool[] = [
     name: "drive_import_to_knowledge",
     kind: "write",
     description:
-      "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto.",
+      "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. En la sección Reglas (rules) solo pueden importar el Owner o un Sales Leader.",
     input: z.object({ file: FILE, section: SECTION }),
     summarize: () => "Importar un archivo de Google Drive al hub de conocimiento",
     run: async (c, a) => {
-      const { importToKnowledge } = await import("@/lib/drive-core");
-      const r = await importToKnowledge(scope(c), a.file, a.section);
+      const { checkImportAllowed, importToKnowledge } = await import("@/lib/drive-core");
+      // Checked again when it runs: Telegram and confirmations may use the privileged client (no RLS).
+      checkImportAllowed(a.section, c.roles);
+      const r = await importToKnowledge(scope(c), a.file, a.section, c.roles);
       return {
         mensaje: `«${r.title}» importado al hub de conocimiento.${r.truncated ? " El texto se ha recortado porque el original es muy largo." : ""}`,
         doc_id: r.docId,
