@@ -299,8 +299,10 @@ describe("/_authenticated beforeLoad uses the cached check (source guard)", () =
   it("never calls supabase.auth.getUser() on each navigation", () => {
     expect(src).not.toMatch(/auth\.getUser\(/);
   });
-  it("redirects to /auth when the cached check says no", () => {
-    expect(src).toMatch(/createSessionCheck\(supabase\.auth\)/);
-    expect(src).toMatch(/if \(!\(await \w+\(\)\)\) throw redirect\(\{ to: "\/auth" \}\)/);
+  it("redirects to /auth only when the check says none", () => {
+    expect(src).toMatch(/checkSession\(\)/);
+    expect(src).toMatch(/status === "none"\)\s*throw redirect\(\{ to: "\/auth" \}\)/);
+    expect(src.match(/redirect\(\{ to: "\/auth" \}\)/g)).toHaveLength(1);
+    expect(src).toMatch(/status === "unverified"\)\s*throw new SessionUnverifiedError\(\)/);
   });
 });

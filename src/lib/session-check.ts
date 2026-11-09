@@ -23,6 +23,14 @@ export function isDefinitiveRejection(error: unknown): boolean {
   return status === 401 || status === 403;
 }
 
+/** Thrown by the /_authenticated guard when the session could not be checked (network, 5xx, 429); shown as a retry screen, never as a redirect. */
+export class SessionUnverifiedError extends Error {
+  constructor() {
+    super("session_unverified");
+    this.name = "SessionUnverifiedError";
+  }
+}
+
 /** The three answers of the session check (NK-0112). */
 export type SessionState<U extends AuthUser = AuthUser> =
   { status: "valid"; user: U } | { status: "none" } | { status: "unverified" };
