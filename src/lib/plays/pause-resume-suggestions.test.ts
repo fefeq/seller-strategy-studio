@@ -59,7 +59,8 @@ function fakeDb(store: Row[], opts: Opts = {}): Db {
           );
           return Promise.resolve(
             opts.playsError
-              ? { data: null, error: { message: "relation play_states does not exist" } }
+              ? // worst case: rows came back together with the error
+                { data: rows.map((r) => ({ ...r })), error: { message: "play_states read failed" } }
               : { data: rows.map((r) => ({ ...r })), error: null },
           ).then(res, rej);
         }
@@ -68,8 +69,11 @@ function fakeDb(store: Row[], opts: Opts = {}): Db {
           patch.status &&
           patch.status !== "resolved" &&
           patch.status !== "approved"
-        )
-          opts.beforeReopen?.();
+        ) {
+          const hook = opts.beforeReopen;
+          opts.beforeReopen = undefined; // once: only the first write after the read is raced
+          hook?.();
+        }
         const hit = store.filter((r) => filters.every((f) => f(r)));
         if (op === "upsert")
           for (const n of incoming)
