@@ -7,6 +7,7 @@ import type { SetupData } from "@/lib/setup-schema";
 import type { FitKeyData, Snapshot } from "@/lib/proactive/types";
 import { disabledPlayIds } from "@/lib/plays/gating";
 import { CATALOG } from "@/lib/plays/catalog";
+import { reopenable } from "@/lib/plays/reopen";
 import { readStaleDays } from "@/lib/stale";
 import { readSla } from "@/lib/lead-funnel";
 import { NOTES_UNTIL_MS } from "@/lib/call-notes";
@@ -370,11 +371,12 @@ async function loadFitKeyData(db: Db, orgId: string): Promise<FitKeyData> {
 }
 
 /**
- * Detectors whose suggestion reopens when it is found again after the system closed it as «resolved»: the setup steps, and the rules
- * of the plays. Pausing a play closes its suggestions and resuming it makes the same keys come back; without reopening, the unique
- * (company, key) would keep them closed for good (review of Plays, 2026-11-08). Dismissed and done-by-the-user ones stay as they are.
+ * Detectors whose suggestion reopens as soon as it is found again after the system closed it as «resolved»: the setup steps.
+ * The rules of the plays are not here: theirs reopen only when the play was resumed after the closing (reopenable, plays/reopen.ts;
+ * SDD-20261109-plays-no-reopen), so a company that never paused a play sees no closed suggestion come back nor any repeated notice.
  */
-const REOPENABLE = new Set(["setup_incomplete", ...CATALOG.flatMap((p) => p.detectors)]);
+const REOPENABLE = new Set(["setup_incomplete"]);
+const PLAY_DETECTORS = new Set(CATALOG.flatMap((p) => p.detectors));
 
 /**
  * Saves what the detectors found and closes what no longer applies. A pending suggestion the user worked
@@ -417,6 +419,40 @@ export async function syncSuggestions(
       .eq("org_id", orgId)
       .in("dedupe_key", again)
       .eq("status", "resolved");
+  // Rules of the plays: a closed suggestion comes back only if its play was resumed after the closing. A failed read of play_states
+  // reopens nothing (reopening by mistake sends the notice again; not reopening only delays it to the next sync).
+  const playKeys = found.filter((f) => PLAY_DETECTORS.has(f.detector)).map((f) => f.dedupe_key);
+  if (playKeys.length) {
+    const [{ data: closedRows, error: closedErr }, { data: states, error: statesErr }] =
+      await Promise.all([
+        db
+          .from("suggestions")
+          .select("id,dedupe_key,detector,updated_at,snoozed_until")
+          .eq("org_id", orgId)
+          .eq("status", "resolved")
+          .in("dedupe_key", playKeys),
+        db.from("play_states").select("play_id,enabled,updated_at").eq("org_id", orgId),
+      ]);
+    if (!closedErr && !statesErr && closedRows?.length) {
+      const now = new Date();
+      const decided = reopenable(states ?? [], closedRows, now);
+      for (const c of closedRows) {
+        const r = decided.get(c.id);
+        if (!r) continue;
+        await db
+          .from("suggestions")
+          .update({
+            status: r.status,
+            snoozed_until: r.snoozed_until,
+            notified_at: null,
+            updated_at: now.toISOString(),
+          })
+          .eq("org_id", orgId)
+          .eq("id", c.id)
+          .eq("status", "resolved");
+      }
+    }
+  }
   // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
   const { data: open } = await db
     .from("suggestions")
