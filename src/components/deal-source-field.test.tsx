@@ -29,4 +29,9 @@ describe("DealSourceField", () => {
     expect(shown()).toBe("Entrada de leads");
     expect(select().value).toBe("Entrada de leads");
   });
+  // SDD-20261109-new-deal-source U-2 (NK-0123) CA-8: the optional accessible name.
+  it("CA-8: with aria-label «Fuente» it is found by that name", () => {
+    render(<DealSourceField value={null} onChange={vi.fn()} aria-label="Fuente" />);
+    expect(screen.getByRole("combobox", { name: "Fuente" })).toBeTruthy();
+  });
 });
