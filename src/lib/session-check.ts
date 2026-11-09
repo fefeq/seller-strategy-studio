@@ -4,19 +4,32 @@
 // Data security stays with RLS; this only decides whether to show the app or send to /auth.
 
 type Session = { access_token: string; user: { id: string } };
+type AuthUser = { id: string };
 
 /** The slice of supabase.auth the check needs (a fake in tests). */
-export type SessionAuth = {
+export type SessionAuth<U extends AuthUser = AuthUser> = {
   getSession(): Promise<{ data: { session: Session | null } }>;
-  getUser(jwt?: string): Promise<{ data: { user: { id: string } | null }; error: unknown }>;
+  getUser(jwt?: string): Promise<{ data: { user: U | null }; error: unknown }>;
   onAuthStateChange(cb: (event: string, session: Session | null) => void): unknown;
 };
 
-export function createSessionCheck(auth: SessionAuth): () => Promise<boolean> {
-  let saved: { token: string; valid: Promise<boolean> } | null = null;
+const shared = new WeakMap<object, () => Promise<unknown>>();
+
+/**
+ * The validated user per access token, shared by the route guard and by meQuery (NK-0098), so both cost
+ * one GET /auth/v1/user per token. One validator per auth client, so createSessionCheck(auth) in the
+ * route and createSessionUser(auth) in meQuery share the same saved answer.
+ * Returns null without a session or when the server refuses it.
+ */
+export function createSessionUser<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => Promise<U | null> {
+  const existing = shared.get(auth);
+  if (existing) return existing as () => Promise<U | null>;
+  let saved: { token: string; valid: Promise<U | null> } | null = null;
   let listening = false;
 
-  return async function isSignedIn() {
+  const validatedUser = async function validatedUser() {
     // Subscribe on first use (client only), not at import time.
     if (!listening) {
       listening = true;
@@ -29,19 +42,26 @@ export function createSessionCheck(auth: SessionAuth): () => Promise<boolean> {
     const session = data.session;
     if (!session) {
       saved = null;
-      return false;
+      return null;
     }
     if (saved?.token !== session.access_token) {
       const valid = auth.getUser(session.access_token).then(
-        ({ data: u, error }) => !error && u.user?.id === session.user.id,
-        () => false,
+        ({ data: u, error }) => (!error && u.user?.id === session.user.id ? u.user : null),
+        () => null,
       );
       saved = { token: session.access_token, valid };
     }
     const entry = saved;
-    const ok = await entry.valid;
+    const user = await entry.valid;
     // Never keep a refusal: the next navigation asks again.
-    if (!ok && saved === entry) saved = null;
-    return ok;
+    if (!user && saved === entry) saved = null;
+    return user;
   };
+  shared.set(auth, validatedUser);
+  return validatedUser;
+}
+
+export function createSessionCheck(auth: SessionAuth): () => Promise<boolean> {
+  const validatedUser = createSessionUser(auth);
+  return async () => (await validatedUser()) !== null;
 }

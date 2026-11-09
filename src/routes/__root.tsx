@@ -153,6 +153,8 @@ function RootComponent() {
   const router = useRouter();
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
+      // meQuery is cached for minutes: a refreshed token or another user must refetch it (NK-0098).
+      if (event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") queryClient.invalidateQueries({ queryKey: ["me"] });
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
