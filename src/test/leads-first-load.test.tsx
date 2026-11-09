@@ -47,7 +47,7 @@ describe("first load of /leads", () => {
     });
     const { container } = render(<RouterProvider router={router} />);
     // Session check and leads both pending: a loading state must already be on screen.
-    expect(await screen.findByRole("status", {}, { timeout: 1000 })).toBeInTheDocument();
+    expect(await screen.findByRole("status")).toBeInTheDocument();
     expect(container.textContent).toContain("Cargando");
   });
 });

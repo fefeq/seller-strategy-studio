@@ -34,7 +34,7 @@ Branch fix/nk-0093-leads-pending, base 4e6c645.
 - `src/routes/_authenticated/route.tsx`: `pendingComponent: AppPending`, `pendingMs: 0`. Only these lines; session check, use-me and `__root` untouched. Loaders of home/accounts/pipeline unchanged.
 
 ### Evidence
-- Test `src/test/leads-first-load.test.tsx`: real `routeTree`, `createMemoryHistory` at `/leads`, supabase mocked with a session check (`getUser`) that never answers and a leads request that never answers; asserts `role=status` and "Cargando" in the DOM (findByRole, 1 s).
+- Test `src/test/leads-first-load.test.tsx`: real `routeTree`, `createMemoryHistory` at `/leads`, supabase mocked with a session check (`getUser`) that never answers and a leads request that never answers; asserts `role=status` and "Cargando" in the DOM (findByRole, default timeout).
 - Fail-first: `node scripts/factory/fail-first.mjs --base dfc0ba9 --file src/test/leads-first-load.test.tsx` -> OK; failure is the empty body (`<div />`), not a setup error.
 - Mutation: `pendingMs: 0` -> `60000` makes the test fail; reverted.
 - tsc, full vitest, eslint on touched files: see final run in the report.
