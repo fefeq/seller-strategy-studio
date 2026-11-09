@@ -186,3 +186,54 @@ describe("CA-7: same data → same state and reason on Payback real and Inicio",
     expect(home).toEqual(payback);
   });
 });
+
+describe("CA-8 / D8: Presupuesto vs real carries the estimated-attribution mark too", () => {
+  it("the real payback and CAC cells of the first segment carry the mark that Payback real shows", async () => {
+    db.tables = {
+      ...TABLES,
+      deals: [
+        ...TABLES.deals,
+        dealRow({
+          segment_id: null,
+          amount: 15000,
+          stage: "won",
+          closed_at: "2026-10-22T10:00:00Z",
+        }),
+      ],
+    };
+    render(wrap(<PaybackQuarters />));
+    await screen.findByText("Alfa");
+    const expected = [
+      ...(screen
+        .getByText("Alfa")
+        .closest("tr")
+        ?.querySelectorAll("td")[4]
+        ?.querySelectorAll('[data-mark="estimado"]') ?? []),
+    ].map((m) => m.textContent);
+    expect(expected).toEqual(["Estimado · 1 de 2 asignados por importe"]);
+    cleanup();
+
+    render(wrap(<BudgetQuarters />));
+    await screen.findAllByText("Payback");
+    const realCell = (label: string) =>
+      [
+        ...(screen
+          .getAllByText(label)
+          .find((e) => e.tagName === "TD")
+          ?.closest("tr")
+          ?.querySelectorAll("td") ?? []),
+      ].find(
+        (c) =>
+          /\d/.test(c.textContent ?? "") &&
+          /\d,?\d* m(?![a-zñ])|\d+ €/.test(c.textContent ?? "") &&
+          c.querySelector('[data-mark="estimado"]'),
+      );
+    for (const label of ["Payback", "CAC"]) {
+      const cell = realCell(label);
+      expect(cell, `${label} real cell with an estimated mark`).toBeTruthy();
+      expect(
+        [...cell!.querySelectorAll('[data-mark="estimado"]')].map((m) => m.textContent),
+      ).toContain(expected[0]);
+    }
+  });
+});
