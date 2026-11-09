@@ -31,14 +31,18 @@ function median(xs: number[]) {
 export function actuals(deals: DealLike[], now = new Date(), windowDays = 365): Actuals {
   const since = now.getTime() - windowDays * DAY;
   const closedAt = (d: DealLike) => new Date(d.closed_at ?? d.updated_at).getTime();
-  const recent = deals.filter((d) => (d.stage === "won" || d.stage === "lost") && closedAt(d) >= since);
+  const recent = deals.filter(
+    (d) => (d.stage === "won" || d.stage === "lost") && closedAt(d) >= since,
+  );
   const won = recent.filter((d) => d.stage === "won");
   const priced = (xs: DealLike[]) => xs.filter((d) => Number(d.amount) > 0);
   const avg = (xs: DealLike[]) => xs.reduce((s, d) => s + Number(d.amount), 0) / xs.length;
   const wonPriced = priced(deals.filter((d) => d.stage === "won"));
   const openPriced = priced(deals.filter((d) => d.stage !== "won" && d.stage !== "lost"));
   const acvBase = wonPriced.length ? wonPriced : openPriced;
-  const cycles = won.map((d) => (closedAt(d) - new Date(d.created_at).getTime()) / DAY).filter((x) => x >= 0);
+  const cycles = won
+    .map((d) => (closedAt(d) - new Date(d.created_at).getTime()) / DAY)
+    .filter((x) => x >= 0);
   const cycle = median(cycles);
   return {
     acv: acvBase.length ? avg(acvBase) : null,
@@ -53,7 +57,11 @@ export function actuals(deals: DealLike[], now = new Date(), windowDays = 365): 
 
 export function segmentActuals(segments: SegLike[], deals: DealLike[], now = new Date()) {
   const bySeg: Record<string, Actuals> = {};
-  for (const s of segments) bySeg[s.id] = actuals(deals.filter((d) => assignSegment(d, segments) === s.id), now);
+  for (const s of segments)
+    bySeg[s.id] = actuals(
+      deals.filter((d) => assignSegment(d, segments) === s.id),
+      now,
+    );
   return { overall: actuals(deals, now), bySegment: bySeg };
 }
 
@@ -69,13 +77,21 @@ export function lastQuarters(now = new Date(), n = 4) {
  * divided by deals won since the start of the oldest one, through segmentCac → cacOf (the one formula; the window
  * is data: «los últimos 4 trimestres»). Used by the strategy calculator's payback.
  */
-export function trailingCac(segments: SegLike[], deals: DealLike[], costs: (CostLike & { period: string })[], now = new Date()) {
+export function trailingCac(
+  segments: SegLike[],
+  deals: DealLike[],
+  costs: (CostLike & { period: string })[],
+  now = new Date(),
+) {
   const quarters = lastQuarters(now, 4);
   const start = quarterRange(quarters[quarters.length - 1]).start.getTime();
-  const won = (id: string) => deals.filter((d) => {
-    const t = new Date(d.closed_at ?? d.updated_at).getTime();
-    return d.stage === "won" && t >= start && t <= now.getTime() && assignSegment(d, segments) === id;
-  }).length;
+  const won = (id: string) =>
+    deals.filter((d) => {
+      const t = new Date(d.closed_at ?? d.updated_at).getTime();
+      return (
+        d.stage === "won" && t >= start && t <= now.getTime() && assignSegment(d, segments) === id
+      );
+    }).length;
   return segmentCac(
     costs.filter((c) => quarters.includes(c.period)),
     Object.fromEntries(segments.map((s) => [s.id, won(s.id)])),
