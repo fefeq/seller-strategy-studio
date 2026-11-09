@@ -50,7 +50,11 @@ describe("CA-3 global win rate KPI", () => {
       "data-mark",
       "sin_dato",
     );
-    expect(expectDataMarks(container)).toEqual(["Sin dato · sin deals cerrados en 2026-Q4"]);
+    // base has no quota, so Cobertura de pipeline carries its own mark since NK-0106.
+    expect(expectDataMarks(container)).toEqual([
+      "Sin dato · sin cuota del trimestre",
+      "Sin dato · sin deals cerrados en 2026-Q4",
+    ]);
   });
   // SDD-20261109-metrics-sin-dato-rest · CA-3: the mark sits in the value and nothing else says «—».
   it("without closed deals the mark is the value, the hint is free and no dash remains", () => {

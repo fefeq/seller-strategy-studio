@@ -40,7 +40,13 @@ export function ResumenKpis({
       <Kpi
         size="normal"
         label="Cobertura de pipeline"
-        value={quota ? formatRatio(cov.ratio) : "—"}
+        value={
+          quota ? (
+            formatRatio(cov.ratio)
+          ) : (
+            <DataMark state="sin_dato" reason="sin cuota del trimestre" />
+          )
+        }
         hint={
           quota ? (
             `${cov.status === "healthy" ? "Sana (3–4x)" : cov.status === "low" ? "Baja: objetivo 3–4x" : "Alta: revisa calidad"}${cov.undated.count ? ` · ${cov.undated.count} ${cov.undated.count === 1 ? "deal" : "deals"} sin fecha de cierre (${money(cov.undated.amount)}) no cuentan` : ""}`
@@ -75,14 +81,14 @@ export function ResumenKpis({
       <Kpi
         size="normal"
         label="Win rate global"
-        value={overall.rate == null ? "—" : pct(overall.rate)}
-        hint={
+        value={
           overall.rate == null ? (
             <DataMark state="sin_dato" reason={`sin deals cerrados en ${quarter}`} />
           ) : (
-            `${overall.closed} cerrados en ${quarter}`
+            pct(overall.rate)
           )
         }
+        hint={overall.rate == null ? undefined : `${overall.closed} cerrados en ${quarter}`}
       />
     </div>
   );
