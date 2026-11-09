@@ -3,7 +3,7 @@
 **Tipo:** Bug (con migración: quita un valor por defecto) · **Prioridad propuesta:** Media (falsea el win rate por origen de Métricas y del Asesor)
 **Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0107 (valor por defecto `'outbound'`), NK-0108 (el formulario muestra y puede guardar «Outbound»), NK-0109 (el Asesor envía «—»)
-**PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, y `src/lib/deal-source.ts` la importa (nunca escribe el literal «—»). **Orden de integración: este SDD antes que NK-0106**, para que la lista cerrada de métricas nazca sin las claves K que este SDD elimina; no un texto, y la prueba de NK-0106 la permite.
+**PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, no un texto, y la prueba de NK-0106 la permite; `src/lib/deal-source.ts` la importa y nunca escribe el literal «—». **Orden de integración: este SDD antes que NK-0106**, para que la lista cerrada de métricas nazca sin las claves K que este SDD elimina.
 
 > Nivel elegido: SDD corto. Lleva una migración (cambia el esquema de `deals`), así que según la tabla de `nokko-shape` exige SDD.
 > Números de línea comprobados en `main` `1fef724`.

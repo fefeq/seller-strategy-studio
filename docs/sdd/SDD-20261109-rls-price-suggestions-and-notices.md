@@ -1,6 +1,6 @@
 # SDD-20261109-rls-price-suggestions-and-notices · [Bug] La base de datos aplica la regla de las sugerencias de precio y deja tocar de un aviso solo «leído»
 
-**Tipo:** Bug (permisos, con dos migraciones) · **Prioridad propuesta:** Media (NK-0044: hoy el servidor ya filtra; NK-0070: severidad baja según su gate)
+**Tipo:** Bug (permisos, con una migración en el Sprint 3, U-2; U-1, aplazada, llevará la suya) · **Prioridad propuesta:** Media (NK-0044: hoy el servidor ya filtra; NK-0070: severidad baja según su gate)
 **Estado:** U-1 (NK-0044) **Aplazada** (decisión de Fede, 2026-11-01, «hasta decidir el destino de la base»; confirmada por el coordinador el 2026-11-09: fuera del Sprint 3) · U-2 (NK-0070) Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0044 (U-1) y NK-0070 (U-2), independientes entre sí
 **PRD:** No aplica (bugs de permisos) · **Depende de:** NK-0042 (`SDD-20261101-price-suggestions-visibility-server.md`, en `main`: regla en código)
@@ -103,7 +103,7 @@ Prueba de todos: `src/lib/notifications-grants.pg.test.ts` (nuevo, PGlite). Crea
 - **U-1, `LIKE` con `_`:** se usa `starts_with(dedupe_key, 'strategy_product_price:price:')`, igual que `startsWith` en TS (CA-9).
 - **U-2, la pantalla:** `markRead` (`notification-center.tsx:137-143`) no comprueba el error; si la base viva tuviera otra política o GRANT, fallaría en silencio. Lo cubre la comprobación previa de §13.
 - **U-2, `org_id` del aviso:** hoy se puede mover un aviso propio a otra empresa (la `with check` no mira `org_id`); con U-2 deja de poderse por la columna.
-- **Otra empresa:** las dos migraciones (U-1 cuando se desbloquee, U-2) mantienen el filtro por `org_id`/`current_org()` de las políticas existentes; CA-8 lo fija para U-1.
+- **Otra empresa:** la migración de U-2 (y la de U-1 cuando se desbloquee) mantiene el filtro por `org_id`/`current_org()` de las políticas existentes; CA-8 lo fija para U-1.
 
 ## 9. Experiencia y copy
 Sin textos nuevos. Para quien no tiene el rol, una sugerencia de precio sigue sin existir en pantalla. Los avisos se marcan como leídos igual que hoy.
@@ -191,7 +191,7 @@ En el Sprint 3 solo se construye U-2. U-1 no tiene brief hasta que Fede la desbl
   4. `select count(*) from suggestions where detector = 'strategy_product_price' and starts_with(dedupe_key, 'strategy_product_price:price:');` (solo el recuento).
   5. `select exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'suggestions');`
   6. `select proname from pg_proc where proname in ('is_price_suggestion','can_see_prices','suggestion_is_price');` → vacío.
-- **Comprobación posterior:** repetir 1-3 y 6; dentro de una transacción que se descarta (`begin; set local role authenticated; select set_config('request.jwt.claim.sub', '<uuid de un usuario de prueba sin rol de precios>', true); … rollback;`), comprobar que una sugerencia de precio no sale y que `update notifications set title = 'x'` falla, como en la 0073.
+- **Comprobación posterior (U-2):** repetir la 3 y la parte de `notifications` de la 1; dentro de una transacción que se descarta (`begin; set local role authenticated; select set_config('request.jwt.claim.sub', '<uuid de un usuario de prueba>', true); … rollback;`), comprobar que `update notifications set read_at = now()` sobre un aviso suyo funciona y que `update notifications set title = 'x'` falla, como en la 0073. El resto (2, 4, 5, 6 y la prueba de una sugerencia de precio) queda para cuando se desbloquee U-1.
 - **Arnés:** `src/test/pg-harness.ts` no trae `deal_desk` ni `sales_leader` en `seed`; se añaden en el test (como `plays.pg.test.ts:27-29`). `strategy_changes`/`strategy_links` salen del archivo real `0070`.
 - **Alternativa descartada (U-1):** cambio de código en `syncStrategySuggestions` para no enviar filas de precio sin rol (opción (a) del gate anterior). Deja la base abierta a quien inserte por la API; el disparador cubre las dos.
 - **Alternativa descartada (U-2):** disparador `BEFORE UPDATE` que rechace cambios fuera de `read_at`. Más código; el permiso por columna es estándar en PostgreSQL y en PostgREST.

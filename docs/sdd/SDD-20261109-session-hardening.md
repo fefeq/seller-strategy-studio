@@ -54,8 +54,8 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 
 ## 5. Alcance
 **Incluye:**
-- Unidad A: `src/lib/session-check.ts` (respuesta de tres estados, sin cambiar `createSessionUser`/`createSessionCheck`), `src/lib/session.ts`, `src/routes/_authenticated/route.tsx` (guarda y estado «sin poder comprobar»), componente nuevo `src/components/session-unverified.tsx`, `src/routes/auth.tsx` (el oyente valida antes de seguir).
-- Unidad B: `org-create.tsx`, `org-onboarding.tsx`, `calls-deals-tabs.tsx`, `[.]lovable.oauth.consent.tsx` (validador compartido), `src/lib/session-check.ts` (último usuario validado), `src/lib/session-cache.ts` (`handleAuthEvent`, `dropUserCache`), `src/hooks/use-me.ts:41-47`.
+- Unidad A: `src/lib/session-check.ts` (tres estados; cambia el interior de `createSessionUser` —resultado guardado y `WeakMap` con un objeto `{ user, check, last }`— sin cambiar su firma ni la de `createSessionCheck`), `src/lib/session.ts`, `src/routes/_authenticated/route.tsx` (guarda y estado «sin poder comprobar»), componente nuevo `src/components/session-unverified.tsx`, `src/routes/auth.tsx` (el oyente valida antes de seguir).
+- Unidad B: `org-create.tsx`, `org-onboarding.tsx`, `calls-deals-tabs.tsx`, `[.]lovable.oauth.consent.tsx` (validador compartido), `src/lib/session-check.ts` (último usuario validado), `src/lib/session-cache.ts` (`handleAuthEvent`, `dropUserCache`), `src/routes/__root.tsx:153-159` (pasa `lastValidatedUserId()` a `handleAuthEvent`), `src/hooks/use-me.ts:41-47`.
 - Una guarda de fuente: ningún archivo de `src` fuera de `src/lib/session-check.ts` llama a `auth.getUser(`.
 - Actualizar el comentario de `src/lib/session-check.ts:1-4` y una línea en `AGENTS.md` (sesión).
 
@@ -64,6 +64,7 @@ Cualquier persona con sesión abierta. Con la red inestable o un fallo momentán
 - Cambiar cuándo se cierra la sesión local (sigue: solo 401/403 del token guardado).
 - Cambiar RLS, `meQuery` más allá de `:41-47`, el formulario de `/auth` o Supabase.
 - Modo sin conexión ni caché de datos durante la caída.
+- Enlace «Cerrar sesión» en la pantalla «No he podido comprobar tu sesión» (decisión del coordinador, §15).
 - Medir fallos de Auth en producción.
 
 ## 6. Cambios de comportamiento (delta)
@@ -132,7 +133,7 @@ Orden **en serie, nunca en paralelo**: U-1 → U-2 → U-3 (unidad A); después 
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - En `session-check.ts`, guardar en `saved.valid` un resultado (`{ user } | { reason: "none" | "unverified" }`) y que `createSessionUser` lo reduzca a `U | null`, para que los tests actuales sigan igual. `unverified` y `none` no se guardan (como hoy `:76`).
-- La guarda de fuente actual (`session-check.test.ts:204-208`) busca el texto exacto `if (!(await \w+\(\)\)) throw redirect…`; se reescribe con la nueva forma, manteniendo «no `getUser(`» (`:201-203`).
+- La guarda de fuente actual (`session-check.test.ts:204-207`) busca el texto exacto `if (!(await \w+\(\)\)) throw redirect…`; se reescribe con la nueva forma, manteniendo «no `getUser(`» (`:201-203`).
 - `SessionUnverifiedError` como clase exportada; `errorComponent` de `/_authenticated` comprueba `instanceof` y, si no lo es, re-lanza o pinta el error por defecto [Por verificar el comportamiento de TanStack Router con `errorComponent` en una ruta de diseño].
 - `/auth`: el oyente puede reutilizar el mismo `validatedUser().then(...)` del montaje; cuidado con varias llamadas concurrentes: comparten la petición en vuelo por token.
 - `lastValidatedUserId` vive en el objeto `{ user, check, last }` que guarda el `WeakMap` de `:24` (uno por cliente; hoy guarda solo una función, U-1 lo cambia a objeto), exportado desde `src/lib/session.ts` para `__root`, que lo pasa a `handleAuthEvent`.
@@ -155,8 +156,9 @@ Orden **en serie, nunca en paralelo**: U-1 → U-2 → U-3 (unidad A); después 
 
 **Decisión del coordinador (delegación de Fede, 2026-11-09):** D-3 tal como está escrita; unidades en serie (B sobre A).
 
-**Para Fede:**
-2. ¿Añadimos en el estado un enlace secundario «Cerrar sesión»? Recomiendo no en este ticket: el ticket pide conservar la sesión, y cerrar sesión ya está en el menú cuando la app carga.
+**Decisión del coordinador (2026-11-09, delegación de Fede):** sin enlace «Cerrar sesión» en la pantalla «No he podido comprobar tu sesión» en este ticket (el ticket pide conservar la sesión; cerrar sesión sigue en el menú cuando la app carga). Está en §5 «No incluye».
+
+**Para Fede:** ninguna.
 
 **Para la revisión técnica:**
 3. Confirmar que `supabase-js` devuelve `status` 5xx/0 (`AuthRetryableFetchError`) y 401/403 (`AuthApiError`) como asume `auth-no-bounce.test.tsx:28-34`.
