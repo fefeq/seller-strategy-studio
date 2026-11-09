@@ -58,8 +58,12 @@ export function createSessionUser<U extends AuthUser>(
           // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
           // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
           // Network errors and 5xx are not definitive: they never sign anyone out.
-          if (error && isDefinitiveRejection(error))
-            await auth.signOut?.({ scope: "local" }).catch(() => undefined);
+          if (error && isDefinitiveRejection(error)) {
+            // Only if the stored session is still the one that was refused (another tab may have signed in).
+            const now = (await auth.getSession()).data.session;
+            if (now?.access_token === session.access_token)
+              await auth.signOut?.({ scope: "local" }).catch(() => undefined);
+          }
           return !error && u.user?.id === session.user.id ? u.user : null;
         },
         () => null,
