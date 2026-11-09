@@ -10,8 +10,16 @@ type AuthUser = { id: string };
 export type SessionAuth<U extends AuthUser = AuthUser> = {
   getSession(): Promise<{ data: { session: Session | null } }>;
   getUser(jwt?: string): Promise<{ data: { user: U | null }; error: unknown }>;
+  /** Optional so small fakes still fit; the real client has it. */
+  signOut?(options: { scope: "local" }): Promise<unknown>;
   onAuthStateChange(cb: (event: string, session: Session | null) => void): unknown;
 };
+
+/** The server said no to this token (401/403), as opposed to a network blip or a 5xx. */
+export function isDefinitiveRejection(error: unknown): boolean {
+  const status = (error as { status?: unknown } | null)?.status;
+  return status === 401 || status === 403;
+}
 
 const shared = new WeakMap<object, () => Promise<unknown>>();
 
@@ -46,7 +54,14 @@ export function createSessionUser<U extends AuthUser>(
     }
     if (saved?.token !== session.access_token) {
       const valid = auth.getUser(session.access_token).then(
-        ({ data: u, error }) => (!error && u.user?.id === session.user.id ? u.user : null),
+        async ({ data: u, error }) => {
+          // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
+          // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
+          // Network errors and 5xx are not definitive: they never sign anyone out.
+          if (error && isDefinitiveRejection(error))
+            await auth.signOut?.({ scope: "local" }).catch(() => undefined);
+          return !error && u.user?.id === session.user.id ? u.user : null;
+        },
         () => null,
       );
       saved = { token: session.access_token, valid };
