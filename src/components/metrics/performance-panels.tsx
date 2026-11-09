@@ -7,19 +7,10 @@ import { Link } from "@tanstack/react-router";
 import type { QuarterCoverage } from "@/lib/coverage";
 import { formatRatio } from "@/lib/coverage";
 import { pct } from "@/lib/money";
+import { dealSourceLabel } from "@/lib/deal-source";
 import type { WinGroup } from "@/lib/metrics-quarter";
 import { DataMark } from "@/components/metrics/data-mark";
 import { Kpi, Panel } from "@/components/page";
-
-const SOURCE_LABEL: Record<string, string> = {
-  outbound: "Outbound",
-  inbound: "Inbound",
-  partner: "Partner",
-  plg: "Producto (PLG)",
-  event: "Evento",
-  referral: "Referido",
-  "—": "Sin origen",
-};
 
 export type OverallWinRate = { won: number; lost: number; closed: number; rate: number | null };
 
@@ -114,7 +105,7 @@ export function WinRatePanels({
         {bySource.map((r) => (
           <Bar
             key={r.k}
-            label={SOURCE_LABEL[r.k] ?? r.k}
+            label={dealSourceLabel(r.k)}
             value={r.rate}
             right={`${pct(r.rate)} · ${r.won}G/${r.lost}P`}
           />
