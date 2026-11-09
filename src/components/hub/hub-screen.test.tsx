@@ -903,3 +903,30 @@ describe("HubScreen · sin crear ni importar con el error de lectura (NK-0101, C
     expect(importBtn()).toBeInTheDocument();
   });
 });
+
+// NK-0100 walkthrough: a blank search never stays in the box (no spaces, no «Borrar búsqueda»).
+describe("HubScreen · buscador en blanco (NK-0100)", () => {
+  it("opens with an empty box when the URL q is only spaces", async () => {
+    h.search = { q: "   " };
+    mount();
+    await screen.findByText("Propuesta de valor");
+    expect(box().value).toBe("");
+    expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).not.toBeInTheDocument();
+  });
+
+  it("empties the box once typed spaces are written (cleaned) to the URL", async () => {
+    mount();
+    await screen.findByText("Propuesta de valor");
+    vi.useFakeTimers();
+    try {
+      type("   ");
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(box().value).toBe("");
+    expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).not.toBeInTheDocument();
+  });
+});
