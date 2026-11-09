@@ -76,7 +76,7 @@ describe("memory.server logs no error text (NK-0104 CA-1)", () => {
         from: () => ({
           select: () => ({
             eq: () => ({
-              eq: () => ({ eq: () => ({ order: () => ({ limit: async () => ({ data: [] }) }) }) }),
+              eq: () => ({ order: () => ({ limit: async () => ({ data: [] }) }) }),
             }),
           }),
         }),
