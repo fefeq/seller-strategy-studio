@@ -4,7 +4,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
-import { expectDataMarks } from "@/test/data-marks";
+import { expectDataMarks, expectNoBareDash } from "@/test/data-marks";
 import { dealRow, segRow, type FakeDb } from "@/test/metrics-mocks";
 
 const db = vi.hoisted((): FakeDb => ({ tables: {} }));
@@ -94,7 +94,8 @@ describe("Cobertura por segmento marks", () => {
     expect(marksOf(card("Pyme"))).toContain("Real · media de ganados");
     expect(marksOf(card("Abiertos"))).toContain("Estimado · media de deals abiertos");
     expect(marksOf(card("Rango"))).toContain("Estimado · punto medio del rango");
-    expect(marksOf(card("Minimo"))).toContain("Estimado · mínimo del rango × 1,5");
+    // SDD-20261109 D3: a minimum without maximum gives no ACV.
+    expect(marksOf(card("Minimo"))).toContain("Sin dato · falta el máximo del rango de ACV");
     expect(marksOf(card("Vacio"))).toContain("Sin dato · falta rango de ACV");
   });
 
@@ -105,7 +106,8 @@ describe("Cobertura por segmento marks", () => {
       </QueryClientProvider>,
     );
     await screen.findByText("Pyme");
-    expect(marksOf(card("Pyme"))).toContain("Estimado · margen del 100 % supuesto (falta margen)");
+    // SDD-20261109 D1: without a margin there is no payback (never 100 %).
+    expect(marksOf(card("Pyme"))).toContain("Sin dato · falta margen");
     for (const name of ["Cero", "Negativo"]) {
       const c = card(name);
       const mark = [...c.querySelectorAll("[data-mark]")].find(
@@ -117,5 +119,34 @@ describe("Cobertura por segmento marks", () => {
     }
     expect(container.textContent).not.toContain("Infinity");
     expectDataMarks(container);
+  });
+});
+
+// SDD-20261109-metrics-strategy-no-estimates · U-3 · CA-6, CA-13, CA-14: the marks come from the Figures; a missing CAC,
+// payback, ACV or win rate reads «Sin dato · motivo», never «—»; the win rate says its window.
+describe("NK-0094 Cobertura: Sin dato instead of «—», win rate window", () => {
+  it("CA-13 / CA-14: only targets nobody typed keep a «—»; each win rate says «Trimestre 2026-Q4»", async () => {
+    const { container } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SegmentCoverage quarter="2026-Q4" />
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Pyme");
+    expectNoBareDash(container, ["/ obj. —", "/ —", "— Sin objetivo"]);
+    expect(screen.getAllByText("Win rate · Trimestre 2026-Q4")).toHaveLength(7);
+    expect(marksOf(card("Rango"))).toContain("Sin dato · ningún deal cerrado en 2026-Q4");
+    expect(marksOf(card("Rango"))).toContain("Sin dato · sin costes en 2026-Q4");
+    expectDataMarks(container);
+  });
+
+  it("CA-6 / D9: no payback with the target CAC; it never says «estimado» for a target", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SegmentCoverage quarter="2026-Q4" />
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Pyme");
+    expect(card("Pyme").textContent).not.toMatch(/Payback estimado|CAC objetivo\./);
+    expect(marksOf(card("Abiertos"))).toContain("Sin dato · sin costes en 2026-Q4");
   });
 });

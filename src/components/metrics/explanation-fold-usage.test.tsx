@@ -115,7 +115,8 @@ describe("closed list of /metrics is folded (CA-2)", () => {
 
   it("X-5 Pipeline", async () => {
     const { container } = wrap(<PipelineBoardPanel quarter="2026-Q4" />);
-    await screen.findByText("Payback real → proyectado");
+    // SDD-20261109 D10: the board's payback is labelled «Payback real» now (only the label it waits for changes).
+    await screen.findByText("Payback real");
     expectFolded(
       container,
       "Quién sigue en cada etapa",

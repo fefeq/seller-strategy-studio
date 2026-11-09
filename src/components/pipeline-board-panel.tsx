@@ -1,4 +1,3 @@
-import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -6,21 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { useLeads } from "@/hooks/use-leads";
 import { quarterRange } from "@/lib/metrics";
-import { actuals } from "@/lib/pipeline-real";
-import { quarterKpis } from "@/lib/quarter-kpis";
 import {
-  boardMargin,
-  closingIn,
+  boardEconomics,
   pipelineBoard,
-  pipelineEconomics,
   type BoardColumn,
   type BoardGroup,
 } from "@/lib/pipeline-board";
+import type { QuarterBudgetLike } from "@/lib/segment-budget";
+import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
 import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
 import { Kpi, ScreenState } from "@/components/page";
-import { DataMark } from "@/components/metrics/data-mark";
-import { MARGIN_NON_POSITIVE, acvMark, boardMarginMark } from "@/components/metrics/mark-text";
+import { FigureWithMark } from "@/components/metrics/figure";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
@@ -65,7 +61,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       return {
         deals: d.data ?? [],
         segments: (s.data ?? []) as SegLike[],
-        budgets: b.data ?? [],
+        budgets: (b.data ?? []) as QuarterBudgetLike[],
         costs: c.data ?? [],
       };
     },
@@ -83,31 +79,15 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
       new Date(),
       stages,
     );
-    const [k] = quarterKpis(data.segments, data.deals, data.budgets, data.costs, [quarter]);
-    const real = actuals(data.deals);
-    // Real margin of the books first, then what the won deals with product lines actually carried (boardMargin, same chain).
-    const bm = boardMargin(k, wonDealsMargin(data.deals, range.end).all, data.segments);
-    const margin = bm.pct;
-    const cost = data.costs.reduce((s, c) => s + Number(c.amount || 0), 0) || null;
-    const closing = closingIn(data.deals, range);
-    const won = board.find((g) => g.id === "won")!.count;
-    return {
-      board,
-      cost,
-      won,
-      closing,
-      real,
-      margin,
-      bm,
-      eco: pipelineEconomics({
-        cost,
-        won,
-        closing: closing.length,
-        winRatePct: real.winRate,
-        acv: real.acv,
-        marginPct: margin,
-      }),
-    };
+    // CAC and payback of the board are the KPI's (boardEconomics: companyCac and companyPayback, SDD-20261109 D10).
+    const eco = boardEconomics({
+      deals: data.deals,
+      segments: data.segments,
+      budgets: data.budgets,
+      costs: data.costs,
+      quarter,
+    });
+    return { board, ...eco };
   }, [data, leadsData, quarter, stages]);
 
   // The panel's own read decides loading and error; the leads read (shared with Leads) keeps it in loading until it answers and shows its error with its own retry.
@@ -135,9 +115,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     (s, g) => s + g.columns.reduce((t, c) => t + c.items.filter((i) => i.late).length, 0),
     0,
   );
-  const months = (n: number | null) => (n == null ? "—" : `${fmt1(n)} m`);
-  const acv = acvMark(view.real.acvSource);
-  const marginMark = boardMarginMark(view.bm.source);
+  const months = (n: number) => `${fmt1(n)} m`;
 
   return (
     <section className="rounded-lg border bg-card p-5">
@@ -185,51 +163,24 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
         <Kpi
           size="inline"
           label="CAC real"
-          value={view.eco.realCac != null ? money(view.eco.realCac) : "—"}
+          value={<FigureWithMark f={view.realCac} show={money} />}
           hint={`${view.won} ${view.won === 1 ? "deal ganado" : "deals ganados"} en ${quarter}`}
         />
         <Kpi
           size="inline"
           label="CAC proyectado"
-          value={view.eco.projectedCac != null ? money(view.eco.projectedCac) : "—"}
+          value={<FigureWithMark f={view.projectedCac} show={money} />}
           hint={
             view.real.winRate != null
-              ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate (Últimos 365 días) ≈ ${fmt1(view.eco.expectedWins)} clientes`
+              ? `+${view.closing.length} abiertos que cierran este trimestre × ${Math.round(view.real.winRate)}% de win rate (${WIN_RATE_WINDOWS.ultimos365.label}) ≈ ${fmt1(view.expectedWins)} clientes`
               : "Sin deals cerrados en los últimos 365 días no hay win rate real"
           }
         />
         <Kpi
           size="inline"
-          label="Payback real → proyectado"
-          value={
-            view.bm.marginNonPositive ? (
-              <DataMark {...MARGIN_NON_POSITIVE} />
-            ) : (
-              `${months(view.eco.realPayback)} → ${months(view.eco.projectedPayback)}`
-            )
-          }
-          hint={
-            view.real.acv != null && view.margin != null ? (
-              <>
-                ACV {money(view.real.acv)}
-                {acv && (
-                  <>
-                    {" "}
-                    · <DataMark {...acv} />
-                  </>
-                )}{" "}
-                · margen {fmt1(view.margin)}%
-                {marginMark && (
-                  <>
-                    {" "}
-                    · <DataMark {...marginMark} />
-                  </>
-                )}
-              </>
-            ) : (
-              "Falta ACV o margen"
-            )
-          }
+          label="Payback real"
+          value={<FigureWithMark f={view.payback} show={months} />}
+          hint="El de los KPIs trimestrales: media de los segmentos con payback, ponderada por clientes"
         />
       </div>
     </section>

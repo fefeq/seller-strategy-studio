@@ -1,36 +1,25 @@
-// Words of the data marks of /metrics (SDD-20261106-metrics-honest-data §6, CA-5 to CA-9). Labels only: the
-// numbers come unchanged from the shared functions; these say where each one comes from.
+// Words of the data marks (SDD-20261106-metrics-honest-data §6; SDD-20261109-metrics-strategy-no-estimates §9).
+// Since SDD-20261109 the reasons come from the Figures of src/lib/unit-economics.ts: figureMark only adapts a
+// Figure to DataMark, it never composes a reason of its own. /strategy and Inicio use it too.
 import type { DataMarkProps } from "@/components/metrics/data-mark";
-import type { RangeBasis } from "@/lib/segment-coverage";
-import type { BoardMarginSource } from "@/lib/pipeline-board";
 
-/** CA-6 / CA-9: origin of an ACV. */
-export function acvMark(
-  source: "ganados" | "abiertos" | "rango" | null,
-  rangeBasis?: RangeBasis,
-): DataMarkProps | null {
-  if (source === "ganados") return { state: "real", reason: "media de ganados" };
-  if (source === "abiertos") return { state: "estimado", reason: "media de deals abiertos" };
-  if (source !== "rango") return null;
-  if (rangeBasis === "minimo_x1_5") return { state: "estimado", reason: "mínimo del rango × 1,5" };
-  if (rangeBasis === "sin_rango") return { state: "sin_dato", reason: "falta rango de ACV" };
-  return { state: "estimado", reason: "punto medio del rango" };
+/** A Figure (or any {state, reason}) as the props of its mark. A planned figure has no mark. */
+export function figureMark(f: { state: string; reason: string | null }): DataMarkProps | null {
+  if (f.state === "real") return { state: "real", reason: f.reason };
+  if (f.state === "estimado") return { state: "estimado", reason: f.reason ?? "" };
+  if (f.state === "sin_dato") return { state: "sin_dato", reason: f.reason ?? "falta un dato" };
+  return null;
 }
 
-/** CA-7: payback computed with the 100 % margin assumed. */
-export const MARGIN_ASSUMED: DataMarkProps = {
-  state: "estimado",
-  reason: "margen del 100 % supuesto (falta margen)",
-};
-/** CA-7: margin of 0 % or below; the payback (Infinity or negative) is never shown. */
-export const MARGIN_NON_POSITIVE: DataMarkProps = {
+/** The mark only when the figure is not plainly real: «Estimado · …» or «Sin dato · …». */
+export function caveatMark(f: { state: string; reason: string | null }): DataMarkProps | null {
+  return f.state === "estimado" || f.state === "sin_dato" ? figureMark(f) : null;
+}
+
+/** CA-8 (SDD-20261109 D7): the shared cost is not split when nobody was won. */
+export const SHARED_NOT_SPLIT: DataMarkProps = {
   state: "sin_dato",
-  reason: "margen 0 % o negativo",
-};
-/** CA-8: shared cost split equally because nobody was won. */
-export const SHARED_EQUAL: DataMarkProps = {
-  state: "estimado",
-  reason: "repartido a partes iguales (nadie ganó)",
+  reason: "nadie ganó: el compartido no se reparte",
 };
 
 /** CA-5: N of M deals assigned to the segment by their amount. */
@@ -39,12 +28,15 @@ export const inferredMark = (n: number, m: number, deals = false): DataMarkProps
   reason: `${n} de ${m}${deals ? " deals" : ""} asignados por importe`,
 });
 
-/** CA-9: where the board's margin comes from. */
-export function boardMarginMark(source: BoardMarginSource): DataMarkProps | null {
-  if (source === "real") return { state: "real", reason: "de las cuentas" };
-  if (source === "deals") return { state: "real", reason: "de deals con líneas" };
-  if (source === "plan") return { state: "estimado", reason: "margen de plan" };
-  if (source === "media_objetivos")
-    return { state: "estimado", reason: "media de márgenes objetivo" };
-  return null;
+/** A win rate with no closed deal in its window. */
+export const noClosedDeals = (window: string) => ({
+  value: null,
+  state: "sin_dato" as const,
+  reason: `ningún deal cerrado en ${window}`,
+});
+
+/** Green or red only for a real or estimated figure with a target; neutral otherwise. */
+export function figureTone(f: { value: number | null; state: string }, ok: boolean | null) {
+  if (f.value == null || (f.state !== "real" && f.state !== "estimado")) return "";
+  return ok === false ? "text-signal" : ok ? "text-success" : "";
 }
