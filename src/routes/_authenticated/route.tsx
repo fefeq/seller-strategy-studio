@@ -25,6 +25,7 @@ import { useSetupGuide } from "@/hooks/use-setup-guide";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
 import { Isotipo, Lockup } from "@/components/brand";
+import { AppPending } from "@/components/app-pending";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
@@ -36,6 +37,9 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     if (!(await isSignedIn())) throw redirect({ to: "/auth" });
   },
+  // First load or reload: this route is client-only, so without a pending state nothing paints until the guard answers.
+  pendingComponent: AppPending,
+  pendingMs: 0,
   component: Shell,
 });
 
