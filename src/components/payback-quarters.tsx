@@ -1,4 +1,3 @@
-import { wonDealsMargin } from "@/lib/deal-lines";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
@@ -8,7 +7,9 @@ import { Pick } from "@/components/fields";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { quartersUpTo } from "@/lib/cac";
 import { paybackByQuarter, type QuarterPayback, type SegLike } from "@/lib/segment-coverage";
-import { withPeriodMargin } from "@/lib/segment-budget";
+import { DataMark } from "@/components/metrics/data-mark";
+import { FigureNote, FigureValue } from "@/components/metrics/figure";
+import { figureTone, inferredMark } from "@/components/metrics/mark-text";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 
@@ -59,14 +60,8 @@ export function usePaybackQuarters(count: number) {
   });
   const rows = useMemo(
     () =>
-      paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, (q) =>
-        withPeriodMargin(
-          segs as SegLike[],
-          budgets,
-          q,
-          wonDealsMargin(deals, quarterRange(q)?.end, segs as SegLike[]).bySegment,
-        ),
-      ),
+      // One margin chain (SDD-20261109 D15): budget rows and the deals' margins, inside paybackByQuarter.
+      paybackByQuarter(segs as SegLike[], deals, costs, quarters, quarterRange, budgets),
     [segs, deals, costs, budgets, quarters],
   );
   return { quarters, rows, segs };
@@ -77,7 +72,9 @@ export function PaybackQuarters() {
   const { money } = useCurrency();
   const [count, setCount] = useState("4");
   const { quarters, rows, segs } = usePaybackQuarters(Number(count));
-  const anyReal = rows.some((r) => Object.values(r.byQuarter).some((c) => c.status === "real"));
+  const anyReal = rows.some((r) =>
+    Object.values(r.byQuarter).some((c) => c.figures.payback.value != null),
+  );
 
   return (
     <div className="space-y-4">
@@ -87,8 +84,9 @@ export function PaybackQuarters() {
           <p className="mt-1 text-xs text-muted-foreground">
             Meses que tarda cada segmento en recuperar lo que cuesta captar un cliente: CAC real del
             trimestre (costes de Métricas / deals ganados) entre el margen mensual del ACV del
-            segmento. El margen sale del presupuesto de ese trimestre o de su año (real o, si no
-            hay, presupuestado). Verde = dentro del objetivo; rojo = fuera.
+            segmento. El margen sale, por este orden, del presupuesto real del trimestre o del año,
+            de los deals ganados con líneas, del presupuesto planificado y del margen objetivo del
+            segmento. Sin ninguno, no hay payback. Verde = dentro del objetivo; rojo = fuera.
           </p>
         </div>
         <div className="w-full sm:w-44">
@@ -165,25 +163,29 @@ export function Cell({
   target: number | null;
   money: (n: number) => string;
 }) {
-  if (c.status !== "real" || c.payback == null) {
+  const f = c.figures.payback;
+  if (f.value == null) {
+    // SDD-20261109 CA-7: «Sin dato · motivo», never a bare dash nor «sin costes» alone; the spend goes to the hint.
     return (
       <td className="px-3 py-3 text-right">
-        <p className="font-mono text-xs text-muted-foreground">—</p>
-        <p className="text-xs text-muted-foreground">
-          {c.status === "no_wins" ? `${money(c.cost)} · 0 ganados` : "sin costes"}
-        </p>
+        <FigureValue f={f} show={() => null} className="text-xs" />
+        {c.cost > 0 && (
+          <p className="text-xs text-muted-foreground">
+            {money(c.cost)} gastado · {c.customers} {c.customers === 1 ? "ganado" : "ganados"}
+          </p>
+        )}
       </td>
     );
   }
-  const tone = c.ok === false ? "text-signal" : c.ok ? "text-success" : "";
-  const diff = target != null ? c.payback - target : null;
+  const tone = figureTone(f, c.ok);
+  const diff = target != null ? f.value - target : null;
   return (
     <td className="px-3 py-3 text-right">
-      <p className={`font-display text-[22px] leading-7 ${tone}`}>{fmt1(c.payback)} m</p>
+      <p className={`font-display text-[22px] leading-7 ${tone}`}>{fmt1(f.value)} m</p>
       <p className="text-xs text-muted-foreground">
         CAC {money(Math.round(c.cac ?? 0))} · {c.customers}{" "}
         {c.customers === 1 ? "ganado" : "ganados"}
-        {diff != null && (
+        {diff != null && tone && (
           <span className={tone}>
             {" "}
             · {diff > 0 ? "+" : ""}
@@ -191,6 +193,13 @@ export function Cell({
           </span>
         )}
       </p>
+      <FigureNote f={f} className="block text-xs text-muted-foreground" />
+      {c.inferredWon > 0 && (
+        <DataMark
+          {...inferredMark(c.inferredWon, c.wonInQuarter)}
+          className="block text-xs text-muted-foreground"
+        />
+      )}
     </td>
   );
 }

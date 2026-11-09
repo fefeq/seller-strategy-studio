@@ -19,12 +19,10 @@ import {
 import { useSegmentCoverageData } from "@/components/segment-coverage";
 import { errorText } from "@/lib/errors";
 import { DataMark } from "@/components/metrics/data-mark";
-import {
-  MARGIN_ASSUMED,
-  MARGIN_NON_POSITIVE,
-  SHARED_EQUAL,
-  inferredMark,
-} from "@/components/metrics/mark-text";
+import { SHARED_NOT_SPLIT, inferredMark } from "@/components/metrics/mark-text";
+import { figureTone } from "@/components/metrics/mark-text";
+import { FigureNote, FigureValue } from "@/components/metrics/figure";
+import { companyCac, fmtMonths } from "@/lib/unit-economics";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
@@ -147,15 +145,21 @@ function QuarterView({
               <td className="py-1.5 pr-3">CAC medio</td>
               {quarters.map((q) => (
                 <td key={q} className="px-2 py-1.5 text-right font-mono text-xs">
-                  {won[q] && t.total[q] ? money(t.total[q] / won[q]) : "—"}
+                  <FigureValue
+                    f={companyCac({ cost: t.total[q], won: won[q], period: q })}
+                    show={money}
+                  />
                 </td>
               ))}
               <td className="px-2 py-1.5 text-right font-mono text-xs">
-                {(() => {
-                  const w = quarters.reduce((s, q) => s + won[q], 0);
-                  const c = quarters.reduce((s, q) => s + t.total[q], 0);
-                  return w && c ? money(c / w) : "—";
-                })()}
+                <FigureValue
+                  f={companyCac({
+                    cost: quarters.reduce((s, q) => s + t.total[q], 0),
+                    won: quarters.reduce((s, q) => s + won[q], 0),
+                    period: `${quarters[0]}–${quarters[3]}`,
+                  })}
+                  show={money}
+                />
               </td>
             </tr>
           </tbody>
@@ -194,6 +198,8 @@ export function CacPanel({ quarter }: { quarter: string }) {
             data.targets,
             quarterRange(quarter),
             data.costs,
+            // SDD-20261109 CA-3: the budget rows feed the one margin chain (segmentMargin), as on every screen.
+            data.budgetRows,
           )
         : [],
     [data, quarter],
@@ -212,7 +218,15 @@ export function CacPanel({ quarter }: { quarter: string }) {
   const colTotal = (seg: string) =>
     costs.filter((c) => (c.segment_id ?? SHARED) === seg).reduce((s, c) => s + Number(c.amount), 0);
   const totalCost = costs.reduce((s, c) => s + Number(c.amount), 0);
-  const totalCustomers = rows.reduce((s, r) => s + r.cac.customers, 0);
+  // Company CAC (SDD-20261109 D11): every cost of the quarter over every deal won in it, with or without segment.
+  const totalCustomers = useMemo(() => {
+    const { start, end } = quarterRange(quarter);
+    return (data?.deals ?? []).filter((d) => {
+      const at = new Date(d.closed_at ?? d.updated_at);
+      return d.stage === "won" && at >= start && at < end;
+    }).length;
+  }, [data, quarter]);
+  const companyFigure = companyCac({ cost: totalCost, won: totalCustomers, period: quarter });
   const byChannel = costByChannel(costs);
 
   async function save(channel: string, seg: string, value: string) {
@@ -290,7 +304,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
             </div>
             <div>
               <p className="font-mono">
-                {totalCustomers && totalCost ? money(totalCost / totalCustomers) : "—"}
+                <FigureValue f={companyFigure} show={money} />
               </p>
               <p className="text-xs text-muted-foreground">CAC medio · {totalCustomers} clientes</p>
             </div>
@@ -364,7 +378,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
                     cells={rows.map((r) => (
                       <>
                         {money(r.cac.shared)}
-                        {r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}
+                        {r.sharedSplit === "sin_reparto" && <Mark {...SHARED_NOT_SPLIT} />}
                       </>
                     ))}
                   />
@@ -373,7 +387,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
                     cells={rows.map((r) => (
                       <>
                         {money(r.cac.cost)}
-                        {r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}
+                        {r.sharedSplit === "sin_reparto" && <Mark {...SHARED_NOT_SPLIT} />}
                       </>
                     ))}
                     strong
@@ -391,7 +405,9 @@ export function CacPanel({ quarter }: { quarter: string }) {
                   />
                   <SummaryRow
                     label="CAC real"
-                    cells={rows.map((r) => (r.cac.real != null ? money(r.cac.real) : "—"))}
+                    cells={rows.map((r) => (
+                      <FigureValue key={r.segment.id} f={r.figures.cac} show={money} />
+                    ))}
                     strong
                   />
                   <SummaryRow
@@ -401,27 +417,21 @@ export function CacPanel({ quarter }: { quarter: string }) {
                   />
                   <SummaryRow
                     label="Payback real"
-                    cells={rows.map((r) =>
-                      r.payback.source !== "real" || r.payback.real == null ? (
-                        "—"
-                      ) : r.paybackMarginBasis === "no_positivo" ? (
-                        <Mark {...MARGIN_NON_POSITIVE} />
-                      ) : (
-                        <>
-                          {`${r.payback.real.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`}
-                          {r.paybackMarginBasis === "supuesto_100" && <Mark {...MARGIN_ASSUMED} />}
-                        </>
-                      ),
-                    )}
-                    tones={rows.map((r) =>
-                      r.payback.source !== "real" || r.paybackMarginBasis === "no_positivo"
-                        ? ""
-                        : r.payback.ok === false
-                          ? "text-signal"
-                          : r.payback.ok
-                            ? "text-success"
-                            : "",
-                    )}
+                    cells={rows.map((r) => (
+                      <>
+                        <FigureValue
+                          f={r.figures.payback}
+                          show={(n) =>
+                            `${fmtMonths(n)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`
+                          }
+                        />
+                        <FigureNote
+                          f={r.figures.payback}
+                          className="block font-sans text-xs font-normal text-muted-foreground"
+                        />
+                      </>
+                    ))}
+                    tones={rows.map((r) => figureTone(r.figures.payback, r.payback.ok))}
                     strong
                   />
                 </tbody>

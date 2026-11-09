@@ -9,11 +9,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useLeads, type Lead } from "@/hooks/use-leads";
-import { Page, Empty, Kpi, Panel } from "@/components/page";
+import { Page, Empty, Kpi, Panel, ScreenState } from "@/components/page";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { LeadsPending } from "@/components/leads/leads-pending";
 import { LeadDetail } from "@/components/leads/lead-detail";
 import { AutoEnrichSwitch, NewLead, SlaSettings } from "@/components/leads/lead-dialogs";
 import {
@@ -71,6 +72,9 @@ export const Route = createFileRoute("/_authenticated/leads/")({
     ],
   }),
   loader: ({ context }) => prepareLeads(context.queryClient),
+  // The loader waits for the data: show the loading state at once instead of a blank page (NK-0093).
+  pendingComponent: LeadsPending,
+  pendingMs: 0,
   component: LeadsPage,
 });
 
@@ -86,7 +90,7 @@ function LeadsPage() {
   const go = useNavigate();
   const touchLead = useLeadTouched();
   const qc = useQueryClient();
-  const { data } = useLeads(orgId);
+  const { data, isPending, error, refetch } = useLeads(orgId);
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -205,7 +209,9 @@ function LeadsPage() {
       }
     >
       {!view || !data ? (
-        <p className="text-sm text-muted-foreground">Cargando leads…</p>
+        <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
+          {null}
+        </ScreenState>
       ) : (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">

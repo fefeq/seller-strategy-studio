@@ -12,17 +12,16 @@ import {
 import { Deviation } from "@/components/budget-quarters";
 import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
-import {
-  MARGIN_ASSUMED,
-  MARGIN_NON_POSITIVE,
-  SHARED_EQUAL,
-  acvMark,
-  inferredMark,
-} from "@/components/metrics/mark-text";
+import { SHARED_NOT_SPLIT, figureMark, inferredMark } from "@/components/metrics/mark-text";
+import { figureTone } from "@/components/metrics/mark-text";
+import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
+import { MARGIN_REASON, noData, real } from "@/lib/unit-economics";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
-const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
+const pct = (n: number) => `${Math.round(n)}%`;
+/** A budget margin (revenue − cost to serve) as a Figure: without both, «Sin dato · falta margen». */
+const marginFigure = (n: number | null) => (n == null ? noData("falta margen") : real(n));
 
 /** Annual plan vs actual per segment (sum of the quarters entered in Estrategia GTM) → real margin and payback. */
 export function BudgetPanel({ year }: { year: number }) {
@@ -42,7 +41,10 @@ export function BudgetPanel({ year }: { year: number }) {
           .order("acv_min"),
         supabase
           .from("deals")
-          .select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+          // gross_margin: the one margin chain reads the won deals with lines (SDD-20261109 §10).
+          .select(
+            "segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin",
+          ),
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(year)),
         supabase
           .from("cac_costs")
@@ -106,7 +108,9 @@ export function BudgetPanel({ year }: { year: number }) {
               </p>
             </div>
             <div>
-              <p className="font-mono">{pct(realMargin)}</p>
+              <p className="font-mono">
+                <FigureValue f={marginFigure(realMargin)} show={pct} />
+              </p>
               <p className="text-xs text-muted-foreground">margen bruto real</p>
             </div>
           </div>
@@ -136,23 +140,20 @@ export function BudgetPanel({ year }: { year: number }) {
             </thead>
             <tbody>
               {rows.map((r) => {
-                // Margin 0 % or below: the payback (Infinity or negative) is replaced by «Sin dato», neutral tone.
-                const noReal = r.paybackMarginBasis.actual === "no_positivo";
-                const noPlan = r.paybackMarginBasis.plan === "no_positivo";
-                const acv = acvMark(r.acvSource, r.acvRangeBasis);
+                const f = r.figures;
+                const acv = figureMark(f.acv);
                 return (
                   <tr key={r.segment.id} className="border-b border-dashed align-top">
                     <td className="sticky left-0 z-10 max-w-40 bg-background py-2 pr-3 sm:max-w-none">
                       <p className="font-medium">{r.segment.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        margen en el payback: {pct(r.margin.pct)}{" "}
-                        {r.margin.source === "real"
-                          ? "(real)"
-                          : r.margin.source === "plan"
-                            ? "(presupuestado)"
-                            : r.margin.source === "objetivo"
-                              ? "(objetivo)"
-                              : ""}
+                        margen en el payback:{" "}
+                        <FigureValue
+                          f={f.margin}
+                          show={(n) =>
+                            `${pct(n)} (${f.margin.source ? MARGIN_REASON[f.margin.source] : ""})`
+                          }
+                        />
                       </p>
                     </td>
                     <Cmp
@@ -161,8 +162,8 @@ export function BudgetPanel({ year }: { year: number }) {
                       dev={<Deviation real={r.actual.revenue} plan={r.plan.revenue} />}
                     />
                     <Cmp
-                      real={pct(r.actual.margin)}
-                      plan={pct(r.plan.margin)}
+                      real={<FigureValue f={marginFigure(r.actual.margin)} show={pct} />}
+                      plan={<FigureValue f={marginFigure(r.plan.margin)} show={pct} />}
                       dev={<Deviation real={r.actual.margin} plan={r.plan.margin} points />}
                     />
                     <Cmp
@@ -175,11 +176,11 @@ export function BudgetPanel({ year }: { year: number }) {
                           lowerIsBetter
                         />
                       }
-                      marks={r.sharedSplit === "partes_iguales" && <Mark {...SHARED_EQUAL} />}
+                      marks={r.sharedSplit === "sin_reparto" && <Mark {...SHARED_NOT_SPLIT} />}
                     />
                     <Cmp
-                      real={r.actual.cac != null ? money(r.actual.cac) : "—"}
-                      plan={r.plan.cac != null ? money(r.plan.cac) : "—"}
+                      real={<FigureValue f={f.cac} show={money} />}
+                      plan={<PlanValue f={f.planCac} show={money} />}
                       dev={<Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />}
                       marks={
                         r.inferredWonInPeriod > 0 && (
@@ -188,51 +189,24 @@ export function BudgetPanel({ year }: { year: number }) {
                       }
                     />
                     <Cmp
-                      real={
-                        noReal ? (
-                          <DataMark {...MARGIN_NON_POSITIVE} />
-                        ) : r.actual.payback != null ? (
-                          `${fmt1(r.actual.payback)} m`
-                        ) : (
-                          "—"
-                        )
-                      }
+                      real={<FigureValue f={f.payback} show={(n) => `${fmt1(n)} m`} />}
                       plan={
                         <>
-                          {noPlan ? (
-                            <DataMark {...MARGIN_NON_POSITIVE} />
-                          ) : r.plan.payback != null ? (
-                            `${fmt1(r.plan.payback)} m`
-                          ) : (
-                            "—"
-                          )}
+                          <PlanValue f={f.planPayback} show={(n) => `${fmt1(n)} m`} />
                           {r.payback.target != null ? ` · obj. ${r.payback.target} m` : ""}
                         </>
                       }
                       dev={
-                        noReal || noPlan ? null : (
-                          <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />
-                        )
+                        <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />
                       }
-                      tone={
-                        noReal
-                          ? ""
-                          : r.payback.realOk === false
-                            ? "text-signal"
-                            : r.payback.realOk
-                              ? "text-success"
-                              : ""
-                      }
+                      tone={figureTone(f.payback, r.payback.realOk)}
                       marks={
                         <>
-                          {(r.paybackMarginBasis.actual === "supuesto_100" ||
-                            r.paybackMarginBasis.plan === "supuesto_100") && (
-                            <Mark {...MARGIN_ASSUMED} />
-                          )}
-                          {(r.actual.payback != null ||
-                            r.plan.payback != null ||
-                            r.acvRangeBasis === "sin_rango") &&
-                            acv && <Mark {...acv} />}
+                          <FigureNote
+                            f={f.payback}
+                            className="block text-xs text-muted-foreground"
+                          />
+                          {acv && <Mark {...acv} />}
                         </>
                       }
                     />

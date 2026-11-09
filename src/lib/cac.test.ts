@@ -47,9 +47,10 @@ describe("real CAC", () => {
     expect(r.a.shared).toBe(3000);
     expect(r.b.shared).toBe(6000);
   });
-  it("with no deals won, shared costs split equally and there is no real CAC", () => {
+  // SDD-20261109-metrics-strategy-no-estimates D7: with nobody won the shared cost is not split.
+  it("with no deals won, shared costs are not split and there is no real CAC", () => {
     const r = segmentCac([{ segment_id: null, channel: "Otros", amount: 1000 }], {}, ["a", "b"]);
-    expect(r.a.shared).toBe(500);
+    expect(r.a.shared).toBe(0);
     expect(r.a.cac).toBeNull();
   });
   it("payback uses the real CAC: 30.000 cost, 2 deals of 20.000, 80% margin → 11,25 months", () => {
@@ -57,14 +58,16 @@ describe("real CAC", () => {
       { segment_id: "mid", channel: "Eventos", amount: 30000 },
     ]);
     expect(row.cac.real).toBe(15000);
-    expect(row.payback.source).toBe("real");
+    // SDD-20261109 D9: `payback.source` is gone (only a real CAC gives a payback); the state says it is real.
+    expect(row.payback.state).toBe("real");
     expect(row.payback.real).toBeCloseTo(11.25);
     expect(row.payback.ok).toBe(true);
   });
-  it("without costs, payback falls back to the target CAC", () => {
+  // SDD-20261109-metrics-strategy-no-estimates D9: no payback with the target CAC; it says the real CAC is missing.
+  it("without costs, there is no payback (never with the target CAC)", () => {
     const [row] = segmentCoverage([mid], [won()], {}, range, []);
-    expect(row.payback.source).toBe("objetivo");
-    expect(row.payback.real).toBeCloseTo(7.5);
+    expect(row.payback.real).toBeNull();
+    expect(row.payback.reason).toBe("sin costes en 2026-Q4");
   });
   it("deals won outside the quarter do not count as customers", () => {
     const [row] = segmentCoverage([mid], [won({ closed_at: "2026-09-20" })], {}, range, [
@@ -183,11 +186,12 @@ describe("sharedSplitBasis (CA-8)", () => {
   it("by customers when someone was won", () => {
     expect(sharedSplitBasis(shared, { a: 1, b: 0 }, ["a", "b"])).toBe("clientes");
   });
-  it("equally when nobody was won, and segmentCac indeed splits it equally", () => {
-    expect(sharedSplitBasis(shared, { a: 0, b: 0 }, ["a", "b"])).toBe("partes_iguales");
-    expect(sharedSplitBasis(shared, {}, ["a", "b"])).toBe("partes_iguales");
+  // SDD-20261109-metrics-strategy-no-estimates D7: nobody won → not split («sin_reparto»), each segment keeps 0.
+  it("sin_reparto when nobody was won, and segmentCac indeed does not split it", () => {
+    expect(sharedSplitBasis(shared, { a: 0, b: 0 }, ["a", "b"])).toBe("sin_reparto");
+    expect(sharedSplitBasis(shared, {}, ["a", "b"])).toBe("sin_reparto");
     const r = segmentCac(shared, {}, ["a", "b"]);
-    expect(r.a.shared).toBe(4500);
+    expect(r.a.shared).toBe(0);
   });
   it("null without shared cost or without segments", () => {
     expect(
@@ -197,5 +201,40 @@ describe("sharedSplitBasis (CA-8)", () => {
       sharedSplitBasis([{ segment_id: null, channel: "Eventos", amount: 0 }], {}, ["a"]),
     ).toBeNull();
     expect(sharedSplitBasis(shared, {}, [])).toBeNull();
+  });
+});
+
+// SDD-20261109-metrics-strategy-no-estimates · U-2 · CA-5 (D7): the shared cost is never split when nobody won.
+describe("NK-0094 CA-5: segmentCac through cacOf", () => {
+  const shared = [{ segment_id: null, channel: "Paid media", amount: 9000 }];
+  it("D7: nobody won → shared 0 per segment and «sin_reparto»; the CAC says nobody was won", () => {
+    const r = segmentCac(shared, {}, ["a", "b"], "2026-Q3");
+    expect([r.a.shared, r.b.shared]).toEqual([0, 0]);
+    expect(sharedSplitBasis(shared, {}, ["a", "b"])).toBe("sin_reparto");
+    expect(r.a.figure).toEqual({
+      value: null,
+      state: "sin_dato",
+      reason: "ningún deal ganado en 2026-Q3",
+    });
+  });
+  it("by customers when someone was won; the CAC is a «real» figure of the period", () => {
+    const r = segmentCac(shared, { a: 1, b: 2 }, ["a", "b"], "2026-Q3");
+    expect(r.b).toMatchObject({ shared: 6000, cac: 3000 });
+    expect(r.b.figure).toEqual({ value: 3000, state: "real", reason: null });
+    expect(r.a.figure.state).toBe("real");
+  });
+  it("trailingCac reads «los últimos 4 trimestres» in its reason", async () => {
+    const { trailingCac } = await import("./pipeline-real");
+    const r = trailingCac(
+      [mid],
+      [],
+      [{ segment_id: "mid", channel: "Eventos", amount: 100, period: "2026-Q4" }],
+      new Date("2026-11-15T12:00:00Z"),
+    );
+    expect(r.mid.figure).toEqual({
+      value: null,
+      state: "sin_dato",
+      reason: "ningún deal ganado en los últimos 4 trimestres",
+    });
   });
 });

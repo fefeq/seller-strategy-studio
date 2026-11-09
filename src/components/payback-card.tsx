@@ -1,13 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { usePaybackQuarters } from "@/components/payback-quarters";
-import { paybackSummary } from "@/lib/segment-coverage";
-
-const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+import { paybackHeadline, paybackSummary } from "@/lib/segment-coverage";
+import { fmtMonths } from "@/lib/unit-economics";
+import { DataMark } from "@/components/metrics/data-mark";
+import { figureMark, figureTone, inferredMark } from "@/components/metrics/mark-text";
 
 /** Dashboard card: real payback per segment over the last 4 quarters vs each segment's target. */
 export function PaybackCard() {
   const { quarters, rows } = usePaybackQuarters(4);
   const summary = paybackSummary(rows, quarters);
+  const headline = paybackHeadline(summary, rows.length);
 
   return (
     <div className="rounded-lg border bg-card p-5">
@@ -22,16 +24,26 @@ export function PaybackCard() {
         </Link>
       </div>
       <p className="mb-4 text-sm text-muted-foreground">
-        {summary.measured > 0 ? (
+        {headline.kind === "within" ? (
           <>
             <strong
-              className={summary.within === summary.measured ? "text-success" : "text-signal"}
+              className={headline.within === headline.measured ? "text-success" : "text-signal"}
             >
-              {summary.within} de {summary.measured}
+              {headline.within} de {headline.measured}
             </strong>{" "}
             segmentos dentro del objetivo en su último trimestre con datos.
           </>
-        ) : rows.length > 0 ? (
+        ) : headline.kind === "no_target" ? (
+          <>
+            Hay payback real en {headline.withPayback}{" "}
+            {headline.withPayback === 1 ? "segmento" : "segmentos"}, pero ninguno tiene objetivo de
+            payback. Fíjalo en{" "}
+            <Link to="/strategy" className="underline">
+              Estrategia GTM
+            </Link>{" "}
+            para ver si está dentro.
+          </>
+        ) : headline.kind === "none" ? (
           <>
             Aún sin payback real: apunta costes en{" "}
             <Link to="/metrics" className="underline">
@@ -77,32 +89,38 @@ export function PaybackCard() {
                       </td>
                       {quarters.map((q) => {
                         const c = r.byQuarter[q];
-                        const tone = c.ok === false ? "text-signal" : c.ok ? "text-success" : "";
+                        const f = c.figures.payback;
+                        const tone = figureTone(f, c.ok);
                         return (
                           <td key={q} className="px-2 py-2.5 text-right">
-                            {c.status === "real" && c.payback != null ? (
+                            {f.value != null ? (
                               <>
                                 <span
                                   className={`font-mono ${tone}`}
                                   title={`CAC real · ${c.customers} ganados`}
                                 >
-                                  {fmt1(c.payback)} m
+                                  {fmtMonths(f.value)} m
                                 </span>
+                                {f.state === "estimado" && (
+                                  <DataMark
+                                    {...figureMark(f)!}
+                                    className="block text-xs text-muted-foreground"
+                                  />
+                                )}
+                                {c.inferredWon > 0 && (
+                                  // CA-7: same «Estimado · asignados por importe» mark as Payback real.
+                                  <DataMark
+                                    {...inferredMark(c.inferredWon, c.wonInQuarter)}
+                                    className="block text-xs text-muted-foreground"
+                                  />
+                                )}
                                 <span className="block text-xs text-muted-foreground md:hidden">
                                   {c.customers} {c.customers === 1 ? "ganado" : "ganados"}
                                 </span>
                               </>
                             ) : (
-                              <span
-                                className="font-mono text-xs text-muted-foreground"
-                                title={
-                                  c.status === "no_wins"
-                                    ? "Hay costes pero ningún deal ganado"
-                                    : "Sin costes apuntados"
-                                }
-                              >
-                                —
-                              </span>
+                              // SDD-20261109 CA-7: «Sin dato · motivo», never a bare dash.
+                              <DataMark {...figureMark(f)!} className="text-xs" />
                             )}
                           </td>
                         );
@@ -111,18 +129,22 @@ export function PaybackCard() {
                         {r.target != null ? (
                           `${r.target} m`
                         ) : (
-                          <span className="text-muted-foreground">—</span>
+                          // SDD-20261109 CA-7/CA-13: «Sin dato · motivo», never a bare dash.
+                          <DataMark state="sin_dato" reason="sin objetivo de payback" />
                         )}
                       </td>
                       <td className="py-2.5 pl-3 text-right font-mono text-xs">
                         {trend == null ? (
-                          <span className="text-muted-foreground">—</span>
+                          <DataMark
+                            state="sin_dato"
+                            reason="falta un trimestre anterior con payback"
+                          />
                         ) : (
                           <span
                             className={trend > 0 ? "text-signal" : trend < 0 ? "text-success" : ""}
                           >
                             {trend > 0 ? "▲ +" : trend < 0 ? "▼ " : ""}
-                            {fmt1(trend)} m
+                            {fmtMonths(trend)} m
                           </span>
                         )}
                       </td>
@@ -133,8 +155,8 @@ export function PaybackCard() {
             </table>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Verde = dentro del objetivo · rojo = fuera · — = sin costes o sin deals ganados en ese
-            trimestre. Tendencia frente al trimestre anterior con datos (bajar es mejor).
+            Verde = dentro del objetivo · rojo = fuera · «Sin dato» dice qué falta en ese trimestre.
+            Tendencia frente al trimestre anterior con datos (bajar es mejor).
           </p>
         </div>
       )}

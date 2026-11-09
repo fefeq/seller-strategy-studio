@@ -15,9 +15,15 @@ import {
   type SegmentBudgetRow,
 } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
+import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
+import { figureTone, inferredMark } from "@/components/metrics/mark-text";
+import { DataMark } from "@/components/metrics/data-mark";
+import { noData, real } from "@/lib/unit-economics";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
-const pct = (n: number | null) => (n == null ? "—" : `${Math.round(n)}%`);
+const pct = (n: number) => `${Math.round(n)}%`;
+/** A budget margin as a Figure: without revenue and cost to serve, «Sin dato · falta margen». */
+const marginFigure = (n: number | null) => (n == null ? noData("falta margen") : real(n));
 
 /** Deviation of actual vs plan in %, green when it goes the good way (red otherwise). */
 export function Deviation({
@@ -71,7 +77,10 @@ export function BudgetQuarters() {
           .order("acv_min"),
         supabase
           .from("deals")
-          .select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+          // gross_margin: the one margin chain reads the won deals with lines (SDD-20261109 §10).
+          .select(
+            "segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin",
+          ),
         supabase.from("segment_budget_quarters").select("*").in("period", quartersOfYear(y)),
         supabase
           .from("cac_costs")
@@ -147,18 +156,30 @@ export function BudgetQuarters() {
         {value == null ? "—" : field === "plan_new_customers" ? String(value) : money(value)}
       </span>
     );
-  const val = (v: string, strong = false) => (
+  const val = (v: ReactNode, strong = false) => (
     <span className={`font-mono text-xs ${strong ? "font-medium" : ""}`}>{v}</span>
   );
-  const pb = (n: number | null, ok: boolean | null) =>
-    n == null ? (
-      val("—")
-    ) : (
-      <span
-        className={`font-mono text-xs font-medium ${ok === false ? "text-signal" : ok ? "text-success" : ""}`}
-      >
-        {fmt1(n)} m
-      </span>
+  // SDD-20261109 CA-8: a payback is a Figure: no negative, no Infinity, «Sin dato · motivo» without one; green or
+  // red only for a real or estimated value with a target.
+  type F = { value: number | null; state: string; reason: string | null };
+  const pb = (f: F, ok: boolean | null, plan = false) => (
+    <span className={`font-mono text-xs font-medium ${figureTone(f, ok)}`}>
+      {plan ? (
+        <PlanValue f={f} show={(n) => `${fmt1(n)} m`} />
+      ) : (
+        <FigureValue f={f} show={(n) => `${fmt1(n)} m`} />
+      )}
+      <FigureNote f={f} className="block font-sans text-xs font-normal text-muted-foreground" />
+    </span>
+  );
+
+  // SDD-20261109 D8 / CA-8: won deals assigned by amount keep their «Estimado · N de M asignados por importe» mark.
+  const inferredNote = (r: SegmentBudgetRow) =>
+    r.inferredWonInPeriod > 0 && (
+      <DataMark
+        {...inferredMark(r.inferredWonInPeriod, r.wonInPeriod)}
+        className="block font-sans text-xs font-normal text-muted-foreground"
+      />
     );
 
   type Line = {
@@ -184,8 +205,8 @@ export function BudgetQuarters() {
     },
     {
       label: "Margen bruto",
-      plan: (c) => val(pct(c.r!.plan.margin)),
-      real: (c) => val(pct(c.r!.actual.margin)),
+      plan: (c) => val(<FigureValue f={marginFigure(c.r!.plan.margin)} show={pct} />),
+      real: (c) => val(<FigureValue f={marginFigure(c.r!.actual.margin)} show={pct} />),
       dev: (r) => <Deviation real={r.actual.margin} plan={r.plan.margin} points />,
     },
     {
@@ -206,14 +227,25 @@ export function BudgetQuarters() {
     },
     {
       label: "CAC",
-      plan: (c) => val(c.r!.plan.cac != null ? money(c.r!.plan.cac) : "—"),
-      real: (c) => val(c.r!.actual.cac != null ? money(c.r!.actual.cac) : "—"),
+      plan: (c) => val(<PlanValue f={c.r!.figures.planCac} show={money} />),
+      real: (c) =>
+        val(
+          <>
+            <FigureValue f={c.r!.figures.cac} show={money} />
+            {inferredNote(c.r!)}
+          </>,
+        ),
       dev: (r) => <Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />,
     },
     {
       label: "Payback",
-      plan: (c) => pb(c.r!.plan.payback, c.r!.payback.planOk),
-      real: (c) => pb(c.r!.actual.payback, c.r!.payback.realOk),
+      plan: (c) => pb(c.r!.figures.planPayback, c.r!.payback.planOk, true),
+      real: (c) => (
+        <>
+          {pb(c.r!.figures.payback, c.r!.payback.realOk)}
+          {c.r!.figures.payback.value != null && inferredNote(c.r!)}
+        </>
+      ),
       dev: (r) => <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />,
       strong: true,
     },
@@ -282,10 +314,10 @@ export function BudgetQuarters() {
               <Kpi
                 size="compact"
                 label="Margen bruto"
-                value={pct(yr.actual.margin)}
+                value={<FigureValue f={marginFigure(yr.actual.margin)} show={pct} />}
                 hint={
                   <>
-                    presupuesto {pct(yr.plan.margin)}
+                    presupuesto <FigureValue f={marginFigure(yr.plan.margin)} show={pct} />
                     <Deviation prefix=" · " real={yr.actual.margin} plan={yr.plan.margin} points />
                   </>
                 }
@@ -309,11 +341,12 @@ export function BudgetQuarters() {
               <Kpi
                 size="compact"
                 label="Payback"
-                value={yr.actual.payback != null ? `${fmt1(yr.actual.payback)} m` : "—"}
+                value={<FigureValue f={yr.figures.payback} show={(n) => `${fmt1(n)} m`} />}
                 hint={
                   <>
-                    presupuesto {yr.plan.payback != null ? `${fmt1(yr.plan.payback)} m` : "—"} ·
-                    objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}
+                    presupuesto{" "}
+                    <PlanValue f={yr.figures.planPayback} show={(n) => `${fmt1(n)} m`} /> · objetivo{" "}
+                    {yr.payback.target != null ? `${yr.payback.target} m` : "—"}
                   </>
                 }
               />
@@ -403,9 +436,11 @@ export function BudgetQuarters() {
             </table>
           </div>
           <p className="text-xs text-muted-foreground">
-            Payback = CAC / (ACV del segmento × margen / 12). El presupuestado usa el margen
-            presupuestado; el real usa el margen real del trimestre (o del año si el trimestre no lo
-            tiene).
+            Payback = CAC / (ACV del segmento × margen / 12). El margen sale, por este orden, del
+            presupuesto real del trimestre o del año, de los deals ganados con líneas, del
+            presupuesto planificado y del margen objetivo del segmento. Sin ninguno, no hay payback.
+            El payback presupuestado usa el margen presupuestado y, sin él, el margen objetivo del
+            segmento.
             {yr?.payback.target != null && ` Objetivo del segmento: ${yr.payback.target} meses.`}
             {!canEdit && " Solo Owner y Sales Leader pueden editar el presupuesto."}
           </p>

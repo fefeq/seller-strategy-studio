@@ -4,7 +4,7 @@
 import { render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
-import { expectDataMarks } from "@/test/data-marks";
+import { expectDataMarks, expectNoBareDash } from "@/test/data-marks";
 import { dealRow, segRow, type FakeDb } from "@/test/metrics-mocks";
 
 const db = vi.hoisted((): FakeDb => ({ tables: {} }));
@@ -88,7 +88,8 @@ describe("Presupuesto por segmento marks", () => {
     expect(marksOf(cell("Pyme", PAYBACK))).toEqual(
       expect.arrayContaining([
         "Real · media de ganados",
-        "Estimado · margen del 100 % supuesto (falta margen)",
+        // SDD-20261109 D1: without a margin there is no payback (never 100 %).
+        "Sin dato · falta margen",
       ]),
     );
     expect(marksOf(cell("Rango", PAYBACK))).toContain("Estimado · punto medio del rango");
@@ -137,9 +138,50 @@ describe("Presupuesto por segmento marks", () => {
       segment_budget_quarters: [],
       cac_costs: [{ segment_id: null, channel: "Paid media", amount: 1000, period: "2026-Q3" }],
     });
-    const equal = "Estimado · repartido a partes iguales (nadie ganó)";
+    // SDD-20261109 D7: the shared cost is no longer split when nobody won.
+    const equal = "Sin dato · nadie ganó: el compartido no se reparte";
     expect(marksOf(cell("Pyme", SPEND))).toEqual([equal]);
     expect(marksOf(cell("Mid", SPEND))).toEqual([equal]);
+    expectDataMarks(container);
+  });
+});
+
+// SDD-20261109-metrics-strategy-no-estimates · U-3 · CA-6, CA-13, D15: the year's payback uses the one margin chain
+// (the won deals with lines, read with gross_margin); a missing CAC, payback or margin reads «Sin dato · motivo».
+describe("NK-0094 Presupuesto por segmento: one margin chain, Sin dato instead of «—»", () => {
+  it("D15: the payback margin is the margin of the won deals with lines", async () => {
+    await show({
+      segments: [segRow({ id: "a", name: "Pyme", acv_min: 0, acv_max: 20000 })],
+      deals: [
+        dealRow({
+          segment_id: "a",
+          amount: 12000,
+          gross_margin: 6000,
+          stage: "won",
+          closed_at: "2026-05-10T10:00:00Z",
+        }),
+      ],
+      segment_budget_quarters: [],
+      cac_costs: [{ segment_id: "a", channel: "Eventos", amount: 6000, period: "2026-Q2" }],
+    });
+    expect(rowOf("Pyme").textContent).toContain(
+      "margen en el payback: 50% (margen de los deals ganados)",
+    );
+    // 6000 / (12000 × 50 % / 12) = 12
+    expect(cell("Pyme", PAYBACK).textContent).toContain("12 m");
+  });
+
+  it("CA-13: only revenue and spend nobody typed keep a «—»", async () => {
+    const { container } = await show({
+      segments: [segRow({ id: "a", name: "Pyme", acv_min: 0, acv_max: 20000 })],
+      deals: [],
+      segment_budget_quarters: [],
+      cac_costs: [],
+    });
+    expect(marksOf(cell("Pyme", CAC))).toEqual(["Sin dato · sin costes en 2026"]);
+    expect(cell("Pyme", CAC).textContent).toContain("presup. sin plan");
+    expect(marksOf(rowOf("Pyme"))).toEqual(expect.arrayContaining(["Sin dato · falta margen"]));
+    expectNoBareDash(container, ["Pyme: —", "presup. —"]);
     expectDataMarks(container);
   });
 });

@@ -1,12 +1,10 @@
 // Background work through Inngest, from the screens: start a long task and get a notice when it ends, and
 // tell Inngest when a lead was created or moved (enrichment and the follow-up sequence with waits).
 import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
-import { EV, JOB_LABEL } from "@/lib/inngest/events";
 
 export const backgroundStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -175,159 +173,13 @@ const JobIn = z.discriminatedUnion("kind", [
 ]);
 export type JobArgs = z.infer<typeof JobIn>;
 
-/** Company-wide tasks: one at a time per company, and only leadership may launch them. */
-const ORG_WIDE = new Set([
-  "discover",
-  "autopilot_now",
-  "weekly_report",
-  "posthog_sync",
-  "playbook_library",
-]);
-const LEADERS = ["owner", "sales_leader"];
-
-type Ctx = Awaited<ReturnType<typeof userCtx>>;
-
-/** Who may launch it and whether the records it will touch belong to this company (the job then runs with the admin client). */
-async function authorize(ctx: Ctx, data: JobArgs) {
-  const has = (roles: string[]) => ctx.roles.some((r) => roles.includes(r));
-  const inOrg = async (
-    table: "accounts" | "stakeholders" | "gtm_artifacts" | "deals",
-    id: string,
-    what: string,
-  ) => {
-    const { data: row } = await ctx.db
-      .from(table)
-      .select("id")
-      .eq("org_id", ctx.orgId)
-      .eq("id", id)
-      .maybeSingle();
-    if (!row) throw new Error(`No encuentro ${what} en esta empresa.`);
-  };
-  if (ORG_WIDE.has(data.kind) && !has(LEADERS))
-    throw new Error("Solo el Owner o el Sales Leader pueden lanzarlo.");
-  const i = data.input as Record<string, unknown>;
-  if (typeof i.accountId === "string") await inOrg("accounts", i.accountId, "esa cuenta");
-  if (typeof i.stakeholderId === "string")
-    await inOrg("stakeholders", i.stakeholderId, "esa persona");
-  if (typeof i.artifactId === "string") await inOrg("gtm_artifacts", i.artifactId, "ese documento");
-  if (typeof i.dealId === "string") await inOrg("deals", i.dealId, "esa oportunidad");
-  if (data.kind === "qualify_leads" && data.input.ids?.length) {
-    const { data: rows } = await ctx.db
-      .from("leads")
-      .select("id")
-      .eq("org_id", ctx.orgId)
-      .in("id", data.input.ids);
-    if ((rows ?? []).length !== data.input.ids.length)
-      throw new Error("Algún lead no es de esta empresa.");
-  }
-  if (data.kind === "discover" && data.input.icpIds?.length) {
-    const { data: rows } = await ctx.db
-      .from("icp_profiles")
-      .select("id")
-      .eq("org_id", ctx.orgId)
-      .in("id", data.input.icpIds);
-    if ((rows ?? []).length !== data.input.icpIds.length)
-      throw new Error("Algún ICP no es de esta empresa.");
-  }
-  if (data.kind === "debate") {
-    const { canConvene, DEBATE_LEVELS } = await import("@/lib/bmad/teams");
-    if (!(data.input.level in DEBATE_LEVELS)) throw new Error("Nivel no válido");
-    if (!canConvene(data.input.level as never, ctx.roles))
-      throw new Error("Tu rol no puede convocar este nivel de debate");
-    if (data.input.subjectId && data.input.subjectType) {
-      const t = { deal: "deals", account: "accounts", artifact: "gtm_artifacts" } as const;
-      await inOrg(t[data.input.subjectType], data.input.subjectId, "ese tema");
-    }
-  }
-  if (data.kind === "draft_artifact") {
-    const { ARTIFACTS } = await import("@/lib/bmad/workflows");
-    if (!(data.input.kind in ARTIFACTS)) throw new Error("Tipo de documento no válido");
-  }
-  if (data.kind === "deep_review") {
-    const { REVIEW_METHOD_TEXT } = await import("@/lib/bmad/debate-core");
-    if (!REVIEW_METHOD_TEXT[data.input.method]) throw new Error("Método no válido");
-  }
-  if (data.kind === "drive_summaries")
-    for (const d of data.input.docs)
-      if (d.accountId) await inOrg("accounts", d.accountId, "esa cuenta");
-}
-
-function targetOf(data: JobArgs): { target_type?: string; target_id?: string } {
-  const i = data.input as Record<string, unknown>;
-  if (typeof i.accountId === "string") return { target_type: "account", target_id: i.accountId };
-  if (typeof i.stakeholderId === "string")
-    return { target_type: "stakeholder", target_id: i.stakeholderId };
-  if (typeof i.artifactId === "string") return { target_type: "artifact", target_id: i.artifactId };
-  return {};
-}
-
-function onPublishedSite() {
-  try {
-    return /(^|\.)nokko\.ai$|^seller-strategy-studio\.lovable\.app$/.test(
-      new URL(getRequest().url).hostname,
-    );
-  } catch {
-    return false;
-  }
-}
-
-/** Creates the job and hands it to Inngest; without Inngest it runs in this request (the screen does not wait). */
-async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = null) {
-  await authorize(ctx, data);
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const target = targetOf(data);
-  const paging = "prevJobId" in data.input && !!data.input.prevJobId;
-  // A second click on the same task follows the one already running: same record, the whole company for
-  // company-wide tasks, or the same person for the rest.
-  if (!paging) {
-    let q = supabaseAdmin
-      .from("background_jobs")
-      .select("id")
-      .eq("org_id", ctx.orgId)
-      .eq("kind", data.kind)
-      .in("status", ["queued", "running"]);
-    if (target.target_id) q = q.eq("target_id", target.target_id);
-    else if (!ORG_WIDE.has(data.kind)) q = q.eq("user_id", ctx.userId);
-    if (target.target_id || ORG_WIDE.has(data.kind) || data.kind === "qualify_leads") {
-      const { data: running } = await q.limit(1);
-      if (running?.[0]) return { jobId: running[0].id, reused: true };
-    }
-  }
-  const { inngestReady, sendEvents } = await import("@/lib/inngest/send.server");
-  // Inngest calls the published site, so only the published site hands work to it; the preview runs its own code.
-  const ready = onPublishedSite() && (await inngestReady(supabaseAdmin));
-  const { data: job, error } = await ctx.db
-    .from("background_jobs")
-    .insert({
-      kind: data.kind,
-      input: data.input as never,
-      ...target,
-      label: (data.label ?? JOB_LABEL[data.kind]).slice(0, 300),
-      org_id: ctx.orgId,
-      user_id: ctx.userId,
-      retry_of: retryOf,
-    })
-    .select("id")
-    .single();
-  if (error) throw new Error(error.message);
-  const sent = ready
-    ? await sendEvents([{ name: EV.jobRequested, data: { job_id: job.id } }])
-        .then(() => true)
-        .catch(() => false)
-    : false;
-  if (!sent) {
-    const { runBackgroundJob } = await import("@/lib/inngest/tasks.server");
-    await runBackgroundJob(supabaseAdmin, job.id).catch(() => undefined);
-  }
-  return { jobId: job.id, reused: false };
-}
-
 export const startBackgroundJob = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => JobIn.parse(d))
-  .handler(async ({ data, context }) =>
-    enqueue(await userCtx(context.supabase as Db, context.userId), data),
-  );
+  .handler(async ({ data, context }) => {
+    const { enqueue } = await import("@/lib/background-jobs.server");
+    return enqueue(await userCtx(context.supabase as Db, context.userId), data);
+  });
 
 /** «Cancelar»: a queued job never starts; a running one stops at its next step (what it already did stays). */
 export const cancelBackgroundJob = createServerFn({ method: "POST" })
@@ -381,6 +233,7 @@ export const retryBackgroundJob = createServerFn({ method: "POST" })
     if (!["failed", "cancelled"].includes(job.status))
       throw new Error("Solo se reintenta lo que falló o se canceló.");
     const args = JobIn.parse({ kind: job.kind, input: job.input, label: job.label || undefined });
+    const { enqueue } = await import("@/lib/background-jobs.server");
     return enqueue(ctx, args, job.id);
   });
 

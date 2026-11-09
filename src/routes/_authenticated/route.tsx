@@ -11,6 +11,8 @@ import {
 } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { signOutAndClear } from "@/lib/session-cache";
+import { createSessionCheck } from "@/lib/session-check";
 import { useMe } from "@/hooks/use-me";
 import { ROLES, type Role } from "@/lib/roles";
 import { canUseAdvisor } from "@/lib/advisor";
@@ -24,15 +26,21 @@ import { useSetupGuide } from "@/hooks/use-setup-guide";
 import { useSuggestions } from "@/components/suggestions";
 import { useLivePipeline } from "@/hooks/use-live-pipeline";
 import { Isotipo, Lockup } from "@/components/brand";
+import { AppPending } from "@/components/app-pending";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+
+// One GET /auth/v1/user per session token, not per navigation (NK-0098, src/lib/session-check.ts).
+const isSignedIn = createSessionCheck(supabase.auth);
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) throw redirect({ to: "/auth" });
+    if (!(await isSignedIn())) throw redirect({ to: "/auth" });
   },
+  // First load or reload: this route is client-only, so without a pending state nothing paints until the guard answers.
+  pendingComponent: AppPending,
+  pendingMs: 0,
   component: Shell,
 });
 
@@ -41,9 +49,7 @@ function Shell() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   async function signOut() {
-    await qc.cancelQueries();
-    qc.clear();
-    await supabase.auth.signOut();
+    await signOutAndClear(qc, supabase.auth);
     navigate({ to: "/auth", replace: true });
   }
   const role = me?.roles[0] as Role | undefined;

@@ -1,17 +1,22 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { capacityPlan, matchSegment, MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
+import { MOTIONS, recommendMotion, type Motion } from "@/lib/metrics";
 import { CURRENCIES, formatMoney } from "@/lib/money";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { lastQuarters, segmentActuals, trailingCac } from "@/lib/pipeline-real";
-import type { SegLike } from "@/lib/segment-coverage";
-import { annualFromQuarters, marginFor, quartersOfYear } from "@/lib/segment-budget";
+import { lastQuarters } from "@/lib/pipeline-real";
+import { assignSegment, type SegLike } from "@/lib/segment-coverage";
+import { quartersOfYear } from "@/lib/segment-budget";
+import { strategyCalculator } from "@/lib/strategy-calculator";
+import { MARGIN_REASON, WIN_RATE_WINDOWS, acvFor } from "@/lib/unit-economics";
+import { DataMark } from "@/components/metrics/data-mark";
+import { FigureNote, FigureValue } from "@/components/metrics/figure";
+import { figureMark, noClosedDeals } from "@/components/metrics/mark-text";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
 import { DeleteElement } from "@/components/delete-element";
@@ -141,46 +146,36 @@ export function Motions() {
           .in("period", quartersOfYear(year))
       ).data ?? [],
   });
-  const budgets = useMemo(() => annualFromQuarters(budgetRows, year), [budgetRows, year]);
-  const real = useMemo(() => segmentActuals(segs as SegLike[], deals), [segs, deals]);
-  const cacReal = useMemo(() => trailingCac(segs as SegLike[], deals, costs), [segs, deals, costs]);
-  // The ACV follows the real pipeline until the user types their own value; without deals it starts
-  // from the middle of the company's own segment ranges, and only with neither from a generic 20.000.
-  const ownAcv = useMemo(() => {
-    const mids = segs
-      .filter((s) => s.acv_min != null && s.acv_max != null)
-      .map((s) => (Number(s.acv_min) + Number(s.acv_max)) / 2);
-    return mids.length ? Math.round(mids.reduce((a, b) => a + b, 0) / mids.length) : null;
-  }, [segs]);
-  const acv =
-    acvManual ?? (real.overall.acv != null ? Math.round(real.overall.acv) : (ownAcv ?? 20000));
-  const seg = forced ? segs.find((s) => s.id === forced) : matchSegment(acv, segs);
-  const segReal = seg ? real.bySegment[seg.id] : undefined;
-  const segCac = seg ? cacReal[seg.id] : undefined;
-  // Margin of this year's budget (real → plan) before the segment's target margin.
-  const margin = seg
-    ? marginFor(
-        seg as SegLike,
-        budgets.find((b) => b.segment_id === seg.id),
-      )
-    : { pct: null, source: null };
-  const rec = recommendMotion(acv);
-  const winUsed =
-    basis === "real" && segReal?.winRate != null ? segReal.winRate : seg?.win_rate_target;
-  const cacUsed = basis === "real" && segCac?.cac != null ? segCac.cac : seg?.cac_target;
-  const plan = capacityPlan({
-    acv,
-    quota: seg?.ae_quota,
-    winRatePct: winUsed,
-    cac: cacUsed,
-    grossMarginPct: margin.pct,
-  });
-  // Real payback = real CAC over the real ACV of the segment (falls back to the calculator's ACV).
-  const paybackReal =
-    segCac?.cac != null
-      ? capacityPlan({ acv: segReal?.acv ?? acv, cac: segCac.cac, grossMarginPct: margin.pct })
-          .paybackMonths
-      : null;
+  // The calculator is pure (src/lib/strategy-calculator.ts, SDD-20261109 U-4): CAC, ACV, margin and payback come from
+  // unit-economics.ts, so the real payback here is the one of Cobertura and Payback real for the same data.
+  const calc = useMemo(
+    () =>
+      strategyCalculator({
+        segments: segs as (SegLike & { ae_quota: number | null })[],
+        deals,
+        costs,
+        budgetRows,
+        acvManual,
+        basis,
+        forced,
+      }),
+    [segs, deals, costs, budgetRows, acvManual, basis, forced],
+  );
+  const real = calc.actuals;
+  const acv = calc.acv.value;
+  const seg = calc.seg ? segs.find((s) => s.id === calc.seg!.id) : undefined;
+  const { segReal, segCac, margin, paybackReal, winUsed, cacUsed } = calc;
+  const rec = recommendMotion(acv ?? 0);
+  /** The segment's ACV behind its payback (acvFor), for the «ACV real» cells of the segments tables. */
+  const segAcvOf = (s: (typeof segs)[number]) =>
+    acvFor(
+      s as SegLike,
+      deals.filter((d) => assignSegment(d, segs as SegLike[]) === s.id),
+    );
+  const winRealOf = (n: number | null | undefined) =>
+    n != null
+      ? { value: n, state: "real", reason: null }
+      : noClosedDeals(WIN_RATE_WINDOWS.ultimos365.label.toLowerCase());
   const missing = seg
     ? [
         !seg.ae_quota && "cuota anual AE",
@@ -188,7 +183,8 @@ export function Motions() {
         !cacUsed && "CAC objetivo",
       ].filter(Boolean)
     : [];
-  const pct = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
+  const pctTarget = (n: number | null | undefined) => (n == null ? "—" : `${Math.round(n)}%`);
+  const pct = (n: number) => `${Math.round(n)}%`;
   const days = (n: number | null | undefined) => (n == null ? "—" : `${n} días`);
 
   // Cells whose last value was refused, so the person sees which one to fix.
@@ -328,8 +324,9 @@ export function Motions() {
           <Field label={`Valor anual del contrato (ACV, ${symbol})`}>
             <Input
               type="number"
-              value={acv}
-              onChange={(e) => setAcvManual(Number(e.target.value))}
+              value={acv ?? ""}
+              placeholder="Escribe un ACV"
+              onChange={(e) => setAcvManual(e.target.value === "" ? null : Number(e.target.value))}
             />
             {real.overall.acv != null ? (
               acvManual == null ? (
@@ -350,11 +347,13 @@ export function Motions() {
               )
             ) : (
               <p className="text-xs text-muted-foreground">
-                Sin deals con importe todavía:{" "}
-                {acvManual == null && ownAcv != null
-                  ? "media de los rangos de ACV de tus segmentos"
-                  : "valor de ejemplo"}
-                .{" "}
+                {/* SDD-20261109 D12, D13: no example ACV; the mean of the ranges is an estimate. */}
+                {acvManual == null && figureMark(calc.acv) && (
+                  <>
+                    <DataMark {...figureMark(calc.acv)!} />.{" "}
+                  </>
+                )}
+                Sin deals con importe todavía.{" "}
                 <Link to="/leads/entrada" className="underline">
                   Conecta tus leads
                 </Link>
@@ -413,53 +412,81 @@ export function Motions() {
             <div className="mt-4 overflow-hidden rounded-md border text-sm">
               <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 bg-muted/50 px-3 py-1.5">
                 <span className="eyebrow text-xs">Real vs objetivo · {seg.name}</span>
-                <span className="eyebrow text-xs">Real (12 meses)</span>
+                <span className="eyebrow text-xs">Real</span>
                 <span className="eyebrow text-xs">Objetivo</span>
               </div>
-              {[
+              {(
                 [
-                  "ACV",
-                  segReal?.acv != null
-                    ? `${money(Math.round(segReal.acv))} · ${segReal.acvSample} ${segReal.acvSample === 1 ? "deal" : "deals"}`
-                    : "—",
-                  seg.acv_min != null
-                    ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}`
-                    : "—",
-                ],
-                [
-                  "Win rate",
-                  segReal?.winRate != null
-                    ? `${pct(segReal.winRate)} · ${segReal.closedSample} ${segReal.closedSample === 1 ? "cerrado" : "cerrados"}`
-                    : "—",
-                  pct(seg.win_rate_target),
-                ],
-                [
-                  "Ciclo de venta",
-                  segReal?.cycleDays != null
-                    ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ${segReal.cycleSample === 1 ? "ganado" : "ganados"}`
-                    : "—",
-                  days(seg.cycle_days),
-                ],
-                [
-                  "CAC",
-                  segCac?.cac != null
-                    ? `${money(Math.round(segCac.cac))} · ${segCac.customers} ${segCac.customers === 1 ? "ganado" : "ganados"}`
-                    : segCac?.cost
-                      ? `${money(Math.round(segCac.cost))} gastado · 0 ganados`
+                  [
+                    "ACV",
+                    WIN_RATE_WINDOWS.historico.label,
+                    calc.segAcv ? (
+                      <>
+                        <FigureValue
+                          f={calc.segAcv}
+                          show={(n) =>
+                            `${money(Math.round(n))}${calc.segAcv!.sample ? ` · ${calc.segAcv!.sample} ${calc.segAcv!.sample === 1 ? "deal" : "deals"}` : ""}`
+                          }
+                        />
+                        <FigureNote f={calc.segAcv} className="block text-xs" />
+                      </>
+                    ) : null,
+                    seg.acv_min != null
+                      ? `${money(Number(seg.acv_min), true)}–${seg.acv_max != null ? money(Number(seg.acv_max), true) : "∞"}`
                       : "—",
-                  seg.cac_target ? money(Number(seg.cac_target)) : "—",
-                ],
-                [
-                  "Payback",
-                  paybackReal != null ? `${fmt1(paybackReal)} m` : "—",
-                  seg.payback_months ? `${seg.payback_months} m` : "—",
-                ],
-              ].map(([l, r, t]) => (
+                  ],
+                  [
+                    "Win rate",
+                    WIN_RATE_WINDOWS.ultimos365.label,
+                    <FigureValue
+                      key="w"
+                      f={winRealOf(segReal?.winRate)}
+                      show={(n) =>
+                        `${pct(n)} · ${segReal!.closedSample} ${segReal!.closedSample === 1 ? "cerrado" : "cerrados"}`
+                      }
+                    />,
+                    pctTarget(seg.win_rate_target),
+                  ],
+                  [
+                    "Ciclo de venta",
+                    WIN_RATE_WINDOWS.ultimos365.label,
+                    segReal?.cycleDays != null
+                      ? `${days(segReal.cycleDays)} · ${segReal.cycleSample} ${segReal.cycleSample === 1 ? "ganado" : "ganados"}`
+                      : "—",
+                    days(seg.cycle_days),
+                  ],
+                  [
+                    "CAC",
+                    WIN_RATE_WINDOWS.ultimos4.label,
+                    segCac ? (
+                      <FigureValue
+                        f={segCac.figure}
+                        show={(n) =>
+                          `${money(Math.round(n))} · ${segCac.customers} ${segCac.customers === 1 ? "ganado" : "ganados"}`
+                        }
+                      />
+                    ) : null,
+                    seg.cac_target ? money(Number(seg.cac_target)) : "—",
+                  ],
+                  [
+                    "Payback",
+                    WIN_RATE_WINDOWS.ultimos4.label,
+                    <>
+                      <FigureValue f={paybackReal} show={(n) => `${fmt1(n)} m`} />
+                      <FigureNote f={paybackReal} className="block text-xs" />
+                    </>,
+                    seg.payback_months ? `${seg.payback_months} m` : "—",
+                  ],
+                ] as [string, string, ReactNode, string][]
+              ).map(([l, w, r, t]) => (
                 <div
                   key={l}
                   className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_minmax(0,1fr)] gap-x-2 border-t px-3 py-1.5"
                 >
-                  <span className="break-words text-muted-foreground">{l}</span>
+                  <span className="break-words text-muted-foreground">
+                    {l}
+                    <span className="block text-xs">{w}</span>
+                  </span>
                   <span className="break-words">{r}</span>
                   <span className="break-words">{t}</span>
                 </div>
@@ -468,7 +495,7 @@ export function Motions() {
             {segCac?.cac == null && (
               <p className="mt-2 text-xs text-muted-foreground">
                 {segCac?.cost ? (
-                  "Hay costes, pero ningún deal ganado en los últimos 12 meses en este segmento: aún no hay CAC real."
+                  "Hay costes, pero ningún deal ganado en los últimos 4 trimestres en este segmento: aún no hay CAC real."
                 ) : (
                   <>
                     Para ver el CAC y el payback reales, introduce los costes por canal en{" "}
@@ -483,48 +510,51 @@ export function Motions() {
             {basis === "real" && (
               <p className="mt-2 text-xs text-muted-foreground">
                 {segReal?.winRate != null
-                  ? `La capacidad usa el win rate real (${pct(segReal.winRate)}).`
+                  ? `La capacidad usa el win rate real (${pct(segReal.winRate)}, ${WIN_RATE_WINDOWS.ultimos365.label.toLowerCase()}).`
                   : "Aún no hay deals cerrados en este segmento: la capacidad usa el win rate objetivo."}{" "}
                 {segCac?.cac != null
                   ? `El payback usa el CAC real (${money(Math.round(segCac.cac))}).`
-                  : "El payback usa el CAC objetivo."}
+                  : "El payback es un escenario con el CAC objetivo."}
               </p>
             )}
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-              {[
+              {(
                 [
-                  "Deals por AE / año",
-                  plan.dealsPerYear != null ? fmt1(Math.ceil(plan.dealsPerYear)) : "—",
-                ],
-                [
-                  "Oportunidades por AE / año",
-                  plan.oppsPerYear != null ? fmt1(Math.ceil(plan.oppsPerYear)) : "—",
-                ],
-                ["Oportunidades por AE / mes", fmt1(plan.oppsPerMonth)],
-                [
-                  basis === "real" && segCac?.cac != null ? "Payback real" : "Payback estimado",
-                  plan.paybackMonths != null ? `${fmt1(plan.paybackMonths)} m` : "—",
-                ],
-              ].map(([l, v]) => (
+                  ["Deals por AE / año", calc.deals, (n: number) => fmt1(Math.ceil(n))],
+                  ["Oportunidades por AE / año", calc.opps, (n: number) => fmt1(Math.ceil(n))],
+                  ["Oportunidades por AE / mes", calc.oppsPerMonth, (n: number) => fmt1(n)],
+                ] as const
+              ).map(([l, f, show]) => (
                 <div key={l} className="rounded-md bg-muted/50 p-3">
                   <p className="eyebrow text-xs">{l}</p>
-                  <p className="font-display text-2xl">{v}</p>
+                  <p className="font-display text-2xl">
+                    {f.value == null && f.state !== "sin_dato" ? (
+                      fmt1(null)
+                    ) : (
+                      <FigureValue f={f} show={show} />
+                    )}
+                  </p>
                 </div>
               ))}
+              {/* SDD-20261109 D14: basis «real» shows the real payback itself; otherwise a marked scenario. */}
+              <div className="rounded-md bg-muted/50 p-3">
+                <p className="eyebrow text-xs">{calc.planPaybackLabel}</p>
+                <p className="font-display text-2xl">
+                  <FigureValue f={calc.planPayback} show={(n) => `${fmt1(n)} m`} />
+                </p>
+                <FigureNote f={calc.planPayback} className="block text-xs text-muted-foreground" />
+              </div>
             </div>
-            {plan.paybackMonths != null && seg.payback_months && (
+            {calc.judged && (
               <p
-                className={`mt-2 text-xs ${plan.paybackMonths <= Number(seg.payback_months) ? "text-success" : "text-destructive"}`}
+                className={`mt-2 text-xs ${calc.judged.within ? "text-success" : "text-destructive"}`}
               >
-                {plan.paybackMonths <= Number(seg.payback_months) ? "Dentro" : "Fuera"} del payback
-                objetivo de {seg.payback_months} meses (margen bruto{" "}
-                {margin.pct != null ? Math.round(margin.pct) : 100}%
-                {margin.source === "real"
-                  ? `, real de ${year}`
-                  : margin.source === "plan"
-                    ? `, presupuestado ${year}`
-                    : ""}
-                ).
+                {calc.judged.within ? "Dentro" : "Fuera"} del payback objetivo de{" "}
+                {calc.judged.target} meses
+                {margin.value != null && margin.source
+                  ? ` (${MARGIN_REASON[margin.source]}: ${Math.round(margin.value)}%)`
+                  : ""}
+                .
               </p>
             )}
             {missing.length > 0 && (
@@ -532,6 +562,18 @@ export function Motions() {
                 Completa {missing.join(", ")} en la tabla de segmentos para calcular la capacidad.
               </p>
             )}
+          </div>
+        ) : acv == null ? (
+          <div>
+            <p className="eyebrow">Calculadora</p>
+            {/* SDD-20261109 D12: no example ACV; nothing is computed until there is one. */}
+            <p className="mt-2 text-sm">
+              <FigureValue f={calc.acv} show={(n) => money(n)} />
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Escribe un ACV, conecta tus leads o pon el rango de ACV de tus segmentos para ver el
+              modelo de venta, la capacidad y el payback.
+            </p>
           </div>
         ) : (
           <div>
@@ -584,14 +626,17 @@ export function Motions() {
                 <div className="min-w-0">
                   <dt className="eyebrow text-xs">ACV real</dt>
                   <dd className="break-words">
-                    {real.bySegment[s.id]?.acv != null
-                      ? money(Math.round(real.bySegment[s.id].acv!), true)
-                      : "—"}
+                    <FigureValue f={segAcvOf(s)} show={(n) => money(Math.round(n), true)} />
+                    <FigureNote f={segAcvOf(s)} className="block text-xs" />
                   </dd>
                 </div>
                 <div className="min-w-0">
-                  <dt className="eyebrow text-xs">Win rate real</dt>
-                  <dd>{pct(real.bySegment[s.id]?.winRate)}</dd>
+                  <dt className="eyebrow text-xs">
+                    Win rate real · {WIN_RATE_WINDOWS.ultimos365.label}
+                  </dt>
+                  <dd>
+                    <FigureValue f={winRealOf(real.bySegment[s.id]?.winRate)} show={pct} />
+                  </dd>
                 </div>
                 <div className="min-w-0">
                   <dt className="eyebrow text-xs">Ciclo real</dt>
@@ -630,7 +675,11 @@ export function Motions() {
                       </th>
                     ))}
                     {showReal &&
-                      ["ACV real", "Win rate real", "Ciclo real"].map((h) => (
+                      [
+                        "ACV real",
+                        `Win rate real · ${WIN_RATE_WINDOWS.ultimos365.label}`,
+                        "Ciclo real",
+                      ].map((h) => (
                         <th key={h} className="eyebrow whitespace-nowrap bg-signal/5 px-3 py-3">
                           {h}
                         </th>
@@ -674,12 +723,11 @@ export function Motions() {
                       {showReal && (
                         <>
                           <td className="whitespace-nowrap bg-signal/5 px-3 py-2">
-                            {real.bySegment[s.id]?.acv != null
-                              ? money(Math.round(real.bySegment[s.id].acv!), true)
-                              : "—"}
+                            <FigureValue f={segAcvOf(s)} show={(n) => money(Math.round(n), true)} />
+                            <FigureNote f={segAcvOf(s)} className="block text-xs" />
                           </td>
                           <td className="whitespace-nowrap bg-signal/5 px-3 py-2">
-                            {pct(real.bySegment[s.id]?.winRate)}
+                            <FigureValue f={winRealOf(real.bySegment[s.id]?.winRate)} show={pct} />
                           </td>
                           <td className="whitespace-nowrap bg-signal/5 px-3 py-2">
                             {days(real.bySegment[s.id]?.cycleDays)}
@@ -708,10 +756,11 @@ export function Motions() {
         ))}
         <p className="mt-2 text-xs text-muted-foreground">
           Los importes están en {CURRENCIES[currency] ?? currency}. Cambiar la moneda no convierte
-          las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline de los
-          últimos 12 meses y se actualizan solas. Un win rate o una cuota de 0 vale para un segmento
-          al que no vendes; si no es tuyo, elimínalo{isOwner ? "" : " (solo el Owner)"}. La mayoría
-          de empresas combinan varios motions: empiezan con uno y añaden otro al escalar.
+          las cifras: revisa tus benchmarks después. Las columnas «real» salen de tu pipeline (el
+          ACV, de todo el histórico; el win rate y el ciclo, de los últimos 365 días) y se
+          actualizan solas. Un win rate o una cuota de 0 vale para un segmento al que no vendes; si
+          no es tuyo, elimínalo{isOwner ? "" : " (solo el Owner)"}. La mayoría de empresas combinan
+          varios motions: empiezan con uno y añaden otro al escalar.
         </p>
         {segs.some((s) => s.notes?.trim()) && (
           <details className="mt-3 text-sm">

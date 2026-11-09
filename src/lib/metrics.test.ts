@@ -98,19 +98,21 @@ describe("capacity plan per AE", () => {
 
 // SDD-20261106-metrics-honest-data U-3 · CA-7: capacityPlan says when the margin was assumed (100 %) or is not positive.
 describe("capacityPlan margin flags (CA-7)", () => {
-  it("missing margin: marginAssumed, same payback as before (100 %)", () => {
+  // SDD-20261109-metrics-strategy-no-estimates D1: a missing margin no longer gives a payback at 100 %.
+  it("missing margin: marginAssumed, and no payback (never 100 %)", () => {
     const r = capacityPlan({ acv: 12000, cac: 6000, grossMarginPct: null });
-    expect(r.paybackMonths).toBe(6);
+    expect(r.paybackMonths).toBeNull();
     expect(r.marginAssumed).toBe(true);
     expect(r.marginNonPositive).toBe(false);
     expect(capacityPlan({ acv: 12000, cac: 6000 }).marginAssumed).toBe(true);
   });
-  it("margin 0 and negative: marginNonPositive; the values do not change (Infinity, negative)", () => {
+  // SDD-20261109-metrics-strategy-no-estimates D2: margin 0 or negative gives no payback (never Infinity or < 0).
+  it("margin 0 and negative: marginNonPositive; no payback (null, never Infinity nor negative)", () => {
     const zero = capacityPlan({ acv: 12000, cac: 6000, grossMarginPct: 0 });
-    expect(zero.paybackMonths).toBe(Infinity);
+    expect(zero.paybackMonths).toBeNull();
     expect(zero).toMatchObject({ marginAssumed: false, marginNonPositive: true });
     const neg = capacityPlan({ acv: 12000, cac: 6000, grossMarginPct: -10 });
-    expect(neg.paybackMonths).toBeLessThan(0);
+    expect(neg.paybackMonths).toBeNull();
     expect(neg).toMatchObject({ marginAssumed: false, marginNonPositive: true });
   });
   it("a real positive margin is neither assumed nor non-positive", () => {

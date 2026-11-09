@@ -42,6 +42,7 @@ Enum `app_role`: `owner`, `sales_leader`, `marketing`, `sdr`, `ae`, `se`, `cs`, 
 | `org_budgets` (escritura) | Solo Owner |
 | Activar entrada directa en `lead_sources` | Owner o Sales Leader (trigger `guard_lead_source_mode`) |
 | Deshacer una edición (`undo_field_edit`) | Solo Owner |
+| `knowledge_docs` vinculantes (de equipo en `rules` o con `mandatory`): crear, editar, marcar, desmarcar, mover a `rules` o pasar a equipo | Owner y Sales Leader (políticas restrictivas `knowledge binding insert/update` y función `knowledge_doc_is_binding`, 0081, no aplicada aún a la base real); borrar sigue siendo solo del Owner |
 | Lectura de finanzas | Owner y Sales Leader según `src/lib/AGENTS.md`; la función `is_finance_member` aparece en `types.ts` y ninguna migración activa la define |
 
 La UI repite estas reglas para ocultar acciones; la protección real es RLS.
