@@ -156,12 +156,37 @@ describe("NK-0094 KPIs trimestrales: company CAC and payback from the Figures", 
     ]);
     // Pyme only: 6000 / (12000 × 50 % / 12) = 12
     expect(headline().textContent).toContain("12 m");
-    expectNoBareDash(container, [
-      "Ingresos: —",
-      "Coste de servir: —",
-      "Clientes nuevos: —",
-      "Gasto de captación: —",
-    ]);
+    // NK-0106: no «—» is allowed any more; the missing real figures carry their «Sin dato · motivo».
+    expectNoBareDash(container, []);
+    const row = (label: string) =>
+      screen.getByText(label, { selector: "td" }).closest("tr") as HTMLElement;
+    expect(marksOf(row("Ingresos"))).toContain("Sin dato · sin ingresos del trimestre");
+    expect(marksOf(row("Coste de servir"))).toContain("Sin dato · sin coste de servir apuntado");
+    expect(marksOf(row("Gasto de captación"))).toEqual([]);
+    expectDataMarks(container);
+  });
+});
+
+// SDD-20261109-metrics-sin-dato-rest · CA-5: without costs the real spend says why; the plan nobody typed stays «sin plan».
+describe("CA-5 KPIs trimestrales without costs", () => {
+  it("Gasto de captación: «Sin dato · sin gasto de captación apuntado» and «sin plan», no dash", async () => {
+    db.tables = {
+      segments: [segRow({ id: "a", name: "Pyme", acv_min: 0, gross_margin_pct: 50 })],
+      deals: [],
+      segment_budget_quarters: [],
+      cac_costs: [],
+    };
+    const { container } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <QuarterKpisPanel quarter="2026-Q4" />
+      </QueryClientProvider>,
+    );
+    await screen.findByText("Payback 2026-Q4");
+    const row = screen.getByText("Gasto de captación", { selector: "td" }).closest("tr")!;
+    const current = row.querySelectorAll("td")[4] as HTMLElement;
+    expect(marksOf(current)).toEqual(["Sin dato · sin gasto de captación apuntado"]);
+    expect(current.textContent).toContain("sin plan");
+    expectNoBareDash(container, []);
     expectDataMarks(container);
   });
 });
