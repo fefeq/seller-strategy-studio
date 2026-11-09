@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 import { validatedUser } from "@/lib/session";
 import { SESSION_CHECK_FAILED } from "@/lib/session-check";
 import { useCurrency } from "@/hooks/use-me";
@@ -19,7 +20,7 @@ export function CallsTab({
   onChange,
 }: {
   accountId: string;
-  list: any[];
+  list: Tables<"calls">[];
   onChange: () => void;
 }) {
   const [title, setTitle] = useState("");
@@ -83,7 +84,7 @@ export function DealsTab({
   onChange,
 }: {
   accountId: string;
-  list: any[];
+  list: Tables<"deals">[];
   onChange: () => void;
 }) {
   const { stages } = useStages();
