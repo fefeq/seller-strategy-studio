@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/hooks/use-me";
 import { Field, Pick } from "@/components/fields";
+import { DealSourceField } from "@/components/deal-source-field";
 import { DateField } from "@/components/date-field";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ export function NewDealButton() {
     amount: "",
     close: null as string | null,
     product: "",
+    source: null as string | null,
   });
   const product = products.find((p) => p.id === f.product);
   const productTotals = product ? dealTotals([lineFromProduct(product)]) : null;
@@ -68,7 +70,7 @@ export function NewDealButton() {
       const existing =
         (accountId ? data?.accounts.find((a) => a.id === accountId) : null) ??
         data?.accounts.find((a) => a.name.trim().toLowerCase() === f.account.trim().toLowerCase());
-      const args = Object.fromEntries(
+      const filled = Object.fromEntries(
         Object.entries({
           name: f.name.trim(),
           account_id: existing?.id,
@@ -80,13 +82,24 @@ export function NewDealButton() {
           close_date: f.close ?? undefined,
         }).filter(([, v]) => v !== undefined),
       );
+      // source stays outside the undefined filter: null («Sin origen») must reach create_deal, never the database default.
+      const args = { ...filled, source: f.source };
       const [r] = await apply({ data: { items: [{ tool: "create_deal", args }] } });
       if (!r?.ok) throw new Error(r?.error ?? "No se ha podido crear el deal.");
       toast.success(
         `Deal «${f.name.trim()}» creado${f.close ? "" : ". Ponle fecha de cierre para que cuente en la cobertura"}.`,
       );
       setAccountId(null);
-      setF({ name: "", account: "", segment: "", stage: "", amount: "", close: null, product: "" });
+      setF({
+        name: "",
+        account: "",
+        segment: "",
+        stage: "",
+        amount: "",
+        close: null,
+        product: "",
+        source: null,
+      });
       setOpen(false);
       qc.invalidateQueries();
     } catch (e) {
@@ -181,6 +194,13 @@ export function NewDealButton() {
                 onChange={(e) => setF({ ...f, amount: e.target.value })}
               />
             )}
+          </Field>
+          <Field label="Fuente">
+            <DealSourceField
+              aria-label="Fuente"
+              value={f.source}
+              onChange={(v) => setF({ ...f, source: v })}
+            />
           </Field>
           <Field label="Fecha de cierre">
             <DateField value={f.close} onChange={(iso) => setF({ ...f, close: iso })} />
