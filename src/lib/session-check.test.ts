@@ -3,7 +3,12 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createSessionCheck, type SessionAuth } from "./session-check";
+import {
+  createSessionCheck,
+  createSessionState,
+  createSessionUser,
+  type SessionAuth,
+} from "./session-check";
 
 type FakeSession = { access_token: string; user: { id: string } };
 type Listener = (event: string, session: FakeSession | null) => void;
@@ -193,6 +198,99 @@ describe("createSessionCheck (NK-0098)", () => {
       getUser: async () => ({ data: { user: { id: "user-ana" } }, error: new Error("bad_jwt") }),
     };
     expect(await createSessionCheck(auth)()).toBe(false);
+  });
+});
+
+describe("checkSession: three states (NK-0112)", () => {
+  const failing = (status: number | undefined, f = fakeAuth(ana1)) => {
+    let fail = true;
+    const auth: SessionAuth = {
+      ...f.auth,
+      getUser: async (jwt?: string) => {
+        f.calls.getUser++;
+        await Promise.resolve();
+        if (fail) {
+          const e = new Error("boom");
+          return {
+            data: { user: null },
+            error: status === undefined ? e : Object.assign(e, { status }),
+          };
+        }
+        return { data: { user: { id: (jwt ?? "").split(":")[0] } }, error: null };
+      },
+    };
+    return { f, auth, heal: () => (fail = false) };
+  };
+
+  it("valid carries the user the server validated", async () => {
+    const f = fakeAuth(ana1);
+    expect(await createSessionState(f.auth)()).toEqual({
+      status: "valid",
+      user: { id: "user-ana" },
+    });
+  });
+
+  it("none without a local session", async () => {
+    const f = fakeAuth(null);
+    expect(await createSessionState(f.auth)()).toEqual({ status: "none" });
+  });
+
+  it("none when the server answers with another user", async () => {
+    const f = fakeAuth({ access_token: "user-leo:9", user: { id: "user-ana" } });
+    expect(await createSessionState(f.auth)()).toEqual({ status: "none" });
+  });
+
+  for (const status of [401, 403]) {
+    it(`none on ${status}, and the local session is closed`, async () => {
+      const { f, auth } = failing(status);
+      let signOut = 0;
+      const withSignOut: SessionAuth = { ...auth, signOut: async () => void signOut++ };
+      expect(await createSessionState(withSignOut)()).toEqual({ status: "none" });
+      expect(signOut).toBe(1);
+      expect(f.calls.getUser).toBe(1);
+    });
+  }
+
+  for (const status of [0, 500, 503, 429, undefined]) {
+    it(`unverified on ${status ?? "an error without status"}, never signs out`, async () => {
+      const { auth } = failing(status);
+      let signOut = 0;
+      const withSignOut: SessionAuth = { ...auth, signOut: async () => void signOut++ };
+      expect(await createSessionState(withSignOut)()).toEqual({ status: "unverified" });
+      expect(signOut).toBe(0);
+    });
+  }
+
+  it("unverified when the request throws", async () => {
+    const f = fakeAuth(ana1);
+    f.setOffline(true);
+    expect(await createSessionState(f.auth)()).toEqual({ status: "unverified" });
+  });
+
+  it("unverified is never saved: the next call asks again and can succeed", async () => {
+    const { f, auth, heal } = failing(503);
+    const check = createSessionState(auth);
+    expect((await check()).status).toBe("unverified");
+    expect((await check()).status).toBe("unverified");
+    expect(f.calls.getUser).toBe(2);
+    heal();
+    expect((await check()).status).toBe("valid");
+    expect((await check()).status).toBe("valid");
+    expect(f.calls.getUser).toBe(3);
+  });
+
+  it("shares the saved answer and the in-flight request with createSessionUser and createSessionCheck", async () => {
+    const f = fakeAuth(ana1);
+    const [a, b, c] = await Promise.all([
+      createSessionState(f.auth)(),
+      createSessionUser(f.auth)(),
+      createSessionCheck(f.auth)(),
+    ]);
+    expect(a.status).toBe("valid");
+    expect(b).toEqual({ id: "user-ana" });
+    expect(c).toBe(true);
+    await createSessionState(f.auth)();
+    expect(f.calls.getUser).toBe(1);
   });
 });
 

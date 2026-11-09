@@ -1,7 +1,9 @@
 // NK-0098: the guard of /_authenticated. getSession() reads the local session (no network) on every
 // navigation; getUser() validates it against the server once per access token. A refreshed token, another
 // user, USER_UPDATED or SIGNED_OUT (also from another tab) drops the saved answer; a refusal is never saved.
-// Data security stays with RLS; this only decides whether to show the app or send to /auth.
+// NK-0112: the check has three answers: valid (the user), none (no session, or the server refused it) and
+// unverified (network, 5xx, 429: could not ask). Only "none" sends to /auth; "unverified" keeps the session
+// and shows a retry screen. Data security stays with RLS; this only decides what to show.
 
 type Session = { access_token: string; user: { id: string } };
 type AuthUser = { id: string };
@@ -21,23 +23,28 @@ export function isDefinitiveRejection(error: unknown): boolean {
   return status === 401 || status === 403;
 }
 
-const shared = new WeakMap<object, () => Promise<unknown>>();
+/** The three answers of the session check (NK-0112). */
+export type SessionState<U extends AuthUser = AuthUser> =
+  { status: "valid"; user: U } | { status: "none" } | { status: "unverified" };
 
-/**
- * The validated user per access token, shared by the route guard and by meQuery (NK-0098), so both cost
- * one GET /auth/v1/user per token. One validator per auth client, so createSessionCheck(auth) in the
- * route and createSessionUser(auth) in meQuery share the same saved answer.
- * Returns null without a session or when the server refuses it.
- */
-export function createSessionUser<U extends AuthUser>(
-  auth: SessionAuth<U>,
-): () => Promise<U | null> {
+type Outcome<U> = { user: U } | { reason: "none" | "unverified" };
+
+type Shared<U extends AuthUser> = {
+  user: () => Promise<U | null>;
+  check: () => Promise<SessionState<U>>;
+  /** Filled by the last-validated-user work (SDD-20261109-session-hardening, unit B); unused in unit A. */
+  last: string | null;
+};
+
+const shared = new WeakMap<object, Shared<AuthUser>>();
+
+function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
   const existing = shared.get(auth);
-  if (existing) return existing as () => Promise<U | null>;
-  let saved: { token: string; valid: Promise<U | null> } | null = null;
+  if (existing) return existing as unknown as Shared<U>;
+  let saved: { token: string; valid: Promise<Outcome<U>> } | null = null;
   let listening = false;
 
-  const validatedUser = async function validatedUser() {
+  const run = async function run(): Promise<Outcome<U>> {
     // Subscribe on first use (client only), not at import time.
     if (!listening) {
       listening = true;
@@ -50,34 +57,67 @@ export function createSessionUser<U extends AuthUser>(
     const session = data.session;
     if (!session) {
       saved = null;
-      return null;
+      return { reason: "none" };
     }
     if (saved?.token !== session.access_token) {
       const valid = auth.getUser(session.access_token).then(
-        async ({ data: u, error }) => {
-          // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
-          // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
-          // Network errors and 5xx are not definitive: they never sign anyone out.
-          if (error && isDefinitiveRejection(error)) {
+        async ({ data: u, error }): Promise<Outcome<U>> => {
+          if (error) {
+            // A token the server refuses for good (e.g. 401 bad_jwt after a secret rotation) would otherwise
+            // stay in storage and bounce /auth <-> /home forever: drop the local session (no server call).
+            // Network errors, 5xx and 429 are not definitive: they never sign anyone out (unverified).
+            if (!isDefinitiveRejection(error)) return { reason: "unverified" };
             // Only if the stored session is still the one that was refused (another tab may have signed in).
             const now = (await auth.getSession()).data.session;
             if (now?.access_token === session.access_token)
               await auth.signOut?.({ scope: "local" }).catch(() => undefined);
+            return { reason: "none" };
           }
-          return !error && u.user?.id === session.user.id ? u.user : null;
+          return u.user && u.user.id === session.user.id ? { user: u.user } : { reason: "none" };
         },
-        () => null,
+        (): Outcome<U> => ({ reason: "unverified" }),
       );
       saved = { token: session.access_token, valid };
     }
     const entry = saved;
-    const user = await entry.valid;
-    // Never keep a refusal: the next navigation asks again.
-    if (!user && saved === entry) saved = null;
-    return user;
+    const outcome = await entry.valid;
+    // Never keep a refusal or a failed attempt: the next navigation asks again.
+    if (!("user" in outcome) && saved === entry) saved = null;
+    return outcome;
   };
-  shared.set(auth, validatedUser);
-  return validatedUser;
+
+  const state: Shared<U> = {
+    user: async () => {
+      const o = await run();
+      return "user" in o ? o.user : null;
+    },
+    check: async () => {
+      const o = await run();
+      return "user" in o ? { status: "valid", user: o.user } : { status: o.reason };
+    },
+    last: null,
+  };
+  shared.set(auth, state as unknown as Shared<AuthUser>);
+  return state;
+}
+
+/**
+ * The validated user per access token, shared by the route guard and by meQuery (NK-0098), so both cost
+ * one GET /auth/v1/user per token. One validator per auth client, so createSessionCheck(auth) in the
+ * route and createSessionUser(auth) in meQuery share the same saved answer.
+ * Returns null without a session, when the server refuses it or when it could not be asked.
+ */
+export function createSessionUser<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => Promise<U | null> {
+  return share(auth).user;
+}
+
+/** Same validation with the three answers (NK-0112): valid, none (go to /auth) or unverified (retry screen). */
+export function createSessionState<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): () => Promise<SessionState<U>> {
+  return share(auth).check;
 }
 
 export function createSessionCheck(auth: SessionAuth): () => Promise<boolean> {
