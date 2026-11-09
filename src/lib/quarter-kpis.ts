@@ -1,13 +1,25 @@
 // Company-wide quarterly KPIs (revenue, cost to serve, margin, acquisition, CAC, payback) built from the
-// per-segment budget rows, so Métricas shows the same numbers as Estrategia GTM → Presupuesto vs real.
+// per-segment budget rows, so Métricas shows the same numbers as Estrategia GTM → Presupuesto vs real, Cobertura and
+// MCP. CAC and payback come from src/lib/unit-economics.ts (SDD-20261109-metrics-strategy-no-estimates): the company
+// CAC is every cost of the quarter / every deal won in it (with or without segment, D11); the payback is the
+// customer-weighted payback of the segments that have one, saying on how many it rests (§15.8).
+import { quarterRange } from "@/lib/metrics";
 import {
   grossMargin,
   quarterlyBudget,
   type QuarterBudgetLike,
   type SegmentBudgetRow,
 } from "@/lib/segment-budget";
-import type { DealLike, SegLike } from "@/lib/segment-coverage";
+import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-coverage";
 import type { CostLike } from "@/lib/cac";
+import {
+  companyCac,
+  companyPayback,
+  planCacOf,
+  type CompanyPayback,
+  type Figure,
+  type PlanFigure,
+} from "@/lib/unit-economics";
 
 export type KpiSide = {
   revenue: number | null;
@@ -18,13 +30,27 @@ export type KpiSide = {
   cac: number | null;
   payback: number | null;
 };
-/** dato · estimado (a weighted segment assumes the margin or takes its ACV from the range or from open deals) · sin_dato (one has margin ≤ 0). */
-export type PaybackBasis = "dato" | "estimado" | "sin_dato" | null;
 export type QuarterKpis = {
   quarter: string;
   plan: KpiSide;
   actual: KpiSide & { wonAmount: number };
-  paybackBasis: { plan: PaybackBasis; actual: PaybackBasis };
+  /** The CAC and payback above as Figures (state and reason), the ones the board shows too. */
+  figures: {
+    cac: Figure;
+    payback: CompanyPayback;
+    planCac: PlanFigure;
+    planPayback: CompanyPayback;
+  };
+  /** Deals won in the quarter that no segment covers: they count in the company CAC (D11). */
+  unsegmentedWon: number;
+};
+
+/** What the company-level figures need beyond the segment rows: every cost and every won deal of the period. */
+export type CompanyPeriod = {
+  period: string;
+  cost: number | null;
+  won: number;
+  unsegmentedWon: number;
 };
 
 /** Sum that stays null when no segment has the value (so "no data" never reads as 0). */
@@ -33,55 +59,81 @@ function sumOrNull(xs: (number | null)[]) {
   return vals.length ? vals.reduce((s, v) => s + v, 0) : null;
 }
 
-/** Average of the segment paybacks weighted by their customers; null when no segment has both. */
-function weightedPayback(pairs: { payback: number | null; customers: number | null }[]) {
-  const ok = pairs.filter((p) => p.payback != null && p.customers);
-  const w = ok.reduce((s, p) => s + p.customers!, 0);
-  return w ? ok.reduce((s, p) => s + p.payback! * p.customers!, 0) / w : null;
-}
-
-/** What the weighted payback rests on, over the same segments weightedPayback uses (payback and customers). */
-function paybackBasis(rows: SegmentBudgetRow[], k: "plan" | "actual"): PaybackBasis {
-  const used = rows.filter((r) => r[k].payback != null && r[k].newCustomers);
-  if (!used.length) return null;
-  if (used.some((r) => r.paybackMarginBasis[k] === "no_positivo")) return "sin_dato";
-  if (used.some((r) => r.paybackMarginBasis[k] === "supuesto_100" || r.acvSource !== "ganados"))
-    return "estimado";
-  return "dato";
-}
-
-/** Company totals of one period from its per-segment budget rows. */
-export function kpiTotals(rows: SegmentBudgetRow[]): Omit<QuarterKpis, "quarter"> {
-  const side = (k: "plan" | "actual"): KpiSide => {
-    const revenue = sumOrNull(rows.map((r) => r[k].revenue));
+/** Company totals of one period from its per-segment budget rows and the period's costs and won deals. */
+export function kpiTotals(
+  rows: SegmentBudgetRow[],
+  company: CompanyPeriod,
+): Omit<QuarterKpis, "quarter"> {
+  const common = (k: "plan" | "actual") => {
     // Margin only over segments that have both revenue and cost, like the annual budget does.
     const paired = rows.filter((r) => r[k].revenue && r[k].costToServe != null);
-    const costToServe = sumOrNull(rows.map((r) => r[k].costToServe));
-    // Real acquisition is the entered costs (0 when none): like segmentCac, no cost means no CAC, not a CAC of 0.
-    const raw = sumOrNull(rows.map((r) => r[k].acquisition));
-    const acquisition = k === "actual" && !raw ? null : raw;
-    const newCustomers = sumOrNull(rows.map((r) => r[k].newCustomers));
     return {
-      revenue,
-      costToServe,
+      revenue: sumOrNull(rows.map((r) => r[k].revenue)),
+      costToServe: sumOrNull(rows.map((r) => r[k].costToServe)),
       margin: paired.length
         ? grossMargin(
             paired.reduce((s, r) => s + r[k].revenue!, 0),
             paired.reduce((s, r) => s + r[k].costToServe!, 0),
           )
         : null,
-      acquisition,
-      newCustomers,
-      cac: acquisition && newCustomers ? acquisition / newCustomers : null,
-      payback: weightedPayback(
-        rows.map((r) => ({ payback: r[k].payback, customers: r[k].newCustomers })),
-      ),
     };
   };
+  const planAcquisition = sumOrNull(rows.map((r) => r.plan.acquisition));
+  const planNew = sumOrNull(rows.map((r) => r.plan.newCustomers));
+  const planCac = planCacOf({
+    acquisition: planAcquisition,
+    newCustomers: planNew,
+    period: company.period,
+  });
+  const planPayback = companyPayback(
+    rows.map((r) => ({ payback: r.figures.planPayback, customers: r.plan.newCustomers })),
+  );
+  // Every cost of the period, also the shared part that nobody's win split (D7); no cost = no CAC, never 0.
+  const cac = companyCac({ cost: company.cost, won: company.won, period: company.period });
+  const payback = companyPayback(
+    rows.map((r) => ({ payback: r.figures.payback, customers: r.actual.newCustomers })),
+  );
   return {
-    plan: side("plan"),
-    actual: { ...side("actual"), wonAmount: rows.reduce((s, r) => s + r.actual.wonAmount, 0) },
-    paybackBasis: { plan: paybackBasis(rows, "plan"), actual: paybackBasis(rows, "actual") },
+    plan: {
+      ...common("plan"),
+      acquisition: planAcquisition,
+      newCustomers: planNew,
+      cac: planCac.value,
+      payback: planPayback.value,
+    },
+    actual: {
+      ...common("actual"),
+      acquisition: company.cost || null,
+      newCustomers: company.won,
+      cac: cac.value,
+      payback: payback.value,
+      wonAmount: rows.reduce((s, r) => s + r.actual.wonAmount, 0),
+    },
+    figures: { cac, payback, planCac, planPayback },
+    unsegmentedWon: company.unsegmentedWon,
+  };
+}
+
+/** Every cost of the quarter and every deal won in it (with or without segment), for kpiTotals. */
+export function companyPeriod(
+  segments: SegLike[],
+  deals: DealLike[],
+  costs: (CostLike & { period: string })[],
+  quarter: string,
+): CompanyPeriod {
+  const { start, end } = quarterRange(quarter);
+  const won = deals.filter((d) => {
+    const t = new Date(d.closed_at ?? d.updated_at).getTime();
+    return d.stage === "won" && t >= start.getTime() && t < end.getTime();
+  });
+  const cost = costs
+    .filter((c) => c.period === quarter)
+    .reduce((s, c) => s + Number(c.amount || 0), 0);
+  return {
+    period: quarter,
+    cost: cost || null,
+    won: won.length,
+    unsegmentedWon: won.filter((d) => assignSegment(d, segments) == null).length,
   };
 }
 
@@ -98,6 +150,9 @@ export function quarterKpis(
     const year = Number(q.slice(0, 4));
     if (!byYear.has(year))
       byYear.set(year, quarterlyBudget(segments, deals, budgetRows, costs, year));
-    return { quarter: q, ...kpiTotals(byYear.get(year)!.byQuarter[q] ?? []) };
+    return {
+      quarter: q,
+      ...kpiTotals(byYear.get(year)!.byQuarter[q] ?? [], companyPeriod(segments, deals, costs, q)),
+    };
   });
 }

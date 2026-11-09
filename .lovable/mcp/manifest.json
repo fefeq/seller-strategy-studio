@@ -64,7 +64,7 @@
       {
         "name": "get_real_metrics",
         "title": "Métricas reales de pipeline",
-        "description": "ACV, win rate y ciclo de venta reales (últimos 12 meses), total y por segmento, frente a los objetivos del segmento.",
+        "description": "ACV, win rate y ciclo de venta reales, total y por segmento, frente a los objetivos del segmento. El win rate y el ciclo son de los últimos 365 días (win_rate_window); el ACV es la media de todo el histórico de deals ganados o, sin ganados, de los abiertos (acv_window, acv_source). Solo Owner y Sales Leader.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -81,7 +81,7 @@
       {
         "name": "get_segment_coverage",
         "title": "Cobertura por segmento",
-        "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate, CAC real (costes introducidos / deals ganados), margen bruto del presupuesto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real).",
+        "description": "Cobertura de pipeline, deals ganados, oportunidades, win rate del trimestre, ACV, CAC real (costes introducidos / deals ganados), margen bruto y payback por segmento frente al objetivo del trimestre, más el presupuesto del trimestre y del año (ingresos, coste de servir y captación, previsto frente a real). ACV, CAC y payback traen state (real, estimado, sin_dato) y reason: un dato que falta es null con su motivo, nunca un supuesto; el payback solo se calcula con el CAC real, nunca con el CAC objetivo. payback.window y win_rate.window dicen la ventana (trimestre). Solo Owner y Sales Leader.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,

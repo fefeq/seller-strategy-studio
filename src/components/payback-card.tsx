@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { usePaybackQuarters } from "@/components/payback-quarters";
 import { paybackSummary } from "@/lib/segment-coverage";
+import { DataMark } from "@/components/metrics/data-mark";
+import { figureMark, figureTone } from "@/components/metrics/mark-text";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
 
@@ -77,32 +79,31 @@ export function PaybackCard() {
                       </td>
                       {quarters.map((q) => {
                         const c = r.byQuarter[q];
-                        const tone = c.ok === false ? "text-signal" : c.ok ? "text-success" : "";
+                        const f = c.figures.payback;
+                        const tone = figureTone(f, c.ok);
                         return (
                           <td key={q} className="px-2 py-2.5 text-right">
-                            {c.status === "real" && c.payback != null ? (
+                            {f.value != null ? (
                               <>
                                 <span
                                   className={`font-mono ${tone}`}
                                   title={`CAC real · ${c.customers} ganados`}
                                 >
-                                  {fmt1(c.payback)} m
+                                  {fmt1(f.value)} m
                                 </span>
+                                {f.state === "estimado" && (
+                                  <DataMark
+                                    {...figureMark(f)!}
+                                    className="block text-xs text-muted-foreground"
+                                  />
+                                )}
                                 <span className="block text-xs text-muted-foreground md:hidden">
                                   {c.customers} {c.customers === 1 ? "ganado" : "ganados"}
                                 </span>
                               </>
                             ) : (
-                              <span
-                                className="font-mono text-xs text-muted-foreground"
-                                title={
-                                  c.status === "no_wins"
-                                    ? "Hay costes pero ningún deal ganado"
-                                    : "Sin costes apuntados"
-                                }
-                              >
-                                —
-                              </span>
+                              // SDD-20261109 CA-7: «Sin dato · motivo», never a bare dash.
+                              <DataMark {...figureMark(f)!} className="text-xs" />
                             )}
                           </td>
                         );
@@ -133,8 +134,8 @@ export function PaybackCard() {
             </table>
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
-            Verde = dentro del objetivo · rojo = fuera · — = sin costes o sin deals ganados en ese
-            trimestre. Tendencia frente al trimestre anterior con datos (bajar es mejor).
+            Verde = dentro del objetivo · rojo = fuera · «Sin dato» dice qué falta en ese trimestre.
+            Tendencia frente al trimestre anterior con datos (bajar es mejor).
           </p>
         </div>
       )}

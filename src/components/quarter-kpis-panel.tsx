@@ -5,14 +5,16 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
 import { quartersUpTo } from "@/lib/cac";
-import { quarterKpis, type KpiSide, type PaybackBasis, type QuarterKpis } from "@/lib/quarter-kpis";
+import { quarterKpis, type KpiSide, type QuarterKpis } from "@/lib/quarter-kpis";
 import { Deviation } from "@/components/budget-quarters";
 import { ScreenState } from "@/components/page";
 import type { SegLike } from "@/lib/segment-coverage";
-import { DataMark } from "@/components/metrics/data-mark";
+import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
+import { noData, real } from "@/lib/unit-economics";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
-const pct = (n: number | null) => (n == null ? "—" : `${fmt1(n)}%`);
+const pct = (n: number) => `${fmt1(n)}%`;
+type Fig = { value: number | null; state: string; reason: string | null };
 
 type Line = {
   label: string;
@@ -21,17 +23,14 @@ type Line = {
   lowerIsBetter?: boolean;
   points?: boolean;
   hint?: (k: QuarterKpis) => ReactNode;
-  /** The weighted payback: labelled by quarterKpis().paybackBasis (SDD-20261106-metrics-honest-data CA-7). */
-  payback?: true;
+  /** CAC, payback and margin are Figures (SDD-20261109 CA-6, CA-13): «Sin dato · motivo», never a bare dash. */
+  figure?: (k: QuarterKpis) => { real: Fig; plan: Fig };
+  /** How the value of the figure reads. */
+  fmt?: (n: number) => string;
 };
 
-/** sin_dato: a weighted segment has margin ≤ 0, so the figure (Infinity or negative) is never shown. */
-function basisMark(b: PaybackBasis) {
-  if (b === "sin_dato")
-    return <DataMark state="sin_dato" reason="un segmento tiene margen 0 % o negativo" />;
-  if (b === "estimado") return <DataMark state="estimado" reason="supuestos en algún segmento" />;
-  return null;
-}
+/** A company margin as a Figure: without revenue and cost to serve, «Sin dato · falta margen». */
+const marginFig = (n: number | null): Fig => (n == null ? noData("falta margen") : real(n));
 
 /** «CAC real» lives in Métricas › CAC y presupuesto (CA-11). */
 function CacRealLink() {
@@ -64,7 +63,10 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           .order("acv_min"),
         supabase
           .from("deals")
-          .select("segment_id,amount,stage,close_date,closed_at,updated_at,created_at"),
+          // gross_margin: the one margin chain reads the won deals with lines (SDD-20261109 §10).
+          .select(
+            "segment_id,amount,stage,close_date,closed_at,updated_at,created_at,gross_margin",
+          ),
         supabase
           .from("segment_budget_quarters")
           .select("*")
@@ -94,6 +96,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
   const current = kpis[kpis.length - 1];
 
   const money0 = (n: number | null) => (n == null ? "—" : money(n));
+  const months = (n: number) => `${fmt1(n)} m`;
   const lines: Line[] = [
     {
       label: "Ingresos",
@@ -102,20 +105,45 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
       hint: (k) => (k.actual.wonAmount ? `${money(k.actual.wonAmount)} ganado en deals` : null),
     },
     { label: "Coste de servir", value: (s) => s.costToServe, show: money0, lowerIsBetter: true },
-    { label: "Margen bruto", value: (s) => s.margin, show: pct, points: true },
+    {
+      label: "Margen bruto",
+      value: (s) => s.margin,
+      show: () => "",
+      points: true,
+      figure: (k) => ({ real: marginFig(k.actual.margin), plan: marginFig(k.plan.margin) }),
+      fmt: pct,
+    },
     { label: "Gasto de captación", value: (s) => s.acquisition, show: money0, lowerIsBetter: true },
     {
       label: "Clientes nuevos",
       value: (s) => s.newCustomers,
       show: (n) => (n == null ? "—" : String(n)),
+      // SDD-20261109 D11: the won deals without segment count in the company CAC; say how many.
+      hint: (k) =>
+        k.unsegmentedWon
+          ? `${k.unsegmentedWon} ganados sin segmento cuentan en el CAC de empresa`
+          : null,
     },
-    { label: "CAC", value: (s) => s.cac, show: money0, lowerIsBetter: true },
+    {
+      label: "CAC",
+      value: (s) => s.cac,
+      show: () => "",
+      lowerIsBetter: true,
+      figure: (k) => ({ real: k.figures.cac, plan: k.figures.planCac }),
+      fmt: money,
+    },
     {
       label: "Payback",
       value: (s) => s.payback,
-      show: (n) => (n == null ? "—" : `${fmt1(n)} m`),
+      show: () => "",
       lowerIsBetter: true,
-      payback: true,
+      // No planned customers at all: nobody typed a plan, so the plan side reads «sin plan».
+      figure: (k) => ({
+        real: k.figures.payback,
+        plan: k.plan.newCustomers == null ? noData("sin plan") : k.figures.planPayback,
+      }),
+      fmt: months,
+      hint: (k) => <FigureNote f={k.figures.payback} />,
     },
   ];
 
@@ -145,22 +173,21 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
             <Link to="/strategy" search={{ tab: "budget" }} className="underline">
               Estrategia GTM → Presupuesto vs real
             </Link>
-            ; el CAC, de los costes de «<CacRealLink />» entre los deals ganados del trimestre; el
-            payback es la media de los segmentos ponderada por clientes. Verde = mejor que el plan;
-            rojo = peor.
+            ; el CAC, de todos los costes de «<CacRealLink />» entre todos los deals ganados del
+            trimestre, tengan o no segmento; el payback es la media de los segmentos ponderada por
+            clientes. Verde = mejor que el plan; rojo = peor.
           </p>
         </div>
         {current && (
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-right text-sm">
-            <Headline label={`CAC ${quarter}`} value={money0(current.actual.cac)} />
+            <Headline
+              label={`CAC ${quarter}`}
+              value={<FigureValue f={current.figures.cac} show={money} />}
+            />
             <Headline
               label={`Payback ${quarter}`}
-              value={
-                current.actual.payback == null || current.paybackBasis.actual === "sin_dato"
-                  ? "—"
-                  : `${fmt1(current.actual.payback)} m`
-              }
-              mark={basisMark(current.paybackBasis.actual)}
+              value={<FigureValue f={current.figures.payback} show={months} />}
+              mark={<FigureNote f={current.figures.payback} />}
             />
           </div>
         )}
@@ -189,20 +216,35 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
                     {l.label}
                   </td>
                   {kpis.map((k) => {
-                    const hideReal = l.payback && k.paybackBasis.actual === "sin_dato";
-                    const hidePlan = l.payback && k.paybackBasis.plan === "sin_dato";
-                    const real = hideReal ? null : l.value(k.actual),
+                    const fig = l.figure?.(k);
+                    const real = l.value(k.actual),
                       plan = l.value(k.plan);
-                    const hint = l.payback ? basisMark(k.paybackBasis.actual) : l.hint?.(k);
+                    const hint = l.hint?.(k);
                     return (
                       <td
                         key={k.quarter}
                         className={`px-3 py-3 text-right ${k.quarter === quarter ? "bg-muted/40" : ""}`}
                       >
-                        <p className="font-mono">{l.show(real)}</p>
+                        <p className="font-mono">
+                          {fig && l.fmt ? <FigureValue f={fig.real} show={l.fmt} /> : l.show(real)}
+                        </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {hidePlan ? (
-                            "plan —"
+                          {fig && l.fmt ? (
+                            <>
+                              plan <PlanValue f={fig.plan} show={l.fmt} />
+                              {fig.real.value != null && fig.plan.value != null && (
+                                <>
+                                  {" "}
+                                  ·{" "}
+                                  <Deviation
+                                    real={real}
+                                    plan={plan}
+                                    lowerIsBetter={l.lowerIsBetter}
+                                    points={l.points}
+                                  />
+                                </>
+                              )}
+                            </>
                           ) : plan != null ? (
                             <>
                               plan {l.show(plan)} ·{" "}
@@ -238,7 +280,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
   );
 }
 
-function Headline({ label, value, mark }: { label: string; value: string; mark?: ReactNode }) {
+function Headline({ label, value, mark }: { label: string; value: ReactNode; mark?: ReactNode }) {
   return (
     <div>
       <p className="font-display text-2xl">{value}</p>

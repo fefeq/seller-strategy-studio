@@ -4,6 +4,7 @@ import { daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "
 import { formatRatio, quarterCoverage } from "./coverage";
 import { ROLES } from "./roles";
 import { NO_SOURCE } from "./metrics-quarter";
+import { WIN_RATE_WINDOWS } from "./unit-economics";
 import { openStages, stagePath, type Stage } from "./stages";
 
 /** Only Owner and Sales Leader may run the GTM advisor. */
@@ -63,6 +64,10 @@ type Quota = { period: string; amount: number };
 const sum = (ds: Deal[]) => ds.reduce((s, d) => s + Number(d.amount ?? 0), 0);
 const r1 = (n: number) => Math.round(n * 10) / 10;
 const pct = (n: number) => Math.round(n * 1000) / 10;
+/** SDD-20261109 CA-12: without closed deals there is no win rate (null), never 0. winRate() keeps its 0 for others. */
+const winRatePct = (won: number, lost: number) => (won + lost ? pct(winRate(won, lost)) : null);
+/** The window of every win rate of the snapshot (WIN_RATE_WINDOWS.historico, as the AI reads it). */
+const WIN_RATE_WINDOW = WIN_RATE_WINDOWS.historico.label.toLowerCase();
 
 function meddpiccFilled(m: unknown) {
   if (!m || typeof m !== "object") return 0;
@@ -136,7 +141,8 @@ export function buildSnapshot(input: {
         ticket_medio: won.length ? Math.round(sum(won) / won.length) : 0,
       },
       perdidos: { deals: lost.length, importe: sum(lost) },
-      win_rate_global_pct: pct(winRate(won.length, lost.length)),
+      win_rate_global_pct: winRatePct(won.length, lost.length),
+      ventana_win_rate: WIN_RATE_WINDOW,
       win_rate_por_fuente: byKey((d) => d.source ?? NO_SOURCE),
       en_riesgo: {
         deals: open.filter((d) => d.health === "red").length,
@@ -206,7 +212,8 @@ export function buildSnapshot(input: {
           pipeline_abierto: sum(sd.filter((d) => d.stage !== "won" && d.stage !== "lost")),
           ganados: sw.length,
           perdidos: sl.length,
-          win_rate_pct: pct(winRate(sw.length, sl.length)),
+          win_rate_pct: winRatePct(sw.length, sl.length),
+          ventana_win_rate: WIN_RATE_WINDOW,
           ticket_medio_ganado: sw.length ? Math.round(sum(sw) / sw.length) : null,
         },
       };

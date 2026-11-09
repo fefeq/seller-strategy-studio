@@ -28,3 +28,34 @@ export function expectDataMarks(root: ParentNode, min = 1): string[] {
     return text;
   });
 }
+
+const norm = (t: string | null | undefined) => (t ?? "").replace(/\s+/g, " ").trim();
+
+/**
+ * SDD-20261109-metrics-strategy-no-estimates · CA-13: a rendered «—» only where the closed list allows it (a target
+ * nobody typed, another metric). Each dash is identified by the text of the element that holds it; a lone «—» by
+ * its table row label («CAC objetivo: —») or, outside a table, «— » plus the text of its next sibling, so a bare
+ * missing figure never hides behind an allowed one. Returns them.
+ */
+export function expectNoBareDash(root: ParentNode, allowed: string[]): string[] {
+  const walker = document.createTreeWalker(root as Node, NodeFilter.SHOW_TEXT);
+  const found: string[] = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    if (!n.textContent?.includes("—") || !n.parentElement) continue;
+    const el = n.parentElement;
+    const own = norm(el.textContent);
+    const row = el.closest("tr")?.firstElementChild;
+    found.push(
+      own !== "—"
+        ? own
+        : row && !row.contains(el)
+          ? `${norm((row.firstElementChild ?? row).textContent)}: —`
+          : norm(`— ${el.nextElementSibling?.textContent ?? ""}`),
+    );
+  }
+  expect(
+    found.filter((k) => !allowed.includes(k)),
+    "«—» outside the closed list",
+  ).toEqual([]);
+  return found;
+}

@@ -1,6 +1,5 @@
-import { wonDealsMargin } from "@/lib/deal-lines";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,16 +8,14 @@ import { Input } from "@/components/ui/input";
 import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegLike, type SegmentCoverageRow } from "@/lib/segment-coverage";
-import { quartersOfYear, withPeriodMargin, type MarginSource } from "@/lib/segment-budget";
+import { quartersOfYear, type MarginSource, type QuarterBudgetLike } from "@/lib/segment-budget";
+import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
 import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
 import { DataMark } from "@/components/metrics/data-mark";
-import {
-  MARGIN_ASSUMED,
-  MARGIN_NON_POSITIVE,
-  acvMark,
-  inferredMark,
-} from "@/components/metrics/mark-text";
+import { figureMark, inferredMark, noClosedDeals } from "@/components/metrics/mark-text";
+import { figureTone } from "@/components/metrics/mark-text";
+import { FigureNote, FigureValue } from "@/components/metrics/figure";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 const MARGIN_LABEL: Record<MarginSource, string> = {
@@ -29,8 +26,8 @@ const MARGIN_LABEL: Record<MarginSource, string> = {
 };
 
 /**
- * Segments, deals, targets and acquisition costs of a quarter; shared by the coverage and CAC panels.
- * `segments` carry the budget margin of the quarter, then its year (real → plan → target) so every payback uses it.
+ * Segments, deals, targets, acquisition costs and budget rows of a quarter; shared by the coverage and CAC panels.
+ * segmentCoverage runs the one margin chain with the budget rows and the deals' margins (SDD-20261109 D15).
  */
 export function useSegmentCoverageData(quarter: string) {
   const { data: me } = useMe();
@@ -59,12 +56,8 @@ export function useSegmentCoverageData(quarter: string) {
       const failed = s.error ?? d.error ?? t.error ?? c.error ?? b.error;
       if (failed) throw failed;
       return {
-        segments: withPeriodMargin(
-          s.data ?? [],
-          b.data ?? [],
-          quarter,
-          wonDealsMargin(d.data ?? [], quarterRange(quarter)?.end, s.data ?? []).bySegment,
-        ),
+        segments: (s.data ?? []) as SegLike[],
+        budgetRows: (b.data ?? []) as QuarterBudgetLike[],
         deals: d.data ?? [],
         costs: c.data ?? [],
         targets: Object.fromEntries(
@@ -92,6 +85,7 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
             data.targets,
             quarterRange(quarter),
             data.costs,
+            data.budgetRows,
           )
         : [],
     [data, quarter],
@@ -186,9 +180,12 @@ function SegmentCard({
       : cov.status === "healthy"
         ? "text-success"
         : "text-foreground";
-  const acv = acvMark(r.acvSource, r.acvRangeBasis);
-  // Margin 0 % or below: the payback (Infinity or negative) is replaced by «Sin dato», never green or red.
-  const nonPositive = r.paybackMarginBasis === "no_positivo";
+  const f = r.figures;
+  const acv = figureMark(f.acv);
+  const winRate =
+    r.winRate.real != null
+      ? { value: r.winRate.real, state: "real", reason: null }
+      : noClosedDeals(quarter);
   return (
     <div className="rounded-md border p-4">
       <div className="flex items-start justify-between gap-2">
@@ -201,7 +198,7 @@ function SegmentCard({
             />
           )}
           <p className="text-xs text-muted-foreground">
-            ACV {money(r.acv)}
+            ACV{r.acv != null ? ` ${money(r.acv)}` : ""}
             {acv && (
               <>
                 {" "}
@@ -267,8 +264,8 @@ function SegmentCard({
           hint={r.opps.target == null && r.target ? "Falta win rate objetivo" : undefined}
         />
         <Metric
-          label="Win rate"
-          real={r.winRate.real != null ? pct(r.winRate.real) : "—"}
+          label={`Win rate · ${WIN_RATE_WINDOWS.trimestre.label(quarter)}`}
+          real={<FigureValue f={winRate} show={(n) => pct(n)} />}
           target={r.winRate.target != null ? `${r.winRate.target}%` : null}
           progress={
             r.winRate.real != null && r.winRate.target
@@ -279,7 +276,7 @@ function SegmentCard({
         <div className="flex items-center justify-between gap-2 border-t pt-2 text-sm">
           <span>CAC</span>
           <span className="font-mono text-xs">
-            {r.cac.real != null ? money(r.cac.real) : "—"}
+            <FigureValue f={f.cac} show={money} />
             <span className="text-muted-foreground">
               {" "}
               / obj. {r.cac.target != null ? money(r.cac.target) : "—"}
@@ -287,41 +284,26 @@ function SegmentCard({
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 text-sm">
-          <span>
-            Payback{" "}
-            {r.payback.source === "real"
-              ? "real"
-              : r.payback.source === "objetivo"
-                ? "estimado"
-                : ""}
-          </span>
+          <span>Payback real</span>
           <span className="font-mono text-xs">
-            {nonPositive ? (
-              <DataMark {...MARGIN_NON_POSITIVE} />
-            ) : (
-              <span
-                className={
-                  r.payback.ok === false ? "text-signal" : r.payback.ok ? "text-success" : ""
-                }
-              >
-                {r.payback.real != null ? `${r.payback.real.toFixed(1)} m` : "—"}
-              </span>
-            )}
+            <FigureValue
+              f={f.payback}
+              show={(n) => `${n.toFixed(1)} m`}
+              className={figureTone(f.payback, r.payback.ok)}
+            />
             <span className="text-muted-foreground">
               {" "}
               / obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}
             </span>
           </span>
         </div>
-        {r.paybackMarginBasis === "supuesto_100" && (
-          <DataMark {...MARGIN_ASSUMED} className="block text-xs text-muted-foreground" />
-        )}
+        <FigureNote f={f.payback} className="block text-xs text-muted-foreground" />
         {(() => {
-          const s = r.segment as SegLike & { margin_source?: MarginSource | null };
-          return s.margin_source && s.gross_margin_pct != null ? (
+          const m = f.margin;
+          return m.source && m.value != null ? (
             <p className="text-xs text-muted-foreground">
-              Con {MARGIN_LABEL[s.margin_source]} del {Math.round(Number(s.gross_margin_pct))}%
-              {s.margin_source === "objetivo" ? (
+              Con {MARGIN_LABEL[m.source]} del {Math.round(m.value)}%
+              {m.source === "objetivo" ? (
                 <>
                   {" "}
                   · apunta ingresos y coste de servir en «
@@ -336,19 +318,13 @@ function SegmentCard({
             </p>
           ) : null;
         })()}
-        {r.payback.source !== "real" && (
+        {f.cac.value == null && (
           <p className="text-xs text-muted-foreground">
-            {r.cac.cost > 0 && r.cac.customers === 0 ? (
+            {r.cac.cost > 0 || r.sharedSplit === "sin_reparto" ? (
               "Hay costes pero ningún deal ganado este trimestre: aún no hay CAC real."
-            ) : r.payback.source === "objetivo" ? (
-              <>
-                Calculado con el CAC objetivo. Introduce los costes en «<CacRealLink />» para verlo
-                real.
-              </>
             ) : (
               <>
-                Introduce los costes en «<CacRealLink />» o un CAC objetivo para calcular el
-                payback.
+                Introduce los costes en «<CacRealLink />» para calcular el CAC y el payback reales.
               </>
             )}
           </p>
@@ -366,7 +342,7 @@ function Metric({
   hint,
 }: {
   label: string;
-  real: string;
+  real: ReactNode;
   target: string | null;
   progress: number | null;
   hint?: string;

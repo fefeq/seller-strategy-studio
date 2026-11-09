@@ -221,3 +221,69 @@ describe("snapshot: deals without source (NK-0091)", () => {
     expect(topNull).toEqual(topSet);
   });
 });
+
+// SDD-20261109-metrics-strategy-no-estimates · U-5 · CA-12: without closed deals the win rate is null (not 0), and the
+// snapshot says the window of its win rates («todo el histórico»), in the pipeline and in each segment.
+describe("NK-0094 advisor win rate: null without closed deals, window said", () => {
+  const base = {
+    probability: 50,
+    health: "green",
+    close_date: null,
+    closed_at: null,
+    updated_at: "2026-10-01",
+    source: "inbound",
+    slip_count: 0,
+    forecast_category: null,
+    meddpicc: {},
+    partner_id: null,
+  };
+  const segments = [
+    {
+      id: "s",
+      name: "Mid",
+      acv_min: 5000,
+      acv_max: 50000,
+      motion: "inside",
+      cycle_days: 60,
+      sdr_per_ae: 2,
+      ae_per_se: null,
+      cac_target: 15000,
+      payback_months: 12,
+      win_rate_target: 30,
+      ae_quota: 600000,
+      gross_margin_pct: 80,
+    },
+  ];
+  const build = (stages: string[]) =>
+    buildSnapshot({
+      currency: "EUR",
+      now: new Date("2026-10-15"),
+      segments,
+      history: [],
+      quotas: [],
+      deals: stages.map((stage, i) => ({
+        ...base,
+        id: String(i),
+        name: `D${i}`,
+        stage,
+        amount: 1000,
+        segment_id: "s",
+      })),
+    });
+
+  it("no closed deal: global and segment win rate are null, never 0", () => {
+    const s = build(["proposal"]);
+    expect(s.pipeline.win_rate_global_pct).toBeNull();
+    expect(s.segmentos[0].real.win_rate_pct).toBeNull();
+  });
+  it("with closed deals the values stay as before", () => {
+    const s = build(["won", "lost"]);
+    expect(s.pipeline.win_rate_global_pct).toBe(50);
+    expect(s.segmentos[0].real.win_rate_pct).toBe(50);
+  });
+  it("the window «todo el histórico» is in the pipeline and in each segment", () => {
+    const s = build(["won"]);
+    expect(s.pipeline.ventana_win_rate).toBe("todo el histórico");
+    expect(s.segmentos[0].real.ventana_win_rate).toBe("todo el histórico");
+  });
+});
