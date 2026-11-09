@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
 import { useUrlSection } from "@/hooks/use-url-section";
+import { useCleanUrl } from "@/hooks/use-clean-url";
 import {
   HUB_DEFAULT_SECTION,
   HUB_SECTIONS,
@@ -109,6 +110,8 @@ export function HubScreen() {
   const docs = data?.rows ?? NO_DOCS;
   const { doc: docParam, q: qParam, seccion } = useSearch({ from: "/_authenticated/hub" });
   const navigate = useNavigate({ from: "/hub" });
+  // NK-0100: a stale ?seccion= or a blank ?q= in the address bar is rewritten clean (replace).
+  useCleanUrl(HUB_SECTIONS, true);
   const [section, setSection] = useUrlSection(
     sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
   );
@@ -348,25 +351,30 @@ export function HubScreen() {
                 {SECTIONS.find((s) => s[0] === section)?.[2]}
               </p>
               {rulesReason && <p className="text-xs text-muted-foreground">{rulesReason}</p>}
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full"
-                disabled={rulesLocked}
-                onClick={() => {
-                  setDraftSeq((n) => n + 1);
-                  setSelected(draft());
-                  revealOnMobile(editorRef.current);
-                }}
-              >
-                + Nuevo
-              </Button>
-              <DriveImportButton
-                section={section}
-                onImported={openDoc}
-                disabled={rulesLocked}
-                reason={rulesReason}
-              />
+              {/* NK-0101: no way to create or import while the read failed (loading and data keep them). */}
+              {!error && (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full"
+                    disabled={rulesLocked}
+                    onClick={() => {
+                      setDraftSeq((n) => n + 1);
+                      setSelected(draft());
+                      revealOnMobile(editorRef.current);
+                    }}
+                  >
+                    + Nuevo
+                  </Button>
+                  <DriveImportButton
+                    section={section}
+                    onImported={openDoc}
+                    disabled={rulesLocked}
+                    reason={rulesReason}
+                  />
+                </>
+              )}
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
               <ScreenState isPending={isPending} error={error} refetch={refetch}>
                 {data?.truncated && (
