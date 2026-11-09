@@ -14,6 +14,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { reloadOnceForStaleModule } from "@/lib/stale-module";
+import { handleAuthEvent } from "@/lib/session-cache";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
@@ -152,12 +153,8 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      // meQuery is cached for minutes: a refreshed token or another user must refetch it (NK-0098).
-      if (event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") queryClient.invalidateQueries({ queryKey: ["me"] });
-      if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (handleAuthEvent(queryClient, event, session)) router.invalidate();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);

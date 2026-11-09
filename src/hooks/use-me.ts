@@ -19,7 +19,13 @@ export const meQuery = queryOptions({
     queryFn: async () => {
       // Per-token validated user shared with the route guard: no extra /auth/v1/user per navigation.
       const user = await validatedUser();
-      if (!user) return null;
+      if (!user) {
+        // Signed out: null is a real answer. A local session that failed validation (blip, refusal) is not:
+        // throw so it is never cached as fresh «no user» for the stale window (NK-0098).
+        const { data } = await supabase.auth.getSession();
+        if (data.session) throw new Error("No se pudo validar la sesión. Vuelve a intentarlo.");
+        return null;
+      }
       // Joins any company that invited this email before loading memberships.
       await supabase.rpc("accept_invites");
       const [{ data: profile }, { data: members }] = await Promise.all([

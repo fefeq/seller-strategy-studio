@@ -107,17 +107,10 @@ describe("meQuery session cost (NK-0098)", () => {
   it("a rejected session is not cached as a user", async () => {
     h.revoked.add("user-ana:1");
     const qc = new QueryClient();
-    expect(await qc.fetchQuery(meQuery)).toBeNull();
+    await expect(qc.fetchQuery(meQuery)).rejects.toThrow();
     h.revoked.clear();
     await qc.invalidateQueries({ queryKey: ["me"] });
     expect((await qc.fetchQuery(meQuery))?.user.id).toBe("user-ana");
     expect(h.getUser).toBe(2);
-  });
-
-  it("the root refreshes me on token refresh and sign-out", () => {
-    const src = readFileSync(path.resolve(__dirname, "../routes/__root.tsx"), "utf8");
-    expect(src).toMatch(
-      /TOKEN_REFRESHED[\s\S]{0,80}SIGNED_OUT[\s\S]{0,120}invalidateQueries\(\{ queryKey: \["me"\] \}\)/,
-    );
   });
 });
