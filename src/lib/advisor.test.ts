@@ -5,7 +5,7 @@ import {
   sortRecommendations,
   type AdvisorRecommendation,
 } from "./advisor";
-import { NO_SOURCE } from "./metrics-quarter";
+import { AI_NO_SOURCE } from "./deal-source";
 
 describe("GTM advisor access", () => {
   it("Owner and Sales Leader can use it", () => {
@@ -195,10 +195,10 @@ describe("snapshot: deals without source (NK-0091)", () => {
       ],
     });
 
-  it("counts them under the same key /metrics uses, never as outbound", () => {
+  it("groups them as «sin origen» for the AI, never as outbound", () => {
     const groups = build(null).pipeline.win_rate_por_fuente;
-    expect(groups.find((g) => g.grupo === NO_SOURCE)).toEqual({
-      grupo: NO_SOURCE,
+    expect(groups.find((g) => g.grupo === AI_NO_SOURCE)).toEqual({
+      grupo: AI_NO_SOURCE,
       ganados: 1,
       perdidos: 2,
       win_rate_pct: 33.3,
@@ -209,6 +209,12 @@ describe("snapshot: deals without source (NK-0091)", () => {
       perdidos: 1,
       win_rate_pct: 50,
     });
+  });
+
+  it("puts a source typed by hand as «sin origen» in the same group (accepted limit)", () => {
+    const groups = build("sin origen").pipeline.win_rate_por_fuente;
+    expect(groups.filter((g) => g.grupo === AI_NO_SOURCE)).toHaveLength(1);
+    expect(groups.some((g) => g.grupo === "—")).toBe(false);
   });
 
   it("changes nothing else in the snapshot", () => {

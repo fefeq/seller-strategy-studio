@@ -3,7 +3,7 @@
 import { daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "./metrics";
 import { formatRatio, quarterCoverage } from "./coverage";
 import { ROLES } from "./roles";
-import { NO_SOURCE } from "./metrics-quarter";
+import { AI_NO_SOURCE } from "./deal-source";
 import { WIN_RATE_WINDOWS } from "./unit-economics";
 import { openStages, stagePath, type Stage } from "./stages";
 
@@ -143,7 +143,7 @@ export function buildSnapshot(input: {
       perdidos: { deals: lost.length, importe: sum(lost) },
       win_rate_global_pct: winRatePct(won.length, lost.length),
       ventana_win_rate: WIN_RATE_WINDOW,
-      win_rate_por_fuente: byKey((d) => d.source ?? NO_SOURCE),
+      win_rate_por_fuente: byKey((d) => d.source ?? AI_NO_SOURCE),
       en_riesgo: {
         deals: open.filter((d) => d.health === "red").length,
         importe: sum(open.filter((d) => d.health === "red")),
