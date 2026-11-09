@@ -154,3 +154,35 @@ describe("CA-7: the Inicio headline agrees with its table", () => {
     expect(container.textContent).not.toContain("—");
   });
 });
+
+describe("CA-7: same data → same state and reason on Payback real and Inicio", () => {
+  // A won deal with no segment is assigned by its amount (estimated attribution): both screens must say so.
+  const withInferred = {
+    ...TABLES,
+    deals: [
+      ...TABLES.deals,
+      dealRow({ segment_id: null, amount: 15000, stage: "won", closed_at: "2026-10-22T10:00:00Z" }),
+    ],
+  };
+  const marksOfQ4 = (name: string) =>
+    [
+      ...(screen
+        .getByText(name)
+        .closest("tr")
+        ?.querySelectorAll("td")[4]
+        ?.querySelectorAll("[data-mark]") ?? []),
+    ].map((m) => `${m.getAttribute("data-mark")}|${m.textContent}`);
+
+  it("the Q4 cell of each segment carries the same marks (state and reason) on both screens", async () => {
+    db.tables = withInferred;
+    render(wrap(<PaybackQuarters />));
+    await screen.findByText("Alfa");
+    const payback = { Alfa: marksOfQ4("Alfa"), Beta: marksOfQ4("Beta") };
+    cleanup();
+    render(wrap(<PaybackCard />));
+    await screen.findByText("Alfa");
+    const home = { Alfa: marksOfQ4("Alfa"), Beta: marksOfQ4("Beta") };
+    expect(payback.Alfa.some((m) => m.startsWith("estimado|Estimado · "))).toBe(true);
+    expect(home).toEqual(payback);
+  });
+});
