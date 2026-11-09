@@ -5,6 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { validatedUser } from "@/lib/session";
+import { SESSION_CHECK_FAILED } from "@/lib/session-check";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Pick } from "@/components/fields";
@@ -33,9 +35,10 @@ export function OrgCreateForm({ orgs, onDone, location }: { orgs: Membership[]; 
   const twin = similarOrg({ name, website }, orgs);
 
   async function enter(orgId: string) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = await validatedUser();
+    if (!user) return toast.error(SESSION_CHECK_FAILED);
     if (twin?.org.archived) { const { error } = await supabase.rpc("archive_organization", { _org: orgId, _archived: false }); if (error) return toast.error(errorText(error)); }
-    const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user!.id);
+    const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user.id);
     if (error) return toast.error(errorText(error));
     onDone?.();
     await qc.resetQueries();

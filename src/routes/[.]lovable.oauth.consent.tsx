@@ -1,6 +1,8 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { checkSession } from "@/lib/session";
+import { SessionUnverifiedError } from "@/lib/session-check";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/.lovable/oauth/consent")({
@@ -23,16 +25,22 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   },
   loader: async ({ location }) => {
     const id = new URLSearchParams(location.searchStr).get("authorization_id")!;
-    const [{ data, error }, { data: u }] = await Promise.all([supabase.auth.oauth.getAuthorizationDetails(id), supabase.auth.getUser()]);
+    // The shared validator (NK-0110): none goes to /auth, unverified shows the retry text in errorComponent.
+    const session = await checkSession();
+    if (session.status === "none") throw redirect({ to: "/auth", search: { next: location.pathname + location.searchStr } });
+    if (session.status === "unverified") throw new SessionUnverifiedError();
+    const { data, error } = await supabase.auth.oauth.getAuthorizationDetails(id);
     if (error) throw new Error("Esta solicitud de conexión no es válida o ha caducado. Vuelve a conectar desde tu asistente.");
     const d = data as unknown as { redirect_url?: string; redirect_to?: string; client?: { name?: string; client_name?: string; redirect_uri?: string; uri?: string }; redirect_uri?: string; scope?: string; scopes?: string[] };
     const immediate = d?.redirect_url ?? d?.redirect_to;
     if (immediate && !d?.client) throw redirect({ href: immediate });
-    return { details: d, email: u.user?.email ?? "" };
+    return { details: d, email: session.user.email ?? "" };
   },
   component: Consent,
   pendingComponent: () => <Shell><p className="text-sm text-muted-foreground">Cargando solicitud…</p></Shell>,
-  errorComponent: ({ error }) => <Shell><h1 className="text-3xl">No se pudo abrir la solicitud</h1><p className="mt-3 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p></Shell>,
+  errorComponent: ({ error }) => error instanceof SessionUnverifiedError
+    ? <Shell><h1 className="text-3xl">No he podido comprobar tu sesión</h1><p className="mt-3 text-sm text-muted-foreground">Puede ser la conexión o un fallo momentáneo. Tu sesión sigue abierta.</p></Shell>
+    : <Shell><h1 className="text-3xl">No se pudo abrir la solicitud</h1><p className="mt-3 text-sm text-muted-foreground">{error instanceof Error ? error.message : String(error)}</p></Shell>,
 });
 
 function Shell({ children }: { children: React.ReactNode }) {

@@ -2,6 +2,8 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { validatedUser } from "@/lib/session";
+import { SESSION_CHECK_FAILED } from "@/lib/session-check";
 import { useCurrency } from "@/hooks/use-me";
 import { Empty, HealthDot } from "@/components/page";
 import { Button } from "@/components/ui/button";
@@ -45,8 +47,9 @@ export function DealsTab({ accountId, list, onChange }: { accountId: string; lis
   const { stages } = useStages();
   const { money: eur } = useCurrency();
   async function add() {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", stage: firstOpenStage(stages).key, owner_id: user?.id });
+    const user = await validatedUser();
+    if (!user) return toast.error(SESSION_CHECK_FAILED);
+    const { error } = await supabase.from("deals").insert({ account_id: accountId, name: "Nuevo deal", stage: firstOpenStage(stages).key, owner_id: user.id });
     if (error) return toast.error(errorText(error));
     onChange();
   }

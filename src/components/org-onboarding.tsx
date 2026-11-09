@@ -1,6 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { validatedUser } from "@/lib/session";
+import { SESSION_CHECK_FAILED } from "@/lib/session-check";
 import type { Membership } from "@/hooks/use-me";
 import { errorText } from "@/lib/errors";
 import { OrgCreateForm } from "@/components/org-create";
@@ -8,8 +10,9 @@ import { OrgCreateForm } from "@/components/org-create";
 export function OrgOnboarding({ memberships, archived = [] }: { memberships: Membership[]; archived?: Membership[] }) {
   const qc = useQueryClient();
   async function pick(orgId: string) {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user!.id);
+    const user = await validatedUser();
+    if (!user) return toast.error(SESSION_CHECK_FAILED);
+    const { error } = await supabase.from("profiles").update({ current_org_id: orgId }).eq("id", user.id);
     if (error) return toast.error(errorText(error));
     await qc.resetQueries();
   }
