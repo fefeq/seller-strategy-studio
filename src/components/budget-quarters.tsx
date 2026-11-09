@@ -16,7 +16,8 @@ import {
 } from "@/lib/segment-budget";
 import { errorText } from "@/lib/errors";
 import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
-import { figureTone } from "@/components/metrics/mark-text";
+import { figureTone, inferredMark } from "@/components/metrics/mark-text";
+import { DataMark } from "@/components/metrics/data-mark";
 import { noData, real } from "@/lib/unit-economics";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
@@ -172,6 +173,15 @@ export function BudgetQuarters() {
     </span>
   );
 
+  // SDD-20261109 D8 / CA-8: won deals assigned by amount keep their «Estimado · N de M asignados por importe» mark.
+  const inferredNote = (r: SegmentBudgetRow) =>
+    r.inferredWonInPeriod > 0 && (
+      <DataMark
+        {...inferredMark(r.inferredWonInPeriod, r.wonInPeriod)}
+        className="block font-sans text-xs font-normal text-muted-foreground"
+      />
+    );
+
   type Line = {
     label: string;
     plan: (c: (typeof cols)[number]) => ReactNode;
@@ -218,13 +228,24 @@ export function BudgetQuarters() {
     {
       label: "CAC",
       plan: (c) => val(<PlanValue f={c.r!.figures.planCac} show={money} />),
-      real: (c) => val(<FigureValue f={c.r!.figures.cac} show={money} />),
+      real: (c) =>
+        val(
+          <>
+            <FigureValue f={c.r!.figures.cac} show={money} />
+            {inferredNote(c.r!)}
+          </>,
+        ),
       dev: (r) => <Deviation real={r.actual.cac} plan={r.plan.cac} lowerIsBetter />,
     },
     {
       label: "Payback",
       plan: (c) => pb(c.r!.figures.planPayback, c.r!.payback.planOk, true),
-      real: (c) => pb(c.r!.figures.payback, c.r!.payback.realOk),
+      real: (c) => (
+        <>
+          {pb(c.r!.figures.payback, c.r!.payback.realOk)}
+          {c.r!.figures.payback.value != null && inferredNote(c.r!)}
+        </>
+      ),
       dev: (r) => <Deviation real={r.actual.payback} plan={r.plan.payback} lowerIsBetter />,
       strong: true,
     },
