@@ -35,6 +35,9 @@ export const WIN_RATE_WINDOWS = {
 /** The period of the calculator's CAC, as it reads inside a reason. */
 export const LAST_4_QUARTERS = "los últimos 4 trimestres";
 
+/** Months of payback as every screen writes them: es-ES (comma), at most one decimal, no trailing «,0». */
+export const fmtMonths = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
+
 /** Constructors, so a caller holding a plain number (a typed ACV, a margin %) hands it over as a Figure. */
 export const real = (value: number, reason: string | null = null): Figure => ({
   value,
