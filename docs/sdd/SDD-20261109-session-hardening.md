@@ -1,7 +1,7 @@
 # SDD-20261109-session-hardening · [Bug] Un fallo momentáneo al comprobar la sesión no te saca de la app, y todo el código usa el mismo usuario validado
 
 **Tipo:** Bug (sesión; sin migración) · **Prioridad propuesta:** Alta (unidad A: hoy un fallo de red o un 5xx manda a iniciar sesión sin aviso) · Media (unidad B)
-**Estado:** Borrador · **Pide:** Fede (Sprint 3, del walkthrough de `d0f4252`) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3, del walkthrough de `d0f4252`) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** unidad A: NK-0112, NK-0113 · unidad B: NK-0110 (+ NK-0114, duplicado enlazado: añade el consentimiento OAuth), NK-0111, NK-0115
 **PRD:** No aplica (bug) · **Depende de:** NK-0098 (Sprint 2, en `main`; sin SDD propio, garantías en los tests de §3)
 
@@ -186,6 +186,15 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR S-m2** La guarda de fuente omite `:205` | CA-5: `:204-207` se sustituye entera (incluida `:205`); `:201-203` se mantiene. |
 | **MENOR S-m3** El consentimiento OAuth no distingue «sin sesión» de «sin poder comprobar» | CA-7, §8 y U-6: el loader usa `checkSession()`; `none` → `/auth?next=…`; `unverified` → texto de §9. |
 | Decisión del coordinador: D-3 y unidades en serie | Registradas en §15; pregunta 1 retirada. |
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: CAMBIOS (0/1/2), corregidos abajo.
+
+| Hallazgo | Resolución |
+|---|---|
+| **MAYOR S2-M1** §5 contradice el contrato de §12 y falta `__root.tsx` | §5 unidad A: cambia el interior de `createSessionUser` sin cambiar firmas; unidad B: añade `src/routes/__root.tsx:153-159` (pasa `lastValidatedUserId()` a `handleAuthEvent`). |
+| **MENOR S2-m1** §13 cita `session-check.test.ts:204-208` | Corregido a `:204-207`. |
+| **MENOR S2-m2** Falta la decisión sobre «Cerrar sesión» | §15: decisión del coordinador (sin enlace en este ticket), pregunta retirada («Para Fede: ninguna»); §5 «No incluye» lo lista. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

@@ -1,7 +1,7 @@
 # SDD-20261109-plays-no-reopen · [Bug] Las sugerencias cerradas de los plays solo se reabren cuando el play se reanudó
 
 **Tipo:** Bug (comportamiento de sugerencias y avisos, sin migración) · **Prioridad propuesta:** Alta (en todas las empresas, hoy reabre sugerencias cerradas y reenvía avisos de prioridad 1 por Telegram)
-**Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0077 (reapertura sin pausa) y NK-0078 (falta la prueba de `syncSuggestions` sin filas en `play_states`)
 **PRD:** No aplica (bug) · **Depende de:** `SDD-20261106-plays-library-core.md` (Plays GTM 1, en `main`)
 
@@ -145,6 +145,13 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR P-m3** §8 «Varias empresas» incompleto | §8 explica que «members read» exige `current_org()` y que, con otro `orgId`, la lectura da 0 filas y no se reabre nada; CA-7 se prueba con el cliente admin. |
 | **MENOR P-m4** Reenvío de avisos al reanudar | Dicho en §8 y §14 para que el walkthrough lo espere. |
 | Decisión del coordinador: Plays D-2 | Registrada en §15 como decisión del coordinador por delegación de Fede (2026-11-09); pregunta a Fede retirada. |
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: APROBABLE (0/0/0). Todos los hallazgos de la pasada 1 están resueltos en el texto.
+
+| Hallazgo | Resolución |
+|---|---|
+| Observación (sin hallazgo): el caso de carrera de CA-6 es una guarda y el fake necesita un gancho entre la lectura de las `resolved` y el `update` | El brief lo nombra; el SDD ya lo rotula como guarda. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

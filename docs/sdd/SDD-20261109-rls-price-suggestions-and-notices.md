@@ -1,7 +1,7 @@
 # SDD-20261109-rls-price-suggestions-and-notices · [Bug] La base de datos aplica la regla de las sugerencias de precio y deja tocar de un aviso solo «leído»
 
 **Tipo:** Bug (permisos, con una migración en el Sprint 3, U-2; U-1, aplazada, llevará la suya) · **Prioridad propuesta:** Media (NK-0044: hoy el servidor ya filtra; NK-0070: severidad baja según su gate)
-**Estado:** U-1 (NK-0044) **Aplazada** (decisión de Fede, 2026-11-01, «hasta decidir el destino de la base»; confirmada por el coordinador el 2026-11-09: fuera del Sprint 3) · U-2 (NK-0070) Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado U-2; U-1 Aplazada — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 (U-1: decisión de Fede del 2026-11-01, «hasta decidir el destino de la base»; fuera del Sprint 3) · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0044 (U-1) y NK-0070 (U-2), independientes entre sí
 **PRD:** No aplica (bugs de permisos) · **Depende de:** NK-0042 (`SDD-20261101-price-suggestions-visibility-server.md`, en `main`: regla en código)
 **Relación con:** `SDD-20261101-price-suggestions-rls.md` (Aplazado el 2026-11-01). La U-1 de este SDD es una propuesta para cuando NK-0044 se desbloquee: recoge los bloqueantes B-1, B-2 y los importantes I-1 a I-3 de aquel gate, pero no sustituye a aquel SDD ni entra en el Sprint 3. Solo U-2 se construye ahora.
@@ -249,6 +249,14 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 2. El revoke y grant de las tres funciones nuevas va en un comentario, no en SQL. `suggestion_is_price` es `security definer` y, con los EXECUTE por defecto de Supabase, la podría llamar `anon`: tiene que ser SQL explícito, con su CA.
 3. El brief debe fijar la versión viva de `has_org_role` con `deal_desk` (`0070:60` lo usa, pero solo en `strategy_changes`).
 4. La pregunta 3 de §15 (PGlite frente a Supabase con disparador `BEFORE INSERT` que devuelve NULL y `ON CONFLICT`) sigue sin probarse en el repo.
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: APROBABLE con menores, solo U-2 (0/0/2).
+
+| Hallazgo | Resolución |
+|---|---|
+| **MENOR R2-m1** Restos de «dos migraciones» (`:3`, `:106`) | Cabecera: «con una migración en el Sprint 3, U-2; U-1, aplazada, llevará la suya»; §8 habla de la migración de U-2 (y la de U-1 cuando se desbloquee). |
+| **MENOR R2-m2** La comprobación posterior de §13 mezcla U-1 | Para U-2: repetir la 3 y la parte de `notifications` de la 1, `read_at` funciona y `title` falla; el resto queda para U-1. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

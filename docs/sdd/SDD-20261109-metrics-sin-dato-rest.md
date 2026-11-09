@@ -1,7 +1,7 @@
 # SDD-20261109-metrics-sin-dato-rest · [Mejora] En Métricas, un «—» que significa «falta el dato» pasa a «Sin dato · motivo»
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15) · **Prioridad propuesta:** Media
-**Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0106
 **PRD:** No aplica (cierra una regla ya aprobada: decisión 4 del §15 de NK-0089 y decisión 13 del §15 de `SDD-20261109-metrics-strategy-no-estimates.md`) · **Depende de:** `SDD-20261109-metrics-strategy-no-estimates.md` (Hecho: `DataMark`, `FigureValue`, `PlanValue`, `expectNoBareDash`, inventario CA-13) · **Coordina con:** `SDD-20261109-deals-no-source.md` (NK-0107/0108/0109): la clave `NO_SOURCE` («—») es una clave de agrupación, no un texto; este SDD la permite. **Se integra después de deals**, para que `METRICS_DASH_ALLOWED` nazca sin las claves K que deals elimina; la lista es un techo (máximo por fragmento), así que esas K no la rompen en ningún orden.
 
@@ -159,6 +159,13 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR M-m5** Mantener las 9 claves de `DASH_ALLOWED` del Sprint 2 | §5: las claves se mantienen; un archivo sin entradas conserva `[]`. |
 | Coherencia con deals (gate §«Coherencia» 1) | Cabecera: este SDD se integra después de deals; la lista es un techo. |
 | Decisión del coordinador: Métricas D-3 | Registrada en §15; pregunta a Fede retirada. |
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: APROBABLE con menores (0/0/1).
+
+| Hallazgo | Resolución |
+|---|---|
+| **MENOR M2-m1** Con deals integrado antes, las K que deals elimina no deben entrar en la lista | §3: el inventario se vuelve a contar sobre la rama de integración con deals; las 4 entradas K que pierden «—» no se añaden a `METRICS_DASH_ALLOWED`; CA-6 se comprueba por valor (`NO_SOURCE === "—"`, etiquetas en `revops.test.ts` y paneles), no por el literal. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.

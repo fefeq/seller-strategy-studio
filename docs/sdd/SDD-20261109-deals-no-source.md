@@ -1,7 +1,7 @@
 # SDD-20261109-deals-no-source · [Bug] Un deal sin origen se queda «Sin origen» en la base, en el formulario y en lo que lee el Asesor
 
 **Tipo:** Bug (con migración: quita un valor por defecto) · **Prioridad propuesta:** Media (falsea el win rate por origen de Métricas y del Asesor)
-**Estado:** Borrador · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0107 (valor por defecto `'outbound'`), NK-0108 (el formulario muestra y puede guardar «Outbound»), NK-0109 (el Asesor envía «—»)
 **PRD:** No aplica (bug) · **Depende de:** — · **Coordina con:** NK-0106 (`SDD-20261109-metrics-sin-dato-rest.md`): allí «—» como texto en pantalla pasa a «Sin dato · motivo»; aquí `NO_SOURCE` («—») es una **clave de agrupación**, no un texto, y la prueba de NK-0106 la permite; `src/lib/deal-source.ts` la importa y nunca escribe el literal «—». **Orden de integración: este SDD antes que NK-0106**, para que la lista cerrada de métricas nazca sin las claves K que este SDD elimina.
 
@@ -165,6 +165,13 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR D-m5** Colisión con texto libre «sin origen» | §8 lo anota como límite aceptado; U-4 usa `AI_NO_SOURCE` y un caso de CA-5 fija el comportamiento. |
 | Coherencia con NK-0106 (gate §«Coherencia» 1) | Cabecera y §13: `deal-source.ts` importa `NO_SOURCE` y no escribe «—»; la lista de métricas es un techo; este SDD se integra antes que NK-0106. |
 | Decisión del coordinador: «Nuevo deal» pide origen = ticket aparte | Registrada en §15. |
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint3-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: APROBABLE con menores (0/0/1).
+
+| Hallazgo | Resolución |
+|---|---|
+| **MENOR D2-m1** Frase rota en «Coordina con» | Cabecera reescrita: clave de agrupación, no un texto; la prueba de NK-0106 la permite; `deal-source.ts` la importa y no escribe «—»; deals antes que NK-0106. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 Pendiente.
