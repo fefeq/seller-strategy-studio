@@ -249,5 +249,27 @@ export function paybackSummary(rows: ReturnType<typeof paybackByQuarter>, quarte
     };
   });
   const measured = latest.filter((l) => l.cell && l.target != null);
-  return { latest, measured: measured.length, within: measured.filter((l) => l.cell!.ok).length };
+  return {
+    latest,
+    measured: measured.length,
+    within: measured.filter((l) => l.cell!.ok).length,
+    /** Segments with a payback in some quarter, with or without a target. */
+    withPayback: latest.filter((l) => l.cell?.payback != null).length,
+  };
+}
+
+/**
+ * Headline of the Inicio payback card, from the same summary as its table (SDD-20261109 CA-7): «within» when some
+ * segment has payback and target; «no_target» when there are paybacks but no target to judge them; «none» when
+ * there are segments but no payback; «no_segments» when there are no segments.
+ */
+export function paybackHeadline(
+  summary: Pick<ReturnType<typeof paybackSummary>, "measured" | "within" | "withPayback">,
+  segments: number,
+) {
+  if (summary.measured > 0)
+    return { kind: "within" as const, within: summary.within, measured: summary.measured };
+  if (summary.withPayback > 0)
+    return { kind: "no_target" as const, withPayback: summary.withPayback };
+  return { kind: segments > 0 ? ("none" as const) : ("no_segments" as const) };
 }

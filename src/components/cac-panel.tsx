@@ -22,7 +22,7 @@ import { DataMark } from "@/components/metrics/data-mark";
 import { SHARED_NOT_SPLIT, inferredMark } from "@/components/metrics/mark-text";
 import { figureTone } from "@/components/metrics/mark-text";
 import { FigureNote, FigureValue } from "@/components/metrics/figure";
-import { companyCac } from "@/lib/unit-economics";
+import { companyCac, fmtMonths } from "@/lib/unit-economics";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 // Keeps the row label visible while the wide tables scroll sideways on a phone.
@@ -198,6 +198,8 @@ export function CacPanel({ quarter }: { quarter: string }) {
             data.targets,
             quarterRange(quarter),
             data.costs,
+            // SDD-20261109 CA-3: the budget rows feed the one margin chain (segmentMargin), as on every screen.
+            data.budgetRows,
           )
         : [],
     [data, quarter],
@@ -420,7 +422,7 @@ export function CacPanel({ quarter }: { quarter: string }) {
                         <FigureValue
                           f={r.figures.payback}
                           show={(n) =>
-                            `${n.toFixed(1)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`
+                            `${fmtMonths(n)} m${r.payback.target != null ? ` / ${r.payback.target}` : ""}`
                           }
                         />
                         <FigureNote

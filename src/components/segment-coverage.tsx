@@ -9,7 +9,7 @@ import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage";
 import { quartersOfYear, type MarginSource } from "@/lib/segment-budget";
-import { WIN_RATE_WINDOWS } from "@/lib/unit-economics";
+import { WIN_RATE_WINDOWS, fmtMonths } from "@/lib/unit-economics";
 import { errorText } from "@/lib/errors";
 import { pct } from "@/lib/money";
 import { DataMark } from "@/components/metrics/data-mark";
@@ -288,7 +288,7 @@ function SegmentCard({
           <span className="font-mono text-xs">
             <FigureValue
               f={f.payback}
-              show={(n) => `${n.toFixed(1)} m`}
+              show={(n) => `${fmtMonths(n)} m`}
               className={figureTone(f.payback, r.payback.ok)}
             />
             <span className="text-muted-foreground">
