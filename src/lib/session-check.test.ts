@@ -185,13 +185,19 @@ describe("createSessionCheck (NK-0098)", () => {
     expect(await check()).toBe(true);
     expect(f.calls.getUser).toBe(2);
   });
+
+  it("any error from the server refuses, even if a user object came back", async () => {
+    const f = fakeAuth(ana1);
+    const auth: SessionAuth = {
+      ...f.auth,
+      getUser: async () => ({ data: { user: { id: "user-ana" } }, error: new Error("bad_jwt") }),
+    };
+    expect(await createSessionCheck(auth)()).toBe(false);
+  });
 });
 
 describe("/_authenticated beforeLoad uses the cached check (source guard)", () => {
-  const src = readFileSync(
-    path.resolve(__dirname, "../routes/_authenticated/route.tsx"),
-    "utf8",
-  );
+  const src = readFileSync(path.resolve(__dirname, "../routes/_authenticated/route.tsx"), "utf8");
   it("never calls supabase.auth.getUser() on each navigation", () => {
     expect(src).not.toMatch(/auth\.getUser\(/);
   });
