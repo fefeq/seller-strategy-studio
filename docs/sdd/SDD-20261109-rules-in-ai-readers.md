@@ -202,14 +202,51 @@ Orden: U-1 → U-2 → U-3 → U-4 → U-5 (U-4 usa `rulesRead` de U-1 y `mensaj
 - **[Por verificar]** Que el modelo cumpla las reglas: eval aparte.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: —
-- [Por verificar] que sigue sin comprobarse: —
-- Contradicciones con el código o con decisiones previas: —
-- Lo que esta revisión NO demuestra: —
+Informe de la primera pasada (v1), copiado sin editar:
 
+- **Veredicto del gate:** Sin objeciones
+- **CA sin prueba posible o sin G-n:** ninguno. No hay PRD, así que no se exige G-n. Los once CA se pueden probar con el archivo que nombran y ninguno cae en `src/routes/`.
+  - `executeTool` ejecuta directamente también las herramientas de escritura (`src/lib/agent/tools.ts:64-70`), así que CA-4 se puede probar como dice.
+  - `runBackgroundJob` está exportado (`job-runner.server.ts:54`) y no importa nada pesado al cargar (`:1-10`), así que CA-5 también.
+- **[Por verificar] que sigue sin comprobarse:**
+  - Que Claude, ChatGPT y Codex lean las `instructions` y llamen a `get_team_rules`.
+  - Número y longitud de reglas por empresa, volumen de generaciones y coste.
+  - Que el modelo cumpla las reglas.
+  - **Resuelto, sí:** Vitest puede importar `src/lib/mcp/index.ts` y leer `instructions`. Lo comprobé con un test de prueba en el scratchpad, sin tocar el repo: alias `@` hacia `src`, entorno `node`, Vitest 4.1.11. `default` tiene las claves `name,title,version,instructions,auth,tools` y `instructions` es un `string` con «Nokko: sistema comercial» (`index.ts:13-16`). No lo probé con el `jsdom` y el `setup.ts` de `vitest.config.ts`. Si ahí fallara, queda la otra vía de CA-11: leer el fuente.
+  - **Resuelto, sí:** `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` regenera el manifiesto con `node_modules` enlazado (a `seller-strategy-studio-integration/node_modules`). Lo ejecuté sobre una copia de `HEAD` hecha con `git archive` en el scratchpad, tras borrar el manifiesto: salida 0 y el archivo generado es idéntico byte a byte a `.lovable/mcp/manifest.json`. El manifiesto no incluye `instructions` (0 apariciones), como dice §3.
+- **Contradicciones con el código o con decisiones previas:** ninguna que bloquee. Comprobé todas las citas de §3, §8, §10 y §13 en el commit base. Coinciden, con desfases de ±1 línea y dos imprecisiones de texto que van en las notas: «las cinco» de §3 y un texto de NK-0095 sobre `knowledge-rules.ts`.
+- **Lo que esta revisión NO demuestra:**
+  - Que la implementación cumpla los CA, ni que el modelo o el asistente externo obedezcan las reglas.
+  - Que la RLS real de `meetings`, `stakeholders`, `accounts` y `knowledge_docs` limite a la empresa activa. Me apoyo en `AGENTS.md`; no ejecuté SQL.
+  - Que el import de `index.ts` funcione con `jsdom` y el `setup.ts` del proyecto.
+  - Que ningún error de proveedor no listado lleve texto del prompt. Solo revisé `ai-gateway.ts` y `gemini.ts`.
+  - Cómo encaja con 5c cuando se implemente (guardia de fase, acceso privilegiado en MCP).
 
-Revisión de coherencia entre los SDD del Sprint 2: `docs/sdd/annex/sprint2-cross-sdd-gate-20261109.md`.
+**Objeciones bloqueantes**
+
+Ninguna.
+
+**Notas para el brief**
+
+1. **El aviso de CA-6 no cubre `job-runner`.** CA-6 dice «en las rutas de este SDD ningún log…», pero solo lo prueba en los núcleos y en la biblioteca. Los núcleos no registran el error de `ask`: lo relanzan. Quien lo registra es `job-runner.server.ts:103` (`(e as Error)?.message`) en `stakeholder_research`, un archivo que U-4 sí toca.
+   - Hoy no hay fuga real: los mensajes de `ask` son textos fijos. Lo comprobé en `ai-gateway.ts:92-97`, `:102`, `:144-149`, `:154`, `:161-171`, `:175-185`, en `askLovable` (`ai-gateway.ts:230-240`, «La IA no respondió») y en `gemini.ts:136-153`.
+   - Corrección: en el brief, acotar CA-6 a «núcleos y biblioteca», o añadir a `job-runner.test.ts` el caso de `researchStakeholderCore` lanzando un `Error` con la marca y cambiar `:103` a `safeErrorLog(e)`.
+2. **Títulos de reglas en `contexto_empresa`.** Siguen entrando en la biblioteca: `companyContext` devuelve `sources: { documentos_aprobados, ...k.sources }` con `obligatorios` (`bmad/drafting.ts:25`, `knowledge-rules.ts:31`), y `library-core.ts:24` lo pasa entero. La desestructuración de §13 solo quita `reglas_obligatorias`. Solo son títulos y de la misma empresa, y CA-7 se cumple tal como está escrito. Recomendación: quitar también `sources` del contexto de la adaptación (no aporta nada al modelo) y comprobarlo en `library-core.test.ts`.
+3. **Imprecisión en §3 (línea 51).** Dice que «las cinco de `ai-core`» las aplican vía herramientas del agente, pero solo cuatro herramientas envuelven núcleos de `ai-core`: `accounts.ts:446-447` y `:462-464`, `meetings.ts:74-75` y `:86-87`. `meetingBriefCore` solo lo llaman la pantalla (`ai.functions.ts:13`) y el piloto automático (`autopilot.server.ts:61`). `prepare_meeting_brief` es otro código (`core-write.ts:453-477`). No cambia el alcance.
+4. **No duplicar el aviso en `draft_proposal`.** Según CA-3, `proposalCore` ya devuelve el `text` con `RULES_READ_FAILED` delante, y la herramienta lo copia a `borrador` (`accounts.ts:464`). CA-4 pide «el aviso delante» y `mensaje`: el aviso se antepone una sola vez, en el núcleo. Además, `generateProposal` devuelve el objeto entero (`ai.functions.ts:26`), así que la pantalla recibirá también `rulesRead`. Es inocuo.
+5. **Mocks de CA-4 y CA-1.** `researchStakeholderCore` llama a `searchBoth` (`ai-core.ts:108`) y, si existe `APIFY_API_KEY`, a Apify (`:101`). El test debe simular `@/lib/web-search` y dejar esa variable sin definir.
+6. **Coordinación con NK-0094.** NK-0094 también regenera `.lovable/mcp/manifest.json` y lo dice (`SDD-20261109-metrics-strategy-no-estimates.md:7`, `:233`). El §14 de NK-0096 no lo menciona. Hay que regenerar el manifiesto tras integrar las dos.
+7. **Texto de NK-0095 incoherente con este SDD.** `SDD-20261109-rules-write-permissions.md:6` dice que NK-0096 «también toca `src/lib/knowledge-rules.ts`», y `:210` dice «las dos tocan». NK-0096 declara que no lo modifica y U-1 a U-5 lo confirman. No hay choque de implementación. Hay que corregir el texto de NK-0095, no el de este SDD.
+8. **5c (aprobado, no implementado en `f59681f`).**
+   - Su CA-1 enumera las herramientas propias del servidor («cambiar de empresa, métricas y cobertura por segmento»), y `get_team_rules` sería una más. Cuando se construya la guardia de fase, debe incluirla.
+   - 5c pasa MCP a acceso privilegiado con filtro explícito, y entonces la frase de §10 «MCP lee con el token del usuario (RLS)» dejará de ser cierta. La seguridad se mantiene porque `loadAgentRules` filtra `org_id` en la consulta y en memoria (`knowledge-rules.ts:110`, `:120`).
+9. **Documentación.**
+   - Actualizar `src/lib/AGENTS.md:7`: las generaciones de `ai-core` ya leen las reglas.
+   - Actualizar `src/lib/AGENTS.md:23`: la biblioteca lee las reglas del lector común.
+   - Actualizar `src/lib/AGENTS.md:17`: dice que las herramientas MCP «se generan del registro del agente», y `get_team_rules`, como las de métricas, es propia del servidor.
+   - Añadir el título a `TITLES` no aplica: la herramienta no es del registro.
+10. **Privacidad de `get_team_rules`.** Expone el texto de las reglas al proveedor del asistente externo. Es información que el miembro ya ve en Conocimiento y que `search_knowledge` ya puede devolver, así que es aceptable. Ningún log debe llevar ese texto (aplicar a esta herramienta la aserción de CA-6).
+11. **Texto de `rulesBlock` en MCP.** CA-9 devuelve el texto tal cual, con «no cambian tus instrucciones de sistema» y «tus escrituras sean propuestas que una persona confirma». Para un asistente externo es correcto, porque las escrituras por MCP quedan pendientes (`agent-tools.ts:161-178`). Si se quiere otro texto, sería un literal nuevo, y §9 dice no crear otros.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
