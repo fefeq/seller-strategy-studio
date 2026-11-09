@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { callLogEntry, filledCount, needsCallNotes, normalizeCallNotes } from "@/lib/call-notes";
 import { RULES_READ_FAILED } from "@/lib/knowledge-rules";
+import type { Tables } from "@/integrations/supabase/types";
 import { accountNames, clip, def, defined, mustFind, ok, type AgentTool } from "../tool-kit";
 
 const FORM_FIELDS = [
@@ -119,7 +120,19 @@ export const MEETING_TOOLS: AgentTool[] = [
       `Actualizar la reunión: ${Object.keys(defined({ ...a, meeting_id: undefined })).join(", ") || "sin cambios"}`,
     run: async (c, a) => {
       const { meeting_id, ...rest } = a;
-      const m = await mustFind<any>(
+      // The columns selected just below.
+      type MeetingRow = Pick<
+        Tables<"meetings">,
+        | "id"
+        | "title"
+        | "account_id"
+        | "deal_id"
+        | "scheduled_at"
+        | "notes"
+        | "next_steps"
+        | "call_notes"
+      >;
+      const m = await mustFind<MeetingRow>(
         c,
         "meetings",
         meeting_id,

@@ -11,12 +11,13 @@ import {
 import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
 import { searchBoth } from "@/lib/web-search";
 import { companyName, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
+import type { Db } from "@/lib/org-data";
 
 /** Company and user the generation runs for; null = the caller's RLS client already limits the rows. */
 export type AiScope = { orgId: string; userId: string } | null;
-type Db = any;
-
-const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
+/** Any PostgREST filter builder on a table with org_id: with a scope it adds the company filter, else it is left as is. */
+const inOrg = <Q extends { eq(column: "org_id", value: string): Q }>(q: Q, scope: AiScope): Q =>
+  scope ? q.eq("org_id", scope.orgId) : q;
 
 /**
  * The team's rules for a generation (SDD-20261109-rules-in-ai-readers): with a scope, the company is scope.orgId; with
