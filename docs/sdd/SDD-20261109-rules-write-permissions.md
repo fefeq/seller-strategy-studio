@@ -1,7 +1,7 @@
 # SDD-20261109-rules-write-permissions · [Mejora] Solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15.1) · **Prioridad propuesta:** Alta (desde NK-0087 una regla de equipo es instrucción para el agente de todos)
-**Estado:** Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), segunda pasada del gate sin objeciones · **Pide:** Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho (entregado en la PR #115, merge `e75f846`, integración `d0f4252`, gate PASS sobre `d0f4252`; 2026-11-09; antes Aprobado el 2026-11-09 por delegación de Fede («sí, ese alcance, ejecuta todo tú»), segunda pasada del gate sin objeciones; migración 0081 no aplicada a ninguna base viva; NK-0096 no es efectivo hasta aplicarla) · **Pide:** Fede Fede (Sprint 2, alcance aprobado el 2026-11-09) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0095
 **PRD:** No aplica (mejora acotada de permisos; la decisión de qué hacer ya la tomó Fede el 2026-11-06 y el alcance del Sprint 2 el 2026-11-09) · **Depende de:** `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho: define qué cuenta como regla, `isMandatory`) · **Coordina con:** NK-0096 (Reglas en ai-core, biblioteca y MCP), que también toca `src/lib/knowledge-rules.ts` y `.lovable/mcp/manifest.json` y **depende de esta entrega** (§14); NK-0094, que comparte `src/lib/agent-tools.test.ts` y el manifiesto; NK-0093 (ya integrado), que cambió `src/lib/drive-core.ts`
 
