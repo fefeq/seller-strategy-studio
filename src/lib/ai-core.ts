@@ -2,6 +2,12 @@
 // agent tools (also run with the privileged client from Telegram). With a scope, every query filters by
 // the company and team knowledge, so the privileged path reads exactly what the user could read in the app.
 import { ask } from "@/lib/ai-gateway";
+import {
+  loadAgentRules,
+  RULES_READ_FAILED,
+  rulesBlock,
+  type LoadedRules,
+} from "@/lib/knowledge-rules";
 import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from "@/lib/call-notes";
 import { searchBoth } from "@/lib/web-search";
 import { companyName, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
@@ -11,6 +17,28 @@ export type AiScope = { orgId: string; userId: string } | null;
 type Db = any;
 
 const inOrg = (q: any, scope: AiScope) => (scope ? q.eq("org_id", scope.orgId) : q);
+
+/**
+ * The team's rules for a generation (SDD-20261109-rules-in-ai-readers): with a scope, the company is scope.orgId; with
+ * scope = null, the org_id of the row already read under RLS. No company to read with is a failure, never «no rules».
+ */
+async function rulesFor(db: Db, scope: AiScope, rowOrg: unknown): Promise<LoadedRules> {
+  const orgId = scope ? scope.orgId : typeof rowOrg === "string" ? rowOrg : "";
+  if (!orgId) {
+    console.error("knowledge rules load failed", "no org");
+    return { ok: false, rules: [] };
+  }
+  return loadAgentRules({ db, orgId });
+}
+
+/** The system text with the rules block after it; without rules, the system text as it was. */
+function withRules(system: string, r: LoadedRules) {
+  const block = rulesBlock(r.rules);
+  return block ? `${system}\n${block}` : system;
+}
+
+/** A failed read is said before the text, also in the saved one (same format as draft_followup). */
+const warned = (text: string, r: LoadedRules) => (r.ok ? text : `${RULES_READ_FAILED}\n\n${text}`);
 
 export const U_SYSTEM =
   "Eres facilitador experto en Theory U (Otto Scharmer, Presencing Institute) aplicada a go-to-market B2B. Respondes en español neutro (tú), markdown conciso y accionable; empiezas por la conclusión, sin signos de exclamación ni emoji. Distingues lo observado (datos) de las hipótesis.";
@@ -88,19 +116,26 @@ export async function meetingBriefCore(
   db: Db,
   meetingId: string,
   scope: AiScope = null,
-): Promise<{ brief: string; title: string; accountId: string | null }> {
+): Promise<{ brief: string; title: string; accountId: string | null; rulesRead: boolean }> {
   const { data: m } = await inOrg(
     db.from("meetings").select("*").eq("id", meetingId),
     scope,
   ).maybeSingle();
   if (!m) throw new Error("Reunión no encontrada");
-  const ctx = m.account_id ? await accountContext(db, m.account_id, scope) : "{}";
-  const brief = await ask(
-    "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Si en conocimiento_empresa hay playbooks de discovery, objeciones, demo o negociación, síguelos: toma de ahí las preguntas y las respuestas y adáptalas a esta cuenta en vez de inventar otras. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
+  const [ctx, rules] = await Promise.all([
+    m.account_id ? accountContext(db, m.account_id, scope) : Promise.resolve("{}"),
+    rulesFor(db, scope, m.org_id),
+  ]);
+  const text = await ask(
+    withRules(
+      "Eres un coach de ventas B2B senior. Responde en español neutro (tú), en markdown conciso. Empieza por la conclusión, sin signos de exclamación ni emoji. Si en conocimiento_empresa hay playbooks de discovery, objeciones, demo o negociación, síguelos: toma de ahí las preguntas y las respuestas y adáptalas a esta cuenta en vez de inventar otras. Estructura: 1) Brief de cuenta (3-5 bullets) 2) Stakeholders: quién es quién y cómo abordarlo 3) Preguntas de discovery sugeridas (5-7) 4) Objeciones probables y respuesta 5) Huecos MEDDPICC a cerrar en esta reunión 6) Próximo paso a proponer.",
+      rules,
+    ),
     `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
   );
+  const brief = warned(text, rules);
   await inOrg(db.from("meetings").update({ ai_brief: brief }).eq("id", m.id), scope);
-  return { brief, title: m.title, accountId: m.account_id };
+  return { brief, title: m.title, accountId: m.account_id, rulesRead: rules.ok };
 }
 
 /**
@@ -112,7 +147,7 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
     db
       .from("meetings")
       .select(
-        "id,title,scheduled_at,objective,desired_outcome,agenda,questions,objections,attendees,ai_brief,notes,call_notes,account_id,deal_id",
+        "id,title,scheduled_at,objective,desired_outcome,agenda,questions,objections,attendees,ai_brief,notes,call_notes,account_id,deal_id,org_id",
       )
       .eq("id", meetingId),
     scope,
@@ -121,7 +156,7 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
   const lines = normalizeCallNotes(m.call_notes);
   if (!hasCallNotes(lines) && !(m.notes ?? "").trim())
     throw new Error("Escribe primero las notas de la llamada (las 5 líneas o tus notas libres)");
-  const [deal, ctx] = await Promise.all([
+  const [deal, ctx, rules] = await Promise.all([
     m.deal_id
       ? inOrg(
           db.from("deals").select("name,stage,amount,close_date,meddpicc").eq("id", m.deal_id),
@@ -129,6 +164,7 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
         ).maybeSingle()
       : Promise.resolve({ data: null }),
     m.account_id ? accountContext(db, m.account_id, scope) : Promise.resolve("{}"),
+    rulesFor(db, scope, m.org_id),
   ]);
   const reunion = {
     titulo: m.title,
@@ -143,27 +179,41 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
     notas_en_5_lineas: callNotesText(lines) || "(sin notas en 5 líneas)",
     notas_libres: m.notes ?? "",
   };
-  const text = await ask(
-    TEARDOWN_SYSTEM,
-    `Reunión:\n${JSON.stringify(reunion)}\n\nDeal:\n${JSON.stringify(deal.data ?? null)}\n\nContexto de la cuenta:\n${ctx}`,
-    { effort: "medium" },
+  const text = warned(
+    await ask(
+      withRules(TEARDOWN_SYSTEM, rules),
+      `Reunión:\n${JSON.stringify(reunion)}\n\nDeal:\n${JSON.stringify(deal.data ?? null)}\n\nContexto de la cuenta:\n${ctx}`,
+      { effort: "medium" },
+    ),
+    rules,
   );
   const { error } = await inOrg(
     db.from("meetings").update({ call_review: text }).eq("id", m.id),
     scope,
   );
   if (error) throw new Error(error.message);
-  return { text, title: m.title as string };
+  return { text, title: m.title as string, rulesRead: rules.ok };
 }
 
 /** Business case draft for an account. Returns the text; nothing is saved or sent. */
 export async function proposalCore(db: Db, accountId: string, scope: AiScope = null) {
-  const ctx = await accountContext(db, accountId, scope);
+  // Without a scope, the account's org_id (read under RLS) says whose rules apply; not found = no org = failure.
+  const [ctx, rules] = await Promise.all([
+    accountContext(db, accountId, scope),
+    scope
+      ? rulesFor(db, scope, null)
+      : inOrg(db.from("accounts").select("org_id").eq("id", accountId), scope)
+          .maybeSingle()
+          .then((r: { data: { org_id?: unknown } | null }) => rulesFor(db, scope, r.data?.org_id)),
+  ]);
   const text = await ask(
-    "Eres un estratega comercial. Redacta en español neutro (tú), sin signos de exclamación ni emoji, en markdown, un borrador de propuesta / business case: resumen ejecutivo, situación y dolores, solución propuesta, impacto y ROI estimado (indica supuestos), plan de implementación, próximos pasos. No inventes cifras sin marcarlas como supuesto.",
+    withRules(
+      "Eres un estratega comercial. Redacta en español neutro (tú), sin signos de exclamación ni emoji, en markdown, un borrador de propuesta / business case: resumen ejecutivo, situación y dolores, solución propuesta, impacto y ROI estimado (indica supuestos), plan de implementación, próximos pasos. No inventes cifras sin marcarlas como supuesto.",
+      rules,
+    ),
     ctx,
   );
-  return { text };
+  return { text: warned(text, rules), rulesRead: rules.ok };
 }
 
 /**
@@ -181,9 +231,10 @@ export async function researchStakeholderCore(
     scope,
   ).maybeSingle();
   if (!s) throw new Error("No encontrado");
-  const [{ data: acc }, ctx] = await Promise.all([
+  const [{ data: acc }, ctx, rules] = await Promise.all([
     inOrg(db.from("accounts").select("name,domain").eq("id", s.account_id), scope).maybeSingle(),
     accountContext(db, s.account_id, scope),
+    rulesFor(db, scope, s.org_id),
   ]);
   let web: NewsItem[] = [];
   let webNote = "";
@@ -218,12 +269,16 @@ export async function researchStakeholderCore(
   }
   const posts = await postsP;
   const body = await ask(
-    "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve. Primero «Lo que dicen las fuentes»: solo hechos de resultados_web sobre esta persona, cada uno con su enlace markdown a la fuente; si los resultados son de un homónimo o de otra empresa, ignóralos y dilo. Si hay publicaciones_linkedin (suyas o que ha compartido), añade «De qué habla en LinkedIn» con los temas y su enlace. Después: prioridades probables según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos y 3 aperturas de conversación, marcando como «(hipótesis)» lo que no venga de las fuentes ni del contexto.",
+    withRules(
+      "Eres analista de research de ventas. En español neutro (tú), sin signos de exclamación ni emoji, y markdown breve. Primero «Lo que dicen las fuentes»: solo hechos de resultados_web sobre esta persona, cada uno con su enlace markdown a la fuente; si los resultados son de un homónimo o de otra empresa, ignóralos y dilo. Si hay publicaciones_linkedin (suyas o que ha compartido), añade «De qué habla en LinkedIn» con los temas y su enlace. Después: prioridades probables según su cargo, qué le importa, cómo encaja nuestra propuesta, riesgos y 3 aperturas de conversación, marcando como «(hipótesis)» lo que no venga de las fuentes ni del contexto.",
+      rules,
+    ),
     `Persona: ${JSON.stringify({ nombre: s.name, cargo: s.title, empresa: acc?.name ?? null, linkedin: s.linkedin_url, rol: s.buying_role, apoyo: s.support, notas: s.priorities })}\n\nresultados_web: ${JSON.stringify(web.map((w) => ({ titulo: w.title, url: w.url, extracto: w.snippet, fecha: w.date })))}\n\npublicaciones_linkedin: ${JSON.stringify(posts.map((p) => ({ url: p.url, fecha: p.date, compartida: p.repost, texto: p.text })))}\n\nContexto:\n${ctx}`,
   );
-  const text = `${webNote ? `_${webNote}_\n\n` : ""}${body}${sourcesMarkdown([...web, ...posts.map((p) => ({ title: `LinkedIn · ${p.text.slice(0, 80)}`, url: p.url, snippet: "", date: p.date, source: "LinkedIn" }))])}`;
+  // The rules warning goes before the web note.
+  const text = `${rules.ok ? "" : `${RULES_READ_FAILED}\n\n`}${webNote ? `_${webNote}_\n\n` : ""}${body}${sourcesMarkdown([...web, ...posts.map((p) => ({ title: `LinkedIn · ${p.text.slice(0, 80)}`, url: p.url, snippet: "", date: p.date, source: "LinkedIn" }))])}`;
   await inOrg(db.from("stakeholders").update({ research: text }).eq("id", s.id), scope);
-  return { text, name: s.name as string };
+  return { text, name: s.name as string, rulesRead: rules.ok };
 }
 
 /** Listening coaching for a meeting, saved on the meeting. */
@@ -232,7 +287,7 @@ export async function listeningCoachingCore(db: Db, meetingId: string, scope: Ai
     db
       .from("meetings")
       .select(
-        "title,objective,attendees,questions,notes,next_steps,call_notes,listening_level,listening_reflection,account_id",
+        "title,objective,attendees,questions,notes,next_steps,call_notes,listening_level,listening_reflection,account_id,org_id",
       )
       .eq("id", meetingId),
     scope,
@@ -240,18 +295,28 @@ export async function listeningCoachingCore(db: Db, meetingId: string, scope: Ai
   if (!row) throw new Error("Reunión no encontrada");
   // The account name is read with the company filter instead of an embedded join, so a meeting pointing at
   // another company's account can never put that name in the prompt.
-  const { account_id, ...fields } = row;
-  const acc = account_id
-    ? await inOrg(db.from("accounts").select("name").eq("id", account_id), scope).maybeSingle()
-    : { data: null };
+  // org_id only says whose rules apply; it never goes in the prompt.
+  const { account_id, org_id, ...fields } = row;
+  const [acc, rules] = await Promise.all([
+    account_id
+      ? inOrg(db.from("accounts").select("name").eq("id", account_id), scope).maybeSingle()
+      : Promise.resolve({ data: null }),
+    rulesFor(db, scope, org_id),
+  ]);
   const m = { ...fields, accounts: acc.data ? { name: acc.data.name } : null };
   const lines = normalizeCallNotes(m.call_notes);
   if (!m.notes && !hasCallNotes(lines) && !m.listening_reflection)
     throw new Error("Escribe las notas o tu reflexión de la reunión primero");
-  const text = await ask(
-    `${U_SYSTEM} Eres coach de escucha para vendedores. Niveles: 1 Descarga (confirmo lo que ya sé), 2 Factual (noto lo nuevo), 3 Empática (veo con sus ojos), 4 Generativa (escucho lo que emerge). Estructura: 1) Nivel que reflejan las notas (con evidencias citadas) frente al nivel autoevaluado 2) Momentos donde se pudo escuchar más hondo 3) Qué hacer para subir un nivel en la próxima reunión (3 prácticas concretas) 4) Cinco preguntas abiertas para la próxima conversación con esta cuenta.`,
-    JSON.stringify({ ...m, call_notes: undefined, notas_en_5_lineas: callNotesText(lines) }),
+  const text = warned(
+    await ask(
+      withRules(
+        `${U_SYSTEM} Eres coach de escucha para vendedores. Niveles: 1 Descarga (confirmo lo que ya sé), 2 Factual (noto lo nuevo), 3 Empática (veo con sus ojos), 4 Generativa (escucho lo que emerge). Estructura: 1) Nivel que reflejan las notas (con evidencias citadas) frente al nivel autoevaluado 2) Momentos donde se pudo escuchar más hondo 3) Qué hacer para subir un nivel en la próxima reunión (3 prácticas concretas) 4) Cinco preguntas abiertas para la próxima conversación con esta cuenta.`,
+        rules,
+      ),
+      JSON.stringify({ ...m, call_notes: undefined, notas_en_5_lineas: callNotesText(lines) }),
+    ),
+    rules,
   );
   await inOrg(db.from("meetings").update({ listening_coaching: text }).eq("id", meetingId), scope);
-  return { text, title: m.title as string };
+  return { text, title: m.title as string, rulesRead: rules.ok };
 }
