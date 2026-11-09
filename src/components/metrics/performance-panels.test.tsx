@@ -3,7 +3,7 @@
 // and a deal without source reads «Sin origen». Fictional data, no network.
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { expectDataMarks } from "@/test/data-marks";
+import { expectDataMarks, expectNoBareDash } from "@/test/data-marks";
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({
@@ -38,12 +38,13 @@ describe("CA-3 global win rate KPI", () => {
     expect(within(kpi).getByText("75%")).toBeInTheDocument();
     expect(within(kpi).getByText("4 cerrados en 2026-Q4")).toBeInTheDocument();
   });
-  it("without closed deals: «—» with «Sin dato · sin deals cerrados en {T}», never 0 %", () => {
+  it("without closed deals: «Sin dato · sin deals cerrados en {T}» as the value, never 0 %", () => {
     const { container } = render(
       <ResumenKpis {...base} overall={{ won: 0, lost: 0, closed: 0, rate: null }} />,
     );
     const kpi = screen.getByText("Win rate global").parentElement!;
-    expect(within(kpi).getByText("—")).toBeInTheDocument();
+    // NK-0106: the mark is the value itself, no «—» beside it.
+    expect(within(kpi).queryByText("—")).toBeNull();
     expect(within(kpi).queryByText("0%")).toBeNull();
     expect(within(kpi).getByText("Sin dato · sin deals cerrados en 2026-Q4")).toHaveAttribute(
       "data-mark",
@@ -51,9 +52,49 @@ describe("CA-3 global win rate KPI", () => {
     );
     expect(expectDataMarks(container)).toEqual(["Sin dato · sin deals cerrados en 2026-Q4"]);
   });
+  // SDD-20261109-metrics-sin-dato-rest · CA-3: the mark sits in the value and nothing else says «—».
+  it("without closed deals the mark is the value, the hint is free and no dash remains", () => {
+    const { container } = render(
+      <ResumenKpis {...base} quota={1000} overall={{ won: 0, lost: 0, closed: 0, rate: null }} />,
+    );
+    const kpi = screen.getByText("Win rate global").parentElement!;
+    const value = kpi.querySelector("p:not(.eyebrow)")!;
+    expect(
+      within(value as HTMLElement).getByText("Sin dato · sin deals cerrados en 2026-Q4"),
+    ).toHaveAttribute("data-mark", "sin_dato");
+    expectNoBareDash(container, []);
+  });
   it("no longer talks about deals created", () => {
     render(<ResumenKpis {...base} overall={{ won: 1, lost: 0, closed: 1, rate: 1 }} />);
     expect(screen.queryByText(/creados este trimestre/)).toBeNull();
+  });
+});
+
+// SDD-20261109-metrics-sin-dato-rest · CA-3
+describe("CA-3 pipeline coverage without a quota", () => {
+  it("says «Sin dato · sin cuota del trimestre» in the value, never a dash", () => {
+    const { container } = render(
+      <ResumenKpis {...base} overall={{ won: 1, lost: 0, closed: 1, rate: 1 }} />,
+    );
+    const kpi = screen.getByText("Cobertura de pipeline").parentElement!;
+    expect(within(kpi).getByText("Sin dato · sin cuota del trimestre")).toHaveAttribute(
+      "data-mark",
+      "sin_dato",
+    );
+    expect(expectDataMarks(container)).toEqual(["Sin dato · sin cuota del trimestre"]);
+    expectNoBareDash(container, []);
+  });
+  it("with a quota it shows the ratio and no mark", () => {
+    const { container } = render(
+      <ResumenKpis
+        {...base}
+        quota={1000}
+        cov={{ ratio: 3.2, status: "healthy", undated: { count: 0, amount: 0 } }}
+        overall={{ won: 1, lost: 0, closed: 1, rate: 1 }}
+      />,
+    );
+    expect(container.querySelectorAll("[data-mark]")).toHaveLength(0);
+    expect(screen.getByText("3,2x")).toBeInTheDocument();
   });
 });
 
