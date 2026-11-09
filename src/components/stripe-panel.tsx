@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { errorText } from "@/lib/errors";
 import { connectStripe, syncStripeNow } from "@/lib/stripe.functions";
 import { ExplanationFold } from "@/components/explanation-fold";
+import { ScreenState } from "@/components/page";
 
 /** Connection status and the latest Stripe read of the current company. Key "stripe". */
 export function useStripe() {
@@ -28,6 +29,9 @@ export function useStripe() {
           .limit(1)
           .maybeSingle(),
       ]);
+      // A failed read must reach the screen as an error, never as «Sin conectar» or «sin lectura».
+      const failed = c.error ?? s.error;
+      if (failed) throw failed;
       return { connection: c.data, snapshot: s.data };
     },
   });
@@ -50,7 +54,7 @@ export function StripeConnect() {
   const role = me?.roles[0];
   const isOwner = role === "owner";
   const canSync = isOwner || role === "sales_leader";
-  const { data } = useStripe();
+  const { data, isPending, error, refetch } = useStripe();
   const connect = useServerFn(connectStripe);
   const sync = useServerFn(syncStripeNow);
   const [key, setKey] = useState("");
@@ -78,6 +82,15 @@ export function StripeConnect() {
     }, "Stripe desconectado. La clave se ha borrado; las lecturas anteriores se quedan como historial.");
   }
 
+  if (isPending || error)
+    return (
+      <div className="rounded-lg border bg-card p-4">
+        <span className="font-medium">Stripe</span>
+        <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="line">
+          {null}
+        </ScreenState>
+      </div>
+    );
   return (
     <div className="rounded-lg border bg-card p-4">
       <div className="flex items-start justify-between gap-3">
@@ -208,12 +221,18 @@ export function StripeConnect() {
 
 /** In Métricas: what Stripe says today, with its date. */
 export function StripeMetricsPanel() {
-  const { data } = useStripe();
+  const { data, isPending, error, refetch } = useStripe();
   const { money, currency } = useCurrency();
   const { data: me } = useMe();
   const role = me?.roles[0];
   const c = data?.connection;
   const s = data?.snapshot;
+  if (isPending || error)
+    return (
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
+        {null}
+      </ScreenState>
+    );
   // The database only gives revenue to these roles; say so instead of showing an empty panel.
   if (c && !s && role && !["owner", "sales_leader", "deal_desk"].includes(role))
     return (
