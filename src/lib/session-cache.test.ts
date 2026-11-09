@@ -167,7 +167,8 @@ describe("other user without «me» in cache (NK-0111)", () => {
   it("SIGNED_IN of Y while X was the validated user removes X's queries (not just invalidates)", async () => {
     const qc = seeded();
     expect(qc.getQueryData(["me"])).toBeUndefined();
-    expect(handleAuthEvent(qc, "SIGNED_IN", y, "user-x")).toBe(true);
+    // D-S3-3: no loader re-run; the app blocks and reloads instead.
+    expect(handleAuthEvent(qc, "SIGNED_IN", y, "user-x")).toBe(false);
     expect(qc.getQueryCache().find({ queryKey: leads })).toBeUndefined();
     const served = await qc.ensureQueryData({
       queryKey: leads,
@@ -204,5 +205,10 @@ describe("the root listener gives handleAuthEvent the last validated user (sourc
     expect(src).toMatch(
       /handleAuthEvent\(\s*queryClient,\s*event,\s*session,\s*lastValidatedUserId\(\)\s*\)/,
     );
+  });
+
+  it("wraps the outlet in AccountSwitchGate so another user's session replaces the app (D-S3-3)", () => {
+    const src = readFileSync(path.resolve(__dirname, "../routes/__root.tsx"), "utf8");
+    expect(src).toMatch(/<AccountSwitchGate>\s*<Outlet \/>\s*<\/AccountSwitchGate>/);
   });
 });

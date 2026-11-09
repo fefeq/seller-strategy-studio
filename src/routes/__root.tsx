@@ -17,6 +17,7 @@ import { reloadOnceForStaleModule } from "@/lib/stale-module";
 import { handleAuthEvent } from "@/lib/session-cache";
 import { lastValidatedUserId } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
+import { AccountSwitchGate } from "@/components/account-switch-gate";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -162,7 +163,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AccountSwitchGate>
+        <Outlet />
+      </AccountSwitchGate>
       <Toaster />
       <DialogHost />
       <CookieBanner />
