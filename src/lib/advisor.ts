@@ -3,6 +3,7 @@
 import { daysInStage, quarterOf, quarterRange, stageConversion, winRate } from "./metrics";
 import { formatRatio, quarterCoverage } from "./coverage";
 import { ROLES } from "./roles";
+import { NO_SOURCE } from "./metrics-quarter";
 import { openStages, stagePath, type Stage } from "./stages";
 
 /** Only Owner and Sales Leader may run the GTM advisor. */
@@ -78,7 +79,7 @@ export function buildSnapshot(input: { deals: Deal[]; segments: Segment[]; histo
       ganados: { deals: won.length, importe: sum(won), ticket_medio: won.length ? Math.round(sum(won) / won.length) : 0 },
       perdidos: { deals: lost.length, importe: sum(lost) },
       win_rate_global_pct: pct(winRate(won.length, lost.length)),
-      win_rate_por_fuente: byKey((d) => d.source ?? "outbound"),
+      win_rate_por_fuente: byKey((d) => d.source ?? NO_SOURCE),
       en_riesgo: { deals: open.filter((d) => d.health === "red").length, importe: sum(open.filter((d) => d.health === "red")) },
       con_retrasos_de_fecha: { deals: open.filter((d) => d.slip_count > 0).length, pct: open.length ? pct(open.filter((d) => d.slip_count > 0).length / open.length) : 0 },
       sin_segmento: open.filter((d) => !d.segment_id).length,
