@@ -188,7 +188,7 @@ const LEADERS = ["owner", "sales_leader"];
 type Ctx = Awaited<ReturnType<typeof userCtx>>;
 
 /** Who may launch it and whether the records it will touch belong to this company (the job then runs with the admin client). */
-async function authorize(ctx: Ctx, data: JobArgs) {
+export async function authorize(ctx: Ctx, data: JobArgs) {
   const has = (roles: string[]) => ctx.roles.some((r) => roles.includes(r));
   const inOrg = async (
     table: "accounts" | "stakeholders" | "gtm_artifacts" | "deals",
@@ -205,6 +205,11 @@ async function authorize(ctx: Ctx, data: JobArgs) {
   };
   if (ORG_WIDE.has(data.kind) && !has(LEADERS))
     throw new Error("Solo el Owner o el Sales Leader pueden lanzarlo.");
+  // Reglas is what the whole team's agent obeys (NK-0095): refused before the job exists; the runner checks again.
+  if (data.kind === "drive_import") {
+    const { checkImportAllowed } = await import("@/lib/drive-core");
+    checkImportAllowed(data.input.section, ctx.roles);
+  }
   const i = data.input as Record<string, unknown>;
   if (typeof i.accountId === "string") await inOrg("accounts", i.accountId, "esa cuenta");
   if (typeof i.stakeholderId === "string")
@@ -272,7 +277,7 @@ function onPublishedSite() {
 }
 
 /** Creates the job and hands it to Inngest; without Inngest it runs in this request (the screen does not wait). */
-async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = null) {
+export async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = null) {
   await authorize(ctx, data);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const target = targetOf(data);

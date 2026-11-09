@@ -4,15 +4,19 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SaveToDriveButton } from "@/components/drive";
 import type { Doc } from "@/components/hub/hub-screen";
+import { BINDING_MARK_ONLY_LEADERS, canEditDoc, canWriteBinding } from "@/lib/knowledge-rules";
 
 export function Editor({
   doc,
+  roles,
   isOwner,
   saving,
   onSave,
   onDelete,
 }: {
   doc: Doc;
+  /** Roles in the current company; undefined while they load (binding documents stay read-only until then). */
+  roles: string[] | undefined;
   isOwner: boolean;
   saving: boolean;
   onSave: (d: Partial<Doc>) => void;
@@ -25,18 +29,25 @@ export function Editor({
   const isRules = doc.section === "rules";
   const empty = !title.trim() || !body.trim();
   const id = doc.id || undefined;
+  // Reglas and mandatory team documents are what the whole team's agent obeys: only Owner or Sales Leader write them (NK-0095).
+  const edit = canEditDoc(doc, roles);
+  const readOnly = !edit.allowed;
+  const canMark = canWriteBinding(roles);
   return (
     <div className="space-y-3 rounded-lg border bg-card p-5">
       {isDraft && <p className="eyebrow">Documento nuevo · sin guardar</p>}
+      {readOnly && roles && <p className="text-sm text-muted-foreground">{edit.reason}</p>}
       <Input
         value={title}
         placeholder="Título"
+        readOnly={readOnly}
         onChange={(e) => setTitle(e.target.value)}
         className="font-display text-2xl"
       />
       <Textarea
         value={body}
         placeholder="Contenido"
+        readOnly={readOnly}
         onChange={(e) => setBody(e.target.value)}
         rows={18}
         className="font-mono text-base md:text-sm"
@@ -47,7 +58,7 @@ export function Editor({
             type="checkbox"
             className="mt-1"
             checked={isRules || mandatory}
-            disabled={isRules}
+            disabled={isRules || readOnly || !canMark}
             onChange={(e) => setMandatory(e.target.checked)}
           />
           <span>
@@ -59,9 +70,12 @@ export function Editor({
           </span>
         </label>
       )}
+      {doc.scope === "team" && !isRules && !readOnly && !canMark && roles && (
+        <p className="text-xs text-muted-foreground">{BINDING_MARK_ONLY_LEADERS}</p>
+      )}
       <div className="flex flex-wrap items-center gap-2">
         <Button
-          disabled={empty || saving}
+          disabled={empty || saving || readOnly}
           onClick={() => onSave({ id, title, body, scope: doc.scope, mandatory })}
         >
           {saving ? "Guardando…" : "Guardar"}
@@ -75,7 +89,7 @@ export function Editor({
             Promover a equipo
           </Button>
         )}
-        {empty && (
+        {empty && !readOnly && (
           <span className="text-xs text-muted-foreground">
             Escribe un título y el contenido para poder guardar.
           </span>

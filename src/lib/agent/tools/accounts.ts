@@ -1,6 +1,7 @@
 // Accounts, account plans, touches, stakeholders and people: the same writes the account screen,
 // ABM and Personas make, and the same score the Cuentas list sorts by.
 import { z } from "zod";
+import { RULES_READ_FAILED } from "@/lib/knowledge-rules";
 import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { countryName } from "@/lib/assignment";
 import { byScore, fitText, latestOf, scoreAccount } from "@/lib/scoring";
@@ -448,7 +449,9 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
         orgId: c.orgId,
         userId: c.userId,
       });
-      return { ok: true, mensaje: `Investigación de ${r.name} guardada en su ficha.` };
+      // A failed read of the rules is never silent (SDD-20261109-rules-in-ai-readers, CA-4).
+      const done = `Investigación de ${r.name} guardada en su ficha.`;
+      return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
     },
   }),
   def({
@@ -460,10 +463,9 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { proposalCore } = await import("@/lib/ai-core");
-      return {
-        borrador: (await proposalCore(c.db, a.account_id, { orgId: c.orgId, userId: c.userId }))
-          .text,
-      };
+      const r = await proposalCore(c.db, a.account_id, { orgId: c.orgId, userId: c.userId });
+      // The core already put the warning before the draft; here it is only repeated in mensaje (CA-4).
+      return r.rulesRead ? { borrador: r.text } : { borrador: r.text, mensaje: RULES_READ_FAILED };
     },
   }),
   def({

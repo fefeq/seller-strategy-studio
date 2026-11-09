@@ -102,6 +102,23 @@
         "outputSchema": null
       },
       {
+        "name": "get_team_rules",
+        "title": "Reglas del equipo",
+        "description": "Reglas obligatorias que el equipo escribió en Conocimiento para la empresa activa. Léelas antes de redactar textos o proponer acciones y cúmplelas.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "get_overview",
         "title": "Resumen de la empresa",
         "description": "Resumen del negocio: pipeline abierto, forecast, cobertura del trimestre, win rate, deals en riesgo y funnel self-service del trimestre.",
@@ -3819,7 +3836,7 @@
       {
         "name": "drive_import_to_knowledge",
         "title": "Importar archivo de Drive al hub",
-        "description": "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Importa un archivo de la carpeta de la empresa en Google Drive al hub de conocimiento como documento de la sección indicada (con enlace a la fuente). Los agentes lo usarán como contexto. En la sección Reglas (rules) solo pueden importar el Owner o un Sales Leader. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,

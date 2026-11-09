@@ -1408,3 +1408,113 @@ describe("NK-0094 get_funnel_diagnosis: one margin chain, no costs in the output
     for (const k of ["cost", "gross_margin", "margin", "cac"]) expect(keys.has(k), k).toBe(false);
   });
 });
+
+// SDD-20261109-rules-write-permissions (NK-0095) U-3 · CA-11: drive_import_to_knowledge with the privileged client (Telegram,
+// decidePending, applySetupItems, decideSuggestionCore all go through executeTool) refuses Reglas for anyone but the Owner or
+// a Sales Leader. Google Drive is mocked for this file (no other case here touches Drive); drive-core keeps its real code,
+// importToKnowledge is only wrapped to see the roles it receives.
+const nk95 = vi.hoisted(() => ({ getFile: vi.fn(), downloadText: vi.fn() }));
+vi.mock("@/lib/google-drive", () => ({
+  DriveError: class DriveError extends Error {
+    status = 0;
+  },
+  getFile: nk95.getFile,
+  downloadText: nk95.downloadText,
+  exportText: vi.fn(),
+  downloadBytes: vi.fn(),
+  copyAs: vi.fn(),
+  createFolder: vi.fn(),
+  createGoogleDoc: vi.fn(),
+  deleteFile: vi.fn(),
+  findByAppProperty: vi.fn(async () => []),
+  listChildren: vi.fn(async () => []),
+  listFiles: vi.fn(async () => []),
+}));
+vi.mock("@/lib/drive-core", async (importOriginal) => {
+  const real = await importOriginal<typeof import("@/lib/drive-core")>();
+  return {
+    ...real,
+    importToKnowledge: vi.fn((...a: Parameters<typeof real.importToKnowledge>) =>
+      real.importToKnowledge(...a),
+    ),
+  };
+});
+
+describe("drive_import_to_knowledge: Reglas only for the Owner or a Sales Leader (NK-0095, CA-11)", () => {
+  const ROOT = "folder-root-1";
+  const FILE = "file-guia-1";
+  const RULE = /Reglas.*solo.*Owner.*Sales Leader/i;
+  const driveDb = () =>
+    fakeDb((q) =>
+      q.table === "drive_folders"
+        ? { data: { folder_id: ROOT, name: "Empresa Ficticia", created_by_app: true } }
+        : q.table === "knowledge_docs" && q.op === "insert"
+          ? { data: { id: ID(950), title: "Guía de prueba" } }
+          : undefined,
+    );
+  const spy = async () => vi.mocked((await import("@/lib/drive-core")).importToKnowledge);
+  const setup = async () => {
+    (await spy()).mockClear();
+    nk95.getFile.mockReset();
+    nk95.downloadText.mockReset();
+    nk95.getFile.mockImplementation(async (id: string) =>
+      id === ROOT
+        ? { id: ROOT, name: "Empresa Ficticia", mimeType: "application/vnd.google-apps.folder" }
+        : { id: FILE, name: "Guía de prueba.txt", mimeType: "text/plain", parents: [ROOT] },
+    );
+    nk95.downloadText.mockResolvedValue("Texto ficticio de la guía.");
+  };
+
+  it("an ae (privileged client, no RLS) gets BINDING_WRITE_DENIED: no Drive read, no insert", async () => {
+    await setup();
+    const { BINDING_WRITE_DENIED } = await import("@/lib/knowledge-rules");
+    const { db, log } = driveDb();
+    await expect(
+      executeTool(ctxWith(db, ["ae"]), "drive_import_to_knowledge", {
+        file: FILE,
+        section: "rules",
+      }),
+    ).rejects.toThrow(BINDING_WRITE_DENIED);
+    expect(await spy()).not.toHaveBeenCalled();
+    expect(nk95.getFile).not.toHaveBeenCalled();
+    expect(writes(log, "knowledge_docs")).toEqual([]);
+  });
+
+  it("a sales_leader reaches importToKnowledge with their roles and the rule is inserted in the company", async () => {
+    await setup();
+    const { db, log } = driveDb();
+    await executeTool(ctxWith(db, ["sales_leader"]), "drive_import_to_knowledge", {
+      file: FILE,
+      section: "rules",
+    });
+    expect(await spy()).toHaveBeenCalledWith({ db, orgId: ORG, userId: ME }, FILE, "rules", [
+      "sales_leader",
+    ]);
+    expect(writes(log, "knowledge_docs")[0]!.payload).toMatchObject({
+      org_id: ORG,
+      section: "rules",
+      scope: "team",
+    });
+  });
+
+  it("an ae still imports into another section", async () => {
+    await setup();
+    const { db, log } = driveDb();
+    await executeTool(ctxWith(db, ["ae"]), "drive_import_to_knowledge", {
+      file: FILE,
+      section: "company",
+    });
+    expect(writes(log, "knowledge_docs")).toHaveLength(1);
+  });
+
+  it("the tool's description and its copy in the MCP manifest say Reglas is for the Owner and Sales Leaders", async () => {
+    const { readFileSync } = await import("node:fs");
+    const description = getTool("drive_import_to_knowledge")!.description;
+    expect(description).toMatch(RULE);
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const m = (manifest.mcp.tools as { name: string; description: string }[]).find(
+      (t) => t.name === "drive_import_to_knowledge",
+    );
+    expect(m?.description).toContain(description);
+  });
+});
