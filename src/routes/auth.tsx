@@ -1,3 +1,4 @@
+import { validatedUser } from "@/lib/session";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { Lockup } from "@/components/brand";
 import { useEffect, useState } from "react";
@@ -58,19 +59,27 @@ function AuthPage() {
 
   useEffect(() => {
     const goOn = () => (next ? window.location.assign(next) : navigate({ to: "/home", replace: true }));
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        trackGoogleReturn(data.session.user.created_at);
+    // Only a validated session sends the user on (NK-0098): a merely local one may be stale, and a failed
+    // check (network, 5xx) must leave /auth in place instead of bouncing to /home and back.
+    // The validator is the guard's own, per token: no extra /auth/v1/user in the normal path.
+    let alive = true;
+    validatedUser().then((user) => {
+      if (alive && user) {
+        trackGoogleReturn(user.created_at);
         goOn();
       }
     });
-    const { data } = supabase.auth.onAuthStateChange((_e, s) => {
-      if (s) {
+    const { data } = supabase.auth.onAuthStateChange((e, s) => {
+      // INITIAL_SESSION just replays the stored (maybe stale) session: validatedUser above covers it.
+      if (s && e !== "INITIAL_SESSION") {
         trackGoogleReturn(s.user.created_at);
         goOn();
       }
     });
-    return () => data.subscription.unsubscribe();
+    return () => {
+      alive = false;
+      data.subscription.unsubscribe();
+    };
   }, [navigate, next]);
 
   async function submit(e: React.FormEvent) {
