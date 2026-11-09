@@ -30,8 +30,12 @@ describe("reopenable", () => {
     });
   });
   it("does not reopen a row older than the closing, or equal to it", () => {
-    expect(reopenable([row({ updated_at: "2026-11-09T09:00:00.000Z" })], [closed()], NOW).get("s1")).toBeNull();
-    expect(reopenable([row({ updated_at: "2026-11-09T10:00:00.000Z" })], [closed()], NOW).get("s1")).toBeNull();
+    expect(
+      reopenable([row({ updated_at: "2026-11-09T09:00:00.000Z" })], [closed()], NOW).get("s1"),
+    ).toBeNull();
+    expect(
+      reopenable([row({ updated_at: "2026-11-09T10:00:00.000Z" })], [closed()], NOW).get("s1"),
+    ).toBeNull();
   });
   it("does not reopen when the play is paused", () => {
     expect(reopenable([row({ enabled: false })], [closed()], NOW).get("s1")).toBeNull();
@@ -65,7 +69,10 @@ describe("reopenable", () => {
   it("ignores rows of plays outside the catalogue and detectors that belong to no play", () => {
     const r = reopenable(
       [row({ play_id: "no-such-play" }), row({ play_id: PLAY.id })],
-      [closed({ id: "s2", detector: "stale_deal" }), closed({ id: "s3", detector: "setup_incomplete" })],
+      [
+        closed({ id: "s2", detector: "stale_deal" }),
+        closed({ id: "s3", detector: "setup_incomplete" }),
+      ],
       NOW,
     );
     expect(r.has("s2")).toBe(false);
@@ -73,7 +80,9 @@ describe("reopenable", () => {
     expect(reopenable([row({ play_id: "no-such-play" })], [closed()], NOW).get("s1")).toBeNull();
   });
   it("only a row of the detector's own play counts", () => {
-    const other = CATALOG.find((p) => p.detectors.length > 0 && !p.detectors.includes("meeting_no_prep"))!;
+    const other = CATALOG.find(
+      (p) => p.detectors.length > 0 && !p.detectors.includes("meeting_no_prep"),
+    )!;
     expect(reopenable([row({ play_id: other.id })], [closed()], NOW).get("s1")).toBeNull();
   });
 });
