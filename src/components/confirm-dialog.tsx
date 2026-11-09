@@ -51,17 +51,37 @@ let push: ((r: Request) => void) | null = null;
 
 export type ConfirmOptions = { body?: string; confirmLabel?: string; cancelLabel?: string };
 /** multiline: a tall text area for pasted documents; maxLength: shows a counter and blocks sending above it. */
-export type TextOptions = { body?: string; placeholder?: string; initial?: string; confirmLabel?: string; multiline?: boolean; maxLength?: number };
+export type TextOptions = {
+  body?: string;
+  placeholder?: string;
+  initial?: string;
+  confirmLabel?: string;
+  multiline?: boolean;
+  maxLength?: number;
+};
 
 /** Resolves true when the user confirms. Falls back to window.confirm if the host is not mounted. */
 export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<boolean> {
-  if (!push) return Promise.resolve(typeof window !== "undefined" && window.confirm([title, opts.body].filter(Boolean).join("\n\n")));
+  if (!push)
+    return Promise.resolve(
+      typeof window !== "undefined" &&
+        window.confirm([title, opts.body].filter(Boolean).join("\n\n")),
+    );
   return new Promise((resolve) => push!({ kind: "confirm", title, ...opts, resolve }));
 }
 
 /** Unsaved changes on leaving: «save», «discard» or «stay» (also when the dialog is dismissed). */
-export function askUnsaved(title: string, opts: { body?: string; saveLabel?: string; discardLabel?: string; stayLabel?: string } = {}): Promise<"save" | "discard" | "stay"> {
-  if (!push) return Promise.resolve(typeof window !== "undefined" && window.confirm([title, opts.body].filter(Boolean).join("\n\n")) ? "discard" : "stay");
+export function askUnsaved(
+  title: string,
+  opts: { body?: string; saveLabel?: string; discardLabel?: string; stayLabel?: string } = {},
+): Promise<"save" | "discard" | "stay"> {
+  if (!push)
+    return Promise.resolve(
+      typeof window !== "undefined" &&
+        window.confirm([title, opts.body].filter(Boolean).join("\n\n"))
+        ? "discard"
+        : "stay",
+    );
   return new Promise((resolve) => push!({ kind: "unsaved", title, ...opts, resolve }));
 }
 
@@ -116,7 +136,9 @@ export function DialogHost() {
   return (
     <AlertDialog open={!!current} onOpenChange={(open) => !open && close(false)}>
       {current && (
-        <AlertDialogContent className={current.kind === "text" && current.multiline ? "sm:max-w-2xl" : undefined}>
+        <AlertDialogContent
+          className={current.kind === "text" && current.multiline ? "sm:max-w-2xl" : undefined}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>{current.title}</AlertDialogTitle>
             {current.body && <AlertDialogDescription>{current.body}</AlertDialogDescription>}
@@ -136,7 +158,10 @@ export function DialogHost() {
                   placeholder={current.placeholder}
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSend) { e.preventDefault(); close(true); }
+                    if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && canSend) {
+                      e.preventDefault();
+                      close(true);
+                    }
                   }}
                   aria-label={current.title}
                   aria-invalid={tooLong || undefined}
@@ -153,7 +178,10 @@ export function DialogHost() {
                 />
               )}
               {max != null && (
-                <p className={`mt-1.5 text-xs ${tooLong ? "text-state-alarm" : "text-ink-mid"}`} aria-live="polite">
+                <p
+                  className={`mt-1.5 text-xs ${tooLong ? "text-state-alarm" : "text-ink-mid"}`}
+                  aria-live="polite"
+                >
                   {tooLong
                     ? `Te sobran ${(len - max).toLocaleString("es-ES")} caracteres: recórtalo para poder enviarlo.`
                     : `${len.toLocaleString("es-ES")} / ${max.toLocaleString("es-ES")} caracteres`}
@@ -163,7 +191,11 @@ export function DialogHost() {
           )}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => close(false)}>
-              {current.kind === "confirm" ? (current.cancelLabel ?? "Cancelar") : current.kind === "unsaved" ? (current.stayLabel ?? "Seguir editando") : "Cancelar"}
+              {current.kind === "confirm"
+                ? (current.cancelLabel ?? "Cancelar")
+                : current.kind === "unsaved"
+                  ? (current.stayLabel ?? "Seguir editando")
+                  : "Cancelar"}
             </AlertDialogCancel>
             {current.kind === "unsaved" && (
               <Button type="button" variant="outline" onClick={discard}>
@@ -177,7 +209,9 @@ export function DialogHost() {
                 close(true);
               }}
             >
-              {current.kind === "unsaved" ? (current.saveLabel ?? "Guardar") : (current.confirmLabel ?? (current.kind === "confirm" ? "Seguir" : "Guardar"))}
+              {current.kind === "unsaved"
+                ? (current.saveLabel ?? "Guardar")
+                : (current.confirmLabel ?? (current.kind === "confirm" ? "Seguir" : "Guardar"))}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
