@@ -23,7 +23,7 @@ vi.mock("@/lib/inngest/send.server", () => ({
 vi.mock("@/lib/inngest/tasks.server", () => ({ runBackgroundJob: vi.fn(async () => undefined) }));
 
 import type { ToolCtx } from "@/lib/agent/tools";
-import { authorize, enqueue } from "@/lib/background.functions";
+import { authorize, enqueue } from "@/lib/background-jobs.server";
 import { BINDING_WRITE_DENIED } from "@/lib/knowledge-rules";
 
 type Call = { table: string; op: string };
