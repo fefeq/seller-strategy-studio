@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 105,
+  "seq": 110,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2593,7 +2593,7 @@
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-metrics-strategy-no-estimates.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -2603,6 +2603,12 @@
           "at": "2026-11-08T20:48:34.176Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:47.071Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-metrics-strategy-no-estimates.md prd=-"
         }
       ]
     },
@@ -2611,19 +2617,31 @@
       "title": "Sprint 2: solo Owner y Sales Leader escriben Reglas y marcan documentos obligatorios",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0095",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-rules-write-permissions.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0095-rules-write-permissions",
+      "base_commit": "19beb33f1a4ceaca6ed1759057f648a0b7bc70f0",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:34.227Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:45.346Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-rules-write-permissions.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T13:37:47.028Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0095"
         }
       ]
     },
@@ -2850,6 +2868,111 @@
         {
           "state": "LOGGED",
           "at": "2026-11-08T22:41:47.319Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0106",
+      "title": "Métricas: los «—» que significan falta el dato en Finanzas, RevOps, ciclo, cobertura de pipeline, Embudo, Perdidos, Cohortes y Tendencias pasan a «Sin dato · motivo» (resto de la decisión 4 del §15 de NK-0089, fuera de NK-0094)",
+      "kind": "feature",
+      "source": "Sprint 2, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:51.260Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0107",
+      "title": "Deals: la columna deals.source tiene default 'outbound' (migración 0001), así que un deal nuevo sin origen se guarda como outbound",
+      "kind": "bug",
+      "source": "Sprint 2, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:51.318Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0108",
+      "title": "Deals: el formulario muestra «Outbound» para un deal sin origen (deals.tsx:558) y al editar puede guardarlo",
+      "kind": "bug",
+      "source": "Sprint 2, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:51.364Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0109",
+      "title": "Asesor: el snapshot envía el grupo sin origen como \"—\" en vez de una etiqueta legible para la IA",
+      "kind": "bug",
+      "source": "Sprint 2, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:51.412Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0110",
+      "title": "Sesión: use-me.ts, org-create.tsx, org-onboarding.tsx y account/calls-deals-tabs.tsx siguen llamando a getUser() por su cuenta (fuera de NK-0098)",
+      "kind": "bug",
+      "source": "Sprint 2, 2026-11-09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:37:51.457Z",
           "by": "tracker",
           "note": ""
         }
