@@ -26,7 +26,12 @@ const h = vi.hoisted(() => ({
   // SDD-20261106-ux-core-screens-pattern, U-2: a read error to return, and how many times the documents were read.
   error: null as { message: string } | null,
   reads: 0,
+  // SDD-20261109-rules-write-permissions (NK-0095), CA-8: the signed-in person per test (undefined = role not loaded yet),
+  // and what the screen sends to knowledge_docs.
+  me: undefined as unknown,
+  writes: [] as { table: string; op: string; payload: unknown }[],
 }));
+const OWNER = { user: { id: "u1" }, roles: ["owner"], currentOrg: { org_id: "o1" } };
 
 vi.mock("@/integrations/supabase/client", () => {
   const chain = (table: string): object =>
@@ -45,7 +50,11 @@ vi.mock("@/integrations/supabase/client", () => {
                     };
                   })
                   .then(f, r)
-            : () => chain(table),
+            : (...a: unknown[]) => {
+                if (p === "update" || p === "insert")
+                  h.writes.push({ table, op: p, payload: a[0] });
+                return chain(table);
+              },
       },
     );
   return { supabase: { from: (t: string) => chain(t) } };
@@ -62,14 +71,24 @@ vi.mock("@/lib/fetch-all", async (importOriginal) => {
   };
 });
 vi.mock("@/hooks/use-me", () => ({
-  useMe: () => ({ data: { user: { id: "u1" }, roles: ["owner"], currentOrg: { org_id: "o1" } } }),
+  useMe: () => ({ data: h.me }),
 }));
 vi.mock("@/components/background", () => ({
   useJob: () => ({ running: false, start: vi.fn(), job: null }),
 }));
 vi.mock("@/components/drive", () => ({
-  DriveImportButton: ({ onImported }: { onImported: (id: string) => void }) => (
-    <button onClick={() => onImported(h.importId)}>Importar de Drive</button>
+  DriveImportButton: ({
+    onImported,
+    disabled,
+    reason,
+  }: {
+    onImported: (id: string) => void;
+    disabled?: boolean;
+    reason?: string;
+  }) => (
+    <button disabled={disabled} title={reason} onClick={() => onImported(h.importId)}>
+      Importar de Drive
+    </button>
   ),
   SaveToDriveButton: () => <button>Guardar en Drive</button>,
 }));
@@ -129,6 +148,8 @@ beforeEach(() => {
   h.truncated = false;
   h.error = null;
   h.reads = 0;
+  h.me = OWNER;
+  h.writes = [];
 });
 afterEach(cleanup);
 
@@ -709,5 +730,130 @@ describe("HubScreen · Reglas que lee el agente (CA-6)", () => {
         "Todo lo de Reglas lo es: el agente lo lee en cada conversación y al redactar seguimientos y preparaciones de reunión, y el Ciclo GTM en sus documentos.",
       ),
     ).toBeInTheDocument();
+  });
+});
+
+// SDD-20261109-rules-write-permissions (NK-0095) U-5 · CA-8: only the Owner or a Sales Leader write Reglas and mark documents as
+// mandatory; the rest see the actions disabled with the reason, never hidden.
+describe("HubScreen · quién escribe reglas y obligatorios (NK-0095, CA-8)", () => {
+  const SECTION_RO = "Solo el Owner o un Sales Leader pueden escribir reglas.";
+  const DOC_RO =
+    "Solo lectura: las reglas y los documentos obligatorios los escriben el Owner o un Sales Leader.";
+  const MARK = "Solo el Owner o un Sales Leader pueden marcarlo como obligatorio.";
+  const as = (role: string | null) => {
+    h.me = role ? { ...OWNER, roles: [role] } : undefined;
+  };
+  const docs = () => [
+    row("d1", "company", "Propuesta de valor"),
+    { ...row("m1", "company", "Precios obligatorios"), mandatory: true },
+    row("r1", "rules", "Regla 1"),
+  ];
+  const newButton = () => screen.getByRole("button", { name: "+ Nuevo" });
+  const importButton = () => screen.getByRole("button", { name: "Importar de Drive" });
+  const save = () => screen.getByRole("button", { name: "Guardar" });
+  const box = () => screen.getByRole("checkbox");
+  const openDoc = async (id: string, title: string) => {
+    h.docs = docs();
+    h.search = { doc: id };
+    mount();
+    await screen.findByDisplayValue(title);
+  };
+
+  it("ae in Reglas: «+ Nuevo» and «Importar de Drive» disabled, with the reason below the description", async () => {
+    as("ae");
+    h.docs = docs();
+    h.search = { seccion: "rules" };
+    mount();
+    await screen.findByText("Regla 1");
+    expect(newButton()).toBeDisabled();
+    expect(importButton()).toBeDisabled();
+    expect(importButton()).toHaveAttribute("title", SECTION_RO);
+    expect(screen.getByText(SECTION_RO)).toBeInTheDocument();
+  });
+
+  it.each([
+    ["a team rule", "r1", "Regla 1"],
+    ["a team document marked mandatory", "m1", "Precios obligatorios"],
+  ])(
+    "ae opening %s: title and text read-only, «Guardar» disabled, reason shown",
+    async (_n, id, title) => {
+      as("ae");
+      await openDoc(id, title);
+      expect(screen.getByDisplayValue(title)).toHaveAttribute("readonly");
+      expect(screen.getByDisplayValue("Texto de prueba.")).toHaveAttribute("readonly");
+      expect(save()).toBeDisabled();
+      expect(screen.getByText(DOC_RO)).toBeInTheDocument();
+      expect(box()).toBeDisabled();
+    },
+  );
+
+  it("ae on a team document that is not binding: edits, the box is disabled with its own reason, and saves mandatory: false", async () => {
+    as("ae");
+    await openDoc("d1", "Propuesta de valor");
+    expect(box()).toBeDisabled();
+    expect(screen.getByText(MARK)).toBeInTheDocument();
+    expect(screen.queryByText(DOC_RO)).not.toBeInTheDocument();
+    const body = screen.getByDisplayValue("Texto de prueba.");
+    expect(body).not.toHaveAttribute("readonly");
+    fireEvent.change(body, { target: { value: "Texto cambiado." } });
+    expect(save()).toBeEnabled();
+    fireEvent.click(save());
+    await waitFor(() => expect(h.writes.length).toBe(1));
+    expect(h.writes[0]).toMatchObject({
+      table: "knowledge_docs",
+      op: "update",
+      payload: { body: "Texto cambiado.", mandatory: false },
+    });
+  });
+
+  it.each(["owner", "sales_leader"])("%s: everything active as before", async (role) => {
+    as(role);
+    h.docs = docs();
+    h.search = { seccion: "rules" };
+    mount();
+    await screen.findByText("Regla 1");
+    expect(newButton()).toBeEnabled();
+    expect(importButton()).toBeEnabled();
+    expect(importButton()).not.toHaveAttribute("title");
+    expect(screen.queryByText(SECTION_RO)).not.toBeInTheDocument();
+    cleanup();
+    await openDoc("r1", "Regla 1");
+    expect(screen.getByDisplayValue("Regla 1")).not.toHaveAttribute("readonly");
+    expect(save()).toBeEnabled();
+    expect(screen.queryByText(DOC_RO)).not.toBeInTheDocument();
+    cleanup();
+    await openDoc("d1", "Propuesta de valor");
+    expect(box()).toBeEnabled();
+    expect(screen.queryByText(MARK)).not.toBeInTheDocument();
+    fireEvent.click(box());
+    fireEvent.click(save());
+    await waitFor(() => expect(h.writes.length).toBe(1));
+    expect(h.writes[0]!.payload).toMatchObject({ mandatory: true });
+  });
+
+  it("while the role has not loaded, everything binding is disabled", async () => {
+    as(null);
+    h.docs = docs();
+    h.search = { seccion: "rules" };
+    mount();
+    await screen.findByText("Regla 1");
+    expect(newButton()).toBeDisabled();
+    expect(importButton()).toBeDisabled();
+    cleanup();
+    await openDoc("r1", "Regla 1");
+    expect(screen.getByDisplayValue("Regla 1")).toHaveAttribute("readonly");
+    expect(save()).toBeDisabled();
+    cleanup();
+    await openDoc("d1", "Propuesta de valor");
+    expect(box()).toBeDisabled();
+  });
+
+  it("other sections stay open to every role", async () => {
+    as("ae");
+    h.docs = docs();
+    mount();
+    await screen.findByText("Propuesta de valor");
+    expect(newButton()).toBeEnabled();
+    expect(importButton()).toBeEnabled();
   });
 });

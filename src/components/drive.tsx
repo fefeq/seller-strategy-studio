@@ -238,9 +238,14 @@ export function DrivePicker({
 export function DriveImportButton({
   section,
   onImported,
+  disabled = false,
+  reason,
 }: {
   section: string;
   onImported: (docId: string) => void;
+  /** Disabled with its reason (the screen shows the reason as text too), e.g. Reglas for roles that may not write it. */
+  disabled?: boolean;
+  reason?: string;
 }) {
   const run = useServerFn(driveImport);
   const startJob = useServerFn(startBackgroundJob);
@@ -277,7 +282,12 @@ export function DriveImportButton({
   }
   return (
     <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        disabled={disabled}
+        title={disabled ? reason : undefined}
+        onClick={() => setOpen(true)}
+      >
         Importar de Drive
       </Button>
       <DrivePicker
