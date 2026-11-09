@@ -91,7 +91,7 @@ Owner y Sales Leader leen el win rate por origen en Métricas (Cohortes, Perdido
 - Sin textos nuevos más allá de esa opción.
 
 ## 10. Datos, permisos y privacidad
-**Migración (`0084`):**
+**Migración (`0083`):**
 ```sql
 alter table public.deals alter column source drop default;
 -- rollback: alter table public.deals alter column source set default 'outbound';
