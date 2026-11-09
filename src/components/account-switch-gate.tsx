@@ -21,3 +21,8 @@ export function AccountSwitchGate({ children }: { children: ReactNode }) {
     </div>
   );
 }
+
+/** Renders nothing while the tab changes account (NK-0120): for what __root mounts next to the outlet (toasts). */
+export function HideWhileSwitching({ children }: { children: ReactNode }) {
+  return useSwitchingAccount() ? null : <>{children}</>;
+}
