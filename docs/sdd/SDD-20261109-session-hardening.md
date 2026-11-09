@@ -1,7 +1,7 @@
 # SDD-20261109-session-hardening · [Bug] Un fallo momentáneo al comprobar la sesión no te saca de la app, y todo el código usa el mismo usuario validado
 
 **Tipo:** Bug (sesión; sin migración) · **Prioridad propuesta:** Alta (unidad A: hoy un fallo de red o un 5xx manda a iniciar sesión sin aviso) · Media (unidad B)
-**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3, del walkthrough de `d0f4252`) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #117 (ccd37fb) · Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3, del walkthrough de `d0f4252`) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** unidad A: NK-0112, NK-0113 · unidad B: NK-0110 (+ NK-0114, duplicado enlazado: añade el consentimiento OAuth), NK-0111, NK-0115
 **PRD:** No aplica (bug) · **Depende de:** NK-0098 (Sprint 2, en `main`; sin SDD propio, garantías en los tests de §3)
 
@@ -197,4 +197,4 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR S2-m2** Falta la decisión sobre «Cerrar sesión» | §15: decisión del coordinador (sin enlace en este ticket), pregunta retirada («Para Fede: ninguna»); §5 «No incluye» lo lista. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+Entregado en PR #117 (ccd37fb), integrado en db23383 con gate PASS (NK-0110, NK-0111, NK-0112, NK-0113, NK-0115). NK-0114 es duplicado de NK-0110. Sin migraciones.

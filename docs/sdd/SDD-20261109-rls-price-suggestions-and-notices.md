@@ -1,7 +1,7 @@
 # SDD-20261109-rls-price-suggestions-and-notices · [Bug] La base de datos aplica la regla de las sugerencias de precio y deja tocar de un aviso solo «leído»
 
 **Tipo:** Bug (permisos, con una migración en el Sprint 3, U-2; U-1, aplazada, llevará la suya) · **Prioridad propuesta:** Media (NK-0044: hoy el servidor ya filtra; NK-0070: severidad baja según su gate)
-**Estado:** Aprobado U-2; U-1 Aplazada — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 (U-1: decisión de Fede del 2026-11-01, «hasta decidir el destino de la base»; fuera del Sprint 3) · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #117 (ccd37fb) (U-2); U-1 Aplazada — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 (U-1: decisión de Fede del 2026-11-01, «hasta decidir el destino de la base»; fuera del Sprint 3) · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Tickets:** NK-0044 (U-1) y NK-0070 (U-2), independientes entre sí
 **PRD:** No aplica (bugs de permisos) · **Depende de:** NK-0042 (`SDD-20261101-price-suggestions-visibility-server.md`, en `main`: regla en código)
 **Relación con:** `SDD-20261101-price-suggestions-rls.md` (Aplazado el 2026-11-01). La U-1 de este SDD es una propuesta para cuando NK-0044 se desbloquee: recoge los bloqueantes B-1, B-2 y los importantes I-1 a I-3 de aquel gate, pero no sustituye a aquel SDD ni entra en el Sprint 3. Solo U-2 se construye ahora.
@@ -102,7 +102,7 @@ Prueba de todos: `src/lib/notifications-grants.pg.test.ts` (nuevo, PGlite). Crea
 - **U-1, Realtime:** el repo no publica `suggestions` en `supabase_realtime` [Por verificar en la base viva]; si lo estuviera, Realtime aplica la RLS de lectura.
 - **U-1, `LIKE` con `_`:** se usa `starts_with(dedupe_key, 'strategy_product_price:price:')`, igual que `startsWith` en TS (CA-9).
 - **U-2, la pantalla:** `markRead` (`notification-center.tsx:137-143`) no comprueba el error; si la base viva tuviera otra política o GRANT, fallaría en silencio. Lo cubre la comprobación previa de §13.
-- **U-2, `org_id` del aviso:** hoy se puede mover un aviso propio a otra empresa (la `with check` no mira `org_id`); con U-2 deja de poderse por la columna.
+- **U-2, `org_id` del aviso:** hoy se puede mover un aviso propio a otra empresa (la `with check` no mira `org_id`); con U-2 deja de poderse por la columna. **Estado de la afirmación:** el autor de NK-0070 indica que no se reprodujo y que el RLS existente ya la bloqueaba. Releer `0049:26-28` no lo confirma: la `with check` solo exige `user_id = auth.uid()`, y no encontramos en la evidencia de NK-0070 ni en `sprint3-gate` el registro de esa reproducción. Queda **sin verificar**; no se afirma que el RLS existente la bloqueara. `0082` (permiso por columna, solo `read_at`) la corta igualmente, sin probar que fuera explotable antes.
 - **Otra empresa:** la migración de U-2 (y la de U-1 cuando se desbloquee) mantiene el filtro por `org_id`/`current_org()` de las políticas existentes; CA-8 lo fija para U-1.
 
 ## 9. Experiencia y copy
@@ -259,4 +259,5 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR R2-m2** La comprobación posterior de §13 mezcla U-1 | Para U-2: repetir la 3 y la parte de `notifications` de la 1, `read_at` funciona y `title` falla; el resto queda para U-1. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+U-2 entregada en PR #117 (ccd37fb), integrada en db23383, gate PASS (NK-0070). U-1 sigue **Aplazada**.
+**Migración 0082 (`0082_notifications_read_only.sql`): NO aplicada a ninguna base viva.** La aplica Fede tras la comprobación previa 3 (§13).
