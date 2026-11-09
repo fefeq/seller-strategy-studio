@@ -1,7 +1,7 @@
 # SDD-20261109-new-deal-source · [Mejora] Nuevo deal: pedir el origen al crear (Pipeline, cuenta, create_deal)
 
 **Tipo:** Mejora (sin cambio de esquema) · **Prioridad propuesta:** Media (sin ella, todo deal nuevo nace «Sin origen» y el win rate por origen se vacía)
-**Estado:** Borrador · **Pide:** Fede (Sprint 4) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Aprobado — coordinador por delegación de Fede ("ok a todo", 2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 4) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0123
 **PRD:** No aplica (mejora acotada) · **Depende de:** `SDD-20261109-deals-no-source.md` (Hecho, Sprint 3: `src/lib/deal-source.ts`, `src/components/deal-source-field.tsx`, migración `0083`) · **Coordina con:** —
 
@@ -164,6 +164,13 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR G-m3** Registrar las decisiones del coordinador | §15: «Decisión del coordinador (delegación de Fede, 2026-11-09)» con D-3 y D-4; retiradas como preguntas. Queda solo la de la `0083`. |
 | **MENOR G-m4** «Importación CSV» no apunta a un camino real | Quitada de §5 (comprobado: los `insert` en `deals` de `main` son `won-deals-panel.tsx:342`, `calls-deals-tabs.tsx:95`, `core-write.ts:109` y `leads-ingest.ts:144`). |
 | **MENOR G-m5** Ajustes de CA-5, CA-6 y walkthrough | CA-5 nombra los mocks (`useServerFn`, Supabase, `useStages`, `useProducts`, `useCurrency`, `EntityCombobox`); CA-6 exige `owner_id` del usuario validado; paso 3 del walkthrough comprueba móvil sin desplazamiento lateral. |
+
+### §17 Gate · pasada 2 (2026-11-09, `.factory/evidence/sprint4-sdd-gate/gate-pass2.md`): hallazgos y resolución
+- Veredicto: APROBABLE (0 bloqueantes, 0 mayores, 0 menores). Los siete hallazgos de la pasada 1 constan resueltos en el texto final.
+
+| Hallazgo | Resolución |
+|---|---|
+| Sin hallazgos. CA-4b verificado sobre la base `d3eeba1`: el extractor termina con código 0 y no deja diff en `.lovable/mcp/manifest.json` (`extractor-base-d3eeba1.log`) | Nada que cambiar. CA-4b queda como guarda del gate (`--extra`) sobre el commit final. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
