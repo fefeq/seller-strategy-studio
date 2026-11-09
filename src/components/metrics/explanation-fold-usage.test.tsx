@@ -115,12 +115,13 @@ describe("closed list of /metrics is folded (CA-2)", () => {
 
   it("X-5 Pipeline", async () => {
     const { container } = wrap(<PipelineBoardPanel quarter="2026-Q4" />);
-    // SDD-20261109 D10: the board's payback is labelled «Payback real» now (only the label it waits for changes).
+    // SDD-20261109 D10: the board's payback is labelled «Payback real» now; the fold speaks only of the projected
+    // CAC (D10, authorised by the coordinator: there is no projected payback any more).
     await screen.findByText("Payback real");
     expectFolded(
       container,
       "Quién sigue en cada etapa",
-      "Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los que dividen el gasto de captación en el CAC real; las oportunidades que cierran este trimestre, al win rate real, dan el CAC y el payback proyectados.",
+      "Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los que dividen el gasto de captación en el CAC real; las oportunidades que cierran este trimestre, al win rate real, dan el CAC proyectado.",
     );
   });
 

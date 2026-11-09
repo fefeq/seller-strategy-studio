@@ -126,7 +126,7 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
             <p className="text-xs text-muted-foreground">
               Quién sigue en cada etapa, de lead a deal ganado. Los ganados del trimestre son los
               que dividen el gasto de captación en el CAC real; las oportunidades que cierran este
-              trimestre, al win rate real, dan el CAC y el payback proyectados.
+              trimestre, al win rate real, dan el CAC proyectado.
             </p>
           </ExplanationFold>
         </div>
