@@ -25,7 +25,7 @@ export async function perplexitySearch(queries: string[], opts: { maxResults?: n
   });
   if (!res.ok) {
     const raw = await res.text();
-    console.error(`Perplexity search [${res.status}]: ${raw.slice(0, 500)}`);
+    console.error(`Perplexity search [${res.status}] body ${raw.length} chars`);
     throw new Error(perplexityErrorText(res.status, raw));
   }
   const data = (await res.json()) as { results?: unknown };

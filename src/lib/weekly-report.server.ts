@@ -7,6 +7,7 @@ import { readSla } from "@/lib/lead-funnel";
 import { readStaleDays } from "@/lib/stale";
 import { formatMoney } from "@/lib/money";
 import { reportText, weekStart, weeklyReport, type WeeklyReport } from "@/lib/weekly-report";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export const WEEKLY_DETECTOR = "weekly_report";
 const WEEKLY_HOUR_UTC = 6;
@@ -59,7 +60,7 @@ export async function runWeeklyReports(db: Db, now = new Date()): Promise<{ crea
       const sent = await deliver(db, o.id, o.name, title, text, id);
       telegram += sent.telegram; email += sent.email;
       await db.from("suggestions").update({ notified_at: now.toISOString() }).eq("id", id);
-    } catch (e) { console.error("weekly report failed", o.id, e); }
+    } catch (e) { console.error("weekly report failed", o.id, safeErrorLog(e)); }
   }
   return { created, telegram, email };
 }
@@ -77,7 +78,7 @@ async function deliver(db: Db, orgId: string, orgName: string, title: string, te
       try {
         await sendText(l.chat_id!, `${title}\n\n${text}`, [[{ text: "Visto", data: `s:${suggestionId}:approve` }, { text: "Descartar", data: `s:${suggestionId}:dismiss` }]]);
         out.telegram++;
-      } catch (e) { console.error("weekly telegram failed", e); }
+      } catch (e) { console.error("weekly telegram failed", safeErrorLog(e)); }
     }
   }
 

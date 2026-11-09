@@ -18,7 +18,7 @@ async function call(path: string, init: RequestInit = {}): Promise<Response> {
   const res = await fetch(`${GATEWAY}${path}`, { ...init, headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": key, ...(init.headers ?? {}) } });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`Google Drive request failed [${res.status}] ${path.split("?")[0]}: ${body.slice(0, 500)}`);
+    console.error(`Google Drive request failed [${res.status}] ${path.split("?")[0]} body ${body.length} chars`);
     throw new DriveError(driveErrorText(res.status, body), res.status);
   }
   return res;

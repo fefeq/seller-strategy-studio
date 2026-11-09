@@ -8,6 +8,7 @@ import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
 import { appendCompetitor, dismissMemory, type DiscoveryKind } from "@/lib/discoveries";
 import { normalizeForSave } from "@/lib/field-normalize";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export const runDiscoveryNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -36,7 +37,7 @@ export const decideDiscovery = createServerFn({ method: "POST" })
       const { error: e } = await db.from("discoveries").update({ status: "dismissed", dismiss_reason: data.reason || null, ...decided }).eq("org_id", ctx.orgId).eq("id", d.id);
       if (e) throw e;
       const { saveFacts } = await import("@/lib/memory.server");
-      try { await saveFacts(ctx, [dismissMemory(d.kind as DiscoveryKind, d.name, data.reason || null)], "decision"); } catch (err) { console.error("discovery memory", err); }
+      try { await saveFacts(ctx, [dismissMemory(d.kind as DiscoveryKind, d.name, data.reason || null)], "decision"); } catch (err) { console.error("discovery memory", safeErrorLog(err)); }
       return { ok: true, message: "Descartado. Nokko lo recordará." };
     }
 

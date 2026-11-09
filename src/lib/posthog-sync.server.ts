@@ -40,7 +40,7 @@ async function hogql(c: Conn, q: HogQL): Promise<{ columns?: string[]; results?:
   } catch { throw new PosthogError(posthogErrorText(0), 0); }
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`PostHog query failed [${res.status}]: ${body.slice(0, 400)}`);
+    console.error(`PostHog query failed [${res.status}] body ${body.length} chars`);
     throw new PosthogError(posthogErrorText(res.status, body), res.status);
   }
   return res.json();

@@ -22,7 +22,7 @@ export async function sendEvents(events: NokkoEvent[]): Promise<void> {
     });
     if (!res.ok) {
       const body = await res.text().catch(() => "");
-      console.error(`Inngest send failed [${res.status}]: ${body.slice(0, 400)}`);
+      console.error(`Inngest send failed [${res.status}] body ${body.length} chars`);
       throw new Error(`No se ha podido encolar la tarea en segundo plano [${res.status}].`);
     }
   }

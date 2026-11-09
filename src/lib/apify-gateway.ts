@@ -16,7 +16,7 @@ export async function runActor(actor: { id: string; maxUsd: number }, input: obj
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    console.error(`Apify run failed [${res.status}] ${actor.id}: ${body.slice(0, 500)}`);
+    console.error(`Apify run failed [${res.status}] ${actor.id} body ${body.length} chars`);
     throw new Error(apifyErrorText(res.status, body));
   }
   const data = await res.json().catch(() => null);

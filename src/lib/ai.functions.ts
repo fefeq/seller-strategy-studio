@@ -142,7 +142,7 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
     );
     let result: AdvisorResult;
     try { result = JSON.parse(raw); } catch {
-      console.error("Advisor: invalid JSON", raw.slice(0, 300));
+      console.error(`Advisor: invalid JSON, output ${raw.length} chars`);
       throw new Error("La IA no devolvió recomendaciones válidas. Inténtalo de nuevo.");
     }
     if (!Array.isArray(result?.recommendations) || result.recommendations.length === 0) throw new Error("La IA no devolvió recomendaciones. Inténtalo de nuevo.");

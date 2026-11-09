@@ -11,7 +11,7 @@ async function call(path: string, init: RequestInit & { okStatus?: number[] } = 
   const res = await fetch(`${GATEWAY}${path}`, { ...init, headers: { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": key, "Content-Type": "application/json", ...(init.headers ?? {}) } });
   if (!res.ok && !(init.okStatus ?? []).includes(res.status)) {
     const body = await res.text().catch(() => "");
-    console.error(`Parallel ${path.split("?")[0]} [${res.status}]: ${body.slice(0, 500)}`);
+    console.error(`Parallel ${path.split("?")[0]} [${res.status}] body ${body.length} chars`);
     throw new Error(parallelErrorText(res.status, body));
   }
   return res;

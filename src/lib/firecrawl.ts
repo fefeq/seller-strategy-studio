@@ -18,7 +18,7 @@ async function call(path: string, body: unknown, timeoutMs = 45_000): Promise<an
     });
     if (!res.ok) {
       const raw = await res.text();
-      console.error(`Firecrawl ${path} [${res.status}]: ${raw.slice(0, 500)}`);
+      console.error(`Firecrawl ${path} [${res.status}] body ${raw.length} chars`);
       throw new Error(firecrawlErrorText(res.status, raw));
     }
     return await res.json();

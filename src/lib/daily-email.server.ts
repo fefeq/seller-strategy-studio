@@ -7,6 +7,7 @@ import { autoWork, todayItems } from "@/lib/briefing";
 import { digest } from "@/lib/proactive";
 import { formatMoney } from "@/lib/money";
 import { DEFAULT_DAILY, dailyEmailBody, dailyEmailDue, dailySubject, localClock, type DailyContent, type DailyPrefs } from "@/lib/daily-email";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 const BASE = () => process.env["APP_URL"] || "https://nokko.ai";
 const MAX_PER_RUN = 300;
@@ -90,8 +91,8 @@ export async function runDailyEmails(db: Db, now = new Date()): Promise<{ sent: 
       if (r.sent) { sent++; continue; }
       failed++;
       // Resend refused for a reason that will not fix itself in an hour (unverified domain, bad key): keep the claim.
-      if (r.status && r.status !== 429 && r.status < 500) { console.error("daily email refused", p.id, r.error); continue; }
-    } catch (e) { failed++; console.error("daily email failed", p.id, e); }
+      if (r.status && r.status !== 429 && r.status < 500) { console.error("daily email refused", p.id, r.status); continue; }
+    } catch (e) { failed++; console.error("daily email failed", p.id, safeErrorLog(e)); }
     await db.from("job_locks").delete().eq("name", lock); // transient: the next hourly run (inside the window) retries
   }
   return { sent, failed };

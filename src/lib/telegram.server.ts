@@ -17,7 +17,7 @@ export async function tg(method: string, body: Record<string, unknown>) {
   });
   const text = await res.text();
   if (!res.ok) {
-    console.error(`Telegram ${method} failed [${res.status}]: ${text.slice(0, 300)}`);
+    console.error(`Telegram ${method} failed [${res.status}] body ${text.length} chars`);
     throw new Error(`Telegram ${method} failed [${res.status}]`);
   }
   return JSON.parse(text);
