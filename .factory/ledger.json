@@ -2632,19 +2632,31 @@
       "title": "Sprint 2: Reglas de Conocimiento en ai-core, biblioteca de playbooks y MCP",
       "kind": "feature",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "nokko-author-nk0096",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-rules-in-ai-readers.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0096-rules-in-ai-readers",
+      "base_commit": "19beb33f1a4ceaca6ed1759057f648a0b7bc70f0",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:34.277Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T13:26:36.318Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-rules-in-ai-readers.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T13:26:37.568Z",
+          "by": "Fede",
+          "note": "owner=nokko-author-nk0096"
         }
       ]
     },
