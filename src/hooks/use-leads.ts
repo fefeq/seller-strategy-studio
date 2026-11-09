@@ -58,10 +58,14 @@ export const leadsQuery = (orgId: string) =>
             .range(a, b),
         ).then((r) => ({ data: r.rows })),
       ]);
+      // A failed read must reach the screen as an error, never as an empty list.
+      const failed = s.error ?? seg.error ?? m.error ?? icp.error;
+      if (failed) throw failed;
       const ids = (m.data ?? []).map((x) => x.user_id);
-      const { data: profiles } = ids.length
+      const { data: profiles, error: profilesError } = ids.length
         ? await supabase.from("profiles").select("id,full_name").in("id", ids)
-        : { data: [] };
+        : { data: [], error: null };
+      if (profilesError) throw profilesError;
       return {
         leads: l.data ?? [],
         deals: d.data ?? [],

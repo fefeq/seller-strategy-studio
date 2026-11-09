@@ -110,15 +110,18 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
     };
   }, [data, leadsData, quarter, stages]);
 
-  // The panel's own read decides loading and error; the leads read (shared with Leads) only keeps it in loading until it answers.
+  // The panel's own read decides loading and error; the leads read (shared with Leads) keeps it in loading until it answers and shows its error with its own retry.
   if (!view) {
     return (
       <section className="rounded-lg border bg-card p-5">
         <h3 className="mb-4 text-2xl">Pipeline · {quarter}</h3>
         <ScreenState
           isPending={isPending || !!leads.isPending}
-          error={error}
-          refetch={refetch}
+          error={error ?? leads.error}
+          refetch={() => {
+            if (error) void refetch();
+            if (leads.error) void leads.refetch();
+          }}
           skeleton="cards"
         >
           {null}

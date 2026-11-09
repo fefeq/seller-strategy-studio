@@ -4,6 +4,7 @@ import { useMe } from "@/hooks/use-me";
 import { useLeads } from "@/hooks/use-leads";
 import { funnelBy, leadCohort, leadFunnel, leadDelay } from "@/lib/lead-funnel";
 import { quarterRange } from "@/lib/metrics";
+import { ScreenState } from "@/components/page";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
 const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
@@ -11,7 +12,7 @@ const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
 /** Full funnel Lead → Contactado → MQL → SQL → Oportunidad → Ganado for the leads that entered in the quarter. */
 export function LeadFunnelPanel({ quarter }: { quarter: string }) {
   const { data: me } = useMe();
-  const { data } = useLeads(me?.currentOrg?.org_id);
+  const { data, isPending, error, refetch } = useLeads(me?.currentOrg?.org_id);
   const [by, setBy] = useState<"segment" | "source">("segment");
 
   const view = useMemo(() => {
@@ -30,7 +31,12 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
     };
   }, [data, quarter, by]);
 
-  if (!view) return null;
+  if (!view)
+    return (
+      <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="cards">
+        {null}
+      </ScreenState>
+    );
   const f = view.funnel;
   const max = Math.max(1, f.total);
   return (
