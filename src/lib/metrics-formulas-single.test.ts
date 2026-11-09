@@ -117,7 +117,7 @@ const DASH_ALLOWED: Record<string, Allowed[]> = {
       'real: (c) => val(c.r!.actual.acquisition ? money(c.r!.actual.acquisition) : "—")',
       "otra_metrica",
     ],
-    ['objetivo {yr.payback.target != null ? `${yr.payback.target} m` : "—"}', "otra_metrica"],
+    ['{yr.payback.target != null ? `${yr.payback.target} m` : "—"}', "otra_metrica"],
   ],
   "src/components/budget-panel.tsx": [
     ['real={r.actual.revenue != null ? money(r.actual.revenue) : "—"}', "otra_metrica"],

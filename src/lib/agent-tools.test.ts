@@ -1341,3 +1341,70 @@ describe("decide_suggestion says where a test or a commercial action is accepted
       expect(d).toMatch(/prueba.*acción comercial.*se aceptan desde Sugerencias/);
   });
 });
+
+// SDD-20261109-metrics-strategy-no-estimates · U-4 · CA-10: get_funnel_diagnosis takes its payback margin from the one
+// chain (won deals with lines read with gross_margin) and its output carries no cost, margin nor CAC, so it needs no
+// role guard; every read stays scoped to the caller's company.
+describe("NK-0094 get_funnel_diagnosis: one margin chain, no costs in the output", () => {
+  const seg = {
+    id: ID(5),
+    name: "Pymes",
+    acv_min: 0,
+    acv_max: null,
+    win_rate_target: null,
+    cac_target: null,
+    gross_margin_pct: null,
+    payback_months: 12,
+    acquisition_motion: "slg",
+  };
+  const won = {
+    segment_id: ID(5),
+    amount: 6000,
+    gross_margin: 1500,
+    stage: "won",
+    close_date: "2026-08-10",
+    closed_at: "2026-08-10T10:00:00Z",
+    updated_at: "2026-08-10T10:00:00Z",
+    created_at: "2026-07-01T10:00:00Z",
+  };
+  const reply = (q: Q) =>
+    q.table === "segments"
+      ? { data: [seg] }
+      : q.table === "deals"
+        ? { data: [won] }
+        : q.table === "cac_costs"
+          ? { data: [{ segment_id: ID(5), channel: "Eventos", amount: 6000 }] }
+          : undefined;
+  type Out = {
+    segments: { phases: { id: string; measures: { id: string; value: number | null }[] }[] }[];
+  };
+
+  it("D15: the payback uses the margin of the won deal with lines (25 %), not a 100 % margin", async () => {
+    const { db, log } = fakeDb(reply);
+    const r = (await executeTool(ctxWith(db), "get_funnel_diagnosis", {
+      quarter: "2026-Q3",
+    })) as Out;
+    const payback = r.segments[0]!.phases.find((p) => p.id === "revenue")!.measures.find(
+      (m) => m.id === "payback",
+    )!;
+    // 6000 / (6000 × 25 % / 12) = 48
+    expect(payback.value).toBe(48);
+    expectScoped(log);
+  });
+
+  it("CA-10: no key «cost», «gross_margin», «margin» or «cac» anywhere in its output", async () => {
+    const { db } = fakeDb(reply);
+    const r = await executeTool(ctxWith(db), "get_funnel_diagnosis", { quarter: "2026-Q3" });
+    const keys = new Set<string>();
+    const walk = (v: unknown) => {
+      if (Array.isArray(v)) v.forEach(walk);
+      else if (v && typeof v === "object")
+        for (const [k, x] of Object.entries(v)) {
+          keys.add(k);
+          walk(x);
+        }
+    };
+    walk(r);
+    for (const k of ["cost", "gross_margin", "margin", "cac"]) expect(keys.has(k), k).toBe(false);
+  });
+});

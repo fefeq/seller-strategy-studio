@@ -204,3 +204,30 @@ describe("CA-3 coherence: one company CAC and one company payback", () => {
     });
   });
 });
+
+// U-4 · CA-3 (calculator) and D14a: Modelos de venta reads the same unit economics; the plan's payback row with basis
+// «real» is the real payback of the segment, and a typed ACV different from the segment's never moves it.
+describe("CA-3 coherence: the strategy calculator", () => {
+  it("with basis «real» the plan's payback row is the segment's real payback, whatever ACV is typed", async () => {
+    const { strategyCalculator } = await import("@/lib/strategy-calculator");
+    const { CALC_ACV } = await import("@/test/metrics-fixture");
+    const run = (acvManual: number | null) =>
+      strategyCalculator({
+        segments: SEGMENTS,
+        deals: EXT_DEALS,
+        costs: COSTS,
+        budgetRows: BUDGET_ROWS,
+        acvManual,
+        basis: "real",
+        forced: "s-pyme",
+        now: NOW,
+      });
+    const a = run(null),
+      b = run(CALC_ACV);
+    expect(a.planPayback).toEqual(a.paybackReal);
+    expect(b.planPayback).toEqual(a.paybackReal);
+    expect(a.paybackReal.value).not.toBeNull();
+    // and its margin is the one chain of the current quarter, the one Cobertura uses (60 % of the deal with lines)
+    expect(a.margin).toMatchObject({ value: 60, source: "deals" });
+  });
+});
