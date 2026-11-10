@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 135,
+  "seq": 139,
   "tickets": [
     {
       "id": "NK-0001",
@@ -3727,7 +3727,7 @@
       "title": "Plays GTM: fase, nivel de aprobación y dependencias en los 28 plays, y recommendablePlays (NK-0126 SDD 1, Sprint 5)",
       "kind": "feature",
       "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 1; SDD aprobado por delegación de Fede 2026-11-10",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint5",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md",
@@ -3752,6 +3752,12 @@
           "at": "2026-11-10T01:09:36.668Z",
           "by": "Fede: \"NK-0127 y NK-0128 son del Sprint 5 … listos para brief\" (2026-11-10)",
           "note": "owner=coordinador-sprint5"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T02:28:58.158Z",
+          "by": "Fede",
+          "note": "sha=92c1296ac6bdadecaa8c68679fa858f00ee3b08d"
         }
       ]
     },
@@ -3760,7 +3766,7 @@
       "title": "Conocimiento: voz de la empresa, regla Escalar y reglas por defecto (NK-0126 SDD 3, Sprint 5)",
       "kind": "feature",
       "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 3; SDD aprobado por delegación de Fede 2026-11-10; requiere 0081 aplicada",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint5",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md",
@@ -3785,6 +3791,12 @@
           "at": "2026-11-10T01:09:36.729Z",
           "by": "Fede: \"NK-0127 y NK-0128 son del Sprint 5 … listos para brief\" (2026-11-10)",
           "note": "owner=coordinador-sprint5"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T02:28:58.210Z",
+          "by": "Fede",
+          "note": "sha=92c1296ac6bdadecaa8c68679fa858f00ee3b08d"
         }
       ]
     },
@@ -3920,6 +3932,90 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0130 to NK-0135: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        }
+      ]
+    },
+    {
+      "id": "NK-0136",
+      "title": "Reglas base: dos sesiones o pestañas a la vez pueden duplicar las reglas (sin índice único por empresa, sección y título; necesita migración o cerrojo en servidor)",
+      "kind": "bug",
+      "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T02:29:00.955Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0137",
+      "title": "/plays: los filtros Fase, Motion y Estado no se guardan en la URL y se pierden al recargar o volver atrás",
+      "kind": "feature",
+      "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T02:29:01.013Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0138",
+      "title": "Reglas «Escalar»: etiqueta visible propia en la lista (hoy solo convención del título)",
+      "kind": "feature",
+      "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T02:29:01.066Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0139",
+      "title": "rulesBlock: con solo reglas «Escalar» sigue añadiendo la frase de reglas_obligatorias",
+      "kind": "bug",
+      "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T02:29:01.122Z",
+          "by": "tracker",
+          "note": ""
         }
       ]
     }
