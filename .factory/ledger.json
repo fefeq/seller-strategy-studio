@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 130,
+  "seq": 135,
   "tickets": [
     {
       "id": "NK-0001",
@@ -790,7 +790,7 @@
       "title": "Torre de control GTM 2: contexto estratégico y onboarding por bloques con nivel de confianza",
       "kind": "feature",
       "source": "Entrevista con Fede, 2026-10-29 y 30",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-2-context-onboarding.md",
@@ -809,6 +809,12 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-10T01:00:50.308Z",
+          "by": "Fede",
+          "note": "Superado por GTM Lab (PRD-20261101-gtm-lab-en-nokko §8 paso 2; su SDD dice «no ejecutar este texto»). Rechazado por delegación de Fede en el chat del 2026-11-10 («si ejecuta todo vos»). El sustituto (perfil y pasos obligatorios del proyecto principal) está por definir."
         }
       ]
     },
@@ -3691,6 +3697,87 @@
     },
     {
       "id": "NK-0126",
+      "title": "Diagnóstico de entrada y equipos de plays (Sprint 4): fase, autonomía y dependencias en los 28 plays, seis equipos de plays, voz y regla Escalar",
+      "kind": "feature",
+      "source": "Fede, entrevista 2026-11-10; PRD-20261110-diagnostico-y-equipos-de-plays; depende de NK-0009 y NK-0028; coordinar con SDD 2 de plays y NK-0081 a NK-0083",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:40:04.045Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:40:10.752Z",
+          "by": "tracker",
+          "note": "docs: sdd=- prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0127",
+      "title": "Plays GTM: fase, nivel de aprobación y dependencias en los 28 plays, y recommendablePlays (NK-0126 SDD 1, Sprint 5)",
+      "kind": "feature",
+      "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 1; SDD aprobado por delegación de Fede 2026-11-10",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md",
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:00:40.127Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:00:50.227Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0128",
+      "title": "Conocimiento: voz de la empresa, regla Escalar y reglas por defecto (NK-0126 SDD 3, Sprint 5)",
+      "kind": "feature",
+      "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 3; SDD aprobado por delegación de Fede 2026-11-10; requiere 0081 aplicada",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md",
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:00:40.187Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:00:50.268Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        }
+      ]
+    },
+    {
+      "id": "NK-0131",
       "title": "Logs: src/routes/api/public/jobs/proactive.ts registra el error entero en 14 sitios y src/routes/api/** queda fuera del escaneo de logs",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
@@ -3707,11 +3794,17 @@
           "at": "2026-11-10T00:47:44.650Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:05:01.961Z",
+          "by": "coordinador",
+          "note": "renumbered from NK-0126 to NK-0131: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
         }
       ]
     },
     {
-      "id": "NK-0127",
+      "id": "NK-0132",
       "title": "Métricas/Finanzas: el KPI «Gasto real» muestra «0 € captación» sin costes de captación apuntados; D-3 del SDD de NK-0106 dice gasto 0 = «sin costes apuntados»",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
@@ -3728,11 +3821,17 @@
           "at": "2026-11-10T00:47:44.685Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:05:01.961Z",
+          "by": "coordinador",
+          "note": "renumbered from NK-0127 to NK-0132: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
         }
       ]
     },
     {
-      "id": "NK-0128",
+      "id": "NK-0133",
       "title": "Formato: decimales con punto en Cobertura («2.5x total», «1.1x», segment-coverage.tsx:128/:213) y embudo de leads («33.3% del total», lead-funnel-panel.tsx:80); usar coma es-ES",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
@@ -3749,11 +3848,17 @@
           "at": "2026-11-10T00:47:44.716Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:05:01.961Z",
+          "by": "coordinador",
+          "note": "renumbered from NK-0128 to NK-0133: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
         }
       ]
     },
     {
-      "id": "NK-0129",
+      "id": "NK-0134",
       "title": "Test frágil: new-deal.test.tsx busca el nombre del deal como primer textbox porque el Label de Field no está asociado al input",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
@@ -3770,11 +3875,17 @@
           "at": "2026-11-10T00:47:44.747Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:05:01.961Z",
+          "by": "coordinador",
+          "note": "renumbered from NK-0129 to NK-0134: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
         }
       ]
     },
     {
-      "id": "NK-0130",
+      "id": "NK-0135",
       "title": "Sesión: una validación tardía de X cuando la sesión ya es Y bloquea y recarga una vez de más; ignorar validaciones cuyo token ya no es el guardado",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
@@ -3791,6 +3902,12 @@
           "at": "2026-11-10T00:47:44.785Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T01:05:01.961Z",
+          "by": "coordinador",
+          "note": "renumbered from NK-0130 to NK-0135: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
         }
       ]
     }
