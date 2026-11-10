@@ -228,7 +228,8 @@ describe("addDefaultRulesCore: who and what (CA-11)", () => {
       existing: EXPECTED.map((e) => ({ org_id: ORG, section: "rules", title: e[0] })),
     });
     expect(await addDefaultRulesCore(ctx(db))).toEqual({ added: 0, titles: [] });
-    expect(inserts(log)).toHaveLength(0);
+    // Not even an empty insert is sent.
+    expect(log.some((c) => c.calls.some((x) => x[0] === "insert"))).toBe(false);
   });
 
   it("can be repeated without duplicating", async () => {
