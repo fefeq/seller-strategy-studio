@@ -64,3 +64,33 @@ drop function if exists public.knowledge_doc_is_binding(text, text, boolean);
 
   No se creó ninguna empresa ni ningún dato de prueba en producción. Esto se comprobó en PGlite y en el walkthrough con base simulada, no aquí.
 - **Registro de `drizzle`:** no se actualizó, porque las aplicaciones anteriores tampoco lo hacían. Sigue pendiente NK-0085.
+
+## 0084 (2026-11-10)
+
+**Vía:** conector de Lovable (`query_database`) sobre el proyecto «Seller Strategy Studio», antes del merge de PR #123. Registro del coordinador; el tracker no consultó la base.
+**Qué añade:** las políticas de voz de la SDD `SDD-20261110-company-voice-and-escalation-rules.md` (CA-3, §10).
+
+### Antes (registro del coordinador)
+- Políticas de `knowledge_docs`: las 4 permisivas y 2 restrictivas «knowledge binding» (0081).
+- Documentos de voz: 0.
+- Secciones en uso: `company`, `methodology`, `playbooks`, `rules`.
+- `has_org_role(uuid, app_role)` disponible.
+
+### Aplicación
+- Se crean dos políticas restrictivas para `authenticated`:
+  - `knowledge voice insert`
+  - `knowledge voice update`
+- `with_check` de ambas:
+  ```sql
+  ((section <> 'voice') OR ((mandatory IS NOT TRUE) AND (has_org_role(org_id,'owner') OR has_org_role(org_id,'sales_leader'))))
+  ```
+- Los 4 documentos no cambian.
+
+### Vuelta atrás
+```sql
+drop policy if exists "knowledge voice insert" on public.knowledge_docs;
+drop policy if exists "knowledge voice update" on public.knowledge_docs;
+```
+
+### Lo que esta nota NO demuestra
+- El comportamiento en la app de la voz (lectura por todo el equipo, edición solo por Owner o Sales Leader, bloqueo de `mandatory`). No se ha verificado en la app.

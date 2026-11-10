@@ -1,7 +1,7 @@
 # SDD-20261110-plays-phase-autonomy-deps · [Mejora] Fase, nivel de aprobación y dependencias en los 28 plays
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media (es el cimiento del diagnóstico; no toca base de datos ni la lógica de ningún play)
-**Estado:** Aprobado (2026-11-10, por delegación de Fede: «si ejecuta todo vos»; dos pasadas de `nokko-gate`, objeciones de la segunda resueltas en el texto sin tercera pasada) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Hecho — PR #123 (f2b9ebe). Aprobado (2026-11-10, por delegación de Fede: «si ejecuta todo vos»; dos pasadas de `nokko-gate`, objeciones de la segunda resueltas en el texto sin tercera pasada) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **Ticket:** NK-0126 (iniciativa; este es su SDD 1)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` (cubre G-2 y G-3; prepara G-1, que se mide en el SDD 4) · **Depende de:** `SDD-20261106-plays-library-core.md` (NK-0063, entregado) · **Coordinar con:** SDD 2 de plays (`plays-signals-decay`) y NK-0081, NK-0082, NK-0083, que tocan el mismo catálogo
 
@@ -213,7 +213,7 @@ CA-4 y U-4 a `plays.test.ts`; CA-8 a `recommend.test.ts` con G-3 y solo la parte
 **Objeciones de la primera pasada que siguen sin resolver**
 - **§8, play inválido en ejecución.** Se quitó el texto «motivo del primero», pero en su lugar entra otra conducta: «`recommendablePlays` excluye el play inválido sin romper la pantalla» (SDD:70). Esa conducta no tiene CA ni prueba. Además, no dice qué motivo se devuelve.
 - **§3, rama leída (SDD:17).** Sigue diciendo «Leído en `main` @ `aa368b62`», pero `aa368b6` no está en `main`: solo está en la rama `chore/...`. La parte de `d3eeba1` sí es cierta, porque está en `main`.
-- **Decisión 19 y tabla del §13 «aceptadas por delegación de Fede».** No puedo comprobar esa delegación. La primera pasada pedía una aceptación explícita de Fede. Como el Estado sigue en «Borrador», el GO decide.
+- **Decisión 19 y tabla del §13 «aceptadas por delegación de Fede».** No puedo comprobar esa delegación. La primera pasada pedía una aceptación explícita de Fede. En esa pasada el Estado era «Borrador», así que el GO decide. Fede dio el GO del 2026-11-10 (promoción de NK-0127 en el ledger), que cubre este SDD; la delegación sigue sin poder comprobarse.
 
 **Problemas nuevos**
 1. **CA-6 no se puede probar del todo con el catálogo real.** Pide excluir dependencias «indirectas», pero el catálogo real no tiene ninguna cadena de dos saltos: solo `signal-activation` → `signals-in-crm-with-decay` (que sí se puede recomendar) y `pain-qualified-segments` → `call-transcript-signal-extraction`. Hay que exigir que `recommendablePlays` reciba el catálogo como parámetro, para probarlo con un catálogo de prueba. Lo mismo hace falta para ciclos e ids inexistentes en ejecución.

@@ -1,7 +1,7 @@
 # SDD-20261110-company-voice-and-escalation-rules · [Feature] Voz de la empresa, regla «Escalar» y reglas por defecto
 
 **Tipo:** Feature · **Prioridad propuesta:** Media (los plays que redactan hoy no tienen la voz de la empresa; las reglas por defecto reducen el riesgo de borradores fuera de tono o promesas sin base)
-**Estado:** Aprobado (2026-11-10, por delegación de Fede: «si ejecuta todo vos»; dos pasadas de `nokko-gate`, objeciones de la segunda resueltas en el texto sin tercera pasada) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Hecho — PR #123 (f2b9ebe). Aprobado (2026-11-10, por delegación de Fede: «si ejecuta todo vos»; dos pasadas de `nokko-gate`, objeciones de la segunda resueltas en el texto sin tercera pasada) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **Ticket:** NK-0126 (iniciativa; este es su SDD 3)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` (cubre G-4 y G-5) · **Depende de:** `SDD-20261106-agent-rules-reader.md` (NK-0087, Hecho), `SDD-20261109-rules-write-permissions.md` (NK-0095, Hecho en código; ver §14) y `SDD-20261109-rules-in-ai-readers.md` (NK-0096)
 
@@ -137,7 +137,7 @@ Textos propuestos; Fede los aprueba.
 
 ## 14. Riesgos y dependencias
 - **Voz visible a todo el equipo:** son mensajes reales; mitigación en el aviso, pero el riesgo existe (decisión abierta 2 del PRD, pregunta 1 de §15).
-- **0081 sin aplicar:** hasta que se aplique en la base real, un miembro que no sea líder podría escribir reglas y, con la migración de esta SDD, también voz escribiendo directo. NK-0096 «no es efectivo» según el SDD de NK-0095. Hay que ordenar la aplicación de ambas migraciones.
+- **0081 sin aplicar (resuelto):** 0081 quedó aplicada en la base viva (Lovable Cloud) el 2026-11-09. La migración de esta SDD (0084) quedó aplicada en la base viva el 2026-11-10, antes del merge de PR #123. Registro en `docs/sdd/annex/migraciones-aplicadas-20261109.md`.
 - **Convención de título:** una regla «Escalar» con un título distinto se lee como regla obligatoria normal; sigue protegiendo, pero sin el aviso de parada.
 - **Contexto más largo:** más tokens en cada redacción; sin dato de coste.
 - **Reglas por defecto que se vuelven obsoletas:** versión única; se edita a mano.
@@ -151,7 +151,7 @@ Resueltas por delegación de Fede («ejecuta todo vos», 2026-11-10):
 4. «Escalar»: convención de título dentro de la sección `rules`.
 
 ## 16. Pendiente de verificar
-- Estado real de la migración 0081 en la base viva (producción o Lovable Cloud).
+- Estado real de la migración 0081 en la base viva: **resuelto**, aplicada el 2026-11-09 (ver §14). La 0084 de esta SDD: **aplicada en la base viva el 2026-11-10**, antes del merge de PR #123.
 - Coste de añadir la voz al contexto de las llamadas de IA.
 - Valor de `VOICE_MAX_CHARS` (lo fija el brief).
 
