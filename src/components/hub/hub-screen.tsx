@@ -1,4 +1,5 @@
 import { useSearch, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +32,7 @@ import {
   sectionCounts,
   truncatedNotice,
 } from "@/lib/hub-search";
+import { addDefaultRules } from "@/lib/default-rules.functions";
 import { DriveImportButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 import { DriveAccountsPanel } from "@/components/drive-overview";
@@ -223,6 +225,22 @@ export function HubScreen() {
   const rulesReason =
     rulesLocked && me ? (isVoice ? VOICE_READ_ONLY : BINDING_SECTION_READ_ONLY) : undefined;
   const missing = missingPlays(docs);
+  // «Añadir reglas base» (NK-0128): only a click adds them; the server says how many were missing.
+  const runDefaultRules = useServerFn(addDefaultRules);
+  const baseRules = useMutation({
+    mutationFn: () => runDefaultRules(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["docs"] });
+      toast.success(
+        r.added === 0
+          ? "Ya tenías todas las reglas base."
+          : r.added === 1
+            ? "Se ha añadido 1 regla base. Revísala y edítala."
+            : `Se han añadido ${r.added} reglas base. Revísalas y edítalas.`,
+      );
+    },
+    onError: (e: Error) => toast.error(errorText(e)),
+  });
   const library = useJob("playbook_library", {
     onDone: () => qc.invalidateQueries({ queryKey: ["docs"] }),
   });
@@ -379,6 +397,18 @@ export function HubScreen() {
                   >
                     + Nuevo
                   </Button>
+                  {section === "rules" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={rulesLocked || baseRules.isPending}
+                      title={rulesReason}
+                      onClick={() => baseRules.mutate()}
+                    >
+                      Añadir reglas base
+                    </Button>
+                  )}
                   {!isVoice && (
                     <DriveImportButton
                       section={section}
