@@ -3727,13 +3727,13 @@
       "title": "Plays GTM: fase, nivel de aprobación y dependencias en los 28 plays, y recommendablePlays (NK-0126 SDD 1, Sprint 5)",
       "kind": "feature",
       "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 1; SDD aprobado por delegación de Fede 2026-11-10",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint5",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md",
       "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0127-plays-phase-autonomy-deps",
+      "base_commit": "5087438d2be93d82814cf8ce1433e9b7e43a6f2c",
       "history": [
         {
           "state": "LOGGED",
@@ -3746,6 +3746,12 @@
           "at": "2026-11-10T01:00:50.227Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T01:09:36.668Z",
+          "by": "Fede: \"NK-0127 y NK-0128 son del Sprint 5 … listos para brief\" (2026-11-10)",
+          "note": "owner=coordinador-sprint5"
         }
       ]
     },
@@ -3754,13 +3760,13 @@
       "title": "Conocimiento: voz de la empresa, regla Escalar y reglas por defecto (NK-0126 SDD 3, Sprint 5)",
       "kind": "feature",
       "source": "PRD-20261110-diagnostico-y-equipos-de-plays §8 fila 3; SDD aprobado por delegación de Fede 2026-11-10; requiere 0081 aplicada",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint5",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md",
       "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0128-company-voice-escalation-rules",
+      "base_commit": "5087438d2be93d82814cf8ce1433e9b7e43a6f2c",
       "history": [
         {
           "state": "LOGGED",
@@ -3773,6 +3779,12 @@
           "at": "2026-11-10T01:00:50.268Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T01:09:36.729Z",
+          "by": "Fede: \"NK-0127 y NK-0128 son del Sprint 5 … listos para brief\" (2026-11-10)",
+          "note": "owner=coordinador-sprint5"
         }
       ]
     },
