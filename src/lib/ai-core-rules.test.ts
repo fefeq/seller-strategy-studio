@@ -6,7 +6,13 @@
 // Fake client, fictional rules, accounts and people.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolCtx } from "@/lib/agent/tools";
-import { RULES_READ_FAILED, rulesBlock } from "@/lib/knowledge-rules";
+import {
+  ESCALAR_NO_PERSON,
+  ESCALAR_WITH_PERSON,
+  RULES_READ_FAILED,
+  rulesBlock,
+} from "@/lib/knowledge-rules";
+import { VOICE_FORM_RULE, VOICE_READ_FAILED, voiceBlock } from "@/lib/knowledge-voice";
 
 const h = vi.hoisted(() => ({
   asks: [] as { system: string; user: string }[],
@@ -398,5 +404,156 @@ describe("agent tools say when the rules were not read (CA-4)", () => {
     })) as ToolOut;
     expect(out.borrador).toBe(`${RULES_READ_FAILED}\n\nTexto del modelo.`);
     expect(out.mensaje).toBe(RULES_READ_FAILED);
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-3 · CA-5, CA-6: the five generations receive the company's voice as
+// data in the user text (never in the system text), with a fixed sentence in the system text that says to copy the form and not
+// the content; a failed read is said before the text and never logged with a message.
+describe.each(CORES)("$name with the company's voice (NK-0128, CA-5, CA-6)", (core) => {
+  const VOICE_TEXT = "Hola Ana, ¿cómo va todo? VOZ-FICTICIA-A1";
+  const voiceRow = {
+    org_id: ORG,
+    title: "Mensaje",
+    body: VOICE_TEXT,
+    section: "voice",
+    scope: "team",
+    mandatory: false,
+  };
+  const isVoiceRead = (q: Q) =>
+    q.table === "knowledge_docs" &&
+    q.filters.some((f) => f[0] === "eq" && f[1] === "section" && f[2] === "voice");
+  /** The base world plus the voice read; the extra rows are what a privileged client would return if a filter were missing. */
+  const withVoice =
+    (voice: "ok" | "error" | "throws", base: (q: Q) => Reply) =>
+    (q: Q): Reply => {
+      if (!isVoiceRead(q)) return base(q);
+      if (voice === "error") return { error: { message: `denied ${MARK}` } };
+      if (voice === "throws") return { throws: true };
+      return {
+        data: [
+          voiceRow,
+          { ...voiceRow, org_id: OTHER, body: OTHER_ORG_TEXT },
+          { ...voiceRow, scope: "personal", body: PERSONAL_TEXT },
+        ],
+      };
+    };
+
+  it.each(MODES)(
+    "%s: voice goes in the user text as data, the system text only says how to use it",
+    async (_m, scope) => {
+      const none = fakeDb(world("none"));
+      await core.run(none.db, scope);
+      const today = h.asks[0]!;
+      expect(today.system).not.toContain(VOICE_FORM_RULE);
+      expect(today.user).not.toContain("voz_de_la_empresa");
+
+      const { db, log } = fakeDb(withVoice("ok", world("none")));
+      const out = await core.run(db, scope);
+      const ask = h.asks[1]!;
+      expect(ask.system).toBe(`${today.system}\n${VOICE_FORM_RULE}`);
+      expect(ask.system).not.toContain(VOICE_TEXT);
+      expect(ask.user).toContain(voiceBlock([{ texto: VOICE_TEXT }]));
+      // Another company's message and a personal one never reach the model, even if a client returned them.
+      expect(ask.user).not.toContain(OTHER_ORG_TEXT);
+      expect(ask.user).not.toContain(PERSONAL_TEXT);
+      expect(out.text).not.toContain(VOICE_READ_FAILED);
+      const read = log.find(isVoiceRead)!;
+      expect(read.filters).toContainEqual(["eq", "org_id", ORG]);
+      expect(read.filters).toContainEqual(["eq", "scope", "team"]);
+      if (core.saved) expect(savedText(log, core)).not.toContain(VOICE_TEXT);
+    },
+  );
+
+  it("with scope = null, reads the voice of the org of the row read under RLS", async () => {
+    const { db, log } = fakeDb(withVoice("ok", world("none", OTHER)));
+    await core.run(db, null);
+    expect(log.find(isVoiceRead)!.filters).toContainEqual(["eq", "org_id", OTHER]);
+  });
+
+  it.each(["error", "throws"] as const)(
+    "voice read %s: generates without it and says so before the text; no log carries a message",
+    async (voice) => {
+      const { db, log } = fakeDb(withVoice(voice, world("ok")));
+      const out = await core.run(db, SCOPE);
+      expect(h.asks).toHaveLength(1);
+      expect(h.asks[0]!.system).not.toContain(VOICE_FORM_RULE);
+      expect(h.asks[0]!.user).not.toContain("voz_de_la_empresa");
+      expect(out.rulesRead).toBe(true);
+      expect(out.text.startsWith(`${VOICE_READ_FAILED}\n\n`)).toBe(true);
+      expect(out.text).not.toContain(RULES_READ_FAILED);
+      expect(out.text).toContain("Texto del modelo.");
+      if (core.saved) expect(savedText(log, core)).toBe(out.text);
+      expect(logs.join("\n")).toContain("knowledge voice load failed");
+      expect(logs.join("\n")).not.toContain(MARK);
+    },
+  );
+
+  it("rules and voice both fail: the rules warning first, then the voice one", async () => {
+    const out = await core.run(fakeDb(withVoice("error", world("error"))).db, SCOPE);
+    expect(out.text.startsWith(`${RULES_READ_FAILED}\n\n${VOICE_READ_FAILED}\n\n`)).toBe(true);
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-4 · CA-8: the «Escalar» rules reach each generation in the mode of
+// its caller. A person is in front when the generation is launched from a screen (scope = null) or by the agent's tools; the
+// autopilot and the background jobs call the cores with a scope and no option: no person.
+describe.each(CORES)("$name with an «Escalar» rule (NK-0128, CA-8)", (core) => {
+  const ESC = {
+    titulo: "Escalar cuando haya precio",
+    texto: `Si falta una cifra, pregunta a una persona. ${MARK}`,
+  };
+  const escRow = { ...ruleRow, title: ESC.titulo, body: ESC.texto };
+  /** The base world, but the rules read answers with a normal rule and an «Escalar» one. */
+  const withEscalar =
+    (base: (q: Q) => Reply) =>
+    (q: Q): Reply =>
+      isRulesRead(q) ? { data: [ruleRow, escRow] } : base(q);
+
+  it.each([
+    ["screen (scope = null): a person is in front", null, true],
+    ["autopilot or background job (scope, no option): no person", SCOPE, false],
+  ] as const)("%s", async (_n, scope, withPerson) => {
+    const { db } = fakeDb(withEscalar(world("none")));
+    await core.run(db, scope);
+    const system = h.asks[0]!.system;
+    const expected = rulesBlock([RULE, { ...ESC, escalar: true }], { withPerson });
+    expect(system.endsWith(`\n${expected}`)).toBe(true);
+    expect(system).toContain(withPerson ? ESCALAR_WITH_PERSON : ESCALAR_NO_PERSON);
+    expect(system).not.toContain(withPerson ? ESCALAR_NO_PERSON : ESCALAR_WITH_PERSON);
+    expect(system).toContain("reglas_de_escalado");
+  });
+});
+
+describe("the agent's tools that wrap the cores run with a person in front (NK-0128, CA-8)", () => {
+  const escRow = {
+    ...ruleRow,
+    title: "Escalar ante una queja",
+    body: "Pasa el caso a una persona.",
+  };
+  const escWorld = (q: Q): Reply => (isRulesRead(q) ? { data: [escRow] } : world("none")(q));
+
+  it.each([
+    ["research_stakeholder", { stakeholder_id: PERSON }],
+    ["review_call", { meeting_id: MEETING }],
+    ["listening_coaching", { meeting_id: MEETING }],
+    ["draft_proposal", { account_id: ACCOUNT }],
+  ] as const)("%s", async (tool, args) => {
+    await executeTool(ctxWith(fakeDb(escWorld).db), tool, args);
+    expect(h.asks[0]!.system).toContain(ESCALAR_WITH_PERSON);
+    expect(h.asks[0]!.system).not.toContain(ESCALAR_NO_PERSON);
+  });
+});
+
+describe("the callers that have no person say so (NK-0128, CA-8, source guard)", () => {
+  it("the autopilot and the job runner call the cores without withPerson, and the screens' server functions neither", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of [
+      "src/lib/autopilot.server.ts",
+      "src/lib/inngest/job-runner.server.ts",
+      "src/lib/ai.functions.ts",
+      "src/lib/playbooks/library-core.ts",
+    ])
+      expect(readFileSync(f, "utf8"), f).not.toMatch(/withPerson:\s*true/);
   });
 });

@@ -4,7 +4,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { SaveToDriveButton } from "@/components/drive";
 import type { Doc } from "@/components/hub/hub-screen";
-import { BINDING_MARK_ONLY_LEADERS, canEditDoc, canWriteBinding } from "@/lib/knowledge-rules";
+import {
+  BINDING_MARK_ONLY_LEADERS,
+  canEditDoc,
+  canWriteBinding,
+  isVoiceDoc,
+} from "@/lib/knowledge-rules";
 
 export function Editor({
   doc,
@@ -24,7 +29,10 @@ export function Editor({
 }) {
   const [title, setTitle] = useState(doc.title);
   const [body, setBody] = useState(doc.body);
-  const [mandatory, setMandatory] = useState(!!doc.mandatory);
+  // A voice document is never mandatory (NK-0128): no box, and it saves unmarked even if it came marked.
+  const isVoice = isVoiceDoc(doc);
+  const [marked, setMandatory] = useState(!!doc.mandatory);
+  const mandatory = !isVoice && marked;
   const isDraft = !doc.id;
   const isRules = doc.section === "rules";
   const empty = !title.trim() || !body.trim();
@@ -52,7 +60,7 @@ export function Editor({
         rows={18}
         className="font-mono text-base md:text-sm"
       />
-      {doc.scope === "team" && (
+      {doc.scope === "team" && !isVoice && (
         <label className="flex items-start gap-2 text-sm">
           <input
             type="checkbox"
@@ -70,7 +78,7 @@ export function Editor({
           </span>
         </label>
       )}
-      {doc.scope === "team" && !isRules && !readOnly && !canMark && roles && (
+      {doc.scope === "team" && !isVoice && !isRules && !readOnly && !canMark && roles && (
         <p className="text-xs text-muted-foreground">{BINDING_MARK_ONLY_LEADERS}</p>
       )}
       <div className="flex flex-wrap items-center gap-2">

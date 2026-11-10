@@ -4,7 +4,12 @@
 // prepare_meeting_brief pass the same block to their AI call and warn in `mensaje` when the read fails (CA-5). Fake client, fictional rules.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolCtx } from "@/lib/agent/tools";
-import { RULES_READ_FAILED, rulesBlock } from "@/lib/knowledge-rules";
+import {
+  ESCALAR_NO_PERSON,
+  ESCALAR_WITH_PERSON,
+  RULES_READ_FAILED,
+  rulesBlock,
+} from "@/lib/knowledge-rules";
 
 const h = vi.hoisted(() => ({
   systems: [] as string[],
@@ -298,4 +303,37 @@ describe("prepare_meeting_brief with the team's rules (CA-5)", () => {
       expect(logs.join("\n")).not.toContain(RULE.texto);
     },
   );
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-4 · CA-8: the agent (app and Telegram) and its drafting tools have
+// a person in front: an «Escalar» rule tells the model to stop and ask for a person to decide.
+describe("«Escalar» rules in the agent (NK-0128, CA-8)", () => {
+  const ESC = { titulo: "Escalar ante una queja", texto: "Pasa el caso a una persona." };
+  const escRow = { ...ruleRow, title: ESC.titulo, body: ESC.texto };
+  const escOk = (q: Q): Reply =>
+    q.table === "knowledge_docs" ? { data: [ruleRow, escRow] } : undefined;
+  const expected = rulesBlock([RULE, { ...ESC, escalar: true }], { withPerson: true });
+
+  it.each([
+    ["app", "chat"],
+    ["app", "interview"],
+    ["telegram", "chat"],
+  ] as const)("runAgent %s %s: with the person's instruction", async (channel, mode) => {
+    await turn(fakeDb(escOk).db, channel, mode);
+    expect(h.systems[0]).toContain(expected);
+    expect(h.systems[0]).toContain(ESCALAR_WITH_PERSON);
+    expect(h.systems[0]).not.toContain(ESCALAR_NO_PERSON);
+  });
+
+  it("draft_followup and prepare_meeting_brief: with the person's instruction", async () => {
+    await executeTool(ctxWith(fakeDb(withTools(escOk)).db), "draft_followup", { lead_id: LEAD });
+    await executeTool(ctxWith(fakeDb(withTools(escOk)).db), "prepare_meeting_brief", {
+      meeting_id: MEETING,
+    });
+    expect(h.asks).toHaveLength(2);
+    for (const a of h.asks) {
+      expect(a.system).toContain(ESCALAR_WITH_PERSON);
+      expect(a.system).not.toContain(ESCALAR_NO_PERSON);
+    }
+  });
 });

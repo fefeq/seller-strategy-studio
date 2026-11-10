@@ -40,6 +40,14 @@ export type PlayBlocker = (typeof BLOCKERS)[number];
 export const OUTPUTS = ["suggestion", "task", "draft"] as const;
 export type PlayOutput = (typeof OUTPUTS)[number];
 
+/** Order in which plays are activated: foundations first, orchestration last (SDD-20261110-plays-phase-autonomy-deps). */
+export const PHASES = ["fundacion", "captura", "generacion", "orquestacion"] as const;
+export type PlayPhase = (typeof PHASES)[number];
+
+/** Who prepares and who decides. Every play is still only a draft, suggestion or task: this never allows an automatic send. */
+export const APPROVALS = ["nokko_con_ayuda", "nokko_borrador"] as const;
+export type PlayApproval = (typeof APPROVALS)[number];
+
 export type Play = {
   id: string;
   title: string;
@@ -56,6 +64,10 @@ export type Play = {
   outputs: PlayOutput[];
   /** Gates of the play. Empty in the SDD that creates the catalogue: the logic of each play is built by SDD 2 to 9. */
   gates: GateDef[];
+  phase: PlayPhase;
+  approval: PlayApproval;
+  /** Ids of other plays that must work before this one. Plays only, not the build order of the SDDs; `needs` stays free text for the screen. */
+  dependsOn: string[];
   /** Number of the SDD of the PRD (section 8) that builds the play. */
   sdd: number;
 };
@@ -80,6 +92,9 @@ export const CATALOG: Play[] = [
     detectors: ["meeting_no_prep", "meeting_no_notes"],
     outputs: ["suggestion", "draft"],
     sdd: 4,
+    phase: "generacion",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "meeting-form-orchestration",
@@ -91,6 +106,9 @@ export const CATALOG: Play[] = [
     detectors: ["late_lead"],
     outputs: ["suggestion", "task"],
     sdd: 4,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "closed-lost-revival",
@@ -102,6 +120,9 @@ export const CATALOG: Play[] = [
     detectors: [],
     outputs: ["suggestion", "draft"],
     sdd: 3,
+    phase: "generacion",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "signals-in-crm-with-decay",
@@ -112,6 +133,9 @@ export const CATALOG: Play[] = [
     needs: ["Señales de cuenta con fecha de publicación", "Peso por tipo de señal"],
     detectors: [],
     sdd: 2,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "signal-activation",
@@ -123,6 +147,9 @@ export const CATALOG: Play[] = [
     detectors: ["account_signal"],
     outputs: ["suggestion", "task"],
     sdd: 2,
+    phase: "orquestacion",
+    approval: "nokko_borrador",
+    dependsOn: ["signals-in-crm-with-decay"],
   }),
   seed({
     id: "call-transcript-signal-extraction",
@@ -133,6 +160,9 @@ export const CATALOG: Play[] = [
     needs: ["Llamadas guardadas", "Notas de llamada", "Esquema fijo de extracción"],
     detectors: [],
     sdd: 5,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "pain-qualified-segments",
@@ -143,6 +173,9 @@ export const CATALOG: Play[] = [
     needs: ["Dolor literal extraído de las llamadas", "Segmentos"],
     detectors: [],
     sdd: 5,
+    phase: "captura",
+    approval: "nokko_con_ayuda",
+    dependsOn: ["call-transcript-signal-extraction"],
   }),
   seed({
     id: "hubspot-account-tiering-scoring",
@@ -153,6 +186,9 @@ export const CATALOG: Play[] = [
     needs: ["Deals ganados", "Puntuación por encaje con el ICP", "Tier de cuenta"],
     detectors: [],
     sdd: 6,
+    phase: "fundacion",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "crm-hygiene",
@@ -163,6 +199,9 @@ export const CATALOG: Play[] = [
     needs: ["Cuentas y personas", "Reglas de duplicados", "Catálogo de campos"],
     detectors: ["account_missing_key"],
     sdd: 6,
+    phase: "captura",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "plg-to-sales",
@@ -174,6 +213,9 @@ export const CATALOG: Play[] = [
     detectors: ["product_qualified", "usage_drop", "trial_conversion"],
     outputs: ["suggestion", "task"],
     sdd: 7,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "product-sign-up-outreach",
@@ -185,6 +227,9 @@ export const CATALOG: Play[] = [
     detectors: [],
     outputs: ["draft"],
     sdd: 7,
+    phase: "generacion",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "multi-thread-inbound-leads",
@@ -197,6 +242,9 @@ export const CATALOG: Play[] = [
     detectors: ["no_decision_maker"],
     outputs: ["suggestion", "task"],
     sdd: 7,
+    phase: "generacion",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "website-visitor-de-anonymization",
@@ -208,6 +256,9 @@ export const CATALOG: Play[] = [
     needs: ["Fuente de visitas identificadas"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "review-site-intent-scoring",
@@ -219,6 +270,9 @@ export const CATALOG: Play[] = [
     needs: ["Alertas de intención de sitios de reseñas"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "new-hire-tracking",
@@ -230,6 +284,9 @@ export const CATALOG: Play[] = [
     needs: ["Cambios de puesto de las personas clave"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "hiring-signal-monitoring",
@@ -241,6 +298,9 @@ export const CATALOG: Play[] = [
     needs: ["Ofertas de empleo de cada cuenta", "Apify activo"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "funding-signal-scraping",
@@ -252,6 +312,9 @@ export const CATALOG: Play[] = [
     needs: ["Revisión semanal de fuentes de financiación por ICP"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "tech-stack-signal-detection",
@@ -263,6 +326,9 @@ export const CATALOG: Play[] = [
     needs: ["Tecnología de cada cuenta y sus altas y bajas"],
     detectors: [],
     sdd: 8,
+    phase: "fundacion",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "brand-mentions-monitoring",
@@ -274,6 +340,9 @@ export const CATALOG: Play[] = [
     needs: ["Monitorización de menciones"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "competitor-post-engagers",
@@ -285,6 +354,9 @@ export const CATALOG: Play[] = [
     needs: ["Personas que interactúan con los competidores"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "target-account-exec-posts",
@@ -296,6 +368,9 @@ export const CATALOG: Play[] = [
     needs: ["Lista de vigilancia de ejecutivos"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "founder-connections-mining",
@@ -307,6 +382,9 @@ export const CATALOG: Play[] = [
     needs: ["Exportación de LinkedIn de la propia persona"],
     detectors: [],
     sdd: 8,
+    phase: "fundacion",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "webinar-attendee-capture",
@@ -318,6 +396,9 @@ export const CATALOG: Play[] = [
     needs: ["Herramienta de webinars sin decidir", "Importación de leads"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "automated-reply-enrichment",
@@ -329,6 +410,9 @@ export const CATALOG: Play[] = [
     needs: ["Bandeja de respuestas entrantes"],
     detectors: [],
     sdd: 8,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "abm-ads",
@@ -340,6 +424,9 @@ export const CATALOG: Play[] = [
     needs: ["ICP", "Cuentas descubiertas", "Plataformas de anuncios (fuera de alcance)"],
     detectors: [],
     sdd: 8,
+    phase: "fundacion",
+    approval: "nokko_con_ayuda",
+    dependsOn: [],
   }),
   seed({
     id: "public-records-signals",
@@ -351,6 +438,9 @@ export const CATALOG: Play[] = [
     needs: ["Consulta de registros públicos por calendario"],
     detectors: [],
     sdd: 9,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "public-filings-qualification",
@@ -362,6 +452,9 @@ export const CATALOG: Play[] = [
     needs: ["Hecho de registro público sobre la cuenta"],
     detectors: [],
     sdd: 9,
+    phase: "captura",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
   seed({
     id: "local-business-tam",
@@ -373,6 +466,9 @@ export const CATALOG: Play[] = [
     needs: ["Directorios de negocios locales"],
     detectors: [],
     sdd: 9,
+    phase: "fundacion",
+    approval: "nokko_borrador",
+    dependsOn: [],
   }),
 ];
 

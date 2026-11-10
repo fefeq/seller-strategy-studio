@@ -582,6 +582,13 @@
       "when": 1794398400000,
       "tag": "0083_deals_source_no_default",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1794484800000,
+      "tag": "0084_knowledge_voice_writers",
+      "breakpoints": true
     }
   ]
 }

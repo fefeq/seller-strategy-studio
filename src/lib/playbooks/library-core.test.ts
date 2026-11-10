@@ -5,7 +5,12 @@
 // Fake client (the real companyContext and loadAgentRules run on it), fictional rules and company.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolCtx } from "@/lib/agent/tool-kit";
-import { RULES_READ_FAILED, rulesBlock } from "@/lib/knowledge-rules";
+import {
+  ESCALAR_NO_PERSON,
+  ESCALAR_WITH_PERSON,
+  RULES_READ_FAILED,
+  rulesBlock,
+} from "@/lib/knowledge-rules";
 import { ADAPT_SYSTEM } from "@/lib/playbooks/adapt";
 import { BASE_PLAYS } from "@/lib/playbooks/base";
 
@@ -210,5 +215,28 @@ describe("a failed adaptation is logged without the error (CA-8, CA-6)", () => {
       expect(a[2]).toEqual({ name: "Error", messageLength: err.message.length });
     }
     expect(logs.join("\n")).not.toContain(MARK);
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-4 · CA-8: the library runs as a background job: nobody reads the
+// adaptation as it is written, so an «Escalar» rule asks for the «Necesita a una persona» line instead of a stop.
+describe("playbook library with an «Escalar» rule (NK-0128, CA-8)", () => {
+  it("each adaptation gets the instruction for jobs without a person", async () => {
+    const esc = {
+      ...ruleRow,
+      title: "Escalar ante una queja",
+      body: "Pasa el caso a una persona.",
+    };
+    const base = world("ok");
+    const { db } = fakeDb((q) => (isRulesRead(q) ? { data: [ruleRow, esc] } : base(q)));
+    await createLibraryCore(ctxWith(db));
+    expect(h.asks.length).toBeGreaterThan(0);
+    for (const a of h.asks) {
+      expect(a.system).toBe(
+        `${ADAPT_SYSTEM}\n${rulesBlock([RULE, { titulo: esc.title, texto: esc.body, escalar: true }], { withPerson: false })}`,
+      );
+      expect(a.system).toContain(ESCALAR_NO_PERSON);
+      expect(a.system).not.toContain(ESCALAR_WITH_PERSON);
+    }
   });
 });
