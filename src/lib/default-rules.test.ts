@@ -266,6 +266,127 @@ describe("addDefaultRulesCore: failures (CA-11)", () => {
   });
 });
 
+// NK-0136 CA-1: two sessions of the same company press «Añadir reglas base» at the same time. Both read before either writes, so
+// the title check alone cannot stop them: the database does (migration 0085, a unique index), and the loser must read again, not fail.
+/** A fake that models the unique index of 0085 on (org_id, lower(btrim(title))) for team rules, with an atomic batch insert. */
+function racingDb(seed: Existing[] = []) {
+  const store: Existing[] = [...seed];
+  let reads = 0;
+  let inserts = 0;
+  const key = (r: Existing) => `${r.org_id}|${r.title.trim().toLowerCase()}`;
+  const from = () => {
+    let batch: Existing[] | undefined;
+    const proxy: object = new Proxy(
+      {},
+      {
+        get(_t, prop: string) {
+          if (prop === "then")
+            return (ok: (v: unknown) => unknown) => {
+              if (batch) {
+                inserts++;
+                const seen = new Set(store.map(key));
+                const clash =
+                  batch.some((r) => seen.has(key(r))) ||
+                  new Set(batch.map(key)).size < batch.length;
+                if (clash)
+                  return Promise.resolve({
+                    data: null,
+                    error: {
+                      code: "23505",
+                      message: "duplicate key value violates unique constraint",
+                    },
+                  }).then(ok);
+                store.push(...batch);
+                return Promise.resolve({ data: null, error: null }).then(ok);
+              }
+              reads++;
+              const snapshot = store.slice();
+              // Yield so the other session reads before this one writes.
+              return new Promise((r) => setTimeout(r, 0))
+                .then(() => ({ data: snapshot, error: null }))
+                .then(ok);
+            };
+          return (...args: unknown[]) => {
+            if (prop === "insert") batch = [args[0]].flat() as Existing[];
+            return proxy;
+          };
+        },
+      },
+    );
+    return proxy;
+  };
+  return {
+    db: { from } as unknown as Parameters<typeof addDefaultRulesCore>[0]["db"],
+    store,
+    counts: () => ({ reads, inserts }),
+  };
+}
+
+describe("addDefaultRulesCore: two sessions at once (NK-0136 CA-1)", () => {
+  it("both calls succeed and the company ends with each base rule exactly once", async () => {
+    const f = racingDb();
+    const [a, b] = await Promise.all([
+      addDefaultRulesCore(ctx(f.db)),
+      addDefaultRulesCore(ctx(f.db, ["sales_leader"])),
+    ]);
+    expect(f.store).toHaveLength(9);
+    expect(new Set(f.store.map((r) => r.title.toLowerCase())).size).toBe(9);
+    // Whoever lost the race reports what it really added: between them, nine.
+    expect(a.added + b.added).toBe(9);
+    expect([a.added, b.added].sort()).toEqual([0, 9]);
+  });
+
+  it("the loser reads again after the conflict and adds only what is still missing", async () => {
+    const f = racingDb();
+    const [a, b] = await Promise.all([
+      addDefaultRulesCore(ctx(f.db)),
+      addDefaultRulesCore(ctx(f.db)),
+    ]);
+    expect(f.counts().reads).toBe(3);
+    expect(f.store).toHaveLength(9);
+    expect(a.titles.length + b.titles.length).toBe(9);
+  });
+
+  it("a conflict that persists after the retries is reported in our words, not the database's", async () => {
+    // A database that rejects every insert as a duplicate while the read never shows it: it must not loop forever.
+    const stuck = {
+      from: () => {
+        const p: object = new Proxy(
+          {},
+          {
+            get(_t, prop: string) {
+              if (prop === "then")
+                return (ok: (v: unknown) => unknown) =>
+                  Promise.resolve({ data: [], error: null }).then(ok);
+              return () => {
+                if (prop === "insert")
+                  return {
+                    then: (ok: (v: unknown) => unknown) =>
+                      Promise.resolve({
+                        data: null,
+                        error: { code: "23505", message: "SECRETO-BD" },
+                      }).then(ok),
+                  };
+                return p;
+              };
+            },
+          },
+        );
+        return p;
+      },
+    } as unknown as Parameters<typeof addDefaultRulesCore>[0]["db"];
+    const err = await addDefaultRulesCore(ctx(stuck)).catch((e: Error) => e);
+    expect((err as Error).message).toBe(DEFAULT_RULES_SAVE_FAILED);
+    expect(logs.join("\n")).not.toContain("SECRETO-BD");
+  });
+
+  it("any other insert error is not retried", async () => {
+    const { db, log } = fakeDb({ insertError: true });
+    await expect(addDefaultRulesCore(ctx(db))).rejects.toThrow(DEFAULT_RULES_SAVE_FAILED);
+    expect(log.filter((c) => c.insert)).toHaveLength(1);
+  });
+});
+
 // CA-12 · regression guard, not fail-first (true today): no base rule is created by anything but the explicit action.
 describe("no base rule is created without the action (CA-12, source guard)", () => {
   const read = (f: string) => readFileSync(f, "utf8");
