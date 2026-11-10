@@ -2,7 +2,7 @@
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media (reutiliza onboarding, plays, Reglas y Conocimiento que ya existen; el coste es de ingeniería y no de proveedores; depende de dos tickets de onboarding sin empezar)
 **Estado:** Aprobado (Fede, 2026-11-10) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
-**SDD que lo desarrollan:** pendiente (sección 8)
+**SDD que lo desarrollan:** `docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, aprobado) y `docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md` (NK-0128, aprobado); el resto, pendiente (sección 8)
 **Sprint:** 4 (decidido por Fede el 2026-11-10; el sprint está en curso con NK-0123); ver sección 8 y el riesgo de dependencias
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
@@ -81,6 +81,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 23 | Escalar a un humano | Tipo de Regla en Conocimiento |
 | 24 | Reglas por defecto | Las redacta Claude y las aprueba Fede |
 | 25 | Sprint | 4 (Fede, 2026-11-10) |
+| 28 | NK-0028 | Rechazado en el ledger por superado (delegación de Fede, 2026-11-10); su sustituto, por definir |
 | 27 | Aprobación | Fede aprueba el PRD y la composición de los seis equipos («ok a todo», 2026-11-10) |
 | 26 | Onboarding | NK-0009 y NK-0028 entran en el Sprint 4 (Fede, 2026-11-10), con una corrección: NK-0028 está superado por GTM Lab, así que entra su sustituto, aún por definir |
 
@@ -116,9 +117,9 @@ Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-00
 | # | SDD | Tipo | Depende de | Cubre |
 |---|---|---|---|---|
 | 0 | NK-0009 (revalidar contra GTM Lab) y el sustituto de NK-0028 (por definir) | Feature | — | Base del diagnóstico |
-| 1 | `SDD-…-plays-phase-autonomy-deps` (fase, nivel de aprobación y dependencias formales en el catálogo de 28 plays) | Mejora | 0; coordinar con SDD 2 de plays | G-2, G-3 |
+| 1 | `SDD-20261110-plays-phase-autonomy-deps` (NK-0127) (fase, nivel de aprobación y dependencias formales en el catálogo de 28 plays) | Mejora | 0; coordinar con SDD 2 de plays | G-2, G-3 |
 | 2 | `SDD-…-play-teams` (catálogo de tareas, seis equipos y vista en `/plays`) | Feature | 1 | G-1, G-2, G-3 |
-| 3 | `SDD-…-company-voice-and-escalation-rules` (voz en Conocimiento, regla «Escalar», reglas por defecto aprobadas) | Feature | NK-0095, NK-0096 | G-4, G-5 |
+| 3 | `SDD-20261110-company-voice-and-escalation-rules` (NK-0128) (voz en Conocimiento, regla «Escalar», reglas por defecto aprobadas) | Feature | NK-0095, NK-0096 | G-4, G-5 |
 | 4 | `SDD-…-diagnosis-in-chat` (diagnóstico en el asistente que genera equipos priorizados) | Feature | 1, 2, 3 | G-1, G-4, G-5 |
 | 5 | `SDD-…-diagnosis-guided-wizard` (asistente guiado, extiende el onboarding) | Feature | 4; pantalla nueva | G-1 |
 
