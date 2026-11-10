@@ -5,6 +5,7 @@ import { TOOLS, canUseTool, executeTool, getTool, type ToolCtx } from "@/lib/age
 import { TITLES } from "@/lib/mcp/tools/agent-tools";
 import { CATALOG } from "@/lib/plays/catalog";
 import { APPROVAL_WORD, PHASE_WORD } from "@/lib/plays/view";
+import { PLAY_TEAMS, teamPlan } from "@/lib/plays/teams";
 
 // A fake Supabase client: records every query and answers from `reply` (same idea as agent-tools.test.ts).
 type Q = {
@@ -297,5 +298,84 @@ describe("titles and manifest (CA-19, G-3)", () => {
     expect(hint("get_play")).toBe(true);
     expect(hint("set_play_enabled")).toBe(false);
     for (const n of names) expect(tools.find((t) => t.name === n)?.title, n).toBe(TITLES[n]);
+  });
+});
+
+// SDD-20261110-play-teams U-4 (CA-13, CA-14, CA-15): list_play_teams, a read tool over the teams of plays.
+describe("list_play_teams (CA-13, G-1, G-2)", () => {
+  it("is a read tool for any member with an empty input", () => {
+    const t = getTool("list_play_teams")!;
+    expect(t.kind).toBe("read");
+    expect(t.roles).toBeUndefined();
+    expect(canUseTool(t, ["ae"])).toBe(true);
+    expect(Object.keys((t.input as unknown as { shape: object }).shape)).toEqual([]);
+    expect(t.input.safeParse({}).success).toBe(true);
+  });
+
+  it("returns the six teams in order, built with the play_states of the caller's company, and writes nothing", async () => {
+    const rows = [{ play_id: "signals-in-crm-with-decay", enabled: true }];
+    const { db, log } = fakeDb(states(rows));
+    const out = (await executeTool(ctxWith(db, ["ae"]), "list_play_teams", {})) as {
+      teams: { id: string }[];
+    };
+    expect(out.teams.map((t) => t.id)).toEqual(PLAY_TEAMS.map((t) => t.id));
+    const byId = new Map(rows.map((r) => [r.play_id, r]));
+    expect(out).toEqual(
+      JSON.parse(JSON.stringify({ teams: PLAY_TEAMS.map((t) => teamPlan(t, CATALOG, byId)) })),
+    );
+    for (const t of out.teams)
+      expect(Object.keys(t).sort()).toEqual([
+        "id",
+        "steps",
+        "summary",
+        "task",
+        "title",
+        "unavailable",
+      ]);
+    expect(log.map((q) => q.table)).toEqual(["play_states"]);
+    expect(writes(log)).toHaveLength(0);
+    expectScoped(log);
+  });
+
+  it("a failing play_states read still returns the teams with the defaults, like list_plays", async () => {
+    const { db } = fakeDb((q) =>
+      q.table === "play_states" ? { error: { message: "relation does not exist" } } : undefined,
+    );
+    const out = (await executeTool(ctxWith(db, ["ae"]), "list_play_teams", {})) as {
+      teams: { id: string; summary: { enabled: number } }[];
+    };
+    expect(out.teams).toHaveLength(6);
+    expect(out).toEqual(
+      JSON.parse(JSON.stringify({ teams: PLAY_TEAMS.map((t) => teamPlan(t, CATALOG, new Map())) })),
+    );
+  });
+});
+
+describe("list_play_teams: title, manifest and words (CA-14, CA-15, G-2)", () => {
+  it("has the title in TITLES and is in the registry exactly once", () => {
+    expect(TITLES.list_play_teams).toBe("Ver los equipos de plays");
+    expect(TOOLS.filter((t) => t.name === "list_play_teams")).toHaveLength(1);
+  });
+  it("is once in .lovable/mcp/manifest.json with that title and readOnlyHint true", () => {
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const found = manifest.mcp.tools.filter((t: { name: string }) => t.name === "list_play_teams");
+    expect(found).toHaveLength(1);
+    expect(found[0].title).toBe(TITLES.list_play_teams);
+    expect(found[0].annotations.readOnlyHint).toBe(true);
+  });
+  it("its description says it only reads, what a team is, that a play can be in several and is activated once, and to use set_play_enabled", () => {
+    const d = getTool("list_play_teams")!.description;
+    expect(d).toMatch(/Solo lee/);
+    expect(d).toMatch(/equipo de plays agrupa plays por tarea/);
+    expect(d).toMatch(/puede estar en varios equipos/);
+    expect(d).toMatch(/se activa una vez/);
+    expect(d).toMatch(/set_play_enabled/);
+  });
+  it("words: no capitalised «Equipo» outside «equipo de plays»; no «agente» in the title; no team called an agent", () => {
+    const d = getTool("list_play_teams")!.description;
+    expect(d).not.toMatch(/\bEquipos?\b(?! de plays)/);
+    expect(TITLES.list_play_teams).not.toMatch(/\bEquipos?\b(?! de plays)/);
+    expect(TITLES.list_play_teams).not.toMatch(/\bagentes?\b/i);
+    expect(d).not.toMatch(/equipos? de plays[^.]*\bagentes?\b/i);
   });
 });
