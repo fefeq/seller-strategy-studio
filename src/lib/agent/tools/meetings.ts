@@ -178,7 +178,7 @@ export const MEETING_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "meetings", a.meeting_id, "esa reunión");
       const { callTeardownCore } = await import("@/lib/ai-core");
-      const r = await callTeardownCore(c.db, a.meeting_id, scope(c));
+      const r = await callTeardownCore(c.db, a.meeting_id, scope(c), { withPerson: true });
       // A failed read of the rules is never silent (SDD-20261109-rules-in-ai-readers, CA-4).
       const done = `Revisión de «${r.title}» guardada en la reunión.`;
       return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
@@ -194,7 +194,7 @@ export const MEETING_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "meetings", a.meeting_id, "esa reunión");
       const { listeningCoachingCore } = await import("@/lib/ai-core");
-      const r = await listeningCoachingCore(c.db, a.meeting_id, scope(c));
+      const r = await listeningCoachingCore(c.db, a.meeting_id, scope(c), { withPerson: true });
       const done = `Coaching de escucha de «${r.title}» guardado en la reunión.`;
       return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
     },

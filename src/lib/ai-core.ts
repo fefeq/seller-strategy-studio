@@ -30,25 +30,36 @@ const inOrg = <Q extends { eq(column: "org_id", value: string): Q }>(q: Q, scope
  * The team's rules for a generation (SDD-20261109-rules-in-ai-readers): with a scope, the company is scope.orgId; with
  * scope = null, the org_id of the row already read under RLS. No company to read with is a failure, never «no rules».
  */
-async function rulesFor(db: Db, scope: AiScope, rowOrg: unknown): Promise<Guidance> {
+async function rulesFor(
+  db: Db,
+  scope: AiScope,
+  rowOrg: unknown,
+  opts: AiOptions,
+): Promise<Guidance> {
+  // Who reads the answer decides what an «Escalar» rule asks (NK-0128): a screen (scope = null) has a person in front; the
+  // autopilot and the background jobs call with a scope and no option, so they have none; the agent's tools say it explicitly.
+  const withPerson = opts.withPerson ?? scope === null;
   const orgId = scope ? scope.orgId : typeof rowOrg === "string" ? rowOrg : "";
   if (!orgId) {
     console.error("knowledge rules load failed", "no org");
-    return { ok: false, rules: [], voice: await loadVoice({ db, orgId }) };
+    return { ok: false, rules: [], voice: await loadVoice({ db, orgId }), withPerson };
   }
   const [r, voice] = await Promise.all([loadAgentRules({ db, orgId }), loadVoice({ db, orgId })]);
-  return { ...r, voice };
+  return { ...r, voice, withPerson };
 }
 
 /** What a generation reads about the company: the team's rules and, apart, its voice (NK-0128). Each reports its own failure. */
-type Guidance = LoadedRules & { voice: LoadedVoice };
+type Guidance = LoadedRules & { voice: LoadedVoice; withPerson: boolean };
+
+/** withPerson: a person reads the answer now (see rulesFor). */
+export type AiOptions = { withPerson?: boolean };
 
 /**
  * The system text with the rules block after it; without rules, the system text as it was. With voice examples it adds the one
  * fixed sentence that says how to use them: the examples themselves go in the user text (withVoice), never in the system text.
  */
 function withRules(system: string, r: Guidance) {
-  const block = rulesBlock(r.rules);
+  const block = rulesBlock(r.rules, { withPerson: r.withPerson });
   const base = block ? `${system}\n${block}` : system;
   return r.voice.examples.length ? `${base}\n${VOICE_FORM_RULE}` : base;
 }
@@ -140,6 +151,7 @@ export async function meetingBriefCore(
   db: Db,
   meetingId: string,
   scope: AiScope = null,
+  opts: AiOptions = {},
 ): Promise<{ brief: string; title: string; accountId: string | null; rulesRead: boolean }> {
   const { data: m } = await inOrg(
     db.from("meetings").select("*").eq("id", meetingId),
@@ -148,7 +160,7 @@ export async function meetingBriefCore(
   if (!m) throw new Error("Reunión no encontrada");
   const [ctx, rules] = await Promise.all([
     m.account_id ? accountContext(db, m.account_id, scope) : Promise.resolve("{}"),
-    rulesFor(db, scope, m.org_id),
+    rulesFor(db, scope, m.org_id, opts),
   ]);
   const text = await ask(
     withRules(
@@ -169,7 +181,12 @@ export async function meetingBriefCore(
  * AI teardown of a call: compares the five-line notes (and free notes) with the meeting's goal, the brief
  * and the deal's MEDDPICC, and says what worked, what is missing and what to update. Saved on the meeting.
  */
-export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope = null) {
+export async function callTeardownCore(
+  db: Db,
+  meetingId: string,
+  scope: AiScope = null,
+  opts: AiOptions = {},
+) {
   const { data: m } = await inOrg(
     db
       .from("meetings")
@@ -191,7 +208,7 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
         ).maybeSingle()
       : Promise.resolve({ data: null }),
     m.account_id ? accountContext(db, m.account_id, scope) : Promise.resolve("{}"),
-    rulesFor(db, scope, m.org_id),
+    rulesFor(db, scope, m.org_id, opts),
   ]);
   const reunion = {
     titulo: m.title,
@@ -226,15 +243,22 @@ export async function callTeardownCore(db: Db, meetingId: string, scope: AiScope
 }
 
 /** Business case draft for an account. Returns the text; nothing is saved or sent. */
-export async function proposalCore(db: Db, accountId: string, scope: AiScope = null) {
+export async function proposalCore(
+  db: Db,
+  accountId: string,
+  scope: AiScope = null,
+  opts: AiOptions = {},
+) {
   // Without a scope, the account's org_id (read under RLS) says whose rules apply; not found = no org = failure.
   const [ctx, rules] = await Promise.all([
     accountContext(db, accountId, scope),
     scope
-      ? rulesFor(db, scope, null)
+      ? rulesFor(db, scope, null, opts)
       : inOrg(db.from("accounts").select("org_id").eq("id", accountId), scope)
           .maybeSingle()
-          .then((r: { data: { org_id?: unknown } | null }) => rulesFor(db, scope, r.data?.org_id)),
+          .then((r: { data: { org_id?: unknown } | null }) =>
+            rulesFor(db, scope, r.data?.org_id, opts),
+          ),
   ]);
   const text = await ask(
     withRules(
@@ -255,6 +279,7 @@ export async function researchStakeholderCore(
   db: Db,
   stakeholderId: string,
   scope: AiScope = null,
+  opts: AiOptions = {},
 ) {
   const { data: s } = await inOrg(
     db.from("stakeholders").select("*").eq("id", stakeholderId),
@@ -264,7 +289,7 @@ export async function researchStakeholderCore(
   const [{ data: acc }, ctx, rules] = await Promise.all([
     inOrg(db.from("accounts").select("name,domain").eq("id", s.account_id), scope).maybeSingle(),
     accountContext(db, s.account_id, scope),
-    rulesFor(db, scope, s.org_id),
+    rulesFor(db, scope, s.org_id, opts),
   ]);
   let web: NewsItem[] = [];
   let webNote = "";
@@ -315,7 +340,12 @@ export async function researchStakeholderCore(
 }
 
 /** Listening coaching for a meeting, saved on the meeting. */
-export async function listeningCoachingCore(db: Db, meetingId: string, scope: AiScope = null) {
+export async function listeningCoachingCore(
+  db: Db,
+  meetingId: string,
+  scope: AiScope = null,
+  opts: AiOptions = {},
+) {
   const { data: row } = await inOrg(
     db
       .from("meetings")
@@ -334,7 +364,7 @@ export async function listeningCoachingCore(db: Db, meetingId: string, scope: Ai
     account_id
       ? inOrg(db.from("accounts").select("name").eq("id", account_id), scope).maybeSingle()
       : Promise.resolve({ data: null }),
-    rulesFor(db, scope, org_id),
+    rulesFor(db, scope, org_id, opts),
   ]);
   const m = { ...fields, accounts: acc.data ? { name: acc.data.name } : null };
   const lines = normalizeCallNotes(m.call_notes);

@@ -546,7 +546,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         positioning: setup.positioning,
         pillars: setup.pillars,
       });
-      const block = rulesBlock(rules.rules);
+      const block = rulesBlock(rules.rules, { withPerson: true });
       const text = await ask(
         `Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.${block ? `\n${block}` : ""}${voice.examples.length ? `\n${VOICE_FORM_RULE}` : ""}`,
         JSON.stringify({

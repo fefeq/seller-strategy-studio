@@ -6,7 +6,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolContext } from "@lovable.dev/mcp-js";
 import type { ToolCtx } from "@/lib/agent/tools";
-import { RULES_READ_FAILED, rulesBlock } from "@/lib/knowledge-rules";
+import {
+  ESCALAR_NO_PERSON,
+  ESCALAR_WITH_PERSON,
+  RULES_READ_FAILED,
+  rulesBlock,
+} from "@/lib/knowledge-rules";
 
 const h = vi.hoisted(() => ({ ctx: null as unknown }));
 vi.mock("@/lib/mcp/context", async (orig) => ({
@@ -159,5 +164,25 @@ describe("the MCP server lists it and tells assistants to call it (CA-10, CA-11)
       "Antes de redactar textos para la empresa o proponer acciones, llama a get_team_rules y cumple sus reglas_obligatorias.",
     );
     expect(mcp.instructions).toContain(RULES_MCP_INSTRUCTION);
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-4 · CA-8: an external assistant is handled by a person, so the
+// «Escalar» rules come with the instruction to stop and ask for a person to decide.
+describe("get_team_rules with an «Escalar» rule (NK-0128, CA-8)", () => {
+  it("answers the block in the with-person mode", async () => {
+    const esc = {
+      ...ruleRow,
+      title: "Escalar ante una queja",
+      body: "Pasa el caso a una persona.",
+    };
+    const out = await teamRulesText(ctxWith(fakeDb({ data: [ruleRow, esc] }).db));
+    expect(out).toBe(
+      rulesBlock([RULE, { titulo: esc.title, texto: esc.body, escalar: true }], {
+        withPerson: true,
+      }),
+    );
+    expect(out).toContain(ESCALAR_WITH_PERSON);
+    expect(out).not.toContain(ESCALAR_NO_PERSON);
   });
 });

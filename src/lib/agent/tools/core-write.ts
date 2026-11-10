@@ -465,7 +465,7 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
         loadAgentRules(c),
         loadVoice(c),
       ]);
-      const block = rulesBlock(rules.rules);
+      const block = rulesBlock(rules.rules, { withPerson: true });
       const brief = await ask(
         `Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.${block ? `\n${block}` : ""}${voice.examples.length ? `\n${VOICE_FORM_RULE}` : ""}`,
         JSON.stringify({
