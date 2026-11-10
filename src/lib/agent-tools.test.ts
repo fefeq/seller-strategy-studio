@@ -1643,3 +1643,31 @@ describe("create_deal source", () => {
     expect(t.inputSchema.required ?? []).not.toContain("source");
   });
 });
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-2 · CA-3 (regression guard, not fail-first: true today): Drive
+// and the agent do not admit «voice» as a destination section, so no privileged path writes the company's voice.
+describe("voice is not a destination section of Drive or the agent (NK-0128, CA-3)", () => {
+  it("drive_import_to_knowledge refuses section voice before reading Drive or writing", async () => {
+    nk95.getFile.mockReset();
+    nk95.downloadText.mockReset();
+    const { db, log } = fakeDb();
+    await expect(
+      executeTool(ctxWith(db, ["owner"]), "drive_import_to_knowledge", {
+        file: "file-guia-1",
+        section: "voice",
+      }),
+    ).rejects.toThrow();
+    expect(nk95.getFile).not.toHaveBeenCalled();
+    expect(writes(log, "knowledge_docs")).toEqual([]);
+  });
+
+  it("the closed lists of sections of the three Drive entry points do not contain voice", async () => {
+    const { readFileSync } = await import("node:fs");
+    for (const f of [
+      "src/lib/agent/tools/drive.ts",
+      "src/lib/drive.functions.ts",
+      "src/lib/background.functions.ts",
+    ])
+      expect(readFileSync(f, "utf8"), f).not.toMatch(/["']voice["']/);
+  });
+});
