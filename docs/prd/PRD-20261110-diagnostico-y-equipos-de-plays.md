@@ -81,6 +81,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 23 | Escalar a un humano | Tipo de Regla en Conocimiento |
 | 24 | Reglas por defecto | Las redacta Claude y las aprueba Fede |
 | 25 | Sprint | 4 (Fede, 2026-11-10) |
+| 26 | Onboarding | NK-0009 y NK-0028 también entran en el Sprint 4 (Fede, 2026-11-10); siguen LOGGED hasta que se les haga SDD y GO |
 
 **Composición propuesta de los seis equipos (para tu revisión; es una propuesta, no una decisión)**
 | Equipo de plays | Plays | Nota |
@@ -109,7 +110,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 - **Solo lectura hasta aquí:** no he leído el código de cada play ni el estado de las ramas `claude/*`.
 
 ## 8. Orden de entrega
-Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-0028, que siguen sin empezar; si no entran también en el sprint 4, solo los SDD 1 y 3 pueden empezar sin ellos (no dependen del onboarding).
+Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-0028, que también entran en el sprint 4 por decisión de Fede (siguen LOGGED, sin SDD ni GO). Mientras no estén cerrados, solo los SDD 1 y 3 pueden empezar (no dependen del onboarding).
 
 | # | SDD | Tipo | Depende de | Cubre |
 |---|---|---|---|---|
