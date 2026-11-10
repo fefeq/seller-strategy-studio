@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 125,
+  "seq": 126,
   "tickets": [
     {
       "id": "NK-0001",
@@ -3596,6 +3596,33 @@
           "at": "2026-11-09T22:37:48.943Z",
           "by": "tracker",
           "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0126",
+      "title": "Diagnóstico de entrada y equipos de plays (Sprint 5): fase, autonomía y dependencias en los 28 plays, seis equipos de plays, voz y regla Escalar",
+      "kind": "feature",
+      "source": "Fede, entrevista 2026-11-10; PRD-20261110-diagnostico-y-equipos-de-plays; depende de NK-0009 y NK-0028; coordinar con SDD 2 de plays y NK-0081 a NK-0083",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:40:04.045Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:40:10.752Z",
+          "by": "tracker",
+          "note": "docs: sdd=- prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
         }
       ]
     }
