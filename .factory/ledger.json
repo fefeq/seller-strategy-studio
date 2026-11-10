@@ -3601,7 +3601,7 @@
     },
     {
       "id": "NK-0126",
-      "title": "Diagnóstico de entrada y equipos de plays (Sprint 5): fase, autonomía y dependencias en los 28 plays, seis equipos de plays, voz y regla Escalar",
+      "title": "Diagnóstico de entrada y equipos de plays (Sprint 4): fase, autonomía y dependencias en los 28 plays, seis equipos de plays, voz y regla Escalar",
       "kind": "feature",
       "source": "Fede, entrevista 2026-11-10; PRD-20261110-diagnostico-y-equipos-de-plays; depende de NK-0009 y NK-0028; coordinar con SDD 2 de plays y NK-0081 a NK-0083",
       "state": "LOGGED",

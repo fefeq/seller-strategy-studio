@@ -3,7 +3,7 @@
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media (reutiliza onboarding, plays, Reglas y Conocimiento que ya existen; el coste es de ingeniería y no de proveedores; depende de dos tickets de onboarding sin empezar)
 **Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **SDD que lo desarrollan:** pendiente (sección 8)
-**Sprint propuesto:** 5 (el 4 está en curso con NK-0123); ver sección 8
+**Sprint:** 4 (decidido por Fede el 2026-11-10; el sprint está en curso con NK-0123); ver sección 8 y el riesgo de dependencias
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
 
@@ -80,6 +80,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 22 | Dónde vive la voz | Sección propia en Conocimiento, solo equipo |
 | 23 | Escalar a un humano | Tipo de Regla en Conocimiento |
 | 24 | Reglas por defecto | Las redacta Claude y las aprueba Fede |
+| 25 | Sprint | 4 (Fede, 2026-11-10) |
 
 **Composición propuesta de los seis equipos (para tu revisión; es una propuesta, no una decisión)**
 | Equipo de plays | Plays | Nota |
@@ -108,7 +109,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 - **Solo lectura hasta aquí:** no he leído el código de cada play ni el estado de las ramas `claude/*`.
 
 ## 8. Orden de entrega
-Sprint propuesto: **5**, porque el 4 está en curso (NK-0123). Requisito previo: NK-0009 y NK-0028.
+Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-0028, que siguen sin empezar; si no entran también en el sprint 4, solo los SDD 1 y 3 pueden empezar sin ellos (no dependen del onboarding).
 
 | # | SDD | Tipo | Depende de | Cubre |
 |---|---|---|---|---|
