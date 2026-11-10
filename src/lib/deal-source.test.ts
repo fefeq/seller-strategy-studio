@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   AI_NO_SOURCE,
+  DEAL_SOURCE_KEYS,
   DEAL_SOURCE_LABELS,
   NO_SOURCE,
   dealSourceLabel,
@@ -64,5 +65,13 @@ describe("source guard", () => {
   it("deal-source.ts never writes the literal «—»", () => {
     const src = readFileSync(`${process.cwd()}/src/lib/deal-source.ts`, "utf8");
     expect(src).not.toContain("—");
+  });
+});
+
+// SDD-20261109-new-deal-source U-1 (NK-0123) CA-7: the tuple that validates create_deal never diverges from the labels.
+describe("DEAL_SOURCE_KEYS", () => {
+  it("has the same keys, in the same order, as DEAL_SOURCE_LABELS", () => {
+    expect([...DEAL_SOURCE_KEYS]).toEqual(Object.keys(DEAL_SOURCE_LABELS));
+    expect(DEAL_SOURCE_KEYS).toHaveLength(6);
   });
 });

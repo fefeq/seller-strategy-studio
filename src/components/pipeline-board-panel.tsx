@@ -16,6 +16,7 @@ import type { SegLike } from "@/lib/segment-coverage";
 import { useStages } from "@/components/stage-settings";
 import { Kpi, ScreenState } from "@/components/page";
 import { FigureWithMark } from "@/components/metrics/figure";
+import { DataMark } from "@/components/metrics/data-mark";
 import { ExplanationFold } from "@/components/explanation-fold";
 
 const fmt1 = (n: number) => n.toLocaleString("es-ES", { maximumFractionDigits: 1 });
@@ -146,7 +147,13 @@ export function PipelineBoardPanel({ quarter }: { quarter: string }) {
         <Kpi
           size="inline"
           label="Gasto de captación del trimestre"
-          value={view.cost ? money(view.cost) : "—"}
+          value={
+            view.cost ? (
+              money(view.cost)
+            ) : (
+              <DataMark state="sin_dato" reason="sin gasto de captación apuntado" />
+            )
+          }
           hint={
             view.cost ? (
               <>

@@ -5,12 +5,15 @@ import { dealSourceOptions } from "@/lib/deal-source";
 export function DealSourceField({
   value,
   onChange,
+  "aria-label": ariaLabel,
 }: {
   value: string | null;
   onChange: (v: string | null) => void;
+  "aria-label"?: string;
 }) {
   return (
     <Pick
+      aria-label={ariaLabel}
       value={value ?? ""}
       options={dealSourceOptions(value)}
       onChange={(v) => onChange(v === "" ? null : v)}

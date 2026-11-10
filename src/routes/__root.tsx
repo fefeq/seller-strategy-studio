@@ -14,10 +14,10 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { reloadOnceForStaleModule } from "@/lib/stale-module";
-import { handleAuthEvent } from "@/lib/session-cache";
-import { lastValidatedUserId } from "@/lib/session";
+import { handleAuthEvent, handleOtherUserValidated } from "@/lib/session-cache";
+import { lastValidatedUserId, onOtherUserValidated } from "@/lib/session";
 import { supabase } from "@/integrations/supabase/client";
-import { AccountSwitchGate } from "@/components/account-switch-gate";
+import { AccountSwitchGate, HideWhileSwitching } from "@/components/account-switch-gate";
 import { Toaster } from "@/components/ui/sonner";
 import { DialogHost } from "@/components/confirm-dialog";
 import { CookieBanner } from "@/components/cookie-banner";
@@ -158,7 +158,12 @@ function RootComponent() {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (handleAuthEvent(queryClient, event, session, lastValidatedUserId())) router.invalidate();
     });
-    return () => data.subscription.unsubscribe();
+    // NK-0119: a navigation may validate another user before that user's SIGNED_IN reaches this tab.
+    const stop = onOtherUserValidated(() => handleOtherUserValidated(queryClient));
+    return () => {
+      data.subscription.unsubscribe();
+      stop();
+    };
   }, [router, queryClient]);
 
   return (
@@ -166,7 +171,9 @@ function RootComponent() {
       <AccountSwitchGate>
         <Outlet />
       </AccountSwitchGate>
-      <Toaster />
+      <HideWhileSwitching>
+        <Toaster />
+      </HideWhileSwitching>
       <DialogHost />
       <CookieBanner />
     </QueryClientProvider>

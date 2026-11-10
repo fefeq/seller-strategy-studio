@@ -119,14 +119,8 @@ const DASH_ALLOWED: Record<string, Allowed[]> = {
     ],
     ['{yr.payback.target != null ? `${yr.payback.target} m` : "—"}', "otra_metrica"],
   ],
-  "src/components/budget-panel.tsx": [
-    ['real={r.actual.revenue != null ? money(r.actual.revenue) : "—"}', "otra_metrica"],
-    ['plan={r.plan.revenue != null ? money(r.plan.revenue) : "—"}', "otra_metrica"],
-    ['real={r.actual.acquisition ? money(r.actual.acquisition) : "—"}', "otra_metrica"],
-    ['plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "—"}', "otra_metrica"],
-  ],
+  "src/components/budget-panel.tsx": [],
   "src/components/segment-coverage.tsx": [
-    ['{cov ? `${cov.ratio.toFixed(1)}x` : "—"}', "otra_metrica"], // pipeline coverage
     ['{r.target ? money(r.target) : "—"}', "otra_metrica"],
     ['/ obj. {r.cac.target != null ? money(r.cac.target) : "—"}', "otra_metrica"],
     ['/ obj. {r.payback.target != null ? `${r.payback.target} m` : "—"}', "otra_metrica"],
@@ -137,13 +131,9 @@ const DASH_ALLOWED: Record<string, Allowed[]> = {
     ['{v && Number(v.amount) ? money(Number(v.amount)) : "—"}', "otra_metrica"], // typed cost
     ['cells={rows.map((r) => (r.cac.target != null ? money(r.cac.target) : "—"))}', "otra_metrica"],
   ],
-  "src/components/quarter-kpis-panel.tsx": [
-    ['const money0 = (n: number | null) => (n == null ? "—" : money(n))', "otra_metrica"], // revenue, cost, spend
-    ['show: (n) => (n == null ? "—" : String(n))', "otra_metrica"], // new customers
-  ],
+  "src/components/quarter-kpis-panel.tsx": [],
   "src/components/pipeline-board-panel.tsx": [
     ['?.full_name ?? "—"', "no_aplica"], // owner without a name
-    ['value={view.cost ? money(view.cost) : "—"}', "otra_metrica"], // acquisition spend
   ],
   "src/components/payback-card.tsx": [
     ['<span className="text-muted-foreground">—</span>', "otra_metrica"], // target not set / no trend yet

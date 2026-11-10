@@ -19,6 +19,27 @@ export function dropUserCache(qc: QueryClient) {
   qc.getMutationCache().clear();
 }
 
+/** Everything user-scoped goes, observed or not: in-flight requests, answers and mutations. */
+function purgeAll(qc: QueryClient) {
+  void qc.cancelQueries();
+  qc.removeQueries();
+  qc.getMutationCache().clear();
+}
+
+/**
+ * NK-0119: the shared validator validated a user other than the last one before that user's SIGNED_IN arrived
+ * (a navigation won the race). Same rule as D-S3-3 when something is mounted (block, then reload); when nothing
+ * is mounted there is nothing on screen to protect, so the cache is simply emptied.
+ */
+export function handleOtherUserValidated(qc: QueryClient) {
+  const mounted = qc
+    .getQueryCache()
+    .getAll()
+    .some((q) => q.getObserversCount() > 0);
+  if (mounted) beginAccountSwitch();
+  purgeAll(qc);
+}
+
 /**
  * Returns true when the router must re-run its loaders.
  * `last` is the id of the last user the shared validator validated (lastValidatedUserId()), or null on a page
@@ -41,9 +62,7 @@ export function handleAuthEvent(
     // user's ids), then every query goes, observed or not, and the page reloads as the new user. No reset and
     // no refetch: they would re-run the old keys (X's org and user ids) before Y's `me` exists.
     beginAccountSwitch();
-    void qc.cancelQueries();
-    qc.removeQueries();
-    qc.getMutationCache().clear();
+    purgeAll(qc);
     return false;
   }
   if (event === "SIGNED_OUT") {

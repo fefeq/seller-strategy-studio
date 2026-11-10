@@ -57,7 +57,7 @@ async function clay(
   }
   if (!res.ok) {
     const raw = await res.text();
-    console.error(`Clay ${init.method} ${path} [${res.status}]: ${raw.slice(0, 500)}`);
+    console.error(`Clay ${init.method} ${path} [${res.status}] body ${raw.length} chars`);
     let msg = raw;
     try {
       msg = String(JSON.parse(raw).message ?? raw);

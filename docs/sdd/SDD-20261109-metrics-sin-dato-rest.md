@@ -168,4 +168,4 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR M2-m1** Con deals integrado antes, las K que deals elimina no deben entrar en la lista | §3: el inventario se vuelve a contar sobre la rama de integración con deals; las 4 entradas K que pierden «—» no se añaden a `METRICS_DASH_ALLOWED`; CA-6 se comprueba por valor (`NO_SOURCE === "—"`, etiquetas en `revops.test.ts` y paneles), no por el literal. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+Rama `feat/nk-0106-metrics-sin-dato` sobre `d3eeba1`. Recuento sobre la base con deals integrado: 47 líneas, F 26, N 13, K 4 (las cuatro K de deals no entran en `METRICS_DASH_ALLOWED`). Las 26 F pasan a «Sin dato · motivo», «sin plan» o «sin dato». Test nuevo `src/lib/metrics-no-bare-dash.test.ts` y casos nuevos en los tests de §12. Desvío: en Presupuesto, con costes compartidos sin repartir, el valor dice «Sin dato · nadie ganó: el compartido no se reparte» y no «sin gasto de captación apuntado» (sería falso). Evidencia en `.factory/evidence/NK-0106/result.md`.

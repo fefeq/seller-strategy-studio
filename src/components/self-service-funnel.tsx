@@ -1,4 +1,5 @@
 import { Kpi } from "@/components/page";
+import { DataMark } from "@/components/metrics/data-mark";
 import { NativeSelect } from "@/components/native-select";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -23,7 +24,11 @@ import { errorText } from "@/lib/errors";
 import { DateField as SpanishDate } from "@/components/date-field";
 
 const pct = (n: number) => `${Math.round(n * 1000) / 10}%`;
-const dd = (n: number | null) => (n == null ? "—" : `${n.toFixed(1)} d`);
+const days = (n: number) => `${n.toFixed(1)} d`;
+/** Median days as a figure, or «Sin dato · motivo» (SDD-20261109-metrics-sin-dato-rest). */
+const dd = (n: number | null, reason: string) =>
+  n == null ? <DataMark state="sin_dato" reason={reason} /> : days(n);
+const noSignups = <DataMark state="sin_dato" reason="sin registros en el periodo" />;
 const toDateInput = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
 export function SelfServiceFunnel({ quarter }: { quarter: string }) {
@@ -99,20 +104,20 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
               <Kpi
                 size="normal"
                 label="Activación"
-                value={t.signups ? pct(t.activationRate) : "—"}
+                value={t.signups ? pct(t.activationRate) : noSignups}
                 hint={`${t.activated} de ${t.signups} registros`}
               />
               <Kpi
                 size="normal"
                 label="Prueba → pago"
-                value={t.signups ? pct(t.trialToPaid) : "—"}
-                hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago ${t.activated ? pct(t.activatedToPaid) : "—"}`}
+                value={t.signups ? pct(t.trialToPaid) : noSignups}
+                hint={`${t.paid} ${t.paid === 1 ? "cliente" : "clientes"} · activados → pago${t.activated ? ` ${pct(t.activatedToPaid)}` : ": sin activados"}`}
               />
               <Kpi
                 size="normal"
                 label="Tiempo hasta la compra"
-                value={dd(t.medianDaysToPurchase)}
-                hint={`Mediana · activación en ${dd(t.medianDaysToActivate)}`}
+                value={dd(t.medianDaysToPurchase, "sin compras")}
+                hint={`Mediana · activación en ${t.medianDaysToActivate == null ? "sin dato" : days(t.medianDaysToActivate)}`}
               />
               <Kpi
                 size="normal"
@@ -175,12 +180,16 @@ export function SelfServiceFunnel({ quarter }: { quarter: string }) {
                           <td
                             className={`py-2 pr-3 text-right ${mark(r.activatedToPaid, bestA2P)}`}
                           >
-                            {r.activated ? pct(r.activatedToPaid) : "—"}
+                            {r.activated ? (
+                              pct(r.activatedToPaid)
+                            ) : (
+                              <DataMark state="sin_dato" reason="sin activados" />
+                            )}
                           </td>
                           <td
                             className={`py-2 pr-3 text-right ${mark(r.medianDaysToPurchase, bestTtp)}`}
                           >
-                            {dd(r.medianDaysToPurchase)}
+                            {dd(r.medianDaysToPurchase, "sin compras")}
                           </td>
                           <td className="py-2 text-right">{money(r.newMrr)}</td>
                         </tr>

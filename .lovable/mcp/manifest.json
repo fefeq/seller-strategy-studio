@@ -531,6 +531,25 @@
             "quantity": {
               "type": "number",
               "exclusiveMinimum": 0
+            },
+            "source": {
+              "description": "Origen del deal. Uno de: outbound (Outbound), inbound (Inbound), partner (Partner), plg (Producto (PLG)), event (Evento), referral (Referido). Si no lo sabes, no lo pases: queda «Sin origen».",
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "outbound",
+                    "inbound",
+                    "partner",
+                    "plg",
+                    "event",
+                    "referral"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
             }
           },
           "required": [
