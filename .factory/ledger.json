@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 139,
+  "seq": 140,
   "tickets": [
     {
       "id": "NK-0001",
@@ -2413,8 +2413,8 @@
       "title": "Migración 0079: verificar en la base viva si está aplicada (registro con 77 filas, max id 78) o pendiente, y cómo se mapea id↔idx del journal",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -2426,6 +2426,12 @@
           "at": "2026-11-08T20:34:44.527Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.568Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3805,8 +3811,8 @@
       "title": "Logs: src/routes/api/public/jobs/proactive.ts registra el error entero en 14 sitios y src/routes/api/** queda fuera del escaneo de logs",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3824,6 +3830,12 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0126 to NK-0131: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.277Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3832,8 +3844,8 @@
       "title": "Métricas/Finanzas: el KPI «Gasto real» muestra «0 € captación» sin costes de captación apuntados; D-3 del SDD de NK-0106 dice gasto 0 = «sin costes apuntados»",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3851,6 +3863,12 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0127 to NK-0132: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.319Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3859,8 +3877,8 @@
       "title": "Formato: decimales con punto en Cobertura («2.5x total», «1.1x», segment-coverage.tsx:128/:213) y embudo de leads («33.3% del total», lead-funnel-panel.tsx:80); usar coma es-ES",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3878,6 +3896,12 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0128 to NK-0133: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.359Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3886,8 +3910,8 @@
       "title": "Test frágil: new-deal.test.tsx busca el nombre del deal como primer textbox porque el Label de Field no está asociado al input",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3905,6 +3929,12 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0129 to NK-0134: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.401Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3913,8 +3943,8 @@
       "title": "Sesión: una validación tardía de X cuando la sesión ya es Y bloquea y recarga una vez de más; ignorar validaciones cuyo token ya no es el guardado",
       "kind": "bug",
       "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3932,6 +3962,12 @@
           "at": "2026-11-10T01:05:01.961Z",
           "by": "coordinador",
           "note": "renumbered from NK-0130 to NK-0135: ID collision with PR #120 (NK-0126..0128 already used by its PRD/SDDs)"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.440Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -3940,8 +3976,8 @@
       "title": "Reglas base: dos sesiones o pestañas a la vez pueden duplicar las reglas (sin índice único por empresa, sección y título; necesita migración o cerrojo en servidor)",
       "kind": "bug",
       "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3953,6 +3989,12 @@
           "at": "2026-11-10T02:29:00.955Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.479Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     },
@@ -4003,8 +4045,8 @@
       "title": "rulesBlock: con solo reglas «Escalar» sigue añadiendo la frase de reglas_obligatorias",
       "kind": "bug",
       "source": "Walkthrough Sprint 5 92f61f3 (evidence/sprint5-walkthrough/summary-92f61f3.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -4015,6 +4057,33 @@
           "state": "LOGGED",
           "at": "2026-11-10T02:29:01.122Z",
           "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:37:04.526Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
+        }
+      ]
+    },
+    {
+      "id": "NK-0140",
+      "title": "Plays GTM: catálogo de tareas, seis equipos y vista en /plays (NK-0126 SDD 2, Sprint 6)",
+      "kind": "feature",
+      "source": "PRD docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md §8 fila 2",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T20:37:02.859Z",
+          "by": "coordinador-sprint6",
           "note": ""
         }
       ]
