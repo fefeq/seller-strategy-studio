@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 // Public lead intake: forms, Zapier/Make and CRM webhooks post here with a per-company secret key.
 const CORS = {
@@ -168,7 +169,7 @@ export const Route = createFileRoute("/api/public/leads")({
             if (r.status === "created" && r.leadId) newLeads.push(r.leadId);
           } catch (e) {
             const msg = (e as Error).message.slice(0, 300);
-            console.error("lead ingest failed", msg);
+            console.error("lead ingest failed", safeErrorLog(e));
             results.push({ status: "error", error: "No se pudo guardar el lead" });
             await db.from("lead_events").insert({
               org_id: source.org_id,

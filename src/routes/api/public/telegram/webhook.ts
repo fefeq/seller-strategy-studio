@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/api/public/telegram/webhook")({
@@ -34,7 +35,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .update({ processed_at: new Date().toISOString(), error: null })
             .eq("update_id", update.update_id);
         } catch (e) {
-          console.error("telegram handle failed", e);
+          console.error("telegram handle failed", safeErrorLog(e));
           await db
             .from("telegram_updates")
             .update({
@@ -59,7 +60,17 @@ type Tg = {
   tg: (m: string, b: Record<string, unknown>) => Promise<unknown>;
 };
 
-async function handle(db: Admin, update: any, t: Tg) {
+/** The parts of a Telegram update this handler reads (the webhook body is untrusted JSON). */
+type TelegramUpdate = {
+  callback_query?: {
+    id?: string;
+    data?: string;
+    message?: { chat?: { id?: string | number } };
+  };
+  message?: { chat?: { id?: string | number }; text?: unknown };
+};
+
+async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
   const { channelCtx } = await import("@/lib/channel-ctx.server");
 
   // Button presses (confirm agent actions / manage suggestions).
