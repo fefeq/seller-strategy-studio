@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { CATALOG, CHANNELS, MOTIONS, STATUSES } from "./catalog";
-import { CHANNEL_LABEL, MOTION_LABEL, STATUS_WORD, filterPlays } from "./view";
+import { APPROVALS, CATALOG, CHANNELS, MOTIONS, PHASES, STATUSES } from "./catalog";
+import {
+  APPROVAL_WORD,
+  CHANNEL_LABEL,
+  MOTION_LABEL,
+  PHASE_WORD,
+  STATUS_WORD,
+  filterPlays,
+} from "./view";
 import { describePlay } from "./status";
 
 const all = CATALOG.map((p) => describePlay(p, null));
@@ -70,5 +77,66 @@ describe("words of /plays (CA-5, G-1)", () => {
       all.map((p) => [p.title, p.needs, p.label]),
     ]);
     expect(text.toLowerCase()).not.toContain("frontal");
+  });
+});
+
+// SDD-20261110-plays-phase-autonomy-deps U-3 (CA-3).
+describe("phase and approval words (CA-3, G-1)", () => {
+  it("names the four phases and the two approval levels with the texts of the SDD", () => {
+    expect(PHASE_WORD).toEqual({
+      fundacion: "Fundación",
+      captura: "Captura",
+      generacion: "Generación",
+      orquestacion: "Orquestación",
+    });
+    expect(APPROVAL_WORD).toEqual({
+      nokko_con_ayuda: "NOKKO prepara, tú decides",
+      nokko_borrador: "NOKKO redacta, tú apruebas",
+    });
+    expect(Object.keys(PHASE_WORD)).toEqual([...PHASES]);
+    expect(Object.keys(APPROVAL_WORD)).toEqual([...APPROVALS]);
+  });
+
+  it("describePlay carries the same words, so the screen and the agent never differ", () => {
+    for (const p of CATALOG) {
+      const d = describePlay(p, null);
+      expect(d.phase, p.id).toBe(p.phase);
+      expect(d.phaseLabel, p.id).toBe(PHASE_WORD[p.phase]);
+      expect(d.approval, p.id).toBe(p.approval);
+      expect(d.approvalLabel, p.id).toBe(APPROVAL_WORD[p.approval]);
+    }
+  });
+});
+
+describe("filter by phase (CA-3, G-1)", () => {
+  it("filters by each phase and keeps the catalogue order", () => {
+    for (const ph of PHASES) {
+      const got = filterPlays(all, { motion: "all", status: "all", phase: ph }).map((p) => p.id);
+      expect(got, ph).toEqual(CATALOG.filter((p) => p.phase === ph).map((p) => p.id));
+      expect(got.length, ph).toBeGreaterThan(0);
+    }
+  });
+
+  it("treats a missing phase and «all» as no phase filter", () => {
+    expect(filterPlays(all, { motion: "all", status: "all" })).toHaveLength(28);
+    expect(filterPlays(all, { motion: "all", status: "all", phase: "all" })).toHaveLength(28);
+  });
+
+  it("combines with motion and status without changing them", () => {
+    const got = filterPlays(all, {
+      motion: "cuentas",
+      status: "parcial",
+      phase: "captura",
+    }).map((p) => p.id);
+    expect(got).toEqual(
+      CATALOG.filter(
+        (p) => p.motion.includes("cuentas") && p.status === "parcial" && p.phase === "captura",
+      ).map((p) => p.id),
+    );
+    expect(got.length).toBeGreaterThan(0);
+  });
+
+  it("never names Frontal in the new words", () => {
+    expect(JSON.stringify([PHASE_WORD, APPROVAL_WORD]).toLowerCase()).not.toContain("frontal");
   });
 });

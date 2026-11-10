@@ -1,4 +1,5 @@
 import type { Play, PlayBlocker } from "./catalog";
+import { APPROVAL_WORD, PHASE_WORD } from "./view";
 
 // Effective state of a play for a company (SDD-20261106-plays-library-core, H-2): catalogue + play_states row. Pure.
 // The screen, the server function and the agent tool all decide through checkToggle/effectiveState, never with parallel logic.
@@ -88,6 +89,10 @@ export function describePlay(play: Play, row: PlayStateRow | null | undefined) {
     channels: play.channels,
     status: play.status,
     blockedBy: play.blockedBy ?? null,
+    phase: play.phase,
+    phaseLabel: PHASE_WORD[play.phase],
+    approval: play.approval,
+    approvalLabel: APPROVAL_WORD[play.approval],
     needs: play.needs,
     detectors: play.detectors,
     outputs: play.outputs,

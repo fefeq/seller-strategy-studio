@@ -11,11 +11,12 @@ import { Pick } from "@/components/fields";
 import { Empty } from "@/components/page";
 import { errorText } from "@/lib/errors";
 import { setPlayEnabled } from "@/lib/plays.functions";
-import { CATALOG, MOTIONS, STATUSES } from "@/lib/plays/catalog";
+import { CATALOG, MOTIONS, PHASES, STATUSES } from "@/lib/plays/catalog";
 import { canTogglePlays, checkToggle, describePlay } from "@/lib/plays/status";
 import {
   CHANNEL_LABEL,
   MOTION_LABEL,
+  PHASE_WORD,
   STATUS_WORD,
   filterPlays,
   type PlayFilter,
@@ -67,7 +68,7 @@ export function PlaysPanel({ roles }: { roles: string[] }) {
   const qc = useQueryClient();
   const { data: rows } = usePlayStates();
   const toggle = useServerFn(setPlayEnabled);
-  const [filter, setFilter] = useState<PlayFilter>({ motion: "all", status: "all" });
+  const [filter, setFilter] = useState<PlayFilter>({ motion: "all", status: "all", phase: "all" });
   const [busy, setBusy] = useState<string | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const byId = new Map((rows ?? []).map((r) => [r.play_id, r]));
@@ -98,7 +99,7 @@ export function PlaysPanel({ roles }: { roles: string[] }) {
         guiones de venta de Conocimiento. Aquí ves cuáles tiene Nokko, cuáles están activados en tu
         empresa y qué falta para el resto.
       </p>
-      <div className="mb-6 grid max-w-xl gap-3 sm:grid-cols-2">
+      <div className="mb-6 grid max-w-3xl gap-3 sm:grid-cols-3">
         <label className="text-sm">
           <span className="eyebrow mb-1 block">Motion</span>
           <Pick
@@ -123,6 +124,18 @@ export function PlaysPanel({ roles }: { roles: string[] }) {
             }}
           />
         </label>
+        <label className="text-sm">
+          <span className="eyebrow mb-1 block">Fase</span>
+          <Pick
+            aria-label="Filtrar por fase"
+            value={filter.phase ?? "all"}
+            onChange={(v) => setFilter({ ...filter, phase: v as PlayFilter["phase"] })}
+            options={{
+              all: "Todas",
+              ...Object.fromEntries(PHASES.map((f) => [f, PHASE_WORD[f]])),
+            }}
+          />
+        </label>
       </div>
       {!plays.length && <Empty>Ningún play coincide con esos filtros.</Empty>}
       <ul className="grid gap-x-8 md:grid-cols-2 xl:grid-cols-3">
@@ -139,6 +152,9 @@ export function PlaysPanel({ roles }: { roles: string[] }) {
                 {p.channels.map((c) => CHANNEL_LABEL[c]).join(", ")}
               </p>
               <p className="mt-2 smallcaps">{p.label}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {p.phaseLabel} · {p.approvalLabel}
+              </p>
               <p className="mt-2 text-sm">Necesita: {p.needs.join("; ")}.</p>
               {p.reason && !p.canEnable && (
                 <p className="mt-1 text-sm text-muted-foreground">

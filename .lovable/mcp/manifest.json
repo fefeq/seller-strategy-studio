@@ -4424,7 +4424,7 @@
       {
         "name": "list_plays",
         "title": "Ver los Plays GTM y su estado",
-        "description": "Lista los 28 Plays GTM (jugadas con disparador, puertas y salida; no son los guiones de venta) con su estado en esta empresa: Activado, Pausado, Parcial, Planificado o Bloqueado con el motivo, qué datos necesita cada uno y qué reglas ya existentes le pertenecen. Filtra por motion o por estado. Solo lee.",
+        "description": "Lista los 28 Plays GTM (jugadas con disparador, puertas y salida; no son los guiones de venta) con su estado en esta empresa: Activado, Pausado, Parcial, Planificado o Bloqueado con el motivo, qué datos necesita cada uno, qué reglas ya existentes le pertenecen, su fase (Fundación, Captura, Generación, Orquestación) y quién decide (NOKKO prepara y tú decides, o NOKKO redacta y tú apruebas). Filtra por motion o por estado. Solo lee.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
@@ -4464,7 +4464,7 @@
       {
         "name": "get_play",
         "title": "Ver un Play GTM",
-        "description": "Devuelve un play del catálogo con su estado en esta empresa: si está activado, si se puede activar, qué lo bloquea y qué datos necesita. Solo lee.",
+        "description": "Devuelve un play del catálogo con su estado en esta empresa: si está activado, si se puede activar, qué lo bloquea, qué datos necesita, su fase y quién decide. Solo lee.",
         "annotations": {
           "readOnlyHint": true,
           "idempotentHint": true,
