@@ -61,12 +61,15 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
   const otherUserListeners = new Set<(userId: string) => void>();
   // Bumped on SIGNED_OUT: a validation that started before it must not bring the signed-out user back.
   let epoch = 0;
+  // NK-0135: the access token of the session this tab holds now (events and reads of getSession keep it).
+  let current: string | null = null;
 
   const run = async function run(): Promise<Outcome<U>> {
     // Subscribe on first use (client only), not at import time.
     if (!listening) {
       listening = true;
       auth.onAuthStateChange((event, session) => {
+        current = session?.access_token ?? null;
         if (event === "SIGNED_OUT") {
           // Signing out ends the user of this tab: the next sign-in (maybe someone else) is a plain login, not
           // «another user in another tab» (NK-0111). Another tab's sign-in never passes through here.
@@ -80,6 +83,7 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     const startedAt = epoch;
     const { data } = await auth.getSession();
     const session = data.session;
+    current = session?.access_token ?? null;
     if (!session) {
       saved = null;
       return { reason: "none" };
@@ -106,7 +110,9 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     }
     const entry = saved;
     const outcome = await entry.valid;
-    if ("user" in outcome && epoch === startedAt) {
+    // NK-0135: a result for a token that is no longer the saved session is discarded: it is not «another user»
+    // and it does not replace the last validated one (the current token's own validation decides that).
+    if ("user" in outcome && epoch === startedAt && current === session.access_token) {
       const previous = last;
       last = outcome.user.id;
       // NK-0119: a navigation validated another user before that user's SIGNED_IN reached this tab. Tell the
