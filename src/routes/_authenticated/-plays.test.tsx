@@ -72,11 +72,7 @@ async function open(entry: string) {
     history: createMemoryHistory({ initialEntries: [entry] }),
   });
   render(<RouterProvider router={router} />);
-  const bar = await screen.findByRole(
-    "navigation",
-    { name: "Vistas de Plays GTM" },
-    { timeout: 5000 },
-  );
+  const bar = await screen.findByRole("navigation", { name: "Vistas de Plays GTM" });
   return { router, bar: within(bar) };
 }
 
