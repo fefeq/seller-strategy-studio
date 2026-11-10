@@ -1671,3 +1671,133 @@ describe("voice is not a destination section of Drive or the agent (NK-0128, CA-
       expect(readFileSync(f, "utf8"), f).not.toMatch(/["']voice["']/);
   });
 });
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-3 · CA-5, CA-6, CA-6b: the agent's drafting tools receive the
+// company's voice as data in the user text, search_knowledge never returns it, and a failed read is said, not hidden.
+const nk128 = vi.hoisted(() => ({ asks: [] as { system: string; user: string }[] }));
+vi.mock("@/lib/ai-gateway", async (orig) => ({
+  ...(await orig<typeof import("@/lib/ai-gateway")>()),
+  ask: async (system: string, user: string) => {
+    nk128.asks.push({ system, user });
+    return "Borrador del modelo.";
+  },
+}));
+
+describe("voice in the agent's tools (NK-0128, CA-5, CA-6, CA-6b)", () => {
+  const VOICE_TEXT = "Hola Ana, ¿cómo va todo? VOZ-FICTICIA-B2";
+  const OTHER_VOICE = "Voz de otra empresa ZETA-OTRA";
+  const LEAD = ID(31);
+  const MEETING = ID(32);
+  const voiceRow = {
+    org_id: ORG,
+    title: "Mensaje",
+    body: VOICE_TEXT,
+    section: "voice",
+    scope: "team",
+    mandatory: false,
+  };
+  const isVoiceRead = (q: Q) =>
+    q.table === "knowledge_docs" &&
+    q.filters.some((f) => f[0] === "eq" && f[1] === "section" && f[2] === "voice");
+  const world =
+    (voice: "ok" | "none" | "error") =>
+    (q: Q): Reply => {
+      if (isVoiceRead(q)) {
+        if (voice === "error") return { error: { message: "denied" } };
+        return {
+          data:
+            voice === "ok" ? [voiceRow, { ...voiceRow, org_id: "org-2", body: OTHER_VOICE }] : [],
+        };
+      }
+      if (q.table === "knowledge_docs") return { data: [] };
+      if (q.table === "leads")
+        return {
+          data: {
+            id: LEAD,
+            company: "Empresa Ficticia",
+            contact_name: "Ana Prueba",
+            title: "CEO",
+            stage: "contacted",
+            contacted_at: new Date(Date.now() - 4 * 86_400_000).toISOString(),
+            next_step_at: null,
+            notes: null,
+            source: null,
+          },
+        };
+      if (q.table === "meetings")
+        return { data: { id: MEETING, title: "Reunión ficticia", account_id: null } };
+      return undefined;
+    };
+
+  it("search_knowledge asks the database to leave voice out and drops it in memory too", async () => {
+    const { db, log } = fakeDb(() => ({
+      data: [
+        { section: "voice", title: "Mensaje", body: VOICE_TEXT, scope: "team", created_by: OTHER },
+        { section: "playbooks", title: "Equipo", body: "x", scope: "team", created_by: OTHER },
+      ],
+    }));
+    const r = (await executeTool(ctxWith(db), "search_knowledge", { query: "Hola" })) as {
+      title: string;
+    }[];
+    expect(r.map((d) => d.title)).toEqual(["Equipo"]);
+    expect(log[0]!.filters).toContainEqual(["neq", "section", "voice"]);
+  });
+
+  it("draft_followup: voice in the user text as data, only the form sentence in the system text; this company's voice only", async () => {
+    nk128.asks.length = 0;
+    const { VOICE_FORM_RULE, voiceBlock } = await import("@/lib/knowledge-voice");
+    const none = await executeTool(ctxWith(fakeDb(world("none")).db), "draft_followup", {
+      lead_id: LEAD,
+    });
+    expect(nk128.asks[0]!.system).not.toContain(VOICE_FORM_RULE);
+    expect(nk128.asks[0]!.user).not.toContain("voz_de_la_empresa");
+    expect((none as { mensaje?: string }).mensaje).toBeUndefined();
+
+    const { db, log } = fakeDb(world("ok"));
+    await executeTool(ctxWith(db), "draft_followup", { lead_id: LEAD });
+    const ask = nk128.asks[1]!;
+    expect(ask.system).toContain(VOICE_FORM_RULE);
+    expect(ask.system).not.toContain(VOICE_TEXT);
+    expect(ask.user).toContain("voz_de_la_empresa");
+    expect(ask.user).toContain(VOICE_TEXT);
+    expect(ask.user).not.toContain(OTHER_VOICE);
+    expect(JSON.parse(ask.user).voz_de_la_empresa).toEqual([{ texto: VOICE_TEXT }]);
+    expect(voiceBlock([{ texto: VOICE_TEXT }])).toContain(VOICE_TEXT);
+    const read = log.find(isVoiceRead)!;
+    expect(eq(read, "org_id", ORG)).toBe(true);
+    expect(eq(read, "scope", "team")).toBe(true);
+  });
+
+  it("draft_followup: a failed voice read drafts without it and says so in the draft and in mensaje_voz", async () => {
+    nk128.asks.length = 0;
+    const { VOICE_FORM_RULE, VOICE_READ_FAILED } = await import("@/lib/knowledge-voice");
+    const out = (await executeTool(ctxWith(fakeDb(world("error")).db), "draft_followup", {
+      lead_id: LEAD,
+    })) as { borrador: string; mensaje?: string; mensaje_voz?: string };
+    expect(nk128.asks[0]!.system).not.toContain(VOICE_FORM_RULE);
+    expect(nk128.asks[0]!.user).not.toContain("voz_de_la_empresa");
+    expect(out.borrador).toBe(`${VOICE_READ_FAILED}\n\nBorrador del modelo.`);
+    expect(out.mensaje_voz).toBe(VOICE_READ_FAILED);
+    expect(out.mensaje).toBeUndefined();
+  });
+
+  it("prepare_meeting_brief: voice in the user text as data; a failed read is said in mensaje", async () => {
+    nk128.asks.length = 0;
+    const { VOICE_FORM_RULE, VOICE_READ_FAILED } = await import("@/lib/knowledge-voice");
+    const ok = (await executeTool(ctxWith(fakeDb(world("ok")).db), "prepare_meeting_brief", {
+      meeting_id: MEETING,
+    })) as { mensaje?: string };
+    const ask = nk128.asks[0]!;
+    expect(ask.system).toContain(VOICE_FORM_RULE);
+    expect(ask.system).not.toContain(VOICE_TEXT);
+    expect(ask.user).toContain(VOICE_TEXT);
+    expect(ask.user).not.toContain(OTHER_VOICE);
+    expect(ok.mensaje).toBeUndefined();
+
+    const bad = (await executeTool(ctxWith(fakeDb(world("error")).db), "prepare_meeting_brief", {
+      meeting_id: MEETING,
+    })) as { mensaje?: string };
+    expect(nk128.asks[1]!.system).not.toContain(VOICE_FORM_RULE);
+    expect(bad.mensaje).toBe(VOICE_READ_FAILED);
+  });
+});
