@@ -81,6 +81,7 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 23 | Escalar a un humano | Tipo de Regla en Conocimiento |
 | 24 | Reglas por defecto | Las redacta Claude y las aprueba Fede |
 | 25 | Sprint | 4 (Fede, 2026-11-10) |
+| 29 | Sprint de NK-0127 y NK-0128 | Sprint 5 (Fede, 2026-11-10) |
 | 28 | NK-0028 | Rechazado en el ledger por superado (delegación de Fede, 2026-11-10); su sustituto, por definir |
 | 27 | Aprobación | Fede aprueba el PRD y la composición de los seis equipos («ok a todo», 2026-11-10) |
 | 26 | Onboarding | NK-0009 y NK-0028 entran en el Sprint 4 (Fede, 2026-11-10), con una corrección: NK-0028 está superado por GTM Lab, así que entra su sustituto, aún por definir |
