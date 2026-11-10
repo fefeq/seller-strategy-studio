@@ -64,8 +64,9 @@ function renderButton() {
 const open = () => fireEvent.click(screen.getByRole("button", { name: "+ Nuevo deal" }));
 const source = () => screen.getByRole("combobox", { name: "Fuente" }) as HTMLSelectElement;
 const create = async (name: string) => {
-  // The Field label is not tied to its input, so the name is the first text box of the dialog.
-  fireEvent.change(screen.getAllByRole("textbox")[0]!, { target: { value: name } });
+  fireEvent.change(screen.getByRole("textbox", { name: "Nombre del deal" }), {
+    target: { value: name },
+  });
   fireEvent.click(screen.getByRole("button", { name: "Crear deal" }));
   await waitFor(() => expect(hoisted.apply).toHaveBeenCalledTimes(1));
   return hoisted.apply.mock.calls[0]![0].data.items[0] as {
