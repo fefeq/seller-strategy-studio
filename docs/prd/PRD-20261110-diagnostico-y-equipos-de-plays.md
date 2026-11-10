@@ -1,7 +1,7 @@
 # PRD-20261110-diagnostico-y-equipos-de-plays · [Iniciativa] Diagnóstico de entrada y equipos de plays
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media (reutiliza onboarding, plays, Reglas y Conocimiento que ya existen; el coste es de ingeniería y no de proveedores; depende de dos tickets de onboarding sin empezar)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Aprobado (Fede, 2026-11-10) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **SDD que lo desarrollan:** pendiente (sección 8)
 **Sprint:** 4 (decidido por Fede el 2026-11-10; el sprint está en curso con NK-0123); ver sección 8 y el riesgo de dependencias
 
@@ -81,7 +81,8 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 23 | Escalar a un humano | Tipo de Regla en Conocimiento |
 | 24 | Reglas por defecto | Las redacta Claude y las aprueba Fede |
 | 25 | Sprint | 4 (Fede, 2026-11-10) |
-| 26 | Onboarding | NK-0009 y NK-0028 también entran en el Sprint 4 (Fede, 2026-11-10); siguen LOGGED hasta que se les haga SDD y GO |
+| 27 | Aprobación | Fede aprueba el PRD y la composición de los seis equipos («ok a todo», 2026-11-10) |
+| 26 | Onboarding | NK-0009 y NK-0028 entran en el Sprint 4 (Fede, 2026-11-10), con una corrección: NK-0028 está superado por GTM Lab, así que entra su sustituto, aún por definir |
 
 **Composición propuesta de los seis equipos (para tu revisión; es una propuesta, no una decisión)**
 | Equipo de plays | Plays | Nota |
@@ -96,12 +97,12 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 **Abiertas**
 1. Confirmar o ajustar la composición de los seis equipos.
 2. Permisos de lectura y escritura de la sección de voz: hoy cualquier miembro lee Conocimiento y los mensajes reales de clientes quedarían visibles para todo el equipo. Se decide en el SDD de voz.
-3. Cuántos bloques del onboarding están completos en `main` (el plan prevé 9; no verificado).
+3. Cuántos bloques del onboarding están completos en `main` (el plan prevé 9; no verificado) y qué ticket sustituye a NK-0028, superado por GTM Lab.
 4. Si «Equipo de plays» se confunde con el equipo de miembros en la interfaz (revisar con las pruebas de textos).
 5. Plazo y forma de abrir el diagnóstico a empresas cliente.
 
 ## 7. Riesgos y dependencias
-- **Dependen de tickets sin empezar:** NK-0009 (onboarding completo y proactivo) y NK-0028 (contexto estratégico y onboarding por bloques con nivel de confianza). El diagnóstico se apoya en ese onboarding; si no se cierran antes, esta iniciativa duplica trabajo.
+- **Dependen de tickets sin empezar y uno está superado:** NK-0009 (onboarding completo y proactivo) tiene su SDD en Borrador y debe revalidarse contra GTM Lab. NK-0028 (contexto por bloques y onboarding con nivel de confianza) **está superado por GTM Lab** (PRD-20261101 §8 paso 2: se sustituye por el perfil y los pasos obligatorios del proyecto principal); su SDD dice «no ejecutar este texto». El diagnóstico se apoya en el onboarding vigente, no en NK-0028: hay que decidir si NK-0028 se rechaza en el ledger y qué ticket lo reemplaza. Si no se cierran antes, esta iniciativa duplica trabajo.
 - **Choca con el calendario de los plays:** los SDD 2 a 9 del PRD de plays y los hallazgos NK-0081, NK-0082 y NK-0083 tocan el mismo catálogo. Añadir fase y autonomía a los 28 plays genera conflictos si se hace por separado; conviene hacerlo dentro del SDD 2 de plays o inmediatamente después.
 - **Choca con NK-0053 y NK-0055** (agente único con modos y memoria): por eso el conjunto de plays no se llama «agente» en la interfaz.
 - **Amendment del PRD de plays:** la fase 1 interna es compatible con «uso interno»; abrirlo a clientes lo contradice y requiere enmienda en el PRD aparte.
@@ -114,7 +115,7 @@ Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-00
 
 | # | SDD | Tipo | Depende de | Cubre |
 |---|---|---|---|---|
-| 0 | NK-0009 y NK-0028 (ya en el registro) | Feature | — | Base del diagnóstico |
+| 0 | NK-0009 (revalidar contra GTM Lab) y el sustituto de NK-0028 (por definir) | Feature | — | Base del diagnóstico |
 | 1 | `SDD-…-plays-phase-autonomy-deps` (fase, nivel de aprobación y dependencias formales en el catálogo de 28 plays) | Mejora | 0; coordinar con SDD 2 de plays | G-2, G-3 |
 | 2 | `SDD-…-play-teams` (catálogo de tareas, seis equipos y vista en `/plays`) | Feature | 1 | G-1, G-2, G-3 |
 | 3 | `SDD-…-company-voice-and-escalation-rules` (voz en Conocimiento, regla «Escalar», reglas por defecto aprobadas) | Feature | NK-0095, NK-0096 | G-4, G-5 |
@@ -124,5 +125,5 @@ Sprint: **4** (decisión de Fede, 2026-11-10). Requisito previo: NK-0009 y NK-00
 Los SDD se redactan uno a uno con `nokko-shape` cuando apruebes este PRD. El 5 queda en una fase posterior por añadir pantalla nueva.
 
 ## 9. Aprobación
-- [ ] Fede aprueba el PRD (primer GO de dirección). Fecha: {…}
+- [x] Fede aprueba el PRD (primer GO de dirección), incluida la composición propuesta de los seis equipos. Fecha: 2026-11-10
 - Al aprobar, el Estado pasa a «Aprobado». Después se redactan los SDD con `nokko-shape`.
