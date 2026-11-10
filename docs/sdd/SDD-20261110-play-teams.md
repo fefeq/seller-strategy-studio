@@ -1,7 +1,7 @@
 # SDD-20261110-play-teams · [Feature] Catálogo de tareas, seis equipos de plays y vista en /plays
 
 **Tipo:** Feature (sin cambio de esquema) · **Prioridad propuesta:** Media (es el paso entre el catálogo ordenado del SDD 1 y el diagnóstico del SDD 4; sin equipos, el diagnóstico no tiene qué proponer)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Aprobado — coordinador por delegación de Fede ("GO" Sprint 6, 2026-11-10), gate pasadas 1 y 2 · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **Ticket:** NK-0140 (NK-0126 iniciativa; este es su SDD 2)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` (cubre G-1 en parte, G-2 y G-3; G-1 se mide en el SDD 4) · **Depende de:** `SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, Hecho en `main`: `phase`, `approval`, `dependsOn` y `recommendablePlays`) · **Coordina con:** SDD 4 de la iniciativa (`diagnosis-in-chat`), que consumirá los equipos; SDD 2 a 9 de plays y NK-0081 a NK-0083, que tocan `catalog.ts` (este SDD no lo toca)
 
@@ -240,7 +240,7 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: pasada 1, CAMBIOS (resueltos en el texto; ver la tabla de abajo). Pasada 2: pendiente.
+- Veredicto del gate: pasada 1, CAMBIOS (resueltos en el texto; ver la tabla de abajo). Pasada 2: APROBABLE, sin hallazgos.
 - CA sin prueba posible o sin G-n: —
 - [Por verificar] que sigue sin comprobarse: —
 - Contradicciones con el código o con decisiones previas: —
@@ -260,6 +260,15 @@ Informe: `.factory/evidence/sprint6-sdd-gate/gate-pass1.md` (2026-11-10, HEAD `c
 | **MENOR G-m3** CA-14 no podía comprobar que no cambian las otras entradas | La comparación base contra final (`jq` por `name`) pasa a CA-14b, comando del gate; CA-14 se queda con título, `readOnlyHint` y una aparición. |
 | **MENOR G-m4** §16 no recogía lo nuevo | §16 añade la guarda en los dos commits, la comparación del manifiesto y el render de la ruta. |
 | Observaciones (play pausado como «Paso n»; ⌘K «equipos» frente a `/team`) | Pasos 7 y 10 del walkthrough. |
+
+### §17 Gate · pasada 2
+Informe: `.factory/evidence/sprint6-sdd-gate/gate-pass2.md` (2026-11-10, HEAD `7b288a1`). Veredicto: APROBABLE (0 bloqueantes, 0 mayores, 0 menores). Los ocho hallazgos de la pasada 1 están resueltos en el texto; las expresiones de CA-15 no marcan ningún texto aprobado del §9 y sí las cuatro infracciones de control (`probe-ca15-regex.mjs`).
+
+| Hallazgo | Resolución |
+|---|---|
+| Ninguno | — |
+
+**Condición:** si al construir no se puede montar la ruta real de CA-11 (`RouterProvider` con `routeTree` y `createMemoryHistory`, patrón de `auth-no-bounce.test.tsx`), se vuelve al SDD; no se baja la comprobación de la barra al walkthrough sin decirlo. La guarda CA-10 la ejecuta el gate con `flake.mjs --runs 3` en el commit 1 de U-2 y en el final.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
