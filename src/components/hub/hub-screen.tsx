@@ -1,4 +1,5 @@
 import { useSearch, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -31,6 +32,7 @@ import {
   sectionCounts,
   truncatedNotice,
 } from "@/lib/hub-search";
+import { addDefaultRules } from "@/lib/default-rules.functions";
 import { DriveImportButton } from "@/components/drive";
 import { BattlecardFromReviews } from "@/components/linkedin";
 import { DriveAccountsPanel } from "@/components/drive-overview";
@@ -38,6 +40,8 @@ import { Editor } from "@/components/hub/doc-editor";
 import {
   AGENT_RULE_LIMITS,
   BINDING_SECTION_READ_ONLY,
+  VOICE_READ_ONLY,
+  VOICE_SECTION,
   canWriteBinding,
   rulesCoverage,
   rulesNotice,
@@ -58,6 +62,11 @@ export const SECTIONS = [
     "rules",
     "Reglas",
     "Lo que los agentes no pueden hacer sin una persona. El agente lee estas reglas en cada conversación y al redactar seguimientos y briefs de reunión.",
+  ],
+  [
+    "voice",
+    "Voz",
+    "Pega tres mensajes reales que hayáis escrito y que representen cómo habláis. Quita nombres y datos de personas antes de pegar.",
   ],
 ] as const;
 
@@ -210,9 +219,28 @@ export function HubScreen() {
   const isOwner = canDelete(me?.roles ?? []);
   const canLibrary = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   // Reglas: only the Owner or a Sales Leader write it (NK-0095); disabled until the role is known, the reason once it is.
-  const rulesLocked = section === "rules" && !canWriteBinding(me?.roles);
-  const rulesReason = rulesLocked && me ? BINDING_SECTION_READ_ONLY : undefined;
+  // Voz (NK-0128): same writers, its own reason, and no Drive import (the server lists never admit voice).
+  const isVoice = section === VOICE_SECTION;
+  const rulesLocked = (section === "rules" || isVoice) && !canWriteBinding(me?.roles);
+  const rulesReason =
+    rulesLocked && me ? (isVoice ? VOICE_READ_ONLY : BINDING_SECTION_READ_ONLY) : undefined;
   const missing = missingPlays(docs);
+  // «Añadir reglas base» (NK-0128): only a click adds them; the server says how many were missing.
+  const runDefaultRules = useServerFn(addDefaultRules);
+  const baseRules = useMutation({
+    mutationFn: () => runDefaultRules(),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["docs"] });
+      toast.success(
+        r.added === 0
+          ? "Ya tenías todas las reglas base."
+          : r.added === 1
+            ? "Se ha añadido 1 regla base. Revísala y edítala."
+            : `Se han añadido ${r.added} reglas base. Revísalas y edítalas.`,
+      );
+    },
+    onError: (e: Error) => toast.error(errorText(e)),
+  });
   const library = useJob("playbook_library", {
     onDone: () => qc.invalidateQueries({ queryKey: ["docs"] }),
   });
@@ -369,12 +397,26 @@ export function HubScreen() {
                   >
                     + Nuevo
                   </Button>
-                  <DriveImportButton
-                    section={section}
-                    onImported={openDoc}
-                    disabled={rulesLocked}
-                    reason={rulesReason}
-                  />
+                  {section === "rules" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={rulesLocked || baseRules.isPending}
+                      title={rulesReason}
+                      onClick={() => baseRules.mutate()}
+                    >
+                      Añadir reglas base
+                    </Button>
+                  )}
+                  {!isVoice && (
+                    <DriveImportButton
+                      section={section}
+                      onImported={openDoc}
+                      disabled={rulesLocked}
+                      reason={rulesReason}
+                    />
+                  )}
                 </>
               )}
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
@@ -404,11 +446,13 @@ export function HubScreen() {
                           personal
                         </span>
                       )}
-                      {d.scope === "team" && (d.mandatory || d.section === "rules") && (
-                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">
-                          obligatorio
-                        </span>
-                      )}
+                      {d.scope === "team" &&
+                        d.section !== VOICE_SECTION &&
+                        (d.mandatory || d.section === "rules") && (
+                          <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">
+                            obligatorio
+                          </span>
+                        )}
                       {snippets.get(d.id) && (
                         <span className="mt-1 block text-xs text-muted-foreground">
                           {snippets.get(d.id)}

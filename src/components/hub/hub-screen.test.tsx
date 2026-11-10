@@ -29,6 +29,7 @@ const h = vi.hoisted(() => ({
   // SDD-20261109-rules-write-permissions (NK-0095), CA-8: the signed-in person per test (undefined = role not loaded yet),
   // and what the screen sends to knowledge_docs.
   me: undefined as unknown,
+  addRules: vi.fn(async () => ({ added: 9, titles: [] as string[] })),
   writes: [] as { table: string; op: string; payload: unknown }[],
 }));
 const OWNER = { user: { id: "u1" }, roles: ["owner"], currentOrg: { org_id: "o1" } };
@@ -99,6 +100,11 @@ vi.mock("@/components/drive-overview", () => ({
   DriveAccountsPanel: () => <div>panel-drive-por-cuenta</div>,
 }));
 vi.mock("sonner", () => ({ toast: Object.assign(vi.fn(), { success: vi.fn(), error: vi.fn() }) }));
+// NK-0128 U-5: «Añadir reglas base» is a server function; the test says what it answers and counts the calls.
+vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
+vi.mock("@/lib/default-rules.functions", () => ({
+  addDefaultRules: () => h.addRules(),
+}));
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (o: unknown) => o,
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
@@ -112,6 +118,7 @@ vi.mock("@tanstack/react-router", () => ({
 
 import { HubScreen } from "./hub-screen";
 import { errorText } from "@/lib/errors";
+import { toast } from "sonner";
 import { HUB_SECTIONS } from "@/lib/screen-sections";
 
 const row = (id: string, section: string, title: string, body = "Texto de prueba."): Row => ({
@@ -150,6 +157,7 @@ beforeEach(() => {
   h.reads = 0;
   h.me = OWNER;
   h.writes = [];
+  h.addRules = vi.fn(async () => ({ added: 9, titles: [] as string[] }));
 });
 afterEach(cleanup);
 
@@ -475,6 +483,7 @@ const sectionLabels = [
   "Campañas",
   "Skills",
   "Reglas",
+  "Voz",
 ];
 const sectionButtons = () =>
   sectionLabels.map((l) => screen.getByRole("button", { name: new RegExp(`^${l}`) }));
@@ -565,6 +574,7 @@ describe("HubScreen · ?seccion= (CA-3)", () => {
       "campaigns",
       "skills",
       "rules",
+      "voice",
       "drive",
     ]);
   });
@@ -928,5 +938,206 @@ describe("HubScreen · buscador en blanco (NK-0100)", () => {
     }
     expect(box().value).toBe("");
     expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).not.toBeInTheDocument();
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-1 · CA-1, CA-2: the «Voz» section. Only the Owner or a Sales
+// Leader write it; a voice document is never mandatory, so the box is not offered there. Fictional texts.
+describe("HubScreen · sección Voz (NK-0128, CA-1, CA-2)", () => {
+  const HINT =
+    "Pega tres mensajes reales que hayáis escrito y que representen cómo habláis. Quita nombres y datos de personas antes de pegar.";
+  const VOICE_RO =
+    "Solo el Owner o un Sales Leader pueden escribir la voz de la empresa. Pídeselo a uno de ellos.";
+  const as = (role: string | null) => {
+    h.me = role ? { ...OWNER, roles: [role] } : undefined;
+  };
+  const voiceDocs = () => [
+    row("v1", "voice", "Mensaje de ejemplo 1", "Hola, gracias por tu tiempo."),
+    { ...row("v2", "voice", "Marcado por error"), mandatory: true },
+  ];
+  const newButton = () => screen.getByRole("button", { name: "+ Nuevo" });
+  const save = () => screen.getByRole("button", { name: "Guardar" });
+
+  it("the section exists, is named Voz and shows the privacy hint", async () => {
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(selected()).toEqual(["Voz"]);
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+    expect(within(sectionButton("Voz")).getByText("2")).toBeInTheDocument();
+  });
+
+  it("a voice document does not show the «obligatorio» badge, even when marked", async () => {
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Marcado por error");
+    expect(screen.queryByText("obligatorio")).not.toBeInTheDocument();
+  });
+
+  it("ae: «+ Nuevo» disabled with the reason in words, no Drive import offered", async () => {
+    as("ae");
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(newButton()).toBeDisabled();
+    expect(screen.getByText(VOICE_RO)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Importar de Drive" })).not.toBeInTheDocument();
+  });
+
+  it("ae opening a voice document: read-only, «Guardar» disabled, reason shown, no mandatory box", async () => {
+    as("ae");
+    h.docs = voiceDocs();
+    h.search = { doc: "v1" };
+    mount();
+    await screen.findByDisplayValue("Mensaje de ejemplo 1");
+    expect(screen.getByDisplayValue("Mensaje de ejemplo 1")).toHaveAttribute("readonly");
+    expect(screen.getByDisplayValue("Hola, gracias por tu tiempo.")).toHaveAttribute("readonly");
+    expect(save()).toBeDisabled();
+    expect(screen.getAllByText(VOICE_RO).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it.each(["owner", "sales_leader"])(
+    "%s: creates and edits voice, no mandatory box, and saves mandatory: false even if it came marked",
+    async (role) => {
+      as(role);
+      h.docs = voiceDocs();
+      h.search = { doc: "v2" };
+      mount();
+      await screen.findByDisplayValue("Marcado por error");
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(screen.queryByText(VOICE_RO)).not.toBeInTheDocument();
+      const body = screen.getByDisplayValue("Texto de prueba.");
+      expect(body).not.toHaveAttribute("readonly");
+      fireEvent.change(body, { target: { value: "Otro texto ficticio." } });
+      fireEvent.click(save());
+      await waitFor(() => expect(h.writes.length).toBe(1));
+      expect(h.writes[0]!.payload).toMatchObject({
+        body: "Otro texto ficticio.",
+        mandatory: false,
+      });
+      cleanup();
+      h.writes = [];
+      h.search = { seccion: "voice" };
+      mount();
+      await screen.findByText("Mensaje de ejemplo 1");
+      expect(newButton()).toBeEnabled();
+    },
+  );
+
+  it("while the role has not loaded, a voice document is read-only and «+ Nuevo» disabled", async () => {
+    as(null);
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(newButton()).toBeDisabled();
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-5 · CA-11, CA-12: «Añadir reglas base» in Conocimiento › Reglas.
+// Only an explicit click adds them; opening the screen never does.
+describe("HubScreen · Añadir reglas base (NK-0128, CA-11, CA-12)", () => {
+  const as = (role: string | null) => {
+    h.me = role ? { ...OWNER, roles: [role] } : undefined;
+  };
+  const button = () => screen.getByRole("button", { name: "Añadir reglas base" });
+  const openRules = async () => {
+    h.search = { seccion: "rules" };
+    h.docs = [row("r1", "rules", "Regla 1")];
+    mount();
+    await screen.findByText("Regla 1");
+  };
+
+  it.each(["owner", "sales_leader"])(
+    "%s: the button is enabled, and opening Reglas adds nothing by itself",
+    async (role) => {
+      as(role);
+      await openRules();
+      expect(button()).toBeEnabled();
+      expect(h.addRules).not.toHaveBeenCalled();
+      expect(h.writes).toEqual([]);
+    },
+  );
+
+  it("ae: disabled while the reason is shown below the description; no call", async () => {
+    as("ae");
+    await openRules();
+    expect(button()).toBeDisabled();
+    expect(
+      screen.getByText("Solo el Owner o un Sales Leader pueden escribir reglas."),
+    ).toBeInTheDocument();
+    expect(h.addRules).not.toHaveBeenCalled();
+  });
+
+  it("while the role has not loaded it is disabled", async () => {
+    as(null);
+    await openRules();
+    expect(button()).toBeDisabled();
+  });
+
+  it("only in Reglas: not in other sections, not in Voz", async () => {
+    for (const seccion of ["company", "voice"]) {
+      h.search = { seccion };
+      mount();
+      await screen.findByRole("button", { name: "+ Nuevo" });
+      expect(screen.queryByRole("button", { name: "Añadir reglas base" })).not.toBeInTheDocument();
+      cleanup();
+    }
+  });
+
+  it("not offered while the documents failed to load", async () => {
+    h.error = { message: "Failed to fetch" };
+    h.search = { seccion: "rules" };
+    mount();
+    await screen.findByRole("button", { name: "Reintentar" });
+    expect(screen.queryByRole("button", { name: "Añadir reglas base" })).not.toBeInTheDocument();
+  });
+
+  it("a click calls the action once, says how many were added and reads the documents again", async () => {
+    as("owner");
+    await openRules();
+    const reads = h.reads;
+    fireEvent.click(button());
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+        "Se han añadido 9 reglas base. Revísalas y edítalas.",
+      ),
+    );
+    expect(h.addRules).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(h.reads).toBeGreaterThan(reads));
+  });
+
+  it("one added: singular text; none added: «Ya tenías todas las reglas base.»", async () => {
+    as("owner");
+    await openRules();
+    h.addRules = vi.fn(async () => ({ added: 1, titles: [] as string[] }));
+    fireEvent.click(button());
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith(
+        "Se ha añadido 1 regla base. Revísala y edítala.",
+      ),
+    );
+    h.addRules = vi.fn(async () => ({ added: 0, titles: [] as string[] }));
+    fireEvent.click(button());
+    await waitFor(() =>
+      expect(vi.mocked(toast.success)).toHaveBeenCalledWith("Ya tenías todas las reglas base."),
+    );
+  });
+
+  it("a failure is shown through errorText, never the raw message", async () => {
+    as("owner");
+    await openRules();
+    h.addRules = vi.fn(async () => {
+      throw new Error("Failed to fetch");
+    });
+    fireEvent.click(button());
+    await waitFor(() =>
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(errorText(new Error("Failed to fetch"))),
+    );
+    expect(vi.mocked(toast.error)).not.toHaveBeenCalledWith("Failed to fetch");
   });
 });

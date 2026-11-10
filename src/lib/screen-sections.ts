@@ -9,6 +9,7 @@ export const HUB_SECTIONS = [
   "campaigns",
   "skills",
   "rules",
+  "voice",
   "drive",
 ] as const;
 export const HUB_DEFAULT_SECTION = "company";

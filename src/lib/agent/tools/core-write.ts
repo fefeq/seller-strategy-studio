@@ -20,6 +20,7 @@ import { leadStageLabel } from "@/lib/lead-funnel";
 import { isLostStage, LOSS_REASONS, lossLabel, parseLoss } from "@/lib/loss-reasons";
 import { ask } from "@/lib/ai-gateway";
 import { loadAgentRules, rulesBlock, RULES_READ_FAILED } from "@/lib/knowledge-rules";
+import { loadVoice, VOICE_FORM_RULE, VOICE_READ_FAILED } from "@/lib/knowledge-voice";
 import { CALL_NOTE_FIELDS, callLogEntry, filledCount, mergeCallNotes } from "@/lib/call-notes";
 import { CORE_READ_TOOLS } from "./core-read";
 import { LEAD_STAGE_IDS } from "../tool-kit";
@@ -454,7 +455,7 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
             account_id: m.account_id,
           })
         : {};
-      const [pos, pillars, rules] = await Promise.all([
+      const [pos, pillars, rules, voice] = await Promise.all([
         c.db
           .from("positioning")
           .select("one_liner,key_benefit,differentiator,competitive_alternative")
@@ -462,15 +463,18 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
           .maybeSingle(),
         c.db.from("messaging_pillars").select("title,message,proof").eq("org_id", c.orgId),
         loadAgentRules(c),
+        loadVoice(c),
       ]);
-      const block = rulesBlock(rules.rules);
+      const block = rulesBlock(rules.rules, { withPerson: true });
       const brief = await ask(
-        `Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.${block ? `\n${block}` : ""}`,
+        `Eres un coach de ventas B2B. Redacta una preparación de llamada concisa en español neutro (tú), sin signos de exclamación ni emoji, en markdown: objetivo, contexto de la cuenta, stakeholders y qué le importa a cada uno, preguntas de discovery, objeciones probables con respuesta, y próximo paso a pedir. Usa solo los datos dados.${block ? `\n${block}` : ""}${voice.examples.length ? `\n${VOICE_FORM_RULE}` : ""}`,
         JSON.stringify({
           reunion: m,
           contexto: acc,
           posicionamiento: pos.data,
           pilares: pillars.data,
+          // The company's voice is data for the model, never part of the system text (NK-0128).
+          ...(voice.examples.length ? { voz_de_la_empresa: voice.examples } : {}),
         }),
       );
       ok(
@@ -483,9 +487,12 @@ export const CORE_WRITE_TOOLS: AgentTool[] = [
           .single(),
       );
       // decidePending shows `mensaje` after «Hecho: …»: a failed read of the rules is never silent (CA-5).
-      return rules.ok
-        ? { ok: true, meeting: m.title }
-        : { ok: true, meeting: m.title, mensaje: RULES_READ_FAILED };
+      const notices = [rules.ok ? "" : RULES_READ_FAILED, voice.ok ? "" : VOICE_READ_FAILED].filter(
+        Boolean,
+      );
+      return notices.length
+        ? { ok: true, meeting: m.title, mensaje: notices.join(" ") }
+        : { ok: true, meeting: m.title };
     },
   }),
   def({

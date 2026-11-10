@@ -20,7 +20,13 @@ import { byScore, fitText, scoreLead } from "@/lib/scoring";
 import { readStaleDays, staleDeals, thresholdText } from "@/lib/stale";
 import { FOLLOWUP_STEPS, followupDraft, followupStatus } from "@/lib/followup";
 import { ask } from "@/lib/ai-gateway";
-import { loadAgentRules, rulesBlock, RULES_READ_FAILED } from "@/lib/knowledge-rules";
+import {
+  loadAgentRules,
+  rulesBlock,
+  RULES_READ_FAILED,
+  VOICE_SECTION,
+} from "@/lib/knowledge-rules";
+import { loadVoice, VOICE_FORM_RULE, VOICE_READ_FAILED } from "@/lib/knowledge-voice";
 import { LEAD_STAGE_IDS } from "../tool-kit";
 import type { AgentTool } from "../tool-kit";
 
@@ -531,14 +537,18 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       const step = a.step
         ? FOLLOWUP_STEPS.find((x) => x.id === a.step)!
         : (st.due ?? st.next?.step ?? FOLLOWUP_STEPS[0]);
-      const [setup, rules] = await Promise.all([loadSetupData(c.db, c.orgId), loadAgentRules(c)]);
+      const [setup, rules, voice] = await Promise.all([
+        loadSetupData(c.db, c.orgId),
+        loadAgentRules(c),
+        loadVoice(c),
+      ]);
       const base = followupDraft(step, l, {
         positioning: setup.positioning,
         pillars: setup.pillars,
       });
-      const block = rulesBlock(rules.rules);
+      const block = rulesBlock(rules.rules, { withPerson: true });
       const text = await ask(
-        `Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.${block ? `\n${block}` : ""}`,
+        `Eres un vendedor B2B experimentado que escribe seguimientos cortos en español neutro, de tú, sin signos de exclamación ni emoji, sin promesas ni adjetivos vacíos. Máximo 60 palabras. Una sola idea por mensaje y una pregunta clara al final. No inventes datos del lead ni de la empresa.${block ? `\n${block}` : ""}${voice.examples.length ? `\n${VOICE_FORM_RULE}` : ""}`,
         JSON.stringify({
           paso: `${step.label}: ${step.purpose}`,
           tono: a.tone ?? null,
@@ -552,23 +562,29 @@ export const CORE_READ_TOOLS: AgentTool[] = [
           posicionamiento: setup.positioning,
           pilares: setup.pillars,
           borrador_base: base,
+          // The company's voice is data for the model, never part of the system text (NK-0128).
+          ...(voice.examples.length ? { voz_de_la_empresa: voice.examples } : {}),
         }),
         { effort: "low" },
       );
-      // A failed read of the rules is said where the person reads the draft (SDD-20261106-agent-rules-reader, CA-5).
+      // A failed read of the rules or of the voice is said where the person reads the draft (SDD-20261106-agent-rules-reader,
+      // CA-5; NK-0128, CA-4). The rules keep `mensaje`; the voice has its own `mensaje_voz`.
       const draft = {
         paso: step.label,
         dias_sin_respuesta: st.daysSinceContact,
         borrador: text.trim(),
         borrador_base: base,
       };
-      return rules.ok
-        ? draft
-        : {
-            ...draft,
-            borrador: `${RULES_READ_FAILED}\n\n${draft.borrador}`,
-            mensaje: RULES_READ_FAILED,
-          };
+      const notices = [rules.ok ? "" : RULES_READ_FAILED, voice.ok ? "" : VOICE_READ_FAILED].filter(
+        Boolean,
+      );
+      if (!notices.length) return draft;
+      return {
+        ...draft,
+        borrador: `${notices.join("\n\n")}\n\n${draft.borrador}`,
+        ...(rules.ok ? {} : { mensaje: RULES_READ_FAILED }),
+        ...(voice.ok ? {} : { mensaje_voz: VOICE_READ_FAILED }),
+      };
     },
   }),
   def({
@@ -583,10 +599,14 @@ export const CORE_READ_TOOLS: AgentTool[] = [
           .from("knowledge_docs")
           .select("section,title,body,scope,created_by")
           .eq("org_id", c.orgId)
+          // The company's voice is real messages: it reaches the drafts only through loadVoice, never through a search that an
+          // external assistant could read over MCP (NK-0128, CA-6b).
+          .neq("section", VOICE_SECTION)
           .or(`title.ilike.${like(a.query)},body.ilike.${like(a.query)}`)
           .limit(30),
       );
       return (rows ?? [])
+        .filter((d) => d.section !== VOICE_SECTION)
         .filter((d) => d.scope === "team" || d.created_by === c.userId)
         .slice(0, 6)
         .map(({ scope: _s, created_by: _c, ...d }) => d);
