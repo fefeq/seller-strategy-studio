@@ -157,8 +157,14 @@ export function BudgetPanel({ year }: { year: number }) {
                       </p>
                     </td>
                     <Cmp
-                      real={r.actual.revenue != null ? money(r.actual.revenue) : "—"}
-                      plan={r.plan.revenue != null ? money(r.plan.revenue) : "—"}
+                      real={
+                        r.actual.revenue != null ? (
+                          money(r.actual.revenue)
+                        ) : (
+                          <DataMark state="sin_dato" reason="sin ingresos del trimestre" />
+                        )
+                      }
+                      plan={r.plan.revenue != null ? money(r.plan.revenue) : "sin plan"}
                       dev={<Deviation real={r.actual.revenue} plan={r.plan.revenue} />}
                     />
                     <Cmp
@@ -167,8 +173,17 @@ export function BudgetPanel({ year }: { year: number }) {
                       dev={<Deviation real={r.actual.margin} plan={r.plan.margin} points />}
                     />
                     <Cmp
-                      real={r.actual.acquisition ? money(r.actual.acquisition) : "—"}
-                      plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "—"}
+                      real={
+                        r.actual.acquisition ? (
+                          money(r.actual.acquisition)
+                        ) : r.sharedSplit === "sin_reparto" ? (
+                          // Costs exist but nobody won: the reason is the shared one, never «sin gasto apuntado».
+                          <DataMark {...SHARED_NOT_SPLIT} />
+                        ) : (
+                          <DataMark state="sin_dato" reason="sin gasto de captación apuntado" />
+                        )
+                      }
+                      plan={r.plan.acquisition != null ? money(r.plan.acquisition) : "sin plan"}
                       dev={
                         <Deviation
                           real={r.actual.acquisition || null}
@@ -176,7 +191,10 @@ export function BudgetPanel({ year }: { year: number }) {
                           lowerIsBetter
                         />
                       }
-                      marks={r.sharedSplit === "sin_reparto" && <Mark {...SHARED_NOT_SPLIT} />}
+                      marks={
+                        r.sharedSplit === "sin_reparto" &&
+                        !!r.actual.acquisition && <Mark {...SHARED_NOT_SPLIT} />
+                      }
                     />
                     <Cmp
                       real={<FigureValue f={f.cac} show={money} />}

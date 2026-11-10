@@ -21,6 +21,7 @@ import {
   type RHistory,
 } from "@/lib/revops";
 import { pct } from "@/lib/money";
+import { DataMark } from "@/components/metrics/data-mark";
 import { NO_SOURCE, dealSourceLabel } from "@/lib/deal-source";
 
 function useSegmentNames() {
@@ -226,9 +227,17 @@ export function RevopsCohorts({ deals }: { deals: RDeal[] }) {
               <td className="pr-3">
                 {c.won}/{c.won + c.lost}
               </td>
-              <td className="pr-3">{c.winRate == null ? "—" : pct(c.winRate)}</td>
+              <td className="pr-3">
+                {c.winRate == null ? (
+                  <DataMark state="sin_dato" reason="sin deals cerrados" />
+                ) : (
+                  pct(c.winRate)
+                )}
+              </td>
               <td className="pr-3">{money(c.wonAmount)}</td>
-              <td>{c.medianDaysToWin ?? "—"}</td>
+              <td>
+                {c.medianDaysToWin ?? <DataMark state="sin_dato" reason="sin deals ganados" />}
+              </td>
             </tr>
           ))}
         </tbody>

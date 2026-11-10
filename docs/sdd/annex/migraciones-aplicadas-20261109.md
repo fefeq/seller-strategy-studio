@@ -1,0 +1,66 @@
+# Migraciones 0081, 0082 y 0083 aplicadas en Lovable Cloud
+
+**Fecha:** 2026-11-09. **Aplicadas por:** el coordinador, con la autorización de Fede en el chat: «aplícalas tú».
+**Vía:** conector de Lovable (`query_database`) sobre el proyecto «Seller Strategy Studio» (`284b5305-…`, base Supabase activa).
+Cada migración se aplicó con una comprobación antes y otra después. Todas las consultas fueron de metadatos o recuentos: no se leyó ni se modificó ninguna fila de cliente.
+
+## Antes (solo lectura)
+
+| Comprobación | Resultado | Lo que espera el SDD |
+|---|---|---|
+| `knowledge_docs.mandatory` | existe, `boolean not null default false` | existe (0081 es un no-op ahí) |
+| Políticas de `knowledge_docs` | `org delete owner`, `org insert`, `org read`, `org update` (todas permisivas); RLS activo | las de 0002, sin restrictivas |
+| `has_org_role` | `has_org_role(uuid, app_role)`, security definer; `app_role` incluye `owner` y `sales_leader` | firma compatible con los literales de 0081 |
+| `knowledge_doc_is_binding` | no existe | no existe |
+| Privilegios de tabla en `notifications` (comprobación previa 3 de NK-0070) | `anon` y `authenticated`: DELETE, INSERT, REFERENCES, SELECT, TRIGGER, TRUNCATE, **UPDATE** (los valores por defecto de Supabase) | los anota para la vuelta atrás |
+| UPDATE por columna en `notifications` | `anon` y `authenticated` en las 12 columnas | idem |
+| Políticas de `notifications` | `own mark read` (UPDATE), `own read` (SELECT) | sin cambios |
+| `deals.source` default | `'outbound'::text` | `'outbound'::text` |
+| Recuentos | `knowledge_docs` 4 (1 regla de equipo, 0 obligatorios); `deals` 0; `notifications` 0 | — |
+| `drizzle.__drizzle_migrations` | 77 filas (`max id` 78) | no se toca (igual que con 0071–0073; ver NK-0085) |
+
+## Aplicación y comprobación posterior
+
+- **0081** (`0081_knowledge_binding_writers.sql`, NK-0095):
+  - Se crean las dos políticas restrictivas `knowledge binding insert` y `knowledge binding update`. Las cuatro permisivas no cambian.
+  - `knowledge_doc_is_binding(text,text,boolean)` queda `immutable` con `search_path=public`. `anon` no la puede ejecutar y `authenticated` sí.
+  - La función evalúa bien:
+
+    | Llamada | Resultado |
+    |---|---|
+    | (`rules`, `team`, false) | true |
+    | (`company`, `team`, true) | true |
+    | (`rules`, `personal`, true) | false |
+    | (`company`, `team`, false) | false |
+
+  - Siguen siendo 4 documentos.
+  - Desde ahora, NK-0096 (las Reglas en los lectores de IA) está en vigor en la base.
+- **0082** (`0082_notifications_read_only.sql`, NK-0070):
+  - `authenticated` y `anon` ya no tienen UPDATE de tabla.
+  - `authenticated` tiene UPDATE solo sobre `read_at`, y `anon` no tiene UPDATE en ninguna columna.
+  - `service_role`, las políticas y las funciones `notify_job_end` y `money_notify` (security definer) no cambian.
+- **0083** (`0083_deals_source_no_default.sql`, NK-0107): `deals.source` ya no tiene valor por defecto (`null`) y sigue siendo nullable.
+
+## Vuelta atrás (no ejecutar salvo que haga falta)
+```sql
+-- 0083
+alter table public.deals alter column source set default 'outbound';
+-- 0082: restaura exactamente lo anotado arriba (Supabase dio UPDATE de tabla a los dos roles)
+revoke update (read_at) on public.notifications from authenticated;
+grant update on public.notifications to authenticated, anon;
+-- 0081
+drop policy if exists "knowledge binding update" on public.knowledge_docs;
+drop policy if exists "knowledge binding insert" on public.knowledge_docs;
+drop function if exists public.knowledge_doc_is_binding(text, text, boolean);
+-- la columna mandatory ya existía antes: no se borra
+```
+
+## Lo que esta nota NO demuestra
+- **Comportamiento en la app:**
+  - que un AE no pueda crear ni editar Reglas;
+  - que un Owner sí pueda;
+  - que «Leer todo» funcione;
+  - que un deal nuevo quede «Sin origen».
+
+  No se creó ninguna empresa ni ningún dato de prueba en producción. Esto se comprobó en PGlite y en el walkthrough con base simulada, no aquí.
+- **Registro de `drizzle`:** no se actualizó, porque las aplicaciones anteriores tampoco lo hacían. Sigue pendiente NK-0085.

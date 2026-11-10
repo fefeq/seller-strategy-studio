@@ -45,6 +45,8 @@ type Shared<U extends AuthUser> = {
   check: () => Promise<SessionState<U>>;
   /** Id of the last user the validator validated (NK-0111): survives refreshed tokens and failed checks. */
   readonly last: string | null;
+  /** NK-0119: told when the validator validates a user other than the last validated one. */
+  subscribeOtherUser: (cb: (userId: string) => void) => () => void;
 };
 
 const shared = new WeakMap<object, Shared<AuthUser>>();
@@ -56,6 +58,7 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
   let listening = false;
 
   let last: string | null = null;
+  const otherUserListeners = new Set<(userId: string) => void>();
   // Bumped on SIGNED_OUT: a validation that started before it must not bring the signed-out user back.
   let epoch = 0;
 
@@ -103,7 +106,13 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     }
     const entry = saved;
     const outcome = await entry.valid;
-    if ("user" in outcome && epoch === startedAt) last = outcome.user.id;
+    if ("user" in outcome && epoch === startedAt) {
+      const previous = last;
+      last = outcome.user.id;
+      // NK-0119: a navigation validated another user before that user's SIGNED_IN reached this tab. Tell the
+      // cache now, before the caller (a loader) can read anything left by the previous user.
+      if (previous != null && previous !== last) otherUserListeners.forEach((cb) => cb(last!));
+    }
     // Never keep a refusal or a failed attempt: the next navigation asks again.
     if (!("user" in outcome) && saved === entry) saved = null;
     return outcome;
@@ -120,6 +129,10 @@ function share<U extends AuthUser>(auth: SessionAuth<U>): Shared<U> {
     },
     get last() {
       return last;
+    },
+    subscribeOtherUser: (cb) => {
+      otherUserListeners.add(cb);
+      return () => void otherUserListeners.delete(cb);
     },
   };
   shared.set(auth, state as unknown as Shared<AuthUser>);
@@ -144,6 +157,13 @@ export function createLastValidatedUserId<U extends AuthUser>(
 ): () => string | null {
   const box = share(auth);
   return () => box.last;
+}
+
+/** Calls back (with the new id) when the shared validator validates a user other than the last validated one (NK-0119). Returns the unsubscribe. */
+export function createOtherUserSubscription<U extends AuthUser>(
+  auth: SessionAuth<U>,
+): (cb: (userId: string) => void) => () => void {
+  return share(auth).subscribeOtherUser;
 }
 
 /** Same validation with the three answers (NK-0112): valid, none (go to /auth) or unverified (retry screen). */

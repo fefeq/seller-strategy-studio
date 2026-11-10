@@ -1,6 +1,7 @@
 import { Kpi } from "@/components/page";
+import { DataMark } from "@/components/metrics/data-mark";
 import { NativeSelect } from "@/components/native-select";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -93,8 +94,21 @@ export function FinancePanel({ quarter }: { quarter: string }) {
         {Math.round(d.value)}% vs presupuesto
       </span>
     ) : null;
-  const money0 = (v: number | null) => (v == null ? "—" : money(v));
-  const ratio = (v: number | null) => (v == null ? "—" : formatRatio(v));
+  // SDD-20261109-metrics-sin-dato-rest: a missing figure says what is missing («Sin dato · motivo»); a budget nobody typed
+  // says «sin plan».
+  const miss = (reason: string) => <DataMark state="sin_dato" reason={reason} />;
+  const plan = (v: number | null) => (v == null ? "sin plan" : money(v));
+  const planRatio = (v: number | null) => (v == null ? "sin plan" : formatRatio(v));
+  const revenue = (v: number | null) => (v == null ? miss("sin ingresos del trimestre") : money(v));
+  const margin = (v: number | null) => (v == null ? miss("falta el ingreso real") : money(v));
+  const ratio = (v: number | null) => (v == null ? miss("falta ingreso o gasto") : formatRatio(v));
+  const cost = (v: number) => (v ? money(v) : miss("sin costes apuntados"));
+  const collected = (v: { actual: { collected: number; revenueSource: RevenueSource | null } }) =>
+    v.actual.collected
+      ? money(v.actual.collected)
+      : v.actual.revenueSource === "facturas"
+        ? money(0)
+        : miss("sin cobros registrados");
 
   return (
     <div className="space-y-6">
@@ -102,7 +116,7 @@ export function FinancePanel({ quarter }: { quarter: string }) {
         <Kpi
           size="normal"
           label="Presupuesto de gasto"
-          value={money0(cur.budget.spend)}
+          value={plan(cur.budget.spend)}
           hint={
             cur.budget.spend == null ? (
               <Link to="/metrics" search={{ seccion: "economia" }} className="underline">
@@ -125,7 +139,7 @@ export function FinancePanel({ quarter }: { quarter: string }) {
         <Kpi
           size="normal"
           label="Ingresos"
-          value={money0(cur.actual.revenue)}
+          value={revenue(cur.actual.revenue)}
           hint={
             cur.actual.revenueSource ? (
               <>
@@ -140,7 +154,7 @@ export function FinancePanel({ quarter }: { quarter: string }) {
         <Kpi
           size="normal"
           label="Margen"
-          value={money0(cur.actual.margin)}
+          value={margin(cur.actual.margin)}
           hint={
             cur.actual.marginPct != null
               ? `${pct(cur.actual.marginPct)} de los ingresos`
@@ -185,39 +199,31 @@ export function FinancePanel({ quarter }: { quarter: string }) {
             <tbody>
               <Row
                 label="Ingresos presupuestados"
-                cells={view.map((v) => money0(v.budget.revenue))}
+                cells={view.map((v) => plan(v.budget.revenue))}
                 muted
               />
               <Row
                 label="Ingresos reales"
-                cells={view.map((v) => money0(v.actual.revenue))}
+                cells={view.map((v) => revenue(v.actual.revenue))}
                 tones={view.map((v) => tone(v.revenueDeviation))}
                 strong
               />
               <Row
                 label="Gasto presupuestado"
-                cells={view.map((v) => money0(v.budget.spend))}
+                cells={view.map((v) => plan(v.budget.spend))}
                 muted
               />
               <Row
                 label="Gasto real"
-                cells={view.map((v) => (v.actual.spend ? money(v.actual.spend) : "—"))}
+                cells={view.map((v) => cost(v.actual.spend))}
                 tones={view.map((v) => tone(v.spendDeviation))}
                 strong
               />
-              <Row
-                label="· captación"
-                cells={view.map((v) => (v.actual.acquisition ? money(v.actual.acquisition) : "—"))}
-                muted
-              />
-              <Row
-                label="· operativos"
-                cells={view.map((v) => (v.actual.operating ? money(v.actual.operating) : "—"))}
-                muted
-              />
+              <Row label="· captación" cells={view.map((v) => cost(v.actual.acquisition))} muted />
+              <Row label="· operativos" cells={view.map((v) => cost(v.actual.operating))} muted />
               <Row
                 label="Margen"
-                cells={view.map((v) => money0(v.actual.margin))}
+                cells={view.map((v) => margin(v.actual.margin))}
                 tones={view.map((v) =>
                   v.actual.margin == null
                     ? ""
@@ -230,7 +236,9 @@ export function FinancePanel({ quarter }: { quarter: string }) {
               <Row
                 label="Margen %"
                 cells={view.map((v) =>
-                  v.actual.marginPct == null ? "—" : pct(v.actual.marginPct),
+                  v.actual.marginPct == null
+                    ? miss("falta el ingreso real")
+                    : pct(v.actual.marginPct),
                 )}
               />
               <Row
@@ -245,12 +253,12 @@ export function FinancePanel({ quarter }: { quarter: string }) {
                 )}
                 strong
               />
-              <Row label="ROI presupuestado" cells={view.map((v) => ratio(v.budget.roi))} muted />
               <Row
-                label="Cobrado"
-                cells={view.map((v) => (v.actual.collected ? money(v.actual.collected) : "—"))}
+                label="ROI presupuestado"
+                cells={view.map((v) => planRatio(v.budget.roi))}
                 muted
               />
+              <Row label="Cobrado" cells={view.map((v) => collected(v))} muted />
             </tbody>
           </table>
         </div>
@@ -617,7 +625,7 @@ function Row({
   tones,
 }: {
   label: string;
-  cells: string[];
+  cells: ReactNode[];
   strong?: boolean;
   muted?: boolean;
   tones?: string[];

@@ -1,8 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { checkSession } from "@/lib/session";
-import { SessionUnverifiedError } from "@/lib/session-check";
+import { SESSION_CHECK_FAILED, SessionUnverifiedError } from "@/lib/session-check";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/.lovable/oauth/consent")({
@@ -56,7 +56,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     };
     const immediate = d?.redirect_url ?? d?.redirect_to;
     if (immediate && !d?.client) throw redirect({ href: immediate });
-    return { details: d, email: session.user.email ?? "" };
+    return { details: d, email: session.user.email ?? "", userId: session.user.id };
   },
   component: Consent,
   pendingComponent: () => (
@@ -97,7 +97,8 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 function Consent() {
-  const { details, email } = Route.useLoaderData();
+  const { details, email, userId } = Route.useLoaderData();
+  const navigate = useNavigate();
   const { authorization_id } = Route.useSearch();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,6 +110,29 @@ function Consent() {
   async function decide(approve: boolean) {
     setBusy(true);
     setError(null);
+    // NK-0122: the loader looked at the session when the page opened; approve or deny with the session of now.
+    const session = await checkSession();
+    if (session.status === "none") {
+      setBusy(false);
+      void navigate({
+        to: "/auth",
+        search: { next: window.location.pathname + window.location.search },
+      });
+      return;
+    }
+    if (session.status === "unverified") {
+      setBusy(false);
+      setError(SESSION_CHECK_FAILED);
+      return;
+    }
+    if (session.user.id !== userId) {
+      // Another account signed in meanwhile (maybe in another tab): this request was opened by someone else.
+      setBusy(false);
+      setError(
+        "Esta solicitud de conexión no es válida o ha caducado. Vuelve a conectar desde tu asistente.",
+      );
+      return;
+    }
     const { data, error } = approve
       ? await supabase.auth.oauth.approveAuthorization(authorization_id)
       : await supabase.auth.oauth.denyAuthorization(authorization_id);

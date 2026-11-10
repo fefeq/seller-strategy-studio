@@ -1,7 +1,7 @@
 # SDD-20261109-metrics-sin-dato-rest · [Mejora] En Métricas, un «—» que significa «falta el dato» pasa a «Sin dato · motivo»
 
 **Tipo:** Mejora (el ledger la registra como `feature`; ver §15) · **Prioridad propuesta:** Media
-**Estado:** Aprobado — coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #121 (268a2d3) · Aprobado por coordinador por delegación de Fede (2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 3) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0106
 **PRD:** No aplica (cierra una regla ya aprobada: decisión 4 del §15 de NK-0089 y decisión 13 del §15 de `SDD-20261109-metrics-strategy-no-estimates.md`) · **Depende de:** `SDD-20261109-metrics-strategy-no-estimates.md` (Hecho: `DataMark`, `FigureValue`, `PlanValue`, `expectNoBareDash`, inventario CA-13) · **Coordina con:** `SDD-20261109-deals-no-source.md` (NK-0107/0108/0109): la clave `NO_SOURCE` («—») es una clave de agrupación, no un texto; este SDD la permite. **Se integra después de deals**, para que `METRICS_DASH_ALLOWED` nazca sin las claves K que deals elimina; la lista es un techo (máximo por fragmento), así que esas K no la rompen en ningún orden.
 
@@ -168,4 +168,4 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 | **MENOR M2-m1** Con deals integrado antes, las K que deals elimina no deben entrar en la lista | §3: el inventario se vuelve a contar sobre la rama de integración con deals; las 4 entradas K que pierden «—» no se añaden a `METRICS_DASH_ALLOWED`; CA-6 se comprueba por valor (`NO_SOURCE === "—"`, etiquetas en `revops.test.ts` y paneles), no por el literal. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Pendiente.
+Rama `feat/nk-0106-metrics-sin-dato` sobre `d3eeba1`. Recuento sobre la base con deals integrado: 47 líneas, F 26, N 13, K 4 (las cuatro K de deals no entran en `METRICS_DASH_ALLOWED`). Las 26 F pasan a «Sin dato · motivo», «sin plan» o «sin dato». Test nuevo `src/lib/metrics-no-bare-dash.test.ts` y casos nuevos en los tests de §12. Desvío: en Presupuesto, con costes compartidos sin repartir, el valor dice «Sin dato · nadie ganó: el compartido no se reparte» y no «sin gasto de captación apuntado» (sería falso). Evidencia en `.factory/evidence/NK-0106/result.md`.

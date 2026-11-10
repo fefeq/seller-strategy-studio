@@ -63,7 +63,7 @@ export async function sendEmail(opts: {
   });
   if (!res.ok) {
     const err = (await res.text().catch(() => "")).slice(0, 300);
-    console.error("resend error", res.status, err);
+    console.error(`resend error [${res.status}] body ${err.length} chars`);
     return { sent: false, status: res.status, error: `Resend ${res.status}: ${err}` };
   }
   const data = (await res.json().catch(() => ({}))) as { id?: string };
