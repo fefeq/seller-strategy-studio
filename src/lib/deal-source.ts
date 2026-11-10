@@ -18,6 +18,16 @@ export const DEAL_SOURCE_LABELS: Record<string, string> = {
   referral: "Referido",
 };
 
+/** The six keys of DEAL_SOURCE_LABELS, in the same order, as a tuple for z.enum (deal-source.test.ts keeps them equal). */
+export const DEAL_SOURCE_KEYS = [
+  "outbound",
+  "inbound",
+  "partner",
+  "plg",
+  "event",
+  "referral",
+] as const;
+
 /** Label of a source key: null or the grouping key → «Sin origen»; a free text (leads intake) is returned as it is. */
 export function dealSourceLabel(key: string | null | undefined): string {
   if (key == null || key === NO_SOURCE) return NO_SOURCE_LABEL;

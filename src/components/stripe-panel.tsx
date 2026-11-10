@@ -263,7 +263,7 @@ export function StripeMetricsPanel() {
     other_currencies?: Record<string, { mrr: number; customers: number }>;
   };
   const pctText = (x: number | null) =>
-    x == null ? "—" : `${x.toLocaleString("es-ES", { maximumFractionDigits: 1 })} %`;
+    x == null ? "sin dato" : `${x.toLocaleString("es-ES", { maximumFractionDigits: 1 })} %`;
   const sameCurrency = s.currency === currency;
   const tile = (label: string, v: string, hint?: string) => (
     <div className="rounded-lg border bg-card p-4">

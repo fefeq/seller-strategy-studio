@@ -1,5 +1,6 @@
 // The one AI call of the strategic review (SDD-20261027 F4). Pure of the database: the caller loads the sources, the last
 // review and the month's budget, and saves the result. `ask` is injected so tests never reach a model.
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { budgetState } from "@/lib/orchestrator/planner";
 import {
   buildReviewInput,
@@ -82,7 +83,7 @@ export async function runReview(d: ReviewDeps): Promise<ReviewResult> {
       schema: { name: "strategy_review", schema: REVIEW_SCHEMA },
     });
   } catch (e) {
-    console.error("strategy review: ask failed", e instanceof Error ? e.message : e);
+    console.error("strategy review: ask failed", safeErrorLog(e));
     return {
       ...base,
       status: "error",
@@ -101,11 +102,7 @@ export async function runReview(d: ReviewDeps): Promise<ReviewResult> {
       discarded: parsed.discarded,
     };
   } catch (e) {
-    console.error(
-      "strategy review: invalid answer",
-      e instanceof Error ? e.message : e,
-      raw.slice(0, 200),
-    );
+    console.error("strategy review: invalid answer", safeErrorLog(e), `output ${raw.length} chars`);
     return {
       ...base,
       status: "error",

@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { DEFAULT_PREFS, telegramDecision, telegramText, type NoticePrefs } from "@/lib/jobs";
 import { SITE_URL } from "@/lib/site";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 type Admin = SupabaseClient<Database>;
 type Notice = {
@@ -101,7 +102,7 @@ export async function deliverJobNotice(db: Admin, jobId: string, now = new Date(
     .order("created_at", { ascending: false })
     .limit(1);
   return deliver(db, (data ?? []) as Notice[], now).catch((e) => {
-    console.error("deliverJobNotice", e);
+    console.error("deliverJobNotice", safeErrorLog(e));
     return 0;
   });
 }
@@ -116,7 +117,7 @@ export async function flushHeldNotices(db: Admin, now = new Date()) {
     .order("created_at")
     .limit(300);
   return deliver(db, (data ?? []) as Notice[], now).catch((e) => {
-    console.error("flushHeldNotices", e);
+    console.error("flushHeldNotices", safeErrorLog(e));
     return 0;
   });
 }

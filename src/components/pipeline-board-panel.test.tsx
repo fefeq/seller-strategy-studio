@@ -137,10 +137,14 @@ describe("NK-0094 Rendimiento board: one payback, the projected CAC says its win
     expectDataMarks(container, 3);
   });
 
-  it("CA-13: without costs every CAC and the payback say why; only the spend keeps «—»", async () => {
+  it("CA-13: without costs every CAC, the payback and the spend say why", async () => {
     const { container } = await show({ deals: [wonQ4()] });
     expect(marksOf(cacReal())).toEqual(["Sin dato · sin costes en 2026-Q4"]);
     expect(marksOf(stat("CAC proyectado"))).toEqual(["Sin dato · sin costes en 2026-Q4"]);
-    expectNoBareDash(container, ["— Apúntalo en «CAC real»"]); // the spend nobody typed (otra métrica)
+    // NK-0106: the spend nobody typed says so; «— Apúntalo en «CAC real»» is no longer allowed.
+    expectNoBareDash(container, []);
+    expect(marksOf(stat("Gasto de captación del trimestre"))).toEqual([
+      "Sin dato · sin gasto de captación apuntado",
+    ]);
   });
 });

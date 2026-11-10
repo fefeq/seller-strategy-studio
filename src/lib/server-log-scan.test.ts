@@ -1,8 +1,12 @@
 // @vitest-environment node
-// NK-0104 CA-5: a console.error|warn|log in src/lib/**/*.server.ts must not carry a slice of a body or model output
+// NK-0104 CA-5, widened by NK-0118 + NK-0121: a console.error|warn|log must not carry a slice of a body or model output
 // (`.slice(`) nor the whole error (`, e)` / `, err)` / `, error)`). Use safeErrorLog(e) or lengths and status instead.
-// The exception list is closed: each entry names the file, the exact call and why it is left. These were found when the
-// scan was written and are NOT approved as safe: they are pending follow-up tickets. A new entry needs a reason.
+// Scope (NK-0121): every non-test source file under src/lib/** (the *.server.ts files, but also the provider gateways
+// such as firecrawl.ts or google-drive.ts and *.functions.ts, which talk to providers and are not named *.server.ts)
+// plus every src/**/*.functions.ts. Criterion: a file anywhere in src/lib is server-side code that handles provider
+// bodies or model output, and a *.functions.ts outside it runs on the server too; the scan reads text, so a pure file
+// with no console call costs nothing. The exception list is closed and now empty: a new entry needs a reason that is
+// not "pending".
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -10,11 +14,21 @@ import { describe, expect, it } from "vitest";
 const ROOT = join(import.meta.dirname, "..", "..");
 const LIB = join(import.meta.dirname);
 
-function serverFiles(dir: string): string[] {
+const SRC = join(ROOT, "src");
+const isTest = (n: string) => /\.test\.tsx?$/.test(n);
+
+function sourceFiles(dir: string, keep: (name: string) => boolean): string[] {
   return readdirSync(dir).flatMap((n) => {
     const p = join(dir, n);
-    return statSync(p).isDirectory() ? serverFiles(p) : n.endsWith(".server.ts") ? [p] : [];
+    return statSync(p).isDirectory() ? sourceFiles(p, keep) : keep(n) ? [p] : [];
   });
+}
+
+/** src/lib/** (non-test .ts/.tsx) plus every src/**\/*.functions.ts, without duplicates. */
+function scannedFiles(): string[] {
+  const lib = sourceFiles(LIB, (n) => /\.tsx?$/.test(n) && !isTest(n));
+  const fns = sourceFiles(SRC, (n) => n.endsWith(".functions.ts"));
+  return [...new Set([...lib, ...fns])];
 }
 
 /** Every console.error|warn|log call: its text up to the matching parenthesis, whitespace collapsed. */
@@ -38,49 +52,39 @@ function isUnsafeLog(call: string): boolean {
   return /\.slice\(/.test(call) || /,\s*(?:e|err|error)\s*\)$/.test(call);
 }
 
-const PENDING = "Pending follow-up (found by the NK-0104 scan, out of its scope): ";
-// file -> exact call -> reason. Closed list.
-const EXCEPTIONS: Record<string, Record<string, string>> = {
-  "src/lib/email.server.ts": {
-    'console.error("resend error", res.status, err)': PENDING + "provider body slice",
-  },
-  "src/lib/posthog-sync.server.ts": {
-    "console.error(`PostHog query failed [${res.status}]: ${body.slice(0, 400)}`)":
-      PENDING + "provider body slice",
-  },
-  "src/lib/telegram.server.ts": {
-    "console.error(`Telegram ${method} failed [${res.status}]: ${text.slice(0, 300)}`)":
-      PENDING + "provider body slice",
-  },
-  "src/lib/inngest/send.server.ts": {
-    "console.error(`Inngest send failed [${res.status}]: ${body.slice(0, 400)}`)":
-      PENDING + "provider body slice",
-  },
-  "src/lib/weekly-report.server.ts": {
-    'console.error("weekly report failed", o.id, e)': PENDING + "whole error",
-    'console.error("weekly telegram failed", e)': PENDING + "whole error",
-  },
-  "src/lib/daily-email.server.ts": {
-    'console.error("daily email failed", p.id, e)': PENDING + "whole error",
-  },
-  "src/lib/notices.server.ts": {
-    'console.error("deliverJobNotice", e)': PENDING + "whole error",
-    'console.error("flushHeldNotices", e)': PENDING + "whole error",
-  },
-  "src/lib/after-response.server.ts": {
-    "console.error(`afterResponse ${label}`, e)": PENDING + "whole error",
-    'console.error("waitUntil", e)': PENDING + "whole error",
-  },
-};
+// file -> exact call -> reason (never "pending"). Closed list, empty since NK-0118 + NK-0121: it can only shrink.
+const EXCEPTIONS: Record<string, Record<string, string>> = {};
 
-describe("server logs carry no body, output or whole error (NK-0104 CA-5)", () => {
-  const files = serverFiles(LIB).map((f) => ({
+describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-0118/0121 CA-2)", () => {
+  const files = scannedFiles().map((f) => ({
     rel: relative(ROOT, f).split("\\").join("/"),
     src: readFileSync(f, "utf8"),
   }));
 
-  it("finds the server files", () => {
+  it("finds the server files and the provider gateways (NK-0121 scope)", () => {
+    const rels = files.map((f) => f.rel);
     expect(files.length).toBeGreaterThan(20);
+    for (const gateway of [
+      "src/lib/memory.server.ts",
+      "src/lib/firecrawl.ts",
+      "src/lib/apollo-gateway.ts",
+      "src/lib/perplexity.ts",
+      "src/lib/apify-gateway.ts",
+      "src/lib/clay-gateway.ts",
+      "src/lib/parallel-gateway.ts",
+      "src/lib/google-drive.ts",
+      "src/lib/ai.functions.ts",
+    ])
+      expect(rels).toContain(gateway);
+  });
+
+  it("the exception list is empty or every reason is not «pending»", () => {
+    const pending = Object.entries(EXCEPTIONS).flatMap(([file, calls]) =>
+      Object.entries(calls)
+        .filter(([, why]) => /pending|pendiente/i.test(why))
+        .map(([call]) => `${file}: ${call}`),
+    );
+    expect(pending).toEqual([]);
   });
 
   it("no unsafe console call outside the closed exception list", () => {
