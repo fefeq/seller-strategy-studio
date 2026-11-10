@@ -445,10 +445,13 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "stakeholders", a.stakeholder_id, "ese stakeholder");
       const { researchStakeholderCore } = await import("@/lib/ai-core");
-      const r = await researchStakeholderCore(c.db, a.stakeholder_id, {
-        orgId: c.orgId,
-        userId: c.userId,
-      });
+      // The agent answers a person (app chat or Telegram): an «Escalar» rule stops and asks (NK-0128, CA-8).
+      const r = await researchStakeholderCore(
+        c.db,
+        a.stakeholder_id,
+        { orgId: c.orgId, userId: c.userId },
+        { withPerson: true },
+      );
       // A failed read of the rules is never silent (SDD-20261109-rules-in-ai-readers, CA-4).
       const done = `Investigación de ${r.name} guardada en su ficha.`;
       return { ok: true, mensaje: r.rulesRead ? done : `${done} ${RULES_READ_FAILED}` };
@@ -463,7 +466,12 @@ export const ACCOUNT_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { proposalCore } = await import("@/lib/ai-core");
-      const r = await proposalCore(c.db, a.account_id, { orgId: c.orgId, userId: c.userId });
+      const r = await proposalCore(
+        c.db,
+        a.account_id,
+        { orgId: c.orgId, userId: c.userId },
+        { withPerson: true },
+      );
       // The core already put the warning before the draft; here it is only repeated in mensaje (CA-4).
       return r.rulesRead ? { borrador: r.text } : { borrador: r.text, mensaje: RULES_READ_FAILED };
     },

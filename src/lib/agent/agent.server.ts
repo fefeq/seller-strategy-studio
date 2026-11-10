@@ -122,7 +122,7 @@ export async function runAgent(
     opts.personaId,
     opts.workflowId,
     memory,
-    rulesBlock(rules.rules),
+    rulesBlock(rules.rules, { withPerson: true }),
   );
   const messages: ModelMessage[] = [...history, { role: "user", content: opts.text }];
 

@@ -1,7 +1,17 @@
 import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { BLOCKERS, CATALOG, CHANNELS, MOTIONS, OUTPUTS, STATUSES, detectorOwner } from "./catalog";
+import {
+  APPROVALS,
+  BLOCKERS,
+  CATALOG,
+  CHANNELS,
+  MOTIONS,
+  OUTPUTS,
+  PHASES,
+  STATUSES,
+  detectorOwner,
+} from "./catalog";
 
 const DETECTORS_DIR = path.resolve(__dirname, "../proactive/detectors");
 const detectorSource = readdirSync(DETECTORS_DIR)
@@ -129,5 +139,63 @@ describe("outputs (CA-20, G-3)", () => {
     const bad: import("./catalog").PlayOutput = "send";
     expect(OUTPUTS as readonly string[]).not.toContain(bad);
     expect(CATALOG.some((p) => (p.outputs as readonly string[]).includes("send"))).toBe(false);
+  });
+});
+
+// SDD-20261110-plays-phase-autonomy-deps U-1 (CA-1, CA-2, CA-5).
+describe("phase and approval (CA-1, CA-2, G-1)", () => {
+  it("names the four phases in order and the two approval levels", () => {
+    expect([...PHASES]).toEqual(["fundacion", "captura", "generacion", "orquestacion"]);
+    expect([...APPROVALS]).toEqual(["nokko_con_ayuda", "nokko_borrador"]);
+  });
+
+  it("gives all 28 plays a valid phase", () => {
+    for (const p of CATALOG) expect(PHASES, p.id).toContain(p.phase);
+  });
+
+  it("gives all 28 plays a valid approval level", () => {
+    for (const p of CATALOG) expect(APPROVALS, p.id).toContain(p.approval);
+  });
+});
+
+describe("dependsOn (CA-5, G-1)", () => {
+  const ids = new Set(CATALOG.map((p) => p.id));
+  const byId = new Map(CATALOG.map((p) => [p.id, p]));
+  const rank = (id: string) => PHASES.indexOf(byId.get(id)!.phase);
+
+  it("is a list on every play and names only plays that exist, never itself", () => {
+    for (const p of CATALOG) {
+      expect(Array.isArray(p.dependsOn), p.id).toBe(true);
+      for (const d of p.dependsOn) {
+        expect(ids.has(d), `${p.id} → ${d}`).toBe(true);
+        expect(d, p.id).not.toBe(p.id);
+      }
+    }
+  });
+
+  it("has no cycles", () => {
+    const state = new Map<string, "visiting" | "done">();
+    const visit = (id: string, trail: string[]) => {
+      expect(state.get(id), `cycle: ${[...trail, id].join(" → ")}`).not.toBe("visiting");
+      if (state.get(id) === "done") return;
+      state.set(id, "visiting");
+      for (const d of byId.get(id)!.dependsOn) visit(d, [...trail, id]);
+      state.set(id, "done");
+    };
+    for (const p of CATALOG) visit(p.id, []);
+  });
+
+  it("puts each dependency in the same phase or an earlier one", () => {
+    for (const p of CATALOG)
+      for (const d of p.dependsOn)
+        expect(rank(d), `${p.id} → ${d}`).toBeLessThanOrEqual(rank(p.id));
+  });
+
+  it("holds only the two dependencies the PRD backs (SDD section 13)", () => {
+    const pairs = CATALOG.flatMap((p) => p.dependsOn.map((d) => `${p.id} → ${d}`)).sort();
+    expect(pairs).toEqual([
+      "pain-qualified-segments → call-transcript-signal-extraction",
+      "signal-activation → signals-in-crm-with-decay",
+    ]);
   });
 });

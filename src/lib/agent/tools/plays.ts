@@ -21,7 +21,7 @@ export const PLAY_TOOLS: AgentTool[] = [
     name: "list_plays",
     kind: "read",
     description:
-      "Lista los 28 Plays GTM (jugadas con disparador, puertas y salida; no son los guiones de venta) con su estado en esta empresa: Activado, Pausado, Parcial, Planificado o Bloqueado con el motivo, qué datos necesita cada uno y qué reglas ya existentes le pertenecen. Filtra por motion o por estado. Solo lee.",
+      "Lista los 28 Plays GTM (jugadas con disparador, puertas y salida; no son los guiones de venta) con su estado en esta empresa: Activado, Pausado, Parcial, Planificado o Bloqueado con el motivo, qué datos necesita cada uno, qué reglas ya existentes le pertenecen, su fase (Fundación, Captura, Generación, Orquestación) y quién decide (NOKKO prepara y tú decides, o NOKKO redacta y tú apruebas). Filtra por motion o por estado. Solo lee.",
     input: z.object({
       motion: z.enum(MOTIONS).optional().describe("Solo los plays de este motion"),
       status: z.enum(STATUSES).optional().describe("Solo los plays con este estado del catálogo"),
@@ -38,7 +38,7 @@ export const PLAY_TOOLS: AgentTool[] = [
     name: "get_play",
     kind: "read",
     description:
-      "Devuelve un play del catálogo con su estado en esta empresa: si está activado, si se puede activar, qué lo bloquea y qué datos necesita. Solo lee.",
+      "Devuelve un play del catálogo con su estado en esta empresa: si está activado, si se puede activar, qué lo bloquea, qué datos necesita, su fase y quién decide. Solo lee.",
     input: z.object({
       play_id: z.string().min(1).describe("Id del play (list_plays), por ejemplo crm-hygiene"),
     }),

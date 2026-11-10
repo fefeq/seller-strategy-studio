@@ -36,7 +36,8 @@ export async function createLibraryCore(
   const hasContext =
     !!cc.setup.positioning || cc.setup.pillars.length > 0 || cc.setup.icps.length > 0;
   const rules = hasContext ? await loadAgentRules({ db: ctx.db, orgId: ctx.orgId }) : null;
-  const block = rulesBlock(rules?.rules ?? []);
+  // A background job: nobody reads the adaptation as it is written (NK-0128, CA-8).
+  const block = rulesBlock(rules?.rules ?? [], { withPerson: false });
   const system = block ? `${ADAPT_SYSTEM}\n${block}` : ADAPT_SYSTEM;
   const { reglas_obligatorias: _rules, ...context } = cc;
   const created: { title: string; adapted: boolean }[] = [];

@@ -14,7 +14,7 @@ export async function teamRulesText(c: { db: Db; orgId: string; orgName: string 
   const r = await loadAgentRules({ db: c.db, orgId: c.orgId });
   if (!r.ok) return RULES_READ_FAILED;
   return r.rules.length
-    ? rulesBlock(r.rules)
+    ? rulesBlock(r.rules, { withPerson: true })
     : `No hay reglas obligatorias de equipo en ${c.orgName}.`;
 }
 

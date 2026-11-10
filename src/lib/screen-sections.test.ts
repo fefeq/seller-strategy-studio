@@ -22,6 +22,7 @@ describe("ids (SDD §7 CA-3)", () => {
       "campaigns",
       "skills",
       "rules",
+      "voice",
       "drive",
     ]);
     expect(HUB_DEFAULT_SECTION).toBe("company");
