@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { TOOLS, canUseTool, executeTool, getTool, type ToolCtx } from "@/lib/agent/tools";
 import { TITLES } from "@/lib/mcp/tools/agent-tools";
 import { CATALOG } from "@/lib/plays/catalog";
+import { APPROVAL_WORD, PHASE_WORD } from "@/lib/plays/view";
 
 // A fake Supabase client: records every query and answers from `reply` (same idea as agent-tools.test.ts).
 type Q = {
@@ -153,6 +154,51 @@ describe("list_plays and get_play (CA-18, G-3)", () => {
     );
     const out = (await executeTool(ctxWith(db, ["ae"]), "list_plays", {})) as { plays: PlayRow[] };
     expect(out.plays.find((p) => p.id === "crm-hygiene")?.enabled).toBe(true);
+  });
+});
+
+// SDD-20261110-plays-phase-autonomy-deps U-4 (CA-4).
+describe("phase and approval in list_plays and get_play (CA-4, G-1)", () => {
+  type Phased = PlayRow & {
+    phase: string;
+    phaseLabel: string;
+    approval: string;
+    approvalLabel: string;
+  };
+
+  it("list_plays gives every play its phase and approval level with the words of the screen", async () => {
+    const { db } = fakeDb();
+    const out = (await executeTool(ctxWith(db, ["ae"]), "list_plays", {})) as { plays: Phased[] };
+    expect(out.plays).toHaveLength(28);
+    for (const p of out.plays) {
+      const c = CATALOG.find((x) => x.id === p.id)!;
+      expect(p.phase, p.id).toBe(c.phase);
+      expect(p.phaseLabel, p.id).toBe(PHASE_WORD[c.phase]);
+      expect(p.approval, p.id).toBe(c.approval);
+      expect(p.approvalLabel, p.id).toBe(APPROVAL_WORD[c.approval]);
+    }
+  });
+
+  it("get_play gives the same words for one play", async () => {
+    const { db } = fakeDb();
+    const p = (await executeTool(ctxWith(db, ["ae"]), "get_play", {
+      play_id: "signal-activation",
+    })) as Phased;
+    expect(p).toMatchObject({
+      phase: "orquestacion",
+      phaseLabel: "Orquestación",
+      approval: "nokko_borrador",
+      approvalLabel: "NOKKO redacta, tú apruebas",
+    });
+  });
+
+  it("list_plays keeps its input as it was: motion and status only, no phase filter", () => {
+    const shape = (getTool("list_plays")!.input as unknown as { shape: object }).shape;
+    expect(Object.keys(shape).sort()).toEqual(["motion", "status"]);
+  });
+
+  it("tells the assistant about the new fields in the descriptions", () => {
+    for (const n of ["list_plays", "get_play"]) expect(getTool(n)!.description, n).toMatch(/fase/i);
   });
 });
 
