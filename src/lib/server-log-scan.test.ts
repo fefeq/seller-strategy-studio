@@ -7,6 +7,9 @@
 // bodies or model output, and a *.functions.ts outside it runs on the server too; the scan reads text, so a pure file
 // with no console call costs nothing. The exception list is closed and now empty: a new entry needs a reason that is
 // not "pending".
+// NK-0131: the scope now also covers every non-test source file under src/routes/api/** (public routes such as the
+// proactive job, the Telegram webhook and the lead intake run on the server and log provider failures). Tests there
+// carry the `-` prefix (-name.test.ts), which the test filter already excludes.
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -15,6 +18,7 @@ const ROOT = join(import.meta.dirname, "..", "..");
 const LIB = join(import.meta.dirname);
 
 const SRC = join(ROOT, "src");
+const API = join(SRC, "routes", "api");
 const isTest = (n: string) => /\.test\.tsx?$/.test(n);
 
 function sourceFiles(dir: string, keep: (name: string) => boolean): string[] {
@@ -24,11 +28,12 @@ function sourceFiles(dir: string, keep: (name: string) => boolean): string[] {
   });
 }
 
-/** src/lib/** (non-test .ts/.tsx) plus every src/**\/*.functions.ts, without duplicates. */
+/** src/lib/** and src/routes/api/** (non-test .ts/.tsx) plus every src/**\/*.functions.ts, without duplicates. */
 function scannedFiles(): string[] {
   const lib = sourceFiles(LIB, (n) => /\.tsx?$/.test(n) && !isTest(n));
+  const api = sourceFiles(API, (n) => /\.tsx?$/.test(n) && !isTest(n));
   const fns = sourceFiles(SRC, (n) => n.endsWith(".functions.ts"));
-  return [...new Set([...lib, ...fns])];
+  return [...new Set([...lib, ...api, ...fns])];
 }
 
 /** Every console.error|warn|log call: its text up to the matching parenthesis, whitespace collapsed. */
@@ -76,6 +81,20 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
       "src/lib/ai.functions.ts",
     ])
       expect(rels).toContain(gateway);
+  });
+
+  it("finds every public API route and no test file there (NK-0131 scope)", () => {
+    const api = files.map((f) => f.rel).filter((r) => r.startsWith("src/routes/api/"));
+    for (const route of [
+      "src/routes/api/public/jobs/proactive.ts",
+      "src/routes/api/public/telegram/webhook.ts",
+      "src/routes/api/public/leads.ts",
+      "src/routes/api/public/accounts.ts",
+      "src/routes/api/public/inngest.ts",
+      "src/routes/api/public/apollo/phone-webhook.ts",
+    ])
+      expect(api).toContain(route);
+    expect(api.filter((r) => /\.test\.tsx?$/.test(r) || /\/-[^/]*$/.test(r))).toEqual([]);
   });
 
   it("the exception list is empty or every reason is not «pending»", () => {

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { canSeePrices } from "@/lib/strategy-suggestions";
 import { applyPriceVisibility, loadMemberRoles, rolesOf } from "@/lib/telegram-roles";
 import { digestMessage, urgentMessage } from "@/lib/telegram-suggestions";
@@ -56,14 +57,14 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
             )
               .then(() => true)
               .catch((e) => {
-                console.error("inngest dispatch failed", e);
+                console.error("inngest dispatch failed", safeErrorLog(e));
                 return false;
               });
             if (queued) {
               await notifyUrgent(db);
               const { runWeeklyReports } = await import("@/lib/weekly-report.server");
               const weekly = await runWeeklyReports(db, now).catch((e) => {
-                console.error("weekly reports failed", e);
+                console.error("weekly reports failed", safeErrorLog(e));
                 return null;
               });
               const daily = await runDaily(db, now);
@@ -79,7 +80,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               await syncSuggestions(db, o.id, found);
               total += found.length;
             } catch (e) {
-              console.error("proactive org failed", o.id, e);
+              console.error("proactive org failed", o.id, safeErrorLog(e));
             }
           }
           // New leads through their flow (account, company data, key people, AI proposal): a few per company and run.
@@ -91,7 +92,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
                 await enrichLead(db, o.id, id, now);
                 leadFlows++;
               } catch (e) {
-                console.error("lead flow failed", id, e);
+                console.error("lead flow failed", id, safeErrorLog(e));
               }
             }
           }
@@ -103,7 +104,7 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               const { notifyAutopilot } = await import("@/lib/notices.server");
               await notifyAutopilot(db, o.id, r, now);
             } catch (e) {
-              console.error("autopilot failed", o.id, e);
+              console.error("autopilot failed", o.id, safeErrorLog(e));
             }
           }
           // «Descubiertos»: each company's weekly search (self-guarded, at most one company per run inline).
@@ -113,32 +114,32 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
               const r = await discoverForOrg(db, o.id, now);
               if (!r.skipped) break;
             } catch (e) {
-              console.error("discoveries failed", o.id, e);
+              console.error("discoveries failed", o.id, safeErrorLog(e));
             }
           }
           await notifyUrgent(db);
           // Monday morning: this week's pipeline report for every company (idempotent, once per week).
           const { runWeeklyReports } = await import("@/lib/weekly-report.server");
           const weekly = await runWeeklyReports(db, now).catch((e) => {
-            console.error("weekly reports failed", e);
+            console.error("weekly reports failed", safeErrorLog(e));
             return null;
           });
           // Stripe: every connected company, at most every few hours.
           const { runStripeSyncs } = await import("@/lib/stripe/sync.server");
           const stripe = await runStripeSyncs(db, now).catch((e) => {
-            console.error("stripe syncs failed", e);
+            console.error("stripe syncs failed", safeErrorLog(e));
             return null;
           });
           // News signals (Firecrawl) for a few ABM target accounts per run, each at most weekly.
           const { runSignalRefresh } = await import("@/lib/web-research-core");
           const signals = await runSignalRefresh(db, now).catch((e) => {
-            console.error("signal refresh failed", e);
+            console.error("signal refresh failed", safeErrorLog(e));
             return null;
           });
           // Each company's PostHog (product usage and sign-ups), at most every few hours.
           const { runPosthogSyncs } = await import("@/lib/posthog-sync.server");
           const posthog = await runPosthogSyncs(db, now).catch((e) => {
-            console.error("posthog syncs failed", e);
+            console.error("posthog syncs failed", safeErrorLog(e));
             return null;
           });
           const daily = await runDaily(db, now);
@@ -170,7 +171,7 @@ type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["su
 async function runDaily(db: Admin, now: Date) {
   const { runDailyEmails } = await import("@/lib/daily-email.server");
   return runDailyEmails(db, now).catch((e) => {
-    console.error("daily emails failed", e);
+    console.error("daily emails failed", safeErrorLog(e));
     return null;
   });
 }
@@ -226,7 +227,7 @@ async function notifyUrgent(db: Admin) {
           .update({ notified_at: new Date().toISOString() })
           .eq("id", s.id);
       } catch (e) {
-        console.error("notify failed", e);
+        console.error("notify failed", safeErrorLog(e));
       }
     }
   }
@@ -272,7 +273,7 @@ async function sendDigests(db: Admin) {
       await sendText(l.chat_id!, m.text, m.buttons);
       sent++;
     } catch (e) {
-      console.error("digest failed", e);
+      console.error("digest failed", safeErrorLog(e));
     }
   }
   return { sent };
