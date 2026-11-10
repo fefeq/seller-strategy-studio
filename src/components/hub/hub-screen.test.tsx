@@ -1128,6 +1128,37 @@ describe("HubScreen · Añadir reglas base (NK-0128, CA-11, CA-12)", () => {
     );
   });
 
+  it("a double click calls the action once and shows one result (NK-0128 walkthrough 3c)", async () => {
+    as("owner");
+    await openRules();
+    let release: (v: { added: number; titles: string[] }) => void = () => {};
+    h.addRules = vi.fn(
+      () =>
+        new Promise<{ added: number; titles: string[] }>((r) => {
+          release = r;
+        }),
+    );
+    vi.mocked(toast.success).mockClear();
+    fireEvent.click(button());
+    fireEvent.click(button());
+    // The mutation starts its call in a microtask: wait for the first, then let every call finish.
+    await waitFor(() => expect(h.addRules).toHaveBeenCalled());
+    release({ added: 9, titles: [] });
+    await waitFor(() => expect(vi.mocked(toast.success)).toHaveBeenCalled());
+    expect(h.addRules).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(toast.success)).toHaveBeenCalledTimes(1);
+  });
+
+  it("after the call ends, a new click works again", async () => {
+    as("owner");
+    await openRules();
+    fireEvent.click(button());
+    await waitFor(() => expect(h.addRules).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(vi.mocked(toast.success)).toHaveBeenCalled());
+    fireEvent.click(button());
+    await waitFor(() => expect(h.addRules).toHaveBeenCalledTimes(2));
+  });
+
   it("a failure is shown through errorText, never the raw message", async () => {
     as("owner");
     await openRules();
