@@ -47,7 +47,8 @@ Referencia a los objetivos del PRD:
 **Incluye:**
 - `src/lib/plays/teams.ts` (nuevo, puro): tipo `PlayTeam` (`id`, `title`, `task`, `plays`), `PLAY_TEAMS` con los seis equipos de la composición aprobada (§13) y en ese orden, `teamPlan(team, catalog, rows)` y `validateTeams(teams, catalog)`.
 - Palabras de la vista (§9) en `teams.ts`, un único juego de textos para pantalla y agente.
-- `src/components/plays/play-card.tsx` (nuevo): la tarjeta de play que hoy está dentro de `PlaysPanel` (`plays-panel.tsx:142-192`), extraída **sin cambiar su comportamiento**, para que el catálogo y los equipos usen la misma.
+- `src/components/plays/play-card.tsx` (nuevo): la tarjeta de play que hoy está dentro de `PlaysPanel` (`plays-panel.tsx:142-192`), extraída **sin cambiar su comportamiento**, para que el catálogo y los equipos usen la misma. El estado `open` de «Ver actividad» sigue en el panel (una sola actividad abierta a la vez, como hoy, `plays-panel.tsx:73`, `:179-180`) y llega a la tarjeta como `open` y `onToggleOpen`.
+- `src/components/plays/use-play-toggle.ts` (nuevo): hook `usePlayToggle` con la lógica de activación que hoy está en `flip` (`plays-panel.tsx:70`, `:72`, `:81-92`: `useServerFn(setPlayEnabled)`, `busy`, `toast` con `errorText`, invalidar `PLAY_STATES_KEY`). Lo usan `PlaysPanel` y `PlayTeamsPanel`; no hay dos copias de esa lógica.
 - `src/components/plays/play-teams-panel.tsx` (nuevo): la vista «Equipos de plays».
 - `src/routes/_authenticated/plays.tsx`: `validateSearch` con `vista?: "equipos"` y una barra con dos enlaces, «Todos los plays» (sin parámetro, la vista de hoy) y «Equipos de plays» (`?vista=equipos`), con el patrón de `metrics.tsx:202-216`. La ruta sigue teniendo solo configuración y disposición.
 - Herramienta de lectura `list_play_teams` en `src/lib/agent/tools/plays.ts`, su título en `TITLES` y el manifiesto **regenerado con el extractor** (`node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .`), nunca a mano.
@@ -67,7 +68,7 @@ Referencia a los objetivos del PRD:
 
 ## 6. Cambios de comportamiento (delta)
 **Añadido:** catálogo `PLAY_TEAMS`; `teamPlan` y `validateTeams`; vista «Equipos de plays» en `/plays?vista=equipos`; herramienta `list_play_teams` (agente in-app, Telegram y MCP); palabra clave «equipos» en ⌘K.
-**Modificado:** `/plays` muestra arriba la barra «Todos los plays» / «Equipos de plays»; sin parámetro se ve exactamente lo de hoy. La tarjeta de play pasa a un componente propio, con el mismo contenido y el mismo comportamiento.
+**Modificado:** `/plays` muestra arriba la barra «Todos los plays» / «Equipos de plays»; sin parámetro se ve exactamente lo de hoy. La tarjeta de play pasa a un componente propio y la lógica de activar o pausar a `usePlayToggle`, con el mismo contenido y el mismo comportamiento (una sola actividad abierta a la vez).
 **Eliminado:** nada.
 
 ## 7. Historias y criterios de aceptación
@@ -83,22 +84,29 @@ Referencia a los objetivos del PRD:
 - **CA-7** (vista) Con `useServerFn`, el cliente de Supabase y `usePlayStates` simulados (precedente: `src/components/strategy-screens.test.tsx`), `PlayTeamsPanel` pinta los seis equipos en el orden de `PLAY_TEAMS`, cada uno con su título, su tarea, el resumen en palabras (§9) y sus pasos numerados («Paso 1», «Paso 2»…) antes de los no disponibles («No disponible: <motivo>»). Ningún texto visible es solo un número, un icono o un color · cubre G-1 · prueba: `src/components/plays/play-teams-panel.test.tsx` (nuevo; falla hoy: el componente no existe)
 - **CA-8** (activar una vez) Con una fila `{ play_id: "signals-in-crm-with-decay", enabled: true }`, ese play se ve «Activado» en «Reactivar perdidos» y en «Señales de cuenta», con «También en: <otro equipo>». Con rol `owner`, pulsar «Pausar» en uno de los dos llama a `setPlayEnabled` **una vez** con `{ play_id: "signals-in-crm-with-decay", enabled: false }` e invalida `PLAY_STATES_KEY`. Con rol `ae`, el botón está deshabilitado y se ve el motivo de `canTogglePlays` · cubre G-1, G-3 · prueba: `src/components/plays/play-teams-panel.test.tsx`
 - **CA-9** (no activa lo que no se puede) En la vista de equipos, el botón de `pain-qualified-segments` está deshabilitado con el texto de `checkToggle` («No puedes activar este play todavía: …») también para `owner` · cubre G-3 · prueba: `src/components/plays/play-teams-panel.test.tsx`
-- **CA-10** (sin regresión del catálogo) `PlayCard` extraída pinta lo mismo que hoy: título, estado, motion, canales, `label`, fase y nivel, «Necesita», motivo de bloqueo, botón Activar/Pausar con `checkToggle` y «Ver actividad». La prueba renderiza `PlaysPanel` y comprueba que siguen los 28 plays, los tres filtros (`aria-label` «Filtrar por motion», «Filtrar por estado», «Filtrar por fase») y esos textos en un play `parcial` y uno `bloqueado` · cubre G-3 · prueba: `src/components/plays/plays-panel.test.tsx` (nuevo; es guarda de regresión, **no** fail-first: hoy ya pasa; se escribe antes de extraer la tarjeta)
-- **CA-11** (ruta) `validateSearch` de `/plays` acepta `vista: "equipos"` y descarta cualquier otro valor (`undefined`); sin parámetro se pinta `PlaysPanel`, con `?vista=equipos`, `PlayTeamsPanel`. La barra tiene `aria-label="Vistas de Plays GTM"` y dos enlaces, «Todos los plays» y «Equipos de plays» · cubre G-1 · prueba: `src/routes/_authenticated/plays.test.tsx` (nuevo; falla hoy: no hay `validateSearch` ni barra). Si probar la ruta montada resulta frágil, la función de `validateSearch` se exporta como `parsePlaysSearch` y se prueba pura, y la barra queda en el walkthrough
+- **CA-10** (sin regresión del catálogo; guarda) La prueba renderiza `PlaysPanel` con `useServerFn` (`setPlayEnabled`), el cliente de Supabase, `usePlayStates`, `toast` y `Activity`/`play_runs` simulados, y comprueba: los 28 plays; los tres filtros (`aria-label` «Filtrar por motion», «Filtrar por estado», «Filtrar por fase»); en un play `parcial` y uno `bloqueado`, título, estado, motion, canales, `label`, fase y nivel, «Necesita» y el motivo de bloqueo; y además:
+  - (a) con `owner`, pulsar «Activar» en un `parcial` sin activar llama a `setPlayEnabled` **una vez** con `{ data: { play_id, enabled: true } }`, invalida `PLAY_STATES_KEY` y el botón está deshabilitado mientras la llamada no termina;
+  - (b) si `setPlayEnabled` falla, `toast.error` recibe el texto de `errorText` del error;
+  - (c) con `ae`, el botón está deshabilitado y se ve «Solo el Owner o el Sales Leader pueden activar o pausar plays.»;
+  - (d) con `owner`, en un `bloqueado` el botón está deshabilitado y se ve el `error` de `checkToggle`;
+  - (e) «Ver actividad» pone `aria-expanded` a `true` y cambia a «Ocultar actividad»; abrir la de otro play cierra la primera (solo una abierta).
+
+  Se escribe y pasa sobre el código de hoy **en un commit anterior a la extracción** de `PlayCard` y `usePlayToggle`; el gate la ejecuta en ese commit y en el final · cubre G-3 · prueba: `src/components/plays/plays-panel.test.tsx` (nuevo; guarda de regresión, **no** fail-first: hoy ya pasa)
+- **CA-11** (ruta) `validateSearch` de `/plays` acepta `vista: "equipos"` y descarta cualquier otro valor (`undefined`); sin parámetro se pinta `PlaysPanel`, con `?vista=equipos`, `PlayTeamsPanel`. La barra tiene `aria-label="Vistas de Plays GTM"` y dos enlaces, «Todos los plays» y «Equipos de plays» · cubre G-1 · `validateSearch` usa una función exportada `parsePlaysSearch`, que se prueba pura (`{ vista: 'equipos' }` → `{ vista: 'equipos' }`; `{ vista: 'otra' }` y `{}` → `{ vista: undefined }`). Además, un render de la ruta real con `RouterProvider`, `createRouter({ routeTree })` y `createMemoryHistory({ initialEntries: ['/plays?vista=equipos'] })`, con el patrón de `src/test/auth-no-bounce.test.tsx:6-8`, comprueba la barra (`aria-label` y los dos enlaces) y que se pinta `PlayTeamsPanel`; con `/plays`, `PlaysPanel` · prueba: `src/routes/_authenticated/plays.test.tsx` (nuevo; falla hoy: no hay `parsePlaysSearch` ni barra)
 - **CA-12** (⌘K) La entrada «Plays GTM» de `nav.ts` incluye «equipos» en `keywords` · cubre G-1 · prueba: `src/lib/nav.test.ts` (caso nuevo junto a `:14`; falla hoy)
 
 ### H-3: Como Owner, quiero preguntar al agente (o a mi asistente por MCP) qué equipos de plays hay y en qué orden, sin abrir la pantalla.
 - **CA-13** (herramienta) `list_play_teams` es `kind: "read"`, sin `roles`, con entrada `z.object({})`. `executeTool(ctx, "list_play_teams", {})` devuelve `{ teams }` con los seis equipos en orden; cada uno con `id`, `title`, `task`, `summary`, `steps` y `unavailable` tal como `teamPlan`, construidos con las filas de `play_states` **de `c.orgId`** (reutiliza `stateRows`, `plays.ts:11`); `expectScoped(log)` pasa y no hay escrituras (`writes(log)` vacío). Una lectura fallida de `play_states` devuelve los equipos con los valores por defecto, igual que `list_plays` (`plays.test.ts:151`) · cubre G-1, G-2 · prueba: `src/lib/agent/tools/plays.test.ts` (falla hoy: la herramienta no existe)
-- **CA-14** (título y manifiesto) `TITLES.list_play_teams` = «Ver los equipos de plays»; la herramienta está una vez en `TOOLS`; en `.lovable/mcp/manifest.json` aparece con ese `title` y `readOnlyHint: true`; las entradas de `list_plays`, `get_play` y `set_play_enabled` del manifiesto no cambian · cubre G-2 · prueba: `src/lib/agent/tools/plays.test.ts` (ampliando `:280-301`; falla hoy)
-- **CA-14b** (sale del extractor) Ejecutar `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` sobre el árbol entregado no deja diff (`git diff --exit-code -- .lovable/mcp/manifest.json`) · prueba: comando del gate (`--extra`) sobre el commit final; no es un test unitario
-- **CA-15** (palabras) La `description` de `list_play_teams` dice que solo lee, que un equipo de plays agrupa plays por tarea, que un play puede estar en varios equipos y se activa una vez, y que para activar se usa `set_play_enabled`. Ningún texto de `teams.ts`, de la vista ni de la herramienta usa «agente» para un equipo ni «Equipo» sin «de plays» detrás (la palabra suelta es la pantalla de miembros, `nav.ts:52`) · cubre G-1 · prueba: `src/lib/plays/teams.test.ts` y `src/lib/agent/tools/plays.test.ts`
+- **CA-14** (título y manifiesto) `TITLES.list_play_teams` = «Ver los equipos de plays»; la herramienta está una vez en `TOOLS`; en `.lovable/mcp/manifest.json` aparece una vez, con ese `title` y `readOnlyHint: true`. Que las entradas de `list_plays`, `get_play` y `set_play_enabled` no cambien lo comprueba CA-14b, no este test · cubre G-2 · prueba: `src/lib/agent/tools/plays.test.ts` (ampliando `:280-301`; falla hoy)
+- **CA-14b** (sale del extractor) Ejecutar `node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .` sobre el árbol entregado no deja diff (`git diff --exit-code -- .lovable/mcp/manifest.json`), y las entradas de `list_plays`, `get_play` y `set_play_enabled` (`jq` por `name`) son iguales en `f176ae4` y en el commit final · prueba: comandos del gate (`--extra`) sobre el commit final; no es un test unitario
+- **CA-15** (palabras) La `description` de `list_play_teams` dice que solo lee, que un equipo de plays agrupa plays por tarea, que un play puede estar en varios equipos y se activa una vez, y que para activar se usa `set_play_enabled`. Regla exacta sobre los textos de `teams.ts` (títulos, tareas y palabras del §9) y la `description` de la herramienta: (1) no aparece «Equipo» ni «Equipos» con **mayúscula inicial** que no vaya seguido de « de plays» (`/\bEquipos?\b(?! de plays)/`, distinguiendo mayúsculas), porque así se confunde con la pantalla de miembros (`nav.ts:52`); «equipo» y «equipos» en minúscula dentro de una frase sí se permiten (p. ej. «varios equipos», «Ningún equipo»); (2) los textos de `teams.ts` y el título de la herramienta no contienen «agente» ni «agentes» (`/\bagentes?\b/i`), y la `description` no llama «agente» a un equipo (`/equipos? de plays[^.]*\bagentes?\b/i` sin coincidencias) · cubre G-1 · prueba: `src/lib/plays/teams.test.ts` y `src/lib/agent/tools/plays.test.ts`
 
 ## 8. Casos límite y errores
 - **Empresa sin filas en `play_states`:** todos los plays con su valor por defecto; el resumen cuenta `defaultEnabled` (CA-5).
 - **Lectura de `play_states` fallida:** en pantalla, `usePlayStates` lanza el error y la vista se pinta con los valores por defecto, como el catálogo hoy (`plays-panel.tsx:69-74`); en el agente, igual que `list_plays` (CA-13).
 - **Un play en dos equipos:** una sola fila en `play_states`; el cambio se ve en los dos tras invalidar la caché (CA-8).
 - **Equipo sin pasos** (todos sus plays no disponibles): se pinta igual, con «0 de N plays disponibles» y la lista de no disponibles con su motivo. Hoy no ocurre con el catálogo real.
-- **Id de equipo inexistente en el catálogo o dependencia fuera del equipo:** la prueba de `validateTeams` falla y el build no pasa (CA-2). En ejecución, `teamPlan` ignora un id que no esté en el catálogo, sin romper la pantalla.
+- **Id de equipo inexistente en el catálogo o dependencia fuera del equipo:** la prueba de `validateTeams` falla, la suite no pasa y el gate no deja integrar (CA-2); `vite build` no ejecuta pruebas, así que no es el build quien lo para. En ejecución, `teamPlan` ignora un id que no esté en el catálogo, sin romper la pantalla.
 - **Play `parcial` que en la práctica necesita algo externo** (`multi-thread-inbound-leads`): se muestra recomendable con su necesidad (decisión P-1, §15).
 - **Otra empresa (multitenant):** el catálogo de equipos es código común; la pantalla lee `play_states` con RLS de la empresa activa y la herramienta filtra por `c.orgId` (CA-13). Nada de otra empresa llega.
 - **Miembro sin rol de líder:** ve los equipos y el estado; los botones, deshabilitados con el motivo (CA-8).
@@ -138,8 +146,8 @@ Textos propuestos; Fede los revisa en la aprobación. Español, «tú», sin ico
 | U | Qué entrega | CA que cierra | Test que falla primero |
 |---|---|---|---|
 | U-1 | `src/lib/plays/teams.ts`: `PlayTeam`, `PLAY_TEAMS`, `validateTeams`, `teamPlan`, palabras del §9 | CA-1, CA-2, CA-3, CA-4, CA-5, CA-6, CA-15 (parte de textos) | `src/lib/plays/teams.test.ts` |
-| U-2 | Guarda de `PlaysPanel` y extracción de `PlayCard` a `play-card.tsx` sin cambio de comportamiento | CA-10 | `src/components/plays/plays-panel.test.tsx` (guarda; se escribe y pasa **antes** de extraer, y debe seguir pasando después) |
-| U-3 | `PlayTeamsPanel` con `PlayCard`; `validateSearch` y barra en `plays.tsx`; «equipos» en `nav.ts` | CA-7, CA-8, CA-9, CA-11, CA-12 | `src/components/plays/play-teams-panel.test.tsx`, `src/routes/_authenticated/plays.test.tsx`, `src/lib/nav.test.ts` |
+| U-2 | (commit 1) Guarda de `PlaysPanel` en verde sobre el código de hoy; (commit 2) extracción de `PlayCard` y `usePlayToggle`, con `open` en el panel, sin cambio de comportamiento | CA-10 | `src/components/plays/plays-panel.test.tsx` (guarda; pasa en el commit 1, antes de extraer, y sigue pasando en el 2 y en el final) |
+| U-3 | `PlayTeamsPanel` con `PlayCard` y `usePlayToggle` (y su propio `open`, uno a la vez); `parsePlaysSearch`, `validateSearch` y barra en `plays.tsx`; «equipos» en `nav.ts` | CA-7, CA-8, CA-9, CA-11, CA-12 | `src/components/plays/play-teams-panel.test.tsx`, `src/routes/_authenticated/plays.test.tsx`, `src/lib/nav.test.ts` |
 | U-4 | `list_play_teams` en `plays.ts`, `TITLES`, manifiesto regenerado con el extractor; línea en `src/lib/AGENTS.md` | CA-13, CA-14, CA-14b, CA-15 (parte de la herramienta) | `src/lib/agent/tools/plays.test.ts` |
 
 U-3 depende de U-1 y U-2. U-4 depende de U-1.
@@ -148,7 +156,8 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 - `teamPlan` llama a `recommendablePlays(catalog)` y filtra por los ids del equipo; no recalcula bloqueos ni orden. Como `validateTeams` exige que cada dependencia esté en el mismo equipo, el orden relativo global es válido dentro del equipo.
 - `teamPlan(team, catalog = CATALOG, rows = new Map())`: el catálogo es parámetro para probar con catálogos de prueba, como `recommend.test.ts:10-26`.
 - `sharedWith` se calcula de `PLAY_TEAMS` (no se escribe a mano), así la nota «También en» no se desincroniza.
-- `PlayCard` recibe `play` (de `CATALOG`), la descripción (`describePlay`), `roles`, `busy` y `onToggle`; el estado `open` de «Ver actividad» queda dentro de la tarjeta. `PlaysPanel` y `PlayTeamsPanel` comparten `flip` copiando el patrón actual (`plays-panel.tsx:81-92`) o con un hook pequeño `usePlayToggle` en `src/components/plays/`; el gate elige.
+- `PlayCard` recibe `play` (de `CATALOG`), la descripción (`describePlay`), `roles`, `busy`, `onToggle`, `open` y `onToggleOpen`. El estado `open` vive en cada panel (uno abierto a la vez, como hoy).
+- `usePlayToggle()` devuelve `{ busy, flip }` y concentra `useServerFn(setPlayEnabled)`, `toast.success(r.mensaje)`, `toast.error(errorText(e))` e invalidar `PLAY_STATES_KEY`; lo usan los dos paneles (recomendación del gate, pasada 1, adoptada).
 - La ruta sigue el patrón de `metrics.tsx:57-59` y `:202-216`. Alternativa descartada: pestañas de Radix dentro del panel, porque `?vista=` deja enlazar la vista desde el agente y el SDD 4.
 - Ids de equipo propuestos: `reuniones`, `reactivar-perdidos`, `senales-de-cuenta`, `aprender-de-llamadas`, `priorizar-cuentas-y-crm`, `entrantes-y-producto`.
 - Alternativa descartada: tabla `play_teams` en base de datos. No hay nada por empresa que guardar (§10) y el catálogo de plays ya fijó que estas listas viven en código y las vigilan las pruebas.
@@ -182,7 +191,7 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 - **Conflictos de rama:** este SDD no toca `catalog.ts`; si un SDD de plays cambia ids, fases o dependencias de los 12 plays, CA-2 y CA-3 fallan y obligan a revisar la composición. Es intencionado.
 - **Manifiesto en caché** de asistentes MCP: no verán `list_play_teams` hasta refrescar; no rompe nada.
 
-**Dependencias:** SDD 1 (Hecho). No depende de NK-0009 ni del sustituto de NK-0028 (PRD §8, fila 2).
+**Dependencias:** SDD 1 (Hecho). El PRD §8 solo deja empezar los SDD 1 y 3 mientras no se cierren NK-0009 y el sustituto de NK-0028. Este SDD no depende del onboarding y empieza antes por decisión informada de Fede (GO del Sprint 6, 2026-11-10; registrada en §15). El SDD 4 sigue esperando a NK-0009.
 
 **Walkthrough** (`nokko-walkthrough`, móvil y escritorio, claro y oscuro, con un Owner y con un AE ficticios):
 1. `/plays` sin parámetro → se ve lo de hoy (28 plays, tres filtros) y la barra «Todos los plays» / «Equipos de plays».
@@ -191,9 +200,10 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 4. Owner: activar «Señales en el CRM con caída en el tiempo» desde «Señales de cuenta» → aparece «Activado» también en «Reactivar perdidos» sin recargar; el resumen de los dos equipos sube en 1. Volver a «Todos los plays» → el mismo estado.
 5. AE: los botones deshabilitados con «Solo el Owner o el Sales Leader pueden activar o pausar plays.»
 6. Agente: «¿qué equipos de plays tengo y por cuál empiezo?» → responde con los seis y su orden, sin activar nada.
-7. ⌘K: escribir «equipos» → aparece «Plays GTM».
+7. ⌘K: escribir «equipos» → aparece «Plays GTM», y no lleva a «Equipo» (`/team`) antes que a «Plays GTM»; anotar el orden.
 8. Móvil por debajo de md: barra de vistas y tarjetas sin desplazamiento lateral; la barra inferior no tapa el último equipo (`pb-28`).
 9. Consola y red sin errores; la única escritura es la de `setPlayEnabled` del paso 4.
+10. Un play pausado de un equipo sigue saliendo como «Paso n» con la palabra «Pausado»: es lo esperado (recomendar no es activar, SDD 1), no un error.
 
 ## 15. Preguntas para Fede y para la revisión técnica
 **Decisiones tomadas (autor, para que Fede las confirme o cambie):**
@@ -210,11 +220,14 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 - **P-3.** `/plays` sigue abriendo por defecto en la lista de hoy (D-4); los equipos, en `?vista=equipos`.
 - **P-4.** Textos del §9 tal como están redactados; Fede puede editarlos después.
 
+**Decisión de Fede (GO del Sprint 6, 2026-11-10), sobre el orden del PRD §8:** la propuesta del coordinador para el Sprint 6 le dijo a Fede: «El PRD pone NK-0009 (onboarding) como requisito previo de la iniciativa, pero el SDD 2 no depende de él. Cuando lleguemos al SDD 4 tendremos que tratar NK-0009.» Fede respondió «GO» (2026-11-10). Por tanto, este SDD empieza antes de NK-0009 por decisión de Fede; el SDD 4 sigue esperando a NK-0009.
+
 **Para Fede:** ninguna pregunta abierta.
 
 ## 16. Pendiente de verificar
-- [Por verificar, gate] CA-14b: el extractor no deja diff en el manifiesto sobre el commit final.
-- [Por verificar, gate] Que `src/routes/_authenticated/plays.test.tsx` pueda montar la ruta con los mocks existentes; si no, CA-11 usa `parsePlaysSearch` puro y la barra pasa al walkthrough.
+- [Por verificar, gate] CA-14b: el extractor no deja diff en el manifiesto sobre el commit final, y las entradas de `list_plays`, `get_play` y `set_play_enabled` (`jq` por `name`) son iguales en `f176ae4` y en el commit final.
+- [Por verificar, gate] CA-10: la guarda pasa en el commit anterior a la extracción y en el commit final.
+- [Por verificar, gate] CA-11: el render de la ruta con `routeTree` y `createMemoryHistory` funciona con los mocks del patrón de `auth-no-bounce.test.tsx`.
 - [Por verificar, walkthrough] Que «equipo de plays» no se confunda con «Equipo» (miembros) en el menú y en ⌘K.
 - [Por verificar, walkthrough] Móvil sin desplazamiento lateral (paso 8).
 
@@ -227,11 +240,26 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- Veredicto del gate: No revisado
+- Veredicto del gate: pasada 1, CAMBIOS (resueltos en el texto; ver la tabla de abajo). Pasada 2: pendiente.
 - CA sin prueba posible o sin G-n: —
 - [Por verificar] que sigue sin comprobarse: —
 - Contradicciones con el código o con decisiones previas: —
 - Lo que esta revisión NO demuestra: —
+
+### §17 Gate · pasada 1: hallazgos y resolución
+Informe: `.factory/evidence/sprint6-sdd-gate/gate-pass1.md` (2026-11-10, HEAD `c3eb3a2`). Veredicto: CAMBIOS (0 bloqueantes, 4 mayores, 4 menores). Todas las citas `archivo:línea` comprobadas correctas en `f176ae4`; el «Plan esperado» del §13 coincide con el `recommendablePlays` real.
+
+| Hallazgo | Resolución |
+|---|---|
+| **MAYOR G-M1** El §14 contradice el orden del PRD §8 (solo SDD 1 y 3 antes de NK-0009) | §14 cita la regla del PRD y §15 registra la decisión informada de Fede (GO del Sprint 6, 2026-11-10) con la cita de la propuesta; el SDD 4 sigue esperando a NK-0009. |
+| **MAYOR G-M2** La guarda CA-10 no cubre lo que se mueve al extraer | CA-10 añade (a) clic y llamada, deshabilitado mientras dura, (b) error por `errorText`, (c) rol sin permiso, (d) play bloqueado, (e) «Ver actividad»; se escribe y pasa en un commit anterior a la extracción (U-2 en dos commits). Se adopta el hook `usePlayToggle` compartido (§5, §13). |
+| **MAYOR G-M3** Mover `open` a la tarjeta cambia el comportamiento | `open` sigue en el panel y llega a `PlayCard` por props; la guarda comprueba que abrir una actividad cierra la otra (CA-10 e). |
+| **MAYOR G-M4** CA-15 contradice los textos aprobados | Regla exacta: solo falla «Equipo»/«Equipos» con mayúscula no seguido de « de plays» (`/\bEquipos?\b(?! de plays)/`); las minúsculas se permiten; «agente» con su expresión regular. |
+| **MENOR G-m1** `validateTeams` no se ejecuta en el build | §8: lo paran la suite y el gate, no `vite build`. |
+| **MENOR G-m2** CA-11 dejaba la prueba a elección | CA-11 fija `parsePlaysSearch` puro más un render de la ruta real con el patrón de `src/test/auth-no-bounce.test.tsx`. |
+| **MENOR G-m3** CA-14 no podía comprobar que no cambian las otras entradas | La comparación base contra final (`jq` por `name`) pasa a CA-14b, comando del gate; CA-14 se queda con título, `readOnlyHint` y una aparición. |
+| **MENOR G-m4** §16 no recogía lo nuevo | §16 añade la guarda en los dos commits, la comparación del manifiesto y el render de la ruta. |
+| Observaciones (play pausado como «Paso n»; ⌘K «equipos» frente a `/team`) | Pasos 7 y 10 del walkthrough. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
