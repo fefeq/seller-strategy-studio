@@ -227,8 +227,13 @@ export function HubScreen() {
   const missing = missingPlays(docs);
   // «Añadir reglas base» (NK-0128): only a click adds them; the server says how many were missing.
   const runDefaultRules = useServerFn(addDefaultRules);
+  // Synchronous in-flight guard: `isPending` only changes after the next render, so a double click would fire two calls.
+  const baseRulesBusy = useRef(false);
   const baseRules = useMutation({
     mutationFn: () => runDefaultRules(),
+    onSettled: () => {
+      baseRulesBusy.current = false;
+    },
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["docs"] });
       toast.success(
@@ -404,7 +409,11 @@ export function HubScreen() {
                       className="w-full"
                       disabled={rulesLocked || baseRules.isPending}
                       title={rulesReason}
-                      onClick={() => baseRules.mutate()}
+                      onClick={() => {
+                        if (baseRulesBusy.current) return;
+                        baseRulesBusy.current = true;
+                        baseRules.mutate();
+                      }}
                     >
                       Añadir reglas base
                     </Button>
