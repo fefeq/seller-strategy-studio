@@ -1,5 +1,6 @@
 // One play as the Plays GTM screens draw it: state, phase, needs, the activate or pause button and the activity. Shared by the catalogue
 // and the teams. The `open` state of the activity stays in each panel (one open at a time) and arrives as props.
+import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -57,6 +58,8 @@ export function PlayCard({
   onToggle,
   open,
   onToggleOpen,
+  lead,
+  note,
 }: {
   play: Play;
   described: ReturnType<typeof describePlay>;
@@ -65,6 +68,10 @@ export function PlayCard({
   onToggle: (enable: boolean) => void;
   open: boolean;
   onToggleOpen: () => void;
+  /** Optional line above the title (the teams put «Paso n» here). */
+  lead?: ReactNode;
+  /** Optional lines under the needs (the teams put «También en» and «No disponible» here). */
+  note?: ReactNode;
 }) {
   const who = canTogglePlays(roles);
   const wantEnable = !p.enabled;
@@ -72,6 +79,7 @@ export function PlayCard({
   const refusal = checkToggle({ play, roles, enable: wantEnable });
   return (
     <li className="border-t py-4">
+      {lead}
       <p className="text-lg font-medium">{p.title}</p>
       <p className="mt-1 text-sm text-muted-foreground">
         {STATUS_WORD[p.status]} · {p.motion.map((m) => MOTION_LABEL[m]).join(", ")} ·{" "}
@@ -82,6 +90,7 @@ export function PlayCard({
         {p.phaseLabel} · {p.approvalLabel}
       </p>
       <p className="mt-2 text-sm">Necesita: {p.needs.join("; ")}.</p>
+      {note}
       {p.reason && !p.canEnable && (
         <p className="mt-1 text-sm text-muted-foreground">
           {p.status === "bloqueado" ? "No se puede activar todavía" : "Todavía no se puede activar"}
