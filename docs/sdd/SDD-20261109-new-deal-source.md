@@ -1,7 +1,7 @@
 # SDD-20261109-new-deal-source · [Mejora] Nuevo deal: pedir el origen al crear (Pipeline, cuenta, create_deal)
 
 **Tipo:** Mejora (sin cambio de esquema) · **Prioridad propuesta:** Media (sin ella, todo deal nuevo nace «Sin origen» y el win rate por origen se vacía)
-**Estado:** Aprobado — coordinador por delegación de Fede ("ok a todo", 2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 4) · **Aprueba:** Fede · **Fecha:** 2026-11-09
+**Estado:** Hecho — PR #121 (268a2d3) · Aprobado por coordinador por delegación de Fede ("ok a todo", 2026-11-09), gate pasadas 1 y 2 · **Pide:** Fede (Sprint 4) · **Aprueba:** Fede · **Fecha:** 2026-11-09
 **Ticket:** NK-0123
 **PRD:** No aplica (mejora acotada) · **Depende de:** `SDD-20261109-deals-no-source.md` (Hecho, Sprint 3: `src/lib/deal-source.ts`, `src/components/deal-source-field.tsx`, migración `0083`) · **Coordina con:** —
 
