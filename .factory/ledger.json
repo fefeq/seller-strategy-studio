@@ -4072,19 +4072,31 @@
       "title": "Plays GTM: catálogo de tareas, seis equipos y vista en /plays (NK-0126 SDD 2, Sprint 6)",
       "kind": "feature",
       "source": "PRD docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md §8 fila 2",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint6",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261110-play-teams.md",
       "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0140-play-teams",
+      "base_commit": "f176ae4d0bbe02c05b154d03342e94216e039173",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-10T20:37:02.859Z",
           "by": "coordinador-sprint6",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T20:51:34.120Z",
+          "by": "coordinador-sprint6",
+          "note": "docs: sdd=docs/sdd/SDD-20261110-play-teams.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-10T20:51:34.434Z",
+          "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
+          "note": "owner=coordinador-sprint6"
         }
       ]
     }
