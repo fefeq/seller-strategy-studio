@@ -2,7 +2,7 @@
 
 **Tipo:** Feature (sin cambio de esquema) · **Prioridad propuesta:** Media (es el paso entre el catálogo ordenado del SDD 1 y el diagnóstico del SDD 4; sin equipos, el diagnóstico no tiene qué proponer)
 **Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
-**Ticket:** (pendiente de ID, NK-0126 iniciativa; este es su SDD 2)
+**Ticket:** NK-0140 (NK-0126 iniciativa; este es su SDD 2)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` (cubre G-1 en parte, G-2 y G-3; G-1 se mide en el SDD 4) · **Depende de:** `SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, Hecho en `main`: `phase`, `approval`, `dependsOn` y `recommendablePlays`) · **Coordina con:** SDD 4 de la iniciativa (`diagnosis-in-chat`), que consumirá los equipos; SDD 2 a 9 de plays y NK-0081 a NK-0083, que tocan `catalog.ts` (este SDD no lo toca)
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) tiene una prueba automática que lo nombra.
@@ -30,7 +30,7 @@ Un **equipo de plays** es una tarea que una empresa quiere resolver («Reuniones
 
 **Estado real de los plays de los seis equipos** (lectura de `catalog.ts`): la composición tiene 13 entradas y 12 plays distintos (`signals-in-crm-with-decay` está en dos equipos); los 12 existen: 11 son `parcial` y `pain-qualified-segments` (`:168`) es `planificado`. Son exactamente los 12 plays que el SDD 1 llama construibles con datos propios; ningún `bloqueado` está en un equipo. Dependencias reales: `signal-activation` → `signals-in-crm-with-decay` (`:152`) y `pain-qualified-segments` → `call-transcript-signal-extraction` (`:178`); las dos quedan **dentro** de su equipo.
 
-**Discrepancia con el PRD:** la composición aprobada dice que `multi-thread-inbound-leads` «se muestra como bloqueado» hasta tener el contacto adicional, pero en el catálogo es `parcial` sin `blockedBy` (`catalog.ts:234-247`, comentario en `:240`: «CA-3 reserva `blockedBy` para plays bloqueados: queda como necesidad»), y el SDD 1 prohíbe cambiar `status`. Este SDD no cambia el catálogo: el play se muestra con su estado real y su necesidad «Contacto adicional vía Apollo o Clay» (pregunta P-1 del §15).
+**Discrepancia con el PRD:** la composición aprobada dice que `multi-thread-inbound-leads` «se muestra como bloqueado» hasta tener el contacto adicional, pero en el catálogo es `parcial` sin `blockedBy` (`catalog.ts:234-247`, comentario en `:240`: «CA-3 reserva `blockedBy` para plays bloqueados: queda como necesidad»), y el SDD 1 prohíbe cambiar `status`. Este SDD no cambia el catálogo: el play se muestra con su estado real y su necesidad «Contacto adicional vía Apollo o Clay» (decisión P-1 del coordinador, §15).
 
 **Uso real:** sin dato (no hay equipos todavía).
 
@@ -57,7 +57,7 @@ Referencia a los objetivos del PRD:
 **No incluye** (el brief lo copia a «Movimientos prohibidos»):
 - Migraciones, tablas, columnas, políticas o GRANTs; `play_states` y `play_runs` no cambian. No hay estado por equipo.
 - Cambiar `CATALOG` (`status`, `blockedBy`, `phase`, `approval`, `dependsOn`, `needs`, `outputs`, `detectors`) ni `recommendablePlays`, `effectiveState`, `checkToggle` o `describePlay`.
-- Un botón «Activar equipo» o cualquier activación en bloque: se activa play a play con el botón que ya existe (decisión 5: «no activa nada solo»; P-2 del §15).
+- Un botón «Activar equipo» o cualquier activación en bloque: se activa play a play con el botón que ya existe (decisión 5: «no activa nada solo»; decisión P-2 del coordinador, §15).
 - El diagnóstico, preguntas al usuario o priorizar equipos por empresa (SDD 4 y 5).
 - Departamentos (Sales, Deals, Intelligence) como campo o filtro; equipos de Customer, Marketing u Operations (decisiones 6 y 11).
 - Cambiar `list_plays`, `get_play` o `set_play_enabled` (entrada, salida o descripción) ni sus entradas en el manifiesto.
@@ -99,7 +99,7 @@ Referencia a los objetivos del PRD:
 - **Un play en dos equipos:** una sola fila en `play_states`; el cambio se ve en los dos tras invalidar la caché (CA-8).
 - **Equipo sin pasos** (todos sus plays no disponibles): se pinta igual, con «0 de N plays disponibles» y la lista de no disponibles con su motivo. Hoy no ocurre con el catálogo real.
 - **Id de equipo inexistente en el catálogo o dependencia fuera del equipo:** la prueba de `validateTeams` falla y el build no pasa (CA-2). En ejecución, `teamPlan` ignora un id que no esté en el catálogo, sin romper la pantalla.
-- **Play `parcial` que en la práctica necesita algo externo** (`multi-thread-inbound-leads`): se muestra recomendable con su necesidad; ver P-1.
+- **Play `parcial` que en la práctica necesita algo externo** (`multi-thread-inbound-leads`): se muestra recomendable con su necesidad (decisión P-1, §15).
 - **Otra empresa (multitenant):** el catálogo de equipos es código común; la pantalla lee `play_states` con RLS de la empresa activa y la herramienta filtra por `c.orgId` (CA-13). Nada de otra empresa llega.
 - **Miembro sin rol de líder:** ve los equipos y el estado; los botones, deshabilitados con el motivo (CA-8).
 
@@ -178,7 +178,7 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 **Riesgos:**
 - **Confusión con «Equipo» (miembros):** mitigado con «equipo de plays» siempre completo (CA-15); se revisa en el walkthrough (abierta 4 del PRD).
 - **Promesa excesiva:** 11 de los 12 plays de los equipos son `parcial` y el otro, `planificado` (su lógica completa llega con los SDD 2 a 9 de plays). Un equipo «disponible» significa que sus plays se pueden activar, no que estén terminados; la introducción no dice más que eso.
-- **`multi-thread-inbound-leads` sale como disponible** aunque el PRD lo esperaba bloqueado (P-1).
+- **`multi-thread-inbound-leads` sale como disponible** aunque el PRD lo esperaba bloqueado (decisión P-1, §15; bloquearlo en el catálogo es un ticket aparte).
 - **Conflictos de rama:** este SDD no toca `catalog.ts`; si un SDD de plays cambia ids, fases o dependencias de los 12 plays, CA-2 y CA-3 fallan y obligan a revisar la composición. Es intencionado.
 - **Manifiesto en caché** de asistentes MCP: no verán `list_play_teams` hasta refrescar; no rompe nada.
 
@@ -200,15 +200,17 @@ U-3 depende de U-1 y U-2. U-4 depende de U-1.
 - **D-1.** Sin migración: equipos en código y estado solo por play (§10).
 - **D-2.** Un equipo es una tarea (decisión 9 y 17): el «catálogo de tareas» y el de equipos son el mismo `PLAY_TEAMS`, con `task` como la frase de la tarea. No se añade un catálogo de tareas aparte.
 - **D-3.** Orden de los equipos fijo (el de la composición aprobada); priorizarlos por empresa es del SDD 4.
-- **D-4.** La vista vive en `/plays?vista=equipos`; por defecto `/plays` sigue mostrando el catálogo de hoy.
+- **D-4.** La vista vive en `/plays?vista=equipos`; por defecto `/plays` sigue mostrando el catálogo de hoy (confirmado por el coordinador, P-3).
 - **D-5.** Se incluye `list_play_teams` (lectura) para que el agente y MCP vean los equipos ya, y el SDD 4 parta de ella; `list_plays` y `get_play` no cambian.
 - **D-6.** Cada dependencia de un play debe estar en su mismo equipo (CA-2); hoy se cumple.
 
-**Para Fede:**
-1. **P-1.** `multi-thread-inbound-leads`: el PRD dice «se muestra como bloqueado» hasta tener el contacto adicional, pero en el catálogo es `parcial` y cambiarlo está fuera de este SDD. Propuesta: mostrarlo con su estado real y su necesidad. ¿Lo aceptas, o prefieres un ticket aparte que lo pase a `bloqueado` (`fuente_externa` o `proveedor_datos`) en el catálogo?
-2. **P-2.** ¿Quieres un botón «Activar los disponibles» por equipo? Este SDD no lo incluye (decisión 5: no activa nada solo); se puede añadir después como acción pendiente de confirmar.
-3. **P-3.** ¿La vista por defecto de `/plays` debe ser «Equipos de plays» en vez del catálogo completo (D-4)?
-4. **P-4.** Textos de las seis tareas y de la vista (§9).
+**Decisión del coordinador (delegación de Fede, GO Sprint 6, 2026-11-10):**
+- **P-1.** `multi-thread-inbound-leads` se muestra con su estado real del catálogo (`parcial`) y su necesidad. Si se bloquea en el catálogo es un ticket aparte, fuera de este SDD.
+- **P-2.** Sin botón «Activar los disponibles» por equipo (decisión 5 del PRD: no activa nada solo).
+- **P-3.** `/plays` sigue abriendo por defecto en la lista de hoy (D-4); los equipos, en `?vista=equipos`.
+- **P-4.** Textos del §9 tal como están redactados; Fede puede editarlos después.
+
+**Para Fede:** ninguna pregunta abierta.
 
 ## 16. Pendiente de verificar
 - [Por verificar, gate] CA-14b: el extractor no deja diff en el manifiesto sobre el commit final.
