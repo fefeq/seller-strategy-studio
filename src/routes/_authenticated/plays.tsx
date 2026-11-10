@@ -5,15 +5,11 @@ import { PlaysPanel } from "@/components/plays/plays-panel";
 import { PlayTeamsPanel } from "@/components/plays/play-teams-panel";
 import { usePlayStates } from "@/components/plays/use-play-states";
 import { playsHeadline } from "@/lib/headlines";
+import { parsePlaysSearch } from "@/lib/plays/search";
 
 const TITLE = "Plays GTM — Nokko";
 const DESC =
   "Las jugadas de venta que Nokko conoce, cuáles están activadas en tu empresa y qué falta para el resto.";
-
-/** `?vista=equipos` shows the teams of plays; any other value (or none) shows the catalogue. */
-export function parsePlaysSearch(s: Record<string, unknown>): { vista?: "equipos" } {
-  return { vista: s.vista === "equipos" ? "equipos" : undefined };
-}
 
 export const Route = createFileRoute("/_authenticated/plays")({
   head: () => ({

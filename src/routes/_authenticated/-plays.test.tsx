@@ -6,7 +6,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { RouterProvider, createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { routeTree } from "@/routeTree.gen";
-import { parsePlaysSearch } from "./plays";
+import { parsePlaysSearch } from "@/lib/plays/search";
 import { TEAMS_INTRO } from "@/lib/plays/teams";
 
 const USER = { id: "user-ana", created_at: "2026-01-01T00:00:00Z" };
