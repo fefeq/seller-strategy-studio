@@ -23,7 +23,11 @@ export function formatMoney(n: number, currency = "EUR", compact = false) {
 }
 
 export function currencySymbol(currency = "EUR") {
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency }).formatToParts(0).find((p) => p.type === "currency")?.value ?? currency;
+  return (
+    new Intl.NumberFormat("es-ES", { style: "currency", currency })
+      .formatToParts(0)
+      .find((p) => p.type === "currency")?.value ?? currency
+  );
 }
 
 /** A 0–1 ratio as a whole percentage («0.123» → «12%»). The one percentage format for screens. */
