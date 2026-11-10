@@ -39,12 +39,22 @@ export const BINDING_MARK_ONLY_LEADERS =
 export const BINDING_WRITE_DENIED =
   "Solo el Owner o un Sales Leader pueden escribir en Reglas o marcar documentos como obligatorios. Pídeselo a uno de ellos.";
 
-/** Whether these roles may edit this document; roles not loaded yet (undefined) may not edit a binding one. */
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128): the «voice» section holds real messages of the company that
+// the drafts use as a mould. It is team knowledge written only by Owner and Sales Leader (migration 0084 says the same), and it
+// is never a rule: isMandatory/isBindingDoc do not change (they mirror knowledge_doc_is_binding of 0081), the readers filter it.
+export const VOICE_SECTION = "voice";
+export const VOICE_READ_ONLY =
+  "Solo el Owner o un Sales Leader pueden escribir la voz de la empresa. Pídeselo a uno de ellos.";
+export const isVoiceDoc = (d: Pick<KnowledgeDoc, "section">) => d.section === VOICE_SECTION;
+
+/** Whether these roles may edit this document; roles not loaded yet (undefined) may not edit a binding or voice one. */
 export function canEditDoc(
   d: BindingFields,
   roles: readonly string[] | undefined,
 ): { allowed: boolean; reason: string | null } {
-  if (!isBindingDoc(d) || canWriteBinding(roles)) return { allowed: true, reason: null };
+  if (canWriteBinding(roles)) return { allowed: true, reason: null };
+  if (isVoiceDoc(d)) return { allowed: false, reason: VOICE_READ_ONLY };
+  if (!isBindingDoc(d)) return { allowed: true, reason: null };
   return { allowed: false, reason: BINDING_READ_ONLY };
 }
 
@@ -84,7 +94,10 @@ export const RULES_TRUNCATED_NOTICE = "Puede haber más reglas de las que se han
  * (L), total = team rules with text (N). The screen counts with the same function, so both say the same.
  */
 export function pickRules(docs: KnowledgeDoc[], limits: RuleLimits) {
-  const all = docs.filter((d) => d.scope === "team" && isMandatory(d) && d.body.trim());
+  // A voice document is never a rule, even if it arrives marked mandatory (NK-0128, CA-1).
+  const all = docs.filter(
+    (d) => d.scope === "team" && !isVoiceDoc(d) && isMandatory(d) && d.body.trim(),
+  );
   const rules: Rule[] = [];
   let read = 0;
   let left = limits.maxChars;
@@ -140,6 +153,7 @@ export async function loadAgentRules(
       .select("org_id,title,body,section,scope,mandatory")
       .eq("org_id", c.orgId)
       .eq("scope", "team")
+      .neq("section", VOICE_SECTION)
       .or("section.eq.rules,mandatory.eq.true")
       .order("updated_at", { ascending: false })
       // Same tiebreak as the Conocimiento screen, so the agent and «L de N» cut the same rule.

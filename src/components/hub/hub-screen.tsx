@@ -38,6 +38,8 @@ import { Editor } from "@/components/hub/doc-editor";
 import {
   AGENT_RULE_LIMITS,
   BINDING_SECTION_READ_ONLY,
+  VOICE_READ_ONLY,
+  VOICE_SECTION,
   canWriteBinding,
   rulesCoverage,
   rulesNotice,
@@ -58,6 +60,11 @@ export const SECTIONS = [
     "rules",
     "Reglas",
     "Lo que los agentes no pueden hacer sin una persona. El agente lee estas reglas en cada conversación y al redactar seguimientos y briefs de reunión.",
+  ],
+  [
+    "voice",
+    "Voz",
+    "Pega tres mensajes reales que hayáis escrito y que representen cómo habláis. Quita nombres y datos de personas antes de pegar.",
   ],
 ] as const;
 
@@ -210,8 +217,11 @@ export function HubScreen() {
   const isOwner = canDelete(me?.roles ?? []);
   const canLibrary = (me?.roles ?? []).some((r) => r === "owner" || r === "sales_leader");
   // Reglas: only the Owner or a Sales Leader write it (NK-0095); disabled until the role is known, the reason once it is.
-  const rulesLocked = section === "rules" && !canWriteBinding(me?.roles);
-  const rulesReason = rulesLocked && me ? BINDING_SECTION_READ_ONLY : undefined;
+  // Voz (NK-0128): same writers, its own reason, and no Drive import (the server lists never admit voice).
+  const isVoice = section === VOICE_SECTION;
+  const rulesLocked = (section === "rules" || isVoice) && !canWriteBinding(me?.roles);
+  const rulesReason =
+    rulesLocked && me ? (isVoice ? VOICE_READ_ONLY : BINDING_SECTION_READ_ONLY) : undefined;
   const missing = missingPlays(docs);
   const library = useJob("playbook_library", {
     onDone: () => qc.invalidateQueries({ queryKey: ["docs"] }),
@@ -369,12 +379,14 @@ export function HubScreen() {
                   >
                     + Nuevo
                   </Button>
-                  <DriveImportButton
-                    section={section}
-                    onImported={openDoc}
-                    disabled={rulesLocked}
-                    reason={rulesReason}
-                  />
+                  {!isVoice && (
+                    <DriveImportButton
+                      section={section}
+                      onImported={openDoc}
+                      disabled={rulesLocked}
+                      reason={rulesReason}
+                    />
+                  )}
                 </>
               )}
               {section === "objections" && <BattlecardFromReviews onSaved={openDoc} />}
@@ -404,11 +416,13 @@ export function HubScreen() {
                           personal
                         </span>
                       )}
-                      {d.scope === "team" && (d.mandatory || d.section === "rules") && (
-                        <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">
-                          obligatorio
-                        </span>
-                      )}
+                      {d.scope === "team" &&
+                        d.section !== VOICE_SECTION &&
+                        (d.mandatory || d.section === "rules") && (
+                          <span className="ml-2 rounded bg-signal/15 px-1.5 font-mono text-xs uppercase text-signal">
+                            obligatorio
+                          </span>
+                        )}
                       {snippets.get(d.id) && (
                         <span className="mt-1 block text-xs text-muted-foreground">
                           {snippets.get(d.id)}

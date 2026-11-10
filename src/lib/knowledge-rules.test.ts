@@ -399,3 +399,71 @@ describe("binding documents: only owner and sales_leader write them (NK-0095, CA
       expect(binding[k as keyof typeof binding], k).toBeDefined();
   });
 });
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-1 · CA-1, CA-2: the «voice» section is team knowledge that only
+// Owner and Sales Leader write and that the rules reader never takes as a rule. isMandatory and isBindingDoc do not change.
+describe("voice documents (NK-0128, CA-1, CA-2)", () => {
+  const voice = (over: Partial<Row> = {}) =>
+    rule(1, { section: "voice", title: "Mensaje", ...over });
+
+  it("exports the section id and the read-only text of §9", () => {
+    expect(binding.VOICE_SECTION).toBe("voice");
+    expect(binding.VOICE_READ_ONLY).toBe(
+      "Solo el Owner o un Sales Leader pueden escribir la voz de la empresa. Pídeselo a uno de ellos.",
+    );
+  });
+
+  it("pickRules never takes a voice document, marked mandatory or not; the count agrees", () => {
+    const docs = [
+      voice({ mandatory: true, title: "Marcada" }),
+      voice({ title: "Sin marcar" }),
+      rule(2),
+    ];
+    const got = pickRules(docs, AGENT_RULE_LIMITS);
+    expect(got.rules.map((r) => r.titulo)).toEqual(["Regla 2"]);
+    expect(got).toMatchObject({ read: 1, total: 1 });
+    expect(rulesCoverage(docs, AGENT_RULE_LIMITS)).toEqual({ read: 1, total: 1 });
+  });
+
+  it("loadAgentRules asks the database to leave voice out and drops it in memory too", async () => {
+    const { db, log } = fakeDb({
+      rows: [voice({ mandatory: true, title: "Voz marcada" }), rule(2, { title: "Propia" })],
+    });
+    const r = await loadAgentRules({ db, orgId: ORG });
+    expect(r.ok && r.rules.map((x) => x.titulo)).toEqual(["Propia"]);
+    expect(log[0]!.calls).toContainEqual(["neq", "section", "voice"]);
+    expect(log[0]!.calls).toContainEqual(["or", "section.eq.rules,mandatory.eq.true"]);
+  });
+
+  it("isMandatory and isBindingDoc stay as they were for voice (they mirror knowledge_doc_is_binding of 0081)", () => {
+    const d = (mandatory: boolean, scope = "team") => ({ section: "voice", scope, mandatory });
+    expect(binding.isBindingDoc(d(false))).toBe(false);
+    expect(binding.isBindingDoc(d(true))).toBe(true);
+    expect(binding.isMandatory({ title: "", body: "", ...d(true) })).toBe(true);
+  });
+
+  it("canEditDoc: voice (team or personal, marked or not) only for owner and sales_leader, with its own reason", () => {
+    for (const scope of ["team", "personal"])
+      for (const mandatory of [false, true])
+        for (const r of BINDING_WRITER_CASES) {
+          const got = binding.canEditDoc({ section: "voice", scope, mandatory }, r.roles);
+          expect(got, `${scope}/${mandatory}/${r.roles.join(",")}`).toEqual({
+            allowed: r.canWrite,
+            reason: r.canWrite ? null : binding.VOICE_READ_ONLY,
+          });
+        }
+    expect(
+      binding.canEditDoc({ section: "voice", scope: "team", mandatory: false }, undefined),
+    ).toEqual({
+      allowed: false,
+      reason: binding.VOICE_READ_ONLY,
+    });
+  });
+
+  it("canEditDoc keeps its answer for every other case of the shared table", () => {
+    for (const c of BINDING_CASES) {
+      const got = binding.canEditDoc(c, ["ae"]);
+      expect(got.allowed, c.name).toBe(!c.binding);
+    }
+  });
+});

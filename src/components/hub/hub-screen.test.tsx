@@ -475,6 +475,7 @@ const sectionLabels = [
   "Campañas",
   "Skills",
   "Reglas",
+  "Voz",
 ];
 const sectionButtons = () =>
   sectionLabels.map((l) => screen.getByRole("button", { name: new RegExp(`^${l}`) }));
@@ -565,6 +566,7 @@ describe("HubScreen · ?seccion= (CA-3)", () => {
       "campaigns",
       "skills",
       "rules",
+      "voice",
       "drive",
     ]);
   });
@@ -928,5 +930,102 @@ describe("HubScreen · buscador en blanco (NK-0100)", () => {
     }
     expect(box().value).toBe("");
     expect(screen.queryByRole("button", { name: "Borrar búsqueda" })).not.toBeInTheDocument();
+  });
+});
+
+// SDD-20261110-company-voice-and-escalation-rules (NK-0128) U-1 · CA-1, CA-2: the «Voz» section. Only the Owner or a Sales
+// Leader write it; a voice document is never mandatory, so the box is not offered there. Fictional texts.
+describe("HubScreen · sección Voz (NK-0128, CA-1, CA-2)", () => {
+  const HINT =
+    "Pega tres mensajes reales que hayáis escrito y que representen cómo habláis. Quita nombres y datos de personas antes de pegar.";
+  const VOICE_RO =
+    "Solo el Owner o un Sales Leader pueden escribir la voz de la empresa. Pídeselo a uno de ellos.";
+  const as = (role: string | null) => {
+    h.me = role ? { ...OWNER, roles: [role] } : undefined;
+  };
+  const voiceDocs = () => [
+    row("v1", "voice", "Mensaje de ejemplo 1", "Hola, gracias por tu tiempo."),
+    { ...row("v2", "voice", "Marcado por error"), mandatory: true },
+  ];
+  const newButton = () => screen.getByRole("button", { name: "+ Nuevo" });
+  const save = () => screen.getByRole("button", { name: "Guardar" });
+
+  it("the section exists, is named Voz and shows the privacy hint", async () => {
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(selected()).toEqual(["Voz"]);
+    expect(screen.getByText(HINT)).toBeInTheDocument();
+    expect(within(sectionButton("Voz")).getByText("2")).toBeInTheDocument();
+  });
+
+  it("a voice document does not show the «obligatorio» badge, even when marked", async () => {
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Marcado por error");
+    expect(screen.queryByText("obligatorio")).not.toBeInTheDocument();
+  });
+
+  it("ae: «+ Nuevo» disabled with the reason in words, no Drive import offered", async () => {
+    as("ae");
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(newButton()).toBeDisabled();
+    expect(screen.getByText(VOICE_RO)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Importar de Drive" })).not.toBeInTheDocument();
+  });
+
+  it("ae opening a voice document: read-only, «Guardar» disabled, reason shown, no mandatory box", async () => {
+    as("ae");
+    h.docs = voiceDocs();
+    h.search = { doc: "v1" };
+    mount();
+    await screen.findByDisplayValue("Mensaje de ejemplo 1");
+    expect(screen.getByDisplayValue("Mensaje de ejemplo 1")).toHaveAttribute("readonly");
+    expect(screen.getByDisplayValue("Hola, gracias por tu tiempo.")).toHaveAttribute("readonly");
+    expect(save()).toBeDisabled();
+    expect(screen.getAllByText(VOICE_RO).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+  });
+
+  it.each(["owner", "sales_leader"])(
+    "%s: creates and edits voice, no mandatory box, and saves mandatory: false even if it came marked",
+    async (role) => {
+      as(role);
+      h.docs = voiceDocs();
+      h.search = { doc: "v2" };
+      mount();
+      await screen.findByDisplayValue("Marcado por error");
+      expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+      expect(screen.queryByText(VOICE_RO)).not.toBeInTheDocument();
+      const body = screen.getByDisplayValue("Texto de prueba.");
+      expect(body).not.toHaveAttribute("readonly");
+      fireEvent.change(body, { target: { value: "Otro texto ficticio." } });
+      fireEvent.click(save());
+      await waitFor(() => expect(h.writes.length).toBe(1));
+      expect(h.writes[0]!.payload).toMatchObject({
+        body: "Otro texto ficticio.",
+        mandatory: false,
+      });
+      cleanup();
+      h.writes = [];
+      h.search = { seccion: "voice" };
+      mount();
+      await screen.findByText("Mensaje de ejemplo 1");
+      expect(newButton()).toBeEnabled();
+    },
+  );
+
+  it("while the role has not loaded, a voice document is read-only and «+ Nuevo» disabled", async () => {
+    as(null);
+    h.docs = voiceDocs();
+    h.search = { seccion: "voice" };
+    mount();
+    await screen.findByText("Mensaje de ejemplo 1");
+    expect(newButton()).toBeDisabled();
   });
 });
