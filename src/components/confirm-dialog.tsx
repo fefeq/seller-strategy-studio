@@ -15,8 +15,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { isSwitchingAccount, useSwitchingAccount } from "@/lib/account-switch";
 
 /**
- * Nokko-styled replacements for window.confirm / window.prompt.
+ * Nokko-styled replacements for the browser's own dialogs, which are never used.
  * Call askConfirm / askText from any event handler; <DialogHost /> (mounted once in __root) renders them.
+ * Without a mounted host they resolve the safe answer (false, null, "stay"): nothing is confirmed by accident.
  */
 type ConfirmRequest = {
   kind: "confirm";
@@ -68,13 +69,9 @@ export type TextOptions = {
   maxLength?: number;
 };
 
-/** Resolves true when the user confirms. Falls back to window.confirm if the host is not mounted. */
+/** Resolves true only when the user confirms; false if dismissed or if the host is not mounted. */
 export function askConfirm(title: string, opts: ConfirmOptions = {}): Promise<boolean> {
-  if (!push)
-    return Promise.resolve(
-      typeof window !== "undefined" &&
-        window.confirm([title, opts.body].filter(Boolean).join("\n\n")),
-    );
+  if (!push) return Promise.resolve(false);
   return new Promise((resolve) => push!({ kind: "confirm", title, ...opts, resolve }));
 }
 
@@ -83,22 +80,13 @@ export function askUnsaved(
   title: string,
   opts: { body?: string; saveLabel?: string; discardLabel?: string; stayLabel?: string } = {},
 ): Promise<"save" | "discard" | "stay"> {
-  if (!push)
-    return Promise.resolve(
-      typeof window !== "undefined" &&
-        window.confirm([title, opts.body].filter(Boolean).join("\n\n"))
-        ? "discard"
-        : "stay",
-    );
+  if (!push) return Promise.resolve("stay");
   return new Promise((resolve) => push!({ kind: "unsaved", title, ...opts, resolve }));
 }
 
-/** Resolves the trimmed text, or null when cancelled or empty. */
+/** Resolves the trimmed text, or null when cancelled, empty or if the host is not mounted. */
 export function askText(title: string, opts: TextOptions = {}): Promise<string | null> {
-  if (!push) {
-    const v = typeof window !== "undefined" ? window.prompt(title, opts.initial ?? "") : null;
-    return Promise.resolve(v?.trim() || null);
-  }
+  if (!push) return Promise.resolve(null);
   return new Promise((resolve) => push!({ kind: "text", title, ...opts, resolve }));
 }
 
