@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 125,
+  "seq": 130,
   "tickets": [
     {
       "id": "NK-0001",
@@ -3016,8 +3016,8 @@
       "title": "Métricas: los «—» que significan falta el dato en Finanzas, RevOps, ciclo, cobertura de pipeline, Embudo, Perdidos, Cohortes y Tendencias pasan a «Sin dato · motivo» (resto de la decisión 4 del §15 de NK-0089, fuera de NK-0094)",
       "kind": "feature",
       "source": "Sprint 2, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261109-metrics-sin-dato-rest.md",
       "prd": null,
@@ -3035,6 +3035,18 @@
           "at": "2026-11-09T18:39:21.510Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261109-metrics-sin-dato-rest.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.084Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.338Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3436,8 +3448,8 @@
       "title": "Logs: 11 llamadas en email, posthog-sync, telegram, inngest/send, weekly-report, daily-email, notices y after-response siguen registrando trozo de cuerpo o error entero (lista de excepciones «pendiente» en src/lib/server-log-scan.test.ts)",
       "kind": "bug",
       "source": "tracker: Sprint 3 intake, 2026-11-09",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3449,6 +3461,18 @@
           "at": "2026-11-09T18:39:21.897Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.120Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.369Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3457,8 +3481,8 @@
       "title": "Sesión: si una navegación valida a Y antes de que llegue su SIGNED_IN y no hay me en caché, los datos de X siguen en caché unos milisegundos (gate Sprint 3, observación 1)",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, observación 1 (sprint3-gate/gate-db23383.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3470,6 +3494,18 @@
           "at": "2026-11-09T22:37:48.699Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.154Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.400Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3478,8 +3514,8 @@
       "title": "Cambio de cuenta: un diálogo de confirmación abierto con texto de X queda visible sobre «Cambiando de cuenta…» hasta la recarga",
       "kind": "bug",
       "source": "gate Sprint 3 295c22e, observación nueva (sprint3-gate/gate-295c22e.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3491,6 +3527,18 @@
           "at": "2026-11-09T22:37:48.739Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.187Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.430Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3499,8 +3547,8 @@
       "title": "Logs: 8 llamadas fuera de *.server.ts registran trozos de respuesta de proveedor o de IA (firecrawl, apollo-gateway, perplexity, apify-gateway, clay-gateway, parallel-gateway, google-drive, ai.functions.ts:145)",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, ticket propuesto de logs (sprint3-gate/gate-db23383.md); relacionado con NK-0118",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3512,6 +3560,18 @@
           "at": "2026-11-09T22:37:48.778Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.218Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.461Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3520,8 +3580,8 @@
       "title": "OAuth: aprobar el consentimiento no vuelve a validar la sesión (decide())",
       "kind": "bug",
       "source": "gate Sprint 3 db23383, observación OAuth (sprint3-gate/gate-db23383.md)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
@@ -3533,6 +3593,18 @@
           "at": "2026-11-09T22:37:48.817Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:12:45.253Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.492Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3541,10 +3613,10 @@
       "title": "Nuevo deal: pedir el origen al crear (Pipeline, cuenta, create_deal)",
       "kind": "feature",
       "source": "Fede (ledger Sprint 3); contexto en sprint3-gate/gate-08c5b9a.md §5 (origen nulo)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint4",
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261109-new-deal-source.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -3554,6 +3626,24 @@
           "at": "2026-11-09T22:37:48.861Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-09T23:22:13.667Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261109-new-deal-source.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-09T23:22:13.759Z",
+          "by": "Fede: \"ok a todo\" (2026-11-09)",
+          "note": "owner=coordinador-sprint4"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-10T00:47:40.523Z",
+          "by": "Fede",
+          "note": "sha=ad51a1f2b9cd478e7fbe943aea77fce84b2070c4"
         }
       ]
     },
@@ -3594,6 +3684,111 @@
         {
           "state": "LOGGED",
           "at": "2026-11-09T22:37:48.943Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0126",
+      "title": "Logs: src/routes/api/public/jobs/proactive.ts registra el error entero en 14 sitios y src/routes/api/** queda fuera del escaneo de logs",
+      "kind": "bug",
+      "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:47:44.650Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0127",
+      "title": "Métricas/Finanzas: el KPI «Gasto real» muestra «0 € captación» sin costes de captación apuntados; D-3 del SDD de NK-0106 dice gasto 0 = «sin costes apuntados»",
+      "kind": "bug",
+      "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:47:44.685Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0128",
+      "title": "Formato: decimales con punto en Cobertura («2.5x total», «1.1x», segment-coverage.tsx:128/:213) y embudo de leads («33.3% del total», lead-funnel-panel.tsx:80); usar coma es-ES",
+      "kind": "bug",
+      "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:47:44.716Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0129",
+      "title": "Test frágil: new-deal.test.tsx busca el nombre del deal como primer textbox porque el Label de Field no está asociado al input",
+      "kind": "bug",
+      "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:47:44.747Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0130",
+      "title": "Sesión: una validación tardía de X cuando la sesión ya es Y bloquea y recarga una vez de más; ignorar validaciones cuyo token ya no es el guardado",
+      "kind": "bug",
+      "source": "Sprint 4 gate ad51a1f / walkthrough 2faae09",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-10T00:47:44.785Z",
           "by": "tracker",
           "note": ""
         }
