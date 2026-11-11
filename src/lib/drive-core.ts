@@ -289,12 +289,13 @@ export async function importToKnowledge(
   checkImportAllowed(section, roles);
   const r = await readFile(s, ref);
   const body = `${r.text}\n\nFuente: Google Drive — ${r.url ?? r.name}${r.truncated ? " (texto recortado: el original es más largo)" : ""}`;
+  const title = safeName(r.name.replace(/\.[a-z0-9]{2,5}$/i, ""));
   const { data, error } = await s.db
     .from("knowledge_docs")
     .insert({
       org_id: s.orgId,
       section,
-      title: safeName(r.name.replace(/\.[a-z0-9]{2,5}$/i, "")),
+      title,
       body,
       scope: importScope(section),
       created_by: s.userId,
@@ -302,6 +303,12 @@ export async function importToKnowledge(
     })
     .select("id,title")
     .single();
+  // Migration 0085: one team rule per title in a company (unique index). The code would be lost on the way to the person
+  // (server fn, job runner), so say it here. The title goes only in this message, never in a log.
+  if (error?.code === "23505" && section === "rules")
+    throw new Error(
+      `Ya hay una regla con el título «${title}». Cámbiale el nombre al archivo o edita la regla existente.`,
+    );
   if (error) throw new Error(error.message);
   return { docId: data.id, title: data.title, truncated: r.truncated };
 }
