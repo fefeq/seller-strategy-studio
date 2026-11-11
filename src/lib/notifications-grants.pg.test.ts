@@ -61,7 +61,7 @@ let boot: ReturnType<typeof base> | undefined;
 const shared = () => (boot ??= base());
 beforeAll(async () => {
   await shared();
-});
+}, 60_000);
 
 /** Per-test state: drops what the previous test left (table, function, grants) and rebuilds it, so every test starts as a fresh world. */
 async function world(b: Awaited<ReturnType<typeof base>>, variant: Variant, withMigration = true) {
