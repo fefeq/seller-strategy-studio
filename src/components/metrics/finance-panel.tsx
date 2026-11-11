@@ -130,10 +130,16 @@ export function FinancePanel({ quarter }: { quarter: string }) {
         <Kpi
           size="normal"
           label="Gasto real"
-          value={money(cur.actual.spend)}
+          value={cost(cur.actual.spend)}
           hint={
             dev(cur.spendDeviation) ??
-            `${money(cur.actual.acquisition)} captación · ${money(cur.actual.operating)} operativos`
+            (cur.actual.acquisition ? (
+              `${money(cur.actual.acquisition)} captación · ${money(cur.actual.operating)} operativos`
+            ) : cur.actual.spend ? (
+              <>
+                captación {miss("sin costes apuntados")} · {money(cur.actual.operating)} operativos
+              </>
+            ) : undefined)
           }
         />
         <Kpi

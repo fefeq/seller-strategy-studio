@@ -589,6 +589,13 @@
       "when": 1794484800000,
       "tag": "0084_knowledge_voice_writers",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1794571200000,
+      "tag": "0085_knowledge_rules_unique_title",
+      "breakpoints": true
     }
   ]
 }

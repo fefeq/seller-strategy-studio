@@ -58,19 +58,14 @@ export const DEFAULT_RULES_SAVE_FAILED =
 
 const same = (t: string) => t.trim().toLowerCase();
 
-/**
- * Adds the base rules the company's Reglas section does not have yet (by title), as team documents. Owner and Sales Leader only
- * (the database says the same, migration 0081; the code repeats it for the privileged clients). Safe to repeat. Throws our own
- * Spanish texts, never the database's, and logs no rule text. The company is the caller's active one (trusted context).
- */
-export async function addDefaultRulesCore(c: {
-  db: Db;
-  orgId: string;
-  userId: string;
-  roles: readonly string[];
-}): Promise<{ added: number; titles: string[] }> {
-  if (!canWriteBinding(c.roles)) throw new Error(BINDING_WRITE_DENIED);
-  let have: Set<string>;
+// Attempts before giving up: the first one can lose a race against another session (unique index of migration 0085); the next
+// ones read again and add only what that session did not. Three is plenty: each lost race means somebody else wrote the titles.
+const MAX_ATTEMPTS = 3;
+// Postgres unique_violation, as PostgREST returns it in error.code.
+const UNIQUE_VIOLATION = "23505";
+
+/** Titles of the company's Reglas section (lowercase, trimmed). A failed read throws our text: it is never «nothing exists». */
+async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
   try {
     const { data, error } = await c.db
       .from("knowledge_docs")
@@ -82,7 +77,7 @@ export async function addDefaultRulesCore(c: {
       throw new Error(DEFAULT_RULES_READ_FAILED);
     }
     // Again in memory: the privileged client does not filter by company.
-    have = new Set(
+    return new Set(
       (data ?? [])
         .filter((d) => d.org_id === c.orgId && d.section === "rules")
         .map((d) => same(d.title)),
@@ -92,22 +87,44 @@ export async function addDefaultRulesCore(c: {
     console.error("default rules read failed", e instanceof Error ? e.name : "unknown");
     throw new Error(DEFAULT_RULES_READ_FAILED);
   }
-  const missing = defaultRules().filter((r) => !have.has(same(r.title)));
-  if (!missing.length) return { added: 0, titles: [] };
-  const { error } = await c.db.from("knowledge_docs").insert(
-    missing.map((r) => ({
-      org_id: c.orgId,
-      section: "rules",
-      title: r.title,
-      body: r.body,
-      scope: "team",
-      created_by: c.userId,
-      updated_by: c.userId,
-    })),
-  );
-  if (error) {
-    console.error("default rules insert failed", "query error");
-    throw new Error(DEFAULT_RULES_SAVE_FAILED);
+}
+
+/**
+ * Adds the base rules the company's Reglas section does not have yet (by title), as team documents. Owner and Sales Leader only
+ * (the database says the same, migration 0081; the code repeats it for the privileged clients). Safe to repeat, also from two
+ * sessions at once (NK-0136): the read-then-insert is not atomic, so migration 0085 makes the database refuse a second team
+ * rule with the same title in the company; the session that loses the race gets that refusal, reads again and adds only what is
+ * still missing (a batch insert is all or nothing, so the loser wrote nothing). Throws our own Spanish texts, never the
+ * database's, and logs no rule text. The company is the caller's active one (trusted context).
+ */
+export async function addDefaultRulesCore(c: {
+  db: Db;
+  orgId: string;
+  userId: string;
+  roles: readonly string[];
+}): Promise<{ added: number; titles: string[] }> {
+  if (!canWriteBinding(c.roles)) throw new Error(BINDING_WRITE_DENIED);
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const have = await readTitles(c);
+    const missing = defaultRules().filter((r) => !have.has(same(r.title)));
+    if (!missing.length) return { added: 0, titles: [] };
+    const { error } = await c.db.from("knowledge_docs").insert(
+      missing.map((r) => ({
+        org_id: c.orgId,
+        section: "rules",
+        title: r.title,
+        body: r.body,
+        scope: "team",
+        created_by: c.userId,
+        updated_by: c.userId,
+      })),
+    );
+    if (!error) return { added: missing.length, titles: missing.map((r) => r.title) };
+    // Not a lost race, or no attempts left: the save failed.
+    if (error.code !== UNIQUE_VIOLATION || attempt === MAX_ATTEMPTS) {
+      console.error("default rules insert failed", "query error");
+      throw new Error(DEFAULT_RULES_SAVE_FAILED);
+    }
   }
-  return { added: missing.length, titles: missing.map((r) => r.title) };
+  throw new Error(DEFAULT_RULES_SAVE_FAILED);
 }

@@ -20,6 +20,10 @@ describe("Menú", () => {
     const { readFileSync } = await import("node:fs");
     expect(readFileSync("src/components/command-palette.tsx", "utf8")).toMatch(/NAV_GROUPS\.map/);
   });
+  it("finds Plays GTM in ⌘K when you type «equipos» (SDD play-teams CA-12)", () => {
+    const item = g("strategy").items.find((i) => i.to === "/plays");
+    expect(item?.keywords?.split(/\s+/)).toContain("equipos");
+  });
   it("opens a collapsed group when you are on one of its pages", () => {
     expect(groupOpen(g("strategy"), "/debates", false)).toBe(true);
     expect(groupOpen(g("settings"), "/home", false)).toBe(false);

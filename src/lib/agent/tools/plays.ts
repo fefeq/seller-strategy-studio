@@ -1,10 +1,11 @@
-// Plays GTM: list_plays and get_play (read, any member) and set_play_enabled (write, owner and sales_leader). Part of the single registry in ../tools.ts.
+// Plays GTM: list_plays, get_play and list_play_teams (read, any member) and set_play_enabled (write, owner and sales_leader). Part of the single registry in ../tools.ts.
 // They reuse the pure rules of src/lib/plays (the screen uses the same ones) and never run a play: they only read the catalogue and the company's play_states.
 import { z } from "zod";
 import { def } from "../tool-kit";
 import type { AgentTool, ToolCtx } from "../tool-kit";
 import { CATALOG, MOTIONS, STATUSES } from "@/lib/plays/catalog";
 import { describePlay } from "@/lib/plays/status";
+import { PLAY_TEAMS, teamPlan } from "@/lib/plays/teams";
 import { mustPlay, togglePlay } from "@/lib/plays/toggle";
 
 /** The company's play_states rows. A failed read (say, the table is not migrated yet) is treated as no rows: every play shows its default. */
@@ -43,6 +44,17 @@ export const PLAY_TOOLS: AgentTool[] = [
       play_id: z.string().min(1).describe("Id del play (list_plays), por ejemplo crm-hygiene"),
     }),
     run: async (c, a) => describePlay(mustPlay(a.play_id), (await stateRows(c)).get(a.play_id)),
+  }),
+  def({
+    name: "list_play_teams",
+    kind: "read",
+    description:
+      "Lista los seis equipos de plays. Un equipo de plays agrupa plays por tarea (por ejemplo, reuniones o reactivar perdidos) y los ordena como conviene activarlos: `steps` son los plays que se pueden recomendar, numerados, y `unavailable` los que todavía no, con el motivo. Un play puede estar en varios equipos y se activa una vez: su estado en esta empresa es el mismo en todos. Para activar o pausar un play usa set_play_enabled. Solo lee.",
+    input: z.object({}),
+    run: async (c) => {
+      const rows = await stateRows(c);
+      return { teams: PLAY_TEAMS.map((t) => teamPlan(t, CATALOG, rows)) };
+    },
   }),
   def({
     name: "set_play_enabled",

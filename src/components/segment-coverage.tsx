@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import { segmentCoverage, type SegmentCoverageRow } from "@/lib/segment-coverage";
+import { formatRatio } from "@/lib/coverage";
 import { quartersOfYear, type MarginSource } from "@/lib/segment-budget";
 import { WIN_RATE_WINDOWS, fmtMonths } from "@/lib/unit-economics";
 import { errorText } from "@/lib/errors";
@@ -125,7 +126,7 @@ export function SegmentCoverage({ quarter }: { quarter: string }) {
         </div>
         {total.target > 0 && (
           <div className="text-right text-sm">
-            <p className="font-mono">{(total.pipeline / total.target).toFixed(1)}x total</p>
+            <p className="font-mono">{formatRatio(total.pipeline / total.target)} total</p>
             <p className="text-xs text-muted-foreground">
               {money(total.won)} ganado de {money(total.target)}
             </p>
@@ -210,7 +211,7 @@ function SegmentCard({
         <div className="shrink-0 text-right">
           <p className={`font-display text-3xl ${tone}`}>
             {cov ? (
-              `${cov.ratio.toFixed(1)}x`
+              formatRatio(cov.ratio)
             ) : (
               <DataMark state="sin_dato" reason="sin objetivo de ventas del trimestre" />
             )}

@@ -4488,6 +4488,23 @@
         "outputSchema": null
       },
       {
+        "name": "list_play_teams",
+        "title": "Ver los equipos de plays",
+        "description": "Lista los seis equipos de plays. Un equipo de plays agrupa plays por tarea (por ejemplo, reuniones o reactivar perdidos) y los ordena como conviene activarlos: `steps` son los plays que se pueden recomendar, numerados, y `unavailable` los que todavía no, con el motivo. Un play puede estar en varios equipos y se activa una vez: su estado en esta empresa es el mismo en todos. Para activar o pausar un play usa set_play_enabled. Solo lee.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "set_play_enabled",
         "title": "Activar o pausar un Play GTM",
         "description": "Activa o pausa un play en esta empresa. Un play bloqueado o planificado no se puede activar. Pausar un play que ya ejecuta reglas cierra sus sugerencias pendientes en la siguiente sincronización. (Queda pendiente: el usuario la confirma en Nokko.)",

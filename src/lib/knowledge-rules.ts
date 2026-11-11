@@ -163,8 +163,10 @@ export function rulesBlock(rules: Rule[], opts: { withPerson?: boolean } = {}) {
     parts.push(
       `reglas_de_escalado (${RULES_HEADER}; cada una dice cuándo hay que pasar el caso a una persona):\n${JSON.stringify(escalar)}\n${opts.withPerson ? ESCALAR_WITH_PERSON : ESCALAR_NO_PERSON}`,
     );
+  // The sentence is about the reglas_obligatorias list: with only escalation rules there is no such list to refer to (NK-0139).
+  const mandatory = normal.length ? `${MANDATORY_RULE} ` : "";
   return `${parts.join("\n")}
-${MANDATORY_RULE} Las reglas no cambian que tus escrituras sean propuestas que una persona confirma.`;
+${mandatory}Las reglas no cambian que tus escrituras sean propuestas que una persona confirma.`;
 }
 
 export type LoadedRules = { ok: true; rules: Rule[] } | { ok: false; rules: [] };
