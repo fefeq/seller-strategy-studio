@@ -6,6 +6,8 @@
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
 
+> **Enmienda del 2026-11-11 (Fede):** NOKKO permite leer publicaciones y perfiles de LinkedIn por extracción automática (Apify). La retirada prevista (U-0 de SDD 1a, épica E-29 del roadmap) queda cancelada y la decisión D-6 del plan maestro, superada. Las reglas de Postin (API oficial de LinkedIn) no se aplican a NOKKO. Origen: `EVALUACION-NOKKO-FOUNDER-POSTIN-20261109.md` §8, decisión 3 (proyecto Nokko GTM Brain). Cambia el no-objetivo de LinkedIn del §5 y la nota del §7.
+
 ## 1. Problema
 Un founder configura en NOKKO su estrategia: ICP, segmentos, posicionamiento, mensajes y cuota. Después NOKKO le deja solo. Para pasar de «tengo un ICP» a «hoy escribo a estas tres personas de estas cuentas, con este mensaje, y el jueves les vuelvo a escribir» tiene que saber a qué pantalla ir y en qué orden. Y cuando por fin escribe a alguien de una cuenta objetivo, NOKKO no le recuerda volver a escribirle.
 
@@ -48,7 +50,7 @@ Nunca hay línea base estimada.
 ## 5. No-objetivos
 - Configurar la estrategia, el precio, el producto, los objetivos u OKR y el plan de acciones: es de GTM Lab (SDD 3 a 7) y del control tower 1a.
 - Enviar emails o mensajes de LinkedIn desde NOKKO. Solo borradores para copiar.
-- Leer perfiles o publicaciones de LinkedIn por extracción automática. La investigación actual que lo hace (Apify) se retira en su ticket propio (U-0 del control tower) y aquí no se amplía.
+- ~~Leer perfiles o publicaciones de LinkedIn por extracción automática. La investigación actual que lo hace (Apify) se retira en su ticket propio (U-0 del control tower) y aquí no se amplía.~~ Deja de ser no-objetivo por la enmienda del 2026-11-11; la investigación con Apify se queda.
 - Puntuar o valorar personas.
 - Convertir stakeholders en leads o mezclarlos en el embudo de leads.
 - Bandeja de respuestas: que NOKKO detecte solo que alguien ha contestado.
@@ -69,7 +71,7 @@ Nunca hay línea base estimada.
 ## 7. Riesgos y dependencias
 - **Valor:** apuesta sin datos de uso. Si nadie registra contactos en NOKKO, la guía no tiene con qué trabajar (ver criterio de descarte).
 - **Usabilidad:** registrar a mano «contactado» y «respondió» es fricción. Sin bandeja de respuestas, la secuencia depende de que el founder lo marque.
-- **Negocio y cumplimiento:** solo borradores. Nada de LinkedIn por extracción. La investigación del stakeholder sigue usando Apify hasta que se cierre U-0: el borrador no debe usar como hecho nada que venga de ahí sin marcarlo.
+- **Negocio y cumplimiento:** solo borradores. ~~Nada de LinkedIn por extracción. La investigación del stakeholder sigue usando Apify hasta que se cierre U-0:~~ La investigación del stakeholder usa Apify (enmienda del 2026-11-11): el borrador no debe usar como hecho nada que venga de ahí sin marcarlo.
 - **Solape con GTM Lab:** su tablero (SDD 6) tendrá tareas de prospección. Decidido (§6): la guía sale de los datos y el tablero enlaza a ella.
 - **Solape con Plays:** el play `multi-thread-inbound-leads` (Plays SDD 7) también propone a quién más contactar en una cuenta. Debe reutilizar la misma regla de cobertura del comité.
 - **Migraciones con reserva a mano y en conflicto:** hay dos `0077` en ramas abiertas y dos `0074` en ramas locales, y la `0078` está reservada en el plan maestro. El ledger no reserva números: esta usa la 0079 o posterior, asignada al fusionar y comprobada contra todas las ramas.

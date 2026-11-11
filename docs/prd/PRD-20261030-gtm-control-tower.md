@@ -7,6 +7,8 @@
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
 > Origen: entrevista de 17 rondas con Fede (2026-10-29 y 30). Sus decisiones están en el §6.
 
+> **Enmienda del 2026-11-11 (Fede):** NOKKO permite leer publicaciones y perfiles de LinkedIn por extracción automática (Apify). La retirada prevista (U-0 de SDD 1a, épica E-29 del roadmap) queda cancelada y la decisión D-6 del plan maestro, superada. Las reglas de Postin (API oficial de LinkedIn) no se aplican a NOKKO. Origen: `EVALUACION-NOKKO-FOUNDER-POSTIN-20261109.md` §8, decisión 3 (proyecto Nokko GTM Brain). Cambia G-10, el no-objetivo de LinkedIn del §5, R-5 y la excepción de R-9.
+
 ## 1. Problema
 Fede ve en Nokko «muchas cosas sueltas pero nada que tenga un hilo conductor que sea cumplir un objetivo». Hoy Nokko es una colección de herramientas comerciales (cuentas, leads, pipeline, métricas, ciclo GTM, sugerencias) sin un objeto que las una. No hay un lugar donde definir qué se quiere conseguir, para qué público y por qué canales, ver cómo va, y bajarlo a tareas con plazos y hoja de ruta. Tampoco hay vigilancia continua de competidores y alternativas.
 
@@ -44,14 +46,14 @@ Todas las líneas base son **sin dato** (no se ha medido nada todavía).
 | G-7 | Un agente copiloto y proactivo que ayuda a pensar, planificar y seguir | El check-in semanal le lleva a Fede menos de 10 minutos | sin dato | Instrumentación de Nokko o declaración de Fede [Por verificar] |
 | G-8 | Mercado vigilado de forma continua, con cada cambio ligado a un objetivo | Cambios relevantes de competidores y alternativas llegan como sugerencia con fuente y fecha | sin dato | Datos de Nokko tras el lanzamiento |
 | G-9 | El Consejo informado y la salud financiera visible (runway y gatillo de continuidad) | El Consejo ve su vista y un informe por pleno sin datos de clientes | sin dato | Datos de Nokko tras el lanzamiento |
-| G-10 | Cumplir las reglas de producto: API oficial de LinkedIn, privacidad, ninguna cifra inventada, aprobación humana de lo que sale al exterior | Cada regla de §6.2 cumplida y probada | sin dato | Pruebas de cada SDD |
+| G-10 | Cumplir las reglas de producto: ~~API oficial de LinkedIn~~ (retirado por la enmienda del 2026-11-11), privacidad, ninguna cifra inventada, aprobación humana de lo que sale al exterior | Cada regla de §6.2 cumplida y probada | sin dato | Pruebas de cada SDD |
 
 Señal de éxito global (palabras de Fede): deja de usar otras herramientas para planificar. Se declara en la revisión de cada fase.
 
 ## 5. No-objetivos
 - Sincronizar tareas con Plane u otra herramienta (las tareas viven solo en Nokko). Única excepción, decidida por Fede el 2026-10-30: un espejo de solo salida de las tareas con fecha como eventos de día completo en el calendario personal de quien las ejecuta (SDD 4b); el calendario nunca modifica la tarea.
 - Enviar, publicar o contactar a terceros sin aprobación humana.
-- Leer o valorar perfiles de LinkedIn por extracción automática; Nokko nunca valora perfiles.
+- Valorar perfiles de LinkedIn; Nokko nunca valora perfiles. (Leerlos por extracción automática deja de ser no-objetivo por la enmienda del 2026-11-11.)
 - Cambiar el cobro, la facturación o el producto de Postin.
 - Onboarding genérico para empresas de terceros (Postin es el primer caso).
 - Borrar datos existentes (se archivan), salvo supresión exigida por una persona titular o por la ley.
@@ -166,11 +168,11 @@ Señal de éxito global (palabras de Fede): deja de usar otras herramientas para
 - **R-2** Lo que sale al exterior requiere aprobación humana. Lista cerrada de acciones externas: publicar contenido; enviar mensajes o correos a personas distintas del usuario; invitar a terceros a eventos; revelar o exportar datos de contacto con crédito de un proveedor. **No** son acciones externas: los avisos propios (email o Telegram a los miembros de la organización), los borradores de correo, la generación del informe del Consejo y las propuestas del servidor para asistentes, que se guardan como propuestas pendientes. El gasto en proveedores o IA no requiere aprobación pero muestra su coste previo en las tareas pesadas.
 - **R-3** El agente crea sin aprobación solo elementos internos (investigar, borradores, tareas, sugerencias) y deja registrado que los creó él. Las tareas que cree el agente o un detector sin iniciativa se guardan como propuestas «Sin asignar».
 - **R-4** Las fichas de conversaciones (registros de cada conversación con una cuenta) no contienen nombres de persona ni de empresa. El agente puede leer fichas; el Consejo solo ve agregados y resúmenes sin textos literales. El umbral mínimo de agregación está [Por verificar].
-- **R-5** LinkedIn solo por API oficial. Sales Navigator solo por exportación manual del usuario. Los proveedores de investigación solo sobre fuentes públicas que no sean LinkedIn.
+- **R-5** ~~LinkedIn solo por API oficial. Sales Navigator solo por exportación manual del usuario. Los proveedores de investigación solo sobre fuentes públicas que no sean LinkedIn.~~ Enmendada el 2026-11-11: NOKKO puede leer LinkedIn por extracción automática (Apify); Sales Navigator sigue por exportación manual del usuario.
 - **R-6** Si una fuente falla o está desactualizada, se muestra el último valor con su antigüedad y el estado «Sin dato reciente»; nunca se inventa un valor.
 - **R-7** Se archiva y no se borra, salvo supresión exigida por una persona titular de datos o por la ley.
 - **R-8** Textos en español, de «tú», con estados en palabra y sin iconos; errores con «qué pasó y qué hacer».
-- **R-9** Mientras una organización no tenga activada una fase, ve el comportamiento anterior sin cambios; las únicas excepciones son la retirada de la lectura de LinkedIn por extracción automática, que se hace en la primera entrega, y que los recuerdos compartidos del agente solo los ven Owner y Sales leader y los demás roles solo aprenden recuerdos de ámbito persona, incluidas las reuniones, las sugerencias decididas y los descubrimientos (SDD 5a CA-37).
+- **R-9** Mientras una organización no tenga activada una fase, ve el comportamiento anterior sin cambios; las únicas excepciones son ~~la retirada de la lectura de LinkedIn por extracción automática, que se hace en la primera entrega,~~ (cancelada por la enmienda del 2026-11-11) y que los recuerdos compartidos del agente solo los ven Owner y Sales leader y los demás roles solo aprenden recuerdos de ámbito persona, incluidas las reuniones, las sugerencias decididas y los descubrimientos (SDD 5a CA-37).
 - **R-10** Los datos de cada organización no se cruzan.
 
 *Glosario:* «organización» es la empresa que usa Nokko; «cuenta» es una empresa prospecto o cliente; «fase» es la activación de un SDD hijo por organización y rol.
