@@ -931,3 +931,56 @@ describe("domain proposal (NK-0012 CA-7)", () => {
     ).toEqual(["a1", "a2", "a3"]);
   });
 });
+
+describe("onboarding_stalled (NK-0009 CA-10, CA-11)", () => {
+  const days = (n: number) => new Date(NOW.getTime() - n * 86_400_000).toISOString();
+  const members = [
+    { user_id: "u-owner", role: "owner" },
+    { user_id: "u-sl", role: "sales_leader" },
+    { user_id: "u-ae", role: "ae" },
+  ];
+  const row = (user_id: string, step: string, updated_at: string) => ({ user_id, step, updated_at });
+  const stalled = async (s: Snapshot) => (await import("./proactive/detectors/onboarding-stalled")).onboardingStalled(s);
+
+  it("gives one suggestion per stalled owner or sales leader, with the key, link, owner and priority 2", async () => {
+    const out = await stalled(snap({ members, onboarding: [row("u-owner", "blocks", days(2)), row("u-sl", "sources", days(3))] }));
+    expect(out).toHaveLength(2);
+    const o = out.find((x) => x.user_id === "u-owner")!;
+    expect(o).toMatchObject({ detector: "onboarding_stalled", dedupe_key: "onboarding_stalled:u-owner:blocks", link: "/onboarding", action: null, priority: 2, title: "Retoma tu onboarding" });
+    expect(out.find((x) => x.user_id === "u-sl")?.dedupe_key).toBe("onboarding_stalled:u-sl:sources");
+  });
+
+  it("never uses priority 1 (it would reach Telegram)", async () => {
+    const out = await stalled(snap({ members, onboarding: [row("u-owner", "depth", days(30))] }));
+    expect(out.length).toBeGreaterThan(0);
+    for (const x of out) expect(x.priority).not.toBe(1);
+  });
+
+  it("the body follows the step", async () => {
+    const body = async (step: string) => (await stalled(snap({ members, onboarding: [row("u-owner", step, days(2))] })))[0]?.body;
+    expect(await body("depth")).toBe("Lo dejaste antes de elegir tus fuentes. Te quedan unos minutos.");
+    expect(await body("sources")).toBe("Lo dejaste antes de elegir tus fuentes. Te quedan unos minutos.");
+    expect(await body("reading")).toBe("Nokko terminó de leer o sigue leyendo. Revisa lo que encontró.");
+    expect(await body("diagnosis")).toBe("Te falta el diagnóstico GTM: son cuatro respuestas.");
+    expect(await body("blocks")).toBe("Tu propuesta está lista. Aprueba o salta los bloques que quedan.");
+  });
+
+  it("nothing for a finished row, a row under a day old, an AE, a non-member, no members or no field", async () => {
+    expect(await stalled(snap({ members, onboarding: [row("u-owner", "roadmap", days(5))] }))).toEqual([]);
+    expect(await stalled(snap({ members, onboarding: [row("u-owner", "blocks", new Date(NOW.getTime() - 23 * 3_600_000).toISOString())] }))).toEqual([]);
+    expect(await stalled(snap({ members, onboarding: [row("u-ae", "blocks", days(5))] }))).toEqual([]);
+    expect(await stalled(snap({ members, onboarding: [row("u-ghost", "blocks", days(5))] }))).toEqual([]);
+    expect(await stalled(snap({ onboarding: [row("u-owner", "blocks", days(5))] }))).toEqual([]);
+    expect(await stalled(snap({ members }))).toEqual([]);
+  });
+
+  it("is registered: detect() returns it for a stalled owner (CA-11)", () => {
+    const out = detect(snap({ members: [{ user_id: "u-owner", role: "owner" }], onboarding: [row("u-owner", "blocks", days(2))] }));
+    expect(out.filter((x) => x.detector === "onboarding_stalled")).toHaveLength(1);
+  });
+
+  it("detect() says nothing about onboarding when the snapshot has no field", () => {
+    expect(keys(snap({ members }))).not.toContain("onboarding_stalled");
+  });
+});
+

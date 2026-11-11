@@ -228,6 +228,7 @@ export async function loadSnapshot(
     usage,
     guide,
     playStates,
+    onboarding,
   ] = await Promise.all([
     loadSetupData(db, orgId),
     fetchAll((a, b) =>
@@ -294,6 +295,7 @@ export async function loadSnapshot(
       .limit(500),
     loadSetupGuideExtras(db, orgId),
     db.from("play_states").select("play_id,enabled").eq("org_id", orgId),
+    db.from("onboarding_sessions").select("user_id,step,updated_at").eq("org_id", orgId),
   ]);
   // Plays the company paused. A failed read (say, the table is not migrated yet) leaves every rule on, exactly as before the Plays GTM.
   const disabledPlays = disabledPlayIds(playStates.error ? [] : (playStates.data ?? []));
@@ -306,6 +308,8 @@ export async function loadSnapshot(
     strategy,
     ...(fitKey ? { fitKey } : {}),
     ...(disabledPlays.length ? { disabledPlays } : {}),
+    // Each person's onboarding row (the person's client sees only theirs). A failed read leaves the field out: no reminder, like play_states.
+    ...(onboarding.error ? {} : { onboarding: onboarding.data ?? [] }),
     setupSnoozes: guide.snoozes,
     setupActivityAt: guide.activityAt,
     stages: (stages.data ?? []) as import("@/lib/stages").Stage[],
@@ -375,7 +379,7 @@ async function loadFitKeyData(db: Db, orgId: string): Promise<FitKeyData> {
  * The rules of the plays are not here: theirs reopen only when the play was resumed after the closing (reopenable, plays/reopen.ts;
  * SDD-20261109-plays-no-reopen), so a company that never paused a play sees no closed suggestion come back nor any repeated notice.
  */
-const REOPENABLE = new Set(["setup_incomplete"]);
+const REOPENABLE = new Set(["setup_incomplete", "onboarding_stalled"]);
 const PLAY_DETECTORS = new Set(CATALOG.flatMap((p) => p.detectors));
 
 /**
@@ -388,6 +392,7 @@ export async function syncSuggestions(
   orgId: string,
   found: import("@/lib/proactive/types").Suggestion[],
   touched: string[] = [],
+  opts: { onboardingSeen?: string[] } = {},
 ) {
   // Strategic suggestions (strategy_* detectors) carry evidence and keep their own decisions: they are written, reopened and
   // left alone by syncStrategySuggestions (CA-5, CA-6) and never auto-closed here.
@@ -462,7 +467,7 @@ export async function syncSuggestions(
     .not(
       "detector",
       "in",
-      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal)",
+      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal,onboarding_stalled)",
     )
     .not("detector", "like", STRATEGY_DETECTOR_LIKE);
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
@@ -481,6 +486,27 @@ export async function syncSuggestions(
     await db.from("suggestions").update({ status: "approved", updated_at: at }).in("id", done);
   if (resolved.length)
     await db.from("suggestions").update({ status: "resolved", updated_at: at }).in("id", resolved);
+  // The reminders of the onboarding are closed per owner, never by the generic rule above: a sync only sees the rows its client can read
+  // (a leader's own client reads just their row), so «not found» says nothing about someone else's. Closed only when the owner's row was
+  // read (onboardingSeen) and its key is no longer found (finished, moved on or changed step), with the same state rule as the generic close.
+  const seen = opts.onboardingSeen ?? [];
+  if (seen.length) {
+    const { data: stalled } = await db
+      .from("suggestions")
+      .select("id,dedupe_key,status")
+      .eq("org_id", orgId)
+      .eq("detector", "onboarding_stalled")
+      .in("status", ["pending", "snoozed"])
+      .in("user_id", seen);
+    const closing = splitClosed(
+      (stalled ?? []).filter((o) => !keys.has(o.dedupe_key)),
+      touched,
+    );
+    if (closing.done.length)
+      await db.from("suggestions").update({ status: "approved", updated_at: at }).eq("org_id", orgId).in("id", closing.done);
+    if (closing.resolved.length)
+      await db.from("suggestions").update({ status: "resolved", updated_at: at }).eq("org_id", orgId).in("id", closing.resolved);
+  }
   // Wake up snoozed ones whose time has come.
   await db
     .from("suggestions")

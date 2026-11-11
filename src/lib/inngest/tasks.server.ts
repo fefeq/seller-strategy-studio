@@ -13,8 +13,9 @@ const HOURS = 3_600_000;
 export async function maintainSuggestions(db: Admin, orgId: string) {
   const { loadSnapshot, syncSuggestions } = await import("@/lib/org-data");
   const { detect } = await import("@/lib/proactive");
-  const found = detect(await loadSnapshot(db, orgId));
-  await syncSuggestions(db, orgId, found);
+  const snap = await loadSnapshot(db, orgId);
+  const found = detect(snap);
+  await syncSuggestions(db, orgId, found, [], { onboardingSeen: (snap.onboarding ?? []).map((o) => o.user_id) });
   return { detected: found.length };
 }
 

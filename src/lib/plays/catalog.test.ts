@@ -89,6 +89,7 @@ describe("detectors (CA-2, G-1)", () => {
       "registration_expiring",
       "unassigned_accounts",
       "followup_sequence",
+      "onboarding_stalled",
     ];
     for (const d of always) expect(detectorOwner(d), d).toBeUndefined();
   });
