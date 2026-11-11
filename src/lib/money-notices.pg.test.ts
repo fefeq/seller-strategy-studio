@@ -181,7 +181,7 @@ describe("U-1 harness smoke (runs without the migration)", () => {
   let A: string;
   beforeAll(async () => {
     ({ db, A } = await world(false));
-  });
+  }, 60_000);
 
   it("the replica builds, stamps the SQL time as authenticated and creates the deal with the initial stage", async () => {
     const lead = await as(
@@ -270,7 +270,7 @@ describe("money notices (migration 0078)", () => {
 
   beforeAll(async () => {
     ({ db, A, B, C, D } = await world(true));
-  });
+  }, 60_000);
   beforeEach(async () => {
     await db.exec(
       "reset role; truncate notifications, deal_stage_history, leads, deals cascade; update organizations set archived_at = null",
@@ -653,7 +653,7 @@ describe("migration 0078: the CHECK rewrite is scoped to notifications.kind (N-4
   // the PGlite boot (about 1.5 s of CPU) goes in beforeAll, not inside the test, so the 5 s test limit does not count it
   beforeAll(async () => {
     w = await world(false);
-  });
+  }, 60_000);
 
   it("replaces the kind CHECK even under another name, and keeps any other CHECK that merely mentions kind", async () => {
     const { db, A, B } = w;
