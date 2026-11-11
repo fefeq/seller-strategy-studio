@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { currentStep, guideSteps, showGuide } from "@/lib/guide";
 
@@ -23,5 +24,16 @@ describe("guide", () => {
     expect(showGuide(all, false)).toBe(false);
     expect(showGuide(guideSteps(base), true)).toBe(false);
     expect(showGuide(guideSteps(base), false)).toBe(true);
+  });
+});
+
+describe("guide uses the single onboarding definition (NK-0009 CA-2)", () => {
+  it("does not compare the step with the roadmap by itself", () => {
+    expect(readFileSync("src/lib/guide.ts", "utf8")).not.toContain('=== "roadmap"');
+  });
+  it("keeps the same result for roadmap, blocks and null", () => {
+    expect(guideSteps({ ...base, onboardingStep: "roadmap" })[1].done).toBe(true);
+    expect(guideSteps({ ...base, onboardingStep: "blocks" })[1].done).toBe(false);
+    expect(guideSteps({ ...base, onboardingStep: null })[1].done).toBe(false);
   });
 });

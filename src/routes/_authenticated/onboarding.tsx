@@ -10,10 +10,9 @@ import { BlocksStep } from "@/components/onboarding/blocks";
 import { GuestOnboarding } from "@/components/onboarding/guest";
 import type { SetupProposal } from "@/lib/setup-extraction";
 import type { Diagnosis, DiagnosisInput } from "@/lib/gtm-diagnosis";
-import type { BlockId, BlockState, Depth, Finding, Opinion } from "@/lib/onboarding";
+import { nextStepAfterDiagnosis, stepReachable, STEP_IDS, type BlockId, type BlockState, type Depth, type Finding, type Opinion, type Step } from "@/lib/onboarding";
 
-const STEPS = [["depth", "Profundidad"], ["sources", "Tus fuentes"], ["reading", "Nokko lee"], ["diagnosis", "Diagnóstico"], ["blocks", "Aprobar"], ["roadmap", "Tu roadmap"]] as const;
-type Step = (typeof STEPS)[number][0];
+const LABELS: Record<Step, string> = { depth: "Profundidad", sources: "Tus fuentes", reading: "Nokko lee", diagnosis: "Diagnóstico", blocks: "Aprobar", roadmap: "Tu roadmap" };
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({ meta: [{ title: "Crea tu estrategia GTM — Nokko" }, { name: "description", content: "De tu web y tus documentos a una estrategia GTM aprobada, a tu ritmo." }, { property: "og:title", content: "Crea tu estrategia GTM — Nokko" }, { property: "og:description", content: "De tu web y tus documentos a una estrategia GTM aprobada, a tu ritmo." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
@@ -48,14 +47,14 @@ function Onboarding() {
     friction: seg && ["field", "strategic"].includes(seg.motion) ? "committee" : "self_serve",
     stage: "early",
   };
-  const reachable = (id: Step) => id === "depth" || id === "sources" || (id === "reading" && !!session?.read_job_id) || ((id === "diagnosis" || id === "blocks") && !!proposal) || (id === "roadmap" && !!diag);
+  const canOpen = (id: Step) => stepReachable(id, { readJobId: session?.read_job_id ?? null, hasProposal: !!proposal, hasDiagnosis: !!diag });
 
   return (
     <Page eyebrow="Onboarding" title="Tu estrategia GTM, a tu ritmo">
       <ol className="mb-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-3 text-sm">
-        {STEPS.map(([id, l], n) => (
+        {STEP_IDS.map((id, n) => (
           <li key={id}>
-            <button disabled={!reachable(id)} onClick={() => save({ step: id })} className={id === step ? "font-semibold text-ink underline underline-offset-4" : reachable(id) ? "text-ink-mid" : "text-ink-faint"}>{n + 1}. {l}</button>
+            <button disabled={!canOpen(id)} onClick={() => save({ step: id })} className={id === step ? "font-semibold text-ink underline underline-offset-4" : canOpen(id) ? "text-ink-mid" : "text-ink-faint"}>{n + 1}. {LABELS[id]}</button>
           </li>
         ))}
       </ol>
@@ -65,7 +64,7 @@ function Onboarding() {
       )}
       {step === "reading" && <ReadingStep jobId={session?.read_job_id ?? null} findings={findings} sources={sources} onNext={() => save({ step: "diagnosis" })} onBack={() => save({ step: "sources" })} onChange={(p) => save({ ...(p.sources && { sources: asJson(p.sources) }), ...(p.findings && { findings: asJson(p.findings) }) })} />}
       {step === "diagnosis" && (
-        <DiagnosisStep initial={initialDiag} onDone={(input, result) => save({ step: proposal ? "blocks" : "roadmap", diagnosis: asJson({ input, result }) })} />
+        <DiagnosisStep initial={initialDiag} onDone={(input, result) => save({ step: nextStepAfterDiagnosis(!!proposal), diagnosis: asJson({ input, result }) })} />
       )}
       {step === "blocks" && proposal && (
         <BlocksStep proposal={proposal} opinions={opinions} archetype={diag?.result.archetype ?? null} status={blockStatus}

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { blockBasis, blockOf, blockOrder, blocksDecided, mergeBlock, protectManual, readingCost, showRoadmapCard } from "@/lib/onboarding";
+import { readFileSync } from "node:fs";
+import { blockBasis, blockOf, blockOrder, blocksDecided, mergeBlock, nextStepAfterDiagnosis, onboardingDone, protectManual, readingCost, showRoadmapCard, stepReachable, STEP_IDS, type Step } from "@/lib/onboarding";
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 import { setupStatus, type SetupData } from "@/lib/setup-schema";
 
@@ -86,5 +87,49 @@ describe("reading cost", () => {
     expect(readingCost("express", true)).toBe(0.02);
     expect(readingCost("express", false)).toBe(0);
     expect(readingCost("deep", true)).toBeGreaterThan(readingCost("standard", true));
+  });
+});
+
+describe("onboardingDone (NK-0009 CA-1)", () => {
+  it("is true only for the roadmap step", () => {
+    expect(onboardingDone({ step: "roadmap" })).toBe(true);
+    for (const step of ["depth", "sources", "reading", "diagnosis", "blocks"]) expect(onboardingDone({ step })).toBe(false);
+  });
+  it("is false for null, undefined and a null step", () => {
+    expect(onboardingDone(null)).toBe(false);
+    expect(onboardingDone(undefined)).toBe(false);
+    expect(onboardingDone({ step: null })).toBe(false);
+  });
+  it("ignores completed_at: hiding the card is not finishing", () => {
+    expect(onboardingDone({ step: "blocks", completed_at: "2026-11-01T00:00:00Z" } as { step: string })).toBe(false);
+    expect(onboardingDone({ step: "roadmap", completed_at: null } as { step: string })).toBe(true);
+  });
+});
+
+describe("stepReachable truth table (NK-0009 CA-3)", () => {
+  const cases: [Step, boolean, boolean, boolean][] = [];
+  for (const job of [false, true]) for (const prop of [false, true]) for (const diag of [false, true]) {
+    for (const step of STEP_IDS) cases.push([step, job, prop, diag]);
+  }
+  it.each(cases)("%s with job=%s proposal=%s diagnosis=%s", (step, job, prop, diag) => {
+    const expected = step === "depth" || step === "sources" || step === "diagnosis"
+      || (step === "reading" && job) || (step === "blocks" && prop) || (step === "roadmap" && diag);
+    expect(stepReachable(step, { readJobId: job ? "j1" : null, hasProposal: prop, hasDiagnosis: diag })).toBe(expected);
+  });
+  it("the six steps keep their order", () => {
+    expect([...STEP_IDS]).toEqual(["depth", "sources", "reading", "diagnosis", "blocks", "roadmap"]);
+  });
+  it("the route does not define its own reachability rule and guide.ts does not compare the step", () => {
+    expect(readFileSync("src/routes/_authenticated/onboarding.tsx", "utf8")).not.toContain("const reachable =");
+    expect(readFileSync("src/lib/guide.ts", "utf8")).not.toContain('=== "roadmap"');
+  });
+});
+
+describe("nextStepAfterDiagnosis (NK-0009 CA-5)", () => {
+  it("goes to the blocks with a proposal and to the roadmap without one, which finishes the onboarding", () => {
+    expect(nextStepAfterDiagnosis(true)).toBe("blocks");
+    expect(nextStepAfterDiagnosis(false)).toBe("roadmap");
+    expect(onboardingDone({ step: nextStepAfterDiagnosis(false) })).toBe(true);
+    expect(onboardingDone({ step: nextStepAfterDiagnosis(true) })).toBe(false);
   });
 });

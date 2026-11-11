@@ -129,3 +129,25 @@ export function showRoadmapCard(session: { completed_at: string | null } | null 
 export function blocksDecided(order: BlockId[], status: Partial<Record<BlockId, BlockState>>, present: Set<BlockId>): boolean {
   return order.filter((b) => present.has(b)).every((b) => !!status[b]);
 }
+
+/** The six steps of the walkthrough, in order; the labels live in the route. */
+export const STEP_IDS = ["depth", "sources", "reading", "diagnosis", "blocks", "roadmap"] as const;
+export type Step = (typeof STEP_IDS)[number];
+
+/** The one definition of «onboarding finished» per person: they reached the roadmap. `completed_at` only means «card hidden». */
+export function onboardingDone(s: { step: string | null } | null | undefined): boolean {
+  return s?.step === "roadmap";
+}
+
+/** Which steps the person can open. The diagnosis never needs a proposal (no sources, or a failed reading). */
+export function stepReachable(step: Step, i: { readJobId: string | null; hasProposal: boolean; hasDiagnosis: boolean }): boolean {
+  if (step === "reading") return !!i.readJobId;
+  if (step === "blocks") return i.hasProposal;
+  if (step === "roadmap") return i.hasDiagnosis;
+  return true;
+}
+
+/** After saving the diagnosis: approve the proposal if there is one, otherwise the walkthrough is done. */
+export function nextStepAfterDiagnosis(hasProposal: boolean): "blocks" | "roadmap" {
+  return hasProposal ? "blocks" : "roadmap";
+}
