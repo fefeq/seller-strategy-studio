@@ -7,7 +7,7 @@
 //   live = Supabase defaults (all to anon and authenticated) plus an extra column UPDATE grant, as the gate probe did.
 // Not replicated: notify_job_end and money_notify (their inserts are mimicked with a small security definer function).
 import { existsSync, readFileSync } from "node:fs";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { as, build, REPO, seed, U } from "@/test/pg-harness";
 
 type Db = Awaited<ReturnType<typeof build>>;
@@ -46,11 +46,21 @@ const migrationSql = () =>
     ? readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8")
     : "";
 
-async function world(variant: Variant, withMigration = true) {
+/** The PGlite boot and the shared seed: the slow part (about 1.5 s of CPU), so it runs once per variant, in beforeAll (D-S3-2). */
+async function base() {
   const db = await build();
   const { A, B } = await seed(db);
   await db.exec(
     `insert into org_members (org_id, user_id, role) values ('${A}','${SERVICE}','ae'); insert into profiles (id, current_org_id) values ('${SERVICE}','${A}');`,
+  );
+  return { db, A, B };
+}
+
+/** Per-test state: drops what the previous test left (table, function, grants) and rebuilds it, so every test starts as a fresh world. */
+async function world(b: Awaited<ReturnType<typeof base>>, variant: Variant, withMigration = true) {
+  const { db, A, B } = b;
+  await db.exec(
+    "reset role; select set_config('request.jwt.claim.sub', '', false); drop function if exists public.fake_notify(uuid, uuid); drop table if exists public.notifications cascade;",
   );
   await db.exec(SCHEMA);
   await db.exec(GRANTS[variant]);
@@ -122,9 +132,13 @@ describe("migration 0082 file", () => {
 describe.each<Variant>(["repo", "live"])(
   "notifications: a member only marks read (permissions: %s)",
   (variant) => {
+    let b: Awaited<ReturnType<typeof base>>;
     let w: Awaited<ReturnType<typeof world>>;
+    beforeAll(async () => {
+      b = await base();
+    });
     beforeEach(async () => {
-      w = await world(variant);
+      w = await world(b, variant);
     });
 
     it("CA-11: a member sets read_at on their own notice (update ... in ids)", async () => {

@@ -633,8 +633,14 @@ describe("money notices (migration 0078)", () => {
 });
 
 describe("migration 0078: the CHECK rewrite is scoped to notifications.kind (N-4)", () => {
+  let w: Awaited<ReturnType<typeof world>>;
+  // the PGlite boot (about 1.5 s of CPU) goes in beforeAll, not inside the test, so the 5 s test limit does not count it
+  beforeAll(async () => {
+    w = await world(false);
+  });
+
   it("replaces the kind CHECK even under another name, and keeps any other CHECK that merely mentions kind", async () => {
-    const { db, A, B } = await world(false);
+    const { db, A, B } = w;
     await db.exec(`alter table public.notifications rename constraint notifications_kind_check to legacy_kind_check;
       alter table public.notifications add constraint notifications_failed_needs_title check (kind <> 'failed' or length(title) > 3);`);
     const user = "00000000-0000-4000-8000-0000000000b1";
