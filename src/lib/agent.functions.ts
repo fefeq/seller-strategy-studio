@@ -246,7 +246,9 @@ export const refreshSuggestions = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
     const snap = await loadSnapshot(ctx.db, ctx.orgId);
-    await syncSuggestions(ctx.db, ctx.orgId, detect(snap), data.touched);
+    await syncSuggestions(ctx.db, ctx.orgId, detect(snap), data.touched, {
+      onboardingSeen: (snap.onboarding ?? []).map((o) => o.user_id),
+    });
     return { ok: true };
   });
 

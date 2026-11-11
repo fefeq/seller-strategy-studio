@@ -14,6 +14,7 @@ vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null }));
 vi.mock("@/lib/background.functions", () => ({ startBackgroundJob: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: (m: string) => state.error(m) } }));
 
+import { startBackgroundJob } from "@/lib/background.functions";
 import { MAX_FILES } from "@/lib/onboarding-sources";
 import { SourcesStep } from "./sources";
 
@@ -70,5 +71,31 @@ describe("SourcesStep: adding files keeps the ones already listed (CA-12)", () =
     ).toEqual(names(1, 10));
     expect(state.error.mock.calls[0]?.[0]).toMatch(/doc-11\.pdf, doc-12\.pdf/);
     expect(state.error.mock.calls[0]?.[0]).toContain(`${MAX_FILES} documentos`);
+  });
+});
+
+describe("SourcesStep: «Hacer solo el diagnóstico» (NK-0009 CA-4)", () => {
+  it("calls onSkip and never starts a reading", () => {
+    const onSkip = vi.fn();
+    const onStarted = vi.fn();
+    vi.mocked(startBackgroundJob).mockClear();
+    render(<SourcesStep depth="express" onStarted={onStarted} onSkip={onSkip} />);
+    fireEvent.click(screen.getByRole("button", { name: "Hacer solo el diagnóstico" }));
+    expect(onSkip).toHaveBeenCalledTimes(1);
+    expect(startBackgroundJob).not.toHaveBeenCalled();
+    expect(onStarted).not.toHaveBeenCalled();
+  });
+
+  it("is enabled with no sources and explains what is left for later", () => {
+    render(<SourcesStep depth="express" onStarted={() => {}} onSkip={() => {}} />);
+    expect(
+      (screen.getByRole("button", { name: "Hacer solo el diagnóstico" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    expect(
+      screen.getByText(
+        "Sin fuentes, Nokko no te propone ICP ni posicionamiento: los completas después en Estrategia.",
+      ),
+    ).toBeTruthy();
   });
 });

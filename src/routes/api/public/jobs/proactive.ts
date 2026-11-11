@@ -76,8 +76,11 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           let total = 0;
           for (const o of orgs ?? []) {
             try {
-              const found = detect(await loadSnapshot(db, o.id));
-              await syncSuggestions(db, o.id, found);
+              const snap = await loadSnapshot(db, o.id);
+              const found = detect(snap);
+              await syncSuggestions(db, o.id, found, [], {
+                onboardingSeen: (snap.onboarding ?? []).map((r) => r.user_id),
+              });
               total += found.length;
             } catch (e) {
               console.error("proactive org failed", o.id, safeErrorLog(e));

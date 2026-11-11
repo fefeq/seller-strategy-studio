@@ -28,6 +28,7 @@ import {
   experimentOverdue,
   experimentReview,
 } from "./detectors/strategy-experiments";
+import { onboardingStalled } from "./detectors/onboarding-stalled";
 import { accountMissingKey } from "./detectors/account-missing-key";
 import { productQualified, usageDrop } from "./detectors/product-usage";
 import { detectorsOf } from "@/lib/plays/gating";
@@ -51,6 +52,7 @@ export const DETECTORS: Detector[] = [
   accountSignal,
   productQualified,
   usageDrop,
+  onboardingStalled,
 ];
 
 /** Strategic rules of F1 (fixed rules, no AI). They only fire when the snapshot carries `strategy` data. */
