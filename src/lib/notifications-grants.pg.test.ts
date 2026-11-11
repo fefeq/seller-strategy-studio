@@ -46,7 +46,7 @@ const migrationSql = () =>
     ? readFileSync(`${REPO}/drizzle/migrations/${MIGRATION}`, "utf8")
     : "";
 
-/** The PGlite boot and the shared seed: the slow part (about 1.5 s of CPU), so it runs once per variant, in beforeAll (D-S3-2). */
+/** The PGlite boot and the shared seed: the slow part (about 1.5 s of CPU), so it runs once per file, in beforeAll (D-S3-2). */
 async function base() {
   const db = await build();
   const { A, B } = await seed(db);
@@ -55,6 +55,13 @@ async function base() {
   );
   return { db, A, B };
 }
+
+// One PGlite for the whole file, booted by the first hook that needs it (not per test, not per variant).
+let boot: ReturnType<typeof base> | undefined;
+const shared = () => (boot ??= base());
+beforeAll(async () => {
+  await shared();
+});
 
 /** Per-test state: drops what the previous test left (table, function, grants) and rebuilds it, so every test starts as a fresh world. */
 async function world(b: Awaited<ReturnType<typeof base>>, variant: Variant, withMigration = true) {
@@ -132,13 +139,9 @@ describe("migration 0082 file", () => {
 describe.each<Variant>(["repo", "live"])(
   "notifications: a member only marks read (permissions: %s)",
   (variant) => {
-    let b: Awaited<ReturnType<typeof base>>;
     let w: Awaited<ReturnType<typeof world>>;
-    beforeAll(async () => {
-      b = await base();
-    });
     beforeEach(async () => {
-      w = await world(b, variant);
+      w = await world(await shared(), variant);
     });
 
     it("CA-11: a member sets read_at on their own notice (update ... in ids)", async () => {

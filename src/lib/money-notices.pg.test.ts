@@ -8,6 +8,7 @@
 // Not replicated: deals_audit, deals_lines_guard, deals_slip, deals_stamp_human_edit, deal_lines, lead_sources, people, deal_stages.
 import { readFileSync } from "node:fs";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { PGlite } from "@electric-sql/pglite";
 import { as, build, REPO, seed, U } from "@/test/pg-harness";
 
 type Db = Awaited<ReturnType<typeof build>>;
@@ -136,9 +137,24 @@ const SCHEMA = `
   create trigger deals_track after insert or update on public.deals for each row execute function public.track_deal_changes();
 `;
 
+// The PGlite boot (initdb in WASM, about 1.7 s of CPU, several times that on a loaded machine) is paid once per file: the harness
+// plus the seed is dumped, and each describe starts from a copy of that dump (about 0.4 s) instead of booting again (D-S3-2).
+let template: Promise<{ dump: File | Blob; A: string; B: string }> | undefined;
+function fromTemplate() {
+  template ??= (async () => {
+    const db = await build();
+    const { A, B } = await seed(db);
+    const dump = await db.dumpDataDir("none");
+    await db.close();
+    return { dump, A, B };
+  })();
+  return template;
+}
+
 async function world(withMigration: boolean) {
-  const db = await build();
-  const { A, B } = await seed(db);
+  const { dump, A, B } = await fromTemplate();
+  const db = new PGlite({ loadDataDir: dump });
+  await db.waitReady;
   await db.exec(SCHEMA);
   const C = (
     (await db.query("insert into organizations (name) values ('Empresa C') returning id"))
