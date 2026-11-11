@@ -17,7 +17,7 @@ const TEXT_LIMIT = 40_000;
 const FILE_LIMIT = 4 * 1024 * 1024;
 
 /** «Dale tus fuentes»: web, documents, pasted text, Drive and a way into the CRM import. Reading runs in the background. */
-export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jobId: string, sources: string[]) => void }) {
+export function SourcesStep({ depth, onStarted, onSkip }: { depth: Depth; onStarted: (jobId: string, sources: string[]) => void; onSkip?: () => void }) {
   const start = useServerFn(startBackgroundJob);
   const { data: me } = useMe();
   const [url, setUrl] = useState(me?.currentOrg?.website ?? "");
@@ -83,6 +83,12 @@ export function SourcesStep({ depth, onStarted }: { depth: Depth; onStarted: (jo
         <p className="mt-4 text-sm"><span className="smallcaps text-ink-mid">Coste aproximado</span> {cost > 0 ? `${cost.toFixed(2)} en fuentes de pago` : "sin coste en fuentes de pago"}{depth === "deep" ? ", más el debate de los C-Levels" : ""}.</p>
         <Button className="mt-4 w-full" disabled={empty || busy} onClick={go}>{busy ? "Lanzando…" : "Que Nokko lo lea"}</Button>
         <p className="mt-2 text-xs text-ink-mid">Corre en segundo plano: puedes salir y te aviso al terminar.</p>
+        {onSkip && (
+          <div className="mt-6 border-t border-hairline pt-4">
+            <Button variant="outline" className="w-full" disabled={busy} onClick={onSkip}>Hacer solo el diagnóstico</Button>
+            <p className="mt-2 text-xs text-ink-mid">Sin fuentes, Nokko no te propone ICP ni posicionamiento: los completas después en Estrategia.</p>
+          </div>
+        )}
       </div>
     </div>
   );

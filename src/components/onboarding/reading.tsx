@@ -14,8 +14,8 @@ import { canRestore, confirmFinding, discardFinding, editFinding, findingsDepend
  * removed, saying which findings depend on it (SDD field-actions, U-4). While it runs nothing is editable: the job is
  * still writing the list.
  */
-export function ReadingStep({ jobId, findings, sources, onNext, onBack, onChange }: {
-  jobId: string | null; findings: Finding[]; sources: string[]; onNext: () => void; onBack: () => void;
+export function ReadingStep({ jobId, findings, sources, onNext, onBack, onSkip, onChange }: {
+  jobId: string | null; findings: Finding[]; sources: string[]; onNext: () => void; onBack: () => void; onSkip?: () => void;
   onChange: (patch: { sources?: string[]; findings?: Finding[] }) => Promise<unknown>;
 }) {
   const { data: me } = useMe();
@@ -104,6 +104,12 @@ export function ReadingStep({ jobId, findings, sources, onNext, onBack, onChange
         </ul>
         {done && <Button className="mt-4 w-full" onClick={onNext}>Seguir a tu diagnóstico</Button>}
         {failed && <Button variant="outline" className="mt-4 w-full" onClick={onBack}>Volver a tus fuentes</Button>}
+        {failed && onSkip && (
+          <>
+            <Button variant="outline" className="mt-2 w-full" onClick={onSkip}>Hacer solo el diagnóstico</Button>
+            <p className="mt-2 text-xs text-ink-mid">Sin fuentes, Nokko no te propone ICP ni posicionamiento: los completas después en Estrategia.</p>
+          </>
+        )}
         {!done && !failed && <p className="mt-4 text-xs text-ink-mid">Puedes salir: el aviso te traerá de vuelta aquí.</p>}
       </div>
     </div>
