@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { blockBasis, blockOf, blockOrder, blocksDecided, mergeBlock, nextStepAfterDiagnosis, onboardingDone, protectManual, readingCost, showRoadmapCard, stepReachable, STEP_IDS, type Step } from "@/lib/onboarding";
+import { blockBasis, blockOf, blockOrder, blocksDecided, mergeBlock, companyOnboardingStatus, nextStepAfterDiagnosis, onboardingDone, protectManual, readingCost, showRoadmapCard, stepReachable, STEP_IDS, type Step } from "@/lib/onboarding";
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 import { setupStatus, type SetupData } from "@/lib/setup-schema";
 
@@ -131,5 +131,85 @@ describe("nextStepAfterDiagnosis (NK-0009 CA-5)", () => {
     expect(nextStepAfterDiagnosis(false)).toBe("roadmap");
     expect(onboardingDone({ step: nextStepAfterDiagnosis(false) })).toBe(true);
     expect(onboardingDone({ step: nextStepAfterDiagnosis(true) })).toBe(false);
+  });
+});
+
+describe("companyOnboardingStatus (NK-0009 CA-6)", () => {
+  const POS = ["best_customers", "alternatives", "differentiation", "value", "trend", "target_customer", "need", "category", "key_benefit", "competitive_alternative", "differentiator", "one_liner", "elevator_pitch"];
+  const fullPositioning = Object.fromEntries(POS.map((k) => [k, `texto ${k}`]));
+  const fullIcp = { industries: "Software", company_size: "50-200", why_fit: "Encaja", anti_icp: "Agencias" };
+  const seg = { name: "SMB", acv_min: 1000, acv_max: 4000, win_rate_target: 0.2, ae_quota: 300000 };
+  const diag = { input: { model: "b2b", acv: 12345, friction: "committee", stage: "early" }, result: { archetype: "B", name: "B2B mid-market / híbrido", motion: "inside_sales", nextStep: "Define tu ICP" } };
+  const ready: SetupData = { ...empty, positioning: fullPositioning, icps: [fullIcp], segments: [seg] };
+  const mine = { step: "roadmap", diagnosis: diag };
+
+  it("reads the diagnosis fields from {input, result}", () => {
+    const s = companyOnboardingStatus({ mine, companyDiagnosis: diag, setup: ready });
+    expect(s.diagnosis).toEqual({ archetype: "B", name: "B2B mid-market / híbrido", motion: "inside_sales", stage: "early", nextStep: "Define tu ICP" });
+    expect(s.mine).toEqual({ step: "roadmap", done: true });
+    expect(s.strategy).toEqual({ positioning: true, icp: true, segments: true });
+    expect(s.missing).toEqual([]);
+    expect(s.ready).toBe(true);
+  });
+
+  it("without a session mine is not done", () => {
+    expect(companyOnboardingStatus({ mine: null, companyDiagnosis: diag, setup: ready }).mine).toEqual({ step: null, done: false });
+    expect(companyOnboardingStatus({ mine: { step: "blocks", diagnosis: null }, companyDiagnosis: null, setup: empty }).mine).toEqual({ step: "blocks", done: false });
+  });
+
+  it("ready is true only with the diagnosis, the positioning and the ICP", () => {
+    const r = (companyDiagnosis: unknown, setup: SetupData) => companyOnboardingStatus({ mine: null, companyDiagnosis, setup }).ready;
+    expect(r(diag, { ...ready, segments: [] })).toBe(true); // segments do not block
+    expect(r(null, ready)).toBe(false);
+    expect(r(diag, { ...ready, positioning: null })).toBe(false);
+    expect(r(diag, { ...ready, icps: [] })).toBe(false);
+    expect(r(diag, empty)).toBe(false);
+  });
+
+  it("a malformed diagnosis gives null and ready false even with positioning and ICP complete", () => {
+    for (const bad of ["texto", 42, [], {}, { result: "x" }, { input: {}, result: {} }, { result: { archetype: 3 } }]) {
+      const s = companyOnboardingStatus({ mine: null, companyDiagnosis: bad, setup: ready });
+      expect(s.diagnosis, JSON.stringify(bad)).toBeNull();
+      expect(s.ready, JSON.stringify(bad)).toBe(false);
+      expect(s.missing[0]).toBe("Diagnóstico GTM sin hacer");
+    }
+  });
+
+  it("12 of the 13 positioning fields is not complete", () => {
+    const { elevator_pitch: _e, ...twelve } = fullPositioning;
+    const s = companyOnboardingStatus({ mine: null, companyDiagnosis: diag, setup: { ...ready, positioning: twelve } });
+    expect(s.strategy.positioning).toBe(false);
+    expect(s.ready).toBe(false);
+    expect(s.missing).toEqual(["Posicionamiento sin completar"]);
+  });
+
+  it("an ICP without anti_icp next to a complete one still counts; alone it does not", () => {
+    const partial = { ...fullIcp, anti_icp: "" };
+    expect(companyOnboardingStatus({ mine: null, companyDiagnosis: diag, setup: { ...ready, icps: [partial, fullIcp] } }).ready).toBe(true);
+    const alone = companyOnboardingStatus({ mine: null, companyDiagnosis: diag, setup: { ...ready, icps: [partial] } });
+    expect(alone.strategy.icp).toBe(false);
+    expect(alone.ready).toBe(false);
+  });
+
+  it("missing lists, in order, what is not done", () => {
+    expect(companyOnboardingStatus({ mine: null, companyDiagnosis: null, setup: empty }).missing).toEqual([
+      "Diagnóstico GTM sin hacer", "Posicionamiento sin completar", "ICP sin completar", "Segmentos sin rango de ACV",
+    ]);
+  });
+
+  it("does the diagnosis alone make it ready? No: only the diagnosis leaves positioning and ICP missing", () => {
+    const s = companyOnboardingStatus({ mine, companyDiagnosis: diag, setup: empty });
+    expect(s.ready).toBe(false);
+    expect(s.missing).toEqual(["Posicionamiento sin completar", "ICP sin completar", "Segmentos sin rango de ACV"]);
+  });
+
+  it("takes the strategy rule from setup-schema and does not repeat its field names", () => {
+    const src = readFileSync("src/lib/onboarding.ts", "utf8");
+    expect(src).not.toContain('"elevator_pitch"');
+    expect(src).not.toContain('"anti_icp"');
+    // Same answer as setupStatus for any data.
+    const items = Object.fromEntries(setupStatus(ready).items.map((i) => [i.id, i.done]));
+    const s = companyOnboardingStatus({ mine: null, companyDiagnosis: diag, setup: ready });
+    expect(s.strategy).toEqual({ positioning: items.positioning, icp: items.icp, segments: items.segments });
   });
 });

@@ -4,7 +4,9 @@
 import { CAPABILITIES } from "@/lib/orchestrator/planner";
 import type { Archetype } from "@/lib/gtm-diagnosis";
 import type { ProposalItem, SetupProposal } from "@/lib/setup-extraction";
-import type { SetupData } from "@/lib/setup-schema";
+import type { Json } from "@/integrations/supabase/types";
+import { jsonObject } from "@/lib/json";
+import { setupStatus, type SetupData } from "@/lib/setup-schema";
 
 export type Depth = "express" | "standard" | "deep";
 export type BlockId = "company" | "icp" | "segments" | "positioning" | "messages" | "goals";
@@ -150,4 +152,41 @@ export function stepReachable(step: Step, i: { readJobId: string | null; hasProp
 /** After saving the diagnosis: approve the proposal if there is one, otherwise the walkthrough is done. */
 export function nextStepAfterDiagnosis(hasProposal: boolean): "blocks" | "roadmap" {
   return hasProposal ? "blocks" : "roadmap";
+}
+
+export type CompanyDiagnosisSummary = { archetype: string; name: string | null; motion: string | null; stage: string | null; nextStep: string | null };
+
+/** What the GTM diagnosis says, without the ticket or the framework lists; a malformed jsonb gives null, never throws. */
+function diagnosisSummary(raw: unknown): CompanyDiagnosisSummary | null {
+  const obj = jsonObject(raw as Json | null | undefined);
+  const result = jsonObject((obj?.result ?? null) as Json | null);
+  if (!result || typeof result.archetype !== "string" || !result.archetype) return null;
+  const input = jsonObject((obj?.input ?? null) as Json | null);
+  const text = (v: Json | undefined) => (typeof v === "string" && v ? v : null);
+  return { archetype: result.archetype, name: text(result.name), motion: text(result.motion), stage: text(input?.stage), nextStep: text(result.nextStep) };
+}
+
+/**
+ * What NOKKO knows about the company's onboarding and what is missing for the plays diagnosis. `ready` needs the GTM
+ * diagnosis plus complete positioning and ICP (the rule lives in setup-schema.ts); segments are listed but do not block.
+ */
+export function companyOnboardingStatus({ mine, companyDiagnosis, setup }: {
+  mine: { step: string | null; diagnosis: unknown } | null; companyDiagnosis: unknown; setup: SetupData;
+}) {
+  const done = new Map(setupStatus(setup).items.map((i) => [i.id, i.done]));
+  const strategy = { positioning: !!done.get("positioning"), icp: !!done.get("icp"), segments: !!done.get("segments") };
+  const diagnosis = diagnosisSummary(companyDiagnosis);
+  const missing = [
+    diagnosis ? null : "Diagnóstico GTM sin hacer",
+    strategy.positioning ? null : "Posicionamiento sin completar",
+    strategy.icp ? null : "ICP sin completar",
+    strategy.segments ? null : "Segmentos sin rango de ACV",
+  ].filter((x): x is string => !!x);
+  return {
+    mine: { step: mine?.step ?? null, done: onboardingDone(mine) },
+    diagnosis,
+    strategy,
+    missing,
+    ready: diagnosis !== null && strategy.positioning && strategy.icp,
+  };
 }
