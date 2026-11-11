@@ -117,7 +117,11 @@ const replies =
   (q: Q): Reply => {
     if (q.table === "onboarding_sessions") {
       if (r.sessionsError) return { error: { message: "boom" } };
-      const rows = (r.sessions ?? []) as { user_id: string }[];
+      // Rows are the company's unless a test says another org_id.
+      const rows = ((r.sessions ?? []) as { user_id: string }[]).map((x) => ({
+        org_id: ORG,
+        ...x,
+      }));
       return { data: eq(q, "user_id", ME) ? (rows.find((x) => x.user_id === ME) ?? null) : rows };
     }
     if (q.table === "positioning") return { data: r.positioning ?? null };
@@ -170,7 +174,7 @@ describe("get_onboarding_status (CA-7)", () => {
     expect((d as ReturnType<typeof diag>).result.archetype).toBe("A");
     const q = log.find((x) => x.table === "onboarding_sessions")!;
     expect(eq(q, "org_id", ORG)).toBe(true);
-    expect(q.selected).toBe("user_id,diagnosis,updated_at");
+    expect(q.selected).toBe("user_id,diagnosis,updated_at,org_id");
   });
 
   it("the person's own diagnosis wins over a more recent colleague's; without it, the most recent", async () => {
@@ -189,6 +193,31 @@ describe("get_onboarding_status (CA-7)", () => {
       ).result.archetype;
     expect(await pick([mateNew, own, mateOld])).toBe("C");
     expect(await pick([mateOld, mateNew])).toBe("D");
+  });
+
+  it("ignores a fallback row of another company, even if the database returned it", async () => {
+    const rows = [
+      { org_id: "org-2", user_id: ME, diagnosis: diag(1, "E"), updated_at: "2026-11-11T10:00:00Z" },
+      {
+        org_id: "org-2",
+        user_id: MATE,
+        diagnosis: diag(1, "D"),
+        updated_at: "2026-11-12T10:00:00Z",
+      },
+      { org_id: ORG, user_id: MATE, diagnosis: diag(1, "A"), updated_at: "2026-11-01T10:00:00Z" },
+    ];
+    const d = await companyDiagnosisFor(
+      ctxWith(fakeDb(replies({ sessions: rows }), () => ({ data: null })).db),
+    );
+    expect((d as ReturnType<typeof diag>).result.archetype).toBe("A");
+    const only = [
+      { org_id: "org-2", user_id: ME, diagnosis: diag(1, "E"), updated_at: "2026-11-11T10:00:00Z" },
+    ];
+    expect(
+      await companyDiagnosisFor(
+        ctxWith(fakeDb(replies({ sessions: only }), () => ({ data: null })).db),
+      ),
+    ).toBeNull();
   });
 
   it("(c) an RPC error or a throw falls back to the person's own row", async () => {

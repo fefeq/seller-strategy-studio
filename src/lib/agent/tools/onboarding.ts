@@ -10,7 +10,7 @@ import { companyOnboardingStatus } from "@/lib/onboarding";
 /**
  * The company's GTM diagnosis: the RPC (migration 0065) and, when it answers null or fails, the same rule in code. The privileged client
  * (Telegram, cron) has no auth.uid(), so the RPC returns null there; with the person's client the policy reduces the rows to their own.
- * Your own diagnosis first, otherwise the most recent one a colleague made. Only user_id, diagnosis and updated_at are read.
+ * Your own diagnosis first, otherwise the most recent one a colleague made. Only user_id, diagnosis and updated_at are read, plus org_id for the in-memory company check.
  */
 export async function companyDiagnosisFor(c: ToolCtx): Promise<unknown> {
   try {
@@ -22,11 +22,12 @@ export async function companyDiagnosisFor(c: ToolCtx): Promise<unknown> {
   try {
     const r = await c.db
       .from("onboarding_sessions")
-      .select("user_id,diagnosis,updated_at")
+      .select("user_id,diagnosis,updated_at,org_id")
       .eq("org_id", c.orgId)
       .not("diagnosis", "is", null);
     if (r.error) return null;
-    const rows = (r.data ?? []).filter((x) => x.diagnosis != null);
+    // The query already filters by company; the check is repeated in memory, as the privileged client skips RLS.
+    const rows = (r.data ?? []).filter((x) => x.org_id === c.orgId && x.diagnosis != null);
     const own = rows.find((x) => x.user_id === c.userId);
     const latest = [...rows].sort((a, b) =>
       String(b.updated_at).localeCompare(String(a.updated_at)),
