@@ -91,8 +91,8 @@ function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
 }
 
 // The `.message` rules (a `.message` or a variable derived from it in a console call) apply to the files of NK-0142:
-// the entry points and src/routes/api/**. In src/lib the same rule finds 32 real calls that log (e as Error).message or
-// error.message (NK-0142 report lists them); fixing them is a separate ticket, and the exception list must stay empty,
+// the entry points and src/routes/api/**. In src/lib the same rule finds 28 real calls that log (e as Error).message or
+// error.message (the NK-0142 result lists them); fixing them is a separate ticket, and the exception list must stay empty,
 // so the rule is not applied there yet. Widening MESSAGE_SCOPE to src/lib is the next step, once those calls are fixed.
 const inMessageScope = (rel: string) =>
   rel === "src/server.ts" || rel === "src/start.ts" || rel.startsWith("src/routes/api/");
