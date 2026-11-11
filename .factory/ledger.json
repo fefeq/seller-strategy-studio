@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 147,
+  "seq": 148,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4333,6 +4333,27 @@
           "state": "LOGGED",
           "at": "2026-11-11T19:58:18.343Z",
           "by": "Fede",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0148",
+      "title": "Tests: metrics-states.test.tsx (6 casos CA-6) falla en main con Node 26: localStorage undefined en metrics.tsx:83 (useEffect de la guía de Inicio); falla igual en la base 6435439 (flake.mjs 3/3)",
+      "kind": "bug",
+      "source": "gate de NK-0146 en 679b31e, 2026-11-11",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T20:50:02.039Z",
+          "by": "Claude",
           "note": ""
         }
       ]
