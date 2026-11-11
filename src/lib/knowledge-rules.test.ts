@@ -555,7 +555,17 @@ describe("escalation rules (NK-0128, CA-7, CA-8, CA-9)", () => {
     const block = rulesBlock([mixed[1]!], { withPerson: true });
     expect(block).toContain("reglas_de_escalado");
     expect(block).not.toContain("reglas_obligatorias (");
-    expect(block).toContain(MANDATORY_RULE);
+    // NK-0139 CA-2: the sentence about reglas_obligatorias refers to a list that is not there, so it is not added either.
+    expect(block).not.toContain(MANDATORY_RULE);
+    expect(block).not.toContain("reglas_obligatorias");
+    expect(block).toContain(CONFIRM);
+  });
+
+  it("NK-0139 CA-2: a mix keeps the sentence, and several escalation rules alone do not bring it", () => {
+    expect(rulesBlock(mixed, { withPerson: true })).toContain(MANDATORY_RULE);
+    const two = [mixed[1]!, { ...mixed[1]!, titulo: "Escalar ante una queja" }];
+    expect(rulesBlock(two)).not.toContain(MANDATORY_RULE);
+    expect(rulesBlock(two)).toContain(binding.ESCALAR_NO_PERSON);
   });
 
   it("CA-8: without escalation rules the block is exactly the one it always was, whatever the mode", () => {

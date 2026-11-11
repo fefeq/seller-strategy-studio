@@ -23,8 +23,16 @@ export function formatMoney(n: number, currency = "EUR", compact = false) {
 }
 
 export function currencySymbol(currency = "EUR") {
-  return new Intl.NumberFormat("es-ES", { style: "currency", currency }).formatToParts(0).find((p) => p.type === "currency")?.value ?? currency;
+  return (
+    new Intl.NumberFormat("es-ES", { style: "currency", currency })
+      .formatToParts(0)
+      .find((p) => p.type === "currency")?.value ?? currency
+  );
 }
 
 /** A 0–1 ratio as a whole percentage («0.123» → «12%»). The one percentage format for screens. */
 export const pct = (ratio: number) => `${Math.round(ratio * 100)}%`;
+
+/** A 0–1 ratio as a percentage with at most one decimal and the es-ES comma («0.3333» → «33,3%»). */
+export const pct1 = (ratio: number) =>
+  `${(Math.round(ratio * 1000) / 10).toLocaleString("es-ES", { maximumFractionDigits: 1 })}%`;
