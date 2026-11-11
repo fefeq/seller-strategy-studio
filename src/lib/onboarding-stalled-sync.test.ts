@@ -70,7 +70,6 @@ function fakeDb(store: Row[]): Db {
   return { from } as unknown as Db;
 }
 
-
 const sug = (key: string, user_id: string, detector = "onboarding_stalled") => ({
   detector,
   dedupe_key: key,
@@ -106,7 +105,9 @@ describe("syncSuggestions and onboarding_stalled (NK-0009 CA-13)", () => {
   it("(a) a sync without the owner's row in onboardingSeen does not close the owner's reminder", async () => {
     const store = open();
     // The leader's own refresh: their client reads only their row, and they are still stalled.
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], { onboardingSeen: [LEADER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], {
+      onboardingSeen: [LEADER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("pending");
     expect(get(store, K_LEADER)?.status).toBe("pending");
   });
@@ -120,42 +121,60 @@ describe("syncSuggestions and onboarding_stalled (NK-0009 CA-13)", () => {
 
   it("(b) a finished row closes the reminder as resolved, and only that owner's", async () => {
     const store = open();
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], { onboardingSeen: [OWNER, LEADER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], {
+      onboardingSeen: [OWNER, LEADER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("resolved");
     expect(get(store, K_LEADER)?.status).toBe("pending");
   });
 
   it("(c) a row stalled at another step closes the old key and leaves the new one open", async () => {
     const store = open();
-    await syncSuggestions(fakeDb(store), "o1", [sug(`onboarding_stalled:${OWNER}:diagnosis`, OWNER), sug(K_LEADER, LEADER)], [], { onboardingSeen: [OWNER, LEADER] });
+    await syncSuggestions(
+      fakeDb(store),
+      "o1",
+      [sug(`onboarding_stalled:${OWNER}:diagnosis`, OWNER), sug(K_LEADER, LEADER)],
+      [],
+      { onboardingSeen: [OWNER, LEADER] },
+    );
     expect(get(store, K_OWNER)?.status).toBe("resolved");
     expect(get(store, `onboarding_stalled:${OWNER}:diagnosis`)?.status).toBe("pending");
   });
 
   it("(d) after it closed, stalling again at the same step reopens it as pending and clears notified_at", async () => {
     const store = open();
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], { onboardingSeen: [OWNER, LEADER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], [], {
+      onboardingSeen: [OWNER, LEADER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("resolved");
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_OWNER, OWNER), sug(K_LEADER, LEADER)], [], { onboardingSeen: [OWNER, LEADER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_OWNER, OWNER), sug(K_LEADER, LEADER)], [], {
+      onboardingSeen: [OWNER, LEADER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("pending");
     expect(get(store, K_OWNER)?.notified_at).toBeNull();
   });
 
   it("(e) one the person worked with «Resolver» closes as approved, not resolved", async () => {
     const store = open();
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], ["id-" + K_OWNER], { onboardingSeen: [OWNER, LEADER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_LEADER, LEADER)], ["id-" + K_OWNER], {
+      onboardingSeen: [OWNER, LEADER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("approved");
     expect(get(store, K_LEADER)?.status).toBe("pending");
   });
 
   it("a dismissed reminder stays dismissed when its key is found again", async () => {
     const store = [row(K_OWNER, OWNER, { status: "dismissed" })];
-    await syncSuggestions(fakeDb(store), "o1", [sug(K_OWNER, OWNER)], [], { onboardingSeen: [OWNER] });
+    await syncSuggestions(fakeDb(store), "o1", [sug(K_OWNER, OWNER)], [], {
+      onboardingSeen: [OWNER],
+    });
     expect(get(store, K_OWNER)?.status).toBe("dismissed");
   });
 
   it("a snoozed reminder of a finished row also closes", async () => {
-    const store = [row(K_OWNER, OWNER, { status: "snoozed", snoozed_until: "2026-12-01T00:00:00.000Z" })];
+    const store = [
+      row(K_OWNER, OWNER, { status: "snoozed", snoozed_until: "2026-12-01T00:00:00.000Z" }),
+    ];
     await syncSuggestions(fakeDb(store), "o1", [], [], { onboardingSeen: [OWNER] });
     expect(get(store, K_OWNER)?.status).toBe("resolved");
   });
@@ -169,7 +188,11 @@ describe("syncSuggestions and onboarding_stalled (NK-0009 CA-13)", () => {
 
   it("the three callers pass onboardingSeen from the snapshot", async () => {
     const { readFileSync } = await import("node:fs");
-    for (const f of ["src/lib/agent.functions.ts", "src/lib/inngest/tasks.server.ts", "src/routes/api/public/jobs/proactive.ts"]) {
+    for (const f of [
+      "src/lib/agent.functions.ts",
+      "src/lib/inngest/tasks.server.ts",
+      "src/routes/api/public/jobs/proactive.ts",
+    ]) {
       const code = readFileSync(f, "utf8").replace(/\s+/g, "");
       expect(code, f).toMatch(/syncSuggestions\([^;]*onboardingSeen/);
     }

@@ -88,7 +88,14 @@ describe("SourcesStep: «Hacer solo el diagnóstico» (NK-0009 CA-4)", () => {
 
   it("is enabled with no sources and explains what is left for later", () => {
     render(<SourcesStep depth="express" onStarted={() => {}} onSkip={() => {}} />);
-    expect((screen.getByRole("button", { name: "Hacer solo el diagnóstico" }) as HTMLButtonElement).disabled).toBe(false);
-    expect(screen.getByText("Sin fuentes, Nokko no te propone ICP ni posicionamiento: los completas después en Estrategia.")).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: "Hacer solo el diagnóstico" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(false);
+    expect(
+      screen.getByText(
+        "Sin fuentes, Nokko no te propone ICP ni posicionamiento: los completas después en Estrategia.",
+      ),
+    ).toBeTruthy();
   });
 });

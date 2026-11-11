@@ -3,13 +3,29 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const state = vi.hoisted(() => ({ job: { status: "failed", step: null, error: "La web no responde." } as { status: string; step: string | null; error: string | null } }));
+const state = vi.hoisted(() => ({
+  job: { status: "failed", step: null, error: "La web no responde." } as {
+    status: string;
+    step: string | null;
+    error: string | null;
+  },
+}));
 
 vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.job }) }) }) }) },
+  supabase: {
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.job }) }) }),
+    }),
+  },
 }));
-vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { roles: ["owner"], user: { id: "user-ana" } } }) }));
-vi.mock("@/components/confirm-dialog", () => ({ askConfirm: vi.fn(), askText: vi.fn(), askUnsaved: vi.fn() }));
+vi.mock("@/hooks/use-me", () => ({
+  useMe: () => ({ data: { roles: ["owner"], user: { id: "user-ana" } } }),
+}));
+vi.mock("@/components/confirm-dialog", () => ({
+  askConfirm: vi.fn(),
+  askText: vi.fn(),
+  askUnsaved: vi.fn(),
+}));
 
 import { ReadingStep } from "./reading";
 
@@ -19,7 +35,15 @@ function show(status: string, onSkip = vi.fn()) {
   state.job = { status, step: null, error: status === "failed" ? "La web no responde." : null };
   render(
     <QueryClientProvider client={new QueryClient()}>
-      <ReadingStep jobId="job-1" findings={[]} sources={["Web · https://ejemplo.test"]} onNext={() => {}} onBack={() => {}} onSkip={onSkip} onChange={async () => {}} />
+      <ReadingStep
+        jobId="job-1"
+        findings={[]}
+        sources={["Web · https://ejemplo.test"]}
+        onNext={() => {}}
+        onBack={() => {}}
+        onSkip={onSkip}
+        onChange={async () => {}}
+      />
     </QueryClientProvider>,
   );
   return onSkip;

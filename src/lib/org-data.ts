@@ -503,9 +503,17 @@ export async function syncSuggestions(
       touched,
     );
     if (closing.done.length)
-      await db.from("suggestions").update({ status: "approved", updated_at: at }).eq("org_id", orgId).in("id", closing.done);
+      await db
+        .from("suggestions")
+        .update({ status: "approved", updated_at: at })
+        .eq("org_id", orgId)
+        .in("id", closing.done);
     if (closing.resolved.length)
-      await db.from("suggestions").update({ status: "resolved", updated_at: at }).eq("org_id", orgId).in("id", closing.resolved);
+      await db
+        .from("suggestions")
+        .update({ status: "resolved", updated_at: at })
+        .eq("org_id", orgId)
+        .in("id", closing.resolved);
   }
   // Wake up snoozed ones whose time has come.
   await db

@@ -6,7 +6,12 @@ const base = { hasCompany: true, onboardingStep: null, searched: false, metricsS
 
 describe("guide", () => {
   it("has the four steps in order: company, onboarding, search, metrics", () => {
-    expect(guideSteps(base).map((s) => s.id)).toEqual(["company", "onboarding", "search", "metrics"]);
+    expect(guideSteps(base).map((s) => s.id)).toEqual([
+      "company",
+      "onboarding",
+      "search",
+      "metrics",
+    ]);
   });
 
   it("onboarding only counts as done once it reaches the roadmap step", () => {
@@ -15,11 +20,18 @@ describe("guide", () => {
   });
 
   it("highlights the first step not done, even if later ones are done", () => {
-    expect(currentStep(guideSteps({ ...base, searched: true, metricsSeen: true }))?.id).toBe("onboarding");
+    expect(currentStep(guideSteps({ ...base, searched: true, metricsSeen: true }))?.id).toBe(
+      "onboarding",
+    );
   });
 
   it("hides when every step is done or when the person hides it", () => {
-    const all = guideSteps({ hasCompany: true, onboardingStep: "roadmap", searched: true, metricsSeen: true });
+    const all = guideSteps({
+      hasCompany: true,
+      onboardingStep: "roadmap",
+      searched: true,
+      metricsSeen: true,
+    });
     expect(currentStep(all)).toBeNull();
     expect(showGuide(all, false)).toBe(false);
     expect(showGuide(guideSteps(base), true)).toBe(false);

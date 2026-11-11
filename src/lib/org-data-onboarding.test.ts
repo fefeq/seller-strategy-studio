@@ -10,23 +10,28 @@ function fakeDb(onboarding: { data?: unknown; error?: { message: string } | null
     const q: Q = { table, filters: [] };
     let single = false;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake query builder is a Proxy
-    const proxy: any = new Proxy({}, {
-      get(_t, prop: string) {
-        if (prop === "then") {
-          log.push(q);
-          const res = table === "onboarding_sessions"
-            ? { data: onboarding.data ?? null, error: onboarding.error ?? null }
-            : { data: single ? null : [], error: null, count: 0 };
-          return (a: (v: unknown) => unknown, b: (e: unknown) => unknown) => Promise.resolve(res).then(a, b);
-        }
-        return (...args: unknown[]) => {
-          if (prop === "select") q.selected = String(args[0] ?? "");
-          else if (prop === "maybeSingle" || prop === "single") single = true;
-          else q.filters.push([prop, ...args]);
-          return proxy;
-        };
+    const proxy: any = new Proxy(
+      {},
+      {
+        get(_t, prop: string) {
+          if (prop === "then") {
+            log.push(q);
+            const res =
+              table === "onboarding_sessions"
+                ? { data: onboarding.data ?? null, error: onboarding.error ?? null }
+                : { data: single ? null : [], error: null, count: 0 };
+            return (a: (v: unknown) => unknown, b: (e: unknown) => unknown) =>
+              Promise.resolve(res).then(a, b);
+          }
+          return (...args: unknown[]) => {
+            if (prop === "select") q.selected = String(args[0] ?? "");
+            else if (prop === "maybeSingle" || prop === "single") single = true;
+            else q.filters.push([prop, ...args]);
+            return proxy;
+          };
+        },
       },
-    });
+    );
     return proxy;
   };
   return { db: { from } as unknown as Db, log };
@@ -41,11 +46,17 @@ describe("loadSnapshot reads the onboarding (NK-0009 CA-12)", () => {
     expect(snap.onboarding).toEqual(ROWS);
     const q = log.find((x) => x.table === "onboarding_sessions")!;
     expect(q.selected).toBe("user_id,step,updated_at");
-    expect(q.filters.some(([op, c, v]) => op === "eq" && c === "org_id" && v === "org-1")).toBe(true);
+    expect(q.filters.some(([op, c, v]) => op === "eq" && c === "org_id" && v === "org-1")).toBe(
+      true,
+    );
   });
 
   it("a failed read leaves the field out, even if rows came back with the error", async () => {
-    const snap = await loadSnapshot(fakeDb({ data: ROWS, error: { message: "boom" } }).db, "org-1", NOW);
+    const snap = await loadSnapshot(
+      fakeDb({ data: ROWS, error: { message: "boom" } }).db,
+      "org-1",
+      NOW,
+    );
     expect("onboarding" in snap).toBe(false);
   });
 });

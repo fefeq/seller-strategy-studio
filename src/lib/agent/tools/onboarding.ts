@@ -20,11 +20,17 @@ export async function companyDiagnosisFor(c: ToolCtx): Promise<unknown> {
     // falls through to the rule in code
   }
   try {
-    const r = await c.db.from("onboarding_sessions").select("user_id,diagnosis,updated_at").eq("org_id", c.orgId).not("diagnosis", "is", null);
+    const r = await c.db
+      .from("onboarding_sessions")
+      .select("user_id,diagnosis,updated_at")
+      .eq("org_id", c.orgId)
+      .not("diagnosis", "is", null);
     if (r.error) return null;
     const rows = (r.data ?? []).filter((x) => x.diagnosis != null);
     const own = rows.find((x) => x.user_id === c.userId);
-    const latest = [...rows].sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)))[0];
+    const latest = [...rows].sort((a, b) =>
+      String(b.updated_at).localeCompare(String(a.updated_at)),
+    )[0];
     return (own ?? latest)?.diagnosis ?? null;
   } catch {
     return null;
@@ -33,7 +39,12 @@ export async function companyDiagnosisFor(c: ToolCtx): Promise<unknown> {
 
 /** The person's own row; a failed read is treated as no row. Only step and diagnosis. */
 async function myRow(c: ToolCtx) {
-  const { data, error } = await c.db.from("onboarding_sessions").select("step,diagnosis").eq("org_id", c.orgId).eq("user_id", c.userId).maybeSingle();
+  const { data, error } = await c.db
+    .from("onboarding_sessions")
+    .select("step,diagnosis")
+    .eq("org_id", c.orgId)
+    .eq("user_id", c.userId)
+    .maybeSingle();
   return error ? null : data;
 }
 
@@ -45,7 +56,11 @@ export const ONBOARDING_TOOLS: AgentTool[] = [
       "Solo lee. Dice en qué paso del onboarding está la persona, el diagnóstico GTM de la empresa (arquetipo, motion, etapa y siguiente paso), qué piezas de la estrategia faltan y si hay lo mínimo para el diagnóstico de plays. No devuelve la propuesta ni los hallazgos.",
     input: z.object({}),
     run: async (c) => {
-      const [mine, companyDiagnosis, setup] = await Promise.all([myRow(c), companyDiagnosisFor(c), loadSetupData(c.db, c.orgId)]);
+      const [mine, companyDiagnosis, setup] = await Promise.all([
+        myRow(c),
+        companyDiagnosisFor(c),
+        loadSetupData(c.db, c.orgId),
+      ]);
       return companyOnboardingStatus({ mine, companyDiagnosis, setup });
     },
   }),

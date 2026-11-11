@@ -17,7 +17,9 @@ const BODY: Record<string, string> = {
  */
 export const onboardingStalled: Detector = (s) => {
   if (!s.onboarding || !s.members) return [];
-  const leaders = new Set(s.members.filter((m) => m.role === "owner" || m.role === "sales_leader").map((m) => m.user_id));
+  const leaders = new Set(
+    s.members.filter((m) => m.role === "owner" || m.role === "sales_leader").map((m) => m.user_id),
+  );
   return s.onboarding
     .filter((o) => !onboardingDone(o) && leaders.has(o.user_id) && inactive(o.updated_at, s.now))
     .map((o) => ({
