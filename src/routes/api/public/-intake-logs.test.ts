@@ -2,7 +2,7 @@
 // NK-0131 (scan of src/routes/api/**): the two other routes that logged an error. The Telegram webhook logged the
 // whole error and the lead intake logged a 300-character slice of its message. A witness in the thrown error must not
 // reach any console.* argument; the log keeps its label; the response, the stored error text and the per-lead result
-// (CA-3) stay as they were. Fictional witness, no customer data.
+// (CA-3) stay as they were (NK-0142: the stored Telegram error is now a label, not the message). Fictional witness, no customer data.
 import { inspect } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -126,11 +126,12 @@ describe("route logs carry no whole error or message slice (NK-0131)", () => {
         }),
       }),
     });
-    // CA-3: the answer is the same and the failure is still recorded for the update (that text is not a log).
+    // CA-3: the answer is the same. NK-0142: the failure is still recorded for the update, but as a label (name, code,
+    // length), never the message text, so the witness reaches neither a log nor telegram_updates.error.
     expect(await res.json()).toEqual({ ok: true });
-    expect(h.updates.find((u) => "error" in u.row && u.row["error"] !== null)?.row["error"]).toBe(
-      `context said ${WITNESS}`,
-    );
+    const stored = h.updates.find((u) => "error" in u.row && u.row["error"] !== null)?.row["error"];
+    expect(stored).toBe(`Error (len ${`context said ${WITNESS}`.length})`);
+    expect(JSON.stringify(h.updates)).not.toContain(WITNESS);
     expectSafeLog(["telegram handle failed"]);
   });
 

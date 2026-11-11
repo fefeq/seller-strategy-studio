@@ -37,3 +37,19 @@ export function safeErrorLog(e: unknown, depth = 0): SafeErrorLog {
   if (depth === 0 && f.lastError !== undefined) out.lastError = safeErrorLog(f.lastError, 1);
   return out;
 }
+
+const PLAIN = /^[A-Za-z0-9_.-]{1,40}$/;
+
+/** What may be stored in a database column for a failure (NK-0142): the name, a code and the message length, e.g.
+ *  `TypeError (len 123)` or `Error ECONNRESET (len 5)`. Never the message, which a provider or a user can fill with
+ *  their own text. A name or code that is not a short plain identifier is dropped (name falls back to «Error»). */
+export function storedErrorLabel(e: unknown): string {
+  if (!(e instanceof Error)) return `${e === null ? "null" : typeof e} (len 0)`;
+  const f = e as Error & { code?: unknown };
+  const name = PLAIN.test(String(f.name)) ? String(f.name) : "Error";
+  const code =
+    (typeof f.code === "string" || typeof f.code === "number") && PLAIN.test(String(f.code))
+      ? ` ${String(f.code)}`
+      : "";
+  return `${name}${code} (len ${String(f.message ?? "").length})`;
+}
