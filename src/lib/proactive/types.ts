@@ -7,6 +7,8 @@ export type Snapshot = {
   /** Setup steps the company postponed and the latest change in setup data. Optional so older snapshots still work. */
   setupSnoozes?: { step_id: string; snoozed_until: string }[];
   setupActivityAt?: string | null;
+  /** Each person's onboarding row (step and last change). Optional so older snapshots still work; absent = no reminder (NK-0009). */
+  onboarding?: { user_id: string; step: string; updated_at: string }[];
   deals: {
     id: string;
     name: string;

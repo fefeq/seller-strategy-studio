@@ -110,6 +110,7 @@ export const TITLES: Record<string, string> = {
   get_play: "Ver un Play GTM",
   list_play_teams: "Ver los equipos de plays",
   set_play_enabled: "Activar o pausar un Play GTM",
+  get_onboarding_status: "Ver el estado del onboarding",
   research_stakeholder: "Investigación de stakeholders",
   review_call: "Revisar llamada",
   save_call_notes: "Guardar notas de llamada en 5 líneas",

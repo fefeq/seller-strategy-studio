@@ -1,6 +1,7 @@
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
+import { safeErrorLog } from "./lib/agent/safe-error-log";
 import { renderErrorPage } from "./lib/error-page";
 import { robotsTagFor } from "./lib/seo";
 import { requestCtx } from "./lib/after-response.server";
@@ -30,7 +31,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   const body = await response.clone().text();
   if (!isH3SwallowedErrorBody(body)) return response;
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  console.error("h3 swallowed SSR error", safeErrorLog(consumeLastCapturedError()));
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
@@ -64,12 +65,15 @@ export default {
     try {
       const handler = await getServerEntry();
       // The Worker runtime adds waitUntil to the request; keep it so afterResponse() work survives the reply.
-      const w = (request as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil
-        ?? (ctx as { waitUntil?: (p: Promise<unknown>) => void } | null)?.waitUntil?.bind(ctx);
-      const response = await requestCtx.run({ waitUntil: w }, () => handler.fetch(request, env, ctx));
+      const w =
+        (request as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil ??
+        (ctx as { waitUntil?: (p: Promise<unknown>) => void } | null)?.waitUntil?.bind(ctx);
+      const response = await requestCtx.run({ waitUntil: w }, () =>
+        handler.fetch(request, env, ctx),
+      );
       return withRobotsTag(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
-      console.error(error);
+      console.error("request failed", safeErrorLog(error));
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },

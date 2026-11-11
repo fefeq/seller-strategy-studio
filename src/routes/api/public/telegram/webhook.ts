@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { safeErrorLog, storedErrorLabel } from "@/lib/agent/safe-error-log";
 import { errorText } from "@/lib/errors";
 
 export const Route = createFileRoute("/api/public/telegram/webhook")({
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/telegram/webhook")({
             .from("telegram_updates")
             .update({
               processed_at: new Date().toISOString(),
-              error: String((e as Error).message).slice(0, 500),
+              error: storedErrorLabel(e),
             })
             .eq("update_id", update.update_id);
         }

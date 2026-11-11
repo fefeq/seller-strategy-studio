@@ -20,6 +20,7 @@ import { STRATEGY_TOOLS } from "./tools/strategy";
 import { FIELD_ACTION_TOOLS } from "./tools/field-actions";
 import { CYCLE_TOOLS } from "./tools/cycle";
 import { PLAY_TOOLS } from "./tools/plays";
+import { ONBOARDING_TOOLS } from "./tools/onboarding";
 
 export type { AgentTool, ToolCtx } from "./tool-kit";
 
@@ -46,6 +47,7 @@ export const TOOLS: AgentTool[] = [
   ...PARALLEL_TOOLS,
   ...NEED_TOOLS,
   ...PLAY_TOOLS,
+  ...ONBOARDING_TOOLS,
 ];
 
 export function getTool(name: string) {

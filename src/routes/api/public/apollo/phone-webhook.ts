@@ -2,6 +2,7 @@
 // (APOLLO_WEBHOOK_SECRET); without it nothing is read or written. Deliveries fill phone_reveals for
 // every company that asked for that person, and the stakeholder's phone.
 import { createFileRoute } from "@tanstack/react-router";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { phonesFromWebhook, sameSecret } from "@/lib/apollo";
 
 export const Route = createFileRoute("/api/public/apollo/phone-webhook")({
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/api/public/apollo/phone-webhook")({
             .eq("apollo_person_id", p.id)
             .select("org_id,stakeholder_id");
           if (error) {
-            console.error("Apollo webhook update failed", error.message);
+            console.error("Apollo webhook update failed", safeErrorLog(error));
             continue;
           }
           updated += rows?.length ?? 0;
@@ -46,7 +47,7 @@ export const Route = createFileRoute("/api/public/apollo/phone-webhook")({
               .update({ phone: best })
               .eq("org_id", r.org_id)
               .eq("id", r.stakeholder_id);
-            if (e2) console.error("Apollo webhook stakeholder update failed", e2.message);
+            if (e2) console.error("Apollo webhook stakeholder update failed", safeErrorLog(e2));
           }
         }
         return Response.json({ ok: true, people: people.length, updated });
