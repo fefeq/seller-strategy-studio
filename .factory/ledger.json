@@ -2959,19 +2959,25 @@
       "title": "Tests: src/lib/money-notices.pg.test.ts cae por timeout de 5 s con la máquina cargada (pasa 17/17 en solitario)",
       "kind": "alert",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-08T20:48:37.846Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T00:38:04.652Z",
+          "by": "Fede: \"GO sprint 7\" (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     },
@@ -4159,19 +4165,25 @@
       "title": "Drive: importar a Reglas un archivo con título ya existente da el mensaje genérico (el 23505 pierde su código); antes duplicaba",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T00:24:44.900Z",
           "by": "coordinador-sprint6",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T00:38:04.477Z",
+          "by": "Fede: \"GO sprint 7\" (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     },
@@ -4180,19 +4192,25 @@
       "title": "Logs: src/server.ts y src/start.ts registran el error entero; apollo/phone-webhook.ts registra error.message (2 sitios); telegram_updates.error guarda 500 caracteres; el escaneo no ve variables derivadas de .message",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T00:24:44.951Z",
           "by": "coordinador-sprint6",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T00:38:04.532Z",
+          "by": "Fede: \"GO sprint 7\" (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     },
@@ -4201,19 +4219,25 @@
       "title": "NK-0103 ampliado: notifications-grants.pg.test.ts también cae por timeout con la máquina cargada",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T00:24:44.992Z",
           "by": "coordinador-sprint6",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T00:38:04.574Z",
+          "by": "Fede: \"GO sprint 7\" (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     },
@@ -4243,19 +4267,25 @@
       "title": "Reglas: trim() de JS y btrim de Postgres difieren con tabuladores y espacios no separables",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
       "branch": null,
-      "base_commit": null,
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T00:24:45.078Z",
           "by": "coordinador-sprint6",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T00:38:04.613Z",
+          "by": "Fede: \"GO sprint 7\" (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     }
