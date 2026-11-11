@@ -64,9 +64,12 @@ export default {
     try {
       const handler = await getServerEntry();
       // The Worker runtime adds waitUntil to the request; keep it so afterResponse() work survives the reply.
-      const w = (request as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil
-        ?? (ctx as { waitUntil?: (p: Promise<unknown>) => void } | null)?.waitUntil?.bind(ctx);
-      const response = await requestCtx.run({ waitUntil: w }, () => handler.fetch(request, env, ctx));
+      const w =
+        (request as { waitUntil?: (p: Promise<unknown>) => void }).waitUntil ??
+        (ctx as { waitUntil?: (p: Promise<unknown>) => void } | null)?.waitUntil?.bind(ctx);
+      const response = await requestCtx.run({ waitUntil: w }, () =>
+        handler.fetch(request, env, ctx),
+      );
       return withRobotsTag(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
