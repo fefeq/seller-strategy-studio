@@ -1,7 +1,7 @@
 # SDD-20261110-play-teams · [Feature] Catálogo de tareas, seis equipos de plays y vista en /plays
 
 **Tipo:** Feature (sin cambio de esquema) · **Prioridad propuesta:** Media (es el paso entre el catálogo ordenado del SDD 1 y el diagnóstico del SDD 4; sin equipos, el diagnóstico no tiene qué proponer)
-**Estado:** Aprobado — coordinador por delegación de Fede ("GO" Sprint 6, 2026-11-10), gate pasadas 1 y 2 · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Hecho — PR #125 (37e1a55) · Aprobado previamente: coordinador por delegación de Fede ("GO" Sprint 6, 2026-11-10), gate pasadas 1 y 2 · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **Ticket:** NK-0140 (NK-0126 iniciativa; este es su SDD 2)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` (cubre G-1 en parte, G-2 y G-3; G-1 se mide en el SDD 4) · **Depende de:** `SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, Hecho en `main`: `phase`, `approval`, `dependsOn` y `recommendablePlays`) · **Coordina con:** SDD 4 de la iniciativa (`diagnosis-in-chat`), que consumirá los equipos; SDD 2 a 9 de plays y NK-0081 a NK-0083, que tocan `catalog.ts` (este SDD no lo toca)
 

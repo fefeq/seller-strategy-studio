@@ -94,3 +94,45 @@ drop policy if exists "knowledge voice update" on public.knowledge_docs;
 
 ### Lo que esta nota NO demuestra
 - El comportamiento en la app de la voz (lectura por todo el equipo, edición solo por Owner o Sales Leader, bloqueo de `mandatory`). No se ha verificado en la app.
+
+## NK-0085 · Registro `drizzle.__drizzle_migrations` (2026-11-10)
+
+**Autorización:** Fede, «si» (2026-11-10).
+
+**Antes:**
+- El registro tenía 77 filas (max `id` 78) y la última era la de `0076_platform_admins_skip_creator`.
+- Su `hash` es el sha256 del archivo SQL. Comprobado con 0072, 0075 y 0076.
+- Las nueve migraciones siguientes del journal (idx 75 a 83: 0074, 0078, 0077, 0079, 0080, 0081, 0082, 0083, 0084) estaban aplicadas en la base real, comprobado objeto a objeto, pero no figuraban en el registro.
+
+**Hecho:**
+- Se insertaron 9 filas `(hash = sha256 del archivo, created_at = when del journal)` mediante el `query_database` de Lovable.
+- No se tocó ninguna otra tabla.
+
+**Después:**
+- El registro tiene 86 filas, 86 hashes distintos y max `created_at` 1794484800000, que es el de la 0084.
+- Hay más filas que entradas en el journal (84) porque el registro ya tenía 2 filas de más antes de este cambio. Esas filas no se han tocado.
+
+**Vuelta atrás:** borrar las 9 filas por su `hash`.
+
+## 0085 (2026-11-10/11)
+
+**Qué:** índice único de reglas de equipo, para cerrar NK-0136 (dos sesiones o pestañas pueden duplicar reglas).
+
+**Antes (pre-check en vivo):** 0 grupos duplicados por `(org_id, lower(btrim(title)))` en `section = 'rules'` y `scope = 'team'`. El índice no existía.
+
+**Aplicado:** mediante `query_database` de Lovable, antes del merge de PR #125.
+
+**Después (reportado por el coordinador):**
+- Índice: `CREATE UNIQUE INDEX knowledge_docs_team_rule_title_uniq ON public.knowledge_docs USING btree (org_id, lower(btrim(title))) WHERE ((section = 'rules') AND (scope = 'team'))`.
+- Los 4 documentos existentes no cambian.
+- Fila nueva en el registro de migraciones: hash `deef5a51…`, `created_at` 1794571200000. El registro pasa a 87 filas (las 86 de la sección anterior más esta).
+
+**Vuelta atrás:**
+```sql
+drop index if exists public.knowledge_docs_team_rule_title_uniq;
+-- y borrar la fila del registro con hash deef5a51… (creada por esta migración)
+```
+
+**Lo que esta nota NO demuestra:**
+- El comportamiento en la app (que la segunda regla con el mismo título se rechace con mensaje claro). No se ha verificado en la app.
+- Los datos de «después» (índice, 4 documentos, registro) son los que reporta el coordinador; el tracker no los ha consultado en la base.
