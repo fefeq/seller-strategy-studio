@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 148,
+  "seq": 152,
   "tickets": [
     {
       "id": "NK-0001",
@@ -217,7 +217,7 @@
       "title": "Onboarding completo y proactivo",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261111-onboarding-complete.md",
@@ -248,6 +248,12 @@
           "at": "2026-11-11T20:03:16.412Z",
           "by": "Fede: \"GO sprint 7\" y decisiones P-1=B, P-2=sí (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.736Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -3001,7 +3007,7 @@
       "title": "Tests: src/lib/money-notices.pg.test.ts cae por timeout de 5 s con la máquina cargada (pasa 17/17 en solitario)",
       "kind": "alert",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
@@ -3020,6 +3026,12 @@
           "at": "2026-11-11T00:38:04.652Z",
           "by": "Fede: \"GO sprint 7\" (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.788Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -4213,7 +4225,7 @@
       "title": "Drive: importar a Reglas un archivo con título ya existente da el mensaje genérico (el 23505 pierde su código); antes duplicaba",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
@@ -4232,6 +4244,12 @@
           "at": "2026-11-11T00:38:04.477Z",
           "by": "Fede: \"GO sprint 7\" (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.841Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -4240,7 +4258,7 @@
       "title": "Logs: src/server.ts y src/start.ts registran el error entero; apollo/phone-webhook.ts registra error.message (2 sitios); telegram_updates.error guarda 500 caracteres; el escaneo no ve variables derivadas de .message",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
@@ -4259,6 +4277,12 @@
           "at": "2026-11-11T00:38:04.532Z",
           "by": "Fede: \"GO sprint 7\" (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.889Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -4267,7 +4291,7 @@
       "title": "NK-0103 ampliado: notifications-grants.pg.test.ts también cae por timeout con la máquina cargada",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
@@ -4286,6 +4310,12 @@
           "at": "2026-11-11T00:38:04.574Z",
           "by": "Fede: \"GO sprint 7\" (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.940Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -4315,7 +4345,7 @@
       "title": "Reglas: trim() de JS y btrim de Postgres difieren con tabuladores y espacios no separables",
       "kind": "bug",
       "source": "coordinador-sprint6-ship-20261111",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint7",
       "duplicate_of": null,
       "sdd": null,
@@ -4334,6 +4364,12 @@
           "at": "2026-11-11T00:38:04.613Z",
           "by": "Fede: \"GO sprint 7\" (2026-11-11)",
           "note": "owner=coordinador-sprint7"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T23:07:36.988Z",
+          "by": "Fede",
+          "note": "sha=6c02febad7fba63f027ba360a74acc030176e550"
         }
       ]
     },
@@ -4396,6 +4432,90 @@
           "state": "LOGGED",
           "at": "2026-11-11T20:50:02.039Z",
           "by": "Claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0149",
+      "title": "Logs: 28 llamadas en src/lib (17 archivos) registran error.message o (e as Error).message; ampliar la regla .message del escaneo a src/lib",
+      "kind": "bug",
+      "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T23:07:40.066Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0150",
+      "title": "Sesión: a 375 px, al cerrar sesión o cambiar de cuenta, salen 5-9 lecturas de la guía de configuración con el org_id y token de X (antes del logout / con el bloqueo puesto); confirmar si es del código o del simulador del walkthrough f5458dd",
+      "kind": "bug",
+      "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T23:07:40.131Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0151",
+      "title": "Inicio: la tarjeta «Tu estrategia» dice «Seguir con el onboarding» con el onboarding ya terminado",
+      "kind": "bug",
+      "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T23:07:40.184Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0152",
+      "title": "Onboarding: decidir si se silencia uno de los dos recordatorios (onboarding_stalled y setup_incomplete) cuando coinciden (P-3 del SDD NK-0009)",
+      "kind": "feature",
+      "source": "docs/sdd/SDD-20261111-onboarding-complete.md (P-3), coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T23:07:40.236Z",
+          "by": "tracker",
           "note": ""
         }
       ]

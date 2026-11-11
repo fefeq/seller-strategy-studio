@@ -1,7 +1,7 @@
 # SDD-20261111-onboarding-complete · [Feature] Onboarding completo y proactivo, revalidado contra GTM Lab
 
 **Tipo:** Feature (sin migración) · **Prioridad propuesta:** Media (es la fila 0 del PRD de diagnóstico: el SDD 4, «diagnóstico en el asistente», no empieza sin esto; el resto del ticket original ya está hecho u obsoleto)
-**Estado:** Aprobado — coordinador por delegación de Fede ("GO sprint 7" y decisiones P-1=B, P-2=sí, 2026-11-11), gate pasadas 1 y 2 (hallazgos de la 2 aplicados en el texto) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-11
+**Estado:** Hecho — PR #129 (72ddcf0) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-11
 **Ticket:** NK-0009 (LOGGED; decisión D-9 de Fede del 2026-11-06: «revalidar contra GTM Lab; lo cubierto se absorbe y el resto va a la épica de encaje de personas»)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` §8 fila 0 («base del diagnóstico»; cubre la condición previa de G-1) y `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-4) · **Sustituye a:** `docs/sdd/SDD-20261025-onboarding-flow-end-to-end.md` (Borrador, nunca aprobado; queda como histórico) · **Depende de:** nada sin entregar · **Coordina con:** SDD 4 del PRD de diagnóstico (`diagnosis-in-chat`, sin redactar), que consume lo que este SDD expone; GTM Lab SDD 3 (`PRD-20261101-gtm-lab-en-nokko` §8 fila 3, sin redactar), que trae el perfil y los pasos obligatorios del proyecto principal
 
@@ -307,4 +307,7 @@ Informe: `.factory/evidence/sprint7-sdd-gate/gate-pass2.md` (2026-11-11, HEAD `e
 | **MENOR G2-m2** El cierre explícito siempre marcaba `resolved` | Resuelto siguiendo la misma regla: CA-13 cierra con `splitClosed(…, touched)` (`approved` si se trabajó, `resolved` si no) y añade el caso (e). §8 lo dice. |
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-Sin entrega todavía.
+- **Entrega:** PR #129 (integración `6c02feb`, en `main` como `72ddcf0`). Gate PASS en `6c02feb` para NK-0009, NK-0103, NK-0141, NK-0142, NK-0143 y NK-0145 (`sprint7-gate/gate-6c02feb.md`). Walkthrough `sprint7-walkthrough/summary-f5458dd.md`.
+- **Desviación en la lectura de respaldo (CA-7 b):** la consulta de `companyDiagnosisFor` también lee `org_id` (dato no sensible) para volver a comprobar la empresa en memoria, hallazgo del gate. Por tanto, la regla «ninguna otra columna» de CA-7 pasa a ser «`user_id`, `diagnosis`, `updated_at` y `org_id`». No se lee ninguna columna de contenido (`proposal`, `findings`, `opinions`, `sources`, `block_status`, `read_job_id`), así que CA-8 se mantiene.
+- **Aprobación:** el Estado previo era «Aprobado» por delegación del coordinador en el GO «GO sprint 7» (decisiones P-1=B, P-2=sí).
+- **Pendiente (no bloquea la entrega):** P-3 (silenciar uno de los dos recordatorios cuando coinciden) queda como NK-0152.
