@@ -217,13 +217,13 @@
       "title": "Onboarding completo y proactivo",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint7",
       "duplicate_of": null,
-      "sdd": "docs/sdd/SDD-20261025-onboarding-flow-end-to-end.md",
-      "prd": "docs/prd/PRD-20261028-ux-onboarding-coherencia.md",
-      "branch": null,
-      "base_commit": null,
+      "sdd": "docs/sdd/SDD-20261111-onboarding-complete.md",
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": "feat/nk-0009-onboarding-complete",
+      "base_commit": "6435439e798d605f6eb858bb579f8bb93acba07f",
       "history": [
         {
           "state": "LOGGED",
@@ -236,6 +236,18 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "D-9: revalidar contra GTM Lab antes de GTM Lab SDD 3; lo cubierto se absorbe y el resto va a la épica de encaje de personas"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-11T20:03:16.337Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261111-onboarding-complete.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-11T20:03:16.412Z",
+          "by": "Fede: \"GO sprint 7\" y decisiones P-1=B, P-2=sí (2026-11-11)",
+          "note": "owner=coordinador-sprint7"
         }
       ]
     },
