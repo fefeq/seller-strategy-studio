@@ -1,7 +1,7 @@
 # SDD-20261111-onboarding-complete · [Feature] Onboarding completo y proactivo, revalidado contra GTM Lab
 
 **Tipo:** Feature (sin migración) · **Prioridad propuesta:** Media (es la fila 0 del PRD de diagnóstico: el SDD 4, «diagnóstico en el asistente», no empieza sin esto; el resto del ticket original ya está hecho u obsoleto)
-**Estado:** Borrador · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-11
+**Estado:** Borrador (P-1 y P-2 decididas por Fede el 2026-11-11, §15) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-11
 **Ticket:** NK-0009 (LOGGED; decisión D-9 de Fede del 2026-11-06: «revalidar contra GTM Lab; lo cubierto se absorbe y el resto va a la épica de encaje de personas»)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` §8 fila 0 («base del diagnóstico»; cubre la condición previa de G-1) y `docs/prd/PRD-20261028-ux-onboarding-coherencia.md` (G-4) · **Sustituye a:** `docs/sdd/SDD-20261025-onboarding-flow-end-to-end.md` (Borrador, nunca aprobado; queda como histórico) · **Depende de:** nada sin entregar · **Coordina con:** SDD 4 del PRD de diagnóstico (`diagnosis-in-chat`, sin redactar), que consume lo que este SDD expone; GTM Lab SDD 3 (`PRD-20261101-gtm-lab-en-nokko` §8 fila 3, sin redactar), que trae el perfil y los pasos obligatorios del proyecto principal
 
@@ -29,7 +29,7 @@ Founder, Owner o Sales Leader que empieza el onboarding y lo deja a medias, o qu
    - `src/lib/onboarding.ts:129-131` `blocksDecided`: habilita «Ver tu roadmap» (`src/components/onboarding/blocks.tsx:160`); es una regla del paso, no de terminado.
 2. **El diagnóstico exige propuesta.** `onboarding.tsx:51`: `diagnosis` y `blocks` solo son alcanzables con `proposal`; `roadmap`, con diagnóstico. Pero `onboarding.tsx:68` ya prevé guardar el diagnóstico sin propuesta (`step: proposal ? "blocks" : "roadmap"`): ese camino hoy no se puede recorrer. Si la lectura falla o no hay fuentes, no hay arquetipo.
 3. **La sesión es por persona.** `drizzle/migrations/0052_onboarding_sessions.sql`: `UNIQUE (org_id, user_id)` y política «Own onboarding in my company» (solo tu fila). `src/hooks/use-onboarding.ts:21`: `upsert` con `onConflict: "org_id,user_id"`.
-4. **El diagnóstico ya es de la empresa en Inicio.** `drizzle/migrations/0065_company_diagnosis.sql`: función `company_diagnosis(_org)` (`SECURITY DEFINER`, solo devuelve `diagnosis`, el tuyo primero y si no el más reciente de un compañero). La usa `home-card.tsx:21`. Está en los tipos generados (`src/integrations/supabase/types.ts:5491`) y en `docs/BASE-DE-DATOS.md:121`; la cabecera de la migración dice «NOT yet applied» **[Por verificar]** en producción.
+4. **El diagnóstico ya es de la empresa en Inicio.** `drizzle/migrations/0065_company_diagnosis.sql`: función `company_diagnosis(_org)` (`SECURITY DEFINER`, solo devuelve `diagnosis`, el tuyo primero y si no el más reciente de un compañero). La usa `home-card.tsx:21`. Está en los tipos generados (`src/integrations/supabase/types.ts:5491`) y en `docs/BASE-DE-DATOS.md:121`. **Aplicada en la base de datos real:** `company_diagnosis(uuid)` existe como función `SECURITY DEFINER`, con `EXECUTE` para `authenticated` = true y para `anon` = false (comprobación de solo lectura del coordinador, 2026-11-11). La cabecera de la migración («NOT yet applied») está desactualizada.
 5. **El agente no ve el diagnóstico.** Ninguna herramienta de `src/lib/agent/tools/` lee `company_diagnosis` ni `onboarding_sessions` (`grep`); `companyContext` (`src/lib/bmad/drafting.ts:12`) lee artefactos, Conocimiento, segmentos, cuotas y miembros, no el diagnóstico.
 6. **El diagnóstico guarda lo que el SDD 4 necesita.** `onboarding.tsx:68` guarda `{ input, result }`: `input` = modelo, ticket anual, fricción y etapa (`src/lib/gtm-diagnosis.ts:9`); `result` = arquetipo, nombre, `motion`, marcos activos y descartados, siguiente paso (`gtm-diagnosis.ts:32-41`).
 7. **Ningún aviso por onboarding a medias.** `src/lib/proactive/detectors/` no tiene detector de onboarding. Lo más cercano es `setup-incomplete.ts:10-32` (siguiente dato de estrategia, con `inactive` de 1 día, `src/lib/setup-guide.ts:162-172`), que mide la estrategia guardada, no el recorrido.
@@ -37,6 +37,11 @@ Founder, Owner o Sales Leader que empieza el onboarding y lo deja a medias, o qu
 9. **El roadmap final es estático.** `src/components/onboarding/steps.tsx:74-108`: dos listas fijas («Nokko hará solo», «Te toca a ti»).
 10. **GTM Lab no está conectado.** `src/lib/gtm-lab/` (núcleo y metodología, NK-0048, Hecho) no tiene tablas ni pantalla; fuera de su carpeta solo lo importan `src/lib/ai-pinned.ts` y `src/lib/knowledge-rules.test.ts`. El perfil (7 preguntas, `src/lib/gtm-lab/methodology/framework.yaml:7-17`) y los pasos obligatorios (los que no llevan `optional: true`, `framework.yaml:24-68`; regla en `src/lib/gtm-lab/core/progress.ts:49-56` `strategyDocReady`) existen como código, sin datos por empresa. Las tablas `gtm_lab_*` son del GTM Lab SDD 3, que depende de «Lovable A y B» (`PRD-20261101` §8 fila 3) y no tiene SDD.
 11. **Equipos de plays: no leen la empresa.** `src/lib/plays/recommend.ts:12` `recommendablePlays(catalog)` y `src/lib/plays/teams.ts` (`PLAY_TEAMS`) ordenan por catálogo, sin datos de la empresa. Elegir equipos por empresa es del SDD 4.
+
+12. **«Completo» para posicionamiento e ICP ya está definido** en `src/lib/setup-schema.ts` y es la regla de la guía y del medidor de Estrategia:
+   - Posicionamiento (`:50-51`): los 13 campos de `POSITIONING_FIELDS` (`:26-36`: los cinco de Dunford de `:18-24` más cliente objetivo, necesidad, categoría, beneficio clave, alternativa competitiva, diferenciador, frase de una línea y elevator pitch) con texto no vacío (`filled`, `:38`).
+   - ICP (`:52-53`): al menos un ICP con `industries`, `company_size`, `why_fit` y `anti_icp` no vacíos.
+   - `setupStatus` (`:68-75`) devuelve esos dos ítems con su `done`.
 
 **Uso real del onboarding:** sin dato (no hay eventos de sesión; `onboarding_sessions` solo guarda el estado actual).
 
@@ -107,9 +112,10 @@ Founder, Owner o Sales Leader que empieza el onboarding y lo deja a medias, o qu
 - **CA-6** `companyOnboardingStatus({ mine, companyDiagnosis, setup })` (pura) devuelve:
   - `mine`: `{ step, done }` con `done = onboardingDone(mine)`;
   - `diagnosis`: `null` o `{ archetype, name, motion, stage, nextStep }` leídos de `{ input, result }` con `jsonObject`; un jsonb mal formado da `null`, nunca lanza;
-  - `strategy`: `{ positioning, icp, segments }` en booleano, de los ítems de `setupStatus` del mismo id (`src/lib/setup-schema.ts:50-55`);
+  - `strategy`: `{ positioning, icp, segments }` en booleano, tomados del `done` de los ítems de `setupStatus(setup)` con ese id (`src/lib/setup-schema.ts:50-55`, `:68-75`; definición en §3.1 hallazgo 12). No se reimplementa la regla: si cambia en `setup-schema.ts`, cambia aquí;
   - `missing`: lista en palabras, en este orden, de lo que falta: «Diagnóstico GTM sin hacer», «Posicionamiento sin completar», «ICP sin completar», «Segmentos sin rango de ACV»;
-  - `ready`: según la regla mínima que decida Fede (§15.1 «Sustituto de NK-0028», pregunta P-1). **Propuesta por defecto (opción A):** `ready = diagnosis !== null`; las piezas de estrategia salen en `missing` pero no bloquean.
+  - `ready` (opción B, decisión de Fede del 2026-11-11, §15.1): `ready = diagnosis !== null && strategy.positioning && strategy.icp`. Los segmentos salen en `missing` pero no bloquean. Tabla de verdad en la prueba: solo con los tres a `true` es `true`; con un diagnóstico mal formado (`diagnosis: null`) es `false` aunque posicionamiento e ICP estén completos; con 12 de los 13 campos de posicionamiento es `false`; con un ICP sin `anti_icp` y otro completo es `true`.
+  - `companyOnboardingStatus` importa `SETUP_ITEMS`/`setupStatus` de `setup-schema.ts` y no repite los nombres de los 13 campos (guarda de fuente: `onboarding.ts` no contiene `"elevator_pitch"` ni `"anti_icp"`).
   · cubre G-4 y condición de G-1 · prueba: `src/lib/onboarding.test.ts` (falla hoy)
 - **CA-7** `get_onboarding_status` es `kind: "read"`, sin `roles`, con entrada `z.object({})`. `executeTool(ctx, "get_onboarding_status", {})` devuelve el resultado de `companyOnboardingStatus` construido con: la fila de la persona (`onboarding_sessions` filtrado por `c.orgId` y `c.userId`, columnas `step,diagnosis` solamente), `company_diagnosis` (RPC con `_org: c.orgId`; si devuelve `null`, el `diagnosis` de la propia fila, como `home-card.tsx:23`) y `loadSetupData(c.db, c.orgId)`. `expectScoped(log)` pasa y no hay escrituras. · cubre condición de G-1 · prueba: `src/lib/agent/tools/onboarding.test.ts` (nuevo; falla hoy)
 - **CA-8** (privacidad) La salida de `get_onboarding_status` no contiene las claves `proposal`, `findings`, `opinions`, `sources`, `block_status` ni `read_job_id`, ni el ticket anual (`acv`) en ningún nivel; la consulta a `onboarding_sessions` no pide esas columnas (se comprueba el `select` registrado). Una lectura fallida de la sesión o del RPC devuelve el estado con `diagnosis: null` y su `missing`, no un error. · cubre condición de G-1 · prueba: `src/lib/agent/tools/onboarding.test.ts`
@@ -122,6 +128,7 @@ Founder, Owner o Sales Leader que empieza el onboarding y lo deja a medias, o qu
 
 ## 8. Casos límite y errores
 - **Sin web, sin documentos o con lectura fallida:** «Hacer solo el diagnóstico» (CA-4); el ticket anual empieza en 0 porque no hay segmento propuesto (`onboarding.tsx:45-50`), y la persona lo escribe.
+- **Diagnóstico sin fuentes (H-2):** la persona tiene arquetipo pero no propuesta, así que posicionamiento e ICP suelen estar vacíos y `ready` es `false` con «Posicionamiento sin completar» e «ICP sin completar» en `missing`; los completa en Estrategia (o con la guía «Configura tu estrategia»). H-2 sigue haciendo falta: sin arquetipo no hay `ready` nunca.
 - **Lectura en marcha y la persona salta al diagnóstico:** el trabajo sigue y escribe `findings` y `proposal` en su fila (`onboarding.server.ts:32`, `:84`); `step` no cambia por el trabajo, así que la persona sigue donde estaba y «Aprobar» queda alcanzable cuando llegue la propuesta (CA-3). Sin conflicto de datos.
 - **Dos miembros con diagnóstico distinto:** el estado de la empresa toma el tuyo y si no el más reciente (regla de `company_diagnosis`, sin cambios). `get_onboarding_status` lo dice tal cual; reconciliarlos es del SDD 4.
 - **Contexto del agente sin sesión de usuario** (Telegram o MCP, si su `db` es el cliente de servicio): `company_diagnosis` usa `auth.uid()` y `is_org_member`, y puede devolver `null`; entonces cuenta el `diagnosis` de la propia fila, y si tampoco se lee, `diagnosis: null` con su `missing` (CA-8). **[Por verificar]** qué cliente usa cada canal.
@@ -162,7 +169,7 @@ Español, «tú», sin iconos, estados con palabra. Fede revisa los textos en la
 | U-3 | `companyOnboardingStatus` y `get_onboarding_status` (`tools/onboarding.ts`, registro, `TITLES`, manifiesto por extractor); líneas en `AGENTS.md` y `src/lib/AGENTS.md` | CA-6, CA-7, CA-8, CA-9 | `src/lib/onboarding.test.ts`, `src/lib/agent/tools/onboarding.test.ts` |
 | U-4 | `Snapshot.onboarding`, lectura en `loadSnapshot`, detector `onboardingStalled` en `DETECTORS` y en la lista «always-on» | CA-10, CA-11, CA-12 | `src/lib/proactive.test.ts`, `src/lib/plays/catalog.test.ts`, `src/lib/org-data-onboarding.test.ts` |
 
-U-2 y U-3 dependen de U-1. U-4 es independiente. U-3 no empieza hasta que Fede responda P-1 (cambia `ready`).
+U-2 y U-3 dependen de U-1. U-4 es independiente. U-3 ya no espera: P-1 está decidida (opción B).
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 - Firmas: `onboardingDone(s: { step: string | null } | null | undefined): boolean`; `stepReachable(step: Step, i: { readJobId: string | null; hasProposal: boolean; hasDiagnosis: boolean }): boolean`; `nextStepAfterDiagnosis(hasProposal: boolean): "blocks" | "roadmap"`; `companyOnboardingStatus({ mine, companyDiagnosis, setup }: { mine: { step: string | null; diagnosis: unknown } | null; companyDiagnosis: unknown; setup: SetupData })`. `Step` sale de `STEPS` (`onboarding.tsx:15`); para no importar una ruta desde `src/lib`, mover la lista de ids a `onboarding.ts` y dejar las etiquetas en la ruta.
@@ -175,8 +182,8 @@ U-2 y U-3 dependen de U-1. U-4 es independiente. U-3 no empieza hasta que Fede r
 ## 14. Riesgos, dependencias y walkthrough
 **Riesgos:**
 - **Doble aviso:** a un Owner con el onboarding a medias le pueden llegar `onboarding_stalled` y `setup_incomplete` el mismo día. Son acciones distintas (recorrido y dato), pero si molesta, se decide después con datos de uso (§15, P-3).
-- **GTM Lab cambia el suelo:** cuando exista el proyecto principal, «lo mínimo para el diagnóstico» debería pasar a sus pasos obligatorios (§15.1). `companyOnboardingStatus` es el único sitio que cambiaría.
-- **`company_diagnosis` sin aplicar en producción** (§3.1 hallazgo 4, [Por verificar]): la herramienta caería al diagnóstico de la propia fila; no rompe.
+- **Riesgo aceptado por Fede con la opción B (2026-11-11):** GTM Lab archivará la Estrategia actual y reescribirá posicionamiento e ICP desde el proyecto principal (`PRD-20261101` §6.1 «Datos existentes», A-6 y A-7). Entre el archivo y la primera publicación, `strategy.positioning` y `strategy.icp` pueden volver a `false` y `ready` pasar a `false` en empresas que ya lo tenían; el SDD 4 debe decirlo con palabras («falta…»), no fallar. A-7 prevé archivar solo cuando el proyecto principal tenga hechos los pasos que publica, lo que acorta ese hueco. `companyOnboardingStatus` es el único sitio que cambiaría al pasar a la opción C.
+- **Listón alto de posicionamiento:** «completo» exige los 13 campos (`setup-schema.ts:50-51`), no solo los cinco de Dunford. Es la regla vigente de la guía y del medidor, y se reutiliza tal cual; si en uso real bloquea demasiadas empresas, se cambia en `setup-schema.ts` con su propio ticket, no aquí.
 - **Manifiesto en caché** de asistentes MCP: no verán la herramienta hasta refrescar; no rompe nada.
 
 **Dependencias:** ninguna sin entregar. El SDD 4 depende de este (CA-6 a CA-9).
@@ -199,14 +206,16 @@ U-2 y U-3 dependen de U-1. U-4 es independiente. U-3 no empieza hasta que Fede r
 - **D-4.** El recordatorio va solo a Sugerencias, con el umbral de 1 día ya decidido; Telegram sigue sus reglas actuales para avisos, sin cambios.
 - **D-5.** El recordatorio no se envía a invitados ni a roles distintos de Owner y Sales Leader.
 
-**Preguntas que necesitan a Fede:**
-- **P-1. Sustituto de NK-0028** (§15.1): ¿qué mínimo exige el diagnóstico de plays antes de proponer equipos? Opciones A, B, C o D. Recomendación: A ahora y C cuando exista GTM Lab SDD 3.
-- **P-2.** ¿Das por buena la revalidación del §3.2 (7 hechos, 1 obsoleto, 3 pendientes y el diagnóstico sin fuentes como nuevo) y que NK-0009 se cierre con este SDD, sin «épica de encaje de personas» aparte para el resto?
+**Decisiones de Fede (2026-11-11, transmitidas por el coordinador):**
+- **P-1. Sustituto de NK-0028 = opción B:** «A + posicionamiento e ICP»: el diagnóstico de plays necesita el diagnóstico GTM de la empresa (`company_diagnosis`) MÁS posicionamiento e ICP completos antes de proponer equipos. Recoge el riesgo aceptado (§14). Aplicado en CA-6 y §15.1.
+- **P-2. Sí:** «close NK-0009 with this SDD, no separate “épica de encaje de personas”». NK-0009 se cierra con este SDD; lo que el §3.2 marca como hecho u obsoleto no genera tickets nuevos.
+
+**Pregunta abierta para Fede:**
 - **P-3** (puede esperar a la entrega): si te molesta el doble aviso (`onboarding_stalled` y `setup_incomplete`), ¿silenciamos uno mientras el otro esté abierto?
 
 **Para la revisión técnica:** qué cliente de base de datos usa el contexto del agente en Telegram y MCP (§8).
 
-### 15.1 Sustituto de NK-0028 (pregunta para Fede, no decidido)
+### 15.1 Sustituto de NK-0028 (decidido por Fede el 2026-11-11: opción B)
 NK-0028 (contexto por bloques con nivel de confianza) está REJECTED en el ledger desde el 2026-11-10: lo sustituyen «el perfil y los pasos obligatorios del proyecto principal» de GTM Lab (`PRD-20261101` §6.2 fila 2). Ese sustituto aún no existe: no hay tablas `gtm_lab_*` ni pantalla (§3.1 hallazgo 10). El diagnóstico de plays (SDD 4) necesita un mínimo antes de proponer equipos; esto es lo que NK-0028 iba a dar y dónde está hoy:
 
 | Dato que cubría NK-0028 (`SDD-20261030-…-2-context-onboarding.md` §10) | Dónde está hoy | ¿Lo necesita el SDD 4? |
@@ -220,15 +229,14 @@ NK-0028 (contexto por bloques con nivel de confianza) está REJECTED en el ledge
 | Perfil de GTM Lab (producto, problema, clientes posibles, alternativas, diferencial, evidencia, objetivo a 12 meses) | Solo como código (`framework.yaml:7-17`), sin datos por empresa | Daría contexto a las preguntas del SDD 4; no es imprescindible |
 
 **Opciones para «mínimo para el diagnóstico de plays» (`ready` de CA-6):**
-- **A. Solo el diagnóstico GTM de la empresa** (arquetipo y etapa). Ya existe y H-2 lo hace posible sin fuentes. Sin migración. Recomendada para el Sprint 7.
+- **A. Solo el diagnóstico GTM de la empresa** (arquetipo y etapa). Ya existe y H-2 lo hace posible sin fuentes. Sin migración. Era la recomendación del autor.
 - **B. A + Posicionamiento e ICP completos** en Estrategia. Existe, pero GTM Lab archivará esos datos y los reescribirá desde el proyecto principal (A-6, A-7): el requisito cambiaría de fuente a medio plazo. Sin migración.
 - **C. Perfil y pasos obligatorios del proyecto principal** (el sustituto aprobado). Bloquea el SDD 4 hasta GTM Lab SDD 3, que espera a «Lovable A y B» y no tiene SDD.
 - **D. Un perfil propio ahora** (las 7 preguntas de GTM Lab en el onboarding, guardadas por empresa). Necesita la migración del §10 y duplica lo que guardará GTM Lab SDD 3.
 
-**Pregunta para Fede (P-1):** ¿qué opción usa el diagnóstico de plays ahora, y pasamos a C cuando exista el proyecto principal? Mientras no respondas, CA-6 usa A y U-3 no empieza.
+**Decisión de Fede (P-1, 2026-11-11):** opción **B**, «A + posicionamiento e ICP»: el diagnóstico de plays necesita el diagnóstico GTM de la empresa (`company_diagnosis`) más posicionamiento e ICP completos, con «completo» definido por `setup-schema.ts:50-53` (§3.1 hallazgo 12). Sin migración. Riesgo aceptado: GTM Lab puede archivar y reescribir posicionamiento e ICP más adelante (§14). Pasar a C cuando exista el proyecto principal queda para entonces, con su propio SDD.
 
 ## 16. Pendiente de verificar
-- [Por verificar, producción] `company_diagnosis` (0065) aplicada en producción: está en los tipos generados, pero la cabecera de la migración dice «NOT yet applied».
 - [Por verificar, gate] Qué cliente de base de datos usa el contexto del agente en Telegram y MCP, y si `company_diagnosis` devuelve algo con él (§8).
 - [Por verificar, gate] CA-9: el extractor no deja diff y las demás entradas del manifiesto no cambian.
 - [Por verificar, walkthrough] Que el recordatorio llega solo a su dueño (paso 6).
@@ -236,7 +244,8 @@ NK-0028 (contexto por bloques con nivel de confianza) está REJECTED en el ledge
 
 **Lo que NO se afirma:**
 - No se afirma cuántas empresas abandonan el onboarding ni en qué paso: sin dato.
-- No se afirma que la opción A baste para un buen diagnóstico de plays: es la recomendación más barata, no un resultado medido.
+- No se afirma que la opción B baste para un buen diagnóstico de plays: es la decisión de Fede, no un resultado medido.
+- No se afirma cuántas empresas cumplen hoy `ready` (diagnóstico más los 13 campos de posicionamiento y un ICP completo): sin dato.
 - No se afirma que el onboarding esté «completo» en contenido: los bloques y lo que escriben quedan como están hasta GTM Lab.
 - No se afirma que los 7 criterios marcados «Hecho» en el §3.2 funcionen en producción: se leyó el código de `main`, no se ejecutó nada.
 - No se afirma el coste en tokens de la herramienta nueva: sin dato.
