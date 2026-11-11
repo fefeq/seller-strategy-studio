@@ -10,6 +10,12 @@
 // NK-0131: the scope now also covers every non-test source file under src/routes/api/** (public routes such as the
 // proactive job, the Telegram webhook and the lead intake run on the server and log provider failures). Tests there
 // carry the `-` prefix (-name.test.ts), which the test filter already excludes.
+// NK-0142: the scope also covers src/server.ts and src/start.ts (the request entry points), and the unsafe patterns now
+// include a bare console.error(e) (no label before it), a `new Error(` built inside the call, any `.message` and a
+// variable derived from a `.message` (const m = e.message; destructured { message }) used in the call. `.message.length`
+// is allowed (a length is what the safe logs keep). The derived-variable rule is a text heuristic: it follows
+// assignments in the same file by name, not data flow, so a variable renamed through a function or an object is not seen
+// (documented limit, covered by the safe-logs tests that drive the real failures).
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -18,6 +24,7 @@ const ROOT = join(import.meta.dirname, "..", "..");
 const LIB = join(import.meta.dirname);
 
 const SRC = join(ROOT, "src");
+const ENTRY_POINTS = [join(SRC, "server.ts"), join(SRC, "start.ts")];
 const API = join(SRC, "routes", "api");
 const isTest = (n: string) => /\.test\.tsx?$/.test(n);
 
@@ -33,11 +40,13 @@ function scannedFiles(): string[] {
   const lib = sourceFiles(LIB, (n) => /\.tsx?$/.test(n) && !isTest(n));
   const api = sourceFiles(API, (n) => /\.tsx?$/.test(n) && !isTest(n));
   const fns = sourceFiles(SRC, (n) => n.endsWith(".functions.ts"));
-  return [...new Set([...lib, ...api, ...fns])];
+  return [...new Set([...lib, ...api, ...fns, ...ENTRY_POINTS])];
 }
 
 /** Every console.error|warn|log call: its text up to the matching parenthesis, whitespace collapsed. */
-function consoleCalls(src: string): string[] {
+function consoleCalls(source: string): string[] {
+  // Comments are not calls (a line that starts with // or a /* */ block).
+  const src = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
   const out: string[] = [];
   const re = /console\.(?:error|warn|log)\(/g;
   for (let m = re.exec(src); m; m = re.exec(src)) {
@@ -53,9 +62,42 @@ function consoleCalls(src: string): string[] {
   return out;
 }
 
-function isUnsafeLog(call: string): boolean {
-  return /\.slice\(/.test(call) || /,\s*(?:e|err|error)\s*\)$/.test(call);
+/** Names that hold (a piece of) an error message in this file: `const m = e.message`, `{ message }`, `{ message: m }`. */
+function messageVariables(src: string): string[] {
+  const names = new Set<string>();
+  for (const m of src.matchAll(
+    /\b(?:const|let|var)\s+(\w+)(?:\s*:[^=]+)?\s*=[^;]*?\.message\b(?!\.length)/g,
+  ))
+    if (m[1]) names.add(m[1]);
+  for (const m of src.matchAll(/\b(?:const|let|var)\s*\{([^}]*)\}\s*=/g))
+    for (const part of (m[1] ?? "").split(",")) {
+      const [key, alias] = part.split(":").map((x) => x.trim());
+      if (key === "message" && (alias || key)) names.add(alias || key);
+    }
+  return [...names];
 }
+
+/** `derived` = message variables to look for; empty when the message rule does not apply to the file (see MESSAGE_SCOPE). */
+function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
+  return (
+    /\.slice\(/.test(call) ||
+    /[(,]\s*(?:e|err|error)\s*\)$/.test(call) ||
+    /\bnew Error\(/.test(call) ||
+    (derived !== null && /\.message\b(?!\.length)/.test(call)) ||
+    (derived ?? []).some((v) =>
+      new RegExp(`(?<![\\w.])${v}\\b(?!\\.length)`).test(call.replace(/^console\.\w+\(/, "")),
+    )
+  );
+}
+
+// The `.message` rules (a `.message` or a variable derived from it in a console call) apply to the files of NK-0142:
+// the entry points and src/routes/api/**. In src/lib the same rule finds 32 real calls that log (e as Error).message or
+// error.message (NK-0142 report lists them); fixing them is a separate ticket, and the exception list must stay empty,
+// so the rule is not applied there yet. Widening MESSAGE_SCOPE to src/lib is the next step, once those calls are fixed.
+const inMessageScope = (rel: string) =>
+  rel === "src/server.ts" || rel === "src/start.ts" || rel.startsWith("src/routes/api/");
+const derivedFor = (f: { rel: string; src: string }) =>
+  inMessageScope(f.rel) ? messageVariables(f.src) : null;
 
 // file -> exact call -> reason (never "pending"). Closed list, empty since NK-0118 + NK-0121: it can only shrink.
 const EXCEPTIONS: Record<string, Record<string, string>> = {};
@@ -109,7 +151,7 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
   it("no unsafe console call outside the closed exception list", () => {
     const found = files.flatMap((f) =>
       consoleCalls(f.src)
-        .filter(isUnsafeLog)
+        .filter((c) => isUnsafeLog(c, derivedFor(f)))
         .filter((c) => !(c in (EXCEPTIONS[f.rel] ?? {})))
         .map((c) => `${f.rel}: ${c}`),
     );
@@ -120,7 +162,7 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
     const stale: string[] = [];
     for (const [file, calls] of Object.entries(EXCEPTIONS)) {
       const f = files.find((x) => x.rel === file);
-      const present = f ? consoleCalls(f.src).filter(isUnsafeLog) : [];
+      const present = f ? consoleCalls(f.src).filter((c) => isUnsafeLog(c, derivedFor(f))) : [];
       for (const [call, why] of Object.entries(calls))
         if (!present.includes(call) || !why.trim()) stale.push(`${file}: ${call}`);
     }
@@ -133,5 +175,54 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
     expect(isUnsafeLog('console.error("x", raw.slice(0, 300))')).toBe(true);
     expect(isUnsafeLog('console.error("x", safeErrorLog(e))')).toBe(false);
     expect(isUnsafeLog('console.error("x", res.status, body.length)')).toBe(false);
+  });
+
+  it("the scan itself flags the NK-0142 patterns and lets the safe forms through", () => {
+    expect(isUnsafeLog("console.error(error)")).toBe(true);
+    expect(isUnsafeLog("console.error(consumeLastCapturedError() ?? new Error(`x ${body}`))")).toBe(
+      true,
+    );
+    expect(isUnsafeLog('console.error("x", error.message)')).toBe(true);
+    expect(isUnsafeLog('console.error("x", e2?.message)')).toBe(true);
+    expect(isUnsafeLog('console.error("x", error.message.length)')).toBe(false);
+    expect(isUnsafeLog('console.error("x", safeErrorLog(error))')).toBe(false);
+    expect(isUnsafeLog("console.error(`x ${msg}`)", ["msg"])).toBe(true);
+    expect(isUnsafeLog('console.error("x", msg)', ["msg"])).toBe(true);
+    expect(isUnsafeLog('console.error("x", msg.length)', ["msg"])).toBe(false);
+    expect(isUnsafeLog('console.error("x", obj.msg)', ["msg"])).toBe(false);
+    expect(isUnsafeLog('console.error("x", msg)')).toBe(false);
+  });
+
+  it("finds the variables derived from a message", () => {
+    const src = [
+      "const a = e.message;",
+      "let b = String((err as Error).message).slice(0, 5);",
+      "const { message } = error;",
+      "const { message: c, code } = error;",
+      "const n = e.message.length;",
+      "const ok = res.status;",
+    ].join("\n");
+    expect(messageVariables(src).sort()).toEqual(["a", "b", "c", "message"]);
+  });
+
+  it("ignores console calls written in comments", () => {
+    expect(
+      consoleCalls("// a plain console.error(error) here\n/* console.log(e) */\nconst x = 1;"),
+    ).toEqual([]);
+    expect(consoleCalls("foo();\nconsole.error(error);")).toEqual(["console.error(error)"]);
+  });
+
+  it("the message rule is off outside its scope and on inside it", () => {
+    expect(isUnsafeLog('console.error("x", e.message)', null)).toBe(false);
+    expect(isUnsafeLog('console.error("x", e.message)', [])).toBe(true);
+    expect(inMessageScope("src/routes/api/public/leads.ts")).toBe(true);
+    expect(inMessageScope("src/server.ts")).toBe(true);
+    expect(inMessageScope("src/lib/memory.server.ts")).toBe(false);
+  });
+
+  it("covers the two entry points", () => {
+    const rels = files.map((f) => f.rel);
+    expect(rels).toContain("src/server.ts");
+    expect(rels).toContain("src/start.ts");
   });
 });

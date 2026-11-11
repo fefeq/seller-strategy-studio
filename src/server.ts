@@ -1,6 +1,7 @@
 import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
+import { safeErrorLog } from "./lib/agent/safe-error-log";
 import { renderErrorPage } from "./lib/error-page";
 import { robotsTagFor } from "./lib/seo";
 import { requestCtx } from "./lib/after-response.server";
@@ -30,7 +31,7 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   const body = await response.clone().text();
   if (!isH3SwallowedErrorBody(body)) return response;
 
-  console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+  console.error("h3 swallowed SSR error", safeErrorLog(consumeLastCapturedError()));
   return new Response(renderErrorPage(), {
     status: 500,
     headers: { "content-type": "text/html; charset=utf-8" },
@@ -72,7 +73,7 @@ export default {
       );
       return withRobotsTag(request, await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
-      console.error(error);
+      console.error("request failed", safeErrorLog(error));
       return new Response(renderErrorPage(), {
         status: 500,
         headers: { "content-type": "text/html; charset=utf-8" },
