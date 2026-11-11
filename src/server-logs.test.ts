@@ -4,7 +4,6 @@
 // stack + message, so a witness in the error or in the body reached the log. The witness must not reach any console
 // argument, the log keeps its label, and the response (CA-3) is the same. Fictional witness, no customer data.
 import { inspect } from "node:util";
-import { consumeLastCapturedError } from "@/lib/error-capture";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const WITNESS = "SECRET-SERVER-ERROR-123";
@@ -28,8 +27,12 @@ vi.spyOn(console, "error").mockImplementation((...a: unknown[]) => void logs.pus
 
 type Server = { fetch: (r: Request, env: unknown, ctx: unknown) => Promise<Response> };
 let server: Server;
+let consumeLastCapturedError: () => unknown;
 beforeAll(async () => {
-  // Imported after the spies, so the wrapper that error-capture installs calls the spy like the real one calls the console.
+  // error-capture must be imported AFTER the spies (never statically): it wraps console.error when it loads, and a spy
+  // installed later would replace that wrapper, so nothing would be captured and a leak of the captured error in
+  // server.ts would go unseen. Here the wrapper calls the spy like the real one calls the console.
+  consumeLastCapturedError = (await import("@/lib/error-capture")).consumeLastCapturedError;
   server = (await import("./server")).default as Server;
 });
 beforeEach(() => {
@@ -74,8 +77,14 @@ describe("src/server.ts logs carry no whole error or body (NK-0142)", () => {
   it("h3 swallows the error into a JSON 500: neither its body nor a captured error reaches the log", async () => {
     h.handler = async () => {
       // h3 logs the original error through console.error (error-capture records it) and answers with this body.
-      console.error(new Error(`captured said ${WITNESS}`));
-      logs.length = 0; // that call is the test's stand-in for h3, not the code under test
+      const original = new Error(`captured said ${WITNESS}`);
+      console.error(original);
+      // The wrapper is really installed: the error was recorded (otherwise this test would prove nothing) ...
+      expect(consumeLastCapturedError()).toBe(original);
+      expect(original.message).toContain(WITNESS);
+      // ... and it is put back for server.ts to consume, like h3 left it.
+      console.error(original);
+      logs.length = 0; // those calls are the test's stand-in for h3, not the code under test
       return new Response(
         JSON.stringify({ unhandled: true, message: "HTTPError", note: WITNESS }),
         {
