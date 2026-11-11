@@ -56,7 +56,14 @@ export const DEFAULT_RULES_READ_FAILED =
 export const DEFAULT_RULES_SAVE_FAILED =
   "No he podido guardar las reglas base. No se ha añadido ninguna; reinténtalo.";
 
-const same = (t: string) => t.trim().toLowerCase();
+/**
+ * The title as the unique index of migration 0085 reads it: lower(btrim(title)). Postgres btrim removes only the normal space
+ * (U+0020), while JS trim() also removes tabs, line breaks, no-break and other Unicode spaces, so trim() could call two titles
+ * equal that the index keeps apart, or the reverse (NK-0145). Compared against a real Postgres in default-rules-btrim.pg.test.ts.
+ */
+export const normalizeRuleTitle = (t: string): string => t.replace(/^ +| +$/g, "").toLowerCase();
+
+const same = normalizeRuleTitle;
 
 // Attempts before giving up: the first one can lose a race against another session (unique index of migration 0085); the next
 // ones read again and add only what that session did not. Three is plenty: each lost race means somebody else wrote the titles.
