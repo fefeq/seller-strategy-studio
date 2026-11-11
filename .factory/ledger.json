@@ -2413,7 +2413,7 @@
       "title": "Migración 0079: verificar en la base viva si está aplicada (registro con 77 filas, max id 78) o pendiente, y cómo se mapea id↔idx del journal",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint6",
       "duplicate_of": null,
       "sdd": null,
@@ -2432,6 +2432,12 @@
           "at": "2026-11-10T20:37:04.568Z",
           "by": "Fede: \"GO\" a la propuesta del Sprint 6 (2026-11-10)",
           "note": "owner=coordinador-sprint6"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-11T00:33:35.312Z",
+          "by": "Fede",
+          "note": "sha=b7c8443b4241949e8487c81d995405d56d5defb5"
         }
       ]
     },
