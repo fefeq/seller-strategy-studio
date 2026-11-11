@@ -114,6 +114,8 @@ drop policy if exists "knowledge voice update" on public.knowledge_docs;
 
 **Vuelta atrás:** borrar las 9 filas por su `hash`.
 
+2026-11-11: comprobación completa — las 85 migraciones del journal están en el registro; las filas 58 y 59 sobran y su origen es desconocido (ninguna versión de ningún .sql del repo coincide); correspondencia fiable por hash. Gate PASS en b7c8443.
+
 ## 0085 (2026-11-10/11)
 
 **Qué:** índice único de reglas de equipo, para cerrar NK-0136 (dos sesiones o pestañas pueden duplicar reglas).
