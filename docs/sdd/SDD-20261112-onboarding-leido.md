@@ -1,7 +1,7 @@
 # SDD-20261112-onboarding-leido · [Mejora] «Nokko lee»: qué significa «Leído» y qué salió de cada fuente
 
 **Tipo:** Mejora (solo interfaz, sin migración, sin IA) · **Prioridad propuesta:** Media (pregunta directa de Fede durante el onboarding; cambio pequeño y reversible)
-**Estado:** Borrador · **Pide:** Fede (2026-11-12) · **Aprueba:** Fede · **Fecha:** 2026-11-12
+**Estado:** Aprobado (2026-11-12; base en §17) · **Pide:** Fede (2026-11-12) · **Aprueba:** Fede · **Fecha:** 2026-11-12
 **Ticket:** NK-0156 (parte 1 de 2; la parte 2 es NK-0157 y NO entra aquí)
 **PRD:** No aplica (mejora acotada) · **Depende de:** `SDD-20261025-field-actions-edit-delete-confirm.md` (U-4: descartar hallazgos y quitar fuentes, ya en `main`) y **de NK-0164** (límite único de 3 documentos **binarios** (`files`: hoy solo PDF; el selector acepta únicamente `.pdf,.txt,.md,.csv`, `sources.tsx:126`) por lectura, en cliente y servidor; rama `feat/nk-0164-onboarding-files-limit`; no limita los archivos de texto ni los documentos de Drive, §3.9). NK-0156 se construye sobre `main` **después** de que NK-0164 se integre; no se empieza antes.
 
@@ -184,14 +184,23 @@ Nota: no hay preguntas de producto que bloqueen el SDD; P-1 no bloquea.
 - Uso real del onboarding: sin dato.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Estado: pass 1 FAIL → corregido en `8379b0d`; pass 2 FAIL → corregido en d6bdad5; pass 3 pendiente.
+- Estado: pass 1 FAIL → corregido en `8379b0d`; pass 2 FAIL → corregido en d6bdad5; pass 3 PASS-WITH-FIXES (0 BLOCKER, 0 MAJOR, 8 MINOR) → menores corregidos en `5ab013b`.
+- Informe de la pasada 3 (sin editar): `.factory/evidence/NK-0156/sdd-gate-pass3.md` y sonda `sdd-gate-pass3-probe.json`.
 - Informe de la pasada 1 (sin editar): `.factory/evidence/NK-0156/sdd-gate-pass1.md` (3 MAJOR, 7 MINOR, 0 BLOCKER).
 - Informe de la pasada 2 (sin editar): `.factory/evidence/NK-0156/sdd-gate-pass2.md` y sonda `sdd-gate-pass2-probe.json` (1 MAJOR, 8 MINOR, 0 BLOCKER).
-- Veredicto del gate (pasada 3): No revisado
+- Veredicto del gate (pasada 3): PASS-WITH-FIXES, 0 mayores; los 8 menores (m-1..m-8) corregidos en `5ab013b` y comprobados contra `main` @ `ec5a813` y la rama de NK-0164 (`fa6b119`). Los menores corregidos no se han vuelto a pasar por el gate.
 - CA sin prueba posible o sin G-n: No revisado (este SDD no tiene PRD; los CA no citan G-n)
 - [Por verificar] que sigue sin comprobarse: No revisado
 - Contradicciones con el código o con decisiones previas: No revisado
 - Lo que esta revisión NO demuestra: No revisado
+
+### Aprobación (2026-11-12)
+- **Estado: Aprobado.** Base de la aprobación, y nada más:
+  1. Gate, pasadas 1 a 3: pasada 1 FAIL, pasada 2 FAIL, pasada 3 PASS-WITH-FIXES (0 mayores; menores corregidos en `5ab013b`).
+  2. Instrucción de Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint» y «sigue, ejecuta todo tú».
+  3. Decisiones del coordinador recogidas abajo: cabecera como estado, web sin contador, dependencia de NK-0164 y ticket hermano para el corte de 40 000 caracteres.
+- **Copy decidido por el coordinador por delegación.** Fede no ha aprobado él mismo el copy exacto (cabecera, estados, frase de ayuda, textos de apoyo); puede revertirlo (P-1) y solo cambiaría el copy de CA-1 a CA-4.
+- Esta aprobación no es un GO de despliegue ni de implementación sin brief: NK-0156 no se construye antes de que NK-0164 esté integrado (§14) y el brief debe volver a citar las líneas movidas (§16).
 
 ### Decisiones del coordinador (Fede delegó la ejecución; 2026-11-12)
 - **Decisión del coordinador (P-1, sustituida):** la pasada 1 mantenía «Terminé de leer tus fuentes»; la sustituye la decisión N-1.
