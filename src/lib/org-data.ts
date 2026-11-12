@@ -136,6 +136,7 @@ async function readSetupGuide(
   db: Db,
   orgId: string,
   withActivity: boolean,
+  signal?: AbortSignal, // NK-0150: a cancelled query (sign-out, account switch) aborts reads that have not left yet
 ): Promise<{ snoozes: Snooze[]; activityAt: string | null }> {
   // Only changes a signed-in person made (migration 0064): enrichments, syncs and triggers do not move last_human_edit_at. Empty = unknown.
   const newest = (
@@ -147,32 +148,35 @@ async function readSetupGuide(
       | "deals"
       | "icp_profiles"
       | "messaging_pillars",
-  ) =>
-    db
+  ) => {
+    const q = db
       .from(table)
       .select("last_human_edit_at")
       .eq("org_id", orgId)
       .not("last_human_edit_at", "is", null)
       .order("last_human_edit_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then((r) => {
-        if (r.error) throw new Error(r.error.message);
-        return r.data?.last_human_edit_at ?? null;
-      });
+      .limit(1);
+    return (signal ? q.abortSignal(signal) : q).maybeSingle().then((r) => {
+      if (r.error) throw new Error(r.error.message);
+      return r.data?.last_human_edit_at ?? null;
+    });
+  };
+  const snoozeQuery = db
+    .from("setup_step_snoozes")
+    .select("step_id,snoozed_until,created_at")
+    .eq("org_id", orgId);
+  const signedUpAt = () => {
+    const q = db.from("organizations").select("created_at").eq("id", orgId);
+    return (signal ? q.abortSignal(signal) : q).maybeSingle().then((r) => {
+      if (r.error) throw new Error(r.error.message);
+      return r.data?.created_at ?? null;
+    });
+  };
   const [snoozes, ...stamps] = await Promise.all([
-    db.from("setup_step_snoozes").select("step_id,snoozed_until,created_at").eq("org_id", orgId),
+    signal ? snoozeQuery.abortSignal(signal) : snoozeQuery,
     ...(withActivity
       ? [
-          db
-            .from("organizations")
-            .select("created_at")
-            .eq("id", orgId)
-            .maybeSingle()
-            .then((r) => {
-              if (r.error) throw new Error(r.error.message);
-              return r.data?.created_at ?? null;
-            }),
+          signedUpAt(),
           newest("positioning"),
           newest("segments"),
           newest("quotas"),
@@ -199,10 +203,14 @@ async function readSetupGuide(
 }
 
 /** Just the snoozes: one query. Enough to pick the next step. */
-export const loadSetupSnoozes = async (db: Db, orgId: string): Promise<Snooze[]> =>
-  (await readSetupGuide(db, orgId, false)).snoozes;
+export const loadSetupSnoozes = async (
+  db: Db,
+  orgId: string,
+  signal?: AbortSignal,
+): Promise<Snooze[]> => (await readSetupGuide(db, orgId, false, signal)).snoozes;
 /** Snoozes plus the latest activity (eight queries): for the inactivity nudge and the proactive snapshot. */
-export const loadSetupGuideExtras = (db: Db, orgId: string) => readSetupGuide(db, orgId, true);
+export const loadSetupGuideExtras = (db: Db, orgId: string, signal?: AbortSignal) =>
+  readSetupGuide(db, orgId, true, signal);
 
 /** `fitKey: false` skips the domain-proposal data (extra queries) for callers that never use it, like the per-lead follow-up. */
 export async function loadSnapshot(
