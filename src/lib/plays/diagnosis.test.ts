@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { CATALOG, type Play } from "./catalog";
 import {
@@ -6,6 +8,7 @@ import {
   MAX_PROPOSED_TEAMS,
   PLAYS_DIAGNOSIS_DETECTOR,
   TEAM_IDS,
+  playDiagnosisText,
   prioritizeTeams,
   type DiagnosisAnswers,
   type DiagnosisResult,
@@ -233,7 +236,7 @@ describe("prioritizeTeams: the order (CA-3)", () => {
     const plg = ready(custom(catalog, teams, status({}, "plg"), answers()));
     expect(ids(plg.proposed)).toEqual(["entrantes-y-producto", "reuniones"]);
     expect(plg.proposed[0]!.reasons).toContain(
-      "Encaja con tu arquetipo (B2B mid-market / híbrido): vendes con producto.",
+      `Encaja con tu arquetipo (${ARCHETYPE_NAME}): vendes con producto.`,
     );
   });
 
@@ -539,5 +542,257 @@ describe("activationPlan (CA-6)", () => {
     );
     for (const a of r.activation) expect(proposedPlays.has(a.play_id)).toBe(true);
     expect(r.activation.map((a) => a.play_id)).not.toContain("call-transcript-signal-extraction");
+  });
+});
+
+const VOZ = { ok: true, ejemplos: 3, faltan: 0 } as const;
+const REGLAS = { ok: true, faltan: [] as string[] } as const;
+const text = (r: DiagnosisResult, o: Partial<Parameters<typeof playDiagnosisText>[1]> = {}) =>
+  playDiagnosisText(r, { voz: VOZ, reglas: REGLAS, canAct: true, ...o });
+const scenarios = () => [
+  run(status(), answers()),
+  run(status({}, "plg"), answers({ bottleneck: "aprender-de-llamadas" })),
+  run(
+    status({}, "field_sales"),
+    answers({ bottleneck: "reuniones", wanted: ["entrantes-y-producto"] }),
+  ),
+  run(status({}, "plg"), answers({ wanted: ["reuniones", "senales-de-cuenta"] })),
+];
+
+const ARCHETYPE_NAME = "B2B mid-market / híbrido";
+
+describe("reasons and texts (CA-7)", () => {
+  it("every reason is one of the fixed sentences of section 9 and has no figures", () => {
+    const fixed = [
+      /^Es tu cuello de botella\.$/,
+      /^Lo has elegido tú\.$/,
+      /^Encaja con tu arquetipo \(.+\): vendes con producto\.$/,
+      /^Empieza por «.+», de la fase (Fundación|Captura|Generación|Orquestación)\.$/,
+      /^Activar «.+» también avanza «.+»\.$/,
+    ];
+    for (const r of scenarios()) {
+      for (const t of ready(r).proposed) {
+        expect(t.reasons.length).toBeGreaterThan(0);
+        for (const reason of t.reasons) {
+          expect(
+            fixed.some((re) => re.test(reason)),
+            reason,
+          ).toBe(true);
+          // The archetype name is data («B2B…»), not a figure of the rule: it is taken out before looking for digits.
+          expect(reason.replace(ARCHETYPE_NAME, "")).not.toMatch(/\d/);
+        }
+      }
+    }
+  });
+
+  it("builds the reasons of a team in order: bottleneck, chosen, fit, where it starts, what else it moves", () => {
+    const r = ready(
+      run(
+        status({}, "plg"),
+        answers({ bottleneck: "entrantes-y-producto", wanted: ["entrantes-y-producto"] }),
+      ),
+    );
+    expect(r.proposed[0]!.reasons).toEqual([
+      "Es tu cuello de botella.",
+      "Lo has elegido tú.",
+      `Encaja con tu arquetipo (${ARCHETYPE_NAME}): vendes con producto.`,
+      "Empieza por «Contacto a cada registro de producto», de la fase Generación.",
+    ]);
+  });
+
+  it("names the play with its catalogue title in «Empieza por» and «Activar … también avanza …»", () => {
+    const r = ready(run(status(), answers()));
+    const reactivar = r.proposed.find((t) => t.id === "reactivar-perdidos")!;
+    expect(reactivar.reasons).toEqual([
+      "Empieza por «Señales en el CRM con caída en el tiempo», de la fase Captura.",
+      "Activar «Señales en el CRM con caída en el tiempo» también avanza «Señales de cuenta».",
+    ]);
+  });
+
+  it("without an archetype name the fit reason has no empty parentheses", () => {
+    const s = status({
+      diagnosis: { archetype: "A", name: null, motion: "plg", stage: null, nextStep: null },
+    });
+    const r = ready(run(s, answers({ bottleneck: "entrantes-y-producto" })));
+    expect(r.proposed[0]!.reasons).toContain("Encaja con tu arquetipo: vendes con producto.");
+    for (const reason of r.proposed.flatMap((t) => t.reasons)) expect(reason).not.toContain("()");
+  });
+
+  it("is pure: the source imports no Supabase client, ai-gateway, agent.server, toggle or server function", () => {
+    const src = readFileSync(path.resolve(__dirname, "diagnosis.ts"), "utf8");
+    const specifiers = [...src.matchAll(/^import[^;]*?from\s+["']([^"']+)["']/gm)].map(
+      (m) => m[1]!,
+    );
+    expect(specifiers.length).toBeGreaterThan(0);
+    for (const s of specifiers)
+      expect(s).not.toMatch(/supabase|ai-gateway|agent\.server|toggle|\.functions|\.server/);
+    expect(src).not.toMatch(
+      /play_states|supabase|\.from\(|\.insert\(|\.upsert\(|\.update\(|\bfetch\(/,
+    );
+  });
+});
+
+describe("playDiagnosisText (section 9)", () => {
+  it("a company that is not ready: what is missing, joined by «; », and where to fix it, with no team or play title", () => {
+    const r = run(
+      status({
+        ready: false,
+        missing: ["Diagnóstico GTM sin hacer", "ICP sin completar", "Segmentos sin rango de ACV"],
+        diagnosis: null,
+      }),
+      answers({ bottleneck: "reuniones" }),
+    );
+    const out = text(r);
+    expect(out).toBe(
+      "Todavía no puedo proponerte equipos de plays. Falta: Diagnóstico GTM sin hacer; ICP sin completar. /onboarding para el diagnóstico GTM y /setup para posicionamiento e ICP.",
+    );
+    for (const t of PLAY_TEAMS) expect(out).not.toContain(t.title);
+    for (const p of CATALOG) expect(out).not.toContain(p.title);
+    expect(out).not.toContain("Segmentos");
+  });
+
+  it("points only to the screen that fixes what is missing", () => {
+    const onlyGtm = text({ ready: false, missing: ["Diagnóstico GTM sin hacer"] });
+    expect(onlyGtm).toContain("/onboarding");
+    expect(onlyGtm).not.toContain("/setup");
+    const onlySetup = text({ ready: false, missing: ["Posicionamiento sin completar"] });
+    expect(onlySetup).toContain("/setup");
+    expect(onlySetup).not.toContain("/onboarding");
+  });
+
+  it("scenario A, owner: header, teams with task and reasons, plan, the rest, voice, rules and closing", () => {
+    const out = text(run(status(), answers()), {
+      voz: { ok: true, ejemplos: 1, faltan: 2 },
+      reglas: { ok: true, faltan: ["a", "b", "c"] },
+    });
+    expect(out).toBe(
+      [
+        "Te propongo empezar por estos equipos de plays, en este orden:",
+        "1. Priorizar cuentas y limpiar CRM: Decidir a qué cuentas dedicar tiempo y tener un CRM del que fiarte. Empieza por «Tiering y puntuación de cuentas», de la fase Fundación.",
+        "2. Reactivar perdidos: Volver a los deals perdidos cuando algo ha cambiado de verdad en la cuenta. Empieza por «Señales en el CRM con caída en el tiempo», de la fase Captura. Activar «Señales en el CRM con caída en el tiempo» también avanza «Señales de cuenta».",
+        "3. Señales de cuenta: Saber qué cuentas se mueven y actuar antes de que la señal se enfríe. Empieza por «Señales en el CRM con caída en el tiempo», de la fase Captura. Activar «Señales en el CRM con caída en el tiempo» también avanza «Reactivar perdidos».",
+        "",
+        "Plan de activación, por fase y dependencias:",
+        "1. Tiering y puntuación de cuentas (Priorizar cuentas y limpiar CRM)",
+        "2. Señales en el CRM con caída en el tiempo (Reactivar perdidos, Señales de cuenta)",
+        "3. Reactivación de deals perdidos (Reactivar perdidos)",
+        "",
+        "Para después:",
+        "Aprender de llamadas: Lo dejamos para después: como mucho 3 equipos de plays a la vez.",
+        "Entrantes y producto: No es lo habitual para tu arquetipo (B2B mid-market / híbrido); dímelo si lo quieres.",
+        "",
+        "Ya activos:",
+        "Reuniones: Todos sus plays disponibles ya están activados.",
+        "",
+        "Tienes 1 de 3 mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.",
+        "Te faltan 3 reglas base; puedo añadirlas si me lo confirmas.",
+        "Nada se activa solo: te dejo cada play como sugerencia y lo activas al aprobarla.",
+      ].join("\n"),
+    );
+  });
+
+  it("a role that cannot act: rules and closing do not promise actions", () => {
+    const out = text(run(status(), answers()), {
+      reglas: { ok: true, faltan: ["a", "b"] },
+      canAct: false,
+    });
+    expect(out).toContain(
+      "Te faltan 2 reglas base; pídele a tu Owner o Sales Leader que las añada.",
+    );
+    expect(out).toContain(
+      "Nada se activa solo: un Owner o un Sales Leader activa cada play al aprobar su sugerencia.",
+    );
+    expect(out).not.toContain("puedo añadirlas");
+    expect(out).not.toContain("te dejo cada play como sugerencia");
+  });
+
+  it("voice and rules: complete, and failed reads say so instead of showing zero", () => {
+    const base = run(status(), answers());
+    expect(text(base)).toContain("Tu voz está completa.");
+    expect(text(base)).toContain("Ya tienes las reglas base.");
+    const failed = text(base, { voz: { ok: false }, reglas: { ok: false } });
+    expect(failed).toContain("No he podido comprobar la voz de tu empresa.");
+    expect(failed).toContain("No he podido comprobar tus reglas.");
+    expect(failed).not.toMatch(/Tienes \d+ de/);
+    expect(failed).not.toContain("Te faltan");
+  });
+
+  it("when every team is active it says so and offers no plan, no closing", () => {
+    const enabled = Object.fromEntries(CATALOG.map((p) => [p.id, true]));
+    const out = text(run(status({}, "plg"), answers(), enabled));
+    expect(out).toContain(
+      "Ya tienes activados todos los plays disponibles de los equipos de plays.",
+    );
+    expect(out).not.toContain("Te propongo");
+    expect(out).not.toContain("Plan de activación");
+    expect(out).not.toContain("Nada se activa solo");
+  });
+
+  it("omits the sections that have no elements", () => {
+    const catalog = [play("a")];
+    const teams = [team("reuniones", ["a"])];
+    const out = text(custom(catalog, teams, status(), answers()));
+    expect(out).not.toContain("Para después:");
+    expect(out).not.toContain("Ya activos:");
+    expect(out).not.toContain("No disponibles todavía:");
+  });
+
+  it("lists the teams without available plays with their reason", () => {
+    const catalog = [
+      play("blk", { status: "bloqueado", blockedBy: "proveedor_datos" }),
+      play("ok"),
+    ];
+    const teams = [team("reuniones", ["blk"]), team("reactivar-perdidos", ["ok"])];
+    const out = text(custom(catalog, teams, status(), answers()));
+    expect(out).toContain(
+      "No disponibles todavía:\nReuniones: Ningún play disponible todavía: falta un proveedor de datos.",
+    );
+  });
+
+  it("never shows voice text or rule bodies: only counts and the titles it is given", () => {
+    const out = text(run(status(), answers()), {
+      voz: { ok: true, ejemplos: 2, faltan: 1 },
+      reglas: { ok: true, faltan: ["Titulo A"] },
+    });
+    expect(out).not.toContain("Titulo A");
+    expect(out).toContain("Tienes 2 de 3");
+  });
+});
+
+describe("words (CA-19, module part)", () => {
+  const sources = () => {
+    const out: string[] = [readFileSync(path.resolve(__dirname, "diagnosis.ts"), "utf8")];
+    for (const r of scenarios()) {
+      const x = ready(r);
+      out.push(
+        text(r),
+        text(r, { canAct: false }),
+        text(r, { voz: { ok: false }, reglas: { ok: false } }),
+      );
+      out.push(...x.proposed.flatMap((t) => t.reasons), ...x.later.map((n) => n.reason));
+      out.push(...x.alreadyActive.map((n) => n.reason), ...x.notAvailable.map((n) => n.reason));
+    }
+    out.push(text({ ready: false, missing: ["Diagnóstico GTM sin hacer", "ICP sin completar"] }));
+    out.push(...Object.values(BOTTLENECK_WORD));
+    return out;
+  };
+
+  it("never writes «Equipo»/«Equipos» capitalised unless followed by « de plays»", () => {
+    for (const s of sources()) expect(s).not.toMatch(/\bEquipos?\b(?! de plays)/);
+  });
+
+  it("never calls a team of plays an agent", () => {
+    for (const s of sources()) expect(s).not.toMatch(/equipos? de plays[^.]*\bagentes?\b/i);
+  });
+
+  it("never uses usted, ustedes, vos or vosotros", () => {
+    for (const s of sources()) expect(s).not.toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
+  });
+
+  it("the word check has teeth: it catches the forms it forbids", () => {
+    expect("Equipo de ventas").toMatch(/\bEquipos?\b(?! de plays)/);
+    expect("Los equipos de plays son agentes").toMatch(/equipos? de plays[^.]*\bagentes?\b/i);
+    expect("Usted puede").toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
+    expect("activos y motivos").not.toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
   });
 });

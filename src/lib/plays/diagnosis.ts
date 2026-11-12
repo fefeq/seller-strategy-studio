@@ -225,3 +225,75 @@ function teamReasons(
   }
   return reasons;
 }
+
+export type VozInfo = { ok: true; ejemplos: number; faltan: number } | { ok: false };
+export type ReglasInfo = { ok: true; faltan: string[] } | { ok: false };
+
+/** Where each blocking piece is fixed (the links of the flow in section 9). */
+function linksFor(missing: string[]): string {
+  const links: string[] = [];
+  if (missing.some((m) => m.startsWith("Diagnóstico GTM")))
+    links.push("/onboarding para el diagnóstico GTM");
+  if (missing.some((m) => !m.startsWith("Diagnóstico GTM")))
+    links.push("/setup para posicionamiento e ICP");
+  return links.join(" y ");
+}
+
+/**
+ * The words of section 9 for a result: what `resumen` says. Pure; the role arrives already resolved as `canAct`.
+ * It counts voice examples and rules, it never shows their text.
+ */
+export function playDiagnosisText(
+  result: DiagnosisResult,
+  { voz, reglas, canAct }: { voz: VozInfo; reglas: ReglasInfo; canAct: boolean },
+): string {
+  if (!result.ready)
+    return [
+      `Todavía no puedo proponerte equipos de plays. Falta: ${result.missing.join("; ")}.`,
+      `${linksFor(result.missing)}.`,
+    ].join(" ");
+
+  const out: string[] = [];
+  if (result.proposed.length) {
+    out.push("Te propongo empezar por estos equipos de plays, en este orden:");
+    for (const t of result.proposed)
+      out.push(`${t.rank}. ${t.title}: ${t.task} ${t.reasons.join(" ")}`);
+  } else if (!result.later.length) {
+    out.push("Ya tienes activados todos los plays disponibles de los equipos de plays.");
+  }
+  if (result.activation.length) {
+    out.push("", "Plan de activación, por fase y dependencias:");
+    for (const a of result.activation) out.push(`${a.n}. ${a.title} (${a.teams.join(", ")})`);
+  }
+  const section = (title: string, notes: TeamNote[]) => {
+    if (!notes.length) return;
+    out.push("", title);
+    for (const n of notes) out.push(`${n.title}: ${n.reason}`);
+  };
+  section("Para después:", result.later);
+  section("Ya activos:", result.alreadyActive);
+  section("No disponibles todavía:", result.notAvailable);
+
+  out.push("");
+  if (!voz.ok) out.push("No he podido comprobar la voz de tu empresa.");
+  else if (voz.faltan > 0)
+    out.push(
+      `Tienes ${voz.ejemplos} de ${voz.ejemplos + voz.faltan} mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.`,
+    );
+  else out.push("Tu voz está completa.");
+  if (!reglas.ok) out.push("No he podido comprobar tus reglas.");
+  else if (reglas.faltan.length)
+    out.push(
+      canAct
+        ? `Te faltan ${reglas.faltan.length} reglas base; puedo añadirlas si me lo confirmas.`
+        : `Te faltan ${reglas.faltan.length} reglas base; pídele a tu Owner o Sales Leader que las añada.`,
+    );
+  else out.push("Ya tienes las reglas base.");
+  if (result.activation.length)
+    out.push(
+      canAct
+        ? "Nada se activa solo: te dejo cada play como sugerencia y lo activas al aprobarla."
+        : "Nada se activa solo: un Owner o un Sales Leader activa cada play al aprobar su sugerencia.",
+    );
+  return out.join("\n");
+}
