@@ -8,7 +8,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({ step: null as string | null }));
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children: React.ReactNode; to: string }) => <a href={to}>{children}</a>,
+  Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
+    <a href={to}>{children}</a>
+  ),
 }));
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: null }) }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: vi.fn() } }));
@@ -23,7 +25,10 @@ vi.mock("@/hooks/use-setup", () => ({ useSetup: () => ({ data: { status: { pct: 
 vi.mock("@/hooks/use-setup-guide", () => ({
   useSetupGuide: () => ({ orgId: "org-ficticia", message: null, stale: false }),
 }));
-vi.mock("@/components/setup/guide", () => ({ GuideOffer: () => null, NextStepMessage: () => null }));
+vi.mock("@/components/setup/guide", () => ({
+  GuideOffer: () => null,
+  NextStepMessage: () => null,
+}));
 
 import { RoadmapCard } from "./home-card";
 
