@@ -969,4 +969,12 @@ describe("playDiagnosisText: review of session 1", () => {
     const r = ready(custom(catalog, teams, status(), answers(), { b: true }));
     expect(r.proposed[0]!.reasons).toEqual(["Empieza por «Play a», de la fase Captura."]);
   });
+
+  it("the voice line says «de 3», the literal of section 9, not a sum of the counts", () => {
+    // loadVoice keeps at most three examples, so ejemplos + faltan is 3 in practice; the text does not depend on that sum.
+    const out = text(run(status(), answers()), { voz: { ok: true, ejemplos: 1, faltan: 1 } });
+    expect(out).toContain(
+      "Tienes 1 de 3 mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.",
+    );
+  });
 });

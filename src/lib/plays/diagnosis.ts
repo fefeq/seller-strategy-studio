@@ -284,7 +284,7 @@ export function playDiagnosisText(
   if (!voz.ok) out.push("No he podido comprobar la voz de tu empresa.");
   else if (voz.faltan > 0)
     out.push(
-      `Tienes ${voz.ejemplos} de ${voz.ejemplos + voz.faltan} mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.`,
+      `Tienes ${voz.ejemplos} de 3 mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.`,
     );
   else out.push("Tu voz está completa.");
   if (!reglas.ok) out.push("No he podido comprobar tus reglas.");
