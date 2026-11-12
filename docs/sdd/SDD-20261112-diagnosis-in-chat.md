@@ -1,7 +1,7 @@
 # SDD-20261112-diagnosis-in-chat · [Feature] Diagnóstico de plays en el asistente: equipos priorizados, reglas base y voz
 
 **Tipo:** Feature (sin migración) · **Prioridad propuesta:** Media (es el SDD que cierra G-1 de la iniciativa; reutiliza los SDD 1, 2 y 3 y NK-0009, todos en `main`)
-**Estado:** Borrador (gate pasada 4: PASS-WITH-FIXES, 0 mayores; menores corregidos en `af3891a`) — pendiente de aprobación de Fede · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-12
+**Estado:** Aprobado (2026-11-12) · **Base de la aprobación:** gate pasadas 1 a 4 (la pasada 4, PASS-WITH-FIXES, 0 mayores, menores corregidos en `af3891a`) y las decisiones de Fede del 2026-11-12 por el diálogo de preguntas: D-6 sí, D-9 abierto en `main` y sin fusionar a `production` sin decidirlo, reabrir aprobadas como cota inferior aceptada; antes, P-1, P-2 y P-3; y su instrucción «sigue, ejecuta todo tú» (ver §15) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-12
 **Ticket:** NK-0153 (iniciativa NK-0126, SDD 4)
 **PRD:** `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` §8 fila 4 (cubre G-1, G-4 y G-5; mantiene G-2 y G-3) · **Depende de:** `SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, Hecho), `SDD-20261110-play-teams.md` (NK-0140, Hecho), `SDD-20261110-company-voice-and-escalation-rules.md` (NK-0128, Hecho) y `SDD-20261111-onboarding-complete.md` (NK-0009, Hecho; sustituto de NK-0028 = opción B) · **Coordina con:** SDD 5 de la iniciativa (`diagnosis-guided-wizard`, sin redactar), que reutilizará la función pura de este SDD con una pantalla
 
@@ -244,22 +244,26 @@ U-2 y U-3 dependen de U-1. U-4 y U-5 dependen de U-2 y U-3 (nombres de herramien
 - **D-3.** La salida es una lista de sugerencias con `set_play_enabled`, una por play del plan de activación; activar sigue siendo play a play y con aprobación (decisión 5; P-2 de NK-0140).
 - **D-4.** Dos preguntas (cuello de botella, otras tareas); lo demás sale de `get_onboarding_status` y de los datos.
 - **D-5.** «Lista» es la opción B de Fede (NK-0009), sin añadir condiciones.
-- **D-6 (DESVIACIÓN del PRD; Fede debe confirmarla).** G-1 del PRD dice literalmente «equipos de plays ordenados por fase y dependencias» (§4, fila G-1; decisión 10). Este SDD lo cumple para el **plan de activación** (CA-6), pero **no** para la **lista de equipos propuestos**, que prioriza antes el cuello de botella, lo elegido y el encaje, y solo después la fase (CA-3). Recomendado: mantener el cuello de botella primero en la lista de equipos, porque es lo que la persona acaba de decir; el plan de activación sigue por fase y dependencias. Si Fede quiere la lista también estrictamente por fase, cambian CA-3, CA-4 y los escenarios del §13.
+- **D-6 (DESVIACIÓN del PRD). Decidido por Fede (2026-11-12): sí, el cuello de botella primero en la lista de equipos; el plan de activación, por fase y dependencias.** G-1 del PRD dice literalmente «equipos de plays ordenados por fase y dependencias» (§4, fila G-1; decisión 10). Este SDD lo cumple para el **plan de activación** (CA-6), pero **no** para la **lista de equipos propuestos**, que prioriza antes el cuello de botella, lo elegido y el encaje, y solo después la fase (CA-3). Recomendado: mantener el cuello de botella primero en la lista de equipos, porque es lo que la persona acaba de decir; el plan de activación sigue por fase y dependencias. Si Fede quiere la lista también estrictamente por fase, cambian CA-3, CA-4 y los escenarios del §13.
 - **D-7.** Medida de G-1: confirmaciones de `save_play_plan` por empresa (`agent_pending_actions`, por `decided_at`), con las sugerencias `plays_diagnosis` como apoyo (§4); redefine «diagnósticos terminados» (medida de G-1, PRD §4) con un hecho medible; fila 33 del §6 del PRD al aprobar.
 - **D-8.** Repetir el diagnóstico: lo abierto y lo pospuesto se dejan (y se dicen), lo descartado no vuelve y lo aprobado o resuelto cuyo play está hoy pausado se reabre a nombre de quien repite (CA-11).
-- **D-9 (DESVIACIÓN del PRD; Fede debe confirmarla).** Decisión 13 del PRD («primero interno») y su §7 («abrirlo a clientes lo contradice y requiere enmienda»): el botón y las herramientas salen para el Owner y el Sales Leader de toda empresa, como ya pasa con `/plays` (§5 «No incluye», §10). Alternativa: restringirlo a una lista de empresas, sin migración (por ejemplo, una constante o un secreto de servidor), con su prueba. Recomendado: decidir antes de desplegar a producción y no fusionar este cambio a `production` sin esa decisión. Qué empresas existen hoy en `production` (y si hay empresas cliente) **[sin verificar]**: la app es multiempresa (`create_organization`) y no se ha leído la base real.
+- **D-9 (DESVIACIÓN del PRD). Decidido por Fede (2026-11-12): abierto en `main` y NO fusionar a `production` sin decidirlo antes (la decisión de fondo sobre empresas cliente sigue pendiente).** Decisión 13 del PRD («primero interno») y su §7 («abrirlo a clientes lo contradice y requiere enmienda»): el botón y las herramientas salen para el Owner y el Sales Leader de toda empresa, como ya pasa con `/plays` (§5 «No incluye», §10). Alternativa: restringirlo a una lista de empresas, sin migración (por ejemplo, una constante o un secreto de servidor), con su prueba. Recomendado: decidir antes de desplegar a producción y no fusionar este cambio a `production` sin esa decisión. Qué empresas existen hoy en `production` (y si hay empresas cliente) **[sin verificar]**: la app es multiempresa (`create_organization`) y no se ha leído la base real.
 
 **Decididas por Fede el 2026-11-12 (diálogo de preguntas, ya no están abiertas):**
 - **P-1 (voz): decidido.** El diagnóstico solo **cuenta** los ejemplos de voz que existen y envía a la persona a Conocimiento › Voz a pegarlos allí. Ningún texto de voz pasa por el chat y el agente nunca escribe Voz (la guarda de NK-0128 no cambia). Esto se aparta de la decisión 20 del PRD («pegados en el diagnóstico»), y queda registrado como decidido por Fede. Descartada la opción B (herramienta de escritura de voz desde el chat).
 - **P-2 (límite y encaje): decidido.** Máximo 3 equipos, y una sola regla de encaje: «Entrantes y producto» solo para arquetipos de producto (PLG), salvo que la persona lo pida (CA-3, CA-4). Recuerda al revisar el motivo «vendes con producto»: `motion: "plg"` lo tienen los arquetipos A (B2B low-touch / PLG), D (B2C / consumo) y E (marketplace), no solo A (`src/lib/gtm-diagnosis.ts:16-20`).
 - **P-3 (G-5, segunda parte): decidido.** «Borradores que leen la voz» es un **ticket aparte** (necesita columna o tabla nueva). Este SDD mide solo la primera parte de G-5. Pendiente de registrar ese ticket como seguimiento; no es alcance.
 
-**Filas que añadir al §6 del PRD al aprobar** (P-1 a P-3 solo constan en este SDD, sin registro fuera de él; la decisión 20 del PRD se queda literal y la fila 30 **se aparta de ella**: la 20 dice «pegados en el diagnóstico» y la 30, nunca en el chat):
+- **Reabrir aprobadas (CA-11, límite del indicador de apoyo del §4): decidido.** Decidido por Fede (2026-11-12): se acepta que el indicador «plays activados desde el diagnóstico» sea una cota inferior, porque reabrir una sugerencia aprobada la devuelve a `pending`.
+- **Instrucción permanente de Fede:** «sigue, ejecuta todo tú».
+- **No consta como decisión de Fede el 2026-11-12:** D-7 (la medida de G-1, fila 33 del PRD) ni D-8 se listan aparte en su diálogo; quedan aprobadas solo en la medida en que Fede aprueba este SDD, sin afirmar más.
+
+**Filas añadidas al §6 del PRD con la aprobación (hecho en este cambio)** (P-1 a P-3 solo constan en este SDD, sin registro fuera de él; la decisión 20 del PRD se queda literal y la fila 30 **se aparta de ella**: la 20 dice «pegados en el diagnóstico» y la 30, nunca en el chat):
 - 30 · Voz en el diagnóstico (se aparta de la 20, no la matiza) · El diagnóstico solo cuenta los ejemplos y manda a Conocimiento › Voz; no se pegan en el chat y el agente no escribe Voz (P-1, Fede, 2026-11-12).
 - 31 · Límite y encaje del diagnóstico · Máximo 3 equipos propuestos; «Entrantes y producto» solo para arquetipos PLG salvo petición (P-2, Fede, 2026-11-12).
 - 32 · G-5, segunda parte · «Borradores que leen la voz» es un ticket aparte, con columna o tabla nueva (P-3, Fede, 2026-11-12).
 - 33 · Medida de G-1 · «Diagnósticos terminados» = confirmaciones de `save_play_plan` por empresa (`agent_pending_actions`, por `decided_at`), con las sugerencias `plays_diagnosis` como apoyo (D-7; enmienda de la medida de G-1, PRD §4; propuesta de este SDD, Fede la confirma al aprobar).
-- Más filas si Fede confirma D-6 (la lista de equipos prioriza el cuello de botella antes que la fase) y D-9 (alcance del botón).
+- D-6 y D-9 están decididas por Fede (2026-11-12) y no añaden filas al §6 del PRD; constan en este SDD.
 
 **Para la revisión técnica (respondido en la pasada 1, confirmado en la pasada 2 sobre este texto):** `decideSuggestionCore` ejecuta `set_play_enabled` con el contexto de la persona en la app (`userCtx`) y en Telegram (`channelCtx` con los roles de `org_members`), y `checkToggle` comprueba rol y bloqueo; la lista de `org-data.ts:470` es el único cierre genérico que hay que tocar (CA-13 falla hoy, demostrado).
 
@@ -352,8 +356,8 @@ Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 —
 
-## Anexo. Enmienda del PRD, filas 30 a 33 del §6 (texto listo para pegar; el PRD no se ha editado)
-Pegar al final de la tabla del §6 de `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` cuando Fede apruebe este SDD. La fila 20 se queda literal; la 30 se aparta de ella.
+## Anexo. Enmienda del PRD, filas 30 a 33 del §6 (pegadas en el PRD al aprobar este SDD, 2026-11-12)
+Pegadas al final de la tabla del §6 de `docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md` al aprobar este SDD. La fila 20 se queda literal; la 30 se aparta de ella.
 
 | # | Decisión | Resolución |
 |---|---|---|
@@ -362,4 +366,4 @@ Pegar al final de la tabla del §6 de `docs/prd/PRD-20261110-diagnostico-y-equip
 | 32 | G-5, segunda parte | «Borradores que leen la voz» es un ticket aparte, con columna o tabla nueva (P-3, Fede, 2026-11-12). |
 | 33 | Medida de G-1 | «Diagnósticos terminados» = confirmaciones de `save_play_plan` por empresa (`agent_pending_actions`, por `decided_at`), con las sugerencias `plays_diagnosis` como apoyo (D-7; enmienda de la medida de G-1, PRD §4; propuesta de este SDD, Fede la confirma al aprobar). |
 
-Filas adicionales solo si Fede confirma D-6 (la lista de equipos prioriza el cuello de botella antes que la fase) y D-9 (alcance del botón).
+D-6 y D-9, decididas por Fede el 2026-11-12, no añaden filas.

@@ -1,7 +1,7 @@
 # PRD-20261110-diagnostico-y-equipos-de-plays · [Iniciativa] Diagnóstico de entrada y equipos de plays
 
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media (reutiliza onboarding, plays, Reglas y Conocimiento que ya existen; el coste es de ingeniería y no de proveedores; depende de dos tickets de onboarding sin empezar)
-**Estado:** Aprobado (Fede, 2026-11-10) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
+**Estado:** Aprobado (Fede, 2026-11-10); §6 enmendado el 2026-11-12 con las filas 30 a 33 (SDD 4, `SDD-20261112-diagnosis-in-chat.md`) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-10
 **SDD que lo desarrollan:** `docs/sdd/SDD-20261110-plays-phase-autonomy-deps.md` (NK-0127, aprobado) y `docs/sdd/SDD-20261110-company-voice-and-escalation-rules.md` (NK-0128, aprobado); el resto, pendiente (sección 8)
 **Sprint:** 4 (decidido por Fede el 2026-11-10; el sprint está en curso con NK-0123); ver sección 8 y el riesgo de dependencias
 
@@ -85,6 +85,10 @@ Decididas por Fede el 2026-11-10 (entrevista; detalle en el análisis, sección 
 | 28 | NK-0028 | Rechazado en el ledger por superado (delegación de Fede, 2026-11-10); su sustituto, por definir |
 | 27 | Aprobación | Fede aprueba el PRD y la composición de los seis equipos («ok a todo», 2026-11-10) |
 | 26 | Onboarding | NK-0009 y NK-0028 entran en el Sprint 4 (Fede, 2026-11-10), con una corrección: NK-0028 está superado por GTM Lab, así que entra su sustituto, aún por definir |
+| 30 | Voz en el diagnóstico (se aparta de la 20, no la matiza) | El diagnóstico solo cuenta los ejemplos y manda a Conocimiento › Voz; no se pegan en el chat y el agente no escribe Voz (P-1, Fede, 2026-11-12). |
+| 31 | Límite y encaje del diagnóstico | Máximo 3 equipos propuestos; «Entrantes y producto» solo para arquetipos PLG salvo petición (P-2, Fede, 2026-11-12). |
+| 32 | G-5, segunda parte | «Borradores que leen la voz» es un ticket aparte, con columna o tabla nueva (P-3, Fede, 2026-11-12). |
+| 33 | Medida de G-1 | «Diagnósticos terminados» = confirmaciones de `save_play_plan` por empresa (`agent_pending_actions`, por `decided_at`), con las sugerencias `plays_diagnosis` como apoyo (D-7; enmienda de la medida de G-1, PRD §4; propuesta de este SDD, Fede la confirma al aprobar). |
 
 **Composición propuesta de los seis equipos (para tu revisión; es una propuesta, no una decisión)**
 | Equipo de plays | Plays | Nota |
