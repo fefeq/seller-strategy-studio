@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CATALOG, type Play } from "./catalog";
 import {
+  activationPlan,
   BOTTLENECK_WORD,
   MAX_PROPOSED_TEAMS,
   PLAYS_DIAGNOSIS_DETECTOR,
@@ -453,5 +454,90 @@ describe("prioritizeTeams: already active (CA-5)", () => {
     expect(r.proposed).toEqual([]);
     expect(r.activation).toEqual([]);
     expect(r.alreadyActive.length).toBeGreaterThan(0);
+  });
+});
+
+describe("activationPlan (CA-6)", () => {
+  const steps = (r: DiagnosisResult) =>
+    ready(r).activation.map((a) => [a.n, a.play_id, a.teams] as const);
+
+  it("(a) section 13 scenarios: by phase and dependencies, shared plays once, teams in rank order", () => {
+    expect(steps(run(status(), answers()))).toEqual([
+      [1, "hubspot-account-tiering-scoring", ["Priorizar cuentas y limpiar CRM"]],
+      [2, "signals-in-crm-with-decay", ["Reactivar perdidos", "Señales de cuenta"]],
+      [3, "closed-lost-revival", ["Reactivar perdidos"]],
+    ]);
+    expect(steps(run(status({}, "plg"), answers({ bottleneck: "aprender-de-llamadas" })))).toEqual([
+      [1, "hubspot-account-tiering-scoring", ["Priorizar cuentas y limpiar CRM"]],
+      [2, "call-transcript-signal-extraction", ["Aprender de llamadas"]],
+      [3, "product-sign-up-outreach", ["Entrantes y producto"]],
+    ]);
+    expect(
+      steps(
+        run(
+          status({}, "field_sales"),
+          answers({ bottleneck: "reuniones", wanted: ["entrantes-y-producto"] }),
+        ),
+      ),
+    ).toEqual([
+      [1, "hubspot-account-tiering-scoring", ["Priorizar cuentas y limpiar CRM"]],
+      [2, "signals-in-crm-with-decay", ["Reactivar perdidos"]],
+      [3, "closed-lost-revival", ["Reactivar perdidos"]],
+      [4, "product-sign-up-outreach", ["Entrantes y producto"]],
+    ]);
+  });
+
+  it("every entry carries the title of the play, not its id", () => {
+    const r = ready(run(status(), answers()));
+    expect(r.activation[1]!.title).toBe("Señales en el CRM con caída en el tiempo");
+    for (const a of r.activation)
+      expect(a.title).toBe(CATALOG.find((p) => p.id === a.play_id)!.title);
+  });
+
+  it("(b) the rank of the team does not decide: a generation play of rank 1 goes after a foundation play of rank 2", () => {
+    const catalog = [play("gen", { phase: "generacion" }), play("fund", { phase: "fundacion" })];
+    const teams = [team("reuniones", ["gen"]), team("reactivar-perdidos", ["fund"])];
+    const r = ready(custom(catalog, teams, status(), answers({ bottleneck: "reuniones" })));
+    expect(ids(r.proposed)).toEqual(["reuniones", "reactivar-perdidos"]);
+    expect(r.activation.map((a) => [a.n, a.play_id])).toEqual([
+      [1, "fund"],
+      [2, "gen"],
+    ]);
+  });
+
+  it("(c) a play that depends on another of its own phase goes after it, even if the catalogue lists it first", () => {
+    const catalog = [
+      play("child", { phase: "captura", dependsOn: ["parent"] }),
+      play("parent", { phase: "captura" }),
+    ];
+    const teams = [team("reuniones", ["child"]), team("reactivar-perdidos", ["parent"])];
+    const r = ready(custom(catalog, teams, status(), answers({ bottleneck: "reuniones" })));
+    expect(r.activation.map((a) => a.play_id)).toEqual(["parent", "child"]);
+  });
+
+  it("only plays that are not enabled enter, and a play that is not in the order cannot appear", () => {
+    const catalog = [play("on"), play("off"), play("ghost")];
+    const teams = [team("reuniones", ["on", "off", "ghost"])];
+    const plans = teams.map((t) => teamPlan(t, catalog, rowsOf({ on: true }), teams));
+    const proposed = ready(
+      prioritizeTeams({ status: status(), plans, answers: answers(), order: ["on", "off"] }),
+    ).proposed;
+    const plan = activationPlan({ proposed, plans, order: ["on", "off"] });
+    expect(plan.map((a) => a.play_id)).toEqual(["off"]);
+  });
+
+  it("with no proposed team there is nothing to activate", () => {
+    expect(activationPlan({ proposed: [], plans: realPlans(), order: realOrder })).toEqual([]);
+  });
+
+  it("takes plays only from the proposed teams, not from later ones", () => {
+    const r = ready(run(status(), answers()));
+    const proposedPlays = new Set(
+      realPlans()
+        .filter((p) => ids(r.proposed).includes(p.id))
+        .flatMap((p) => p.steps.map((s) => s.id)),
+    );
+    for (const a of r.activation) expect(proposedPlays.has(a.play_id)).toBe(true);
+    expect(r.activation.map((a) => a.play_id)).not.toContain("call-transcript-signal-extraction");
   });
 });

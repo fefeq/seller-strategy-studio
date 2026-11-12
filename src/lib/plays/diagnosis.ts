@@ -64,7 +64,7 @@ export function prioritizeTeams({
   status,
   plans,
   answers,
-  order: _order,
+  order,
   max = MAX_PROPOSED_TEAMS,
 }: {
   status: DiagnosisStatus;
@@ -161,7 +161,38 @@ export function prioritizeTeams({
       ),
     ),
   ];
-  return { ready: true, proposed, later, alreadyActive, notAvailable, activation: [] };
+  const activation = activationPlan({ proposed, plans, order });
+  return { ready: true, proposed, later, alreadyActive, notAvailable, activation };
+}
+
+/**
+ * The order in which to activate the plays of the proposed teams: the plays not enabled yet, each once, in the position they have in
+ * `order` (recommendablePlays: by phase and, inside a phase, after what each play depends on). The rank of the team does not decide.
+ * `teams` are the proposed teams that have the play among their steps, in rank order. A play that is not in `order` is never listed.
+ */
+export function activationPlan({
+  proposed,
+  plans,
+  order,
+}: {
+  proposed: ProposedTeam[];
+  plans: TeamPlan[];
+  order: string[];
+}): ActivationStep[] {
+  const byId = new Map(plans.map((p) => [p.id, p]));
+  const position = new Map(order.map((id, i) => [id, i]));
+  const found = new Map<string, { title: string; teams: string[] }>();
+  for (const team of proposed) {
+    for (const step of byId.get(team.id)?.steps ?? []) {
+      if (step.enabled || !position.has(step.id)) continue;
+      const entry = found.get(step.id) ?? { title: step.title, teams: [] };
+      entry.teams.push(team.title);
+      found.set(step.id, entry);
+    }
+  }
+  return [...found.entries()]
+    .sort((a, b) => position.get(a[0])! - position.get(b[0])!)
+    .map(([play_id, { title, teams }], i) => ({ n: i + 1, play_id, title, teams }));
 }
 
 /** Fixed sentences of section 9; no figures, and `<play>` is always the title of the play. */
