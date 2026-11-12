@@ -466,7 +466,8 @@ export async function syncSuggestions(
       }
     }
   }
-  // The weekly report, the AI's setup questions and the «te han asignado cuentas» notices are not detectors: they stay until the user decides on them.
+  // The weekly report, the AI's setup questions, the «te han asignado cuentas» notices and the plan of a plays diagnosis (asked for by a person,
+  // NK-0153) are not detectors: they stay until the user decides on them.
   const { data: open } = await db
     .from("suggestions")
     .select("id,dedupe_key,status,title,body")
@@ -475,7 +476,7 @@ export async function syncSuggestions(
     .not(
       "detector",
       "in",
-      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal,onboarding_stalled)",
+      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal,onboarding_stalled,plays_diagnosis)",
     )
     .not("detector", "like", STRATEGY_DETECTOR_LIKE);
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it
