@@ -987,4 +987,21 @@ describe("playDiagnosisText: review of session 1", () => {
     expect(src).toContain("GTM_DIAGNOSIS_MISSING");
     expect(src).not.toMatch(/["'`]Diagnóstico GTM/);
   });
+
+  it("coordinator's copy decision: one missing base rule is singular, several are plural", () => {
+    const base = run(status(), answers());
+    expect(text(base, { reglas: { ok: true, faltan: ["a"] } })).toContain(
+      "Te falta 1 regla base; puedo añadirla si me lo confirmas.",
+    );
+    expect(text(base, { reglas: { ok: true, faltan: ["a"] }, canAct: false })).toContain(
+      "Te falta 1 regla base; pídele a tu Owner o Sales Leader que la añada.",
+    );
+    expect(text(base, { reglas: { ok: true, faltan: ["a", "b"] } })).toContain(
+      "Te faltan 2 reglas base; puedo añadirlas si me lo confirmas.",
+    );
+    for (const canAct of [true, false])
+      expect(text(base, { reglas: { ok: true, faltan: ["a"] }, canAct })).not.toMatch(
+        /Te faltan 1 |1 reglas/,
+      );
+  });
 });

@@ -291,6 +291,13 @@ export function playDiagnosisText(
     );
   else out.push("Tu voz está completa.");
   if (!reglas.ok) out.push("No he podido comprobar tus reglas.");
+  else if (reglas.faltan.length === 1)
+    // Coordinator's copy decision (NK-0153 review of session 1): the sentence agrees in number.
+    out.push(
+      canAct
+        ? "Te falta 1 regla base; puedo añadirla si me lo confirmas."
+        : "Te falta 1 regla base; pídele a tu Owner o Sales Leader que la añada.",
+    );
   else if (reglas.faltan.length)
     out.push(
       canAct
