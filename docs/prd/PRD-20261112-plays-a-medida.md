@@ -58,20 +58,21 @@ Fede quiere replicar la **estructura** del catálogo público de plays de Glider
 | G-4 | Que un play mal definido no se pueda guardar | Planes guardados con muestra y umbral incoherentes, sin ventana de frescura o con un paso sin fuente | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la validación pura |
 | G-5 | Que un play sin fuente conectada nunca finja | Plays activados cuya fuente no está conectada en esa empresa | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la comprobación de fuentes |
 | G-6 | Que ninguna afirmación de un mensaje salga sin cita | Borradores guardados con una afirmación sin paso de evidencia, o que cita un paso inexistente o más viejo que la ventana | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la validación de borradores |
-| G-7 | Conocer el coste de IA por propuesta antes de poner un tope | Coste de cada propuesta y de cada ejecución en la tanda 0 | Sin dato (no se mide hoy por play) | `integration_usage` (`service`, `need`, `cost`, `created_at`; migración 0041), [Por verificar] si registra las llamadas de IA o solo las de proveedores |
+| G-7 | Conocer el coste real de IA por propuesta y por empresa antes de poner un tope (la tanda 0 está abierta a todas las empresas y sin tope: decisión 15) | Coste real (tokens y coste) de cada propuesta y de cada ejecución, **por empresa**, en la tanda 0; toda propuesta debe dejar su registro | Sin dato (no se mide hoy por play) | `integration_usage` (`service`, `need`, `cost`, `created_at`; migración 0041), [Por verificar] si registra las llamadas de IA o solo las de proveedores |
 
-Nunca hay línea base estimada. G-4, G-5 y G-6 son invariantes de seguridad: se prueban, no se miden con datos de uso.
+Nunca hay línea base estimada. G-4, G-5 y G-6 son invariantes de seguridad: se prueban, no se miden con datos de uso. **Las medidas G-1 a G-3 y G-7 incluyen el coste de IA por empresa**, para poder decidir después el tope con datos reales.
 
 ## 5. No-objetivos
 - **Copiar texto de Glider:** nombres, hooks, mensajes de ejemplo y títulos quedan fuera. Solo estructura y patrones (decisión 9).
 - **Enviar o publicar nada solo.** Un play produce sugerencia, tarea o borrador; lo aprueba una persona (reglas de `src/lib/AGENTS.md`).
 - **Inventar la fuente que falta.** Si la empresa no tiene la herramienta conectada, el play queda bloqueado por fuente externa con el motivo.
-- **Tope de coste de IA** con una cifra inventada: se mide en la tanda 0 y se fija después.
+- **Tope o freno de coste de IA en la tanda 0:** Fede eligió solo registrar el coste, sin freno (decisión 15). No se inventa ninguna cifra; el tope, si llega, se decide después con el coste medido.
+- **Motor de envío (decisión de posicionamiento confirmada por Fede, 2026-11-12):** NOKKO no construye un motor de envío. Decide y prepara; otras herramientas envían.
 - **Plays basados en registros oficiales** (P1 a P7 del análisis) en la tanda 0: dependen de fuentes por país sin verificar. Son SDD 4+.
 - **Cambiar los 28 plays existentes** ni migrarlos al molde nuevo.
 - **Contacto verificado propio:** NOKKO sigue usando Clay y Apollo para encontrar contacto; no se construye un proveedor de contactos.
 - **Pantalla nueva de creación** en la tanda 0: la propuesta y la aprobación ocurren en el asistente y en la vista de plays que ya existe.
-- **Valorar personas desde LinkedIn:** decisión D2 del PRD de plays, sigue abierta; los plays que dependan de perfiles de LinkedIn quedan bloqueados.
+- **Presentar una receta como análisis o puntuación de perfiles de personas:** nunca. Una receta trata de una señal pública y un motivo para escribir (decisión 12). Las recetas sobre perfiles públicos de LinkedIn están permitidas por Fede (decisión 12), pero no están entre las tres de la tanda 0 (decisión 11). [Por verificar] si la decisión 12 supera a la D2 del PRD de plays; no se toca aquí.
 - **Aplicar a Postin:** NOKKO y Postin son productos separados.
 
 ## 6. Decisiones tomadas y abiertas
@@ -88,6 +89,11 @@ Decididas por Fede en la entrevista del 2026-11-12 (origen: NK-0171):
 | 8 | Vocabulario | Todo es «play». Se distingue solo por origen: «De la biblioteca» o «Creado para tu empresa». Sin nombres nuevos tipo «recetas» en la interfaz | Fede, 2026-11-12 |
 | 9 | Texto de Glider | No se copia: solo estructura y patrones, con palabras propias (límite del coordinador, confirmado por Fede) | Fede / coordinador, 2026-11-12 |
 | 10 | Cola | NK-0156, esta iniciativa, NK-0167, NK-0168 | Fede, 2026-11-12 |
+| 11 (antes Q-1) | Recetas de la tanda 0 | Las tres recetas R-1, R-2 y R-3 quedan confirmadas | Fede, 2026-11-12 |
+| 12 (antes Q-2) | Recetas con perfiles públicos de LinkedIn | **Permitidas**, usando solo las integraciones que NOKKO ya usa (Apollo, Clay, Apify). Fede no pidió ninguna salvaguarda más allá del aviso. Una receta nunca se presenta como análisis o puntuación de perfiles: trata de una señal pública y un motivo para escribir. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
+| 13 (antes Q-3) | Contacto de personas de la UE (RGPD) | **Permitido**, con un aviso en el paso de verificación manual. Sin interruptor por empresa. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
+| 14 (antes Q-4) | Revisión legal (consentimiento en transcripciones y grabaciones públicas; uso de registros públicos) | **Ninguna acción legal por ahora.** Queda como riesgo abierto aceptado (7.2). El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 4 en adelante); la decisión sigue siendo de Fede | Fede, 2026-11-12 |
+| 15 (antes Q-5) | Alcance de la tanda 0 y coste de IA | La tanda 0 se abre a **todas las empresas desde el principio**, no solo a la organización de Fede. Coste de IA: **solo registrar el coste, sin freno** (Fede eligió esto frente a contarlo contra `org_budgets` y frente a limitar a solo bajo demanda). Sin tope y sin cifra inventada. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
 
 **Decisiones de diseño que propone este PRD** (Fede las confirma al aprobar; no están decididas):
 | # | Tema | Propuesta |
@@ -115,6 +121,9 @@ Todo se valida con código puro antes de guardar. La IA solo propone; el código
 | **Parámetros por empresa** | Zona, oficio y umbrales como campos con tipo y rango, no un jsonb libre |
 | **Comprobación de fuentes** | Cada fuente de los pasos se contrasta con lo que la empresa tiene conectado. Si falta una, el play queda `bloqueado` por fuente externa con el motivo (decisión 3); nunca se activa ni simula resultados |
 | **Salida** | Solo `suggestion`, `task` o `draft`. Nunca un envío automático |
+| **Redacción** | La receta habla de una señal pública y de un motivo para escribir; nunca dice que analiza o puntúa perfiles de personas (decisión 12) |
+| **Aviso de UE** | Si el contacto es una persona de la UE, el paso de verificación manual incluye un aviso (decisión 13). No hay interruptor por empresa |
+| **Coste registrado** | Toda propuesta y toda ejecución registra su coste real (tokens y coste) **por empresa**. Sin ese registro no se guarda la propuesta. No hay tope ni freno en la tanda 0 (decisión 15) |
 
 El diseño de prueba existe porque en el análisis 25 de 61 tests de Glider tenían muestra y base incoherentes (cifra de un resumen automático, confirmada en 2 páginas): aquí es una regla que el código aplica, no una convención.
 
@@ -125,8 +134,8 @@ Comprobado en `src/lib/AGENTS.md` y `src/lib/agent/tools/` (lectura):
 | Firecrawl | Lectura de páginas públicas y búsqueda (`firecrawl.ts`, `web-research.ts`) | Solo URLs públicas |
 | Perplexity | Solo `POST /search`, por pasarela gestionada | **No** admite chat ni investigación profunda: no sirve para preguntar a un buscador de IA y ver qué cita |
 | Parallel | Búsqueda, extracción y tareas con citas (`parallel.ts`) | Ejecuciones largas en `research_runs` |
-| Apify | Cuatro robots: publicaciones de empresa y de persona en LinkedIn, ofertas de empleo, reseñas de G2 (`apify.ts`, `ACTORS`) | No hay robot de tiendas de apps; LinkedIn de personas choca con D2 |
-| Clay y Apollo | Búsqueda y enriquecimiento de empresas y personas; revelado de contacto (escritura, gasta créditos) | Contacto en la UE: ver pregunta abierta Q-3 |
+| Apify | Cuatro robots: publicaciones de empresa y de persona en LinkedIn, ofertas de empleo, reseñas de G2 (`apify.ts`, `ACTORS`) | No hay robot de tiendas de apps; perfiles públicos de LinkedIn permitidos (decisión 12), con el riesgo de términos de uso de 7.2 |
+| Clay y Apollo | Búsqueda y enriquecimiento de empresas y personas; revelado de contacto (escritura, gasta créditos) | Contacto en la UE permitido con aviso (decisión 13; riesgo en 7.2) |
 | PostHog | Uso de producto por empresa, con clave del Owner | Solo para planes de producto |
 | Google Drive | Carpeta «Nokko / empresa» | Solo lectura y escritura en esa carpeta |
 
@@ -158,15 +167,15 @@ Criterio: grado A, fuentes que NOKKO ya tiene hoy, sin registro oficial, sin per
 | R-2 | Clientes de un competidor explican por qué se van o qué les falta | P9 | Apify (reseñas de G2, ya con `motivo_cambio`) y búsqueda web de foros; Clay o Apollo | Ya existe `competitor_reviews` y `create_battlecard_from_reviews` (`linkedin.ts`); la receta añade evidencia citada, verificación y prueba |
 | R-3 | Un problema que tu producto resuelve se describe en público | P9 | Búsqueda combinada y lectura de páginas con texto (foros, comunidades, medios, transcripciones publicadas); Clay o Apollo | Es el patrón más amplio, el que mejor se adapta a nichos, y no depende de ningún registro |
 
-**Descartadas con motivo:** `ai-search-cites-competitors` (la pasarela de Perplexity solo admite `/search`; no se puede preguntar a un buscador de IA); `reviews-say-app-crashes` (no hay robot de tiendas de apps; leerlas con Firecrawl es [Por verificar]); `redesign-threw-away-backlinks` (necesita una herramienta de enlaces entrantes y de historial de webs que NOKKO no tiene); los dos basados en LinkedIn (D2).
+**Descartadas con motivo:** `ai-search-cites-competitors` (la pasarela de Perplexity solo admite `/search`; no se puede preguntar a un buscador de IA); `reviews-say-app-crashes` (no hay robot de tiendas de apps; leerlas con Firecrawl es [Por verificar]); `redesign-threw-away-backlinks` (necesita una herramienta de enlaces entrantes y de historial de webs que NOKKO no tiene); los dos basados en LinkedIn (no están entre las tres confirmadas, decisión 11; las recetas con perfiles públicos están permitidas para después, decisión 12).
 **Cautela de R-2:** las reseñas de G2 suelen ser anónimas o no traen contacto; el play no «contacta al autor»: usa la señal para elegir cuentas del ICP que usan ese competidor. El SDD 2 lo detalla.
 **Límite de la tanda 0:** cada receta puede quedar `bloqueada` en una empresa concreta si le falta un conector (por ejemplo Apollo o Clay para el contacto). Es el comportamiento previsto (decisión 3).
 
 ## 7. Riesgos y dependencias
 - **Calidad del análisis de origen:** lo resumió un modelo pequeño; los recuentos (17/30/16, 17 de 61, 25 de 61) son orden de magnitud. Nada de lo que construyamos depende de esas cifras; sí lo declaramos aquí.
 - **Copiar por accidente:** la tabla de hechos del anexo contiene los hooks originales de Glider. El anexo es interno; el SDD 2 debe incluir una prueba que compruebe que ningún título, hook ni mensaje de la biblioteca coincide con el anexo [Por verificar] cómo se automatiza sin copiar el texto en código.
-- **Coste de IA:** cada propuesta y cada ejecución gasta IA y, en R-2, saldo de Apify. Sin tope hasta medir en la tanda 0 (decisión 5): riesgo de gasto no acotado en la tanda 0. Mitigación propuesta: la tanda 0 se activa solo para la organización de Fede.
-- **Datos personales:** el mensaje y el contacto tratan datos de personas. El contacto en la UE está sujeto al RGPD (Q-3). La evidencia guarda hechos públicos y URL, no datos de personas (P-6).
+- **Coste de IA:** cada propuesta y cada ejecución gasta IA y, en R-2, saldo de Apify. Sin tope ni freno en la tanda 0 y abierta a todas las empresas (decisión 15): el gasto de IA por empresa no está acotado. Detalle en 7.2.
+- **Datos personales:** el mensaje y el contacto tratan datos de personas. El contacto en la UE está sujeto al RGPD y se permite con aviso (decisión 13; riesgo en 7.2). La evidencia guarda hechos públicos y URL, no datos de personas (P-6).
 - **Fuentes que cambian o se prohíben:** una fuente puede cambiar de formato o de términos de uso. La comprobación de fuentes se ejecuta al activar y en cada ejecución, no solo al guardar.
 - **La IA propone con la estrategia de la empresa:** si la estrategia está vacía, la propuesta es genérica. La herramienta debe negarse a proponer sin ICP y posicionamiento (reutiliza el estado de onboarding, `companyOnboardingStatus`).
 - **Dependencias:** diagnóstico de plays (SDD-20261112-diagnosis-in-chat) aún sin integrar en `main`; NK-0156 (onboarding leído) va antes en la cola y alimenta la estrategia que lee la herramienta; NK-0167 (varias líneas de negocio) puede cambiar cómo se lee el arquetipo. El SDD 3 se redacta cuando estén integrados.
@@ -179,19 +188,28 @@ Criterio: grado A, fuentes que NOKKO ya tiene hoy, sin registro oficial, sin per
 - No se afirma que los equivalentes españoles o europeos de los registros de EE. UU. (PLACSP, TED, BORME, CNMV, Catastro, etc.) existan con la cobertura, el formato, el coste y los términos de uso necesarios. Son hipótesis del análisis, por verificar.
 - No se afirma que un cliente real tenga o pueda conectar Clay, Apollo, Apify o PostHog: se comprueba por empresa al activar.
 - No se afirma ninguna conclusión legal (RGPD, grabación de llamadas, uso de registros públicos, precios de reventa, paridad de tarifas): son avisos para revisar con un abogado.
-- No se afirma qué coste de IA tendrá una propuesta ni qué tope conviene: se mide en la tanda 0.
+- No se afirma qué coste de IA tendrá una propuesta ni qué tope conviene: se registra en la tanda 0 y el tope, si llega, se decide después.
 - No se afirma que «De la biblioteca» tenga un número concreto de plays al lanzar: en la tanda 0 son 28 existentes y 3 nuevos, y se confirma en el SDD 2.
 - No se afirma la calidad de los datos de contacto de Clay o Apollo (Glider declara los suyos; tampoco los hemos verificado).
 - No se afirma que `diagnosis.ts` esté en `main`: no está en el commit leído.
 
-### 7.2 Preguntas abiertas para Fede (pocas; con recomendación)
+### 7.2 Riesgos aceptados por Fede
+Fede decidió estos puntos en la entrevista del 2026-11-12 y aceptó sus consecuencias. Se listan para que nadie las lea mal más adelante. No se suavizan ni se anulan aquí.
+
+| Decisión | Qué se aceptó | Consecuencia que debe quedar clara |
+|---|---|---|
+| 12 (perfiles públicos de LinkedIn) | Recetas basadas en perfiles públicos de LinkedIn permitidas, solo con Apollo, Clay y Apify. Sin salvaguarda más allá del aviso | **Riesgo de términos de uso** de los proveedores y de LinkedIn. Una receta nunca se presenta como análisis o puntuación de perfiles: trata de una señal pública y un motivo para escribir |
+| 13 (contacto UE, RGPD) | Contacto de personas de la UE permitido, con un aviso en la verificación manual. Sin interruptor por empresa | **Riesgo RGPD:** NOKKO puede proponer contacto en frío a personas de la UE sin revisión legal previa y sin poder desactivarlo por empresa. El aviso es la única barrera |
+| 14 (legal) | Ninguna acción legal por ahora | **Riesgo abierto aceptado:** consentimiento al usar transcripciones o grabaciones públicas, y uso de registros públicos sin revisión legal. El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 4 en adelante). Sigue siendo decisión de Fede |
+| 15 (tanda 0 abierta y sin freno) | Tanda 0 abierta a todas las empresas desde el principio. Coste de IA: solo registrar, sin freno | **Gasto de IA sin tope por empresa en la tanda 0.** Una empresa puede generar propuestas sin límite. Para poder decidir el tope después, **cada propuesta debe registrar su coste real (tokens y coste) por empresa**, y las medidas de G-1 a G-3 y G-7 lo incluyen. No se inventa ningún tope. Sugerencia del coordinador (no decidida): `org_budgets` ya existe si Fede quiere un freno más adelante |
+
+[Por verificar] Las reglas de la organización Postin (LinkedIn «solo API oficial»; nunca decir que se analizan o puntúan perfiles) se fijaron para Postin y puede que no apliquen a NOKKO. Hasta que Fede lo confirme, este PRD mantiene la regla de redacción de la decisión 12 (nunca presentar una receta como análisis o puntuación de perfiles).
+
+### 7.3 Preguntas abiertas para Fede
+Las Q-1 a Q-5 originales están decididas (decisiones 11 a 15). Queda una, que no bloquea:
 | # | Pregunta | Recomendación |
 |---|---|---|
-| Q-1 | ¿Confirmas las tres recetas R-1, R-2 y R-3? | Sí. Son las únicas A de las que NOKKO ya tiene todas las fuentes; la alternativa es sustituir R-3 por un play de ofertas de empleo, pero choca con D2 |
-| Q-2 | Recetas basadas en perfiles públicos de LinkedIn (2 en Glider): ¿entran o se quedan fuera hasta resolver D2? | Fuera. Hoy los plays con LinkedIn de personas están bloqueados por D2; el molde las deja bloqueadas con ese motivo |
-| Q-3 | Contacto en la UE: ¿se permite que un play proponga contacto de personas de la UE para prospección en frío con Clay o Apollo? | Sí, pero solo con una revisión legal previa (RGPD) y con la verificación manual obligatoria; hasta entonces el play entrega la señal y la cuenta, no el contacto, para empresas en la UE |
-| Q-4 | R-2 y R-3 pueden usar grabaciones o transcripciones públicas: ¿hace falta una regla de consentimiento y de uso de registros públicos? | Sí: una línea en la verificación manual de cada play que cite grabaciones o registros, y revisión legal antes de abrir los SDD 4+ de registros oficiales |
-| Q-5 | ¿La tanda 0 se activa solo en la organización de Fede o en todas las empresas? | Solo en la de Fede hasta medir el coste de IA (decisión 5) |
+| Q-6 | ¿Confirmas que las reglas de la organización Postin sobre LinkedIn («solo API oficial», no analizar ni puntuar perfiles) no aplican a las recetas de NOKKO? | Confirmarlo por escrito. No bloquea: la regla de redacción de la decisión 12 se mantiene mientras tanto |
 
 ## 8. Orden de entrega
 Cola: tras NK-0156 y antes de NK-0167 y NK-0168. Cada SDD se redacta uno a uno con `nokko-shape` cuando apruebes este PRD. SDD 1 y 2 no dependen del diagnóstico; el SDD 3 sí lo toca.
@@ -200,11 +218,14 @@ Cola: tras NK-0156 y antes de NK-0167 y NK-0168. Cada SDD se redacta uno a uno c
 |---|---|---|---|---|
 | 1 | `SDD-…-plays-a-medida-modelo`: tabla por empresa con RLS (migración), tipos del molde, validación pura (frescura, evidencia citada, mensaje citado, diseño de prueba, parámetros, comprobación de fuentes) | Feature | — (revisar con NK-0156) | G-4, G-5, G-6 |
 | 2 | `SDD-…-plays-a-medida-biblioteca`: biblioteca de referencia en código y solo lectura, origen «De la biblioteca» frente a «Creado para tu empresa», 3 recetas R-1, R-2, R-3 | Feature | 1 | G-3, G-5, G-6 |
-| 3 | `SDD-…-plays-a-medida-asistente`: herramienta del asistente para proponer y guardar un play con aprobación (Owner y Sales Leader), lectura de la estrategia, medida del coste de IA | Feature | 1, 2; diagnóstico de plays integrado | G-1, G-2, G-7 |
-| 4+ | Un SDD por conector o vertical: registros oficiales por país (P1 a P7), precios (P10), enlaces rotos (P11), LinkedIn de personas, apps | Feature | Resultados de la tanda 0; decisión legal (Q-3, Q-4) | G-1 |
+| 3 | `SDD-…-plays-a-medida-asistente`: herramienta del asistente para proponer y guardar un play con aprobación (Owner y Sales Leader), lectura de la estrategia, registro del coste real de IA por propuesta y por empresa | Feature | 1, 2; diagnóstico de plays integrado | G-1, G-2, G-7 |
+| 4+ | Un SDD por conector o vertical: registros oficiales por país (P1 a P7), precios (P10), enlaces rotos (P11), LinkedIn de personas, apps | Feature | Resultados de la tanda 0; revisión legal recomendada por el coordinador (decisión 14, riesgo aceptado en 7.2) | G-1 |
 
 Orden dentro de la iniciativa: 1, luego 2, luego 3. No se lanzan 2 y 3 sin 1 (el molde y la validación son el contrato).
 
 ## 9. Aprobación
 - [ ] Fede aprueba el PRD (primer GO de dirección), incluidas las propuestas P-1 a P-6 y las tres recetas R-1 a R-3. Fecha: {…}
 - Al aprobar, el Estado pasa a «Aprobado». Después se redactan los SDD con `nokko-shape`.
+
+## 10. Relacionado
+- **NK-0174 (bandeja de respuestas):** Fede eligió «Conectar Gmail u Outlook» (lectura del buzón por OAuth) frente a una dirección de reenvío y a un webhook (2026-11-12). Pertenece al PRD propio de NK-0174, no a esta iniciativa: aquí no se define alcance. La lectura del buzón por OAuth tiene peso de privacidad y permisos que ese PRD debe resolver: reglas de datos de clientes (ningún texto de cliente en logs, ningún dato de una empresa visible para otra) y permisos (scopes) mínimos.
