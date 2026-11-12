@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useAgent } from "@/components/agent";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSetup } from "@/hooks/use-setup";
-import { showRoadmapCard } from "@/lib/onboarding";
+import { onboardingDone, showRoadmapCard } from "@/lib/onboarding";
 import { jsonObject } from "@/lib/json";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
 import { GuideOffer, NextStepMessage } from "@/components/setup/guide";
@@ -35,7 +35,7 @@ export function RoadmapCard() {
       <div className="mt-4 flex flex-wrap gap-2">
         <Button asChild><Link to="/setup">Completar con IA</Link></Button>
         <Button variant="outline" onClick={() => openAgent({ mode: "interview", prompt: "Quiero completar la configuración de mi estrategia GTM. Empieza por lo más importante que falte." })}>Hazme las preguntas</Button>
-        <Button variant="ghost" asChild><Link to="/onboarding">Seguir con el onboarding</Link></Button>
+        {!onboardingDone(session) && <Button variant="ghost" asChild><Link to="/onboarding">Seguir con el onboarding</Link></Button>}
       </div>
     </section>
   );
