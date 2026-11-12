@@ -527,7 +527,8 @@ async function runKind(
           done++;
         } catch (e) {
           failed++;
-          console.error("drive summary failed", d.fileId, (e as Error).message);
+          const { safeErrorLog } = await import("@/lib/agent/safe-error-log");
+          console.error("drive summary failed", d.fileId, safeErrorLog(e));
         }
       }
       return {

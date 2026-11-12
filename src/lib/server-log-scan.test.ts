@@ -90,12 +90,10 @@ function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
   );
 }
 
-// The `.message` rules (a `.message` or a variable derived from it in a console call) apply to the files of NK-0142:
-// the entry points and src/routes/api/**. In src/lib the same rule finds 28 real calls that log (e as Error).message or
-// error.message (the NK-0142 result lists them); fixing them is a separate ticket, and the exception list must stay empty,
-// so the rule is not applied there yet. Widening MESSAGE_SCOPE to src/lib is the next step, once those calls are fixed.
-const inMessageScope = (rel: string) =>
-  rel === "src/server.ts" || rel === "src/start.ts" || rel.startsWith("src/routes/api/");
+// The `.message` rules (a `.message` or a variable derived from it in a console call) apply to every scanned file:
+// src/lib/** since NK-0149 (the 28 calls NK-0142 listed now log safeErrorLog or a length), the entry points and
+// src/routes/api/** since NK-0142, and every *.functions.ts. A log that needs a readable text uses a literal label.
+const inMessageScope = (_rel: string) => true;
 const derivedFor = (f: { rel: string; src: string }) =>
   inMessageScope(f.rel) ? messageVariables(f.src) : null;
 
@@ -217,7 +215,8 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
     expect(isUnsafeLog('console.error("x", e.message)', [])).toBe(true);
     expect(inMessageScope("src/routes/api/public/leads.ts")).toBe(true);
     expect(inMessageScope("src/server.ts")).toBe(true);
-    expect(inMessageScope("src/lib/memory.server.ts")).toBe(false);
+    expect(inMessageScope("src/lib/memory.server.ts")).toBe(true);
+    expect(inMessageScope("src/lib/inngest/tasks.server.ts")).toBe(true);
   });
 
   it("covers the two entry points", () => {

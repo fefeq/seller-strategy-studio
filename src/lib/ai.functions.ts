@@ -19,6 +19,7 @@ import {
 } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
 import type { Json } from "@/integrations/supabase/types";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export const generateMeetingBrief = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -246,6 +247,6 @@ export const generateGtmAdvice = createServerFn({ method: "POST" })
       .insert({ goal: data.goal, horizon: data.horizon, result: result as unknown as Json })
       .select("id, created_at")
       .single();
-    if (error) console.error("Advisor: save failed", error.message);
+    if (error) console.error("Advisor: save failed", safeErrorLog(error));
     return { id: row?.id ?? null, created_at: row?.created_at ?? new Date().toISOString(), result };
   });

@@ -5,6 +5,7 @@ import { search } from "@/lib/firecrawl";
 import { perplexitySearch } from "@/lib/perplexity";
 import { parallelSearch } from "@/lib/parallel-gateway";
 import { newsItems, type NewsItem } from "@/lib/web-research";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export async function searchBoth(
   firecrawl: { query: string; limit?: number; sources?: ("web" | "news")[]; tbs?: string } | null,
@@ -18,9 +19,9 @@ export async function searchBoth(
     perplexity && process.env["PARALLEL_API_KEY"] ? parallelSearch(perplexity.queries.join(" · "), perplexity.queries, { max: perplexity.maxResults ?? 5, afterDate }).then((r) => newsItems(r, max)) : Promise.resolve([] as NewsItem[]),
   ]);
   if (fc.status === "rejected" && px.status === "rejected" && pl.status === "rejected") throw fc.reason;
-  if (fc.status === "rejected") console.error("Firecrawl search failed", (fc.reason as Error)?.message);
-  if (px.status === "rejected") console.error("Perplexity search failed", (px.reason as Error)?.message);
-  if (pl.status === "rejected") console.error("Parallel search failed", (pl.reason as Error)?.message);
+  if (fc.status === "rejected") console.error("Firecrawl search failed", safeErrorLog(fc.reason));
+  if (px.status === "rejected") console.error("Perplexity search failed", safeErrorLog(px.reason));
+  if (pl.status === "rejected") console.error("Parallel search failed", safeErrorLog(pl.reason));
   const ok = (r: PromiseSettledResult<NewsItem[]>) => (r.status === "fulfilled" ? r.value : []);
   return newsItems([...ok(fc), ...ok(px), ...ok(pl)], max);
 }

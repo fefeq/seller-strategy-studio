@@ -19,6 +19,7 @@ import { callNotesText, hasCallNotes, normalizeCallNotes, TEARDOWN_SYSTEM } from
 import { searchBoth } from "@/lib/web-search";
 import { companyName, sourcesMarkdown, type NewsItem } from "@/lib/web-research";
 import type { Db } from "@/lib/org-data";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 /** Company and user the generation runs for; null = the caller's RLS client already limits the rows. */
 export type AiScope = { orgId: string; userId: string } | null;
@@ -303,7 +304,7 @@ export async function researchStakeholderCore(
     const url = linkedinProfileUrl(s.linkedin_url);
     return url
       ? profilePosts(url, 3).catch((e) => {
-          console.error("Apify profile posts failed", (e as Error).message);
+          console.error("Apify profile posts failed", safeErrorLog(e));
           return [];
         })
       : [];

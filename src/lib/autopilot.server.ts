@@ -5,6 +5,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 type Admin = SupabaseClient<Database>;
 const DAY = 86_400_000;
@@ -32,7 +33,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         const r = await completeAccount(c2, a.id, "automatic");
         const written = await applyAutoChanges(c2, a.id, r.changes, now.toISOString());
         if (written.length) lines.push(`Datos completados: ${written.length} campos (${r.sources}).`);
-      } catch (e) { console.error("autopilot complete", (e as Error).message); }
+      } catch (e) { console.error("autopilot complete", safeErrorLog(e)); }
       try {
         const res = await trackedRun(ctx, "research_account", "automatic", () => researchAccountCore(db, a.id, scope));
         const { data: plan } = await db.from("account_plans").select("*").eq("org_id", orgId).eq("account_id", a.id).maybeSingle();
@@ -111,7 +112,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
           `Días sin actividad: ${c.idleDays}\nDeals abiertos: ${c.openDeals.map((d) => d.name).join(", ") || "ninguno"}\n\n${(await accountContext(db, c.id, scope)).slice(0, 18_000)}`,
           { effort: "low" },
         );
-      } catch (e) { console.error("autopilot cooling review", (e as Error).message); }
+      } catch (e) { console.error("autopilot cooling review", safeErrorLog(e)); }
       await db.from("suggestions").upsert({
         org_id: orgId, detector: "account_cooling", dedupe_key: `account_cooling:${c.id}:${week}`, priority: c.openDeals.length ? 1 : 2,
         title: `${c.name} se está enfriando: ${c.idleDays} días sin actividad`.slice(0, 200),
