@@ -123,7 +123,9 @@ it("N-6: if the membership query fails nothing is sent and the failure is logged
     expect(await flushHeldNotices(admin, NOW)).toBe(0);
     expect(sendText).not.toHaveBeenCalled();
     expect(updates).toHaveLength(0); // nothing is marked as sent, so the next hour still delivers
-    expect(log.mock.calls.some((c) => String(c.join(" ")).includes("connection reset"))).toBe(true);
+    // NK-0149: the failure is logged by its label; the error's own text is not part of the log.
+    expect(log.mock.calls.some((c) => String(c[0]).includes("membership query failed"))).toBe(true);
+    expect(log.mock.calls.some((c) => JSON.stringify(c).includes("connection reset"))).toBe(false);
     membersFail = false; // control: same notices, healthy query
     expect(await flushHeldNotices(admin, NOW)).toBe(1);
     expect(sendText).toHaveBeenCalledTimes(1);
