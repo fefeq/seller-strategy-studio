@@ -5,14 +5,25 @@ import { stageGate, trackFor } from "./bmad/tracks";
 import { getWorkflow, missingPrereqs, WORKFLOWS } from "./bmad/workflows";
 import { PERSONAS, personasFor } from "./bmad/personas";
 
-const base: CycleState = { approved: [], drafts: [], setupPct: 100, openDeals: 0, closedDealsWithoutWinloss: 0, daysSinceRetro: null };
+const base: CycleState = {
+  approved: [],
+  drafts: [],
+  setupPct: 100,
+  openDeals: 0,
+  closedDealsWithoutWinloss: 0,
+  daysSinceRetro: null,
+};
 
 describe("phases", () => {
   it("starts in analysis and advances with approved artifacts", () => {
     expect(currentPhase(base)).toBe("analysis");
     expect(currentPhase({ ...base, approved: ["brief"] })).toBe("plan");
-    expect(currentPhase({ ...base, approved: ["brief", "plan", "architecture"] })).toBe("architecture");
-    expect(currentPhase({ ...base, approved: ["brief", "plan", "architecture", "readiness"] })).toBe("execution");
+    expect(currentPhase({ ...base, approved: ["brief", "plan", "architecture"] })).toBe(
+      "architecture",
+    );
+    expect(
+      currentPhase({ ...base, approved: ["brief", "plan", "architecture", "readiness"] }),
+    ).toBe("execution");
   });
   it("owner is asked for the brief first; AE is not", () => {
     expect(nextSteps(base, ["owner"])[0].id).toBe("draft_brief");
@@ -54,11 +65,27 @@ describe("tracks and stage gates", () => {
     expect(trackFor(120000)).toBe("full");
   });
   it("full track needs economic buyer before proposal", () => {
-    const g = stageGate({ amount: 100000, meddpicc: { identify_pain: { score: 3 }, metrics: { score: 2 }, champion: { score: 2 }, decision_criteria: { score: 2 } } }, "proposal");
+    const g = stageGate(
+      {
+        amount: 100000,
+        meddpicc: {
+          identify_pain: { score: 3 },
+          metrics: { score: 2 },
+          champion: { score: 2 },
+          decision_criteria: { score: 2 },
+        },
+      },
+      "proposal",
+    );
     expect(g.missing).toEqual(["Economic buyer", "Decision process", "Competition"]);
   });
   it("light track to qualified only needs pain", () => {
-    expect(stageGate({ amount: 1000, meddpicc: { identify_pain: { score: 0, note: "dolor" } } }, "qualified").missing).toEqual([]);
+    expect(
+      stageGate(
+        { amount: 1000, meddpicc: { identify_pain: { score: 0, note: "dolor" } } },
+        "qualified",
+      ).missing,
+    ).toEqual([]);
   });
 });
 
@@ -67,7 +94,8 @@ describe("workflows", () => {
     expect(missingPrereqs(getWorkflow("plan")!, [])).toEqual(["brief"]);
   });
   it("every persona menu points to an existing workflow", () => {
-    for (const p of PERSONAS) for (const m of p.menu) expect(WORKFLOWS.some((w) => w.id === m.workflow)).toBe(true);
+    for (const p of PERSONAS)
+      for (const m of p.menu) expect(WORKFLOWS.some((w) => w.id === m.workflow)).toBe(true);
   });
   it("primary personas come first for the role", () => {
     expect(personasFor(["cs"])[0].id).toBe("brian");
