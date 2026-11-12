@@ -949,4 +949,24 @@ describe("playDiagnosisText: review of session 1", () => {
         expect(out).not.toContain("\n\n\n");
       }
   });
+
+  it("«también avanza» is said for every step not enabled, not only the next one, and names teams that are not proposed", () => {
+    // Reuniones starts by «a»; «b» comes after it and is shared with Entrantes y producto, which goes to later (not usual).
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a", "b"]), team("entrantes-y-producto", ["b"])];
+    const r = ready(custom(catalog, teams, status(), answers()));
+    expect(ids(r.proposed)).toEqual(["reuniones"]);
+    expect(ids(r.later)).toEqual(["entrantes-y-producto"]);
+    expect(r.proposed[0]!.reasons).toEqual([
+      "Empieza por «Play a», de la fase Captura.",
+      "Activar «Play b» también avanza «Entrantes y producto».",
+    ]);
+  });
+
+  it("an enabled step says nothing about the teams it shares", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a", "b"]), team("entrantes-y-producto", ["b"])];
+    const r = ready(custom(catalog, teams, status(), answers(), { b: true }));
+    expect(r.proposed[0]!.reasons).toEqual(["Empieza por «Play a», de la fase Captura."]);
+  });
 });
