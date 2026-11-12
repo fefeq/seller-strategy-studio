@@ -181,7 +181,7 @@ Nota: no hay preguntas de producto que bloqueen el SDD; P-1 no bloquea.
 - Uso real del onboarding: sin dato.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Estado: pass 1 FAIL → corregido en `8379b0d`; pass 2 FAIL → corregido en <sha>; pass 3 pendiente.
+- Estado: pass 1 FAIL → corregido en `8379b0d`; pass 2 FAIL → corregido en d6bdad5; pass 3 pendiente.
 - Informe de la pasada 1 (sin editar): `.factory/evidence/NK-0156/sdd-gate-pass1.md` (3 MAJOR, 7 MINOR, 0 BLOCKER).
 - Informe de la pasada 2 (sin editar): `.factory/evidence/NK-0156/sdd-gate-pass2.md` y sonda `sdd-gate-pass2-probe.json` (1 MAJOR, 8 MINOR, 0 BLOCKER).
 - Veredicto del gate (pasada 3): No revisado
