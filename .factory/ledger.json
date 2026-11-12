@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 170,
+  "seq": 171,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4965,6 +4965,27 @@
         {
           "state": "LOGGED",
           "at": "2026-11-12T23:19:01.685Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0171",
+      "title": "Plays a medida: molde de receta de señal (inspirado en el catálogo público de Glider, reescrito con palabras propias) + biblioteca de referencia + plays por empresa propuestos por el asistente a partir de la estrategia y aprobados por una persona",
+      "kind": "feature",
+      "source": "Fede, entrevista 2026-11-12. Decisiones: (1) almacenamiento = tabla por empresa con org_id y RLS (migración); biblioteca de referencia en código, solo lectura. (2) proponer y aprobar: Owner y Sales Leader. (3) receta sin fuente conectada = play bloqueado por fuente externa con el motivo, nunca finge. (4) tanda 0 = molde validado por código (disparador, evidencia con fuente por paso y cita, entregable, verificación manual, contacto, mensaje citado, diseño de prueba) + 3 recetas horizontales con herramientas ya disponibles + herramienta del asistente para proponer/guardar un play con aprobación. (5) coste de IA: medirlo en la tanda 0 y fijar tope después (sin tope inventado). (6) éxito: empresas con >=1 play a medida activado; propuestas aprobadas vs descartadas; plays con resultado de prueba. (7) mercado global, clientes de nicho y B2B general. (8) vocabulario unificado: todo es «play», distinguido solo por origen («De la biblioteca» / «Creado para tu empresa»), sin nombres nuevos tipo «recetas». (9) no copiar texto de Glider: solo estructura y patrones. (10) orden de cola del siguiente sprint: NK-0156, esta iniciativa, NK-0167, NK-0168. Evidencia: scratchpad glider-plays-analysis.md (fuera del repo, sin commit); src/lib/plays/{types,catalog,teams,gating,run-log}.ts; docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md (otra iniciativa, relacionada, no enlazada como PRD). SDD y PRD: pendientes (nokko-shape).",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:45:12.908Z",
           "by": "tracker",
           "note": ""
         }
