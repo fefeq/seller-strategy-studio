@@ -4551,6 +4551,137 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "diagnose_play_teams",
+        "title": "Diagnosticar equipos de plays",
+        "description": "Solo lee. Diagnóstico de plays: con el estado de la empresa, los plays que tiene activados, su voz y sus reglas base, ordena los seis equipos de plays con motivos fijos y da el plan de activación, por fase y dependencias. Si la empresa no está lista, dice qué falta y no propone nada. En la conversación, pregunta antes cuál es su cuello de botella y qué otras tareas quiere resolver; las opciones del cuello de botella son: «Llego a las reuniones sin preparar o se quedan sin seguimiento.» «Perdemos deals y no volvemos a ellos.» «No sé qué cuentas se están moviendo.» «No sé qué dolores repiten los clientes en las llamadas.» «No sé a qué cuentas dedicar tiempo o no me fío del CRM.» «Los registros y los leads entrantes se enfrían.» o «Ninguno de estos» (bottleneck null). Después cuenta el resultado a partir de resumen: no añadas equipos de plays, plays, motivos ni cifras que no estén en la respuesta. De la voz solo cuenta los ejemplos: los mensajes de voz se pegan en Conocimiento › Voz, nunca en el chat. No activa nada: el plan se guarda con save_play_plan y las reglas base que falten se añaden con add_default_rules.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "bottleneck": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "reuniones",
+                    "reactivar-perdidos",
+                    "senales-de-cuenta",
+                    "aprender-de-llamadas",
+                    "priorizar-cuentas-y-crm",
+                    "entrantes-y-producto"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id del equipo de plays que es hoy su cuello de botella, o null si ha dicho «Ninguno de estos»"
+            },
+            "wanted": {
+              "default": [],
+              "description": "Ids de los otros equipos de plays cuyas tareas quiere resolver (varios o ninguno)",
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "reuniones",
+                  "reactivar-perdidos",
+                  "senales-de-cuenta",
+                  "aprender-de-llamadas",
+                  "priorizar-cuentas-y-crm",
+                  "entrantes-y-producto"
+                ]
+              }
+            }
+          },
+          "required": [
+            "bottleneck"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "save_play_plan",
+        "title": "Guardar el plan de equipos de plays",
+        "description": "Guarda el plan del diagnóstico de plays como sugerencias en Sugerencias: una por play a activar, cada una con la acción set_play_enabled, que solo se ejecuta si la persona la aprueba; no activa ningún play. Recalcula el plan con los datos del momento: usa las mismas respuestas que diagnose_play_teams. Repetirlo no duplica sugerencias: dice cuáles ya estaban abiertas, pospuestas o descartadas. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "bottleneck": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": [
+                    "reuniones",
+                    "reactivar-perdidos",
+                    "senales-de-cuenta",
+                    "aprender-de-llamadas",
+                    "priorizar-cuentas-y-crm",
+                    "entrantes-y-producto"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Id del equipo de plays que es hoy su cuello de botella, o null si ha dicho «Ninguno de estos»"
+            },
+            "wanted": {
+              "default": [],
+              "description": "Ids de los otros equipos de plays cuyas tareas quiere resolver (varios o ninguno)",
+              "maxItems": 6,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "reuniones",
+                  "reactivar-perdidos",
+                  "senales-de-cuenta",
+                  "aprender-de-llamadas",
+                  "priorizar-cuentas-y-crm",
+                  "entrantes-y-producto"
+                ]
+              }
+            }
+          },
+          "required": [
+            "bottleneck"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_default_rules",
+        "title": "Añadir las reglas base",
+        "description": "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título. No duplica las que ya existen ni cambia las que la empresa ha editado. Si no puede leer las reglas, no añade ninguna. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }

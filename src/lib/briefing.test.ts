@@ -54,3 +54,37 @@ describe("briefing autopilot lines", () => {
     ]);
   });
 });
+
+// SDD-20261112-diagnosis-in-chat (NK-0153) CA-21: the suggestions of a plays diagnosis were asked for by the person; Inicio does not
+// count them as new issues it detected. Every other detector is counted as before.
+describe("briefing and the plays diagnosis (NK-0153 CA-21)", () => {
+  const t = "2026-10-24T09:00:00Z";
+  const empty = { since, usage: [], leads: [], memories: [], signals: [], jobs: [] };
+  it("plays_diagnosis suggestions are not «asuntos nuevos»", () => {
+    const items = autoWork(
+      {
+        ...empty,
+        suggestions: [
+          { created_at: t, detector: "plays_diagnosis" },
+          { created_at: t, detector: "plays_diagnosis" },
+        ],
+      },
+      money,
+    );
+    expect(items).toEqual([]);
+  });
+  it("the other detectors are counted as today, next to plays_diagnosis ones", () => {
+    const items = autoWork(
+      {
+        ...empty,
+        suggestions: [
+          { created_at: t, detector: "plays_diagnosis" },
+          { created_at: t, detector: "deal_stale" },
+          { created_at: t, detector: "onboarding_stalled" },
+        ],
+      },
+      money,
+    ).map((i) => i.text);
+    expect(items).toEqual(["Detecté 2 asuntos nuevos que merecen tu atención."]);
+  });
+});

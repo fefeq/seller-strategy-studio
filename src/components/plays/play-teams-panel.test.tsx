@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const h = vi.hoisted(() => ({
   rows: [] as { play_id: string; enabled: boolean }[],
   toggle: vi.fn(),
+  open: vi.fn(),
 }));
 
 vi.mock("@/integrations/supabase/client", () => {
@@ -26,6 +27,7 @@ vi.mock("@tanstack/react-start", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@tanstack/react-start")>()),
   useServerFn: (f: unknown) => f,
 }));
+vi.mock("@/components/agent", () => ({ useAgent: () => ({ open: h.open, docked: false }) }));
 vi.mock("@/lib/plays.functions", () => ({ setPlayEnabled: h.toggle }));
 vi.mock("@/components/plays/use-play-states", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/plays/use-play-states")>()),
@@ -66,6 +68,7 @@ const card = (teamTitle: string, playTitle: string) =>
 beforeEach(() => {
   h.rows = [];
   h.toggle.mockReset();
+  h.open.mockReset();
 });
 afterEach(cleanup);
 
@@ -178,6 +181,48 @@ describe("one activity open at a time (shared card behaviour)", () => {
     expect(screen.getAllByRole("button", { name: "Ocultar actividad" })).toHaveLength(1);
     expect(b.getByRole("button", { name: "Ocultar actividad" }).getAttribute("aria-expanded")).toBe(
       "true",
+    );
+  });
+});
+
+// SDD-20261112-diagnosis-in-chat CA-17: the button that opens the assistant with the plays diagnosis flow.
+describe("the plays diagnosis button (NK-0153 CA-17)", () => {
+  const NAME = "Hacer el diagnóstico de plays";
+  it.each(["owner", "sales_leader"])(
+    "%s: opens a fresh chat with the flow and the first prompt",
+    (role) => {
+      mount([role]);
+      fireEvent.click(screen.getByRole("button", { name: NAME }));
+      expect(h.open).toHaveBeenCalledTimes(1);
+      expect(h.open).toHaveBeenCalledWith({
+        fresh: true,
+        mode: "chat",
+        workflowId: "plays_diagnosis",
+        prompt: "Quiero hacer el diagnóstico de plays.",
+      });
+    },
+  );
+  it("ae: the button is not there and nothing opens", () => {
+    mount(["ae"]);
+    expect(screen.queryByRole("button", { name: NAME })).toBeNull();
+    expect(screen.queryByText(NAME)).toBeNull();
+    expect(h.open).not.toHaveBeenCalled();
+  });
+  it("no role at all: the button is not there", () => {
+    mount([]);
+    expect(screen.queryByRole("button", { name: NAME })).toBeNull();
+  });
+  it("a role list with a leader among others shows it once", () => {
+    mount(["ae", "sales_leader"]);
+    expect(screen.getAllByRole("button", { name: NAME })).toHaveLength(1);
+  });
+  it("the button comes before the six teams and uses only token classes", () => {
+    mount(["owner"]);
+    const b = screen.getByRole("button", { name: NAME });
+    const first = screen.getAllByRole("heading", { level: 2 })[0]!;
+    expect(b.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(b.className).not.toMatch(
+      /#[0-9a-f]{3,8}|\b(?:bg|text|border)-(?:red|blue|green|gray|slate|white|black)/i,
     );
   });
 });

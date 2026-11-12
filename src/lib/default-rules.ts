@@ -97,6 +97,17 @@ async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
 }
 
 /**
+ * Titles of the base rules the company's Reglas section does not have yet (by title, as addDefaultRulesCore compares them). Same read:
+ * a failed read throws DEFAULT_RULES_READ_FAILED, never «all missing». Read only; the plays diagnosis counts them (NK-0153).
+ */
+export async function missingDefaultRuleTitles(c: { db: Db; orgId: string }): Promise<string[]> {
+  const have = await readTitles(c);
+  return defaultRules()
+    .filter((r) => !have.has(same(r.title)))
+    .map((r) => r.title);
+}
+
+/**
  * Adds the base rules the company's Reglas section does not have yet (by title), as team documents. Owner and Sales Leader only
  * (the database says the same, migration 0081; the code repeats it for the privileged clients). Safe to repeat, also from two
  * sessions at once (NK-0136): the read-then-insert is not atomic, so migration 0085 makes the database refuse a second team
