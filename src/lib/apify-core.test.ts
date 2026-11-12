@@ -216,7 +216,9 @@ describe("companyLinkedin when the read or the save fails (NK-0022 gate)", () =>
     const user = fakeDb(row);
     fakeDb(row, { message: "boom" }); // the admin client that fails the save
     expect((await accountJobsCore(user.db, ACC.id)).linkedin).toBe(URL);
-    expect(log).toHaveBeenCalledWith("LinkedIn page lookup failed", "boom");
+    // NK-0149: the failure is logged by its label; the error's own text is not part of the log.
+    expect(log.mock.calls.some((c) => c[0] === "LinkedIn page lookup failed")).toBe(true);
+    expect(JSON.stringify(log.mock.calls)).not.toContain("boom");
     log.mockRestore();
   });
 

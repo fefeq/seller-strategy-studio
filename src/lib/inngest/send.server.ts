@@ -3,6 +3,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { HEARTBEAT_LOCK, isHeartbeatFresh, type NokkoEvent } from "@/lib/inngest/events";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/inngest";
 type Admin = SupabaseClient<Database>;
@@ -44,7 +45,7 @@ export async function trySend(events: NokkoEvent[]) {
     await sendEvents(events);
     return true;
   } catch (e) {
-    console.error("inngest trySend", (e as Error).message);
+    console.error("inngest trySend", safeErrorLog(e));
     return false;
   }
 }

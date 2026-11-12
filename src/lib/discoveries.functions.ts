@@ -119,7 +119,7 @@ export const decideDiscovery = createServerFn({ method: "POST" })
           title: det["title"] ?? null,
           linkedin_url: det["linkedin"] ?? null,
         });
-        if (e) console.error("discovery stakeholder", e.message);
+        if (e) console.error("discovery stakeholder", safeErrorLog(e));
       }
       const { data: lead, error: e } = await db
         .from("leads")
