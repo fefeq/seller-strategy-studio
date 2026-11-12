@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
-import { useSessionQuiet } from "@/lib/session-ending";
+import { assertSessionOpen, retryWhileOpen, useSessionQuiet } from "@/lib/session-ending";
 import { useSetup } from "@/hooks/use-setup";
 import { invalidateSetup } from "@/hooks/setup-invalidation";
 import { loadSetupGuideExtras, loadSetupSnoozes } from "@/lib/org-data";
@@ -67,27 +67,35 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
   const snoozesQ = useQuery({
     queryKey: ["setup-guide", "snoozes", orgId],
     enabled: !!orgId && hasPending && !quiet,
-    retry: 2,
-    queryFn: ({ signal }) => loadSetupSnoozes(supabase, orgId!, signal),
+    retry: retryWhileOpen(2),
+    queryFn: ({ signal }) => {
+      assertSessionOpen();
+      return loadSetupSnoozes(supabase, orgId!, signal);
+    },
   });
   const activityQ = useQuery({
     queryKey: ["setup-guide", "activity", orgId],
     enabled: !!orgId && hasPending && activity && !quiet,
-    retry: 2,
-    queryFn: ({ signal }) => loadSetupGuideExtras(supabase, orgId!, signal),
+    retry: retryWhileOpen(2),
+    queryFn: ({ signal }) => {
+      assertSessionOpen();
+      return loadSetupGuideExtras(supabase, orgId!, signal);
+    },
   });
   const membersQ = useQuery({
     queryKey: ["setup-guide-members", orgId],
     enabled: !!orgId && needsMembers && !quiet,
     staleTime: 5 * 60_000,
-    queryFn: async (): Promise<GuideMember[]> => {
+    queryFn: async ({ signal }): Promise<GuideMember[]> => {
+      assertSessionOpen();
       const { data: rows } = await supabase
         .from("org_members")
         .select("user_id,role")
-        .eq("org_id", orgId!);
+        .eq("org_id", orgId!)
+        .abortSignal(signal);
       const ids = (rows ?? []).map((r) => r.user_id);
       const { data: profiles } = ids.length
-        ? await supabase.from("profiles").select("id,full_name").in("id", ids)
+        ? await supabase.from("profiles").select("id,full_name").in("id", ids).abortSignal(signal)
         : { data: [] as { id: string; full_name: string | null }[] };
       const names = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
       return (rows ?? []).map((r) => ({

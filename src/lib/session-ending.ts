@@ -2,7 +2,7 @@
 // must not be read again: the session is still valid until the logout request ends, so any refetch (a save, a
 // finished job) would go out with the previous user's org id and token. A tiny store, like account-switch.ts.
 import { useSyncExternalStore } from "react";
-import { useSwitchingAccount } from "@/lib/account-switch";
+import { isSwitchingAccount, useSwitchingAccount } from "@/lib/account-switch";
 
 let ending = false;
 const listeners = new Set<() => void>();
@@ -22,6 +22,30 @@ export function endSessionEnd() {
   ending = false;
   emit();
 }
+
+/** The window is open: signing out, or the tab learned that another account signed in. Synchronous, unlike the hook. */
+export const isSessionQuiet = () => ending || isSwitchingAccount();
+
+/** Thrown by a read that found the window open when it was about to send: it never reaches the network. */
+export class SessionEndedError extends Error {
+  constructor() {
+    super("session-ended");
+    this.name = "SessionEndedError";
+  }
+}
+
+/**
+ * First line of a query function that reads with the signed-in person's ids. `enabled` only follows the window after
+ * React re-renders, so a refetch asked in the same tick as the click (or a retry whose timer fires in between) would
+ * still start; this check is synchronous and sits right before the request.
+ */
+export function assertSessionOpen() {
+  if (isSessionQuiet()) throw new SessionEndedError();
+}
+
+/** React Query `retry` for those reads: up to `max` retries, none once the window is open (the next attempt would send with the previous user's ids). */
+export const retryWhileOpen = (max: number) => (count: number, error: unknown) =>
+  count < max && !isSessionQuiet() && !(error instanceof SessionEndedError);
 
 const subscribe = (l: () => void) => {
   listeners.add(l);
