@@ -1,0 +1,457 @@
+import { describe, expect, it } from "vitest";
+import { CATALOG, type Play } from "./catalog";
+import {
+  BOTTLENECK_WORD,
+  MAX_PROPOSED_TEAMS,
+  PLAYS_DIAGNOSIS_DETECTOR,
+  TEAM_IDS,
+  prioritizeTeams,
+  type DiagnosisAnswers,
+  type DiagnosisResult,
+  type DiagnosisStatus,
+} from "./diagnosis";
+import { recommendablePlays } from "./recommend";
+import { PLAY_TEAMS, teamPlan, type PlayTeam } from "./teams";
+import { blockingMissing } from "@/lib/onboarding";
+
+// SDD-20261112-diagnosis-in-chat U-1 (CA-1 to CA-7, CA-19 of the module). Pure rules: the status, the plans and the recommendable order are
+// inputs. Real-catalogue cases are the scenarios of section 13; made-up catalogues check the rules without depending on the catalogue.
+
+const status = (o: Partial<DiagnosisStatus> = {}, motion: string | null = "inside_sales") =>
+  ({
+    ready: true,
+    missing: [],
+    diagnosis: {
+      archetype: "B",
+      name: "B2B mid-market / híbrido",
+      motion,
+      stage: "early",
+      nextStep: null,
+    },
+    strategy: { positioning: true, icp: true, segments: true },
+    ...o,
+  }) as DiagnosisStatus;
+const answers = (o: Partial<DiagnosisAnswers> = {}): DiagnosisAnswers => ({
+  bottleneck: null,
+  wanted: [],
+  ...o,
+});
+const realOrder = recommendablePlays(CATALOG).recommended.map((p) => p.id);
+const rowsOf = (enabled: Record<string, boolean> = {}) =>
+  new Map(Object.entries(enabled).map(([id, e]) => [id, { enabled: e }]));
+/** The real catalogue and teams, with the given rows. */
+const realPlans = (enabled: Record<string, boolean> = {}) =>
+  PLAY_TEAMS.map((t) => teamPlan(t, CATALOG, rowsOf(enabled)));
+const run = (s: DiagnosisStatus, a: DiagnosisAnswers, enabled: Record<string, boolean> = {}) =>
+  prioritizeTeams({ status: s, plans: realPlans(enabled), answers: a, order: realOrder });
+const ready = (r: DiagnosisResult) => {
+  if (!r.ready) throw new Error("expected a ready result");
+  return r;
+};
+
+// Made-up catalogue: the team ids are real (the fit rule names entrantes-y-producto) and the plays are invented.
+const play = (id: string, o: Partial<Play> = {}): Play => ({
+  id,
+  title: `Play ${id}`,
+  motion: ["cuentas"],
+  channels: ["crm"],
+  status: "parcial",
+  needs: ["Algo"],
+  detectors: [],
+  defaultEnabled: false,
+  outputs: ["suggestion"],
+  gates: [],
+  sdd: 2,
+  phase: "captura",
+  approval: "nokko_borrador",
+  dependsOn: [],
+  ...o,
+});
+const team = (id: string, plays: string[]): PlayTeam => ({
+  id,
+  title: PLAY_TEAMS.find((t) => t.id === id)!.title,
+  task: `Tarea de ${id}`,
+  plays,
+});
+function custom(
+  catalog: Play[],
+  teams: PlayTeam[],
+  s: DiagnosisStatus,
+  a: DiagnosisAnswers,
+  enabled: Record<string, boolean> = {},
+) {
+  const plans = teams.map((t) => teamPlan(t, catalog, rowsOf(enabled), teams));
+  const order = recommendablePlays(catalog).recommended.map((p) => p.id);
+  return prioritizeTeams({ status: s, plans, answers: a, order });
+}
+const ids = (xs: { id: string }[]) => xs.map((x) => x.id);
+
+describe("constants", () => {
+  it("TEAM_IDS are the ids of PLAY_TEAMS, the limit is 3 and the detector is plays_diagnosis", () => {
+    expect(TEAM_IDS).toEqual(PLAY_TEAMS.map((t) => t.id));
+    expect(MAX_PROPOSED_TEAMS).toBe(3);
+    expect(PLAYS_DIAGNOSIS_DETECTOR).toBe("plays_diagnosis");
+  });
+
+  it("BOTTLENECK_WORD has the six options of section 9, one per team, in the team order", () => {
+    expect(Object.keys(BOTTLENECK_WORD)).toEqual(TEAM_IDS);
+    expect(BOTTLENECK_WORD).toEqual({
+      reuniones: "Llego a las reuniones sin preparar o se quedan sin seguimiento.",
+      "reactivar-perdidos": "Perdemos deals y no volvemos a ellos.",
+      "senales-de-cuenta": "No sé qué cuentas se están moviendo.",
+      "aprender-de-llamadas": "No sé qué dolores repiten los clientes en las llamadas.",
+      "priorizar-cuentas-y-crm": "No sé a qué cuentas dedicar tiempo o no me fío del CRM.",
+      "entrantes-y-producto": "Los registros y los leads entrantes se enfrían.",
+    });
+  });
+});
+
+describe("prioritizeTeams: a company that is not ready (CA-1)", () => {
+  it("returns exactly ready false and the blocking missing, nothing else", () => {
+    const s = status({
+      ready: false,
+      missing: ["Diagnóstico GTM sin hacer", "ICP sin completar", "Segmentos sin rango de ACV"],
+      diagnosis: null,
+    });
+    const r = run(s, answers({ bottleneck: "reuniones" }));
+    expect(r).toEqual({
+      ready: false,
+      missing: ["Diagnóstico GTM sin hacer", "ICP sin completar"],
+    });
+    expect(Object.keys(r).sort()).toEqual(["missing", "ready"]);
+  });
+
+  it("blockingMissing drops only the segments piece, and companyOnboardingStatus-style missing keeps its order", () => {
+    expect(blockingMissing({ missing: ["Segmentos sin rango de ACV"] })).toEqual([]);
+    expect(
+      blockingMissing({ missing: ["Posicionamiento sin completar", "Segmentos sin rango de ACV"] }),
+    ).toEqual(["Posicionamiento sin completar"]);
+    expect(blockingMissing({ missing: [] })).toEqual([]);
+  });
+
+  it("with only the segments missing, ready is true and it proposes as usual", () => {
+    const r = ready(run(status({ missing: ["Segmentos sin rango de ACV"] }), answers()));
+    expect(r.proposed.length).toBeGreaterThan(0);
+  });
+});
+
+describe("prioritizeTeams: only what can be recommended (CA-2)", () => {
+  it("a team with no steps goes to notAvailable with the reason of teamPlan, also if it is the bottleneck or wanted", () => {
+    const catalog = [
+      play("blk", { status: "bloqueado", blockedBy: "proveedor_datos", title: "Bloqueado" }),
+      play("ok"),
+    ];
+    const teams = [team("reuniones", ["blk"]), team("reactivar-perdidos", ["ok"])];
+    const reasonFromTeamPlan = teamPlan(teams[0]!, catalog).unavailable[0]!.reason;
+    expect(reasonFromTeamPlan).toBe("falta un proveedor de datos");
+    for (const a of [
+      answers(),
+      answers({ bottleneck: "reuniones" }),
+      answers({ wanted: ["reuniones"] }),
+    ]) {
+      const r = ready(custom(catalog, teams, status(), a));
+      expect(r.notAvailable).toEqual([
+        {
+          id: "reuniones",
+          title: "Reuniones",
+          reason: "Ningún play disponible todavía: falta un proveedor de datos.",
+        },
+      ]);
+      expect(ids(r.proposed)).toEqual(["reactivar-perdidos"]);
+    }
+  });
+
+  it("never proposes or plans a blocked, a planned or a play that depends on a planned one", () => {
+    const catalog = [
+      play("blk", { status: "bloqueado", blockedBy: "linkedin_d2" }),
+      play("pln", { status: "planificado" }),
+      play("dep", { dependsOn: ["pln"] }),
+      play("ok"),
+    ];
+    const teams = [
+      team("reuniones", ["blk", "pln", "dep"]),
+      team("reactivar-perdidos", ["ok", "dep", "pln"]),
+    ];
+    const r = ready(custom(catalog, teams, status(), answers({ bottleneck: "reuniones" })));
+    expect(ids(r.proposed)).toEqual(["reactivar-perdidos"]);
+    expect(r.proposed.map((p) => p.next)).toEqual(["ok"]);
+    expect(ids(r.notAvailable)).toEqual(["reuniones"]);
+  });
+
+  it("the reason is copied from the first unavailable play of teamPlan, not written here", () => {
+    const catalog = [
+      play("pln", { status: "planificado" }),
+      play("dep", { dependsOn: ["pln"], title: "Hija" }),
+    ];
+    const teams = [team("reuniones", ["pln", "dep"])];
+    const plan = teamPlan(teams[0]!, catalog, rowsOf(), teams);
+    const r = ready(custom(catalog, teams, status(), answers()));
+    expect(r.notAvailable[0]!.reason).toBe(
+      `Ningún play disponible todavía: ${plan.unavailable[0]!.reason}.`,
+    );
+  });
+});
+
+describe("prioritizeTeams: the order (CA-3)", () => {
+  it("sorts by bottleneck, then wanted, then fit, then phase of next, then the order of PLAY_TEAMS", () => {
+    // Four teams, all with one disabled play; the phase of each next decides the last two keys.
+    const catalog = [
+      play("p-gen", { phase: "generacion" }),
+      play("p-fund", { phase: "fundacion" }),
+      play("p-cap", { phase: "captura" }),
+      play("p-cap2", { phase: "captura" }),
+    ];
+    const teams = [
+      team("reuniones", ["p-gen"]),
+      team("reactivar-perdidos", ["p-fund"]),
+      team("senales-de-cuenta", ["p-cap"]),
+      team("aprender-de-llamadas", ["p-cap2"]),
+    ];
+    const big = (a: DiagnosisAnswers) => {
+      const plans = teams.map((t) => teamPlan(t, catalog, rowsOf(), teams));
+      const order = recommendablePlays(catalog).recommended.map((p) => p.id);
+      const r = ready(prioritizeTeams({ status: status(), plans, answers: a, order, max: 9 }));
+      return ids(r.proposed);
+    };
+    expect(big(answers())).toEqual([
+      "reactivar-perdidos",
+      "senales-de-cuenta",
+      "aprender-de-llamadas",
+      "reuniones",
+    ]);
+    // wanted beats phase; bottleneck beats wanted.
+    expect(big(answers({ wanted: ["reuniones"] }))[0]).toBe("reuniones");
+    expect(
+      big(answers({ wanted: ["reuniones"], bottleneck: "aprender-de-llamadas" })).slice(0, 2),
+    ).toEqual(["aprender-de-llamadas", "reuniones"]);
+  });
+
+  it("fit: entrantes-y-producto goes before the phase rule only for a plg archetype", () => {
+    const catalog = [play("a", { phase: "fundacion" }), play("b", { phase: "generacion" })];
+    const teams = [team("reuniones", ["a"]), team("entrantes-y-producto", ["b"])];
+    const plg = ready(custom(catalog, teams, status({}, "plg"), answers()));
+    expect(ids(plg.proposed)).toEqual(["entrantes-y-producto", "reuniones"]);
+    expect(plg.proposed[0]!.reasons).toContain(
+      "Encaja con tu arquetipo (B2B mid-market / híbrido): vendes con producto.",
+    );
+  });
+
+  it("a not usual team (entrantes-y-producto without plg) never goes to proposed, even with free slots, and says why", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a"]), team("entrantes-y-producto", ["b"])];
+    const r = ready(custom(catalog, teams, status(), answers()));
+    expect(ids(r.proposed)).toEqual(["reuniones"]);
+    expect(r.later).toEqual([
+      {
+        id: "entrantes-y-producto",
+        title: "Entrantes y producto",
+        reason:
+          "No es lo habitual para tu arquetipo (B2B mid-market / híbrido); dímelo si lo quieres.",
+      },
+    ]);
+    const noName = ready(
+      custom(
+        catalog,
+        teams,
+        status({
+          diagnosis: {
+            archetype: "B",
+            name: null,
+            motion: "inside_sales",
+            stage: null,
+            nextStep: null,
+          },
+        }),
+        answers(),
+      ),
+    );
+    expect(noName.later[0]!.reason).toBe(
+      "No es lo habitual para tu arquetipo; dímelo si lo quieres.",
+    );
+  });
+
+  it("a not usual team is proposed when it is the bottleneck or wanted", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a"]), team("entrantes-y-producto", ["b"])];
+    for (const a of [
+      answers({ bottleneck: "entrantes-y-producto" }),
+      answers({ wanted: ["entrantes-y-producto"] }),
+    ]) {
+      const r = ready(custom(catalog, teams, status(), a));
+      expect(ids(r.proposed)).toEqual(["entrantes-y-producto", "reuniones"]);
+    }
+  });
+
+  it("with the motion unknown (null) it is not a product archetype", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a"]), team("entrantes-y-producto", ["b"])];
+    const r = ready(custom(catalog, teams, status({}, null), answers()));
+    expect(ids(r.proposed)).toEqual(["reuniones"]);
+  });
+
+  it("the result is the same with wanted in any order and with duplicates, and twice the same input gives equal results", () => {
+    const a1 = answers({
+      bottleneck: "reuniones",
+      wanted: ["senales-de-cuenta", "entrantes-y-producto"],
+    });
+    const a2 = answers({
+      bottleneck: "reuniones",
+      wanted: [
+        "entrantes-y-producto",
+        "senales-de-cuenta",
+        "senales-de-cuenta",
+        "entrantes-y-producto",
+      ],
+    });
+    expect(ready(run(status(), a1)).proposed.length).toBe(3);
+    expect(run(status(), a2)).toEqual(run(status(), a1));
+    expect(run(status(), a1)).toEqual(run(status(), a1));
+  });
+
+  it("does not mutate its inputs", () => {
+    const plans = realPlans();
+    const before = JSON.stringify(plans);
+    const a = answers({ wanted: ["reuniones", "reuniones"] });
+    prioritizeTeams({ status: status(), plans, answers: a, order: realOrder });
+    expect(JSON.stringify(plans)).toBe(before);
+    expect(a.wanted).toEqual(["reuniones", "reuniones"]);
+  });
+
+  it("candidates are the teams with a step not enabled: next is the first such step in the team order", () => {
+    const catalog = [play("first", { dependsOn: [] }), play("second", { dependsOn: ["first"] })];
+    const teams = [team("reuniones", ["first", "second"])];
+    const r = ready(custom(catalog, teams, status(), answers(), { first: true }));
+    expect(r.proposed[0]!.next).toBe("second");
+  });
+
+  describe("section 13 scenarios on the real catalogue and no rows", () => {
+    it("A: archetype B (inside_sales), no bottleneck, nothing wanted", () => {
+      const r = ready(run(status(), answers()));
+      expect(r.proposed.map((p) => [p.rank, p.id, p.next])).toEqual([
+        [1, "priorizar-cuentas-y-crm", "hubspot-account-tiering-scoring"],
+        [2, "reactivar-perdidos", "signals-in-crm-with-decay"],
+        [3, "senales-de-cuenta", "signals-in-crm-with-decay"],
+      ]);
+      expect(ids(r.later)).toEqual(["aprender-de-llamadas", "entrantes-y-producto"]);
+      expect(ids(r.alreadyActive)).toEqual(["reuniones"]);
+      expect(r.notAvailable).toEqual([]);
+    });
+
+    it("B: archetype A (plg), bottleneck aprender-de-llamadas", () => {
+      const r = ready(run(status({}, "plg"), answers({ bottleneck: "aprender-de-llamadas" })));
+      expect(r.proposed.map((p) => [p.rank, p.id, p.next])).toEqual([
+        [1, "aprender-de-llamadas", "call-transcript-signal-extraction"],
+        [2, "entrantes-y-producto", "product-sign-up-outreach"],
+        [3, "priorizar-cuentas-y-crm", "hubspot-account-tiering-scoring"],
+      ]);
+      expect(ids(r.later)).toEqual(["reactivar-perdidos", "senales-de-cuenta"]);
+      expect(ids(r.alreadyActive)).toEqual(["reuniones"]);
+    });
+
+    it("C: archetype C (field_sales), bottleneck reuniones, entrantes-y-producto wanted", () => {
+      const r = ready(
+        run(
+          status({}, "field_sales"),
+          answers({ bottleneck: "reuniones", wanted: ["entrantes-y-producto"] }),
+        ),
+      );
+      expect(r.proposed.map((p) => [p.rank, p.id, p.next])).toEqual([
+        [1, "entrantes-y-producto", "product-sign-up-outreach"],
+        [2, "priorizar-cuentas-y-crm", "hubspot-account-tiering-scoring"],
+        [3, "reactivar-perdidos", "signals-in-crm-with-decay"],
+      ]);
+      expect(ids(r.later)).toEqual(["senales-de-cuenta", "aprender-de-llamadas"]);
+      expect(r.alreadyActive).toEqual([
+        {
+          id: "reuniones",
+          title: "Reuniones",
+          reason: "Es tu cuello de botella, pero todos sus plays disponibles ya están activados.",
+        },
+      ]);
+    });
+  });
+});
+
+describe("prioritizeTeams: at most three (CA-4)", () => {
+  const six = () => {
+    const catalog = ["a", "b", "c", "d", "e"].map((id, i) =>
+      play(id, {
+        phase: (["fundacion", "captura", "captura", "generacion", "generacion"] as const)[i]!,
+      }),
+    );
+    const teams = [
+      team("reuniones", ["a"]),
+      team("reactivar-perdidos", ["b"]),
+      team("senales-de-cuenta", ["c"]),
+      team("aprender-de-llamadas", ["d"]),
+      team("priorizar-cuentas-y-crm", ["e"]),
+    ];
+    return { catalog, teams };
+  };
+
+  it("proposes the first three with rank from 1; the rest go to later in the same order with the limit reason", () => {
+    const { catalog, teams } = six();
+    const r = ready(custom(catalog, teams, status(), answers()));
+    expect(r.proposed.map((p) => p.rank)).toEqual([1, 2, 3]);
+    expect(ids(r.proposed)).toEqual(["reuniones", "reactivar-perdidos", "senales-de-cuenta"]);
+    expect(r.later).toEqual([
+      {
+        id: "aprender-de-llamadas",
+        title: "Aprender de llamadas",
+        reason: "Lo dejamos para después: como mucho 3 equipos de plays a la vez.",
+      },
+      {
+        id: "priorizar-cuentas-y-crm",
+        title: "Priorizar cuentas y limpiar CRM",
+        reason: "Lo dejamos para después: como mucho 3 equipos de plays a la vez.",
+      },
+    ]);
+  });
+
+  it("with fewer than three candidates it proposes them all", () => {
+    const { catalog, teams } = six();
+    const r = ready(custom(catalog, teams.slice(0, 2), status(), answers()));
+    expect(r.proposed.map((p) => p.rank)).toEqual([1, 2]);
+    expect(r.later).toEqual([]);
+  });
+});
+
+describe("prioritizeTeams: already active (CA-5)", () => {
+  it("a team with every step enabled goes to alreadyActive, never to proposed", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a"]), team("reactivar-perdidos", ["b"])];
+    const r = ready(custom(catalog, teams, status(), answers(), { a: true }));
+    expect(r.alreadyActive).toEqual([
+      {
+        id: "reuniones",
+        title: "Reuniones",
+        reason: "Todos sus plays disponibles ya están activados.",
+      },
+    ]);
+    expect(ids(r.proposed)).toEqual(["reactivar-perdidos"]);
+  });
+
+  it("a bottleneck that is already active says so and is not proposed", () => {
+    const catalog = [play("a"), play("b")];
+    const teams = [team("reuniones", ["a"]), team("reactivar-perdidos", ["b"])];
+    const r = ready(
+      custom(catalog, teams, status(), answers({ bottleneck: "reuniones" }), { a: true }),
+    );
+    expect(r.alreadyActive[0]!.reason).toBe(
+      "Es tu cuello de botella, pero todos sus plays disponibles ya están activados.",
+    );
+    expect(ids(r.proposed)).toEqual(["reactivar-perdidos"]);
+  });
+
+  it("with the real catalogue and no rows, Reuniones is already active", () => {
+    expect(ids(ready(run(status(), answers())).alreadyActive)).toEqual(["reuniones"]);
+  });
+
+  it("when every team is active, proposed and activation are empty", () => {
+    const enabled = Object.fromEntries(CATALOG.map((p) => [p.id, true]));
+    const r = ready(run(status({}, "plg"), answers(), enabled));
+    expect(r.proposed).toEqual([]);
+    expect(r.activation).toEqual([]);
+    expect(r.alreadyActive.length).toBeGreaterThan(0);
+  });
+});
