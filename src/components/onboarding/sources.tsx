@@ -11,12 +11,8 @@ import { startBackgroundJob } from "@/lib/background.functions";
 import { readingCost, type Depth } from "@/lib/onboarding";
 import { errorText } from "@/lib/errors";
 import { FieldActions } from "@/components/field-actions";
-import {
-  FILES_HOW_TO_GO_ON,
-  MAX_FILES,
-  mergeFiles,
-  removeFileText,
-} from "@/lib/onboarding-sources";
+import { FILES_HOW_TO_GO_ON, MAX_FILES } from "@/lib/onboarding-files-limit";
+import { mergeFiles, removeFileText } from "@/lib/onboarding-sources";
 
 const TEXT_LIMIT = 40_000;
 const FILE_LIMIT = 4 * 1024 * 1024;

@@ -4,7 +4,7 @@
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import type { Json } from "@/integrations/supabase/types";
 import { BLOCKS, proposalFindings, type Depth, type Finding, type Opinion } from "@/lib/onboarding";
-import { MAX_FILES } from "@/lib/onboarding-sources";
+import { MAX_FILES } from "@/lib/onboarding-files-limit";
 import type { SetupProposal } from "@/lib/setup-extraction";
 
 type Ctx = ToolCtx & { orgName: string };

@@ -1,7 +1,7 @@
 // User-facing error text. Supabase/PostgREST, auth and network errors arrive in English; this turns
 // them into «what happened + what to do» in Spanish (Nokko voice). Our own messages pass through.
 
-import { filesLimitText } from "@/lib/onboarding-sources";
+import { filesLimitText } from "@/lib/onboarding-files-limit";
 
 type ErrLike = { message?: unknown; code?: unknown; status?: unknown } | string | null | undefined;
 

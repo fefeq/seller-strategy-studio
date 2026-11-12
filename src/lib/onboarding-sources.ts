@@ -4,18 +4,10 @@
 import { z } from "zod";
 import { UNDO_HOURS } from "@/lib/delete-rules";
 import type { Finding } from "@/lib/onboarding";
+import { MAX_FILES, FILES_HOW_TO_GO_ON, filesLimitText } from "@/lib/onboarding-files-limit";
 
-/**
- * The most documents one reading takes, shared by the screen (mergeFiles), the job schema and the reading itself.
- * 3 because each PDF travels as a data URL in the request (up to 4 MB each): raising it is a different ticket (NK-0164).
- */
-export const MAX_FILES = 3;
-
-/** What the person is told when a reading gets more documents than it takes (client notice and server too_big). */
-export const FILES_HOW_TO_GO_ON =
-  "Para añadir más, súbelos a Drive y elígelos desde ahí, o pega su texto.";
-export const filesLimitText = () =>
-  `Una lectura admite hasta ${MAX_FILES} documentos. ${FILES_HOW_TO_GO_ON}`;
+// MAX_FILES and the limit text live in a zod-free module (errors.ts imports them on every screen); re-exported so imports here keep working.
+export { MAX_FILES, FILES_HOW_TO_GO_ON, filesLimitText };
 
 /** Input of the `onboarding_read` background job. Lives here (client-safe, zod only) so tests and the job share one schema. */
 export const onboardingReadInput = z
