@@ -113,6 +113,7 @@ export const TITLES: Record<string, string> = {
   get_onboarding_status: "Ver el estado del onboarding",
   diagnose_play_teams: "Diagnosticar equipos de plays",
   save_play_plan: "Guardar el plan de equipos de plays",
+  add_default_rules: "Añadir las reglas base",
   research_stakeholder: "Investigación de stakeholders",
   review_call: "Revisar llamada",
   save_call_notes: "Guardar notas de llamada en 5 líneas",

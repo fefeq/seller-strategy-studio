@@ -1,6 +1,5 @@
-// Diagnóstico de plays (SDD-20261112-diagnosis-in-chat): diagnose_play_teams (read, any member) and save_play_plan (write, owner and
-// sales_leader); add_default_rules is held: an existing guard (default-rules.test.ts, CA-12) lists the only files that may add base rules.
-// Part of the single registry in ../tools.ts, right after ONBOARDING_TOOLS.
+// Diagnóstico de plays (SDD-20261112-diagnosis-in-chat): diagnose_play_teams (read, any member), save_play_plan and add_default_rules
+// (write, owner and sales_leader). Part of the single registry in ../tools.ts, right after ONBOARDING_TOOLS.
 // planFor is shared by diagnose_play_teams and save_play_plan, so what is saved is what would have been shown with the same data. It reads
 // the company's state, the play rows and the plan; it has no voice, no rules and no writes. Nothing here activates a play: save_play_plan
 // only leaves suggestions whose action (set_play_enabled) runs when a person approves each one. Voice is only counted, never returned.
@@ -10,7 +9,7 @@ import type { AgentTool, ToolCtx } from "../tool-kit";
 import { onboardingStatusFor } from "./onboarding";
 import { playStateRows } from "./plays";
 import type { Json } from "@/integrations/supabase/types";
-import { missingDefaultRuleTitles } from "@/lib/default-rules";
+import { addDefaultRulesCore, missingDefaultRuleTitles } from "@/lib/default-rules";
 import { loadVoice, VOICE_MAX_EXAMPLES } from "@/lib/knowledge-voice";
 import { CATALOG } from "@/lib/plays/catalog";
 import {
@@ -230,6 +229,28 @@ export const PLAY_DIAGNOSIS_TOOLS: AgentTool[] = [
         pospuestas: part.pospuestas.length,
         descartadas: part.descartadas.length,
         cambiadas_por_otra_persona: changed.length,
+      };
+    },
+  }),
+  def({
+    name: "add_default_rules",
+    kind: "write",
+    roles: ["owner", "sales_leader"],
+    description:
+      "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título. No duplica las que ya existen ni cambia las que la empresa ha editado. Si no puede leer las reglas, no añade ninguna.",
+    input: z.object({}),
+    summarize: () => "Añadir las reglas base que falten a Reglas",
+    run: async (c) => {
+      const r = await addDefaultRulesCore(c);
+      return {
+        ...r,
+        mensaje:
+          r.added === 0
+            ? "Ya tenías todas las reglas base."
+            : r.added === 1
+              ? // Coordinator's copy decision (agreement in number), applied to this sentence too.
+                "He añadido 1 regla base a Reglas."
+              : `He añadido ${r.added} reglas base a Reglas.`,
       };
     },
   }),

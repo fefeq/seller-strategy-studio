@@ -9,7 +9,7 @@ import { TOOLS, executeTool, getTool, toolsFor, type ToolCtx } from "@/lib/agent
 import { planFor } from "@/lib/agent/tools/play-diagnosis";
 import { playStateRows } from "@/lib/agent/tools/plays";
 import { getWorkflow } from "@/lib/bmad/workflows";
-import { defaultRules } from "@/lib/default-rules";
+import { DEFAULT_RULES_READ_FAILED, defaultRules } from "@/lib/default-rules";
 import { TITLES } from "@/lib/mcp/tools/agent-tools";
 import { CATALOG } from "@/lib/plays/catalog";
 import {
@@ -1012,6 +1012,64 @@ describe("save_play_plan (CA-11)", () => {
   });
 });
 
+describe("add_default_rules (CA-14)", () => {
+  it("is a write for Owner and Sales Leader, with no input and its summary", () => {
+    const t = getTool("add_default_rules")!;
+    expect(t.kind).toBe("write");
+    expect(t.roles).toEqual(["owner", "sales_leader"]);
+    expect(Object.keys((t.input as z.ZodObject<z.ZodRawShape>).shape)).toEqual([]);
+    expect(t.summarize!({})).toBe("Añadir las reglas base que falten a Reglas");
+    expect(toolsFor(["ae"]).map((x) => x.name)).not.toContain("add_default_rules");
+  });
+
+  it("adds the nine to an empty Reglas and says how many", async () => {
+    const { out, log } = run({}, "add_default_rules", {});
+    expect(await out).toEqual({
+      added: 9,
+      titles: defaultRules().map((r) => r.title),
+      mensaje: "He añadido 9 reglas base a Reglas.",
+    });
+    const ins = writes(log);
+    expect(ins.map((q) => [q.table, q.op])).toEqual([["knowledge_docs", "insert"]]);
+    expect((ins[0]!.payload as unknown[]).length).toBe(9);
+    expectScoped(log);
+  });
+
+  it("with every base rule present it adds none and says so", async () => {
+    const { out, log } = run(
+      { docs: ruleDocs(defaultRules().map((r) => r.title)) },
+      "add_default_rules",
+      {},
+    );
+    expect(await out).toEqual({
+      added: 0,
+      titles: [],
+      mensaje: "Ya tenías todas las reglas base.",
+    });
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("one missing rule is said in singular (coordinator's copy decision, extended)", async () => {
+    const have = defaultRules()
+      .map((r) => r.title)
+      .slice(1);
+    const { out } = run({ docs: ruleDocs(have) }, "add_default_rules", {});
+    expect(((await out) as { mensaje: string }).mensaje).toBe("He añadido 1 regla base a Reglas.");
+  });
+
+  it("a failed read throws DEFAULT_RULES_READ_FAILED and writes nothing", async () => {
+    const { out, log } = run({ rulesError: true }, "add_default_rules", {});
+    await expect(out).rejects.toThrow(DEFAULT_RULES_READ_FAILED);
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("an AE is refused", async () => {
+    const { out, log } = run({}, "add_default_rules", {}, ["ae"]);
+    await expect(out).rejects.toThrow("Tu rol no permite esta acción");
+    expect(log).toEqual([]);
+  });
+});
+
 describe("the measure of G-1 (CA-15)", () => {
   it("PLAYS_DIAGNOSIS_DETECTOR is plays_diagnosis and the saved rows carry it", async () => {
     expect(PLAYS_DIAGNOSIS_DETECTOR).toBe("plays_diagnosis");
@@ -1036,6 +1094,7 @@ describe("titles and manifest (CA-18)", () => {
   const NAMES = {
     diagnose_play_teams: "Diagnosticar equipos de plays",
     save_play_plan: "Guardar el plan de equipos de plays",
+    add_default_rules: "Añadir las reglas base",
   };
   it("have their MCP titles and are once in the registry, right after get_onboarding_status", () => {
     const names = TOOLS.map((t) => t.name);
@@ -1047,7 +1106,7 @@ describe("titles and manifest (CA-18)", () => {
       ).toHaveLength(1);
     }
     const at = names.indexOf("get_onboarding_status");
-    expect(names.slice(at + 1, at + 1 + Object.keys(NAMES).length)).toEqual(Object.keys(NAMES));
+    expect(names.slice(at + 1, at + 4)).toEqual(Object.keys(NAMES));
   });
 });
 
@@ -1055,6 +1114,7 @@ const descriptionOf = (n: string) => getTool(n)!.description;
 const wordSources = () => [
   descriptionOf("diagnose_play_teams"),
   descriptionOf("save_play_plan"),
+  descriptionOf("add_default_rules"),
   getWorkflow("plays_diagnosis")!.instructions,
 ];
 
