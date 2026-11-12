@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 152,
+  "seq": 153,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4420,19 +4420,25 @@
       "title": "Tests: metrics-states.test.tsx (6 casos CA-6) falla en main con Node 26: localStorage undefined en metrics.tsx:83 (useEffect de la guía de Inicio); falla igual en la base 6435439 (flake.mjs 3/3)",
       "kind": "bug",
       "source": "gate de NK-0146 en 679b31e, 2026-11-11",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0148-node26-localstorage",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T20:50:02.039Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.753Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
@@ -4441,19 +4447,25 @@
       "title": "Logs: 28 llamadas en src/lib (17 archivos) registran error.message o (e as Error).message; ampliar la regla .message del escaneo a src/lib",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0149-lib-message-logs",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.066Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.793Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
@@ -4462,19 +4474,25 @@
       "title": "Sesión: a 375 px, al cerrar sesión o cambiar de cuenta, salen 5-9 lecturas de la guía de configuración con el org_id y token de X (antes del logout / con el bloqueo puesto); confirmar si es del código o del simulador del walkthrough f5458dd",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0150-logout-reads",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.131Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.854Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
@@ -4483,19 +4501,25 @@
       "title": "Inicio: la tarjeta «Tu estrategia» dice «Seguir con el onboarding» con el onboarding ya terminado",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0151-home-onboarding-card",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.184Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.918Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
@@ -4516,6 +4540,27 @@
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.236Z",
           "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0153",
+      "title": "Plays GTM: diagnóstico en el asistente que genera equipos de plays priorizados (NK-0126 SDD 4, Sprint 8)",
+      "kind": "feature",
+      "source": "coordinador-sprint8 (GO Fede 2026-11-12, PRD-20261110)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T17:51:21.957Z",
+          "by": "coordinador-sprint8",
           "note": ""
         }
       ]
