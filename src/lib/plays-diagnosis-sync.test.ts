@@ -144,6 +144,7 @@ describe("syncSuggestions leaves the plays_diagnosis suggestions open (NK-0153 C
         body: "",
         link: "/deals",
         action: null,
+        user_id: OWNER,
       },
     ]);
     expect(get(store, OTHER).status).toBe("pending");
