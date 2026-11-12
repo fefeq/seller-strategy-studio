@@ -283,7 +283,7 @@ U-2 y U-3 dependen de U-1. U-4 y U-5 dependen de U-2 y U-3 (nombres de herramien
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 Un agente `nokko-gate` con contexto fresco lee este SDD y el código, y devuelve su informe. El coordinador lo copia aquí sin editarlo. El gate no aprueba el SDD: informa; la aprobación es de Fede.
-- **Registro del gate:** pasada 1 PASS-WITH-FIXES (sobre `1a322fc`, base `7fe9aed`; 0 bloqueantes, 4 mayores, 12 menores; informe: `.factory/evidence/NK-0153/sdd-gate-pass1.md`, con sondas y registros en esa carpeta) → corregido en `<SHA1>`, **pasada 2 pendiente**. El SDD sigue en «Borrador» hasta la pasada 2 y la aprobación de Fede.
+- **Registro del gate:** pasada 1 PASS-WITH-FIXES (sobre `1a322fc`, base `7fe9aed`; 0 bloqueantes, 4 mayores, 12 menores; informe: `.factory/evidence/NK-0153/sdd-gate-pass1.md`, con sondas y registros en esa carpeta) → corregido en `0feee87`, **pasada 2 pendiente**. El SDD sigue en «Borrador» hasta la pasada 2 y la aprobación de Fede.
 - Veredicto de la pasada 2: No revisado
 - CA sin prueba posible o sin G-n: —
 - [Por verificar] que sigue sin comprobarse: —
