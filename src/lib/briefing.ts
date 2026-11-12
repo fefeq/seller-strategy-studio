@@ -25,7 +25,8 @@ export function autoWork(i: AutoWorkInput, money: (n: number) => string): BriefI
   const completed = auto.filter((u) => u.need === "enrich_account").length;
   const learned = i.memories.filter((m) => m.learned && after(m.created_at)).length;
   const signals = i.signals.filter((s) => after(s.found_at)).length;
-  const AUTO = new Set(["lead_enriched", "account_researched", "meeting_prepped", "account_cooling", "discoveries"]);
+  // plays_diagnosis: the plan the person asked the assistant to save (NK-0153); it is not something Nokko detected.
+  const AUTO = new Set(["lead_enriched", "account_researched", "meeting_prepped", "account_cooling", "discoveries", "plays_diagnosis"]);
   const recent = i.suggestions.filter((s) => after(s.created_at));
   const by = (d: string) => recent.filter((s) => s.detector === d).length;
   const researched = by("account_researched"), prepped = by("meeting_prepped"), cooling = by("account_cooling");
