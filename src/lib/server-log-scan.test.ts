@@ -87,7 +87,9 @@ function messageVariables(src: string): string[] {
 function messageCarriers(src: string): string[] {
   const names = new Set<string>();
   const hasMessage = (t: string) => /\.message\b(?!\.length)/.test(t);
-  for (const m of src.matchAll(/([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.push\(([\s\S]{0,400}?)\)\s*;/g))
+  for (const m of src.matchAll(
+    /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.push\(([\s\S]{0,400}?)\)\s*;/g,
+  ))
     if (m[1] && hasMessage(m[2] ?? "")) names.add(m[1]);
   for (const m of src.matchAll(
     /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)(?:\[[^\]]*\])?\s*=[^=>][^;]{0,400};/g,
@@ -104,7 +106,9 @@ function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
     /\bnew Error\(/.test(call) ||
     (derived !== null && /\.message\b(?!\.length)/.test(call)) ||
     (derived ?? []).some((v) =>
-      new RegExp(`(?<![\\w.])${v.replace(/\./g, "\\.")}\\b(?!\\.length)`).test(call.replace(/^console\.\w+\(/, "").replace(/"[^"]*"|'[^']*'/g, '""')),
+      new RegExp(`(?<![\\w.])${v.replace(/\./g, "\\.")}\\b(?!\\.length)`).test(
+        call.replace(/^console\.\w+\(/, "").replace(/"[^"]*"|'[^']*'/g, '""'),
+      ),
     )
   );
 }
@@ -237,10 +241,14 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
   });
 
   it("flags a console call that logs a collection of messages, not its length (NK-0149 gate rework)", () => {
-    expect(isUnsafeLog('console.warn("autopilot notes", orgId, out.notes)', ["out.notes"])).toBe(true);
+    expect(isUnsafeLog('console.warn("autopilot notes", orgId, out.notes)', ["out.notes"])).toBe(
+      true,
+    );
     expect(isUnsafeLog('console.warn("discoveries notes", orgId, notes)', ["notes"])).toBe(true);
-    expect(isUnsafeLog("console.warn(`n ${notes.join(\"; \")}`)", ["notes"])).toBe(true);
-    expect(isUnsafeLog('console.warn("notes", orgId, { count: out.notes.length })', ["out.notes"])).toBe(false);
+    expect(isUnsafeLog('console.warn(`n ${notes.join("; ")}`)', ["notes"])).toBe(true);
+    expect(
+      isUnsafeLog('console.warn("notes", orgId, { count: out.notes.length })', ["out.notes"]),
+    ).toBe(false);
     expect(isUnsafeLog('console.warn("notes", orgId, notes.length)', ["notes"])).toBe(false);
     expect(isUnsafeLog('console.warn("notes", orgId, other.notes)', ["notes"])).toBe(false);
   });

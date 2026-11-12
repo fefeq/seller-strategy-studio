@@ -52,7 +52,8 @@ beforeEach(() => {
 });
 afterEach(() => vi.restoreAllMocks());
 
-const serialized = () => inspect(logs, { depth: 8, maxStringLength: Infinity, maxArrayLength: null });
+const serialized = () =>
+  inspect(logs, { depth: 8, maxStringLength: Infinity, maxArrayLength: null });
 
 describe("notes never carry error text or customer text into console.* (NK-0149 gate rework)", () => {
   it("autopilotForOrg: an error thrown while reading is returned in the notes, not logged", async () => {
@@ -67,7 +68,14 @@ describe("notes never carry error text or customer text into console.* (NK-0149 
     const soon = new Date(Date.now() + 3_600_000).toISOString();
     const db = fakeDb([], {
       meetings: [
-        { id: "m1", title: WITNESS_TITLE, scheduled_at: soon, ai_brief: null, account_id: null, created_by: "u1" },
+        {
+          id: "m1",
+          title: WITNESS_TITLE,
+          scheduled_at: soon,
+          ai_brief: null,
+          account_id: null,
+          created_by: "u1",
+        },
       ],
     });
     const out = await autopilotForOrg(db, "org-1");
