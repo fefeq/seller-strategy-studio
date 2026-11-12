@@ -57,21 +57,21 @@ function expectSafeLog(label: string) {
 }
 
 /** Every query resolves to `result`, whatever the chain. */
-const dbReturning = (result: unknown): Db =>
-  ({
-    from: () =>
-      new Proxy(
-        {},
-        {
-          get: (_t, prop: string) =>
-            prop === "then"
-              ? (f: (v: unknown) => unknown) => Promise.resolve(result).then(f)
-              : prop === "single" || prop === "maybeSingle"
-                ? () => Promise.resolve(result)
-                : () => dbReturning(result).from(),
-        },
-      ),
-  }) as unknown as Db;
+const dbReturning = (result: unknown): Db => {
+  const chain = (): object =>
+    new Proxy(
+      {},
+      {
+        get: (_t, prop: string) =>
+          prop === "then"
+            ? (f: (v: unknown) => unknown) => Promise.resolve(result).then(f)
+            : prop === "single" || prop === "maybeSingle"
+              ? () => Promise.resolve(result)
+              : () => chain(),
+      },
+    );
+  return { from: () => chain() } as unknown as Db;
+};
 
 // Supabase errors reach the logs both as an Error and as a plain { message } object.
 const dbErrors: [string, unknown][] = [
