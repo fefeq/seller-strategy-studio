@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 164,
+  "seq": 168,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4627,7 +4627,7 @@
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
-      "sdd": null,
+      "sdd": "docs/sdd/SDD-20261112-onboarding-leido.md",
       "prd": null,
       "branch": null,
       "base_commit": null,
@@ -4637,6 +4637,12 @@
           "at": "2026-11-12T22:16:05.964Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:37.355Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261112-onboarding-leido.md prd=-"
         }
       ]
     },
@@ -4811,6 +4817,90 @@
           "at": "2026-11-12T22:25:57.433Z",
           "by": "Fede: captura del error + \"sigue, ejecuta todo tú\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        }
+      ]
+    },
+    {
+      "id": "NK-0165",
+      "title": "Onboarding «Tus fuentes»: el texto de archivos de texto/Drive se corta en silencio a 40 000 caracteres y sus nombres siguen figurando como fuentes; avisar al cortar y mostrar qué fuentes no llegaron a la lectura (hermano de NK-0156/NK-0164)",
+      "kind": "bug",
+      "source": "Coordinador: SDD NK-0156 §3.9 y sonda del gate pasada 2 (.factory/evidence/NK-0156/sdd-gate-pass2-probe.json en el checkout principal); src/components/onboarding/sources.tsx:16,43,137; src/lib/onboarding.server.ts:21; docs/sdd/SDD-20261112-onboarding-leido.md §3.9",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:37.424Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0166",
+      "title": "Flake candidato en Node 26: -plays.test.tsx › …?vista=equipos… falló 1 vez en 3 suites completas (pasa en Node 22 y al repetirlo con flake.mjs)",
+      "kind": "bug",
+      "source": "Gate sprint 8b: .factory/evidence/sprint8b-gate/gate-182d4f6.md (checkout principal)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.140Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0167",
+      "title": "Onboarding: el modelo de negocio (B2B/B2C/marketplace) es de elección única y de ahí sale un solo arquetipo; permitir varias líneas de negocio, cada una con modelo, ticket y fricción, y un enfoque por arquetipo, enlazado con los segmentos (src/components/onboarding/steps.tsx:49, src/lib/gtm-diagnosis.ts)",
+      "kind": "feature",
+      "source": "Fede 2026-11-12 (propuesta del coordinador pendiente de su confirmación)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.199Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0168",
+      "title": "Iconografía de Nokko: hoy la app es solo texto (menú sin iconos; lucide solo genéricos); añadir iconos que representen la acción concreta (navegación, acciones repetidas, ⌘K), siempre con etiqueta, un icono por concepto, accesibles, con tokens y modo oscuro",
+      "kind": "feature",
+      "source": "Fede 2026-11-12: modifica toda la iconografía de NOKKO para que sea más intuitivo y represente correctamente a la acción concreta",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.254Z",
+          "by": "tracker",
+          "note": ""
         }
       ]
     }
