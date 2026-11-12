@@ -1,11 +1,39 @@
 // Sources and findings of the onboarding reading (SDD field-actions-edit-delete-confirm, U-4): adding files keeps
 // the ones already listed (CA-12), removing a source says which findings depend on it and lets the person keep or
 // discard them (CA-11), and a finding can be confirmed, edited or discarded (undo within 24 hours). Pure and tested.
+import { z } from "zod";
 import { UNDO_HOURS } from "@/lib/delete-rules";
 import type { Finding } from "@/lib/onboarding";
 
-/** The most files a reading takes. Per selection the screen already took 3; the total used to be whatever the last selection was. */
-export const MAX_FILES = 10;
+/**
+ * The most documents one reading takes, shared by the screen (mergeFiles), the job schema and the reading itself.
+ * 3 because each PDF travels as a data URL in the request (up to 4 MB each): raising it is a different ticket (NK-0164).
+ */
+export const MAX_FILES = 3;
+
+/** What the person is told when a reading gets more documents than it takes (client notice and server too_big). */
+export const FILES_HOW_TO_GO_ON =
+  "Para añadir más, súbelos a Drive y elígelos desde ahí, o pega su texto.";
+export const filesLimitText = () =>
+  `Una lectura admite hasta ${MAX_FILES} documentos. ${FILES_HOW_TO_GO_ON}`;
+
+/** Input of the `onboarding_read` background job. Lives here (client-safe, zod only) so tests and the job share one schema. */
+export const onboardingReadInput = z
+  .object({
+    depth: z.enum(["express", "standard", "deep"]),
+    url: z.string().trim().max(500).default(""),
+    text: z.string().max(40_000).default(""),
+    files: z
+      .array(
+        z.object({
+          filename: z.string().max(200),
+          dataUrl: z.string().startsWith("data:").max(6_000_000),
+        }),
+      )
+      .max(MAX_FILES)
+      .default([]),
+  })
+  .refine((i) => i.url || i.text.trim() || i.files.length, "Añade una web, texto o un documento");
 
 export type PendingFile = { filename: string; dataUrl: string };
 
