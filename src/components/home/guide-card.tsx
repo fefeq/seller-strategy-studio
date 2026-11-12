@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrgCreateForm } from "@/components/org-create";
 import { SEARCH_JOB_KINDS, currentStep, guideKey, guideSteps, showGuide, type GuideStepId } from "@/lib/guide";
+import { storageGet, storageSet } from "@/lib/safe-storage";
 
 /** «Primeros pasos» in Inicio: create company → onboarding → first search → Métricas. */
 export function GuideCard() {
@@ -21,8 +22,8 @@ export function GuideCard() {
   // Browser storage is read after hydration so server and client render the same first frame.
   useEffect(() => {
     if (!orgId) return;
-    setMetricsSeen(localStorage.getItem(guideKey(orgId, "metrics")) === "1");
-    setHidden(localStorage.getItem(guideKey(orgId, "hidden")) === "1");
+    setMetricsSeen(storageGet("local", guideKey(orgId, "metrics")) === "1");
+    setHidden(storageGet("local", guideKey(orgId, "hidden")) === "1");
   }, [orgId]);
 
   const { data: searched = false } = useQuery({
@@ -43,7 +44,7 @@ export function GuideCard() {
   const doneCount = steps.filter((s) => s.done).length;
 
   function hide() {
-    localStorage.setItem(guideKey(orgId!, "hidden"), "1");
+    storageSet("local", guideKey(orgId!, "hidden"), "1");
     setHidden(true);
   }
 
