@@ -10,7 +10,11 @@ const ROOT = resolve(__dirname, "../..");
 const EXTS = ["", ".ts", ".tsx", "/index.ts", "/index.tsx"];
 
 function resolveSpec(spec: string, from: string): string | null {
-  const base = spec.startsWith("@/") ? resolve(ROOT, "src", spec.slice(2)) : spec.startsWith(".") ? resolve(dirname(from), spec) : null;
+  const base = spec.startsWith("@/")
+    ? resolve(ROOT, "src", spec.slice(2))
+    : spec.startsWith(".")
+      ? resolve(dirname(from), spec)
+      : null;
   if (!base) return null;
   for (const e of EXTS) {
     const p = base + e;
@@ -22,7 +26,11 @@ function resolveSpec(spec: string, from: string): string | null {
 /** Static (non-type-only) import/export specifiers of a file; dynamic import() is not followed on purpose. */
 function staticSpecs(file: string): string[] {
   const src = readFileSync(file, "utf8");
-  return [...src.matchAll(/^\s*(?:import|export)\b(?!\s+type\b)[^;]*?\bfrom\s+"([^"]+)"|^\s*import\s+"([^"]+)"/gm)].map((m) => (m[1] ?? m[2])!);
+  return [
+    ...src.matchAll(
+      /^\s*(?:import|export)\b(?!\s+type\b)[^;]*?\bfrom\s+"([^"]+)"|^\s*import\s+"([^"]+)"/gm,
+    ),
+  ].map((m) => (m[1] ?? m[2])!);
 }
 
 function reach(entry: string): { files: Set<string>; packages: Set<string> } {
@@ -50,6 +58,10 @@ describe("errors.ts keeps zod out of every screen's bundle", () => {
   });
 
   it("does not reach onboarding-sources.ts (the job schema)", () => {
-    expect([...files].map((f) => f.replace(`${ROOT}/`, "")).filter((f) => f.endsWith("onboarding-sources.ts"))).toEqual([]);
+    expect(
+      [...files]
+        .map((f) => f.replace(`${ROOT}/`, ""))
+        .filter((f) => f.endsWith("onboarding-sources.ts")),
+    ).toEqual([]);
   });
 });
