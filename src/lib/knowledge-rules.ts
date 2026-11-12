@@ -3,6 +3,7 @@
 // read rules here, so retiring Ciclo GTM never leaves the rules without a reader. It must not import src/lib/bmad/.
 // knowledgeForAgents also returns conocimiento_empresa (company docs): BMAD's context, kept as it was.
 import type { Db } from "@/lib/org-data";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export type KnowledgeDoc = {
   title: string;
@@ -192,7 +193,7 @@ export async function loadAgentRules(
       // Same tiebreak as the Conocimiento screen, so the agent and «L de N» cut the same rule.
       .order("id");
     if (error) {
-      console.error("knowledge rules load failed", error.message);
+      console.error("knowledge rules load failed", safeErrorLog(error));
       return { ok: false, rules: [] };
     }
     const mine = (data ?? []).filter((d) => d.org_id === c.orgId);

@@ -385,6 +385,6 @@ export async function discoverForOrg(
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
   }
-  if (notes.length) console.warn("discoveries notes", orgId, notes);
+  if (notes.length) console.warn("discoveries notes", orgId, { count: notes.length });
   return { added, notes };
 }

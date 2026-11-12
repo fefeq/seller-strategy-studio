@@ -15,6 +15,7 @@ import {
   type NewsItem,
   type SignalKind,
 } from "@/lib/web-research";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- same untyped client as ai-core.ts: typing it as SupabaseClient<Database> needs org_id null handling here, a logic change out of scope for NK-0012
 type Db = any;
@@ -238,7 +239,7 @@ export async function refreshSignalsCore(
       18,
     ),
     linkedinSignalItems(db, acc).catch((e) => {
-      console.error("LinkedIn signals failed", (e as Error).message);
+      console.error("LinkedIn signals failed", safeErrorLog(e));
       return [] as NewsItem[];
     }),
   ]);
@@ -349,7 +350,7 @@ export async function runSignalRefresh(db: Db, now: Date, maxPerRun = 12, perOrg
       added += (await refreshSignalsCore(db, a.id, { orgId: a.org_id, userId: "" })).added.length;
     } catch (e) {
       failed++;
-      console.error("signal refresh failed", a.id, (e as Error).message);
+      console.error("signal refresh failed", a.id, safeErrorLog(e));
       if (/créditos/.test((e as Error).message)) break; // no credits: stop spending calls this run
     }
   }
