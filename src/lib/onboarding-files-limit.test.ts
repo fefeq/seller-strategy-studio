@@ -1,7 +1,8 @@
 // @vitest-environment node
 // NK-0164 CA-1: one limit of documents per reading, shared by the client and the server schema.
 import { describe, expect, it } from "vitest";
-import { MAX_FILES, mergeFiles, onboardingReadInput } from "./onboarding-sources";
+import { MAX_FILES, mergeFiles } from "./onboarding-sources";
+import { onboardingReadInput } from "./onboarding-read-input";
 
 const file = (n: number) => ({
   filename: `doc-${n}.pdf`,
