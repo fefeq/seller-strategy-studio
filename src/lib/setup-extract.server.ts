@@ -2,6 +2,7 @@
 // (Configuración) and the onboarding background reading, so both ask the same thing.
 import { ask } from "@/lib/ai-gateway";
 import { SETUP_EXTRACTION_SCHEMA, type SetupProposal } from "@/lib/setup-extraction";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 const PRIVATE_HOST =
   /^(localhost|127\.|10\.|192\.168\.|169\.254\.|172\.(1[6-9]|2\d|3[01])\.|0\.|\[?::1)/i;
@@ -37,7 +38,7 @@ export async function readSite(url: string): Promise<string> {
   return readCompanySite(url)
     .then((r) => r.text)
     .catch((e) => {
-      console.error("Firecrawl site read failed", (e as Error).message);
+      console.error("Firecrawl site read failed", safeErrorLog(e));
       return fetchSite(url);
     });
 }

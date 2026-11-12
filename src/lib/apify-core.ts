@@ -32,6 +32,7 @@ import {
   stampUnconfirmed,
   type OriginKind,
 } from "@/lib/provenance";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 type Db = OrgDb;
 const inOrg = <Q extends { eq: (column: string, value: string) => Q }>(q: Q, scope: AiScope): Q =>
@@ -71,7 +72,7 @@ async function linkedinForReading(db: Db, acc: Acc): Promise<string | null> {
   try {
     return await companyLinkedin(db, acc);
   } catch (e) {
-    console.error("LinkedIn page lookup failed", (e as Error).message);
+    console.error("LinkedIn page lookup failed", safeErrorLog(e));
     return e instanceof LinkedinSaveError ? e.url : null;
   }
 }
@@ -225,13 +226,13 @@ export async function linkedinSignalItems(db: Db, acc: Acc): Promise<NewsItem[]>
   const [posts, jobs] = await Promise.all([
     url
       ? companyPosts(url, 5, "month").catch((e) => {
-          console.error("Apify company posts failed", (e as Error).message);
+          console.error("Apify company posts failed", safeErrorLog(e));
           return [] as Post[];
         })
       : Promise.resolve([] as Post[]),
     name
       ? companyJobs(name, url, 10).catch((e) => {
-          console.error("Apify jobs failed", (e as Error).message);
+          console.error("Apify jobs failed", safeErrorLog(e));
           return [] as Job[];
         })
       : Promise.resolve([] as Job[]),

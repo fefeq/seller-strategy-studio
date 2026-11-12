@@ -79,7 +79,7 @@ export async function saveFacts(c: ToolCtx, facts: Fact[], source: string, exist
     const { error } = await c.db
       .from("memories")
       .insert(insert.filter((f) => f.scope !== "account" || f.account_id).map(row));
-    if (error) console.error("memory insert failed", error.message);
+    if (error) console.error("memory insert failed", safeErrorLog(error));
   }
   for (const s of supersede) {
     const { data, error } = await c.db
@@ -88,7 +88,7 @@ export async function saveFacts(c: ToolCtx, facts: Fact[], source: string, exist
       .select("id")
       .single();
     if (error || !data) {
-      console.error("memory replace failed", error?.message);
+      console.error("memory replace failed", safeErrorLog(error));
       continue;
     }
     await c.db
