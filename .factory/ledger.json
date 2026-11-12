@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 163,
+  "seq": 164,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4784,6 +4784,33 @@
           "at": "2026-11-12T22:16:17.192Z",
           "by": "tracker",
           "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0164",
+      "title": "Onboarding «Tus fuentes»: «Que Nokko lo lea» falla con «Algún valor es demasiado grande» al subir 4 o más documentos (cliente acepta 10, servidor 3; error genérico sin causa ni acción)",
+      "kind": "bug",
+      "source": "Fede, captura del error 2026-11-12",
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": "feat/nk-0164-onboarding-files-limit",
+      "base_commit": "ec5a8131a9e59e7d3faf1b8e7fb4938b7864a49d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:25:54.359Z",
+          "by": "coordinador-ledger",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T22:25:57.433Z",
+          "by": "Fede: captura del error + \"sigue, ejecuta todo tú\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     }
