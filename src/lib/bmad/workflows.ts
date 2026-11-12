@@ -54,6 +54,14 @@ export const WORKFLOWS: Workflow[] = [
   { id: "cosell", label: "Co-selling", phase: "execution", instructions: "Diseña el plan de co-selling con un partner para una cuenta." },
   { id: "partner_plan", label: "Plan de partner", phase: "plan", instructions: "Propón el plan anual con un partner: objetivos, enablement, incentivos." },
   { id: "channel_conflict", label: "Conflicto de canal", phase: "execution", instructions: "Analiza un conflicto entre venta directa y partner y propone resolución." },
+  // Plays diagnosis (SDD-20261112-diagnosis-in-chat): the script of the app; Telegram and MCP only see the tools (their descriptions carry the rules).
+  {
+    id: "plays_diagnosis",
+    label: "Diagnóstico de plays",
+    phase: "execution",
+    instructions:
+      "1) Llama a get_onboarding_status. Si ready es false, di qué falta con las palabras de missing (sin contar los segmentos), enlaza /onboarding para el diagnóstico GTM y /setup para posicionamiento e ICP, y no propongas equipos de plays. 2) Si está lista, pregunta una cosa por turno: primero cuál es hoy su cuello de botella, con las seis opciones de BOTTLENECK_WORD más «Ninguno de estos»; después qué otras tareas quiere resolver (puede elegir varias o ninguna). No preguntes lo que get_onboarding_status ya sabe. 3) Llama a diagnose_play_teams con sus respuestas y cuenta el resultado a partir de resumen: no añadas equipos de plays, plays, motivos ni cifras que no estén en la respuesta. 4) Si reglas_base.faltan no está vacío, propón add_default_rules. Si voz.faltan es mayor que 0, di cuántos hay y pide que pegue los que faltan en Conocimiento › Voz (/hub?seccion=voice), nunca en el chat; tú no guardas voz. 5) Propón save_play_plan con las mismas respuestas y di que nada se activa hasta que apruebe cada sugerencia.",
+  },
   { id: "retro", label: "Retro trimestral", phase: "retro", produces: "retro", instructions: "Retro del trimestre a partir de resultados y win/loss." },
 ];
 
