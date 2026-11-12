@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 168,
+  "seq": 170,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4420,7 +4420,7 @@
       "title": "Tests: metrics-states.test.tsx (6 casos CA-6) falla en main con Node 26: localStorage undefined en metrics.tsx:83 (useEffect de la guía de Inicio); falla igual en la base 6435439 (flake.mjs 3/3)",
       "kind": "bug",
       "source": "gate de NK-0146 en 679b31e, 2026-11-11",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -4439,6 +4439,12 @@
           "at": "2026-11-12T17:51:26.753Z",
           "by": "Fede: \"GO sprint 8\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.718Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4447,7 +4453,7 @@
       "title": "Logs: 28 llamadas en src/lib (17 archivos) registran error.message o (e as Error).message; ampliar la regla .message del escaneo a src/lib",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -4466,6 +4472,12 @@
           "at": "2026-11-12T17:51:26.793Z",
           "by": "Fede: \"GO sprint 8\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.770Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4474,7 +4486,7 @@
       "title": "Sesión: a 375 px, al cerrar sesión o cambiar de cuenta, salen 5-9 lecturas de la guía de configuración con el org_id y token de X (antes del logout / con el bloqueo puesto); confirmar si es del código o del simulador del walkthrough f5458dd",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -4493,6 +4505,12 @@
           "at": "2026-11-12T17:51:26.854Z",
           "by": "Fede: \"GO sprint 8\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.824Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4501,7 +4519,7 @@
       "title": "Inicio: la tarjeta «Tu estrategia» dice «Seguir con el onboarding» con el onboarding ya terminado",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -4520,6 +4538,12 @@
           "at": "2026-11-12T17:51:26.918Z",
           "by": "Fede: \"GO sprint 8\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.866Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4899,6 +4923,48 @@
         {
           "state": "LOGGED",
           "at": "2026-11-12T22:59:40.254Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0169",
+      "title": "Sesión: tras Cerrar sesión, lecturas fuera de la guía (useMe, useSetup, Inicio, realtime/useLivePipeline) siguen saliendo con el token y org_id de la cuenta anterior mientras el logout está en vuelo; NK-0150 solo cubrió las consultas de la guía de configuración",
+      "kind": "bug",
+      "source": "gate de NK-0150 en ea65a9b, evidencia .factory/evidence/sprint8-gate/round3/observe-nonguide.log y gate-ea65a9b.md §Para el coordinador",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:19:01.626Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0170",
+      "title": "NK-0150: SessionEndedError puede mostrar «datos antiguos» durante la ventana de logout en la guía (caso sintético); la consulta de miembros ignora el error de Supabase y devuelve lista vacía",
+      "kind": "bug",
+      "source": "gate de NK-0150 en ea65a9b (prioridad baja), evidencia .factory/evidence/sprint8-gate/gate-ea65a9b.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:19:01.685Z",
           "by": "tracker",
           "note": ""
         }
