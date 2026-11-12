@@ -4,6 +4,7 @@
 import type { ToolCtx } from "@/lib/agent/tool-kit";
 import type { Json } from "@/integrations/supabase/types";
 import { BLOCKS, proposalFindings, type Depth, type Finding, type Opinion } from "@/lib/onboarding";
+import { MAX_FILES } from "@/lib/onboarding-sources";
 import type { SetupProposal } from "@/lib/setup-extraction";
 
 type Ctx = ToolCtx & { orgName: string };
@@ -19,7 +20,7 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
   const depth: Depth = input.depth ?? "express";
   const url = String(input.url ?? "").trim();
   const text = String(input.text ?? "").slice(0, 40_000);
-  const files = (input.files ?? []).slice(0, 3);
+  const files = (input.files ?? []).slice(0, MAX_FILES);
 
   const b = await monthBudget(c);
   if (b.paused) throw new Error("Has llegado al límite mensual de gasto en fuentes. Súbelo en Conexiones o espera al mes que viene.");

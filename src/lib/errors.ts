@@ -1,6 +1,8 @@
 // User-facing error text. Supabase/PostgREST, auth and network errors arrive in English; this turns
 // them into «what happened + what to do» in Spanish (Nokko voice). Our own messages pass through.
 
+import { filesLimitText } from "@/lib/onboarding-sources";
+
 type ErrLike = { message?: unknown; code?: unknown; status?: unknown } | string | null | undefined;
 
 const GENERIC = "Algo ha fallado. Vuelve a intentarlo y, si se repite, recarga la página.";
@@ -59,6 +61,10 @@ function validationText(msg: string): string | null {
   const first = Array.isArray(issues) ? (issues[0] as { code?: unknown; message?: unknown; origin?: unknown; type?: unknown } | undefined) : undefined;
   if (!first || typeof first !== "object" || !("code" in first)) return null;
   if (typeof first.message === "string" && looksSpanish(first.message)) return first.message;
+  const path = (first as { path?: unknown }).path;
+  const onFiles = Array.isArray(path) && path[path.length - 1] === "files";
+  if (first.code === "too_big" && first.origin !== "string" && first.type !== "string" && onFiles)
+    return filesLimitText();
   const isText = first.origin === "string" || first.type === "string";
   if (first.code === "too_big") return isText ? "El texto es demasiado largo. Recórtalo y vuelve a intentarlo." : "Algún valor es demasiado grande. Revísalo y vuelve a intentarlo.";
   if (first.code === "too_small") return isText ? "El texto es demasiado corto o está vacío. Complétalo y vuelve a intentarlo." : "Algún valor es demasiado pequeño. Revísalo y vuelve a intentarlo.";
