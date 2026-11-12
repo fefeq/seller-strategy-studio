@@ -77,6 +77,27 @@ function messageVariables(src: string): string[] {
   return [...names];
 }
 
+/**
+ * NK-0149 (gate rework): collections that collect message text and are logged later as a whole.
+ * `notes.push(`x: ${(e as Error).message}`)`, `out.notes.push(e.message)`, `bag[k] = e.message`, `bag.k = e.message`
+ * and `bag = [e.message]` all make `notes` / `out.notes` / `bag` a carrier: a console call that names it (and not just
+ * its `.length`) logs the error text, and anything interpolated next to it (a meeting title, an ICP name).
+ * Same documented limit as messageVariables: by name in the same file, not data flow.
+ */
+function messageCarriers(src: string): string[] {
+  const names = new Set<string>();
+  const hasMessage = (t: string) => /\.message\b(?!\.length)/.test(t);
+  for (const m of src.matchAll(
+    /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\.push\(([\s\S]{0,400}?)\)\s*;/g,
+  ))
+    if (m[1] && hasMessage(m[2] ?? "")) names.add(m[1]);
+  for (const m of src.matchAll(
+    /([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)(?:\[[^\]]*\])?\s*=[^=>][^;]{0,400};/g,
+  ))
+    if (m[1] && hasMessage(m[0].slice(m[0].indexOf("=")))) names.add(m[1]);
+  return [...names];
+}
+
 /** `derived` = message variables to look for; empty when the message rule does not apply to the file (see MESSAGE_SCOPE). */
 function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
   return (
@@ -85,7 +106,9 @@ function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
     /\bnew Error\(/.test(call) ||
     (derived !== null && /\.message\b(?!\.length)/.test(call)) ||
     (derived ?? []).some((v) =>
-      new RegExp(`(?<![\\w.])${v}\\b(?!\\.length)`).test(call.replace(/^console\.\w+\(/, "")),
+      new RegExp(`(?<![\\w.])${v.replace(/\./g, "\\.")}\\b(?!\\.length)`).test(
+        call.replace(/^console\.\w+\(/, "").replace(/"[^"]*"|'[^']*'/g, '""'),
+      ),
     )
   );
 }
@@ -95,7 +118,7 @@ function isUnsafeLog(call: string, derived: string[] | null = []): boolean {
 // src/routes/api/** since NK-0142, and every *.functions.ts. A log that needs a readable text uses a literal label.
 const inMessageScope = (_rel: string) => true;
 const derivedFor = (f: { rel: string; src: string }) =>
-  inMessageScope(f.rel) ? messageVariables(f.src) : null;
+  inMessageScope(f.rel) ? [...messageVariables(f.src), ...messageCarriers(f.src)] : null;
 
 // file -> exact call -> reason (never "pending"). Closed list, empty since NK-0118 + NK-0121: it can only shrink.
 const EXCEPTIONS: Record<string, Record<string, string>> = {};
@@ -201,6 +224,33 @@ describe("server logs carry no body, output or whole error (NK-0104 CA-5, NK-011
       "const ok = res.status;",
     ].join("\n");
     expect(messageVariables(src).sort()).toEqual(["a", "b", "c", "message"]);
+  });
+
+  it("finds the collections that gather a message (NK-0149 gate rework)", () => {
+    const src = [
+      "notes.push(`Empresas: ${(e as Error).message}`);",
+      "out.notes.push(`Reunión ${meta.title}: ${(e as Error).message}`);",
+      "bag[k] = err.message;",
+      "info.last = e.message;",
+      "const arr = [e.message];",
+      "counts.push(rows.length);",
+      "sizes.push(e.message.length);",
+      "const ok = res.status;",
+    ].join("\n");
+    expect(messageCarriers(src).sort()).toEqual(["arr", "bag", "info.last", "notes", "out.notes"]);
+  });
+
+  it("flags a console call that logs a collection of messages, not its length (NK-0149 gate rework)", () => {
+    expect(isUnsafeLog('console.warn("autopilot notes", orgId, out.notes)', ["out.notes"])).toBe(
+      true,
+    );
+    expect(isUnsafeLog('console.warn("discoveries notes", orgId, notes)', ["notes"])).toBe(true);
+    expect(isUnsafeLog('console.warn(`n ${notes.join("; ")}`)', ["notes"])).toBe(true);
+    expect(
+      isUnsafeLog('console.warn("notes", orgId, { count: out.notes.length })', ["out.notes"]),
+    ).toBe(false);
+    expect(isUnsafeLog('console.warn("notes", orgId, notes.length)', ["notes"])).toBe(false);
+    expect(isUnsafeLog('console.warn("notes", orgId, other.notes)', ["notes"])).toBe(false);
   });
 
   it("ignores console calls written in comments", () => {

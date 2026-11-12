@@ -285,6 +285,6 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
     out.notes.push(`Cuentas que se enfrían: ${(e as Error).message}`);
   }
 
-  if (out.notes.length) console.warn("autopilot notes", orgId, out.notes);
+  if (out.notes.length) console.warn("autopilot notes", orgId, { count: out.notes.length });
   return out;
 }
