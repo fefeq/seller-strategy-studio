@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 155,
+  "seq": 163,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4614,6 +4614,174 @@
         {
           "state": "LOGGED",
           "at": "2026-11-12T20:28:50.317Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0156",
+      "title": "Onboarding «Nokko lee»: explicar «Leído» y mostrar qué vio en cada fuente (texto de estado y recuento de hallazgos por fuente, sin tocar datos ni IA)",
+      "kind": "feature",
+      "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint». Mejora de UI en src/components/onboarding/reading.tsx (líneas 61 y 100). Nivel de documentación: solo ticket, sin SDD ni PRD (decisión de Fede, cambio sin schema ni RLS)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:05.964Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0157",
+      "title": "Onboarding «Nokko lee»: indicar en cada hallazgo a qué bloque de la estrategia aporta (ICP, posicionamiento, segmentos…) — la lectura debe devolver el bloque; parte 2 de la petición de Fede del 2026-11-12",
+      "kind": "feature",
+      "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint» (parte 2 pendiente). Relacionado con NK-0156 (parte 1), no duplicado. Requiere PRD/SDD antes de promover; sin owner",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:11.350Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0158",
+      "title": "src/lib/error-capture.ts expande Error a mensaje+stack+cause: cualquier console.error(error) (p. ej. src/routes/__root.tsx:50, logging interno de h3) puede llevar texto de error a los logs del servidor",
+      "kind": "alert",
+      "source": "Sprint 8, gate ronda 2. Evidencia: src/lib/error-capture.ts; src/routes/__root.tsx:50",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.724Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0159",
+      "title": "Inngest guarda como salida de step.run las notes con texto de error y títulos (src/lib/inngest/functions.server.ts:27-28)",
+      "kind": "alert",
+      "source": "Sprint 8, gate. Evidencia: src/lib/inngest/functions.server.ts:27-28",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.801Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0160",
+      "title": "Escaneo server-log-scan: no detecta colecciones que solo reciben títulos/nombres sin .message; plus src/components/suggestions.tsx:91 console.warn(..., e) en navegador",
+      "kind": "bug",
+      "source": "Sprint 8, gate. Evidencia: escaneo server-log-scan; src/components/suggestions.tsx:91",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.856Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0161",
+      "title": "src/components/suggestions.tsx:83-85 usa sessionStorage sin try/catch: si setItem lanza cae toda la app autenticada",
+      "kind": "bug",
+      "source": "Walkthrough sprint8, flujo 3. Evidencia: src/components/suggestions.tsx:83-85",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.996Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0162",
+      "title": "src/lib/autopilot.server.ts:100 pone (e as Error).message en el cuerpo de una sugerencia visible; viola errorText()",
+      "kind": "bug",
+      "source": "Sprint 8, gate. Evidencia: src/lib/autopilot.server.ts:100; regla errorText() (src/lib/errors.ts)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:17.092Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0163",
+      "title": "Walkthrough de logout (NK-0150): medir desde el despacho real del clic, no desde antes de btn.click() (≈265 ms de desfase); documentar en el harness",
+      "kind": "bug",
+      "source": "Walkthrough sprint8 sobre NK-0150. Medida: ≈265 ms de desfase entre antes de btn.click() y el despacho real. Documentar en el harness del walkthrough",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:17.192Z",
           "by": "tracker",
           "note": ""
         }
