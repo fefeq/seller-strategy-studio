@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 153,
+  "seq": 155,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4549,6 +4549,39 @@
       "title": "Plays GTM: diagnóstico en el asistente que genera equipos de plays priorizados (NK-0126 SDD 4, Sprint 8)",
       "kind": "feature",
       "source": "coordinador-sprint8 (GO Fede 2026-11-12, PRD-20261110)",
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261112-diagnosis-in-chat.md",
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": "feat/nk-0153-diagnosis-in-chat",
+      "base_commit": "ec5a8131a9e59e7d3faf1b8e7fb4938b7864a49d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T17:51:21.957Z",
+          "by": "coordinador-sprint8",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T20:28:41.238Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261112-diagnosis-in-chat.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T20:28:45.351Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12) + respuestas D-6/D-9/reabrir y \"sigue, ejecuta todo tú\" (2026-11-12); SDD aprobado, PR #131 (ec5a813)",
+          "note": "owner=coordinador-sprint8"
+        }
+      ]
+    },
+    {
+      "id": "NK-0154",
+      "title": "Plays GTM: medir que los borradores leen la voz (G-5, segunda parte): guardar qué contexto usó cada borrador (NK-0153 P-3; necesita columna o tabla nueva y SDD)",
+      "kind": "feature",
+      "source": "PRD-20261110 G-5; SDD-20261112 P-3",
       "state": "LOGGED",
       "owner": null,
       "duplicate_of": null,
@@ -4559,8 +4592,29 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-12T17:51:21.957Z",
-          "by": "coordinador-sprint8",
+          "at": "2026-11-12T20:28:50.240Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0155",
+      "title": "Confirmar D-7 (medida de G-1) y D-8 de NK-0153",
+      "kind": "alert",
+      "source": "SDD-20261112-diagnosis-in-chat §14: D-7 y D-8 no constan como decisión aparte de Fede el 2026-11-12; revisar al revisar G-1 y la reapertura de sugerencias aprobadas",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261112-diagnosis-in-chat.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T20:28:50.317Z",
+          "by": "tracker",
           "note": ""
         }
       ]
