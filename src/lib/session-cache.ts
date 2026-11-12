@@ -2,6 +2,7 @@
 // never be served the previous user's data (name, company, org_id) while their own loads.
 import type { QueryClient } from "@tanstack/react-query";
 import { beginAccountSwitch } from "@/lib/account-switch";
+import { beginSessionEnd, endSessionEnd } from "@/lib/session-ending";
 
 type AuthSession = { user: { id: string } } | null;
 
@@ -80,9 +81,16 @@ export function handleAuthEvent(
 /**
  * Sign out without a window where a mounted screen refetches with a half-cleared session (NK-0098):
  * stop in-flight requests, end the session first, only then drop the cache.
+ * NK-0150: the app is marked as signing out first (synchronously), so queries that watch it stay off while the
+ * session is still valid; if the sign-out fails the person is still signed in and they come back on.
  */
 export async function signOutAndClear(qc: QueryClient, auth: { signOut(): Promise<unknown> }) {
-  await qc.cancelQueries();
-  await auth.signOut();
-  dropUserCache(qc);
+  beginSessionEnd();
+  try {
+    await qc.cancelQueries();
+    await auth.signOut();
+    dropUserCache(qc);
+  } finally {
+    endSessionEnd();
+  }
 }
