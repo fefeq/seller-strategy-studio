@@ -51,7 +51,7 @@ describe("SourcesStep: adding files keeps the ones already listed (CA-12)", () =
     render(<SourcesStep depth="express" onStarted={() => {}} />);
     const names = (from: number, n: number) =>
       Array.from({ length: n }, (_, k) => `doc-${from + k}.pdf`);
-    const per = 3; // files per selection
+    const per = 3; // selection size (equals MAX_FILES); the partial-fit case is covered in src/lib/onboarding-sources.test.ts
     const shown = () =>
       listed()
         .filter((t) => /\.pdf/.test(t))
