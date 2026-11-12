@@ -657,7 +657,418 @@ describe("the same status read (CA-10)", () => {
   });
 });
 
+describe("save_play_plan (CA-11)", () => {
+  it("is a write for Owner and Sales Leader, with the same answers as diagnose_play_teams and its summary", () => {
+    const t = getTool("save_play_plan")!;
+    expect(t.kind).toBe("write");
+    expect(t.roles).toEqual(["owner", "sales_leader"]);
+    expect(t.summarize!(NO_ANSWERS)).toBe(
+      "Guardar el plan de equipos de plays como sugerencias (no activa ningún play)",
+    );
+    const d = getTool("diagnose_play_teams")!;
+    for (const args of [
+      { bottleneck: null },
+      { bottleneck: "reuniones", wanted: ["senales-de-cuenta"] },
+    ])
+      expect(t.input.parse(args)).toEqual(d.input.parse(args));
+    for (const bad of [{ bottleneck: "x" }, { bottleneck: null, wanted: ["x"] }])
+      expect(t.input.safeParse(bad).success).toBe(false);
+    expect(toolsFor(["ae"]).map((x) => x.name)).not.toContain("save_play_plan");
+    expect(toolsFor(["sales_leader"]).map((x) => x.name)).toContain("save_play_plan");
+  });
+
+  it("an AE is refused by executeTool and nothing is read or written", async () => {
+    const { out, log } = run({}, "save_play_plan", NO_ANSWERS, ["ae"]);
+    await expect(out).rejects.toThrow("Tu rol no permite esta acción");
+    expect(log).toEqual([]);
+  });
+
+  it("creates one suggestion per play of the plan, with the fields of section 9, and activates nothing", async () => {
+    const w: World = {};
+    const { out, log } = await save(w);
+    expect(out).toEqual({
+      mensaje: `Te he dejado 3 sugerencias nuevas en Sugerencias. ${NOTHING_ACTIVATED}`,
+      creadas: 3,
+      reabiertas: 0,
+      ya_abiertas: 0,
+      de_otra_persona: 0,
+      pospuestas: 0,
+      descartadas: 0,
+      cambiadas_por_otra_persona: 0,
+    });
+    const upsert = writes(log).find((q) => q.op === "upsert")!;
+    expect(upsert.table).toBe("suggestions");
+    expect(upsert.options).toEqual({ onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
+    expect(upsert.selected).toBe("dedupe_key");
+    const byKey = new Map(w.suggestions!.map((r) => [r.dedupe_key, r]));
+    expect([...byKey.keys()]).toEqual([
+      K("hubspot-account-tiering-scoring"),
+      K("signals-in-crm-with-decay"),
+      K("closed-lost-revival"),
+    ]);
+    expect(byKey.get(K("signals-in-crm-with-decay"))).toMatchObject({
+      org_id: ORG,
+      user_id: ME,
+      detector: "plays_diagnosis",
+      priority: 2,
+      status: "pending",
+      title: `Activa «${T_SIG}»`,
+      body: "Del plan de tu diagnóstico de plays. Avanza: Reactivar perdidos, Señales de cuenta. Al aprobarla se activa este play; nada más.",
+      link: "/plays?vista=equipos",
+      action: {
+        tool: "set_play_enabled",
+        args: { play_id: "signals-in-crm-with-decay", enabled: true },
+      },
+    });
+    expect(byKey.get(K("hubspot-account-tiering-scoring"))!.title).toBe(`Activa «${T_TIER}»`);
+    expect(byKey.get(K("closed-lost-revival"))!.body).toBe(
+      "Del plan de tu diagnóstico de plays. Avanza: Reactivar perdidos. Al aprobarla se activa este play; nada más.",
+    );
+    for (const r of w.suggestions!) {
+      expect(r.priority).not.toBe(1);
+      expect(r.title).not.toMatch(/Paso|\d/);
+      expect(r.body).not.toMatch(/Paso|\d/);
+      expect(r.title).not.toContain((r.action as { args: { play_id: string } }).args.play_id);
+    }
+    expect(writes(log).map((q) => q.table)).toEqual(["suggestions"]);
+    expect(log.some((q) => q.table === "play_states" && q.op !== "select")).toBe(false);
+    expectScoped(log);
+  });
+
+  it("names the play by its catalogue title in the title, the body, the mensaje and resumen, never by its id", async () => {
+    const w: World = { suggestions: [srow("signals-in-crm-with-decay", { status: "dismissed" })] };
+    const { out } = await save(w);
+    expect(out.mensaje).toContain(`No he vuelto a dejar lo que descartaste: «${T_SIG}».`);
+    expect(out.mensaje).not.toContain("signals-in-crm-with-decay");
+    expect(w.suggestions!.find((r) => r.dedupe_key === K("closed-lost-revival"))!.title).toBe(
+      `Activa «${T_CLR}»`,
+    );
+    const d = await diagnose({});
+    expect(d.resumen).toContain(`2. ${T_SIG} (Reactivar perdidos, Señales de cuenta)`);
+    expect(d.resumen).not.toContain("signals-in-crm-with-decay");
+  });
+
+  it("repeating the same plan does not duplicate: same keys, nothing new, and says they were open", async () => {
+    const w: World = {};
+    await save(w);
+    const { out, log } = await save(w);
+    expect(w.suggestions).toHaveLength(3);
+    expect(out).toMatchObject({ creadas: 0, reabiertas: 0, ya_abiertas: 3 });
+    expect(out.mensaje).toBe(
+      `No he dejado ninguna sugerencia nueva. Ya estaban abiertas: «${T_TIER}», «${T_SIG}», «${T_CLR}». ${NOTHING_ACTIVATED}`,
+    );
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("counts the rows the table really inserted or reopened: 1 dismissed + 1 approved reopened + 1 without row is «2», not «3»", async () => {
+    const w: World = {
+      suggestions: [
+        srow("hubspot-account-tiering-scoring", { status: "dismissed" }),
+        srow("signals-in-crm-with-decay", { status: "approved", user_id: OTHER_PERSON }),
+      ],
+    };
+    const { out } = await save(w);
+    expect(out).toMatchObject({ creadas: 1, reabiertas: 1, descartadas: 1 });
+    expect(total(out)).toBe(3);
+    expect(out.mensaje).toBe(
+      `Te he dejado 2 sugerencias nuevas en Sugerencias. No he vuelto a dejar lo que descartaste: «${T_TIER}». ${NOTHING_ACTIVATED}`,
+    );
+    expect(
+      w.suggestions!.find((r) => r.dedupe_key === K("hubspot-account-tiering-scoring"))!.status,
+    ).toBe("dismissed");
+  });
+
+  it("one new suggestion is said in singular", async () => {
+    const w: World = {
+      suggestions: [srow("hubspot-account-tiering-scoring"), srow("signals-in-crm-with-decay")],
+    };
+    const { out } = await save(w);
+    expect(out.mensaje.startsWith("Te he dejado una sugerencia nueva en Sugerencias. ")).toBe(true);
+  });
+
+  it("a reopened row is yours, pending, with the current text and action, through a guarded update", async () => {
+    const w: World = {
+      suggestions: [
+        srow("signals-in-crm-with-decay", {
+          status: "resolved",
+          user_id: OTHER_PERSON,
+          snoozed_until: "2026-11-02T00:00:00.000Z",
+          action: { tool: "set_play_enabled", args: { play_id: "otro", enabled: false } },
+        }),
+      ],
+    };
+    const { out, log } = await save(w);
+    expect(out.reabiertas).toBe(1);
+    const r = w.suggestions!.find((x) => x.dedupe_key === K("signals-in-crm-with-decay"))!;
+    expect(r).toMatchObject({
+      status: "pending",
+      user_id: ME,
+      snoozed_until: null,
+      notified_at: null,
+      title: `Activa «${T_SIG}»`,
+      body: "Del plan de tu diagnóstico de plays. Avanza: Reactivar perdidos, Señales de cuenta. Al aprobarla se activa este play; nada más.",
+      action: {
+        tool: "set_play_enabled",
+        args: { play_id: "signals-in-crm-with-decay", enabled: true },
+      },
+    });
+    expect(r.updated_at).not.toBe("2026-11-01T08:00:00.000Z");
+    const upd = writes(log).find((q) => q.op === "update")!;
+    expect(eq(upd, "id", `row-signals-in-crm-with-decay`)).toBe(true);
+    expect(eq(upd, "status", "resolved")).toBe(true);
+    expect(eq(upd, "org_id", ORG)).toBe(true);
+    expect(upd.selected).toBe("id");
+    expect(writes(log).every((q) => q.table === "suggestions")).toBe(true);
+  });
+
+  it("pending of another person is only «de otra persona»; pending without owner is «ya abierta»", async () => {
+    const w: World = {
+      suggestions: [
+        srow("hubspot-account-tiering-scoring", { user_id: OTHER_PERSON }),
+        srow("signals-in-crm-with-decay", { user_id: null }),
+      ],
+    };
+    const { out } = await save(w);
+    expect(out).toMatchObject({ creadas: 1, de_otra_persona: 1, ya_abiertas: 1 });
+    expect(out.mensaje).toBe(
+      `Te he dejado una sugerencia nueva en Sugerencias. Ya estaban abiertas: «${T_SIG}». Están abiertas a nombre de otra persona y no las verás en tu Sugerencias: «${T_TIER}». ${NOTHING_ACTIVATED}`,
+    );
+    expect(occurrences(out.mensaje, T_TIER)).toBe(1);
+    expect(
+      w.suggestions!.find((r) => r.dedupe_key === K("hubspot-account-tiering-scoring"))!.user_id,
+    ).toBe(OTHER_PERSON);
+  });
+
+  it("snoozed, also of another person, is only «pospuesta» and is not touched", async () => {
+    const w: World = {
+      suggestions: [
+        srow("closed-lost-revival", {
+          status: "snoozed",
+          user_id: OTHER_PERSON,
+          snoozed_until: "2999-01-01T00:00:00.000Z",
+        }),
+      ],
+    };
+    const { out } = await save(w);
+    expect(out).toMatchObject({ creadas: 2, pospuestas: 1, de_otra_persona: 0, ya_abiertas: 0 });
+    expect(out.mensaje).toContain(
+      `Están pospuestas y no se pueden aprobar hasta que despierten: «${T_CLR}».`,
+    );
+    expect(occurrences(out.mensaje, T_CLR)).toBe(1);
+    expect(w.suggestions!.find((r) => r.dedupe_key === K("closed-lost-revival"))).toMatchObject({
+      status: "snoozed",
+      user_id: OTHER_PERSON,
+    });
+  });
+
+  it("a row another person created between the read and the upsert, and one another person decided before the update, are «cambiadas»", async () => {
+    const w: World = {
+      suggestions: [srow("closed-lost-revival", { status: "approved" })],
+      beforeUpsert: (store) => {
+        if (!store.some((r) => r.dedupe_key === K("signals-in-crm-with-decay")))
+          store.push(srow("signals-in-crm-with-decay", { id: "race-1", user_id: OTHER_PERSON }));
+      },
+      beforeUpdate: (store, q) => {
+        const id = q.filters.find(([op, c]) => op === "eq" && c === "id")?.[2];
+        const hit = store.find((r) => r.id === id);
+        if (hit && hit.dedupe_key === K("closed-lost-revival")) hit.status = "dismissed";
+      },
+    };
+    const { out } = await save(w);
+    expect(out).toMatchObject({ creadas: 1, reabiertas: 0, cambiadas_por_otra_persona: 2 });
+    expect(total(out)).toBe(3);
+    expect(out.mensaje).toBe(
+      `Te he dejado una sugerencia nueva en Sugerencias. Otra persona las cambió mientras guardaba: «${T_SIG}», «${T_CLR}». ${NOTHING_ACTIVATED}`,
+    );
+    // The row of the other person is not overwritten, and the decision of the other person stands.
+    expect(w.suggestions!.find((r) => r.id === "race-1")!.user_id).toBe(OTHER_PERSON);
+    expect(w.suggestions!.find((r) => r.dedupe_key === K("closed-lost-revival"))!.status).toBe(
+      "dismissed",
+    );
+  });
+
+  it("every state at once: each play is in exactly one of the seven categories, named once, and they add up to the plan", async () => {
+    const plan = await diagnose({ states: SEVEN }, SEVEN_ANSWERS);
+    if (!plan.ready) throw new Error("expected ready");
+    const a = plan.activation;
+    expect(a).toHaveLength(7);
+    const [created, reopened, mine, others, snoozed, dismissed, raced] = a.map(
+      (s) => s.play_id,
+    ) as [string, string, string, string, string, string, string];
+    const w: World = {
+      states: SEVEN,
+      suggestions: [
+        srow(reopened, { status: "approved" }),
+        srow(mine),
+        srow(others, { user_id: OTHER_PERSON }),
+        srow(snoozed, { status: "snoozed", snoozed_until: "2999-01-01T00:00:00.000Z" }),
+        srow(dismissed, { status: "dismissed" }),
+        srow(raced, { status: "resolved" }),
+      ],
+      beforeUpdate: (store, q) => {
+        const id = q.filters.find(([op, c]) => op === "eq" && c === "id")?.[2];
+        const hit = store.find((r) => r.id === id);
+        if (hit && hit.dedupe_key === K(raced)) hit.status = "approved";
+      },
+    };
+    const { out } = await save(w, SEVEN_ANSWERS);
+    expect(out).toMatchObject({
+      creadas: 1,
+      reabiertas: 1,
+      ya_abiertas: 1,
+      de_otra_persona: 1,
+      pospuestas: 1,
+      descartadas: 1,
+      cambiadas_por_otra_persona: 1,
+    });
+    expect(total(out)).toBe(a.length);
+    const title = (id: string) => CATALOG.find((p) => p.id === id)!.title;
+    expect(out.mensaje).toBe(
+      [
+        "Te he dejado 2 sugerencias nuevas en Sugerencias.",
+        `Ya estaban abiertas: «${title(mine)}».`,
+        `Están abiertas a nombre de otra persona y no las verás en tu Sugerencias: «${title(others)}».`,
+        `Están pospuestas y no se pueden aprobar hasta que despierten: «${title(snoozed)}».`,
+        `No he vuelto a dejar lo que descartaste: «${title(dismissed)}».`,
+        `Otra persona las cambió mientras guardaba: «${title(raced)}».`,
+        NOTHING_ACTIVATED,
+      ].join(" "),
+    );
+    for (const id of [mine, others, snoozed, dismissed, raced])
+      expect(occurrences(out.mensaje, `«${title(id)}»`), id).toBe(1);
+    for (const id of [created, reopened]) expect(out.mensaje).not.toContain(title(id));
+    expect(new Set(w.suggestions!.map((r) => r.dedupe_key)).size).toBe(w.suggestions!.length);
+  });
+
+  it("the probe of gate pass 3: save, approve one and enable another in /plays, save again: no repeated or numbered titles", async () => {
+    const w: World = {};
+    await save(w);
+    // 2.º: the suggestion of «Señales…» is approved (its play gets enabled) and «Tiering…» is enabled from /plays.
+    w.suggestions!.find((r) => r.dedupe_key === K("signals-in-crm-with-decay"))!.status =
+      "approved";
+    w.states = [
+      { play_id: "signals-in-crm-with-decay", enabled: true },
+      { play_id: "hubspot-account-tiering-scoring", enabled: true },
+    ];
+    const { out } = await save(w);
+    expect(out).toMatchObject({ creadas: 1, ya_abiertas: 1 });
+    expect(total(out)).toBe(2);
+    const titles = w.suggestions!.map((r) => r.title);
+    expect(new Set(titles).size).toBe(titles.length);
+    for (const t of titles) expect(t).toMatch(/^Activa «[^«»\d]+»$/);
+    // A third time changes nothing.
+    const third = await save(w);
+    expect(third.out).toMatchObject({ creadas: 0, ya_abiertas: 2 });
+    expect(w.suggestions!.map((r) => r.title)).toEqual(titles);
+  });
+
+  it("recomputes with the data of the moment: a play enabled since the proposal leaves the plan", async () => {
+    const w: World = { states: [{ play_id: "hubspot-account-tiering-scoring", enabled: true }] };
+    await save(w);
+    expect(w.suggestions!.map((r) => r.dedupe_key)).not.toContain(
+      K("hubspot-account-tiering-scoring"),
+    );
+  });
+
+  it("voice and rules failing do not stop the save; it does not even read them", async () => {
+    const w: World = { voiceError: true, rulesError: true };
+    const { out, log } = await save(w);
+    expect(out.creadas).toBe(3);
+    expect(log.some((q) => q.table === "knowledge_docs")).toBe(false);
+  });
+
+  it("a failed play_states read says so and writes nothing", async () => {
+    const { out, log } = run({ statesError: true }, "save_play_plan");
+    await expect(out).rejects.toThrow(SAVE_PLAYS_FAILED);
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("a failed suggestions read throws and writes nothing", async () => {
+    const { out, log } = run({ suggestionsReadError: true }, "save_play_plan");
+    await expect(out).rejects.toThrow();
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("a company that is not ready gets «Todavía no puedo guardar un plan: falta …» and nothing is written", async () => {
+    const { out, log } = run({ diagnosis: null }, "save_play_plan");
+    await expect(out).rejects.toThrow(
+      "Todavía no puedo guardar un plan: falta Diagnóstico GTM sin hacer.",
+    );
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("with nothing to activate it says so and writes nothing", async () => {
+    const all = CATALOG.map((p) => ({ play_id: p.id, enabled: true }));
+    const { out, log } = run({ states: all }, "save_play_plan");
+    await expect(out).rejects.toThrow(NOTHING_TO_ACTIVATE);
+    expect(writes(log)).toEqual([]);
+  });
+
+  it("never activates: the module imports no toggle nor plays.functions and calls no activation", () => {
+    const src = srcOf("play-diagnosis.ts");
+    const specifiers = [...src.matchAll(/from\s+["']([^"']+)["']/g)].map((m) => m[1]!);
+    for (const s of specifiers) expect(s).not.toMatch(/toggle|plays\.functions/);
+    expect(src).not.toMatch(/togglePlay|setPlayEnabled|executeTool\(|from\("play_states"\)/);
+  });
+});
+
+describe("the measure of G-1 (CA-15)", () => {
+  it("PLAYS_DIAGNOSIS_DETECTOR is plays_diagnosis and the saved rows carry it", async () => {
+    expect(PLAYS_DIAGNOSIS_DETECTOR).toBe("plays_diagnosis");
+    const w: World = {};
+    await save(w);
+    for (const r of w.suggestions!) expect(r.detector).toBe(PLAYS_DIAGNOSIS_DETECTOR);
+  });
+
+  it("no source file outside tests and diagnosis.ts writes a plays_diagnosis detector (regression guard)", () => {
+    const root = path.resolve(__dirname, "../../..");
+    const re = /detector:\s*["']plays_diagnosis["']/;
+    const hits = (readdirSync(root, { recursive: true }) as string[])
+      .filter((f) => /\.(ts|tsx)$/.test(f) && !/\.test\./.test(f))
+      .filter((f) => !f.endsWith(path.join("plays", "diagnosis.ts")))
+      .filter((f) => re.test(readFileSync(path.join(root, f), "utf8")));
+    expect(hits).toEqual([]);
+    expect(re.test('{ detector: "plays_diagnosis" }')).toBe(true);
+  });
+});
+
+describe("titles and manifest (CA-18)", () => {
+  const NAMES = {
+    diagnose_play_teams: "Diagnosticar equipos de plays",
+    save_play_plan: "Guardar el plan de equipos de plays",
+  };
+  it("have their MCP titles and are once in the registry, right after get_onboarding_status", () => {
+    const names = TOOLS.map((t) => t.name);
+    for (const [n, title] of Object.entries(NAMES)) {
+      expect(TITLES[n], n).toBe(title);
+      expect(
+        names.filter((x) => x === n),
+        n,
+      ).toHaveLength(1);
+    }
+    const at = names.indexOf("get_onboarding_status");
+    expect(names.slice(at + 1, at + 1 + Object.keys(NAMES).length)).toEqual(Object.keys(NAMES));
+  });
+});
+
 const descriptionOf = (n: string) => getTool(n)!.description;
+const wordSources = () => [
+  descriptionOf("diagnose_play_teams"),
+  descriptionOf("save_play_plan"),
+  getWorkflow("plays_diagnosis")!.instructions,
+];
+
+describe("words of the tools and the flow (CA-19)", () => {
+  it("never «Equipo»/«Equipos» capitalised unless followed by « de plays»", () => {
+    for (const s of wordSources()) expect(s).not.toMatch(/\bEquipos?\b(?! de plays)/);
+  });
+  it("never calls a team of plays an agent", () => {
+    for (const s of wordSources()) expect(s).not.toMatch(/equipos? de plays[^.]*\bagentes?\b/i);
+  });
+  it("never usted, ustedes, vos or vosotros", () => {
+    for (const s of wordSources()) expect(s).not.toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
+  });
+});
 
 describe("the rules travel with the tools for Telegram and MCP (CA-20)", () => {
   it("diagnose_play_teams says how to tell the result, what to ask first, the six options, and where voice goes", () => {
@@ -671,6 +1082,11 @@ describe("the rules travel with the tools for Telegram and MCP (CA-20)", () => {
     );
     for (const phrase of Object.values(BOTTLENECK_WORD)) expect(d).toContain(phrase);
     expect(d).toContain("los mensajes de voz se pegan en Conocimiento › Voz, nunca en el chat");
+  });
+  it("save_play_plan says to use the same answers and that it activates no play", () => {
+    const d = descriptionOf("save_play_plan");
+    expect(d).toContain("usa las mismas respuestas que diagnose_play_teams");
+    expect(d).toContain("no activa ningún play");
   });
   it("resumen with voice examples missing says not to paste them in the chat", async () => {
     const out = await diagnose({ docs: voiceDocs(2) });
