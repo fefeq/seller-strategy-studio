@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
-import { onboardingReadInput } from "@/lib/onboarding-sources";
+import { onboardingReadInput } from "@/lib/onboarding-read-input";
 
 export const backgroundStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

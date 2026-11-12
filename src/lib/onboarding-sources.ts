@@ -1,31 +1,12 @@
 // Sources and findings of the onboarding reading (SDD field-actions-edit-delete-confirm, U-4): adding files keeps
 // the ones already listed (CA-12), removing a source says which findings depend on it and lets the person keep or
 // discard them (CA-11), and a finding can be confirmed, edited or discarded (undo within 24 hours). Pure and tested.
-import { z } from "zod";
 import { UNDO_HOURS } from "@/lib/delete-rules";
 import type { Finding } from "@/lib/onboarding";
 import { MAX_FILES, FILES_HOW_TO_GO_ON, filesLimitText } from "@/lib/onboarding-files-limit";
 
 // MAX_FILES and the limit text live in a zod-free module (errors.ts imports them on every screen); re-exported so imports here keep working.
 export { MAX_FILES, FILES_HOW_TO_GO_ON, filesLimitText };
-
-/** Input of the `onboarding_read` background job. Lives here (client-safe, zod only) so tests and the job share one schema. */
-export const onboardingReadInput = z
-  .object({
-    depth: z.enum(["express", "standard", "deep"]),
-    url: z.string().trim().max(500).default(""),
-    text: z.string().max(40_000).default(""),
-    files: z
-      .array(
-        z.object({
-          filename: z.string().max(200),
-          dataUrl: z.string().startsWith("data:").max(6_000_000),
-        }),
-      )
-      .max(MAX_FILES)
-      .default([]),
-  })
-  .refine((i) => i.url || i.text.trim() || i.files.length, "Añade una web, texto o un documento");
 
 export type PendingFile = { filename: string; dataUrl: string };
 
