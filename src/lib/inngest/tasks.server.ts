@@ -4,6 +4,7 @@
 // they are re-exported here so callers keep one entry point.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 type Admin = SupabaseClient<Database>;
 const HOURS = 3_600_000;
@@ -79,7 +80,7 @@ export async function maintainSignals(db: Admin, orgId: string, now = new Date()
     try {
       added += (await refreshSignalsCore(db, a.id, { orgId, userId: "" })).added.length;
     } catch (e) {
-      console.error("signal refresh failed", a.id, (e as Error).message);
+      console.error("signal refresh failed", a.id, safeErrorLog(e));
       if (/créditos|saldo/.test((e as Error).message)) break;
     }
   }

@@ -270,6 +270,17 @@ function diagnosisSummary(raw: unknown): CompanyDiagnosisSummary | null {
   };
 }
 
+/** The word for a company without a GTM diagnosis: the piece that /onboarding fixes (the rest of the blocking ones are fixed in /setup). */
+export const GTM_DIAGNOSIS_MISSING = "Diagnóstico GTM sin hacer";
+
+/** The word for segments without an ACV range: listed in `missing` but it does not block `ready`. */
+export const SEGMENTS_MISSING = "Segmentos sin rango de ACV";
+
+/** `missing` without the pieces that do not block `ready` (today only the segments): what is really missing to propose plays. */
+export function blockingMissing(status: { missing: string[] }): string[] {
+  return status.missing.filter((m) => m !== SEGMENTS_MISSING);
+}
+
 /**
  * What NOKKO knows about the company's onboarding and what is missing for the plays diagnosis. `ready` needs the GTM
  * diagnosis plus complete positioning and ICP (the rule lives in setup-schema.ts); segments are listed but do not block.
@@ -291,10 +302,10 @@ export function companyOnboardingStatus({
   };
   const diagnosis = diagnosisSummary(companyDiagnosis);
   const missing = [
-    diagnosis ? null : "Diagnóstico GTM sin hacer",
+    diagnosis ? null : GTM_DIAGNOSIS_MISSING,
     strategy.positioning ? null : "Posicionamiento sin completar",
     strategy.icp ? null : "ICP sin completar",
-    strategy.segments ? null : "Segmentos sin rango de ACV",
+    strategy.segments ? null : SEGMENTS_MISSING,
   ].filter((x): x is string => !!x);
   return {
     mine: { step: mine?.step ?? null, done: onboardingDone(mine) },

@@ -4,6 +4,7 @@ import type { Json } from "@/integrations/supabase/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { missingKey } from "@/lib/fit-key";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 type Admin = SupabaseClient<Database>;
 const HOURS = 3_600_000;
@@ -112,7 +113,7 @@ export async function enrichLead(
       })
       .select("id")
       .single();
-    if (error) console.error("lead flow account", error.message);
+    if (error) console.error("lead flow account", safeErrorLog(error));
     else {
       accountId = data.id;
       created = true;
@@ -214,7 +215,7 @@ export async function enrichLead(
             .join(" · ")}.`,
         );
     } catch (e) {
-      console.error("lead flow signals", (e as Error).message);
+      console.error("lead flow signals", safeErrorLog(e));
     }
   }
 

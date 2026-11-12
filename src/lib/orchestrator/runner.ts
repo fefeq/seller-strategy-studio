@@ -26,6 +26,7 @@ import {
 } from "./planner";
 import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
 import { missingKey } from "@/lib/fit-key";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 const ENV: Partial<Record<Service, string[]>> = {
   apollo: ["APOLLO_API_KEY"],
@@ -76,7 +77,7 @@ export async function logUsage(c: ToolCtx, need: Need, used: Used[], trigger: Tr
       cost: u.cost,
     })),
   );
-  if (error) console.error("integration_usage insert failed", error.message);
+  if (error) console.error("integration_usage insert failed", safeErrorLog(error));
 }
 
 async function planNeed(
@@ -281,7 +282,7 @@ export async function applyAutoChanges(
     const { error: e } = await c.db
       .from("suggestions")
       .upsert(rows, { onConflict: "org_id,dedupe_key", ignoreDuplicates: true });
-    if (e) console.error("field proposals", e.message);
+    if (e) console.error("field proposals", safeErrorLog(e));
   }
   if (!fill.length) return [];
   const patch: Record<string, unknown> = Object.fromEntries(

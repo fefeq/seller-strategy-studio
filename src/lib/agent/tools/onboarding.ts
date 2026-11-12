@@ -49,6 +49,16 @@ async function myRow(c: ToolCtx) {
   return error ? null : data;
 }
 
+/** What get_onboarding_status answers; diagnose_play_teams and save_play_plan read the company's state through this same function. */
+export async function onboardingStatusFor(c: ToolCtx) {
+  const [mine, companyDiagnosis, setup] = await Promise.all([
+    myRow(c),
+    companyDiagnosisFor(c),
+    loadSetupData(c.db, c.orgId),
+  ]);
+  return companyOnboardingStatus({ mine, companyDiagnosis, setup });
+}
+
 export const ONBOARDING_TOOLS: AgentTool[] = [
   def({
     name: "get_onboarding_status",
@@ -56,13 +66,6 @@ export const ONBOARDING_TOOLS: AgentTool[] = [
     description:
       "Solo lee. Dice en qué paso del onboarding está la persona, el diagnóstico GTM de la empresa (arquetipo, motion, etapa y siguiente paso), qué piezas de la estrategia faltan y si hay lo mínimo para el diagnóstico de plays. No devuelve la propuesta ni los hallazgos.",
     input: z.object({}),
-    run: async (c) => {
-      const [mine, companyDiagnosis, setup] = await Promise.all([
-        myRow(c),
-        companyDiagnosisFor(c),
-        loadSetupData(c.db, c.orgId),
-      ]);
-      return companyOnboardingStatus({ mine, companyDiagnosis, setup });
-    },
+    run: (c) => onboardingStatusFor(c),
   }),
 ];

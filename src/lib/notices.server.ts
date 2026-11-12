@@ -60,7 +60,7 @@ async function deliver(db: Admin, list: Notice[], now: Date) {
       membershipsOf(db, users),
     ]);
   if (membersError) {
-    console.error("telegram notices skipped: membership query failed", membersError.message);
+    console.error("telegram notices skipped: membership query failed", safeErrorLog(membersError));
     return 0;
   } // without membership nothing can be checked, so nothing leaves; unsent notices stay for the next run
   const chat = new Map((links ?? []).map((l) => [l.user_id, l.chat_id!]));
@@ -84,7 +84,7 @@ async function deliver(db: Admin, list: Notice[], now: Date) {
       await db.from("notifications").update({ telegram_sent_at: now.toISOString() }).eq("id", n.id);
       sent++;
     } catch (e) {
-      console.error("telegram notice failed", n.id, (e as Error).message);
+      console.error("telegram notice failed", n.id, safeErrorLog(e));
     }
   }
   return sent;
@@ -159,7 +159,7 @@ export async function notifyAutopilot(
     )
     .select(COLS);
   if (error) {
-    console.error("notifyAutopilot", error.message);
+    console.error("notifyAutopilot", safeErrorLog(error));
     return 0;
   }
   return deliver(db, (data ?? []) as Notice[], now);

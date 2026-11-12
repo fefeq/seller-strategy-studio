@@ -1,10 +1,1 @@
-{
-  "tests": [
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) while the read has not answered: loading; after, the content",
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) when «deals» fails: errorText and «Reintentar», not a blank page; retry reads again",
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) when «deal_stage_history» fails: errorText and «Reintentar», not a blank page; retry reads again",
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) when «quotas» fails: errorText and «Reintentar», not a blank page; retry reads again",
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) when «org_members» fails: errorText and «Reintentar», not a blank page; retry reads again",
-    "src/components/metrics/metrics-states.test.tsx > Metrics page (CA-6) when «profiles» fails: errorText and «Reintentar», not a blank page; retry reads again"
-  ]
-}
+{ "tests": [] }

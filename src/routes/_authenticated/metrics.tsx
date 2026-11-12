@@ -9,6 +9,7 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { guideKey } from "@/lib/guide";
+import { storageSet } from "@/lib/safe-storage";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
@@ -80,7 +81,7 @@ function Metrics() {
   const orgId = me?.currentOrg?.org_id;
   // Marks the «Mira tus Métricas» step of the Inicio guide as done for this company.
   useEffect(() => {
-    if (orgId) localStorage.setItem(guideKey(orgId, "metrics"), "1");
+    if (orgId) storageSet("local", guideKey(orgId, "metrics"), "1");
   }, [orgId]);
   const canEdit = me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const [quarter, setQuarter] = useState(quarterOf(new Date()));
