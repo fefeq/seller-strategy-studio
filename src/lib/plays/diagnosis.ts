@@ -297,3 +297,56 @@ export function playDiagnosisText(
     );
   return out.join("\n");
 }
+
+export type PlanSuggestionRow = {
+  id: string;
+  dedupe_key: string;
+  status: string;
+  user_id: string | null;
+};
+export type PlanPartition = {
+  create: string[];
+  reopen: { key: string; id: string; status: string }[];
+  ya_abiertas: string[];
+  de_otra_persona: string[];
+  pospuestas: string[];
+  descartadas: string[];
+};
+
+/**
+ * Internal helper of `save_play_plan` (SDD CA-11): what the state read decides for each key `plays_diagnosis:<play_id>` of the plan.
+ * Each key goes to exactly one category: no row (create), approved or resolved (reopen), pending yours or unowned (ya_abiertas),
+ * pending of another person (de_otra_persona), snoozed (pospuestas) or dismissed (descartadas). What the database returns on writing
+ * (created, reopened, changed by someone else in between) is not decided here. Pure: no I/O.
+ */
+export function partitionPlanSuggestions({
+  keys,
+  rows,
+  userId,
+}: {
+  keys: string[];
+  rows: PlanSuggestionRow[];
+  userId: string;
+}): PlanPartition {
+  const byKey = new Map(rows.map((r) => [r.dedupe_key, r]));
+  const out: PlanPartition = {
+    create: [],
+    reopen: [],
+    ya_abiertas: [],
+    de_otra_persona: [],
+    pospuestas: [],
+    descartadas: [],
+  };
+  for (const key of new Set(keys)) {
+    const row = byKey.get(key);
+    if (!row) out.create.push(key);
+    else if (row.status === "approved" || row.status === "resolved")
+      out.reopen.push({ key, id: row.id, status: row.status });
+    else if (row.status === "pending")
+      (!row.user_id || row.user_id === userId ? out.ya_abiertas : out.de_otra_persona).push(key);
+    else if (row.status === "snoozed") out.pospuestas.push(key);
+    else if (row.status === "dismissed") out.descartadas.push(key);
+    else throw new Error(`Unknown suggestion status: ${row.status}`);
+  }
+  return out;
+}

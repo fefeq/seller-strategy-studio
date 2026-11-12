@@ -8,6 +8,7 @@ import {
   MAX_PROPOSED_TEAMS,
   PLAYS_DIAGNOSIS_DETECTOR,
   TEAM_IDS,
+  partitionPlanSuggestions,
   playDiagnosisText,
   prioritizeTeams,
   type DiagnosisAnswers,
@@ -794,5 +795,120 @@ describe("words (CA-19, module part)", () => {
     expect("Los equipos de plays son agentes").toMatch(/equipos? de plays[^.]*\bagentes?\b/i);
     expect("Usted puede").toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
     expect("activos y motivos").not.toMatch(/\b(usted|ustedes|vos|vosotros)\b/i);
+  });
+});
+
+describe("partitionPlanSuggestions (internal helper of CA-11: the categories decided by the state read)", () => {
+  const ME = "me";
+  const OTHER = "other";
+  const key = (n: string) => `plays_diagnosis:${n}`;
+  const row = (n: string, status: string, user_id: string | null) => ({
+    id: `id-${n}`,
+    dedupe_key: key(n),
+    status,
+    user_id,
+  });
+  const part = (keys: string[], rows: ReturnType<typeof row>[]) =>
+    partitionPlanSuggestions({ keys: keys.map(key), rows, userId: ME });
+
+  it("a key with no row is created", () => {
+    expect(part(["a"], [])).toEqual({
+      create: [key("a")],
+      reopen: [],
+      ya_abiertas: [],
+      de_otra_persona: [],
+      pospuestas: [],
+      descartadas: [],
+    });
+  });
+
+  it("approved and resolved rows are reopened, keeping the row id and the status read, whoever owns them", () => {
+    const r = part(
+      ["a", "b", "c"],
+      [row("a", "approved", ME), row("b", "resolved", OTHER), row("c", "approved", null)],
+    );
+    expect(r.reopen).toEqual([
+      { key: key("a"), id: "id-a", status: "approved" },
+      { key: key("b"), id: "id-b", status: "resolved" },
+      { key: key("c"), id: "id-c", status: "approved" },
+    ]);
+    expect(r.create).toEqual([]);
+  });
+
+  it("pending: yours or without an owner is already open; another person's is only «de otra persona»", () => {
+    const r = part(
+      ["a", "b", "c"],
+      [row("a", "pending", ME), row("b", "pending", null), row("c", "pending", OTHER)],
+    );
+    expect(r.ya_abiertas).toEqual([key("a"), key("b")]);
+    expect(r.de_otra_persona).toEqual([key("c")]);
+  });
+
+  it("snoozed is only «pospuestas», whoever owns it, and is never reopened", () => {
+    const r = part(["a", "b"], [row("a", "snoozed", ME), row("b", "snoozed", OTHER)]);
+    expect(r.pospuestas).toEqual([key("a"), key("b")]);
+    expect(r.ya_abiertas).toEqual([]);
+    expect(r.de_otra_persona).toEqual([]);
+    expect(r.reopen).toEqual([]);
+  });
+
+  it("dismissed is «descartadas», whoever owns it, and is never reopened", () => {
+    const r = part(["a", "b"], [row("a", "dismissed", ME), row("b", "dismissed", OTHER)]);
+    expect(r.descartadas).toEqual([key("a"), key("b")]);
+    expect(r.reopen).toEqual([]);
+    expect(r.create).toEqual([]);
+  });
+
+  it("with every state at once each play is in exactly one category and the sum is the number of keys", () => {
+    const names = ["new", "app", "res", "mine", "mate", "snz", "dis"];
+    const r = part(names, [
+      row("app", "approved", ME),
+      row("res", "resolved", ME),
+      row("mine", "pending", ME),
+      row("mate", "pending", OTHER),
+      row("snz", "snoozed", OTHER),
+      row("dis", "dismissed", ME),
+    ]);
+    const all = [
+      ...r.create,
+      ...r.reopen.map((x) => x.key),
+      ...r.ya_abiertas,
+      ...r.de_otra_persona,
+      ...r.pospuestas,
+      ...r.descartadas,
+    ];
+    expect(all.length).toBe(names.length);
+    expect(new Set(all).size).toBe(names.length);
+    expect([...all].sort()).toEqual(names.map(key).sort());
+  });
+
+  it("ignores rows of keys that are not in the plan, and a repeated key counts once", () => {
+    const r = part(["a", "a"], [row("a", "pending", ME), row("zzz", "dismissed", ME)]);
+    expect(r.ya_abiertas).toEqual([key("a")]);
+    expect(r.descartadas).toEqual([]);
+    expect(r.create).toEqual([]);
+  });
+
+  it("keeps the order of the keys inside each category", () => {
+    const r = part(
+      ["c", "a", "b"],
+      [row("a", "dismissed", ME), row("b", "dismissed", ME), row("c", "dismissed", ME)],
+    );
+    expect(r.descartadas).toEqual([key("c"), key("a"), key("b")]);
+  });
+
+  it("a status the database cannot hold is not guessed: it throws", () => {
+    expect(() => part(["a"], [row("a", "sent", ME)])).toThrow();
+  });
+
+  it("an empty plan gives empty categories", () => {
+    expect(part([], [row("a", "pending", ME)])).toEqual({
+      create: [],
+      reopen: [],
+      ya_abiertas: [],
+      de_otra_persona: [],
+      pospuestas: [],
+      descartadas: [],
+    });
   });
 });
