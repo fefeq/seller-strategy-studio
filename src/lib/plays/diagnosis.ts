@@ -254,6 +254,10 @@ export function playDiagnosisText(
     ].join(" ");
 
   const out: string[] = [];
+  // A blank line separates blocks; never before the first one (with nothing proposed the text starts with the next block).
+  const gap = () => {
+    if (out.length) out.push("");
+  };
   if (result.proposed.length) {
     out.push("Te propongo empezar por estos equipos de plays, en este orden:");
     for (const t of result.proposed)
@@ -262,19 +266,21 @@ export function playDiagnosisText(
     out.push("Ya tienes activados todos los plays disponibles de los equipos de plays.");
   }
   if (result.activation.length) {
-    out.push("", "Plan de activación, por fase y dependencias:");
+    gap();
+    out.push("Plan de activación, por fase y dependencias:");
     for (const a of result.activation) out.push(`${a.n}. ${a.title} (${a.teams.join(", ")})`);
   }
   const section = (title: string, notes: TeamNote[]) => {
     if (!notes.length) return;
-    out.push("", title);
+    gap();
+    out.push(title);
     for (const n of notes) out.push(`${n.title}: ${n.reason}`);
   };
   section("Para después:", result.later);
   section("Ya activos:", result.alreadyActive);
   section("No disponibles todavía:", result.notAvailable);
 
-  out.push("");
+  gap();
   if (!voz.ok) out.push("No he podido comprobar la voz de tu empresa.");
   else if (voz.faltan > 0)
     out.push(

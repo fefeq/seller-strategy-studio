@@ -912,3 +912,41 @@ describe("partitionPlanSuggestions (internal helper of CA-11: the categories dec
     });
   });
 });
+
+// Review of session 1 (NK-0153): defects found by the reviewer and the coordinator's copy decisions, each pinned by a test.
+describe("playDiagnosisText: review of session 1", () => {
+  it("with nothing proposed and only a not usual team for later, the text starts with «Para después:», not with a blank line", () => {
+    // Every play enabled except the one of Entrantes y producto, which is not usual for an inside_sales archetype.
+    const enabled = Object.fromEntries(
+      CATALOG.filter((p) => p.id !== "product-sign-up-outreach").map((p) => [p.id, true]),
+    );
+    const r = ready(run(status(), answers(), enabled));
+    expect(r.proposed).toEqual([]);
+    expect(ids(r.later)).toEqual(["entrantes-y-producto"]);
+    const out = text(r);
+    expect(out.startsWith("Para después:\nEntrantes y producto: No es lo habitual")).toBe(true);
+    // It does not claim every play is active (one is still waiting in «Para después») and invents no header.
+    expect(out).not.toContain("Ya tienes activados todos");
+    expect(out).not.toContain("Te propongo");
+  });
+
+  it("never starts with a line break nor leaves two blank lines in a row", () => {
+    const enabled = Object.fromEntries(CATALOG.map((p) => [p.id, true]));
+    const all = [
+      ...scenarios(),
+      run(status(), answers(), enabled),
+      run(
+        status(),
+        answers(),
+        Object.fromEntries(
+          CATALOG.filter((p) => p.id !== "product-sign-up-outreach").map((p) => [p.id, true]),
+        ),
+      ),
+    ];
+    for (const r of all)
+      for (const out of [text(r), text(r, { canAct: false, voz: { ok: false } })]) {
+        expect(out.startsWith("\n")).toBe(false);
+        expect(out).not.toContain("\n\n\n");
+      }
+  });
+});
