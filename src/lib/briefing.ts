@@ -1,7 +1,15 @@
 // Inicio briefing (pure, tested): what Nokko did on its own since yesterday and what comes today.
 // «Necesita tu decisión» reuses the suggestions digest; this module only counts and words the other two blocks.
 
-export type BriefLink = "/leads" | "/accounts" | "/integrations" | "/inbox" | "/memory" | "/deals" | "/approvals" | { account: string };
+export type BriefLink =
+  | "/leads"
+  | "/accounts"
+  | "/integrations"
+  | "/inbox"
+  | "/memory"
+  | "/deals"
+  | "/approvals"
+  | { account: string };
 export type BriefItem = { text: string; link: BriefLink | null };
 
 export type AutoWorkInput = {
@@ -26,23 +34,69 @@ export function autoWork(i: AutoWorkInput, money: (n: number) => string): BriefI
   const learned = i.memories.filter((m) => m.learned && after(m.created_at)).length;
   const signals = i.signals.filter((s) => after(s.found_at)).length;
   // plays_diagnosis: the plan the person asked the assistant to save (NK-0153); it is not something Nokko detected.
-  const AUTO = new Set(["lead_enriched", "account_researched", "meeting_prepped", "account_cooling", "discoveries", "plays_diagnosis"]);
+  const AUTO = new Set([
+    "lead_enriched",
+    "account_researched",
+    "meeting_prepped",
+    "account_cooling",
+    "discoveries",
+    "plays_diagnosis",
+  ]);
   const recent = i.suggestions.filter((s) => after(s.created_at));
   const by = (d: string) => recent.filter((s) => s.detector === d).length;
-  const researched = by("account_researched"), prepped = by("meeting_prepped"), cooling = by("account_cooling");
+  const researched = by("account_researched"),
+    prepped = by("meeting_prepped"),
+    cooling = by("account_cooling");
   const detected = recent.filter((s) => !AUTO.has(s.detector)).length;
   const jobs = i.jobs.filter((j) => j.status === "done" && after(j.finished_at)).length;
   const out: BriefItem[] = [];
-  if (leads) out.push({ text: `Preparé ${plural(leads, "lead nuevo", "leads nuevos")}: su cuenta, sus datos, las personas clave y una propuesta de etapa.`, link: "/leads" });
-  if (completed) out.push({ text: `Completé los datos de ${plural(completed, "cuenta", "cuentas")}${spent > 0 ? ` (gasto automático: ${money(spent)})` : ""}.`, link: "/accounts" });
-  else if (spent > 0) out.push({ text: `Gasto automático en servicios: ${money(spent)}.`, link: "/integrations" });
-  if (prepped) out.push({ text: `Preparé ${plural(prepped, "reunión", "reuniones")} de las próximas horas.`, link: "/inbox" });
-  if (researched) out.push({ text: `Investigué ${plural(researched, "cuenta nueva", "cuentas nuevas")} y rellené su plan de cuenta.`, link: "/accounts" });
-  if (cooling) out.push({ text: `Repasé ${plural(cooling, "cuenta que se enfría", "cuentas que se enfrían")} y te propongo cómo retomarlas.`, link: "/inbox" });
-  if (signals) out.push({ text: `Encontré ${plural(signals, "novedad", "novedades")} en tus cuentas.`, link: "/accounts" });
-  if (detected) out.push({ text: `Detecté ${plural(detected, "asunto nuevo que merece", "asuntos nuevos que merecen")} tu atención.`, link: "/inbox" });
-  if (learned) out.push({ text: `Aprendí ${plural(learned, "cosa nueva", "cosas nuevas")} sobre el negocio y el equipo.`, link: "/memory" });
-  if (jobs) out.push({ text: `Terminé ${plural(jobs, "tarea larga", "tareas largas")} en segundo plano.`, link: null });
+  if (leads)
+    out.push({
+      text: `Preparé ${plural(leads, "lead nuevo", "leads nuevos")}: su cuenta, sus datos, las personas clave y una propuesta de etapa.`,
+      link: "/leads",
+    });
+  if (completed)
+    out.push({
+      text: `Completé los datos de ${plural(completed, "cuenta", "cuentas")}${spent > 0 ? ` (gasto automático: ${money(spent)})` : ""}.`,
+      link: "/accounts",
+    });
+  else if (spent > 0)
+    out.push({ text: `Gasto automático en servicios: ${money(spent)}.`, link: "/integrations" });
+  if (prepped)
+    out.push({
+      text: `Preparé ${plural(prepped, "reunión", "reuniones")} de las próximas horas.`,
+      link: "/inbox",
+    });
+  if (researched)
+    out.push({
+      text: `Investigué ${plural(researched, "cuenta nueva", "cuentas nuevas")} y rellené su plan de cuenta.`,
+      link: "/accounts",
+    });
+  if (cooling)
+    out.push({
+      text: `Repasé ${plural(cooling, "cuenta que se enfría", "cuentas que se enfrían")} y te propongo cómo retomarlas.`,
+      link: "/inbox",
+    });
+  if (signals)
+    out.push({
+      text: `Encontré ${plural(signals, "novedad", "novedades")} en tus cuentas.`,
+      link: "/accounts",
+    });
+  if (detected)
+    out.push({
+      text: `Detecté ${plural(detected, "asunto nuevo que merece", "asuntos nuevos que merecen")} tu atención.`,
+      link: "/inbox",
+    });
+  if (learned)
+    out.push({
+      text: `Aprendí ${plural(learned, "cosa nueva", "cosas nuevas")} sobre el negocio y el equipo.`,
+      link: "/memory",
+    });
+  if (jobs)
+    out.push({
+      text: `Terminé ${plural(jobs, "tarea larga", "tareas largas")} en segundo plano.`,
+      link: null,
+    });
   return out;
 }
 
@@ -52,30 +106,80 @@ export type TodayInput = {
   leader: boolean;
   meetings: { id: string; title: string; scheduled_at: string | null; account_id: string | null }[];
   tasks: { title: string; due_date: string | null; done: boolean; owner_id: string | null }[];
-  deals: { name: string; close_date: string | null; owner_id: string | null; stage: string; closed: boolean }[];
+  deals: {
+    name: string;
+    close_date: string | null;
+    owner_id: string | null;
+    stage: string;
+    closed: boolean;
+  }[];
   leads: { company: string; next_step_at: string | null; owner_id: string | null; stage: string }[];
 };
 
-const time = (iso: string) => new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+const time = (iso: string) =>
+  new Date(iso).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
 
 /** «Hoy»: meetings, tasks due or overdue, deals whose close date has come, lead follow-ups due. Scoped to the person unless leader. */
 export function todayItems(i: TodayInput): BriefItem[] {
   const mine = (owner: string | null) => i.leader || owner === i.userId || owner === null;
   const out: BriefItem[] = [];
-  for (const m of i.meetings.filter((m) => m.scheduled_at?.slice(0, 10) === i.today).sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? "")))
-    out.push({ text: `${time(m.scheduled_at!)} · ${m.title}`, link: m.account_id ? { account: m.account_id } : null });
-  const tasks = i.tasks.filter((t) => !t.done && t.due_date && t.due_date <= i.today && (t.owner_id === i.userId || (i.leader && !t.owner_id) || t.owner_id === null));
+  for (const m of i.meetings
+    .filter((m) => m.scheduled_at?.slice(0, 10) === i.today)
+    .sort((a, b) => (a.scheduled_at ?? "").localeCompare(b.scheduled_at ?? "")))
+    out.push({
+      text: `${time(m.scheduled_at!)} · ${m.title}`,
+      link: m.account_id ? { account: m.account_id } : null,
+    });
+  const tasks = i.tasks.filter(
+    (t) =>
+      !t.done &&
+      t.due_date &&
+      t.due_date <= i.today &&
+      (t.owner_id === i.userId || (i.leader && !t.owner_id) || t.owner_id === null),
+  );
   const late = tasks.filter((t) => t.due_date! < i.today).length;
-  if (tasks.length) out.push({ text: `${plural(tasks.length, "tarea", "tareas")} para hoy${late ? `, ${late} con retraso` : ""}: ${tasks.slice(0, 2).map((t) => t.title).join(" · ")}${tasks.length > 2 ? "…" : ""}`, link: null });
-  const closing = i.deals.filter((d) => !d.closed && d.close_date && d.close_date <= i.today && mine(d.owner_id));
-  if (closing.length) out.push({ text: `${plural(closing.length, "deal debería cerrar", "deals deberían cerrar")} hoy o ya: ${closing.slice(0, 2).map((d) => d.name).join(" · ")}${closing.length > 2 ? "…" : ""}. Actualiza la fecha o la etapa.`, link: "/deals" });
-  const follow = i.leads.filter((l) => l.next_step_at && l.next_step_at <= i.today && l.stage !== "opportunity" && l.stage !== "disqualified" && mine(l.owner_id));
-  if (follow.length) out.push({ text: `${plural(follow.length, "seguimiento de lead", "seguimientos de leads")}: ${follow.slice(0, 3).map((l) => l.company).join(" · ")}${follow.length > 3 ? "…" : ""}`, link: "/leads" });
+  if (tasks.length)
+    out.push({
+      text: `${plural(tasks.length, "tarea", "tareas")} para hoy${late ? `, ${late} con retraso` : ""}: ${tasks
+        .slice(0, 2)
+        .map((t) => t.title)
+        .join(" · ")}${tasks.length > 2 ? "…" : ""}`,
+      link: null,
+    });
+  const closing = i.deals.filter(
+    (d) => !d.closed && d.close_date && d.close_date <= i.today && mine(d.owner_id),
+  );
+  if (closing.length)
+    out.push({
+      text: `${plural(closing.length, "deal debería cerrar", "deals deberían cerrar")} hoy o ya: ${closing
+        .slice(0, 2)
+        .map((d) => d.name)
+        .join(" · ")}${closing.length > 2 ? "…" : ""}. Actualiza la fecha o la etapa.`,
+      link: "/deals",
+    });
+  const follow = i.leads.filter(
+    (l) =>
+      l.next_step_at &&
+      l.next_step_at <= i.today &&
+      l.stage !== "opportunity" &&
+      l.stage !== "disqualified" &&
+      mine(l.owner_id),
+  );
+  if (follow.length)
+    out.push({
+      text: `${plural(follow.length, "seguimiento de lead", "seguimientos de leads")}: ${follow
+        .slice(0, 3)
+        .map((l) => l.company)
+        .join(" · ")}${follow.length > 3 ? "…" : ""}`,
+      link: "/leads",
+    });
   return out;
 }
 
 /** Start of the «desde ayer» window: yesterday at 00:00 local time. */
 export function briefingSince(now = new Date()): string {
-  const d = new Date(now); d.setDate(d.getDate() - 1); d.setHours(0, 0, 0, 0);
+  const d = new Date(now);
+  d.setDate(d.getDate() - 1);
+  d.setHours(0, 0, 0, 0);
   return d.toISOString();
 }
