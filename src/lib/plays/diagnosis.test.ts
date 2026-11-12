@@ -17,7 +17,7 @@ import {
 } from "./diagnosis";
 import { recommendablePlays } from "./recommend";
 import { PLAY_TEAMS, teamPlan, type PlayTeam } from "./teams";
-import { blockingMissing } from "@/lib/onboarding";
+import { blockingMissing, GTM_DIAGNOSIS_MISSING } from "@/lib/onboarding";
 
 // SDD-20261112-diagnosis-in-chat U-1 (CA-1 to CA-7, CA-19 of the module). Pure rules: the status, the plans and the recommendable order are
 // inputs. Real-catalogue cases are the scenarios of section 13; made-up catalogues check the rules without depending on the catalogue.
@@ -976,5 +976,15 @@ describe("playDiagnosisText: review of session 1", () => {
     expect(out).toContain(
       "Tienes 1 de 3 mensajes de voz. Añade los que faltan en Conocimiento › Voz; no los pegues en el chat.",
     );
+  });
+
+  it("the link to /onboarding keys off the exported word of the GTM diagnosis, not a copy of it", () => {
+    expect(GTM_DIAGNOSIS_MISSING).toBe("Diagnóstico GTM sin hacer");
+    expect(text({ ready: false, missing: [GTM_DIAGNOSIS_MISSING] })).toBe(
+      "Todavía no puedo proponerte equipos de plays. Falta: Diagnóstico GTM sin hacer. /onboarding para el diagnóstico GTM.",
+    );
+    const src = readFileSync(path.resolve(__dirname, "diagnosis.ts"), "utf8");
+    expect(src).toContain("GTM_DIAGNOSIS_MISSING");
+    expect(src).not.toMatch(/["'`]Diagnóstico GTM/);
   });
 });

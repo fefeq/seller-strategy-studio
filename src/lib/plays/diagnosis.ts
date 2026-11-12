@@ -1,7 +1,11 @@
 import { PHASES } from "./catalog";
 import { PLAY_TEAMS, type TeamPlan } from "./teams";
 import { PHASE_WORD } from "./view";
-import { blockingMissing, type companyOnboardingStatus } from "@/lib/onboarding";
+import {
+  blockingMissing,
+  GTM_DIAGNOSIS_MISSING,
+  type companyOnboardingStatus,
+} from "@/lib/onboarding";
 
 // Diagnóstico de plays (SDD-20261112-diagnosis-in-chat, U-1): which «equipos de plays» to start with and in which order the plays are activated.
 // Pure: it receives the status of the company, the team plans (already computed with teamPlan and the company's rows) and the
@@ -232,9 +236,8 @@ export type ReglasInfo = { ok: true; faltan: string[] } | { ok: false };
 /** Where each blocking piece is fixed (the links of the flow in section 9). */
 function linksFor(missing: string[]): string {
   const links: string[] = [];
-  if (missing.some((m) => m.startsWith("Diagnóstico GTM")))
-    links.push("/onboarding para el diagnóstico GTM");
-  if (missing.some((m) => !m.startsWith("Diagnóstico GTM")))
+  if (missing.includes(GTM_DIAGNOSIS_MISSING)) links.push("/onboarding para el diagnóstico GTM");
+  if (missing.some((m) => m !== GTM_DIAGNOSIS_MISSING))
     links.push("/setup para posicionamiento e ICP");
   return links.join(" y ");
 }

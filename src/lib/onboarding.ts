@@ -270,6 +270,9 @@ function diagnosisSummary(raw: unknown): CompanyDiagnosisSummary | null {
   };
 }
 
+/** The word for a company without a GTM diagnosis: the piece that /onboarding fixes (the rest of the blocking ones are fixed in /setup). */
+export const GTM_DIAGNOSIS_MISSING = "Diagnóstico GTM sin hacer";
+
 /** The word for segments without an ACV range: listed in `missing` but it does not block `ready`. */
 export const SEGMENTS_MISSING = "Segmentos sin rango de ACV";
 
@@ -299,7 +302,7 @@ export function companyOnboardingStatus({
   };
   const diagnosis = diagnosisSummary(companyDiagnosis);
   const missing = [
-    diagnosis ? null : "Diagnóstico GTM sin hacer",
+    diagnosis ? null : GTM_DIAGNOSIS_MISSING,
     strategy.positioning ? null : "Posicionamiento sin completar",
     strategy.icp ? null : "ICP sin completar",
     strategy.segments ? null : SEGMENTS_MISSING,
