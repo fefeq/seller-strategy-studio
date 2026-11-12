@@ -15,6 +15,7 @@ import {
 } from "@/lib/strategy-review-core";
 import { readSuggestions } from "@/lib/strategy-review-read";
 import { parseStrategy } from "@/lib/strategy-suggestions";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export const REVIEW_FORBIDDEN =
   "Solo el Owner y el Sales Leader pueden pedir una revisión estratégica con IA";
@@ -85,7 +86,7 @@ export async function executeReview(
     cost: res.cost,
     created_by: ctx.userId,
   });
-  if (error) console.error("strategy review: save failed", error.message);
+  if (error) console.error("strategy review: save failed", safeErrorLog(error));
   await ctx.db.from("integration_usage").insert({
     org_id: ctx.orgId,
     user_id: ctx.userId,
