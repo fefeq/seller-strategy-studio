@@ -1108,6 +1108,17 @@ describe("titles and manifest (CA-18)", () => {
     const at = names.indexOf("get_onboarding_status");
     expect(names.slice(at + 1, at + 4)).toEqual(Object.keys(NAMES));
   });
+  it("are once in .lovable/mcp/manifest.json with those titles; only the read is readOnlyHint", () => {
+    const manifest = JSON.parse(readFileSync(".lovable/mcp/manifest.json", "utf8"));
+    const tools: { name: string; title: string; annotations: { readOnlyHint: boolean } }[] =
+      manifest.mcp.tools;
+    for (const [n, title] of Object.entries(NAMES)) {
+      const found = tools.filter((t) => t.name === n);
+      expect(found, n).toHaveLength(1);
+      expect(found[0]!.title).toBe(title);
+      expect(found[0]!.annotations.readOnlyHint).toBe(n === "diagnose_play_teams");
+    }
+  });
 });
 
 const descriptionOf = (n: string) => getTool(n)!.description;
