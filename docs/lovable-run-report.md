@@ -174,3 +174,9 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - Comprobado: suite 350/350 archivos, 5656/5656; build OK. Navegador: Sugerencias en escritorio muestra los tres botones con texto; móvil 375 claro/oscuro muestra «Cerrar» con ✕ y sin desplazamiento lateral; un 404 de recurso en la primera carga (ya visto antes, no investigado).
 - No comprobado: el icono de Theory U/Conectar asistentes en pantalla (no aparecen en el menú de este rol en la vista revisada); botones de borrar/descartar de otras pantallas siguen sin icono (entrega 2).
 - SHA: no disponible (commits automáticos de Lovable).
+
+## NK-0168 — Iconografía, entrega 2 (13/11/2026)
+- Cambió: 19 pantallas; botones «Borrar/Eliminar» con Trash2, «Cancelar» con X (texto siempre visible). Nueva prueba: mismo icono por concepto (icon-rule.test.ts, 3 tests).
+- Comprobado: suite 350/350, 5656/5656 antes de la prueba de concepto; la nueva pasa. Build: se verá en el siguiente registro.
+- No comprobado en navegador cada pantalla tocada. Botones de «Descartar cambios» / «Descalificar» con texto distinto o compuesto no se tocaron automáticamente.
+- SHA: no disponible (commits automáticos de Lovable).
