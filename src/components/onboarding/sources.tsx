@@ -191,6 +191,11 @@ export function SourcesStep({
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+          {/* NK-0165: the box stops at TEXT_LIMIT, so it says so instead of cutting a paste in silence. */}
+          <p className="mt-1 text-xs text-ink-mid" aria-live="polite">
+            {text.length.toLocaleString("es-ES")}/{TEXT_LIMIT.toLocaleString("es-ES")} caracteres
+            {text.length >= TEXT_LIMIT ? ". Has llegado al máximo: si tu texto es más largo, súbelo como archivo." : ""}
+          </p>
         </div>
         <p className="text-sm text-ink-mid">
           ¿Tienes un CRM? Importa tus cuentas y leads desde{" "}
