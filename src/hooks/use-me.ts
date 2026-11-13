@@ -2,7 +2,6 @@ import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { validatedUser } from "@/lib/session";
 import { currencySymbol, formatMoney } from "@/lib/money";
-import { assertSessionOpen } from "@/lib/session-ending";
 
 export type Membership = {
   org_id: string;
@@ -39,7 +38,6 @@ export const meQuery = queryOptions({
       if (data.session) throw new Error("No se pudo validar la sesión. Vuelve a intentarlo.");
       return null;
     }
-    assertSessionOpen();
     // Signed out (or switched) while we were validating: never query with the old user's id, and never
     // cache «no user» for the stale window: reject, and the session event that caused it refetches (NK-0115).
     const stillSame = async () =>
@@ -48,10 +46,8 @@ export const meQuery = queryOptions({
       new Error("La sesión ha cambiado mientras se cargaba. Vuelve a intentarlo.");
     if (!(await stillSame())) throw changed();
     // Joins any company that invited this email before loading memberships.
-    assertSessionOpen();
     await supabase.rpc("accept_invites");
     if (!(await stillSame())) throw changed();
-    assertSessionOpen();
     const [{ data: profile }, { data: members }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase
