@@ -54,7 +54,7 @@ export const CUSTOM_PLAY_TOOLS: AgentTool[] = [
       });
       if (error) throw new Error(error.message);
       // The proposal's AI cost is not measured yet: stored as 0 with provider «ai:sin_dato», never estimated.
-      await supabaseAdmin.from("custom_play_costs").insert({ org_id: c.orgId, play_key: key, provider: "ai:sin_dato", amount: 0 });
+      await supabaseAdmin.from("custom_play_costs").insert({ org_id: c.orgId, play_key: key, provider: "ai:sin_dato", amount: 0, cost_kind: "ai_sin_dato" });
       return { key, mensaje: "Play guardado como «Creado para tu empresa». Aún no se ejecuta." };
     },
   }),

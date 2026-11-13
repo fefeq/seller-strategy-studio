@@ -58,7 +58,13 @@ export type ConceptId =
   | "url_evidencia"
   | "cita_evidencia"
   | "fecha_evento"
-  | "cambio_sistema";
+  | "cambio_sistema"
+  | "estado_play"
+  | "primera_activacion"
+  | "muestra_prueba"
+  | "exitos_prueba"
+  | "fecha_prueba"
+  | "tipo_coste";
 
 export type Concept = {
   id: ConceptId;
@@ -87,6 +93,12 @@ export const CONCEPTS: Concept[] = [
   { id: "clave_registro", label: "Registro (clave)", meaning: "Identificador único de un registro de sistema.", kind: "text", format: "uuid", display: "No se muestra" },
   { id: "superficie_borrador", label: "Origen del borrador", meaning: "Superficie en la que se bloqueó la preparación de un borrador.", kind: "enum", format: "Valor cerrado", allowed: ["draft_followup", "followup_sequence"], display: "Agente o seguimiento proactivo" },
   { id: "motivo_bloqueo_email", label: "Motivo del bloqueo", meaning: "Razón del bloqueo y siguiente paso, sin dirección de email.", kind: "text", format: "Máximo 300 caracteres", display: "Motivo en español" },
+  { id: "estado_play", label: "Estado del play", meaning: "Estado de un play a medida: aprobado, activo, pausado o archivado.", kind: "enum", format: "Valor cerrado", allowed: ["aprobado", "activo", "pausado", "archivado"], display: "Etiqueta" },
+  { id: "primera_activacion", label: "Primera activación", meaning: "Momento en que el play se activó por primera vez.", kind: "text", format: "Fecha y hora", display: "No se muestra" },
+  { id: "muestra_prueba", label: "Muestra de la prueba", meaning: "Contactos usados en la prueba del play.", kind: "text", format: "Entero positivo", display: "Número" },
+  { id: "exitos_prueba", label: "Éxitos de la prueba", meaning: "Respuestas positivas obtenidas en la prueba.", kind: "text", format: "Entero ≥ 0", display: "Número" },
+  { id: "fecha_prueba", label: "Fecha del resultado", meaning: "Cuándo se registró el resultado de la prueba.", kind: "text", format: "Fecha y hora", display: "Fecha corta" },
+  { id: "tipo_coste", label: "Tipo de coste", meaning: "Si el coste es de IA medido, de IA sin dato o estimado de proveedor.", kind: "enum", format: "Valor cerrado", allowed: ["ai_measured", "ai_sin_dato", "provider_estimated"], display: "No se muestra" },
   { id: "clave_empresa", label: "Empresa (clave)", meaning: "Empresa propietaria de un registro.", kind: "text", format: "uuid", display: "No se muestra" },
   { id: "direccion_email", label: "Email", meaning: "Dirección normalizada de contacto.", kind: "text", format: "Minúsculas sin espacios exteriores", display: "Dirección" },
   { id: "estado_email", label: "Estado del email", meaning: "Estado comunicado por el proveedor para una dirección.", kind: "enum", format: "Valor cerrado", allowed: ["verified", "catch_all", "unverifiable", "invalid", "unverified"], display: "Estado efectivo en español" },
@@ -331,6 +343,11 @@ export const BINDINGS: Binding[] = [
   { table: "custom_plays", column: "verified_only", concept: "solo_verificado", persistence: saved },
   { table: "custom_plays", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "custom_plays", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  { table: "custom_plays", column: "status", concept: "estado_play", persistence: saved },
+  { table: "custom_plays", column: "first_activated_at", concept: "primera_activacion", persistence: saved },
+  { table: "custom_plays", column: "test_sample", concept: "muestra_prueba", persistence: saved },
+  { table: "custom_plays", column: "test_successes", concept: "exitos_prueba", persistence: saved },
+  { table: "custom_plays", column: "test_recorded_at", concept: "fecha_prueba", persistence: saved },
   { table: "custom_play_evidence", column: "id", concept: "clave_registro", persistence: saved },
   { table: "custom_play_evidence", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "custom_play_evidence", column: "play_id", concept: "clave_registro", persistence: saved },
@@ -339,6 +356,7 @@ export const BINDINGS: Binding[] = [
   { table: "custom_play_evidence", column: "event_date", concept: "fecha_evento", persistence: saved },
   { table: "custom_play_evidence", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "custom_play_costs", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_costs", column: "cost_kind", concept: "tipo_coste", persistence: saved },
   { table: "custom_play_costs", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "custom_play_costs", column: "play_key", concept: "clave_play", persistence: saved },
   { table: "custom_play_costs", column: "provider", concept: "fuente_citada", persistence: saved },
@@ -659,6 +677,12 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   cita_evidencia: ["src/lib/plays/custom/model.ts"],
   fecha_evento: ["src/lib/plays/custom/model.ts"],
   cambio_sistema: ["src/integrations/supabase/types.ts"],
+  estado_play: ["src/integrations/supabase/types.ts"],
+  primera_activacion: ["src/integrations/supabase/types.ts"],
+  muestra_prueba: ["src/integrations/supabase/types.ts"],
+  exitos_prueba: ["src/integrations/supabase/types.ts"],
+  fecha_prueba: ["src/integrations/supabase/types.ts"],
+  tipo_coste: ["src/integrations/supabase/types.ts"],
   superficie_borrador: ["src/lib/agent/tools/core-read.ts", "src/lib/org-data.ts"],
   motivo_bloqueo_email: ["src/lib/email-status.ts"],
   pais: [
