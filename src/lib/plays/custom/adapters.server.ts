@@ -9,7 +9,7 @@ import { accountsForCompetitor, splitCompetitors } from "./library";
 import { effectiveEmailStatus } from "@/lib/email-verification";
 import { loadEmailVerifications } from "@/lib/email-verification-read";
 import { buildStepPayload, type StepPayload } from "./step-output";
-import { monthBudget } from "@/lib/orchestrator/runner";
+import { budgetState, planFor } from "@/lib/orchestrator/planner";
 import { runtimeServices, readStepSource } from "./sources.server";
 import { selectSignals, type PlayCost } from "./measured-ai.server";
 import type { TaggedItem, Target } from "./engine";
@@ -21,6 +21,13 @@ function proposalOf(row: Tables<"custom_plays">): Proposal {
   return z.object({ name:z.string(),trigger:z.string(),window:z.object({ backDays:z.number().positive(),forwardDays:z.number().nonnegative() }),steps:z.array(stepSchema).min(1).max(8),message:z.object({ claims:z.array(z.object({ text:z.string(),step:z.number() })),built:z.string(),ask:z.string() }),test:z.object({ n:z.number(),k:z.number(),base:z.number() }),verifiedOnly:z.boolean() }).parse({ ...d,name:row.name,verifiedOnly:row.verified_only });
 }
 const checked = <T>(r: { data:T;error:unknown }): T => { if(r.error) throw new Error("No se pudo guardar o leer la ejecución. Revisa el play antes de repetir.");return r.data; };
+async function budgetFor(c:ToolCtx) {
+  const start=new Date();start.setUTCDate(1);start.setUTCHours(0,0,0,0);
+  const limit=checked(await c.db.from("org_budgets").select("monthly_limit").eq("org_id",c.orgId).maybeSingle());
+  const usage=await fetchAll((a,b) => c.db.from("integration_usage").select("cost").eq("org_id",c.orgId).gte("created_at",start.toISOString()).order("id").range(a,b));
+  if(usage.truncated) throw new Error("No se pudo comprobar el presupuesto completo. Revisa Conexiones.");
+  return budgetState(usage.rows.reduce((s,r) => s+Number(r.cost),0),limit?.monthly_limit == null ? null : Number(limit.monthly_limit));
+}
 const parsePayload = (v: Json): StepPayload => {
   // Only server-owned committed payloads are read; validate their container before narrowing.
   const p = jsonObject(v);
@@ -81,9 +88,12 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       const row = checked(await db.from("custom_plays").select("status,execution_pause").eq("org_id",i.orgId).eq("id",i.playId).maybeSingle());
       const org = checked(await db.from("organizations").select("archived_at").eq("id",i.orgId).maybeSingle());
       const members = checked(await db.from("org_members").select("user_id").eq("org_id",i.orgId).eq("user_id",i.userId).limit(1));
-      return { active:row?.status === "activo" && !row.execution_pause && !!org && !org.archived_at && !!members?.length,cancelled:false,budgetPaused:(await monthBudget(context(i))).paused };
+      const pause=checked(await db.from("job_locks").select("paused_reason").eq("name",`custom_plays:${i.orgId}`).maybeSingle());
+      return { active:row?.status === "activo" && !row.execution_pause && !pause?.paused_reason && !!org && !org.archived_at && !!members?.length,cancelled:false,budgetPaused:(await budgetFor(context(i))).paused };
     },
     pause:async(i,reason) => {
+      // ALL custom-play entry points consult this durable company-wide circuit breaker.
+      checked(await db.from("job_locks").upsert({ name:`custom_plays:${i.orgId}`,paused_reason:reason },{ onConflict:"name" }));
       checked(await db.from("custom_plays").update({ status:"pausado",execution_pause:reason }).eq("org_id",i.orgId).eq("id",i.playId).eq("lease_token",token));
       checked(await db.from("custom_play_runs").update({ status:"paused",updated_at:new Date().toISOString() }).eq("org_id",i.orgId).eq("id",i.runId));
     },
@@ -96,22 +106,32 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       let usage:StepPayload["usage"] = [];
       let costs:PlayCost[] = [];
       let selectionError:unknown;
+      let sourceData:unknown = null;
       const pos = checked(await db.from("positioning").select("competitive_alternative,product_name,need,target_customer").eq("org_id",i.orgId).limit(1).maybeSingle());
       const competitors = splitCompetitors(pos?.competitive_alternative).slice(0,3);
       if(["people","company"].includes(i.step.source)) {
         const relevantTargets = await targetsFor(c,previous.flatMap(p => p.signals),i.now);
-        const { findKeyPeople,completeAccount } = await import("@/lib/orchestrator/runner");
+        const need=i.step.source === "people" ? "find_stakeholders" : "enrich_account";
+        const budget=await budgetFor(c);
+        const option=planFor({ need,connected:runtimeServices(),budget:{ remaining:budget.remaining,paused:budget.paused,automatic:i.trigger === "automatic" } }).steps.find(s => s.service === "apollo" || s.service === "clay");
+        if(relevantTargets.length && !option) throw new Error("No hay una fuente disponible para buscar estos datos. Revisa Conexiones.");
+        const data:unknown[]=[];
         for(const target of relevantTargets.slice(0,3)) {
-          // No automatic reveals, no contact writes. The orchestrator logs its own provider usage.
-          const found = i.step.source === "people" ? await findKeyPeople(c,{ accountId:target.accountId },i.trigger) : await completeAccount(c,target.accountId,i.trigger);
-          if(found.blocked) throw new Error(found.blocked);
+          if(!option) break;
+          // One selected Need option: no hidden web-fallback AI call or automatic contact reveal.
+          const gateway=option.service === "apollo" ? await import("@/lib/apollo-gateway") : await import("@/lib/clay-gateway");
+          const found=i.step.source === "people" ? await gateway.findPeople(c,{ accountId:target.accountId }) : await gateway.enrichAccount(c,target.accountId);
+          data.push({ accountId:target.accountId,result:found });
+          usage.push({ service:option.service,need,trigger:i.trigger,cost:option.cost });
         }
+        sourceData=data;
+        costs=usage.map(u => ({ provider:u.service,amount:u.cost,cost_kind:"provider_estimated",currency:"EUR",input_tokens:null,output_tokens:null }));
       } else if(i.step.source === "posthog") {
         // Cached company-scoped product usage is not a public dated event and cannot support message claims.
-        checked(await db.from("product_usage").select("account_id,active_users_7d,synced_at").eq("org_id",i.orgId).limit(20));
+        sourceData=checked(await db.from("product_usage").select("account_id,active_users_7d,synced_at").eq("org_id",i.orgId).limit(20));
       } else if(i.step.source === "competitors") {
         // Declared competitors only: never infer which competitor is used by a customer.
-        checked(await db.from("positioning").select("competitive_alternative").eq("org_id",i.orgId).limit(1));
+        sourceData=competitors;
       } else if(i.step.source === "drive") {
         const { companyFolder } = await import("@/lib/drive-core");
         const { listChildren,exportText,downloadText } = await import("@/lib/google-drive");
@@ -131,7 +151,10 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       }
       if(signals.length) {
         try {
-          const selection = await selectSignals(`${i.proposal.trigger}\n${i.step.question}`,signals);
+          const { loadAgentRules,rulesBlock }=await import("@/lib/knowledge-rules");
+          const rules=await loadAgentRules(c);
+          if(!rules.ok) throw new Error("No se pudieron leer las reglas del equipo. Revisa la ejecución.");
+          const selection = await selectSignals(`${i.proposal.trigger}\n${i.step.question}`,signals,process.env,fetch,rulesBlock(rules.rules));
           costs.push(selection.cost);
           signals = selection.selected.flatMap(n => signals[n] ? [signals[n]] : []);
         } catch(e) {
@@ -144,7 +167,7 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       const allSignals = [...previous.flatMap(p => p.signals),...signals];
       const targets = last ? await targetsFor(c,allSignals,i.now) : [];
       const payload = buildStepPayload({ playId:i.playId,proposal:i.proposal,step:i.step,signals,targets,previous,now:i.now,last });
-      payload.costs=costs;payload.usage=usage;
+      payload.costs=costs;payload.usage=usage;payload.sourceData=sourceData;
       const receipt = receiptSchema.parse(checked(await db.rpc("commit_custom_play_step",{ ...args(i),p_step:i.step.n,p_payload:payload as unknown as Json })));
       if(selectionError) throw selectionError;
       return receipt;
@@ -154,6 +177,8 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
 }
 /** One bounded hourly batch. It neither activates a play nor sends anything. */
 export async function runActiveCustomPlays(db:Db,orgId:string,now=new Date()) {
+  const pause=checked(await db.from("job_locks").select("paused_reason").eq("name",`custom_plays:${orgId}`).maybeSingle());
+  if(pause?.paused_reason) return { runs:0,evidenceCount:0,suggestionCount:0,paused:1 };
   const rows = checked(await db.from("custom_plays").select("id").eq("org_id",orgId).eq("status","activo").is("execution_pause",null).order("updated_at").limit(3)) ?? [];
   const members = checked(await db.from("org_members").select("user_id").eq("org_id",orgId).in("role",["owner","sales_leader"]).order("created_at").limit(1));
   const userId = members?.[0]?.user_id;

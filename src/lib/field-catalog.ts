@@ -705,6 +705,12 @@ export function allowedValues(table: string, column: string): readonly string[] 
 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
+  paso_ejecucion: ["src/lib/plays/custom/execution.ts"],
+  estado_ejecucion: ["src/lib/plays/custom/execution.ts"],
+  contador_ejecucion: ["src/lib/plays/custom/execution.ts"],
+  tokens_ia: ["src/lib/plays/custom/measured-ai.server.ts"],
+  moneda_coste: ["src/lib/plays/custom/measured-ai.server.ts"],
+  origen_fecha: ["src/lib/plays/custom/model.ts"],
   clave_registro: ["src/integrations/supabase/types.ts"],
   clave_play: ["src/lib/plays/custom/model.ts"],
   nombre_play: ["src/lib/plays/custom/model.ts"],

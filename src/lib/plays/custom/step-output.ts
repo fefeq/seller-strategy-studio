@@ -1,6 +1,6 @@
 import type { TablesInsert } from "@/integrations/supabase/types";
 import { runPlay, type TaggedItem, type Target } from "./engine";
-import { validateMessage, type Evidence, type Step } from "./model";
+import { validateMessage, type Step } from "./model";
 import type { Proposal } from "./propose";
 import type { PlayCost } from "./measured-ai.server";
 export type StepPayload = {
@@ -9,6 +9,7 @@ export type StepPayload = {
   suggestions: Array<Pick<TablesInsert<"suggestions">,"dedupe_key"|"title"|"body"|"link">>;
   costs: PlayCost[];
   usage: Array<{ service: string; need: string; trigger: string; cost: number }>;
+  sourceData?: unknown;
 };
 export function buildStepPayload(i: { playId: string; proposal: Proposal; step: Step; signals: TaggedItem[]; targets: Target[]; previous: StepPayload[]; now: Date; last: boolean }): StepPayload {
   const r = runPlay({ steps: i.proposal.steps, signalStep: i.step.n, window: i.proposal.window, verifiedOnly: i.proposal.verifiedOnly, now: i.now, signals: i.signals, targets: i.targets });
