@@ -51,8 +51,11 @@ describe("F4: reads while the old token remains valid during sign-out", () => {
     client.setQueryData(["me"], { currentOrg: { org_id: "synthetic-org" } });
     beginSessionEnd();
     const { result } = renderHook(() => useSetup(), { wrapper: wrapper(client) });
-    await act(async () => { await result.current.refetch(); });
-    expect(h.load).not.toHaveBeenCalled(); expect(result.current.error).toBeInstanceOf(SessionEndedError); client.clear();
+    await act(async () => {
+      const refreshed = await result.current.refetch();
+      expect(refreshed.error).toBeInstanceOf(SessionEndedError);
+    });
+    expect(h.load).not.toHaveBeenCalled(); client.clear();
   });
   it("useLivePipeline suppresses a queued refresh during sign-out and refreshes once open", async () => {
     vi.useFakeTimers(); const client = qc(); const invalidate = vi.spyOn(client, "invalidateQueries");
