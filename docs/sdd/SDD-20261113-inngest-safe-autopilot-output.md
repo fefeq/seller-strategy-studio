@@ -15,3 +15,8 @@ No activar cron ni gastar en proveedores. Navegador: no existe superficie visual
 
 ## Riesgos y vuelta atrás
 El historial nuevo pierde el detalle de las notas; los historiales ya existentes no se borran ni modifican. Revertir la proyección y su uso devuelve el comportamiento previo. Sin migración.
+
+## Informe de ejecución
+Prueba nueva del callback real: falla antes por fuga del testigo de error y pasa después; se conserva el resultado interno para el notificador. Pruebas protegidas intactas. Suite completa: 335 archivos, 5574 pruebas, todos pasan con cuatro workers, Node 22.23.5. Compilación automática OK posterior al cambio funcional.
+
+Pendiente de cierre: checker de tipos manual prohibido por el entorno, sin señal separada automática comprobable. No se declara checker limpio. No se desplegó ni se consultó historial alojado; no hay cambio visual y no se recorrió una página ajena para suplir la comprobación durable. SDD En curso; informe completo en docs/lovable-run-report.md. Siguiente entrega no iniciada.

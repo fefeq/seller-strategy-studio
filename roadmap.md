@@ -4,7 +4,8 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
 - [x] NK-0176: implementar tras aprobación y emitir informe; 5573/5573, checker limpio, build automático OK y navegador verificado.
 - [ ] NK-0176: revisión independiente y aceptación final de la entrega por Fede; SDD En curso, no se declara gate técnico.
-- [ ] NK-0159: sanear salidas de Inngest sin cambiar las notas retornadas por los cores ni sus pruebas protegidas; SDD y verificación pendientes.
+- [x] NK-0159: SDD y proyección de contadores dentro del paso durable; prueba nueva falló primero y después pasa; pruebas existentes intactas, suite 5574/5574 y compilación automática OK.
+- [ ] NK-0159: cierre de comprobaciones obligatorio antes de siguiente entrega; checker de tipos no ejecutado por prohibición del entorno, sin resultado separado automático disponible. Inngest alojado no comprobado (no desplegar).
 - [ ] NK-0160: SDD corto, después de la entrega anterior.
 - [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
 - [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.

@@ -1,6 +1,6 @@
 # Informe final de F1–F11 — 13-11-2026
 
-**Estado:** cerrado en el alcance autorizado; gate de entrada a la cola abierto solo para redactar NK-0176. Su implementación requiere aprobación de Fede. Este informe sustituye los balances parciales y bloqueos anteriores, no declara una certificación de producción.
+**Estado:** F1–F11 cerrado en el alcance autorizado. NK-0176 implementado y verificado en la entrega de abajo. Autorización general de Fede recibida el 13-11-2026 a las 14:08 UTC para continuar toda la cola sin aprobación SDD a SDD, conservando las paradas obligatorias. Este informe sustituye los balances parciales y bloqueos anteriores, no declara una certificación de producción.
 
 ## 1. Fusión comprobada
 - Base verificada: `734c2026ab2be2312514b3ad491218c2dea6d13d`, idéntica al ref local `main`. El entorno usa una rama temporal `edit/…`; no cambié de rama ni hice operaciones de escritura de Git.
@@ -74,3 +74,27 @@ Nota: en la ronda anterior se añadió solo el stub `DriveRefButton` al mock de 
 - Navegador con sesión válida, `/plays`: seis tarjetas de LinkedIn con el nuevo bloqueo; activación deshabilitada y texto antiguo ausente. Escritorio 1280 y móvil 375, claro/oscuro; cuatro capturas de tarjeta inspeccionadas. Sin overflow horizontal ni errores de página. Se cargaron lecturas reales; no se activó ningún play, no se lanzó IA ni se hicieron envíos. La coherencia del asistente se comprueba por su prueba y estado compartido, no por una conversación IA real.
 - Sin migraciones, publicación ni despliegue. F12 intacto; Torre de control GTM y Salida de Lovable intactas. Revisión técnica independiente del SDD no realizada, sin inventar un pase de gate. SDD permanece En curso hasta revisión/aceptación de la entrega por Fede.
 - Informe emitido; NK-0159 y los siguientes SDD no iniciados en esta sesión.
+
+## Autorización general y entrega NK-0159 — 13-11-2026, desde 14:08 UTC
+
+La autorización permite guardar cada SDD y construir sin esperar confirmación entre entregas. No autoriza modificar pruebas existentes, llamadas de pago de verificación, publicación, despliegue, migración de empresas existentes ni correo real. La revisión independiente de NK-0176 no se inventa ni se marca realizada.
+
+### Hecho y comprobado
+- SDD: `docs/sdd/SDD-20261113-inngest-safe-autopilot-output.md`. Implementación mínima: dentro del callback `step.run("autopilot")`, después del notificador, retornar únicamente `researched`, `prepped`, `cooling` y `noteCount`. La salida final reutiliza ese resultado saneado. Ningún spread ni nota privada llega a esos dos resultados durables.
+- Prueba nueva `src/lib/inngest/autopilot-output.test.ts`: ejecuta el callback real de mantenimiento con SDK, cliente y servicios simulados. Primero falló por la presencia del testigo sintético de error en la salida del paso y final; después pasa. Comprueba también que se conserva el resultado entregado al notificador y se rechazan propiedades extra en la salida persistida.
+- Las cinco pruebas protegidas de `safe-logs-notes.test.ts` siguen intactas y pasan: los cores siguen retornando sus notas internas; se sanea la frontera de Inngest, no su contrato.
+- Selección de cuatro archivos: 10/10 pruebas. Suite completa `bunx vitest run --maxWorkers=4`: **335/335 archivos y 5574/5574 pruebas**, exit 0, 279,80 segundos. Sin expiraciones ni pruebas omitidas. Node 22.23.5. Log temporal: `/tmp/queue-verification/nk0159-suite.log`.
+- Compilación automática: última señal consultada `build OK`, 2026-11-13T14:10:08Z, posterior al cambio funcional. Ningún build manual ejecutado.
+- Cero pruebas existentes modificadas; sin migraciones, proveedores reales, envíos, publicación, despliegue o operaciones Git de escritura. El entorno mantiene una rama temporal `edit/…`; no cambié de rama ni fusioné. Se añadió a AGENTS la regla técnica de proyección de salida durable.
+
+### Hecho pero sin poder comprobar
+- No ejecuté un checker manual: las instrucciones vigentes del entorno prohíben tanto typecheck como build manuales del proyecto. La señal de compilación automática está disponible, pero no expone un resultado separado del checker de tipos; **no se afirma typecheck limpio**. No ejecuté `tsc` ni Node 26.
+- No ejecuté una función real de Inngest ni inspeccioné sus nuevos registros alojados: requiere desplegar el cambio, prohibido. La evidencia es el callback real con servicios simulados, no un historial real. El historial anterior no se borra.
+- No hay superficie visual del resultado durable cambiado; no ejecuté una visita irrelevante en navegador como sustituto de su prueba. Escritorio/375 px y claro/oscuro no comprobados para esta entrega sin cambio visual.
+
+### Parado / pendiente
+- **Cierre de NK-0159:** pendiente evidencia del checker de tipos para satisfacer la comprobación obligatoria entre entregas. Se necesita una comprobación permitida o el resultado externo de Fede; no se marca la entrega como completamente cerrada. La suite está en verde, pero eso no sustituye el checker.
+- **NK-0160 y siguientes:** no iniciados después de NK-0159, por faltar esa comprobación de cierre. No se presenta toda la cola como ejecutada ni se promete trabajo en segundo plano tras este turno.
+- Inspección previa de NK-0160: el escáner actual vive dentro de `server-log-scan.test.ts`, una prueba protegida; ampliarlo editando ese archivo está prohibido. No se ha editado ni declarado imposible una alternativa con guardas nuevas. El `console.warn` señalado de Sugerencias ya usa únicamente el nombre del error, no el objeto: comprobado en el código y en `log-hygiene-phase3.test.ts` (pasa).
+- Inspección previa de NK-0177: `readTitles` ya filtra reglas de equipo en memoria y su prueba personal/equipo pasa. La expectativa protegida `play-diagnosis.test.ts`, caso «with every base rule present it adds none and says so», exige exactamente «Ya tenías todas las reglas base.» y ausencia de escrituras. No se cambió ni se inició una entrega de redacción que la contradiga.
+- F12 permanece: los documentos de `onboarding-sources` nunca se borran automáticamente. Torre de control GTM y Salida de Lovable intactas.
