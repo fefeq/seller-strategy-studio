@@ -75,4 +75,4 @@ Que el plan de Apollo incluya `email_status` sin crédito aparte [Por verificar 
 No revisado; no se rellena veredicto independiente.
 
 ## 18. Delta de implementación
-Pendiente de rellenar al entregar.
+U-1 a U-4 implementadas el 2026-11-13. Las tres pruebas nuevas fallaron primero (8 fallos) y pasan tras la implementación (16/16). `logUsage` se movió a `src/lib/orchestrator/usage.ts` (runner lo reexporta; sin ciclo gateway↔runner). `revealKeyPeople` ya no registra por su cuenta: lo hace el núcleo con el mismo coste. `revealStakeholder` devuelve `proposedEmail` y nunca sobrescribe; pantalla y agente dicen la propuesta en una frase. Comentario de `planner.ts` y línea del orquestador en `src/lib/AGENTS.md` corregidos (Q-6). Suite completa 342 archivos y 5.617 pruebas en verde; compilación automática OK. Tipos sin comprobar por restricción del entorno. Ninguna prueba existente modificada. Aviso pendiente al dueño de NK-0171: su PRD documenta que lo manual de pago se para al límite; desde esta entrega no se para.
