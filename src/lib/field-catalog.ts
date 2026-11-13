@@ -663,10 +663,10 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   registro_decision: ["src/components/theory-u/prototypes.tsx", "src/lib/experiments-core.ts"],
   motion_adquisicion: ["src/components/strategy/motions.tsx"],
   clave_usuario: ["src/integrations/supabase/types.ts"],
-  clave_empresa: [],
-  direccion_email: [],
-  estado_email: [],
-  estado_proveedor_email: [],
+  clave_empresa: ["src/integrations/supabase/types.ts"],
+  direccion_email: ["src/lib/email-verification.ts"],
+  estado_email: ["src/lib/email-verification.ts"],
+  estado_proveedor_email: ["src/integrations/supabase/types.ts"],
   alta_sistema: ["src/integrations/supabase/types.ts"],
 };
 
