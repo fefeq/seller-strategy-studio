@@ -1,3 +1,5 @@
+import { Trash2, X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -511,7 +513,7 @@ function ArtifactSheet({
                   Guardar
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setEdit(null)}>
-                  Cancelar
+                  <IconText icon={X}>Cancelar</IconText>
                 </Button>
               </>
             ))}
@@ -566,7 +568,7 @@ function ArtifactSheet({
           />
           {me?.roles.includes("owner") && (
             <Button size="sm" variant="ghost" className="text-destructive" onClick={remove}>
-              Borrar
+              <IconText icon={Trash2}>Borrar</IconText>
             </Button>
           )}
         </div>

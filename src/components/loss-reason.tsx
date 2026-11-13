@@ -1,5 +1,7 @@
 // Why a deal was lost and against whom (SDD-20261027 strategic-suggestions-engine, F0 · H-2). Nothing here is mandatory:
 // leaving it empty saves the deal as lost with «sin dato» (CA-10). Rules and the list live in src/lib/loss-reasons.ts.
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -138,7 +140,7 @@ export function LossDialog({
           <LossFields form={form} onChange={setForm} />
           <AlertDialogFooter className="flex-wrap gap-2 sm:flex-wrap sm:gap-2">
             <Button variant="ghost" disabled={busy} onClick={onCancel}>
-              Cancelar
+              <IconText icon={X}>Cancelar</IconText>
             </Button>
             <Button variant="outline" disabled={busy} onClick={() => void submit(true)}>
               Omitir y marcar como perdido

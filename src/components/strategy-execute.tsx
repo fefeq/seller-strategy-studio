@@ -1,6 +1,8 @@
 // Executing a strategic suggestion (SDD-20261027 F3): the editable form that turns an accepted «prueba» into an experiment (CA-35) or
 // an «acción comercial» into a task (CA-36), and the panel of proposed changes to confirm, reject or undo (CA-32, CA-33, CA-34, CA-38).
 // Nothing is saved until the person confirms. «tú», no icons.
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -206,7 +208,7 @@ export function ExecuteDialog({
         )}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
-            Cancelar
+            <IconText icon={X}>Cancelar</IconText>
           </Button>
           <Button disabled={busy || issues.length > 0} onClick={save}>
             {kind === "experiment" ? "Aceptar y crear experimento" : "Aceptar y crear tarea"}

@@ -1,5 +1,7 @@
 // Background work on the screens: the useJob hook every heavy button uses (start, follow, cancel, read the
 // result), the toast when a notice arrives, and the lead hook that keeps enrichment and follow-ups in step.
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -85,7 +87,7 @@ export function JobProgress({ job, onCancel, className = "" }: { job: BgJob | nu
   return (
     <p className={`flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground ${className}`}>
       <span>Trabajando · {job?.step ?? (job?.status === "running" ? "en curso" : "en cola")}… Te aviso al terminar.</span>
-      {job && onCancel && <button type="button" className="underline underline-offset-4" onClick={onCancel}>Cancelar</button>}
+      {job && onCancel && <button type="button" className="underline underline-offset-4" onClick={onCancel}><IconText icon={X}>Cancelar</IconText></button>}
     </p>
   );
 }

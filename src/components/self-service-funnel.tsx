@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { Kpi } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { NativeSelect } from "@/components/native-select";
@@ -472,7 +474,7 @@ function ManageTrials({ trials, segments }: { trials: TrialRow[]; segments: Seg[
                 </label>
                 {isOwner ? (
                   <Button variant="ghost" size="sm" onClick={() => remove(t.id)}>
-                    Borrar
+                    <IconText icon={Trash2}>Borrar</IconText>
                   </Button>
                 ) : (
                   <span />

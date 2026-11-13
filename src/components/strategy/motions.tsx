@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState, type ReactNode } from "react";
@@ -741,7 +743,7 @@ export function Motions() {
                                 aria-label={`Eliminar ${s.name}`}
                                 onClick={() => setToDelete({ id: s.id, name: s.name })}
                               >
-                                Eliminar
+                                <IconText icon={Trash2}>Eliminar</IconText>
                               </Button>
                             </td>
                           )}

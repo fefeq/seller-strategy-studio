@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
@@ -20,7 +22,7 @@ export function SnoozeForm({ stepId, onDone }: { stepId: string; onDone: () => v
         <Input type="date" className="mt-1 h-9 w-44" min={dayAfter(new Date(), 1)} value={value} onChange={(e) => setValue(e.target.value)} />
       </label>
       <Button type="submit" size="sm" disabled={busy || !value}>Posponer</Button>
-      <Button type="button" size="sm" variant="ghost" onClick={onDone}>Cancelar</Button>
+      <Button type="button" size="sm" variant="ghost" onClick={onDone}><IconText icon={X}>Cancelar</IconText></Button>
     </form>
   );
 }

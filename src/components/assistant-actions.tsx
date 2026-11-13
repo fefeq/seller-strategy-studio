@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -34,7 +36,7 @@ export function AssistantActions() {
             <span className="min-w-0 basis-full break-words sm:flex-1 sm:basis-auto">{a.summary}</span>
             <span className="text-xs text-muted-foreground">{new Date(a.created_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })}</span>
             <Button size="sm" onClick={() => run(a.id, "confirm")}>Confirmar</Button>
-            <Button size="sm" variant="outline" onClick={() => run(a.id, "cancel")}>Cancelar</Button>
+            <Button size="sm" variant="outline" onClick={() => run(a.id, "cancel")}><IconText icon={X}>Cancelar</IconText></Button>
           </div>
         ))}
       </div>

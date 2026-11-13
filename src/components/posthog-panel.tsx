@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { NativeSelect } from "@/components/native-select";
 // The company's own PostHog: connect it (Owner), choose which events mean sign-up, activation and payment,
 // and see product usage per account. Data reads run on the server (posthog.functions.ts).
@@ -201,7 +203,7 @@ export function PosthogConnect() {
                   Sí, desconectar
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setConfirmOff(false)}>
-                  Cancelar
+                  <IconText icon={X}>Cancelar</IconText>
                 </Button>
               </>
             )}
@@ -270,7 +272,7 @@ export function PosthogConnect() {
               {busy ? "Guardando y leyendo…" : "Guardar y leer"}
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEvents(null)}>
-              Cancelar
+              <IconText icon={X}>Cancelar</IconText>
             </Button>
           </div>
         </div>

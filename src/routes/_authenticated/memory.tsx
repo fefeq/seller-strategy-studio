@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -254,7 +256,7 @@ function MemoryRow({ r, editable, onChange }: { r: Row; editable: boolean; onCha
               Guardar
             </Button>
             <Button size="sm" variant="ghost" onClick={() => setEdit(null)}>
-              Cancelar
+              <IconText icon={X}>Cancelar</IconText>
             </Button>
           </div>
         </div>

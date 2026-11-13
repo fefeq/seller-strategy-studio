@@ -1,4 +1,6 @@
 // Centro de avisos: what Nokko is doing in the background («En marcha») and what it finished («Avisos»).
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useEffect } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -204,7 +206,7 @@ export function NotificationCenter({
                       className="mt-1 text-xs underline underline-offset-4"
                       onClick={() => cancel(j.id)}
                     >
-                      Cancelar
+                      <IconText icon={X}>Cancelar</IconText>
                     </button>
                   )}
                 </div>

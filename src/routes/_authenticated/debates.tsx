@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -314,7 +316,7 @@ function DebatesPage() {
                 <p className="text-xs text-muted-foreground">
                   Puedes salir de aquí: te aviso cuando termine.{" "}
                   <button type="button" className="underline" onClick={debateJob.cancel}>
-                    Cancelar
+                    <IconText icon={X}>Cancelar</IconText>
                   </button>
                 </p>
               )}

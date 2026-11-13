@@ -33,4 +33,13 @@ describe("NK-0168 icon rule", () => {
     expect(bareIconUses("x.tsx", 'import { Trash2 } from "lucide-react";\nconst a = <Trash2 size={16} />;')).toHaveLength(1);
     expect(bareIconUses("x.tsx", 'import { Trash2 } from "lucide-react";\nconst a = <IconText icon={Trash2}>Borrar</IconText>;')).toHaveLength(0);
   });
+  it("one icon per concept: delete=Trash2, discard changes=Eraser, disqualify=Ban, cancel=X", () => {
+    const want: Record<string, string> = { Borrar: "Trash2", Eliminar: "Trash2", "Descartar cambios": "Eraser", Descalificar: "Ban", Cancelar: "X" };
+    const bad = files(ROOT).flatMap((p) =>
+      [...readFileSync(p, "utf8").matchAll(/<IconText icon=\{(\w+)\}[^>]*>([^<]+)<\/IconText>/g)]
+        .filter(([, icon, text]) => want[text.trim()] && want[text.trim()] !== icon)
+        .map(([m]) => `${p}: ${m}`),
+    );
+    expect(bad).toEqual([]);
+  });
 });
