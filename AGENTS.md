@@ -33,3 +33,4 @@
 - RevOps analysis (reconciled funnel, lost, cohorts, weekly trend) is pure in src/lib/revops.ts (tested, ported from the RevOps Dashboard engine) and shown as sections of /metrics selected by ?seccion=.
 - Onboarding storage provisioning is an explicit native Storage API operation (scripts/provision-onboarding-storage.ts), never a page-load side effect or storage.buckets SQL, because the platform manages the storage schema.
 - Durable autopilot step outputs use an explicit count-only projection before returning from step.run; core notes remain internal so Inngest history never persists customer titles or error text from them.
+- The title/name log audit is a local AST scanner under scripts, exercised by a new guard alongside the protected legacy scanner; never bundle compiler-based audit tooling into served code.

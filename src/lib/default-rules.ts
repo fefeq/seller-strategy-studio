@@ -78,7 +78,8 @@ async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
       .from("knowledge_docs")
       .select("org_id,section,title,scope")
       .eq("org_id", c.orgId)
-      .eq("section", "rules");
+      .eq("section", "rules")
+      .eq("scope", "team");
     if (error) {
       console.error("default rules read failed", "query error");
       throw new Error(DEFAULT_RULES_READ_FAILED);
