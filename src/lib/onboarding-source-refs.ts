@@ -14,6 +14,24 @@ export type SourceStatus = {
   reason?: string;
 };
 
+/** Validate persisted JSON; invalid legacy rows never reach the reading screen. */
+export function parseSourceStatuses(value: unknown): SourceStatus[] {
+  if (!Array.isArray(value)) return [];
+  const out: SourceStatus[] = [];
+  for (const row of value) {
+    if (!row || typeof row !== "object") continue;
+    const { name, kind, state, read, total, reason } = row;
+    if (typeof name !== "string" || !["storage", "drive"].includes(kind) ||
+        !["full", "partial", "unread"].includes(state) ||
+        !Number.isSafeInteger(read) || !Number.isSafeInteger(total) || read < 0 || total < read ||
+        (reason !== undefined && typeof reason !== "string")) continue;
+    const expected = read === 0 ? "unread" : read === total ? "full" : "partial";
+    if (state !== expected) continue;
+    out.push({ name, kind, state, read, total, ...(reason ? { reason } : {}) });
+  }
+  return out;
+}
+
 /** Total characters of document text one reading sends to the AI, shared by all sources. */
 export const TEXT_BUDGET = 120_000;
 export const ALLOWED_UPLOAD = /\.(pdf|txt|md|csv)$/i;
