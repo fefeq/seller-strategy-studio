@@ -20,11 +20,11 @@ No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-202611
 - [ ] F5: producto permitido formateado; formato de pruebas existentes/autogenerados requiere permiso/regeneración.
 - [x] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
 - [x] F8: subida, eliminación, límite y progreso indeterminado de fuentes.
-- [ ] F9: función UUID aplicada/probada; herramienta generó prefijo 0087 duplicado, reparación de diario gestionado bloqueada.
+- [x] F9: función UUID aplicada/probada; el prefijo 0087 duplicado se renombró a 0088_onboarding_source_uuid_guard (archivo y entrada del diario) al fusionar.
 - [x] F10: validar source_status.
 - [x] F11: documentación corregida y correspondencia de snapshots informada sin renombrarlos.
 - [x] Tipos limpios, build automático OK, navegador real escritorio/375 px claro/oscuro e informe final.
-- [ ] Suite completa verde: bloqueada por F4 (2 nuevas) y prefijo duplicado F9 (1 existente); 5565/5568 pasan.
+- [x] Suite completa verde tras la fusión: 5570/5570 en Node 22; tsc limpio.
 - [x] F12: decisión documentada — los documentos de onboarding-sources nunca se borran automáticamente.
 - [ ] Heredados NK-0159/NK-0176/escáner NK-0160 — bloqueados por decisión o permiso; no modificar pruebas existentes.
 

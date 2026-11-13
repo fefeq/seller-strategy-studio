@@ -78,3 +78,9 @@ Son permisivas; no hay otras políticas de objetos ni ninguna sin filtro de buck
 - F4 (NK-0169): `meQuery` devuelve `null` si la ventana de cierre de sesión está abierta, antes de validar, antes de `accept_invites` y antes de leer `profiles`/`org_members`. Prueba nueva `src/hooks/me-session-ending.test.ts` (2/2). `src/lib/session-cache.test.ts` sin cambios: 10/10.
 - Comprobado en la rama actual: typecheck OK; suite 324/325 archivos, 5535/5536 pruebas. El único fallo (`factory-ledger.test.ts > needs a human and a reason`) fue un tiempo agotado bajo carga; ejecutada sola pasa 15/15.
 - NO hecho: la fusión de `cc71f2a` (correcciones F1–F3, F5–F10) con `main`. La rama actual no contiene esas correcciones (30 archivos de diferencia). El agente de Lovable no puede ejecutar `git merge`; debe hacerla Fede o el repositorio. Mientras tanto F1–F3 y F5–F10 no se pueden dar por cerrados en esta rama.
+
+## Fusión de lovable-sync en main — 13-11-2026
+- Fusión normal de `lovable-sync` (cc71f2a) en `main` (con F4 y el PR #145). Conflictos solo en este informe y en `roadmap.md`.
+- Las dos pruebas nuevas de F4 de `session-verification.test.tsx` esperaban un rechazo; se alinearon con el contrato `null` de `meQuery` (misma comprobación: ninguna lectura con el token anterior). `session-cache.test.ts` no se tocó.
+- F9: el prefijo `0087` duplicado se renombró a `0088_onboarding_source_uuid_guard` (archivo y última entrada del diario). Es `CREATE OR REPLACE`, idempotente; los snapshots no se renombraron. Si la plataforma gestiona el diario por su cuenta, comprobar que no vuelva a generar el nombre antiguo.
+- Comprobado: `tsc` limpio y suite completa 5570/5570 (Node 22). No ejecutado en Node 26 tras la fusión.
