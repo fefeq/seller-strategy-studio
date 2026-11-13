@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 174,
+  "seq": 176,
   "tickets": [
     {
       "id": "NK-0001",
@@ -5061,6 +5061,48 @@
         {
           "state": "LOGGED",
           "at": "2026-11-12T23:49:00.373Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0175",
+      "title": "src/lib/AGENTS.md:29 dice que searchBoth combina Firecrawl + Perplexity; el código (src/lib/web-search.ts:1-3, 27-54) combina tres fuentes (Firecrawl, Perplexity y Parallel Search); AGENTS.md:34 ya lo dice",
+      "kind": "bug",
+      "source": "Gate PRD NK-0171, pasada 2 (.factory/evidence/NK-0171/prd-gate-pass2.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:34:52.617Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0176",
+      "title": "src/lib/plays/status.ts:18-21: los plays bloqueados por LinkedIn siguen mostrando «falta una decisión» aunque la decisión D2 quedó cerrada por Fede el 2026-11-13 (entrevista, PRD-20261112-plays-a-medida decisión 17); actualizar el texto del bloqueador y registrar el cierre de D2 en PRD-20261106-plays-gtm.md:91",
+      "kind": "bug",
+      "source": "Gate PRD NK-0171, pasada 4 (.factory/evidence/NK-0171/prd-gate-pass4.md, q-7)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:34:52.679Z",
           "by": "tracker",
           "note": ""
         }
