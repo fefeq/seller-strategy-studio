@@ -203,7 +203,7 @@ Cada SDD mide el delta de bundle acumulado. El SDD 1 es el único que fija la l�
 | Pasada | Resultado | Informe | Estado |
 |---|---|---|---|
 | 1 | FAIL: 0 BLOCKER, 3 MAJOR, 8 MINOR | `.factory/evidence/NK-0168/prd-gate-pass1.md` (local, no versionado) | Corregido en 6f9c273 |
-| 2 | FAIL: 0 BLOCKER, 1 MAJOR, 4 MINOR, 5 notas | `.factory/evidence/NK-0168/prd-gate-pass2.md` (local, no versionado) | Corregido en <sha> |
+| 2 | FAIL: 0 BLOCKER, 1 MAJOR, 4 MINOR, 5 notas | `.factory/evidence/NK-0168/prd-gate-pass2.md` (local, no versionado) | Corregido en 015e3ce |
 | 3 | Pendiente | — | — |
 
-pasada 1 FAIL → corregido en 6f9c273; pasada 2 FAIL → corregido en <sha>; pasada 3 pendiente.
+pasada 1 FAIL → corregido en 6f9c273; pasada 2 FAIL → corregido en 015e3ce; pasada 3 pendiente.
