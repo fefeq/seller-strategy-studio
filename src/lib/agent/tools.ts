@@ -20,6 +20,7 @@ import { STRATEGY_TOOLS } from "./tools/strategy";
 import { FIELD_ACTION_TOOLS } from "./tools/field-actions";
 import { CYCLE_TOOLS } from "./tools/cycle";
 import { PLAY_TOOLS } from "./tools/plays";
+import { CUSTOM_PLAY_TOOLS } from "./tools/custom-plays";
 import { ONBOARDING_TOOLS } from "./tools/onboarding";
 import { PLAY_DIAGNOSIS_TOOLS } from "./tools/play-diagnosis";
 
@@ -48,6 +49,7 @@ export const TOOLS: AgentTool[] = [
   ...PARALLEL_TOOLS,
   ...NEED_TOOLS,
   ...PLAY_TOOLS,
+  ...CUSTOM_PLAY_TOOLS,
   ...ONBOARDING_TOOLS,
   ...PLAY_DIAGNOSIS_TOOLS,
 ];

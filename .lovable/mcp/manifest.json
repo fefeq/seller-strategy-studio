@@ -4536,6 +4536,153 @@
         "outputSchema": null
       },
       {
+        "name": "propose_custom_play",
+        "title": "Proponer un play a medida",
+        "description": "Propone un play «Creado para tu empresa»: disparador público con fecha, ventana de frescura, pasos de evidencia con fuente, mensaje donde cada hecho cita un paso, y prueba (muestra y éxitos). Se guarda solo si el Owner o un Sales Leader lo confirma y pasa las reglas (incluida la de no copiar plays de otras empresas). No lo ejecuta. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "description": "Nombre del play, con palabras propias"
+            },
+            "trigger": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Evento público verificable que lo dispara"
+            },
+            "back_days": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Días hacia atrás que vale la fecha del evento"
+            },
+            "forward_days": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Días hacia delante (eventos anunciados)"
+            },
+            "steps": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "n": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "news",
+                      "web",
+                      "reviews_or_cases",
+                      "reviews",
+                      "competitors",
+                      "people",
+                      "company",
+                      "drive",
+                      "posthog"
+                    ]
+                  },
+                  "question": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "returns": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "n",
+                  "source",
+                  "question",
+                  "returns"
+                ]
+              }
+            },
+            "claims": {
+              "minItems": 1,
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "step": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0,
+                    "maximum": 9007199254740991
+                  }
+                },
+                "required": [
+                  "text",
+                  "step"
+                ]
+              },
+              "description": "Cada hecho del mensaje con el paso que lo prueba"
+            },
+            "built": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Lo que se ha preparado para la cuenta"
+            },
+            "ask": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Petición pequeña"
+            },
+            "sample": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Contactos de la prueba"
+            },
+            "successes": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 9007199254740991,
+              "description": "Éxitos esperados (≤ muestra)"
+            },
+            "verified_only": {
+              "default": false,
+              "description": "Solo contactos con email verificado",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "name",
+            "trigger",
+            "back_days",
+            "forward_days",
+            "steps",
+            "claims",
+            "built",
+            "ask",
+            "sample",
+            "successes"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "get_onboarding_status",
         "title": "Ver el estado del onboarding",
         "description": "Solo lee. Dice en qué paso del onboarding está la persona, el diagnóstico GTM de la empresa (arquetipo, motion, etapa y siguiente paso), qué piezas de la estrategia faltan y si hay lo mínimo para el diagnóstico de plays. No devuelve la propuesta ni los hallazgos.",
