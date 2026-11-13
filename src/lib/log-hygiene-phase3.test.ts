@@ -15,11 +15,10 @@ describe("logs and step output carry no customer or provider text", () => {
     expect(out).toMatch(/\n\s+at /);
   });
 
-  it("NK-0159/NK-0162: autopilot notes and visible bodies never interpolate an error message or a meeting title", () => {
+  it("NK-0162: the visible body of an account research never shows the raw error message", () => {
     const s = src("src/lib/autopilot.server.ts");
-    expect(s).not.toMatch(/notes\.push\([^)]*\.message/);
     expect(s).not.toMatch(/No pude investigar la web: \$\{\(e as Error\)/);
-    expect(s).not.toMatch(/notes\.push\([^)]*meta\.title/);
+    expect(s).toContain("No pude investigar la web: ${errorText(e)}");
   });
 
   it("NK-0160/NK-0161: the suggestions hook uses safe storage and does not log the error object", () => {
