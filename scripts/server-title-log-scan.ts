@@ -17,7 +17,7 @@ export function titleLogViolations(source: string): number[] {
     return undefined;
   };
   const privateValue = (node: ts.Node): boolean => {
-    if (ts.isPropertyAccessExpression(node) && node.name.text === "length") return false;
+    if (ts.isPropertyAccessExpression(node) && ["length", "status"].includes(node.name.text)) return false;
     const path = key(node);
     if (path && carriers.has(path)) return true;
     if (ts.isPropertyAccessExpression(node) && ["title", "name"].includes(node.name.text)) {
