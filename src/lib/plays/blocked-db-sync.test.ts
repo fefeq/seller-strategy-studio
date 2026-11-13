@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { PLAYS } from "./catalog";
+import { CATALOG as PLAYS } from "./catalog";
 
 // NK-0081: the database refuses enabled=true for blocked/planned plays; its list must match the catalogue.
 describe("blocked plays guard in the database", () => {
