@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 176,
+  "seq": 178,
   "tickets": [
     {
       "id": "NK-0001",
@@ -5014,7 +5014,7 @@
       "title": "add_default_rules: las reglas base se comparan por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original y puede contradecir la editada (la descripción dice que no cambia las reglas editadas); diagnose_play_teams dice «Te falta 1 regla base» en ese caso; un documento de otro scope con el mismo título cuenta como existente (sin verificar contra BD)",
       "kind": "bug",
       "source": "Gate de NK-0153 en e0b6061 (ronda 2), 2026-11-12. Redacción propuesta: «…comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente.» Evidencia: .factory/evidence/sprint8b-gate/gate-e0b6061.md",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -5033,6 +5033,12 @@
           "at": "2026-11-13T00:14:39.420Z",
           "by": "Fede: \"Sí, solo la redacción\" (2026-11-13)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T00:57:01.911Z",
+          "by": "Fede",
+          "note": "sha=91f57165dec88526590e690d24e7c664ef8bcb00"
         }
       ]
     },
@@ -5115,6 +5121,48 @@
         {
           "state": "LOGGED",
           "at": "2026-11-13T00:34:52.679Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0177",
+      "title": "add_default_rules / diagnose_play_teams: una regla personal con el título de una regla base hace que la herramienta diga «Ya tenías todas las reglas base» y no vuelva la de equipo (readTitles no filtra por scope; afecta a missingDefaultRuleTitles y al diagnóstico de plays). Decide Fede: redacción o comportamiento (comportamiento requiere SDD)",
+      "kind": "bug",
+      "source": "Gate sprint8d de NK-0172 (MINOR-1), .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:75-91, src/lib/knowledge-rules.ts:176-189",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:57:12.833Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0178",
+      "title": "add_default_rules: la descripción dice «comparadas por título» sin precisar que se ignoran mayúsculas y espacios normales de los extremos; un cambio solo de mayúsculas no cuenta como renombrar (wording)",
+      "kind": "bug",
+      "source": "Gate sprint8d de NK-0172, .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:60,127",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:57:12.879Z",
           "by": "tracker",
           "note": ""
         }
