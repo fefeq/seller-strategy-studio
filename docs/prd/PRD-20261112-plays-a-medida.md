@@ -272,7 +272,7 @@ Orden dentro de la iniciativa: 1, luego 2, luego 3 y 4. No se lanzan 2, 3 ni 4 s
 ## 9.1 Registro del gate
 | Pasada | Resultado | Evidencia | Estado |
 |---|---|---|---|
-| 1 | FAIL (0 BLOCKER, 7 MAJOR, 9 MINOR) sobre `4f143c3` | `.factory/evidence/NK-0171/prd-gate-pass1.md` | pasada 1 FAIL → corregido en fa7a87f; pasada 2 FAIL → corregido en <sha>; pasada 3 pendiente |
+| 1 | FAIL (0 BLOCKER, 7 MAJOR, 9 MINOR) sobre `4f143c3` | `.factory/evidence/NK-0171/prd-gate-pass1.md` | pasada 1 FAIL → corregido en fa7a87f; pasada 2 FAIL → corregido en b02fb12; pasada 3 pendiente |
 
 Qué se hizo con cada hallazgo (el coordinador verificó cada uno contra `origin/main` @ d5e6a56):
 | Hallazgo | Veredicto | Dónde se corrigió |
