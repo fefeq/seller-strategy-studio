@@ -1,3 +1,4 @@
+import { assertSessionOpen, retryWhileOpen } from "@/lib/session-ending";
 // Main queries of Inicio, Cuentas and Pipeline as queryOptions, so each route loader can prepare the data
 // before the screen opens (no empty first paint) and the component reads the same cache entry.
 import { queryOptions, type QueryClient } from "@tanstack/react-query";
@@ -8,7 +9,9 @@ import { leadsQuery } from "@/hooks/use-leads";
 
 export const homeQuery = queryOptions({
   queryKey: ["home"],
+  retry: retryWhileOpen(3),
   queryFn: async () => {
+    assertSessionOpen(); // NK-0169
     const [deals, meetings, approvals, people, accounts] = await Promise.all([
       supabase.from("deals").select("id,name,stage,amount,probability,health,close_date,owner_id"),
       supabase.from("meetings").select("id,title,scheduled_at,account_id").gte("scheduled_at", new Date(Date.now() - 864e5).toISOString()).order("scheduled_at").limit(6),
