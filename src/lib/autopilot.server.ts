@@ -97,7 +97,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
               .join(" · ")}`,
           );
       } catch (e) {
-        lines.push(`No pude investigar la web: ${(e as Error).message}`);
+        lines.push(`No pude investigar la web: ${errorText(e)}`);
       }
       await db.from("suggestions").upsert(
         {
