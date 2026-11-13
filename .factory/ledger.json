@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 152,
+  "seq": 181,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4420,19 +4420,31 @@
       "title": "Tests: metrics-states.test.tsx (6 casos CA-6) falla en main con Node 26: localStorage undefined en metrics.tsx:83 (useEffect de la guía de Inicio); falla igual en la base 6435439 (flake.mjs 3/3)",
       "kind": "bug",
       "source": "gate de NK-0146 en 679b31e, 2026-11-11",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0148-node26-localstorage",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T20:50:02.039Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.753Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.718Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4441,19 +4453,31 @@
       "title": "Logs: 28 llamadas en src/lib (17 archivos) registran error.message o (e as Error).message; ampliar la regla .message del escaneo a src/lib",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0149-lib-message-logs",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.066Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.793Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.770Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4462,19 +4486,31 @@
       "title": "Sesión: a 375 px, al cerrar sesión o cambiar de cuenta, salen 5-9 lecturas de la guía de configuración con el org_id y token de X (antes del logout / con el bloqueo puesto); confirmar si es del código o del simulador del walkthrough f5458dd",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0150-logout-reads",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.131Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.854Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.824Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4483,19 +4519,31 @@
       "title": "Inicio: la tarjeta «Tu estrategia» dice «Seguir con el onboarding» con el onboarding ya terminado",
       "kind": "bug",
       "source": "coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0151-home-onboarding-card",
+      "base_commit": "7fe9aedec2f1ae6253c7c9b91d70270e4a24fc4d",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.184Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T17:51:26.918Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:18:56.866Z",
+          "by": "Fede",
+          "note": "sha=ea65a9b73a96f2ab65c335aa7bd939dae821f3d2"
         }
       ]
     },
@@ -4515,6 +4563,675 @@
         {
           "state": "LOGGED",
           "at": "2026-11-11T23:07:40.236Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0153",
+      "title": "Plays GTM: diagnóstico en el asistente que genera equipos de plays priorizados (NK-0126 SDD 4, Sprint 8)",
+      "kind": "feature",
+      "source": "coordinador-sprint8 (GO Fede 2026-11-12, PRD-20261110)",
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261112-diagnosis-in-chat.md",
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": "feat/nk-0153-diagnosis-in-chat",
+      "base_commit": "ec5a8131a9e59e7d3faf1b8e7fb4938b7864a49d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T17:51:21.957Z",
+          "by": "coordinador-sprint8",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T20:28:41.238Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261112-diagnosis-in-chat.md prd=docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T20:28:45.351Z",
+          "by": "Fede: \"GO sprint 8\" (2026-11-12) + respuestas D-6/D-9/reabrir y \"sigue, ejecuta todo tú\" (2026-11-12); SDD aprobado, PR #131 (ec5a813)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-12T23:48:52.334Z",
+          "by": "Fede",
+          "note": "sha=e0b60618da0f1b5ab1acc91439808199ecc3a83b"
+        }
+      ]
+    },
+    {
+      "id": "NK-0154",
+      "title": "Plays GTM: medir que los borradores leen la voz (G-5, segunda parte): guardar qué contexto usó cada borrador (NK-0153 P-3; necesita columna o tabla nueva y SDD)",
+      "kind": "feature",
+      "source": "PRD-20261110 G-5; SDD-20261112 P-3",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": "docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md",
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T20:28:50.240Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0155",
+      "title": "Confirmar D-7 (medida de G-1) y D-8 de NK-0153",
+      "kind": "alert",
+      "source": "SDD-20261112-diagnosis-in-chat §14: D-7 y D-8 no constan como decisión aparte de Fede el 2026-11-12; revisar al revisar G-1 y la reapertura de sugerencias aprobadas",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261112-diagnosis-in-chat.md",
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T20:28:50.317Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0156",
+      "title": "Onboarding «Nokko lee»: explicar «Leído» y mostrar qué vio en cada fuente (texto de estado y recuento de hallazgos por fuente, sin tocar datos ni IA)",
+      "kind": "feature",
+      "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint». Mejora de UI en src/components/onboarding/reading.tsx (líneas 61 y 100). Nivel de documentación: solo ticket, sin SDD ni PRD (decisión de Fede, cambio sin schema ni RLS)",
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261112-onboarding-leido.md",
+      "prd": null,
+      "branch": "feat/nk-0156-leido",
+      "base_commit": "61faab8ea2661bbb2158e2690702aae52876e3b9",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:05.964Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:37.355Z",
+          "by": "tracker",
+          "note": "docs: sdd=docs/sdd/SDD-20261112-onboarding-leido.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-13T00:48:28.619Z",
+          "by": "Fede: \"haz los dos tickets, la parte 1 en este sprint\" + \"sigue, ejecuta todo tú\" (2026-11-12); SDD aprobado (PR #132); copy decidido por el coordinador por delegación",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T01:39:48.054Z",
+          "by": "Fede",
+          "note": "sha=3298d4a6d518af8157f6939f3fef5023169ea710"
+        }
+      ]
+    },
+    {
+      "id": "NK-0157",
+      "title": "Onboarding «Nokko lee»: indicar en cada hallazgo a qué bloque de la estrategia aporta (ICP, posicionamiento, segmentos…) — la lectura debe devolver el bloque; parte 2 de la petición de Fede del 2026-11-12",
+      "kind": "feature",
+      "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint» (parte 2 pendiente). Relacionado con NK-0156 (parte 1), no duplicado. Requiere PRD/SDD antes de promover; sin owner",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:11.350Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0158",
+      "title": "src/lib/error-capture.ts expande Error a mensaje+stack+cause: cualquier console.error(error) (p. ej. src/routes/__root.tsx:50, logging interno de h3) puede llevar texto de error a los logs del servidor",
+      "kind": "alert",
+      "source": "Sprint 8, gate ronda 2. Evidencia: src/lib/error-capture.ts; src/routes/__root.tsx:50",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.724Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0159",
+      "title": "Inngest guarda como salida de step.run las notes con texto de error y títulos (src/lib/inngest/functions.server.ts:27-28)",
+      "kind": "alert",
+      "source": "Sprint 8, gate. Evidencia: src/lib/inngest/functions.server.ts:27-28",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.801Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0160",
+      "title": "Escaneo server-log-scan: no detecta colecciones que solo reciben títulos/nombres sin .message; plus src/components/suggestions.tsx:91 console.warn(..., e) en navegador",
+      "kind": "bug",
+      "source": "Sprint 8, gate. Evidencia: escaneo server-log-scan; src/components/suggestions.tsx:91",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.856Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0161",
+      "title": "src/components/suggestions.tsx:83-85 usa sessionStorage sin try/catch: si setItem lanza cae toda la app autenticada",
+      "kind": "bug",
+      "source": "Walkthrough sprint8, flujo 3. Evidencia: src/components/suggestions.tsx:83-85",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:16.996Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0162",
+      "title": "src/lib/autopilot.server.ts:100 pone (e as Error).message en el cuerpo de una sugerencia visible; viola errorText()",
+      "kind": "bug",
+      "source": "Sprint 8, gate. Evidencia: src/lib/autopilot.server.ts:100; regla errorText() (src/lib/errors.ts)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:17.092Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0163",
+      "title": "Walkthrough de logout (NK-0150): medir desde el despacho real del clic, no desde antes de btn.click() (≈265 ms de desfase); documentar en el harness",
+      "kind": "bug",
+      "source": "Walkthrough sprint8 sobre NK-0150. Medida: ≈265 ms de desfase entre antes de btn.click() y el despacho real. Documentar en el harness del walkthrough",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:16:17.192Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0164",
+      "title": "Onboarding «Tus fuentes»: «Que Nokko lo lea» falla con «Algún valor es demasiado grande» al subir 4 o más documentos (cliente acepta 10, servidor 3; error genérico sin causa ni acción)",
+      "kind": "bug",
+      "source": "Fede, captura del error 2026-11-12",
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": "feat/nk-0164-onboarding-files-limit",
+      "base_commit": "ec5a8131a9e59e7d3faf1b8e7fb4938b7864a49d",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:25:54.359Z",
+          "by": "coordinador-ledger",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-12T22:25:57.433Z",
+          "by": "Fede: captura del error + \"sigue, ejecuta todo tú\" (2026-11-12)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T00:42:44.578Z",
+          "by": "Fede",
+          "note": "sha=729eb814e3ef9f9e1ecd9e68b772df736ad5cf48"
+        }
+      ]
+    },
+    {
+      "id": "NK-0165",
+      "title": "Onboarding «Tus fuentes»: el texto de archivos de texto/Drive se corta en silencio a 40 000 caracteres y sus nombres siguen figurando como fuentes; avisar al cortar y mostrar qué fuentes no llegaron a la lectura (hermano de NK-0156/NK-0164)",
+      "kind": "bug",
+      "source": "Coordinador: SDD NK-0156 §3.9 y sonda del gate pasada 2 (.factory/evidence/NK-0156/sdd-gate-pass2-probe.json en el checkout principal); src/components/onboarding/sources.tsx:16,43,137; src/lib/onboarding.server.ts:21; docs/sdd/SDD-20261112-onboarding-leido.md §3.9",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:37.424Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0166",
+      "title": "Flake candidato en Node 26: -plays.test.tsx › …?vista=equipos… falló 1 vez en 3 suites completas (pasa en Node 22 y al repetirlo con flake.mjs)",
+      "kind": "bug",
+      "source": "Gate sprint 8b: .factory/evidence/sprint8b-gate/gate-182d4f6.md (checkout principal)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.140Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0167",
+      "title": "Onboarding: el modelo de negocio (B2B/B2C/marketplace) es de elección única y de ahí sale un solo arquetipo; permitir varias líneas de negocio, cada una con modelo, ticket y fricción, y un enfoque por arquetipo, enlazado con los segmentos (src/components/onboarding/steps.tsx:49, src/lib/gtm-diagnosis.ts)",
+      "kind": "feature",
+      "source": "Fede 2026-11-12 (propuesta del coordinador pendiente de su confirmación)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.199Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0168",
+      "title": "Iconografía de Nokko: hoy la app es solo texto (menú sin iconos; lucide solo genéricos); añadir iconos que representen la acción concreta (navegación, acciones repetidas, ⌘K), siempre con etiqueta, un icono por concepto, accesibles, con tokens y modo oscuro",
+      "kind": "feature",
+      "source": "Fede 2026-11-12: modifica toda la iconografía de NOKKO para que sea más intuitivo y represente correctamente a la acción concreta",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T22:59:40.254Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0169",
+      "title": "Sesión: tras Cerrar sesión, lecturas fuera de la guía (useMe, useSetup, Inicio, realtime/useLivePipeline) siguen saliendo con el token y org_id de la cuenta anterior mientras el logout está en vuelo; NK-0150 solo cubrió las consultas de la guía de configuración",
+      "kind": "bug",
+      "source": "gate de NK-0150 en ea65a9b, evidencia .factory/evidence/sprint8-gate/round3/observe-nonguide.log y gate-ea65a9b.md §Para el coordinador",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:19:01.626Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0170",
+      "title": "NK-0150: SessionEndedError puede mostrar «datos antiguos» durante la ventana de logout en la guía (caso sintético); la consulta de miembros ignora el error de Supabase y devuelve lista vacía",
+      "kind": "bug",
+      "source": "gate de NK-0150 en ea65a9b (prioridad baja), evidencia .factory/evidence/sprint8-gate/gate-ea65a9b.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:19:01.685Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0171",
+      "title": "Plays a medida: molde de receta de señal (inspirado en el catálogo público de Glider, reescrito con palabras propias) + biblioteca de referencia + plays por empresa propuestos por el asistente a partir de la estrategia y aprobados por una persona",
+      "kind": "feature",
+      "source": "Fede, entrevista 2026-11-12. Decisiones: (1) almacenamiento = tabla por empresa con org_id y RLS (migración); biblioteca de referencia en código, solo lectura. (2) proponer y aprobar: Owner y Sales Leader. (3) receta sin fuente conectada = play bloqueado por fuente externa con el motivo, nunca finge. (4) tanda 0 = molde validado por código (disparador, evidencia con fuente por paso y cita, entregable, verificación manual, contacto, mensaje citado, diseño de prueba) + 3 recetas horizontales con herramientas ya disponibles + herramienta del asistente para proponer/guardar un play con aprobación. (5) coste de IA: medirlo en la tanda 0 y fijar tope después (sin tope inventado). (6) éxito: empresas con >=1 play a medida activado; propuestas aprobadas vs descartadas; plays con resultado de prueba. (7) mercado global, clientes de nicho y B2B general. (8) vocabulario unificado: todo es «play», distinguido solo por origen («De la biblioteca» / «Creado para tu empresa»), sin nombres nuevos tipo «recetas». (9) no copiar texto de Glider: solo estructura y patrones. (10) orden de cola del siguiente sprint: NK-0156, esta iniciativa, NK-0167, NK-0168. Evidencia: scratchpad glider-plays-analysis.md (fuera del repo, sin commit); src/lib/plays/{types,catalog,teams,gating,run-log}.ts; docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md (otra iniciativa, relacionada, no enlazada como PRD). SDD y PRD: pendientes (nokko-shape).",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:45:12.908Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0172",
+      "title": "add_default_rules: las reglas base se comparan por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original y puede contradecir la editada (la descripción dice que no cambia las reglas editadas); diagnose_play_teams dice «Te falta 1 regla base» en ese caso; un documento de otro scope con el mismo título cuenta como existente (sin verificar contra BD)",
+      "kind": "bug",
+      "source": "Gate de NK-0153 en e0b6061 (ronda 2), 2026-11-12. Redacción propuesta: «…comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente.» Evidencia: .factory/evidence/sprint8b-gate/gate-e0b6061.md",
+      "state": "SHIPPED",
+      "owner": "coordinador-sprint8",
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": "feat/nk-0172-add-default-rules-description",
+      "base_commit": "d5e6a5600e7c6ecef0fec06ae859ec0f14141ce2",
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:49:00.259Z",
+          "by": "tracker",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-13T00:14:39.420Z",
+          "by": "Fede: \"Sí, solo la redacción\" (2026-11-13)",
+          "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T00:57:01.911Z",
+          "by": "Fede",
+          "note": "sha=91f57165dec88526590e690d24e7c664ef8bcb00"
+        }
+      ]
+    },
+    {
+      "id": "NK-0173",
+      "title": "Verificación de email como paso de contacto en las recetas de plays y en la búsqueda de personas (estado de verificación, catch-all) con un proveedor a decidir (Apollo, Hunter, FullEnrich…); hoy src/lib/apollo.ts menciona el estado pero no hay herramienta de verificación propia",
+      "kind": "feature",
+      "source": "Fede 2026-11-12: análisis de las features de Glider (https://heyglider.co/#features)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:49:00.308Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0174",
+      "title": "Bandeja de respuestas: clasificar cada respuesta y proponer un borrador en la voz de la empresa (NK-0128), desbloquea el play automated-reply-enrichment (bloqueado por fuente_externa); nunca envía",
+      "kind": "feature",
+      "source": "Fede 2026-11-12: análisis de las features de Glider (https://heyglider.co/#features)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-12T23:49:00.373Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0175",
+      "title": "src/lib/AGENTS.md:29 dice que searchBoth combina Firecrawl + Perplexity; el código (src/lib/web-search.ts:1-3, 27-54) combina tres fuentes (Firecrawl, Perplexity y Parallel Search); AGENTS.md:34 ya lo dice",
+      "kind": "bug",
+      "source": "Gate PRD NK-0171, pasada 2 (.factory/evidence/NK-0171/prd-gate-pass2.md)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:34:52.617Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0176",
+      "title": "src/lib/plays/status.ts:18-21: los plays bloqueados por LinkedIn siguen mostrando «falta una decisión» aunque la decisión D2 quedó cerrada por Fede el 2026-11-13 (entrevista, PRD-20261112-plays-a-medida decisión 17); actualizar el texto del bloqueador y registrar el cierre de D2 en PRD-20261106-plays-gtm.md:91",
+      "kind": "bug",
+      "source": "Gate PRD NK-0171, pasada 4 (.factory/evidence/NK-0171/prd-gate-pass4.md, q-7)",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:34:52.679Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0177",
+      "title": "add_default_rules / diagnose_play_teams: una regla personal con el título de una regla base hace que la herramienta diga «Ya tenías todas las reglas base» y no vuelva la de equipo (readTitles no filtra por scope; afecta a missingDefaultRuleTitles y al diagnóstico de plays). Decide Fede: redacción o comportamiento (comportamiento requiere SDD)",
+      "kind": "bug",
+      "source": "Gate sprint8d de NK-0172 (MINOR-1), .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:75-91, src/lib/knowledge-rules.ts:176-189",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:57:12.833Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0178",
+      "title": "add_default_rules: la descripción dice «comparadas por título» sin precisar que se ignoran mayúsculas y espacios normales de los extremos; un cambio solo de mayúsculas no cuenta como renombrar (wording)",
+      "kind": "bug",
+      "source": "Gate sprint8d de NK-0172, .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:60,127",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T00:57:12.879Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0179",
+      "title": "Móvil 375 px: con un trabajo de lectura en marcha (queued/running) la barra superior del shell muestra «Avisos · 1 en marcha» y la página desborda en horizontal (417 px de ancho); con done no desborda",
+      "kind": "bug",
+      "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.122Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0180",
+      "title": "Onboarding «Nokko lee», lista de hallazgos: pinta « · {source}» sin overflow-wrap; con un source de 94 caracteres sin espacios la página mide 626 px a 375 px (src/components/onboarding/reading.tsx; la columna «Fuentes» sí lo tiene)",
+      "kind": "bug",
+      "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.166Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0181",
+      "title": "NK-0156: tres comportamientos solo los fija la sonda del gate y ningún test del repo: ids de desplegable únicos con varias fuentes abiertas, el texto de apoyo no sale mientras la lectura sigue en curso, la clase min-w-0 de la etiqueta; el trim() de la regla Leyendo/Leí sin test; el desplegable abierto se guarda por el texto de la fuente y reaparece abierto al recuperar un hallazgo descartado",
+      "kind": "bug",
+      "source": "NK-0156 gate, .factory/evidence/sprint8e-gate/gate-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.215Z",
           "by": "tracker",
           "note": ""
         }

@@ -5,16 +5,24 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DriveSetupButton } from "@/components/drive";
+import { DriveRefButton } from "@/components/drive";
+import { supabase } from "@/integrations/supabase/client";
 import { Link } from "@tanstack/react-router";
 import { startBackgroundJob } from "@/lib/background.functions";
 import { readingCost, type Depth } from "@/lib/onboarding";
 import { errorText } from "@/lib/errors";
 import { FieldActions } from "@/components/field-actions";
-import { MAX_FILES, mergeFiles, removeFileText } from "@/lib/onboarding-sources";
+import { MAX_SOURCES, sourcesLimitText } from "@/lib/onboarding-files-limit";
+import {
+  mergeRefs,
+  perSourceFloor,
+  storagePath,
+  uploadProblem,
+  type SourceRef,
+} from "@/lib/onboarding-source-refs";
 
 const TEXT_LIMIT = 40_000;
-const FILE_LIMIT = 4 * 1024 * 1024;
+type Item = SourceRef & { state: "uploading" | "ready" | "error" };
 
 /** «Dale tus fuentes»: web, documents, pasted text, Drive and a way into the CRM import. Reading runs in the background. */
 export function SourcesStep({
@@ -30,55 +38,77 @@ export function SourcesStep({
   const { data: me } = useMe();
   const [url, setUrl] = useState(me?.currentOrg?.website ?? "");
   const [text, setText] = useState("");
-  const [files, setFiles] = useState<{ filename: string; dataUrl: string }[]>([]);
-  const [names, setNames] = useState<string[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [busy, setBusy] = useState(false);
 
-  async function onFiles(list: FileList | null) {
-    const arr = Array.from(list ?? []).slice(0, 3);
-    const read = await Promise.all(
-      arr.map(async (f) => {
-        if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) {
-          const body = await f.text();
-          setText((t) => `${t}\n\n--- ${f.name} ---\n${body.slice(0, 20000)}`.slice(0, TEXT_LIMIT));
-          setNames((n) => [...n, f.name]);
-          return null;
-        }
-        if (f.size > FILE_LIMIT) {
-          toast.error(`${f.name} supera 4 MB: súbelo a Drive y elígelo desde ahí.`);
-          return null;
-        }
-        const dataUrl = await new Promise<string>((res) => {
-          const r = new FileReader();
-          r.onload = () => res(String(r.result));
-          r.readAsDataURL(f);
-        });
-        return { filename: f.name, dataUrl };
-      }),
-    );
-    // CA-12: new files join the ones already listed, never replace them.
-    const merged = mergeFiles(
-      files,
-      read.filter((x): x is { filename: string; dataUrl: string } => !!x),
-    );
-    setFiles(merged.files);
-    if (merged.dropped.length)
-      toast.error(
-        `Una lectura admite hasta ${MAX_FILES} documentos. Se quedan fuera: ${merged.dropped.join(", ")}.`,
-      );
+  function add(list: Item[]) {
+    const r = mergeRefs(items, list);
+    setItems(r.sources as Item[]);
+    return { dropped: r.dropped, duplicated: r.duplicated };
   }
+  const notify = (r: { dropped: string[]; duplicated: string[] }) => {
+    if (r.dropped.length)
+      toast.error(`${sourcesLimitText()} Se quedan fuera: ${r.dropped.join(", ")}.`);
+    if (r.duplicated.length) toast.info(`Ya estaba en la lista: ${r.duplicated.join(", ")}.`);
+  };
+
+  async function onFiles(list: FileList | null) {
+    const orgId = me?.currentOrg?.org_id;
+    const userId = me?.user.id;
+    if (!orgId || !userId) return;
+    const ok: { f: File; item: Item }[] = [];
+    for (const f of Array.from(list ?? [])) {
+      const bad = uploadProblem(f);
+      if (bad) toast.error(bad);
+      else
+        ok.push({
+          f,
+          item: {
+            kind: "storage",
+            ref: storagePath(orgId, userId, crypto.randomUUID(), f.name),
+            name: f.name,
+            state: "uploading",
+          },
+        });
+    }
+    const r = add(ok.map((x) => x.item));
+    notify(r);
+    const skip = new Set(r.dropped);
+    await Promise.all(
+      ok
+        .filter((x) => !skip.has(x.item.name))
+        .map(async ({ f, item }) => {
+          const { error } = await supabase.storage
+            .from("onboarding-sources")
+            .upload(item.ref, f, { contentType: f.type || undefined });
+          if (error) toast.error(`${f.name}: ${errorText(error)}`);
+          setItems((xs) =>
+            xs.map((x) => (x.ref === item.ref ? { ...x, state: error ? "error" : "ready" } : x)),
+          );
+        }),
+    );
+  }
+
+  function remove(it: Item) {
+    setItems((xs) => xs.filter((x) => x.ref !== it.ref));
+    if (it.kind === "storage" && it.state !== "error")
+      void supabase.storage.from("onboarding-sources").remove([it.ref]);
+  }
+
+  const uploading = items.some((x) => x.state === "uploading");
+  const ready = items.filter((x) => x.state === "ready");
 
   async function go() {
     setBusy(true);
     try {
       const sources = [
         url && `Web · ${url}`,
-        ...files.map((f) => f.filename),
-        ...names,
-        text.trim() && !names.length ? "Texto pegado" : "",
+        ...ready.map((x) => x.name),
+        text.trim() ? "Texto pegado" : "",
       ].filter(Boolean) as string[];
+      const refs = ready.map(({ kind, ref, name }) => ({ kind, ref, name }));
       const r = await start({
-        data: { kind: "onboarding_read", input: { depth, url, text, files } },
+        data: { kind: "onboarding_read", input: { depth, url, text, sources: refs } },
       });
       onStarted(r.jobId, sources);
     } catch (e) {
@@ -98,7 +128,7 @@ export function SourcesStep({
     />
   );
   const cost = readingCost(depth, !!url.trim());
-  const empty = !url.trim() && !text.trim() && !files.length;
+  const empty = !url.trim() && !text.trim() && !ready.length;
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_18rem]">
       <div className="space-y-6">
@@ -118,6 +148,9 @@ export function SourcesStep({
           <label htmlFor="ob-files" className="smallcaps text-ink-mid">
             Documentos: business plan, P&L, decks, battlecards, ICP
           </label>
+          <p className="mt-1 text-xs text-ink-mid">
+            Hasta {MAX_SOURCES} entre archivos (PDF, TXT, MD o CSV, máx. 20 MB) y Drive.
+          </p>
           <Input
             id="ob-files"
             className="mt-2"
@@ -132,11 +165,10 @@ export function SourcesStep({
             }}
           />
           <div className="mt-2">
-            <DriveSetupButton
-              onText={(name, body) => {
-                setText((t) => `${t}\n\n--- ${name} ---\n${body}`.slice(0, TEXT_LIMIT));
-                setNames((n) => [...n, `${name} (Drive)`]);
-              }}
+            <DriveRefButton
+              onPick={(f) =>
+                notify(add([{ kind: "drive", ref: f.id, name: `${f.name} (Drive)`, state: "ready" }]))
+              }
             />
           </div>
         </div>
@@ -171,22 +203,16 @@ export function SourcesStep({
               {quit(() => setUrl(""))}
             </li>
           )}
-          {files.map((f) => (
-            <li key={f.filename} className="flex flex-wrap items-center gap-2">
-              {f.filename} <span className="text-ink-faint">pendiente</span>
-              {quit(() => setFiles((xs) => xs.filter((x) => x.filename !== f.filename)))}
+          {items.map((it) => (
+            <li key={it.ref} className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 [overflow-wrap:anywhere]">{it.name}</span>
+              <span className={it.state === "error" ? "text-destructive" : "text-ink-faint"}>
+                {it.state === "uploading" ? "subiendo…" : it.state === "error" ? "error al subir" : "lista"}
+              </span>
+              {quit(() => remove(it))}
             </li>
           ))}
-          {names.map((n) => (
-            <li key={n} className="flex flex-wrap items-center gap-2">
-              {n} <span className="text-ink-faint">pendiente</span>
-              {quit(() => {
-                setNames((xs) => xs.filter((x) => x !== n));
-                setText((t) => removeFileText(t, n));
-              })}
-            </li>
-          ))}
-          {text.trim() && !names.length && (
+          {text.trim() && (
             <li className="flex flex-wrap items-center gap-2">
               Texto pegado <span className="text-ink-faint">pendiente</span>
               {quit(() => setText(""))}
@@ -194,13 +220,20 @@ export function SourcesStep({
           )}
           {empty && <li className="text-ink-faint">Aún nada. Con la web basta para empezar.</li>}
         </ul>
+        {items.length > 0 && (
+          <p className="mt-2 text-xs text-ink-mid">
+            {items.length}/{MAX_SOURCES} documentos. Si son largos, de cada uno se leerán al menos{" "}
+            {perSourceFloor(ready.length || 1).toLocaleString("es-ES")} caracteres; al terminar te digo
+            cuáles se leyeron enteros.
+          </p>
+        )}
         <p className="mt-4 text-sm">
           <span className="smallcaps text-ink-mid">Coste aproximado</span>{" "}
           {cost > 0 ? `${cost.toFixed(2)} en fuentes de pago` : "sin coste en fuentes de pago"}
           {depth === "deep" ? ", más el debate de los C-Levels" : ""}.
         </p>
-        <Button className="mt-4 w-full" disabled={empty || busy} onClick={go}>
-          {busy ? "Lanzando…" : "Que Nokko lo lea"}
+        <Button className="mt-4 w-full" disabled={empty || busy || uploading} onClick={go}>
+          {busy ? "Lanzando…" : uploading ? "Subiendo documentos…" : "Que Nokko lo lea"}
         </Button>
         <p className="mt-2 text-xs text-ink-mid">
           Corre en segundo plano: puedes salir y te aviso al terminar.

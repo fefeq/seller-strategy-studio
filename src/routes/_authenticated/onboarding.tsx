@@ -6,6 +6,7 @@ import { jsonObject } from "@/lib/json";
 import { DepthStep, DiagnosisStep, RoadmapStep } from "@/components/onboarding/steps";
 import { SourcesStep } from "@/components/onboarding/sources";
 import { ReadingStep } from "@/components/onboarding/reading";
+import type { SourceStatus } from "@/lib/onboarding-source-refs";
 import { BlocksStep } from "@/components/onboarding/blocks";
 import { GuestOnboarding } from "@/components/onboarding/guest";
 import type { SetupProposal } from "@/lib/setup-extraction";
@@ -139,6 +140,11 @@ function Onboarding() {
           jobId={session?.read_job_id ?? null}
           findings={findings}
           sources={sources}
+          statuses={
+            (Array.isArray(session?.source_status)
+              ? session.source_status
+              : []) as unknown as SourceStatus[]
+          }
           onNext={() => save({ step: "diagnosis" })}
           onBack={() => save({ step: "sources" })}
           onSkip={() => save({ step: "diagnosis" })}
