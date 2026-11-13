@@ -31,7 +31,7 @@ export async function runActor(
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     console.error(`Apify run failed [${res.status}] ${actor.id} body ${body.length} chars`);
-    throw new Error(apifyErrorText(res.status, body));
+    throw Object.assign(new Error(apifyErrorText(res.status, body)), { status: res.status });
   }
   const data = await res.json().catch(() => null);
   return Array.isArray(data) ? data : [];

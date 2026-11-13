@@ -43,7 +43,7 @@ export async function perplexitySearch(
   if (!res.ok) {
     const raw = await res.text();
     console.error(`Perplexity search [${res.status}] body ${raw.length} chars`);
-    throw new Error(perplexityErrorText(res.status, raw));
+    throw Object.assign(new Error(perplexityErrorText(res.status, raw)), { status: res.status });
   }
   const data = (await res.json()) as { results?: unknown };
   // One query → a flat list; several → Perplexity may nest a list per query.
