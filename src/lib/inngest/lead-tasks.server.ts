@@ -360,8 +360,16 @@ export async function followupStep(db: Admin, orgId: string, leadId: string, now
   const found = followupSequence({ ...snap, leads: [lead] });
   if (found.length)
     await db.from("suggestions").upsert(
-      found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })),
+      found.map((f) => {
+        const { email_block: _block, ...row } = f;
+        return { ...row, org_id: orgId, action: f.action as unknown as Json };
+      }),
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
+  const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
+  for (const f of found) {
+    if (!f.email_block) continue;
+    await recordEmailDraftBlock(db, orgId, { surface: "followup_sequence", ...f.email_block });
+  }
   return { stop: false as const, created: found.length };
 }

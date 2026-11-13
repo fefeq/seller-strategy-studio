@@ -25,6 +25,7 @@ import { PersonQuickActions } from "@/components/quick-actions";
 import { fetchAll } from "@/lib/fetch-all";
 import { askConfirm } from "@/components/confirm-dialog";
 import type { TablesUpdate } from "@/integrations/supabase/types";
+import { EmailVerificationMark, useEmailVerifications } from "@/components/email-verification";
 
 export const Route = createFileRoute("/_authenticated/people")({
   head: () => ({
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/people")({
       { name: "description", content: "Base única de personas sin duplicados." },
       { property: "og:title", content: "Personas — Nokko" },
       { property: "og:description", content: "Base única de personas sin duplicados." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: People,
@@ -91,6 +94,7 @@ function People() {
     if (filter === "in_deal") return p.crm_stage === "opportunity" || p.crm_stage === "customer";
     return true;
   });
+  const verification = useEmailVerifications(list.map((p) => p.email));
 
   async function update(id: string, patch: TablesUpdate<"people">) {
     const { error } = await supabase.from("people").update(patch).eq("id", id);
@@ -205,6 +209,7 @@ function People() {
                     {p.email}
                     {p.company ? ` · ${p.company}` : ""}
                   </p>
+                  <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
                   <span className="mt-1 inline-block">
                     <PersonQuickActions person={p} />
                   </span>
@@ -256,6 +261,7 @@ function People() {
                         {p.email}
                         {p.company ? ` · ${p.company}` : ""}
                       </p>
+                      <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
                     </td>
                     {editors(p).map((e) => (
                       <td key={e.label} className={`px-3 py-2 ${e.w}`}>

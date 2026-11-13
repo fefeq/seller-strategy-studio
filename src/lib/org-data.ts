@@ -455,12 +455,14 @@ export async function syncSuggestions(
   const emailBlocks = found.filter((f) => f.email_block);
   if (emailBlocks.length) {
     const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
-    for (const f of emailBlocks)
+    for (const f of emailBlocks) {
+      if (!f.email_block) continue;
       await recordEmailDraftBlock(db, orgId, {
         surface: "followup_sequence",
-        status: f.email_block!.status,
-        reason: f.email_block!.reason,
+        status: f.email_block.status,
+        reason: f.email_block.reason,
       });
+    }
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
   // A setup step comes and goes (the order changed, the step was reopened by an edit, the quota's quarter turned): the same key is emitted

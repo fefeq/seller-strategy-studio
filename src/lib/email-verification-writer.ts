@@ -3,6 +3,7 @@
 // no insert/update policy for members. Never logs an email address.
 import { apolloEmailStatus, normalizeVerificationEmail, type EmailStatus } from "./email-verification";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import type { Db } from "./org-data";
 
 export type VerificationRow = {
   org_id: string;
@@ -49,8 +50,7 @@ export async function recordApolloVerifications(rows: VerificationRow[]): Promis
 
 /** Registers a blocked draft (surface, state, reason) — never the address. Works with the member's client too. */
 export async function recordEmailDraftBlock(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accepts both the member's client and the privileged one
-  db: any,
+  db: Db,
   orgId: string,
   block: { surface: "draft_followup" | "followup_sequence"; status: EmailStatus; reason: string },
 ): Promise<void> {

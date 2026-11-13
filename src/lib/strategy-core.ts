@@ -142,12 +142,15 @@ export async function syncStrategySuggestions(
   }
   if (inserts.length) {
     await db.from("suggestions").upsert(
-      inserts.map((f) => ({
-        ...f,
-        org_id: orgId,
-        action: f.action as unknown as Json,
-        strategy: f.strategy as unknown as Json,
-      })),
+      inserts.map((f) => {
+        const { email_block: _block, ...row } = f;
+        return {
+          ...row,
+          org_id: orgId,
+          action: f.action as unknown as Json,
+          strategy: f.strategy as unknown as Json,
+        };
+      }),
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
   }
