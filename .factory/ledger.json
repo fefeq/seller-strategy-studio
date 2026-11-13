@@ -5002,19 +5002,25 @@
       "title": "add_default_rules: las reglas base se comparan por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original y puede contradecir la editada (la descripción dice que no cambia las reglas editadas); diagnose_play_teams dice «Te falta 1 regla base» en ese caso; un documento de otro scope con el mismo título cuenta como existente (sin verificar contra BD)",
       "kind": "bug",
       "source": "Gate de NK-0153 en e0b6061 (ronda 2), 2026-11-12. Redacción propuesta: «…comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente.» Evidencia: .factory/evidence/sprint8b-gate/gate-e0b6061.md",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0172-add-default-rules-description",
+      "base_commit": "d5e6a5600e7c6ecef0fec06ae859ec0f14141ce2",
       "history": [
         {
           "state": "LOGGED",
           "at": "2026-11-12T23:49:00.259Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-13T00:14:39.420Z",
+          "by": "Fede: \"Sí, solo la redacción\" (2026-11-13)",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
