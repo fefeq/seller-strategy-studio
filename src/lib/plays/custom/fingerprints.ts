@@ -43,3 +43,21 @@ export function annexFingerprints(annex: string): Set<string>[] {
   }
   return out;
 }
+
+/** FNV-1a 32-bit: the repo keeps only hashes of the annex fragments, never its text (§7, q-5). */
+export function hashFragment(s: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
+  return h.toString(16).padStart(8, "0");
+}
+export const hashFingerprints = (fps: Set<string>[]): string[][] => fps.map((fp) => [...fp].map(hashFragment).sort());
+
+/** Production check against the stored hash list (used by the assistant tool, SDD 3). */
+export function copiesHashed(text: string, list: string[][]): boolean {
+  const c = [...shingles(text)].map(hashFragment);
+  if (!c.length) return false;
+  return list.some((fp) => {
+    const s = new Set(fp);
+    return c.filter((h) => s.has(h)).length / c.length >= FINGERPRINT_MIN_OVERLAP;
+  });
+}
