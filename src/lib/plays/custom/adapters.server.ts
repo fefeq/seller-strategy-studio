@@ -159,14 +159,15 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
           signals = selection.selected.flatMap(n => signals[n] ? [signals[n]] : []);
         } catch(e) {
           const cost = e && typeof e === "object" && "playCost" in e ? e.playCost as PlayCost : null;
-          if(!cost) throw e;
-          costs.push(cost);signals=[];selectionError=e;
+          if(cost) costs.push(cost);
+          signals=[];selectionError=e;
         }
       }
       const last = i.proposal.steps.at(-1)?.n === i.step.n;
       const allSignals = [...previous.flatMap(p => p.signals),...signals];
-      const targets = last ? await targetsFor(c,allSignals,i.now) : [];
+      const targets = last && !selectionError ? await targetsFor(c,allSignals,i.now) : [];
       const payload = buildStepPayload({ playId:i.playId,proposal:i.proposal,step:i.step,signals,targets,previous,now:i.now,last });
+      if(selectionError) payload.suggestions=[];
       payload.costs=costs;payload.usage=usage;payload.sourceData=sourceData;
       const receipt = receiptSchema.parse(checked(await db.rpc("commit_custom_play_step",{ ...args(i),p_step:i.step.n,p_payload:payload as unknown as Json })));
       if(selectionError) throw selectionError;
@@ -192,9 +193,20 @@ export async function runActiveCustomPlays(db:Db,orgId:string,now=new Date()) {
     const prior = existing?.[0];
     if(prior && prior.status !== "running") continue;
     const input:ExecutionInput = { orgId,playId:row.id,runId:prior?.id ?? crypto.randomUUID(),userId,trigger:"automatic",now };
-    const r = await executeCustomPlay(createExecutionPorts(db,crypto.randomUUID()),input);
+    const ports=createExecutionPorts(db,crypto.randomUUID());
+    let r;
+    try {
+      r=await executeCustomPlay(ports,input);
+    } catch {
+      // The coordinator releases the lease before propagating: pause by scoped play id here.
+      // An unconfirmed external step must not be replayed by the next hourly run.
+      checked(await db.from("custom_plays").update({ status:"pausado",execution_pause:"uncertain" }).eq("org_id",orgId).eq("id",row.id));
+      checked(await db.from("custom_play_runs").update({ status:"failed" }).eq("org_id",orgId).eq("id",input.runId));
+      total.paused++;break;
+    }
     if(r.status === "done" || r.status === "paused" || r.status === "blocked") checked(await db.from("custom_play_runs").update({ status:r.status,updated_at:new Date().toISOString() }).eq("org_id",orgId).eq("id",input.runId));
     total.runs++;total.evidenceCount+=r.evidenceCount;total.suggestionCount+=r.suggestionCount;
+    if(r.status === "done") checked(await db.from("custom_plays").update({ updated_at:new Date().toISOString() }).eq("org_id",orgId).eq("id",row.id));
     if(r.status === "paused") { total.paused++;break; }
   }
   return total;
