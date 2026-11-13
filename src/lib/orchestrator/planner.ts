@@ -25,7 +25,8 @@ export type Need =
   | "icp_companies"
   | "case_studies"
   | "competitors"
-  | "read_document";
+  | "read_document"
+  | "reviews";
 
 export type NeedKey = { entity: KeyEntity; need?: KeyNeed } | null;
 /**
@@ -44,6 +45,7 @@ export const NEED_KEYS: Record<Need, NeedKey> = {
   case_studies: null,
   competitors: null,
   read_document: null,
+  reviews: null,
 };
 
 export type Option = { service: Service; cost: number; speed: 1 | 2 | 3; quality: 1 | 2 | 3 };
@@ -125,6 +127,11 @@ export const CAPABILITIES: Record<Need, { label: string; options: Option[] }> = 
   read_document: {
     label: "Leer un documento",
     options: [{ service: "drive", cost: 0, speed: 3, quality: 3 }],
+  },
+  // NK-0171 R-2: public reviews of a declared competitor (Apify G2 robot); no other provider reads them.
+  reviews: {
+    label: "Reseñas de un competidor",
+    options: [{ service: "apify", cost: 0.05, speed: 1, quality: 2 }],
   },
 };
 

@@ -59,11 +59,12 @@ export function checkFreshness(
 }
 
 /* ---------- 6.2: source registry derived from CAPABILITIES ---------- */
-export type SourceKey = "news" | "web" | "reviews_or_cases" | "competitors" | "people" | "company" | "drive" | "posthog";
+export type SourceKey = "news" | "web" | "reviews_or_cases" | "reviews" | "competitors" | "people" | "company" | "drive" | "posthog";
 export const SOURCE_REGISTRY: Record<SourceKey, { label: string; need?: Need; service?: Service; returns: readonly GateField[] }> = {
   news: { label: "Noticias y señales", need: "news_signals", returns: ["event_date", "country", "headline_kind"] },
   web: { label: "Web de la cuenta", need: "research_account", returns: ["event_date", "country", "industry"] },
   reviews_or_cases: { label: "Casos y reseñas públicas", need: "case_studies", returns: ["event_date", "rating"] },
+  reviews: { label: "Reseñas de competidores", need: "reviews", returns: ["event_date", "rating", "competitor"] },
   competitors: { label: "Competidores", need: "competitors", returns: ["competitor"] },
   people: { label: "Personas clave", need: "find_stakeholders", returns: ["seniority", "department"] },
   company: { label: "Datos de empresa", need: "enrich_account", returns: ["employees", "country", "industry"] },
