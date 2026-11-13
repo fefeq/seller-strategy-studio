@@ -180,3 +180,7 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - Comprobado: suite 350/350, 5656/5656 antes de la prueba de concepto; la nueva pasa. Build: se verá en el siguiente registro.
 - No comprobado en navegador cada pantalla tocada. Botones de «Descartar cambios» / «Descalificar» con texto distinto o compuesto no se tocaron automáticamente.
 - SHA: no disponible (commits automáticos de Lovable).
+
+## NK-0171 U-2 · almacenamiento de plays a medida
+- Migración `0092_custom_plays_storage` (la herramienta le dio 0091, renombrada; drizzle-kit check limpio), aplicada en la base real: `custom_plays`, `custom_play_evidence` (cascada con el play), `custom_play_costs` (sin FK, sobrevive al borrado). Lectura por miembros, escritura solo cliente privilegiado. CHECK: clave `custom:`, cita ≤280 sin email/teléfono.
+- Prueba nueva `src/lib/custom-plays.pg.test.ts` (5), falló primero (sin migración). Catálogo de campos ampliado. Ninguna prueba existente modificada.
