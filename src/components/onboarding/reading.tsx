@@ -65,6 +65,19 @@ export function ReadingStep({
       second: "2-digit",
     });
   const now = () => new Date().toISOString();
+  // A step that already says «Leyendo…»/«Leí…» would repeat the word, so the header drops it.
+  const step = job?.step ?? null;
+  const headline = done
+    ? "Lectura terminada"
+    : job?.status === "failed"
+      ? "No pude terminar la lectura"
+      : job?.status === "cancelled"
+        ? "Se canceló la lectura"
+        : !step
+          ? "Estoy leyendo · esperando turno"
+          : /^(leyendo|leí)/i.test(step.trim())
+            ? "Estoy leyendo"
+            : `Estoy leyendo · ${step}`;
   const live = findings.flatMap((f, i) => (f.discardedAt ? [] : [{ f, i }]));
   const discarded = findings.flatMap((f, i) => (f.discardedAt ? [{ f, i }] : []));
 
@@ -109,9 +122,15 @@ export function ReadingStep({
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_18rem]">
       <div>
-        <p className="smallcaps text-ink-mid">
-          {done ? "Leído" : failed ? "Sin terminar" : `Leyendo · ${job?.step ?? "en cola"}`}
+        <p data-testid="reading-headline" className="smallcaps text-ink-mid">
+          {headline}
         </p>
+        {done && (
+          <p className="mt-2 text-sm text-ink-mid">
+            Cada línea es algo que encontré; si sale de una fuente, la verás al final. Confírmalo,
+            edítalo o descártalo.
+          </p>
+        )}
         <ol className="mt-3 border-t border-hairline font-mono text-sm" aria-live="polite">
           {live.map(({ f, i }) => (
             <li key={i} className="grid grid-cols-[5.5rem_1fr] gap-3 border-b border-hairline py-2">
@@ -180,9 +199,7 @@ export function ReadingStep({
             </ul>
           </details>
         )}
-        {failed && (
-          <p className="mt-4 text-sm text-destructive">{job?.error ?? "La lectura se canceló."}</p>
-        )}
+        {failed && job?.error && <p className="mt-4 text-sm text-destructive">{job.error}</p>}
       </div>
       <div className="border-t-2 border-hairline-firm pt-4">
         <p className="smallcaps">Fuentes</p>
@@ -191,7 +208,7 @@ export function ReadingStep({
             <li key={s} className="flex flex-wrap items-center gap-2">
               {s}{" "}
               <span className="text-ink-faint">
-                {done ? "leído" : failed ? "sin acceso" : "leyendo"}
+                {done ? "leído" : failed ? "Sin terminar" : "leyendo"}
               </span>
               {done && (
                 <FieldActions
