@@ -15,7 +15,10 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [ ] NK-0173 SDD 3: U-1–U-5 implementadas; catálogo completo, estado/fecha en las tres fichas, puerta y registro en agente/detector/followup durable, botón Verificar con coste existente. Suite 5648/5648 en 347 archivos y compilación automática OK 16:42:02 UTC; revisión visual CA-2/CA-8 pendiente porque navegador local solo muestra carga inicial y aborta módulos. Ninguna llamada de pago. Nunca 2b.
 - [x] NK-0168 SDD 2: permiso acotado recibido para expectativa ✓ de strategy-screens.test.tsx:421; aún no modificada, no autoriza otras pruebas.
 - [x] NK-0168: entregas 1 y 2 hechas (IconText, mazo, menú, Trash2/X en botones, guardias).
+- [ ] Onboarding: repensar la pantalla de hallazgos (Confirmar/Editar/Descartar): explicar el objetivo de cada fuente y qué tiene que hacer el usuario. Pedido por Fede 13-11 20:05; después de NK-0171.
 - [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
+  - [x] SDD 1 U-1: molde puro + Q-7 (model.ts, 25 pruebas).
+  - [ ] SDD 1 U-2: tablas por empresa con RLS y registro de coste. Luego SDD 2, 3, 4.
 - [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
 - [ ] NK-0174: SDD 1; Workspace Internal, solo Fede hasta confirmación legal para otros buzones.
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
