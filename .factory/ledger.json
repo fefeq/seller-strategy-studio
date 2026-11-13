@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 178,
+  "seq": 181,
   "tickets": [
     {
       "id": "NK-0001",
@@ -4654,7 +4654,7 @@
       "title": "Onboarding «Nokko lee»: explicar «Leído» y mostrar qué vio en cada fuente (texto de estado y recuento de hallazgos por fuente, sin tocar datos ni IA)",
       "kind": "feature",
       "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint». Mejora de UI en src/components/onboarding/reading.tsx (líneas 61 y 100). Nivel de documentación: solo ticket, sin SDD ni PRD (decisión de Fede, cambio sin schema ni RLS)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261112-onboarding-leido.md",
@@ -4679,6 +4679,12 @@
           "at": "2026-11-13T00:48:28.619Z",
           "by": "Fede: \"haz los dos tickets, la parte 1 en este sprint\" + \"sigue, ejecuta todo tú\" (2026-11-12); SDD aprobado (PR #132); copy decidido por el coordinador por delegación",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T01:39:48.054Z",
+          "by": "Fede",
+          "note": "sha=3298d4a6d518af8157f6939f3fef5023169ea710"
         }
       ]
     },
@@ -5163,6 +5169,69 @@
         {
           "state": "LOGGED",
           "at": "2026-11-13T00:57:12.879Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0179",
+      "title": "Móvil 375 px: con un trabajo de lectura en marcha (queued/running) la barra superior del shell muestra «Avisos · 1 en marcha» y la página desborda en horizontal (417 px de ancho); con done no desborda",
+      "kind": "bug",
+      "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.122Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0180",
+      "title": "Onboarding «Nokko lee», lista de hallazgos: pinta « · {source}» sin overflow-wrap; con un source de 94 caracteres sin espacios la página mide 626 px a 375 px (src/components/onboarding/reading.tsx; la columna «Fuentes» sí lo tiene)",
+      "kind": "bug",
+      "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.166Z",
+          "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0181",
+      "title": "NK-0156: tres comportamientos solo los fija la sonda del gate y ningún test del repo: ids de desplegable únicos con varias fuentes abiertas, el texto de apoyo no sale mientras la lectura sigue en curso, la clase min-w-0 de la etiqueta; el trim() de la regla Leyendo/Leí sin test; el desplegable abierto se guarda por el texto de la fuente y reaparece abierto al recuperar un hallazgo descartado",
+      "kind": "bug",
+      "source": "NK-0156 gate, .factory/evidence/sprint8e-gate/gate-3298d4a.md",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-13T01:39:54.215Z",
           "by": "tracker",
           "note": ""
         }
