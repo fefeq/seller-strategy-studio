@@ -64,7 +64,13 @@ export type ConceptId =
   | "muestra_prueba"
   | "exitos_prueba"
   | "fecha_prueba"
-  | "tipo_coste";
+  | "tipo_coste"
+  | "paso_ejecucion"
+  | "estado_ejecucion"
+  | "contador_ejecucion"
+  | "tokens_ia"
+  | "moneda_coste"
+  | "origen_fecha";
 
 export type Concept = {
   id: ConceptId;
@@ -82,6 +88,12 @@ export type Concept = {
 };
 
 export const CONCEPTS: Concept[] = [
+  { id: "paso_ejecucion", label: "Paso", meaning: "Paso numerado de una ejecución.", kind: "number", format: "Entero positivo", display: "Número" },
+  { id: "estado_ejecucion", label: "Estado de ejecución", meaning: "Estado o motivo de pausa persistente de un trabajo.", kind: "text", format: "Estado de sistema", display: "Estado" },
+  { id: "contador_ejecucion", label: "Resultados", meaning: "Número de evidencias o sugerencias guardadas.", kind: "number", format: "Entero no negativo", display: "Número" },
+  { id: "tokens_ia", label: "Tokens de IA", meaning: "Tokens comunicados por el proveedor; vacío cuando no informa.", kind: "number", format: "Entero no negativo o vacío", display: "Número o sin dato" },
+  { id: "moneda_coste", label: "Moneda del coste", meaning: "Moneda original de un registro, sin conversión.", kind: "text", format: "USD medido de IA o EUR estimado del planificador", display: "Moneda" },
+  { id: "origen_fecha", label: "Origen de la fecha", meaning: "Campo estructurado, literal o desconocido.", kind: "text", format: "structured / literal / unknown", display: "Origen" },
   { id: "clave_play", label: "Play a medida (clave)", meaning: "Clave del play a medida dentro de la empresa.", kind: "text", format: "custom: + minúsculas, números, - o _", display: "No se muestra" },
   { id: "nombre_play", label: "Nombre del play", meaning: "Nombre visible del play a medida.", kind: "text", format: "1 a 200 caracteres", display: "Nombre" },
   { id: "definicion_play", label: "Definición del play", meaning: "Receta validada del play a medida (puertas, mensaje, prueba).", kind: "text", format: "JSON validado por plays/custom/model", display: "No se muestra" },
@@ -335,6 +347,31 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  { table: "custom_plays", column: "lease_token", concept: "clave_registro", persistence: saved },
+  { table: "custom_plays", column: "lease_until", concept: "fecha_revision", persistence: saved },
+  { table: "custom_plays", column: "execution_pause", concept: "estado_ejecucion", persistence: saved },
+  ...["custom_play_runs", "custom_play_steps"].flatMap(table => [
+    { table, column: "org_id", concept: "clave_empresa" as const, persistence: saved },
+    { table, column: "status", concept: "estado_ejecucion" as const, persistence: saved },
+    { table, column: "created_at", concept: "alta_sistema" as const, persistence: saved },
+  ]),
+  { table: "custom_play_runs", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_runs", column: "play_id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_runs", column: "user_id", concept: "clave_usuario", persistence: saved },
+  { table: "custom_play_runs", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  { table: "custom_play_steps", column: "payload", concept: "definicion_play", persistence: saved },
+  { table: "custom_play_steps", column: "evidence_count", concept: "contador_ejecucion", persistence: saved },
+  { table: "custom_play_steps", column: "suggestion_count", concept: "contador_ejecucion", persistence: saved },
+  ...["custom_play_steps", "custom_play_evidence", "custom_play_costs"].flatMap(table => [
+    { table, column: "run_id", concept: "clave_registro" as const, persistence: saved },
+    { table, column: "step_number", concept: "paso_ejecucion" as const, persistence: saved },
+  ]),
+  { table: "custom_play_evidence", column: "provider", concept: "fuente_citada", persistence: saved },
+  { table: "custom_play_evidence", column: "observed_at", concept: "fecha_revision", persistence: saved },
+  { table: "custom_play_evidence", column: "date_from", concept: "origen_fecha", persistence: saved },
+  { table: "custom_play_costs", column: "currency", concept: "moneda_coste", persistence: saved },
+  { table: "custom_play_costs", column: "input_tokens", concept: "tokens_ia", persistence: saved },
+  { table: "custom_play_costs", column: "output_tokens", concept: "tokens_ia", persistence: saved },
   { table: "custom_plays", column: "id", concept: "clave_registro", persistence: saved },
   { table: "custom_plays", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "custom_plays", column: "key", concept: "clave_play", persistence: saved },

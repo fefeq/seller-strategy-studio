@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Db } from "@/lib/org-data";
 import type { Json, Tables } from "@/integrations/supabase/types";
-import { executeCustomPlay, type ExecutionInput, type ExecutionPorts, type StepReceipt } from "./execution";
+import { executeCustomPlay, type ExecutionInput, type ExecutionPorts } from "./execution";
 import type { Proposal } from "./propose";
 import { jsonObject } from "@/lib/json";
 import { fetchAll } from "@/lib/fetch-all";
@@ -67,7 +67,7 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       ]);
       return { status:row.status === "activo" && !row.execution_pause ? "active" : row.status,archived:!checked(org) || !!org.data?.archived_at,member:!!checked(member)?.length,proposal:proposalOf(row),sources:{ services:runtimeServices(),driveFolder:!!checked(drive),posthog:!!checked(posthog) } };
     },
-    claim:async i => checked(await db.rpc("claim_custom_play",{ ...args(i),p_user:i.userId })),
+    claim:async i => checked(await db.rpc("claim_custom_play",{ ...args(i),p_user:i.userId })) === true,
     release:async i => { checked(await db.from("custom_plays").update({ lease_token:null,lease_until:null }).eq("org_id",i.orgId).eq("id",i.playId).eq("lease_token",token)); },
     checkpoint:async(i,n) => {
       const s = (await prior(i)).find(s => s.step_number === n);
@@ -96,9 +96,22 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
       let usage:StepPayload["usage"] = [];
       let costs:PlayCost[] = [];
       let selectionError:unknown;
-      if(["people","company","competitors","posthog"].includes(i.step.source)) {
-        // Local evidence is never fabricated as a dated public signal; it only helps target already-read signals.
-        signals = [];
+      const pos = checked(await db.from("positioning").select("competitive_alternative,product_name,need,target_customer").eq("org_id",i.orgId).limit(1).maybeSingle());
+      const competitors = splitCompetitors(pos?.competitive_alternative).slice(0,3);
+      if(["people","company"].includes(i.step.source)) {
+        const relevantTargets = await targetsFor(c,previous.flatMap(p => p.signals),i.now);
+        const { findKeyPeople,completeAccount } = await import("@/lib/orchestrator/runner");
+        for(const target of relevantTargets.slice(0,3)) {
+          // No automatic reveals, no contact writes. The orchestrator logs its own provider usage.
+          const found = i.step.source === "people" ? await findKeyPeople(c,{ accountId:target.accountId },i.trigger) : await completeAccount(c,target.accountId,i.trigger);
+          if(found.blocked) throw new Error(found.blocked);
+        }
+      } else if(i.step.source === "posthog") {
+        // Cached company-scoped product usage is not a public dated event and cannot support message claims.
+        checked(await db.from("product_usage").select("account_id,active_users_7d,synced_at").eq("org_id",i.orgId).limit(20));
+      } else if(i.step.source === "competitors") {
+        // Declared competitors only: never infer which competitor is used by a customer.
+        checked(await db.from("positioning").select("competitive_alternative").eq("org_id",i.orgId).limit(1));
       } else if(i.step.source === "drive") {
         const { companyFolder } = await import("@/lib/drive-core");
         const { listChildren,exportText,downloadText } = await import("@/lib/google-drive");
@@ -107,10 +120,12 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
         for(const file of (await listChildren(folder.id)).filter(f => f.mimeType === "application/vnd.google-apps.document" || f.mimeType === "text/plain").slice(0,3)) {
           const text = file.mimeType === "text/plain" ? await downloadText(file.id) : await exportText(file.id,"text/plain");
           // Modification time is NOT event time. Only a date literally present in the source may qualify.
-          signals.push({ title:file.name,url:file.webViewLink ?? `https://drive.google.com/file/d/${file.id}`,snippet:text.slice(0,280),date:null,source:"Drive",provider:"firecrawl" });
+          signals.push({ title:file.name,url:file.webViewLink ?? `https://drive.google.com/file/d/${file.id}`,snippet:text.slice(0,280),date:null,source:"Drive",provider:"drive" });
         }
       } else {
-        const read = await readStepSource(c,i.step,i.trigger);
+        const query = i.step.source === "reviews" ? competitors[0] : `${i.step.question} ${competitors.join(" ")} ${pos?.product_name ?? ""} ${pos?.need ?? ""}`.slice(0,1500);
+        if(!query) throw new Error("Falta un competidor declarado para buscar reseñas. Completa el posicionamiento.");
+        const read = await readStepSource(c,{ ...i.step,question:query },i.trigger);
         signals = read.signals;usage=read.usage;
         costs = usage.map(u => ({ provider:u.service,amount:u.cost,cost_kind:"provider_estimated",currency:"EUR",input_tokens:null,output_tokens:null }));
       }
@@ -146,7 +161,9 @@ export async function runActiveCustomPlays(db:Db,orgId:string,now=new Date()) {
   if(!userId) return total;
   for(const row of rows) {
     const since = new Date(now);since.setUTCMinutes(0,0,0);
-    const existing = checked(await db.from("custom_play_runs").select("id,status").eq("org_id",orgId).eq("play_id",row.id).gte("created_at",since.toISOString()).order("created_at").limit(1));
+    // Recover an unfinished run even across the hour boundary; never lose uncertain reservations.
+    const unfinished = checked(await db.from("custom_play_runs").select("id,status").eq("org_id",orgId).eq("play_id",row.id).eq("status","running").order("created_at").limit(1));
+    const existing = unfinished?.length ? unfinished : checked(await db.from("custom_play_runs").select("id,status").eq("org_id",orgId).eq("play_id",row.id).gte("created_at",since.toISOString()).order("created_at").limit(1));
     const prior = existing?.[0];
     if(prior && prior.status !== "running") continue;
     const input:ExecutionInput = { orgId,playId:row.id,runId:prior?.id ?? crypto.randomUUID(),userId,trigger:"automatic",now };
