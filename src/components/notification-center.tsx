@@ -147,6 +147,8 @@ export function NotificationCenter({
     if (n.link) navigate({ to: n.link as "/" });
   }
 
+  // NK-0179: on a 375 px top bar the long label pushed the page sideways; below sm only the number is shown.
+  const short = running.length ? `Avisos · ${running.length}` : unread ? `Avisos · ${unread}` : "Avisos";
   const label = running.length
     ? `Avisos · ${running.length} en marcha`
     : unread
@@ -157,9 +159,10 @@ export function NotificationCenter({
       <PopoverTrigger asChild>
         <button
           className={`text-sm ${unread ? "font-medium text-ink" : "text-ink-mid"} underline decoration-hairline-firm underline-offset-4 hover:decoration-ink ${className}`}
-          aria-label={`Avisos, ${unread} sin leer`}
+          aria-label={`Avisos, ${unread} sin leer${running.length ? `, ${running.length} en marcha` : ""}`}
         >
-          {label}
+          <span className="whitespace-nowrap sm:hidden">{short}</span>
+          <span className="hidden whitespace-nowrap sm:inline">{label}</span>
         </button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-[min(24rem,calc(100vw-2rem))] p-0">
