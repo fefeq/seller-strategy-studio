@@ -16,7 +16,7 @@ No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-202611
 - [ ] F1: truncamiento de Drive visible y probado en el job.
 - [ ] F2: estado y políticas reales de Storage; creación reproducible por API (INSERT en storage.buckets no permitido por la plataforma).
 - [ ] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
-- [x] F4: cerrar lecturas de meQuery en salida de sesión; probar useSetup y useLivePipeline. (meQuery devuelve null en la ventana; pruebas existentes intactas)
+- [x] F4 (meQuery): devuelve null en la ventana de cierre; pruebas existentes intactas. Pruebas de useSetup/useLivePipeline están en cc71f2a, pendientes de la fusión.
 - [ ] F5: formato solo en los archivos afectados, sin cambios a pruebas existentes.
 - [ ] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
 - [ ] F8: subida, eliminación, límite y progreso de fuentes.
