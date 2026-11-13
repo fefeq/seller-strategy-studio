@@ -86,7 +86,7 @@ const PLAN_LINK = "/plays?vista=equipos";
 const BOTTLENECK_OPTIONS = Object.values(BOTTLENECK_WORD)
   .map((w) => `«${w}»`)
   .join(" ");
-const DIAGNOSE_DESCRIPTION = `Solo lee. Diagnóstico de plays: con el estado de la empresa, los plays que tiene activados, su voz y sus reglas base, ordena los seis equipos de plays con motivos fijos y da el plan de activación, por fase y dependencias. Si la empresa no está lista, dice qué falta y no propone nada. En la conversación, pregunta antes cuál es su cuello de botella y qué otras tareas quiere resolver; las opciones del cuello de botella son: ${BOTTLENECK_OPTIONS} o «Ninguno de estos» (bottleneck null). Después cuenta el resultado a partir de resumen: no añadas equipos de plays, plays, motivos ni cifras que no estén en la respuesta. De la voz solo cuenta los ejemplos: los mensajes de voz se pegan en Conocimiento › Voz, nunca en el chat. No activa nada: el plan se guarda con save_play_plan y las reglas base que falten se añaden con add_default_rules.`;
+const DIAGNOSE_DESCRIPTION = `Solo lee. Diagnóstico de plays: con el estado de la empresa, los plays que tiene activados, su voz y sus reglas base, ordena los seis equipos de plays con motivos fijos y da el plan de activación, por fase y dependencias. Si la empresa no está lista, dice qué falta y no propone nada. En la conversación, pregunta antes cuál es su cuello de botella y qué otras tareas quiere resolver; las opciones del cuello de botella son: ${BOTTLENECK_OPTIONS} o «Ninguno de estos» (bottleneck null). Después cuenta el resultado a partir de resumen: no añadas equipos de plays, plays, motivos ni cifras que no estén en la respuesta. De la voz solo cuenta los ejemplos: los mensajes de voz se pegan en Conocimiento › Voz, nunca en el chat. No activa nada: el plan se guarda con save_play_plan y las reglas base que falten se añaden con add_default_rules. Una regla base falta si no hay una regla de equipo (no personal) con su título, sin distinguir mayúsculas ni espacios de los extremos.`;
 
 const keyOf = (playId: string) => `${PLAYS_DIAGNOSIS_DETECTOR}:${playId}`;
 
@@ -237,7 +237,7 @@ export const PLAY_DIAGNOSIS_TOOLS: AgentTool[] = [
     kind: "write",
     roles: ["owner", "sales_leader"],
     description:
-      "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente. Si no puede leer las reglas, no añade ninguna.",
+      "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente. Solo cuenta las reglas de equipo (no las personales) y compara el título sin distinguir mayúsculas ni espacios de los extremos. Si no puede leer las reglas, no añade ninguna.",
     input: z.object({}),
     summarize: () => "Añadir las reglas base que falten a Reglas",
     run: async (c) => {
