@@ -47,7 +47,7 @@ const snap = (leads: Snapshot["leads"]): Snapshot => ({
 
 describe("followup_sequence email gate", () => {
   it("CA-5 an invalid email blocks the step: suggestion without draft or action, with the reason", () => {
-    const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "invalid" }]));
+    const s = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "invalid" }])).find((x) => x.detector === "followup_sequence")!;
     expect(s.detector).toBe("followup_sequence");
     expect(s.dedupe_key).toBe("followup:l1:nudge");
     expect(s.body).toContain("Este email es inválido");
@@ -59,19 +59,19 @@ describe("followup_sequence email gate", () => {
     });
   });
   it("CA-5 a catch-all domain blocks the step too", () => {
-    const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "catch_all" }]));
+    const s = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "catch_all" }])).find((x) => x.detector === "followup_sequence")!;
     expect(s.body).toContain("catch-all");
     expect(s.action).toBeNull();
   });
   it("CA-5 an unverified email keeps the draft and adds the mark", () => {
-    const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "unverified" }]));
+    const s = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "unverified" }])).find((x) => x.detector === "followup_sequence")!;
     expect(s.body).toContain("Borrador");
     expect(s.body).toContain("email sin verificar");
     expect(s.action).not.toBeNull();
     expect(s.email_block).toBeUndefined();
   });
   it("CA-5 a lead without email behaves exactly as today", () => {
-    const [s] = detect(snap([baseLead]));
+    const s = detect(snap([baseLead])).find((x) => x.detector === "followup_sequence")!;
     expect(s.body).toContain("Borrador");
     expect(s.body).not.toContain("email sin verificar");
     expect(s.action).not.toBeNull();
@@ -103,7 +103,7 @@ describe("syncSuggestions registers blocked drafts (CA-6)", () => {
       );
       return proxy;
     };
-    const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "invalid" }]));
+    const s = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "invalid" }])).find((x) => x.detector === "followup_sequence")!;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake only records inserts
     await syncSuggestions({ from } as any, "o1", [s], []);
     expect(inserts).toHaveLength(1);
