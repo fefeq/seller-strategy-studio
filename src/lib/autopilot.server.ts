@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { errorText } from "@/lib/errors";
 
 type Admin = SupabaseClient<Database>;
 const DAY = 86_400_000;
