@@ -76,7 +76,7 @@ async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
   try {
     const { data, error } = await c.db
       .from("knowledge_docs")
-      .select("org_id,section,title")
+      .select("org_id,section,title,scope")
       .eq("org_id", c.orgId)
       .eq("section", "rules");
     if (error) {
@@ -86,7 +86,8 @@ async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
     // Again in memory: the privileged client does not filter by company.
     return new Set(
       (data ?? [])
-        .filter((d) => d.org_id === c.orgId && d.section === "rules")
+        // NK-0177: only team rules count; a personal rule with a base title does not stand in for it.
+        .filter((d) => d.org_id === c.orgId && d.section === "rules" && (d.scope ?? "team") === "team")
         .map((d) => same(d.title)),
     );
   } catch (e) {

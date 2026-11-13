@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { isSessionQuiet } from "@/lib/session-ending";
 
 // Everything that reads deals or leads; refreshed when a lead arrives or a deal changes anywhere.
 const KEYS = new Set(["deals", "deal-lines", "deal-stages", "products", "deals-real", "metrics", "segment-coverage", "home", "accounts", "people", "lead-events", "lead-sources", "setup", "suggestions", "leads"]);
@@ -13,7 +14,11 @@ export function useLivePipeline(orgId: string | null | undefined) {
     let timer: ReturnType<typeof setTimeout> | undefined;
     const refresh = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => qc.invalidateQueries({ predicate: (q) => KEYS.has(String(q.queryKey[0])) }), 600);
+      timer = setTimeout(() => {
+        // NK-0169: no refetch with the previous account while signing out or switching.
+        if (isSessionQuiet()) return;
+        void qc.invalidateQueries({ predicate: (q) => KEYS.has(String(q.queryKey[0])) });
+      }, 600);
     };
     const channel = supabase
       .channel(`pipeline-${orgId}`)
