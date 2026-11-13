@@ -53,7 +53,7 @@ export function SourcesStep({
   };
 
   async function onFiles(list: FileList | null) {
-    const orgId = me?.currentOrg?.id;
+    const orgId = me?.currentOrg?.org_id;
     const userId = me?.user.id;
     if (!orgId || !userId) return;
     const ok: { f: File; item: Item }[] = [];
