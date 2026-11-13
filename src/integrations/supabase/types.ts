@@ -3409,6 +3409,7 @@ export type Database = {
           org_id: string
           proposal: Json | null
           read_job_id: string | null
+          source_status: Json
           sources: Json
           step: string
           updated_at: string
@@ -3426,6 +3427,7 @@ export type Database = {
           org_id?: string
           proposal?: Json | null
           read_job_id?: string | null
+          source_status?: Json
           sources?: Json
           step?: string
           updated_at?: string
@@ -3443,6 +3445,7 @@ export type Database = {
           org_id?: string
           proposal?: Json | null
           read_job_id?: string | null
+          source_status?: Json
           sources?: Json
           step?: string
           updated_at?: string
@@ -5545,6 +5548,10 @@ export type Database = {
           _owner: string
         }
         Returns: undefined
+      }
+      onboarding_source_path_ok: {
+        Args: { _name: string; _own: boolean }
+        Returns: boolean
       }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
