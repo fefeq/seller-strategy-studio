@@ -65,4 +65,4 @@ RLS y retención por último contacto no implementados ni probados; schema live 
 No revisado; no se rellena veredicto independiente.
 
 ## 18. Delta de implementación
-Pendiente: U-1 antes de U-2. No se declara SDD completo mientras CA-6 quede abierto.
+U-1 implementada: cinco pruebas fallaron primero y pasan después; suite completa 338 archivos y 5593 pruebas en verde, 296,00 s. Compilación automática OK 14:44:37 UTC. Tipos sin comprobar por restricción del entorno. U-2 parada ante destino de migración compartido; CA-6 abierto. Ningún consumidor conectado, interfaz sin cambios, ninguna migración o proveedor real ejecutado. No se declara SDD completo; informe emitido en docs/lovable-run-report.md.

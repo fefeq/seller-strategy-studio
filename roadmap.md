@@ -10,7 +10,8 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0160: SDD y complemento AST de títulos/nombres, guardia nueva, escáner protegido intacto; suite 5584/5584, compilación automática OK e informe. Tipos sin comprobar por restricción del entorno.
 - [x] NK-0177: filtro de equipo en consulta compartida, prueba nueva falló primero, 90/90 seleccionadas y 5585/5585 en suite, compilación automática OK e informe. Tipos sin comprobar por restricción del entorno; texto protegido conservado.
 - [x] Bloque B: Fede autoriza plantilla del repositorio y guía documental de nokko-shape, sin activar ni ejecutar habilidad. SDD con estructura completa, PRD y decisiones enlazados.
-- [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.
+- [ ] NK-0173: SDD 1 parcial — U-1 modelo puro y cinco CA probados, suite 5593/5593 y compilación OK; U-2 esquema parado por EXECUTION local/pruebas frente a backend compartido. SDD 2/3 dependientes pendientes; nunca 2b.
+- [ ] NK-0168 SDD 2: parada prospectiva — cambiar ✓ contradice prueba protegida strategy-screens.test.tsx:421; requiere permiso explícito acotado.
 - [ ] NK-0168: SDD 1 (registro, plantilla SDD, EXECUTION.md, nokko-shape), luego 2 y 3.
 - [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
 - [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
