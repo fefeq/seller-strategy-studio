@@ -10,3 +10,6 @@ Añadir `eq("scope", "team")` a la consulta, conservando filtro local y contrato
 
 ## Riesgos, comprobación y vuelta atrás
 No migración ni cambio visual. Prueba de núcleo con cliente simulado, suite completa, compilación automática. Tipos sin comprobar por restricción del entorno; Fede verifica por lotes. No conversación IA real ni escritura de reglas de una empresa real. Revertir el filtro devuelve la consulta anterior, manteniendo el filtro en memoria. Revisión independiente pendiente.
+
+## Resultado
+Prueba nueva falló por ausencia del filtro de consulta; después pasa. Selección 90/90 y suite completa 5585/5585 (337 archivos), sin expiraciones. Compilación automática OK 14:32:11 UTC. Tipos sin comprobar por restricción del entorno. Pruebas existentes y texto protegido intactos. Informe emitido antes del Bloque B; revisión independiente no realizada.

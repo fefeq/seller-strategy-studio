@@ -8,7 +8,8 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0159: bloqueo de tipos cerrado con resultado externo de Claude comunicado por Fede: main 47b0f81, tsc --noEmit limpio en Node 22. No ejecutado por Lovable; Inngest alojado sigue sin comprobar (no desplegar).
 - Regla de continuación 14:25 UTC: tipos sin comprobar por restricción del entorno se informan, no detienen entregas; Fede verifica por lotes.
 - [x] NK-0160: SDD y complemento AST de títulos/nombres, guardia nueva, escáner protegido intacto; suite 5584/5584, compilación automática OK e informe. Tipos sin comprobar por restricción del entorno.
-- [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
+- [x] NK-0177: filtro de equipo en consulta compartida, prueba nueva falló primero, 90/90 seleccionadas y 5585/5585 en suite, compilación automática OK e informe. Tipos sin comprobar por restricción del entorno; texto protegido conservado.
+- [ ] Bloque B: parada compartida — sus PRD exigen nokko-shape, que no está activo; Fede debe activarlo o autorizar usar la plantilla sin ejecutar esa habilidad. No implementación iniciada.
 - [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.
 - [ ] NK-0168: SDD 1 (registro, plantilla SDD, EXECUTION.md, nokko-shape), luego 2 y 3.
 - [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
