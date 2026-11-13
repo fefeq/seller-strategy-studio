@@ -1677,6 +1677,41 @@ export type Database = {
           },
         ]
       }
+      email_draft_blocks: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          reason: string
+          status: string
+          surface: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          reason: string
+          status: string
+          surface: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          reason?: string
+          status?: string
+          surface?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_draft_blocks_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_templates: {
         Row: {
           body: string

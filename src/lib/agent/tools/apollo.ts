@@ -12,6 +12,8 @@ import {
   revealToAccount,
 } from "@/lib/apollo-gateway";
 import { countryName } from "@/lib/assignment";
+import { apolloEmailStatus } from "@/lib/email-verification";
+import { EMAIL_STATUS_LABEL } from "@/lib/email-status";
 import { def, type AgentTool } from "../tool-kit";
 
 const list = z.array(z.string().min(1).max(120)).max(15).optional();
@@ -150,6 +152,9 @@ export const APOLLO_TOOLS: AgentTool[] = [
           nombre: x.contact.name,
           cargo: x.contact.title,
           email: x.contact.email,
+          estado_email: x.contact.email
+            ? EMAIL_STATUS_LABEL[apolloEmailStatus(x.contact.emailStatus)]
+            : null,
           linkedin: x.contact.linkedin_url,
           stakeholder_id: x.stakeholderId,
           nueva: x.created,
@@ -167,6 +172,9 @@ export const APOLLO_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       const r = await revealStakeholder(c, { stakeholderId: a.stakeholder_id, phone: a.phone });
       if (!r.found) return { mensaje: "Apollo no ha encontrado a esa persona." };
+      const estadoEmail = r.contact?.email
+        ? EMAIL_STATUS_LABEL[apolloEmailStatus(r.contact.emailStatus)]
+        : null;
       const parts = [
         r.contact?.email ? `email ${r.contact.email}` : r.contact ? "sin email disponible" : null,
         r.phone === "cached"
@@ -176,8 +184,11 @@ export const APOLLO_TOOLS: AgentTool[] = [
             : r.phone === "requested"
               ? "el móvil llegará en unos minutos"
               : null,
+        r.proposedEmail
+          ? `Apollo propone otro email: ${r.proposedEmail}. No lo he cambiado; edítalo tú si quieres usarlo`
+          : null,
       ].filter(Boolean);
-      return { mensaje: `Apollo: ${parts.join("; ")}.` };
+      return { mensaje: `Apollo: ${parts.join("; ")}.`, estado_email: estadoEmail };
     },
   }),
 ];

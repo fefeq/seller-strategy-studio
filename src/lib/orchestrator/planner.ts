@@ -162,7 +162,9 @@ export function planFor(input: PlanInput): Plan {
       skipped.push({ service: o.service, reason: "ya hay datos" });
       return false;
     }
-    if (o.cost > input.budget.remaining) {
+    // Q-6 (NK-0173): manual actions are never paused by the limit — the person confirmed the cost;
+    // they still log their spend. Only automatic work skips options over the remaining budget.
+    if (input.budget.automatic && o.cost > input.budget.remaining) {
       skipped.push({ service: o.service, reason: "sin presupuesto" });
       return false;
     }
@@ -181,7 +183,7 @@ export function planFor(input: PlanInput): Plan {
   };
 }
 
-/** Budget state: warn at 80 %, pause automatic work at 100 %; manual requests are never paused. */
+/** Budget state: warn at 80 %, pause automatic work at 100 %; manual requests are never paused (planFor enforces it). */
 export function budgetState(spent: number, limit: number | null) {
   if (!limit || limit <= 0) return { remaining: Infinity, warn: false, paused: false, pct: 0 };
   const pct = spent / limit;

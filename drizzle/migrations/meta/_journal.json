@@ -624,6 +624,13 @@
       "when": 1794581590018,
       "tag": "0089_email_verification_model",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794585136571,
+      "tag": "0090_email_draft_blocks",
+      "breakpoints": true
     }
   ]
 }

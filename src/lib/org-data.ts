@@ -276,7 +276,7 @@ export async function loadSnapshot(
       db
         .from("leads")
         .select(
-          "id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name",
+          "id,company,stage,stage_entered_at,next_step_at,owner_id,account_id,contacted_at,contact_name,email",
         )
         .eq("org_id", orgId)
         .in("stage", ["new", "contacted", "mql", "sql"])
@@ -309,6 +309,33 @@ export async function loadSnapshot(
   const disabledPlays = disabledPlayIds(playStates.error ? [] : (playStates.data ?? []));
   const strategy = await loadStrategyData(db, orgId);
   const fitKey = opts.fitKey === false ? undefined : await loadFitKeyData(db, orgId);
+  // NK-0173: effective verification state of each lead's email, for the draft gate. A failed read
+  // leaves the state out: the gate then treats the address as unverified (marked), never blocked.
+  const leadRows = leads.data ?? [];
+  const leadEmails = [
+    ...new Set(
+      leadRows.map((l) => l.email?.trim().toLowerCase()).filter((e): e is string => !!e),
+    ),
+  ];
+  let leadEmailStatus = new Map<string, import("@/lib/email-verification").EmailStatus>();
+  if (leadEmails.length) {
+    const { data: vrows, error: vErr } = await db
+      .from("email_verifications")
+      .select("email,status,checked_at")
+      .eq("org_id", orgId)
+      .in("email", leadEmails);
+    if (!vErr) {
+      const { effectiveEmailStatus } = await import("@/lib/email-verification");
+      leadEmailStatus = new Map(
+        leadEmails.map((e) => {
+          // Narrow cast: PostgREST types status as string; the table CHECK limits it to EmailStatus.
+          const row = ((vrows ?? []).find((v) => v.email === e) ??
+            null) as import("@/lib/email-verification").EmailVerification | null;
+          return [e, effectiveEmailStatus(e, row, now)];
+        }),
+      );
+    }
+  }
   return {
     now,
     orgId,
@@ -329,7 +356,12 @@ export async function loadSnapshot(
     registrations: regs.data ?? [],
     trials: trials.data ?? [],
     segments: segs.data ?? [],
-    leads: leads.data ?? [],
+    leads: leadRows.map((l) => ({
+      ...l,
+      email_status: l.email?.trim()
+        ? leadEmailStatus.get(l.email.trim().toLowerCase())
+        : undefined,
+    })),
     leadSla: readSla(leadSettings.data?.sla),
     cycleDeals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
     cycleSegments: segs.data ?? [],
@@ -411,9 +443,24 @@ export async function syncSuggestions(
   await syncStrategySuggestions(db, orgId, strategic);
   if (found.length) {
     await db.from("suggestions").upsert(
-      found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })),
+      // email_block is not a column: it only feeds the email_draft_blocks registry below.
+      found.map((f) => {
+        const { email_block: _drop, ...row } = f;
+        return { ...row, org_id: orgId, action: f.action as unknown as Json };
+      }),
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
+  }
+  // NK-0173: every blocked draft leaves a registry row (surface, state, reason) — never the address.
+  const emailBlocks = found.filter((f) => f.email_block);
+  if (emailBlocks.length) {
+    const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
+    for (const f of emailBlocks)
+      await recordEmailDraftBlock(db, orgId, {
+        surface: "followup_sequence",
+        status: f.email_block!.status,
+        reason: f.email_block!.reason,
+      });
   }
   const keys = new Set(found.map((f) => f.dedupe_key));
   // A setup step comes and goes (the order changed, the step was reopened by an edit, the quota's quarter turned): the same key is emitted

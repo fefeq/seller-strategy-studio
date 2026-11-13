@@ -515,6 +515,10 @@ export function ApolloReveal({
       else if (r.phone === "cached") toast.success(`Móvil recuperado sin coste: ${r.phoneNumber}`);
       else if (r.phone === "pending") toast.message(`El móvil ya está pedido. ${PHONE_WAIT}`);
       else if (r.phone === "requested") toast.success(`Pedido a Apollo. ${PHONE_WAIT}`);
+      else if (r.proposedEmail)
+        toast.message(
+          `Apollo propone otro email: ${r.proposedEmail}. No lo he cambiado; edítalo tú si quieres usarlo.`,
+        );
       else
         toast.success(
           r.contact?.email

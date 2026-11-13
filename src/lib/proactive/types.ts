@@ -66,6 +66,9 @@ export type Snapshot = {
     account_id: string | null;
     contacted_at?: string | null;
     contact_name?: string | null;
+    /** Email and its effective verification state (NK-0173); absent in older snapshots = the rule does not apply. */
+    email?: string | null;
+    email_status?: import("@/lib/email-verification").EmailStatus;
   }[];
   leadSla?: import("@/lib/lead-funnel").LeadSla;
   /** For the cold-deal threshold: every deal with its dates and segment, the segments with ACV ranges, and the company override. Optional so older snapshots still work. */
@@ -175,6 +178,8 @@ export type Suggestion = {
   user_id: string | null;
   /** Only strategic suggestions (strategy_* detectors, F0/F1). */
   strategy?: import("@/lib/strategy-suggestions").StrategyMeta;
+  /** Set when the email gate blocked the draft (NK-0173): sync registers it, never with the address. */
+  email_block?: { status: import("@/lib/email-verification").EmailStatus; reason: string };
 };
 
 export type Detector = (s: Snapshot) => Suggestion[];

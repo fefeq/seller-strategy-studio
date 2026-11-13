@@ -32,6 +32,14 @@ import {
 } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
 import { requireKey } from "@/lib/fit-key";
+import { revealCost } from "@/lib/orchestrator/search";
+import { logUsage } from "@/lib/orchestrator/usage";
+import { normalizeVerificationEmail } from "@/lib/email-verification";
+import {
+  buildVerificationRow,
+  recordApolloVerifications,
+  type VerificationRow,
+} from "@/lib/email-verification-writer";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
@@ -230,6 +238,29 @@ export async function revealToAccount(
       phone: a.phone ? "requested" : "no",
     });
   }
+  if (out.length) {
+    // Every caller (screens, agent, MCP, orchestrator) logs the spend and stores the email status here.
+    await logUsage(
+      c,
+      a.phone ? "find_phone" : "find_email",
+      [{ service: "apollo", cost: revealCost(out.length, !!a.phone) }],
+      "manual",
+    );
+    const now = new Date();
+    await recordApolloVerifications(
+      out
+        .map((r) =>
+          buildVerificationRow({
+            orgId: c.orgId,
+            email: r.contact.email,
+            providerStatus: r.contact.emailStatus,
+            requestedBy: c.userId,
+            now,
+          }),
+        )
+        .filter((r): r is VerificationRow => !!r),
+    );
+  }
   return out;
 }
 
@@ -242,6 +273,8 @@ export async function revealStakeholder(
   contact: RevealedContact | null;
   phone: "requested" | "cached" | "pending" | "no";
   phoneNumber: string | null;
+  /** A different email Apollo returned: kept as a proposal, never written over the saved one. */
+  proposedEmail: string | null;
 }> {
   const s = await mustFind<{
     id: string;
@@ -288,10 +321,10 @@ export async function revealStakeholder(
             .eq("org_id", c.orgId)
             .eq("id", s.id),
         );
-      return { found: true, contact: null, phone: "cached", phoneNumber: cached };
+      return { found: true, contact: null, phone: "cached", phoneNumber: cached, proposedEmail: null };
     }
     if (last?.status === "pending")
-      return { found: true, contact: null, phone: "pending", phoneNumber: null };
+      return { found: true, contact: null, phone: "pending", phoneNumber: null, proposedEmail: null };
   }
   const [m] = await bulkMatch(
     [
@@ -305,16 +338,35 @@ export async function revealStakeholder(
     !!a.phone,
     a.webhookBase,
   );
-  if (!m) return { found: false, contact: null, phone: "no", phoneNumber: null };
+  if (!m) return { found: false, contact: null, phone: "no", phoneNumber: null, proposedEmail: null };
+  // Keep and propose (Fede, NK-0173): a different email from Apollo never overwrites the saved one.
+  const proposedEmail =
+    m.email && s.email && normalizeVerificationEmail(m.email) !== normalizeVerificationEmail(s.email)
+      ? m.email
+      : null;
   const patch = {
-    ...(m.email && m.email !== s.email ? { email: m.email } : {}),
+    ...(m.email && !s.email ? { email: m.email } : {}),
     ...(m.linkedin_url && !s.linkedin_url ? { linkedin_url: m.linkedin_url } : {}),
     ...(m.title && !s.title ? { title: m.title } : {}),
   };
   if (Object.keys(patch).length)
     ok(await c.db.from("stakeholders").update(patch).eq("org_id", c.orgId).eq("id", s.id));
   if (a.phone) await requestPhone(c, m, s.id);
-  return { found: true, contact: m, phone: a.phone ? "requested" : "no", phoneNumber: null };
+  await logUsage(
+    c,
+    a.phone ? "find_phone" : "find_email",
+    [{ service: "apollo", cost: revealCost(1, !!a.phone) }],
+    "manual",
+  );
+  const verification = buildVerificationRow({
+    orgId: c.orgId,
+    email: m.email,
+    providerStatus: m.emailStatus,
+    requestedBy: c.userId,
+    now: new Date(),
+  });
+  if (verification) await recordApolloVerifications([verification]);
+  return { found: true, contact: m, phone: a.phone ? "requested" : "no", phoneNumber: null, proposedEmail };
 }
 
 export type CompanyHit = AccountDraft & { existingId: string | null };

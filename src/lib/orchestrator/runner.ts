@@ -27,6 +27,10 @@ import {
 import { DEFAULT_LEVELS, levelsFor, nextCursor, revealCost, type Cursor } from "./search";
 import { missingKey } from "@/lib/fit-key";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { logUsage, type Trigger, type Used } from "./usage";
+
+export type { Trigger, Used } from "./usage";
+export { logUsage } from "./usage";
 
 const ENV: Partial<Record<Service, string[]>> = {
   apollo: ["APOLLO_API_KEY"],
@@ -41,9 +45,6 @@ const ENV: Partial<Record<Service, string[]>> = {
 export function connectedServices(): Service[] {
   return (Object.keys(ENV) as Service[]).filter((s) => ENV[s]!.every((k) => !!process.env[k]));
 }
-
-export type Trigger = "manual" | "automatic";
-export type Used = { service: Service; cost: number };
 
 export async function monthBudget(c: ToolCtx) {
   const start = new Date();
@@ -63,21 +64,6 @@ export async function monthBudget(c: ToolCtx) {
   );
   const limit = b?.monthly_limit == null ? null : Number(b.monthly_limit);
   return { spent, limit, ...budgetState(spent, limit) };
-}
-
-export async function logUsage(c: ToolCtx, need: Need, used: Used[], trigger: Trigger) {
-  if (!used.length) return;
-  const { error } = await c.db.from("integration_usage").insert(
-    used.map((u) => ({
-      org_id: c.orgId,
-      user_id: c.userId,
-      service: u.service,
-      need,
-      trigger,
-      cost: u.cost,
-    })),
-  );
-  if (error) console.error("integration_usage insert failed", safeErrorLog(error));
 }
 
 async function planNeed(
@@ -277,7 +263,9 @@ export async function applyAutoChanges(
         { field: ch.field, current: ch.current, proposed: ch.proposed, source: ch.source },
         acc.field_sources,
       );
-      return { ...sug, org_id: c.orgId, action: sug.action as unknown as Json };
+      // email_block is not a column: strip it before writing (it only feeds the draft-block registry).
+      const { email_block: _drop, ...row } = sug;
+      return { ...row, org_id: c.orgId, action: sug.action as unknown as Json };
     });
     const { error: e } = await c.db
       .from("suggestions")
@@ -473,14 +461,13 @@ export async function findKeyPeople(
   throw new Error(lastError ?? "No se ha podido buscar personas.");
 }
 
-/** Adds Apollo results to the map: reveals name, email and LinkedIn (and the mobile if asked), logging the spend. */
+/** Adds Apollo results to the map: reveals name, email and LinkedIn (and the mobile if asked). The gateway core logs the spend. */
 export async function revealKeyPeople(
   c: ToolCtx,
   a: { accountId: string; apolloIds: string[]; phone?: boolean; webhookBase?: string },
 ) {
   const r = await revealToAccount(c, a);
   const cost = revealCost(r.length, !!a.phone);
-  await logUsage(c, a.phone ? "find_phone" : "find_email", [{ service: "apollo", cost }], "manual");
   return { people: r, sources: sourcesLine([{ service: "apollo", cost }]) };
 }
 
