@@ -1,15 +1,17 @@
 # Roadmap
 ## Verificación independiente (13-11-2026; prioridad antes de iniciativas nuevas)
-- [ ] F1: truncamiento de Drive visible y probado en el job.
-- [ ] F2: estado y políticas reales de Storage; creación reproducible por API (INSERT en storage.buckets no permitido por la plataforma).
-- [ ] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
-- [ ] F4: cerrar lecturas de meQuery en salida de sesión; probar useSetup y useLivePipeline.
-- [ ] F5: formato solo en los archivos afectados, sin cambios a pruebas existentes.
-- [ ] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
-- [ ] F8: subida, eliminación, límite y progreso de fuentes.
-- [ ] F9–F10: validar rutas UUID y source_status.
-- [ ] F11: corregir documentación e informar correspondencia de snapshots sin renombrarlos.
-- [ ] Verificar suite completa, tipos disponibles, navegador escritorio/375 px claro/oscuro e informe final.
+- [x] F1: truncamiento de Drive visible y probado en el job.
+- [x] F2: estado/políticas reales auditados; creación reproducible por API, no SQL; configuración real MIME sin restricción documentada.
+- [x] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
+- [ ] F4: bloqueado por dos pruebas existentes de session-cache; meQuery revertido, nuevas reproducciones rojas conservadas; useSetup/useLivePipeline probados.
+- [ ] F5: producto permitido formateado; formato de pruebas existentes/autogenerados requiere permiso/regeneración.
+- [x] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
+- [x] F8: subida, eliminación, límite y progreso indeterminado de fuentes.
+- [ ] F9: función UUID aplicada/probada; herramienta generó prefijo 0087 duplicado, reparación de diario gestionado bloqueada.
+- [x] F10: validar source_status.
+- [x] F11: documentación corregida y correspondencia de snapshots informada sin renombrarlos.
+- [x] Tipos limpios, build automático OK, navegador real escritorio/375 px claro/oscuro e informe final.
+- [ ] Suite completa verde: bloqueada por F4 (2 nuevas) y prefijo duplicado F9 (1 existente); 5565/5568 pasan.
 - [ ] F12: retención — bloqueado, requiere decisión de Fede; no implementar.
 - [ ] Heredados NK-0159/NK-0176/escáner NK-0160 — bloqueados por decisión o permiso; no modificar pruebas existentes.
 
