@@ -23,6 +23,11 @@ function build() {
       const suggestions = await step.run("suggestions", async () => t.maintainSuggestions(await admin(), orgId));
       const stripe = await step.run("stripe", async () => t.maintainStripe(await admin(), orgId));
       const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
+      const customPlays = await step.run("custom-plays", async () => {
+        const { runActiveCustomPlays } = await import("@/lib/plays/custom/adapters.server");
+        const r = await runActiveCustomPlays(await admin(), orgId);
+        return { runs: r.runs, evidenceCount: r.evidenceCount, suggestionCount: r.suggestionCount, paused: r.paused };
+      });
       const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
       const discoveries = await step.run("discoveries", async () => { const { discoverForOrg } = await import("@/lib/discoveries.server"); return discoverForOrg(await admin(), orgId); });
       const autopilot = await step.run("autopilot", async () => {
@@ -36,7 +41,7 @@ function build() {
       });
       const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
       if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
-      return { suggestions, stripe, posthog, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };
+      return { suggestions, stripe, posthog, customPlays, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };
     },
   );
 
