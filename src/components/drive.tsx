@@ -337,6 +337,28 @@ export function DriveSetupButton({ onText }: { onText: (name: string, text: stri
   );
 }
 
+/** Onboarding: picks a Drive file by reference only; the reading downloads it on the server. */
+export function DriveRefButton({ onPick }: { onPick: (f: { id: string; name: string }) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <Button type="button" variant="outline" size="sm" onClick={() => setOpen(true)}>
+        Añadir desde Google Drive
+      </Button>
+      <DrivePicker
+        open={open}
+        onOpenChange={setOpen}
+        onPick={(f: Picked) => {
+          onPick(f);
+          setOpen(false);
+        }}
+        busy={false}
+        title="Documentos de Google Drive"
+      />
+    </>
+  );
+}
+
 /** Saves a text as a Google Doc in the account folder (or the company folder). */
 export function SaveToDriveButton({
   title,

@@ -1,3 +1,4 @@
+import { statusLabel, type SourceStatus } from "@/lib/onboarding-source-refs";
 import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +33,9 @@ export function ReadingStep({
   onBack,
   onSkip,
   onChange,
+  statuses = [],
 }: {
+  statuses?: SourceStatus[];
   jobId: string | null;
   findings: Finding[];
   sources: string[];
@@ -222,6 +225,8 @@ export function ReadingStep({
             const panelId = `${uid}-findings-${n}`;
             const hintId = `${uid}-hint-${n}`;
             const isOpen = open.has(s);
+            // The real read status (NK-0165): an unread or partly read document says so instead of a counter.
+            const real = statuses.find((x) => x.name === s);
             const counter = count === 1 ? "1 hallazgo" : `${count} hallazgos`;
             const hint =
               done && count === null
@@ -234,7 +239,9 @@ export function ReadingStep({
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="min-w-0 [overflow-wrap:anywhere]">{s}</span>
                   <span data-testid="source-status" className="text-ink-faint">
-                    {done && count ? (
+                    {done && real && real.state !== "full" ? (
+                      statusLabel(real)
+                    ) : done && count ? (
                       <button
                         type="button"
                         id={`${uid}-toggle-${n}`}
