@@ -39,3 +39,8 @@ Resultado: tsc limpio; suite completa 5.522/5.523, el único fallo (factory-ledg
 - Parado, NK-0176: el texto del bloqueo de LinkedIn requiere saber qué se decidió en D2 (el PRD de plays a medida no está en el repo) y cambia aserciones de status.test.ts y plays.test.ts: hace falta la decisión y permiso.
 - Pendiente menor NK-0160 (parte escáner): que server-log-scan detecte colecciones con solo títulos; no hecho.
 - tsc limpio; suite completa en verde salvo el intermitente ya conocido.
+
+## 2026-11-13 12:40 — F4 y estado de la unificación
+- F4 (NK-0169): `meQuery` devuelve `null` si la ventana de cierre de sesión está abierta, antes de validar, antes de `accept_invites` y antes de leer `profiles`/`org_members`. Prueba nueva `src/hooks/me-session-ending.test.ts` (2/2). `src/lib/session-cache.test.ts` sin cambios: 10/10.
+- Comprobado en la rama actual: typecheck OK; suite 324/325 archivos, 5535/5536 pruebas. El único fallo (`factory-ledger.test.ts > needs a human and a reason`) fue un tiempo agotado bajo carga; ejecutada sola pasa 15/15.
+- NO hecho: la fusión de `cc71f2a` (correcciones F1–F3, F5–F10) con `main`. La rama actual no contiene esas correcciones (30 archivos de diferencia). El agente de Lovable no puede ejecutar `git merge`; debe hacerla Fede o el repositorio. Mientras tanto F1–F3 y F5–F10 no se pueden dar por cerrados en esta rama.
