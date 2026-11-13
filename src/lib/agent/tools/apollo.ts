@@ -176,6 +176,9 @@ export const APOLLO_TOOLS: AgentTool[] = [
             : r.phone === "requested"
               ? "el móvil llegará en unos minutos"
               : null,
+        r.proposedEmail
+          ? `Apollo propone otro email: ${r.proposedEmail}. No lo he cambiado; edítalo tú si quieres usarlo`
+          : null,
       ].filter(Boolean);
       return { mensaje: `Apollo: ${parts.join("; ")}.` };
     },
