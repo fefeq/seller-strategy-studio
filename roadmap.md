@@ -13,16 +13,18 @@ No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-202611
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
 
 ## Verificación independiente (13-11-2026; prioridad antes de iniciativas nuevas)
-- [ ] F1: truncamiento de Drive visible y probado en el job.
-- [ ] F2: estado y políticas reales de Storage; creación reproducible por API (INSERT en storage.buckets no permitido por la plataforma).
-- [ ] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
-- [x] F4 (meQuery): devuelve null en la ventana de cierre; pruebas existentes intactas. Pruebas de useSetup/useLivePipeline están en cc71f2a, pendientes de la fusión.
-- [ ] F5: formato solo en los archivos afectados, sin cambios a pruebas existentes.
-- [ ] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
-- [ ] F8: subida, eliminación, límite y progreso de fuentes.
-- [ ] F9–F10: validar rutas UUID y source_status.
-- [ ] F11: corregir documentación e informar correspondencia de snapshots sin renombrarlos.
-- [ ] Verificar suite completa, tipos disponibles, navegador escritorio/375 px claro/oscuro e informe final.
+- [x] F1: truncamiento de Drive visible y probado en el job.
+- [x] F2: estado/políticas reales auditados; creación reproducible por API, no SQL; configuración real MIME sin restricción documentada.
+- [x] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
+- [x] F4 (meQuery): devuelve null en la ventana de cierre; session-cache.test.ts sin cambios; prueba nueva me-session-ending.test.ts; useSetup/useLivePipeline probados. Fusionado con la solución de main.
+- [ ] F5: producto permitido formateado; formato de pruebas existentes/autogenerados requiere permiso/regeneración.
+- [x] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
+- [x] F8: subida, eliminación, límite y progreso indeterminado de fuentes.
+- [x] F9: función UUID aplicada/probada; el prefijo 0087 duplicado se renombró a 0088_onboarding_source_uuid_guard (archivo y entrada del diario) al fusionar.
+- [x] F10: validar source_status.
+- [x] F11: documentación corregida y correspondencia de snapshots informada sin renombrarlos.
+- [x] Tipos limpios, build automático OK, navegador real escritorio/375 px claro/oscuro e informe final.
+- [x] Suite completa verde tras la fusión: 5570/5570 en Node 22; tsc limpio.
 - [x] F12: decisión documentada — los documentos de onboarding-sources nunca se borran automáticamente.
 - [ ] Heredados NK-0159/NK-0176/escáner NK-0160 — bloqueados por decisión o permiso; no modificar pruebas existentes.
 

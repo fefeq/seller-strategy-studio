@@ -21,15 +21,19 @@ export const setupIncomplete: Detector = (s) => {
   // so the plain key would hit the row the postponement closed, or one the person dismissed before. Seconds, not the day, so that
   // postponing and clearing it twice on the same day gives two different suggestions. The step stays the second part of the key.
   const ended = (s.setupSnoozes ?? []).find((x) => x.step_id === g.next!.id);
-  return [{
-    detector: "setup_incomplete",
-    dedupe_key: ended ? `setup_incomplete:${g.next.id}:${Math.floor(new Date(ended.snoozed_until).getTime() / 1000)}` : `setup_incomplete:${g.next.id}`,
-    priority: g.pct < 50 || stalled ? 1 : 3,
-    title: `Completa: ${g.next.label}`,
-    // No percentage here: a stored suggestion would freeze it, and the sidebar and Inicio show the live one.
-    body: `${g.next.why} Esto desbloquea: ${g.next.unlocks}.`,
-    link: setupStepLink(g.next.id),
-    action: null,
-    user_id: who.user_id,
-  }];
+  return [
+    {
+      detector: "setup_incomplete",
+      dedupe_key: ended
+        ? `setup_incomplete:${g.next.id}:${Math.floor(new Date(ended.snoozed_until).getTime() / 1000)}`
+        : `setup_incomplete:${g.next.id}`,
+      priority: g.pct < 50 || stalled ? 1 : 3,
+      title: `Completa: ${g.next.label}`,
+      // No percentage here: a stored suggestion would freeze it, and the sidebar and Inicio show the live one.
+      body: `${g.next.why} Esto desbloquea: ${g.next.unlocks}.`,
+      link: setupStepLink(g.next.id),
+      action: null,
+      user_id: who.user_id,
+    },
+  ];
 };

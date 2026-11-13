@@ -87,7 +87,9 @@ async function readTitles(c: { db: Db; orgId: string }): Promise<Set<string>> {
     return new Set(
       (data ?? [])
         // NK-0177: only team rules count; a personal rule with a base title does not stand in for it.
-        .filter((d) => d.org_id === c.orgId && d.section === "rules" && (d.scope ?? "team") === "team")
+        .filter(
+          (d) => d.org_id === c.orgId && d.section === "rules" && (d.scope ?? "team") === "team",
+        )
         .map((d) => same(d.title)),
     );
   } catch (e) {

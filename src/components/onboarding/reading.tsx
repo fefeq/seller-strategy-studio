@@ -95,7 +95,10 @@ export function ReadingStep({
   const summary = summarizeSources(sources, findings);
   const live = findings.flatMap((f, i) => (f.discardedAt ? [] : [{ f, i }]));
   // NK-0181: a source left without findings closes its panel, so restoring a discarded finding never brings it back open.
-  const emptied = summary.filter((x) => !x.count && open.has(x.source)).map((x) => x.source).join("\n");
+  const emptied = summary
+    .filter((x) => !x.count && open.has(x.source))
+    .map((x) => x.source)
+    .join("\n");
   useEffect(() => {
     if (!emptied) return;
     setOpen((prev) => {
@@ -158,7 +161,10 @@ export function ReadingStep({
         )}
         <ol className="mt-3 border-t border-hairline font-mono text-sm" aria-live="polite">
           {live.map(({ f, i }) => (
-            <li key={i} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 border-b border-hairline py-2">
+            <li
+              key={i}
+              className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 border-b border-hairline py-2"
+            >
               <span className="text-ink-faint">{time(f.at)}</span>
               {/* NK-0180: a long source without spaces wraps instead of widening the page. */}
               <span className="min-w-0 [overflow-wrap:anywhere]">
