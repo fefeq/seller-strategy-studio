@@ -26,7 +26,7 @@ describe("onboarding sources by reference", () => {
   });
   it("states full, partial and unread", () => {
     expect(statusOf(ref(1), 10, 10).state).toBe("full");
-    expect(statusLabel(statusOf(ref(1), 1000, 4000))).toBe("Leída en parte: 1.000 de 4.000 caracteres");
+    expect(statusLabel(statusOf(ref(1), 12000, 40000))).toBe("Leída en parte: 12.000 de 40.000 caracteres");
     expect(statusLabel(statusOf(ref(1), 0, 0, "fuera de la carpeta"))).toBe("No leída: fuera de la carpeta");
   });
   it("refuses wrong types and files over 20 MB", () => {
