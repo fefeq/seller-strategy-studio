@@ -5553,6 +5553,7 @@ export type Database = {
         Args: { _name: string; _own: boolean }
         Returns: boolean
       }
+      play_enable_allowed: { Args: { _play_id: string }; Returns: boolean }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
