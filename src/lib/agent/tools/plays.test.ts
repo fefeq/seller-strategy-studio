@@ -109,7 +109,7 @@ describe("list_plays and get_play (CA-18, G-3)", () => {
     expect(by["new-hire-tracking"]).toMatchObject({
       enabled: false,
       canEnable: false,
-      label: "Bloqueado: falta una decisión de LinkedIn",
+      label: "Bloqueado: falta una integración con la API oficial de LinkedIn",
     });
     expect(writes(log)).toHaveLength(0);
     expectScoped(log);

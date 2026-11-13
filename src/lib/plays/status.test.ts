@@ -51,13 +51,13 @@ describe("blocked and planned plays cannot be enabled (CA-9, G-3)", () => {
   it("shows a blocked play as blocked with the reason and what to decide, never enabled", () => {
     const s = effectiveState(BLOCKED_LI, null);
     expect(s).toMatchObject({ enabled: false, canEnable: false });
-    expect(s.label).toBe("Bloqueado: falta una decisión de LinkedIn");
+    expect(s.label).toBe("Bloqueado: falta una integración con la API oficial de LinkedIn");
     expect(s.reason).toBeTruthy();
   });
 
   it("covers the four blockers with their own words", () => {
     const label = (id: string) => effectiveState(play(id), null).label;
-    expect(label("new-hire-tracking")).toBe("Bloqueado: falta una decisión de LinkedIn");
+    expect(label("new-hire-tracking")).toBe("Bloqueado: falta una integración con la API oficial de LinkedIn");
     expect(label("website-visitor-de-anonymization")).toBe(
       "Bloqueado: falta un proveedor de datos",
     );
