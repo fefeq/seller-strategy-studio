@@ -27,7 +27,7 @@ vi.mock("@/components/onboarding/blocks", () => ({ BlocksStep: () => null }));
 vi.mock("@/lib/background.functions", () => ({
   startBackgroundJob: (...a: unknown[]) => state.start(...a),
 }));
-vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null }));
+vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null, DriveRefButton: () => null }));
 vi.mock("@/components/page", () => ({
   Page: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
