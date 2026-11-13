@@ -6,7 +6,7 @@ import { staleDeals, thresholdText } from "@/lib/stale";
  * or the company's own number) → prepare a follow-up task.
  */
 export const staleDeal: Detector = (s) => {
-  const cycleDeals = s.cycleDeals ?? s.deals.map((d) => ({ id: d.id, stage: d.stage, amount: d.amount, close_date: d.close_date, closed_at: null, updated_at: d.updated_at, created_at: d.updated_at, segment_id: null }));
+  const cycleDeals = s.cycleDeals ?? s.deals.map((d) => ({ id: d.id, stage: d.stage, amount: d.amount, close_date: d.close_date, closed_at: null as string | null, updated_at: d.updated_at, created_at: d.updated_at, segment_id: null as string | null }));
   const cold = new Map(staleDeals(cycleDeals, s.cycleSegments ?? [], s.staleDays ?? null, s.now).filter((r) => r.stale).map((r) => [r.deal.id, r]));
   return s.deals
     .filter((d) => OPEN(d.stage) && cold.has(d.id))
