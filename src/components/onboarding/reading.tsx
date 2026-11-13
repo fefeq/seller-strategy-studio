@@ -148,9 +148,10 @@ export function ReadingStep({
         )}
         <ol className="mt-3 border-t border-hairline font-mono text-sm" aria-live="polite">
           {live.map(({ f, i }) => (
-            <li key={i} className="grid grid-cols-[5.5rem_1fr] gap-3 border-b border-hairline py-2">
+            <li key={i} className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 border-b border-hairline py-2">
               <span className="text-ink-faint">{time(f.at)}</span>
-              <span>
+              {/* NK-0180: a long source without spaces wraps instead of widening the page. */}
+              <span className="min-w-0 [overflow-wrap:anywhere]">
                 {f.text}
                 {!!f.source && <span className="text-ink-mid"> · {f.source}</span>}
                 {!!f.sourceRemoved && <span className="text-ink-mid"> · fuente quitada</span>}
