@@ -1,7 +1,7 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { validatedUser } from "@/lib/session";
-import { assertSessionOpen, retryWhileOpen } from "@/lib/session-ending";
+import { assertSessionOpen } from "@/lib/session-ending";
 import { currencySymbol, formatMoney } from "@/lib/money";
 
 export type Membership = {
@@ -29,7 +29,6 @@ export const meQuery = queryOptions({
   queryKey: ["me"],
   // Remounts (mobile drawer, every screen) reuse the cache; session changes invalidate it (__root).
   staleTime: 5 * 60_000,
-  retry: retryWhileOpen(3),
   queryFn: async () => {
     // NK-0169: never read with the previous account while «Cerrar sesión» is in flight.
     assertSessionOpen();
