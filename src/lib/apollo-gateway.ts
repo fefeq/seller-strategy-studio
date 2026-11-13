@@ -32,6 +32,14 @@ import {
 } from "@/lib/apollo";
 import { cleanDomain } from "@/lib/leads";
 import { requireKey } from "@/lib/fit-key";
+import { revealCost } from "@/lib/orchestrator/search";
+import { logUsage } from "@/lib/orchestrator/usage";
+import { normalizeVerificationEmail } from "@/lib/email-verification";
+import {
+  buildVerificationRow,
+  recordApolloVerifications,
+  type VerificationRow,
+} from "@/lib/email-verification-writer";
 
 const GATEWAY_URL = "https://connector-gateway.lovable.dev/apollo";
 
@@ -230,6 +238,29 @@ export async function revealToAccount(
       phone: a.phone ? "requested" : "no",
     });
   }
+  if (out.length) {
+    // Every caller (screens, agent, MCP, orchestrator) logs the spend and stores the email status here.
+    await logUsage(
+      c,
+      a.phone ? "find_phone" : "find_email",
+      [{ service: "apollo", cost: revealCost(out.length, !!a.phone) }],
+      "manual",
+    );
+    const now = new Date();
+    await recordApolloVerifications(
+      out
+        .map((r) =>
+          buildVerificationRow({
+            orgId: c.orgId,
+            email: r.contact.email,
+            providerStatus: r.contact.emailStatus,
+            requestedBy: c.userId,
+            now,
+          }),
+        )
+        .filter((r): r is VerificationRow => !!r),
+    );
+  }
   return out;
 }
 
@@ -242,6 +273,8 @@ export async function revealStakeholder(
   contact: RevealedContact | null;
   phone: "requested" | "cached" | "pending" | "no";
   phoneNumber: string | null;
+  /** A different email Apollo returned: kept as a proposal, never written over the saved one. */
+  proposedEmail: string | null;
 }> {
   const s = await mustFind<{
     id: string;
