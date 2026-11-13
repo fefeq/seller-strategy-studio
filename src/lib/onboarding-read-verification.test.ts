@@ -59,4 +59,13 @@ describe("independent verification: referenced onboarding reads", () => {
     const findings = [...writes].reverse().find((w) => Array.isArray(w.findings))?.findings as { source: string | null }[];
     expect(findings.filter((f) => f.source === drive.name)).toEqual([]);
   });
+  it("F6: raw Drive errors are translated before persisting status or findings", async () => {
+    mocks.readFile.mockRejectedValue(new Error("permission denied for relation drive_folders"));
+    const { c, writes } = context();
+    await runOnboardingRead(c, { sources: [drive] }, async () => {});
+    const statuses = [...writes].reverse().find((w) => Array.isArray(w.source_status))?.source_status;
+    expect(statuses).toEqual([expect.objectContaining({ state: "unread", reason: "Tu rol no permite hacer este cambio. Pídeselo al Owner o a un Sales Leader de la empresa." })]);
+    expect(JSON.stringify(writes)).not.toContain("permission denied");
+    expect(JSON.stringify(writes)).not.toContain("drive_folders");
+  });
 });
