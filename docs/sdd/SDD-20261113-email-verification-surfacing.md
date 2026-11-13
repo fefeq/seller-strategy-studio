@@ -71,10 +71,14 @@ Un lead nunca llega a «verificado» en este paso (solo se revelan stakeholders)
 Ninguna abierta. No publicar ni desplegar.
 
 ## 16. Pendiente de verificar
-Insignia y botón en navegador real (desktop y móvil, claro y oscuro). Tipos sin comprobar por restricción del entorno.
+Insignia y botón en navegador real (desktop y móvil, claro y oscuro): pendiente. La sesión se restauró, pero el navegador local permaneció en el esqueleto de carga en Personas y Cuentas; peticiones de módulos abortadas, sin excepción de página. No se declara CA-2/CA-8 verificado visualmente ni se ejecutó revelado de pago. Comprobación manual de tipos no ejecutada por restricción del entorno; señal automática `build OK` a las 16:38:12 UTC tras corregir los errores indicados.
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
 No revisado; no se rellena veredicto independiente.
 
 ## 18. Delta de implementación
-Pendiente de rellenar al entregar.
+U-1–U-5 implementadas. Componente compartido para estado/fecha en stakeholders, leads y Personas (tabla y móvil); helper de lectura por lotes de 100 direcciones normalizadas y empresa explícita, con cliente del miembro. Error de lectura se mantiene visible y nunca presenta «verificado». El botón del stakeholder con email reutiliza ApolloReveal, muestra «Verificar email» y el coste del catálogo existente; no se añade verificador ni revelado de leads/people.
+
+Catálogo cubre las seis columnas de email_draft_blocks sin ampliar baseline ni modificar pruebas protegidas. Nueva prueba PGlite valida GRANT efectivos sin privilegios por defecto, aislamiento, INSERT propio, prohibición de UPDATE/DELETE/anon y ausencia de columna email. Nuevas pruebas del helper: normalización/dedupe, scope, no lectura sin empresa/email y error distinguible.
+
+Se corrigieron los tres errores automáticos pendientes: status del agente acotado al CHECK de la tabla; email_block excluido de escrituras de estrategia y followupStep, además de runner/sync ya corregidos. followupStep también registra los bloqueos (camino durable que comparte el detector). Ninguna migración reaplicada: lectura del catálogo real confirma ambas tablas. CA-2 y CA-8 quedan pendientes de revisión visual; revisión independiente no realizada. Sin publicación, despliegue ni gasto real.
