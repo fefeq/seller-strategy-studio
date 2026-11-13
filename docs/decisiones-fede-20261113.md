@@ -15,6 +15,7 @@ Respuestas de Fede en la entrevista de cierre de pendientes. Mandan sobre las re
 - Q-5: la fila se borra cuando ningún contacto de la empresa use ese email (al borrar el contacto o al cambiar su email) y siempre al borrar la empresa. Sin plazo numérico.
 - Q-6: lo manual con coste **no se pausa** al límite y siempre se registra el gasto (cambio transversal del orquestador; avisar a NK-0171).
 - Q-7: pedir a NK-0171 un parámetro opcional «solo contacto verificado» por play o receta.
+- Aclaración posterior de Fede: si Apollo devuelve un email distinto al existente, **conservar y proponer** la alternativa; no sustituir automáticamente la dirección guardada.
 
 ## NK-0167 Líneas de negocio (aprobado)
 - Etapa **por línea** (cuatro preguntas por línea). Quitar línea: **solo el Owner**.
