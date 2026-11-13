@@ -13,3 +13,6 @@ Prueba nueva falla primero con colección de títulos, después prueba nombres, 
 
 ## Riesgos y vuelta atrás
 Análisis estático local, no interprocedimental: no garantiza detectar valores que cruzan funciones o archivos. No afirma auditoría exhaustiva de datos personales. Revertir los dos archivos nuevos elimina el complemento, dejando intacto el escáner protegido. No hay cambio visual ni llamadas reales; navegador no sustituye una prueba de análisis estático.
+
+## Resultado
+Cinco pruebas fallaron primero por ausencia de detección; selección final 26/26 y suite completa 5584/5584 (336 archivos). Tres falsos positivos de contadores de ai-gateway se diagnosticaron y corrigieron permitiendo status, sin tocar pruebas existentes. Compilación automática OK 14:26:45 UTC. Tipos sin comprobar por restricción del entorno. Informe emitido; revisión independiente no realizada, Estado En curso.
