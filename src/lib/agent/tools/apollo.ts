@@ -150,6 +150,9 @@ export const APOLLO_TOOLS: AgentTool[] = [
           nombre: x.contact.name,
           cargo: x.contact.title,
           email: x.contact.email,
+          estado_email: x.contact.email
+            ? EMAIL_STATUS_LABEL[apolloEmailStatus(x.contact.emailStatus)]
+            : null,
           linkedin: x.contact.linkedin_url,
           stakeholder_id: x.stakeholderId,
           nueva: x.created,
@@ -167,6 +170,9 @@ export const APOLLO_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       const r = await revealStakeholder(c, { stakeholderId: a.stakeholder_id, phone: a.phone });
       if (!r.found) return { mensaje: "Apollo no ha encontrado a esa persona." };
+      const estadoEmail = r.contact?.email
+        ? EMAIL_STATUS_LABEL[apolloEmailStatus(r.contact.emailStatus)]
+        : null;
       const parts = [
         r.contact?.email ? `email ${r.contact.email}` : r.contact ? "sin email disponible" : null,
         r.phone === "cached"

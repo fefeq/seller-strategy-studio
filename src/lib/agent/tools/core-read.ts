@@ -527,12 +527,36 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       const l = one(
         await c.db
           .from("leads")
-          .select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source")
+          .select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source,email")
           .eq("org_id", c.orgId)
           .eq("id", a.lead_id)
           .single(),
         "el lead",
       );
+      // Email gate (NK-0173): invalid or catch-all blocks the draft with the reason; unverified or
+      // unverifiable passes with a visible mark; no address on the lead behaves as before.
+      let emailMark: string | null = null;
+      if (l.email?.trim()) {
+        const { emailBlockReason, emailGateMark, emailStatusFor } = await import("@/lib/email-status");
+        const { data: vrow } = await c.db
+          .from("email_verifications")
+          .select("email,status,checked_at")
+          .eq("org_id", c.orgId)
+          .eq("email", l.email.trim().toLowerCase())
+          .maybeSingle();
+        const status = emailStatusFor(l.email, vrow ?? null, new Date());
+        const reason = status ? emailBlockReason(status) : null;
+        if (reason && status) {
+          const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
+          await recordEmailDraftBlock(c.db, c.orgId, {
+            surface: "draft_followup",
+            status,
+            reason,
+          });
+          return { bloqueado: true, motivo: reason };
+        }
+        emailMark = status ? emailGateMark(status) : null;
+      }
       const st = followupStatus(l, new Date());
       const step = a.step
         ? FOLLOWUP_STEPS.find((x) => x.id === a.step)!
@@ -574,6 +598,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         dias_sin_respuesta: st.daysSinceContact,
         borrador: text.trim(),
         borrador_base: base,
+        marca_email: emailMark,
       };
       const notices = [rules.ok ? "" : RULES_READ_FAILED, voice.ok ? "" : VOICE_READ_FAILED].filter(
         Boolean,
