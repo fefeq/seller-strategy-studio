@@ -418,7 +418,7 @@ describe("deck (Inicio and card view of Sugerencias)", () => {
   it("an operational card keeps «Hacer» and has no evidence block", () => {
     wrap(<SuggestionDeck items={[operational("o")] as unknown as Items} keyboard={false} />);
     expect(screen.getByRole("button", { name: /Hacer/ })).toBeInTheDocument();
-    expect(screen.getByText("✓")).toBeInTheDocument(); // operational cards keep the icon buttons
+    expect(screen.getByText("Hacer", { selector: "button span" })).toBeVisible(); // NK-0168: operational cards keep icon buttons, now with visible text
     expect(document.querySelector("details")).toBeNull();
     expect(screen.queryByLabelText("Motivo de tu decisión (opcional)")).toBeNull();
   });

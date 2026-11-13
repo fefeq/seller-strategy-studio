@@ -167,3 +167,10 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - No visto: bloqueo de borradores en pantalla (aparece en sugerencias y agente; generarlos requiere IA). Etiqueta de «verificado» presente en el texto de la ficha de Ana, sin captura dedicada.
 - Empresa activa devuelta a Postin.
 - Commit/SHA: no aplicable; este entorno no permite hacer commits (los gestiona Lovable automáticamente).
+
+## NK-0168 — Iconografía, entrega 1 (13/11/2026)
+- Cambió: `IconText` (16/20 px, trazo 1,75); mazo de Inicio/Sugerencias con «Descartar» (Ban) y «Hacer» (Check) visibles; menú móvil «Menú»/«Cerrar» con icono; Theory U (Spline) y Conectar asistentes (Cable) en el menú; regla en AGENTS.md, EXECUTION.md y nokko-shape; guardia `icon-rule.test.ts`.
+- Prueba existente: strategy-screens.test.tsx:421 (permiso previo de Fede) `getByText("✓")` → «Hacer» visible dentro del botón; motivo: el ✓ suelto deja de existir por decisión NK-0168.
+- Comprobado: suite 350/350 archivos, 5656/5656; build OK. Navegador: Sugerencias en escritorio muestra los tres botones con texto; móvil 375 claro/oscuro muestra «Cerrar» con ✕ y sin desplazamiento lateral; un 404 de recurso en la primera carga (ya visto antes, no investigado).
+- No comprobado: el icono de Theory U/Conectar asistentes en pantalla (no aparecen en el menú de este rol en la vista revisada); botones de borrar/descartar de otras pantallas siguen sin icono (entrega 2).
+- SHA: no disponible (commits automáticos de Lovable).

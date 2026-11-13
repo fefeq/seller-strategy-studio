@@ -1,3 +1,7 @@
+import { Cable, Menu, Spline, X, type LucideIcon } from "lucide-react";
+// NK-0168: one icon per concept, always with its label.
+const NAV_ICONS: Record<string, LucideIcon> = { "/theory-u": Spline, "/connect": Cable };
+import { IconText } from "@/components/icon-text";
 import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
 import { NotificationCenter } from "@/components/notification-center";
@@ -134,7 +138,7 @@ function Shell() {
                       to={n.to as never}
                       className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime-soft data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
                     >
-                      {n.label}
+                      {NAV_ICONS[n.to] ? <IconText icon={NAV_ICONS[n.to]} size="nav">{n.label}</IconText> : n.label}
                     </Link>
                   ))}
               </div>
@@ -186,11 +190,9 @@ function Shell() {
               aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={navOpen}
               aria-controls="mobile-nav"
-              className="-mr-2 flex size-11 shrink-0 items-center justify-center text-ink"
+              className="-mr-2 flex h-11 shrink-0 items-center justify-center px-2 text-sm text-ink"
             >
-              <span aria-hidden className="text-xl leading-none">
-                {navOpen ? "✕" : "☰"}
-              </span>
+              <IconText icon={navOpen ? X : Menu} size="nav">{navOpen ? "Cerrar" : "Menú"}</IconText>
             </button>
           </div>
         </header>

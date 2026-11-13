@@ -33,7 +33,7 @@ Si dudas entre dos niveles, propón el más ligero y dile a Fede qué le añadir
 ## 3. Reglas
 - Ningún número de negocio se estima: línea base medida con su fuente, o «sin dato».
 - Sin datos de clientes en ejemplos, evidencias ni casos. Datos ficticios.
-- Textos de producto en español, «tú», sin iconos. Identificadores y commits en inglés.
+- Textos de producto en español, «tú», iconos solo con su texto (un icono por concepto, `IconText`; única excepción el `›` del rail colapsado), estados con palabra. Identificadores y commits en inglés.
 - La sección 17 del SDD (revisión técnica) la rellena el resultado de un agente `nokko-gate` con contexto fresco, nunca tú. Lánzalo sobre el SDD en «Borrador», copia su informe sin editarlo y pásaselo a Fede junto con el SDD. El gate informa; aprueba Fede.
 - No amplíes el alcance: lo que sobre va a «No incluye» o a una sugerencia.
 - No uses ni cites plantillas, skills ni reglas de otros productos. Todo sale de `docs/factory/templates/`.
