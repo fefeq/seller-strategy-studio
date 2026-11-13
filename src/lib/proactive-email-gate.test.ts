@@ -24,7 +24,14 @@ const baseLead = {
 const snap = (leads: Snapshot["leads"]): Snapshot => ({
   now: NOW,
   orgId: "o1",
-  setup: { items: [], positioning: null, pillars: [], segments: [], icp: [] } as unknown as Snapshot["setup"],
+  setup: {
+    currency: "EUR",
+    segments: [{ name: "SMB", acv_min: 5000, acv_max: 50000, win_rate_target: 25, ae_quota: 600000 }],
+    icps: [],
+    positioning: null,
+    pillars: [],
+    quarter: "2026-Q4",
+  } as unknown as Snapshot["setup"],
   deals: [],
   meetings: [],
   accounts: [],
