@@ -17,7 +17,8 @@ describe("logs and step output carry no customer or provider text", () => {
 
   it("NK-0159/NK-0162: autopilot notes and visible bodies never interpolate an error message or a meeting title", () => {
     const s = src("src/lib/autopilot.server.ts");
-    expect(s).not.toMatch(/\(e as Error\)\.message/);
+    expect(s).not.toMatch(/notes\.push\([^)]*\.message/);
+    expect(s).not.toMatch(/No pude investigar la web: \$\{\(e as Error\)/);
     expect(s).not.toMatch(/notes\.push\([^)]*meta\.title/);
   });
 

@@ -167,7 +167,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         out.prepped++;
       } catch (e) {
         out.notes.push("Una reunión no se pudo preparar."); // NK-0159: no title nor provider text
-        if (/créditos|bloqueado|cuota/i.test((e as Error).message)) break;
+        if (/créditos|bloqueado|cuota/i.test(e instanceof Error ? e.message : "")) break;
       }
     }
   } catch (e) {
@@ -283,7 +283,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       out.cooling++;
     }
   } catch (e) {
-    out.notes.push(`Cuentas que se enfrían: ${(e as Error).message}`);
+    out.notes.push("Cuentas que se enfrían: no se pudo terminar."); // NK-0159
   }
 
   if (out.notes.length) console.warn("autopilot notes", orgId, { count: out.notes.length });
