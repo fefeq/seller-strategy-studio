@@ -202,7 +202,7 @@ Cada SDD mide el delta de bundle acumulado. El SDD 1 es el único que fija la l�
 ## 12. Registro del gate
 | Pasada | Resultado | Informe | Estado |
 |---|---|---|---|
-| 1 | FAIL: 0 BLOCKER, 3 MAJOR, 8 MINOR | `.factory/evidence/NK-0168/prd-gate-pass1.md` (local, no versionado) | Corregido en {sha} |
+| 1 | FAIL: 0 BLOCKER, 3 MAJOR, 8 MINOR | `.factory/evidence/NK-0168/prd-gate-pass1.md` (local, no versionado) | Corregido en 6f9c273 |
 | 2 | Pendiente | — | — |
 
-pasada 1 FAIL → corregido en {sha}; pasada 2 pendiente.
+pasada 1 FAIL → corregido en 6f9c273; pasada 2 pendiente.
