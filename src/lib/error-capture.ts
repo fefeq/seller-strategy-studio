@@ -20,7 +20,7 @@ export function describeError(error: unknown): string {
   let current: unknown = error;
   for (let depth = 0; depth < CAUSE_DEPTH_LIMIT && current != null; depth++) {
     if (!(current instanceof Error)) {
-      parts.push(typeof current === "string" ? current : safeStringify(current));
+      parts.push(`[cause: ${typeof current}]`); // NK-0158: never the value itself
       break;
     }
     const label = depth === 0 ? "" : "caused by: ";
