@@ -6,6 +6,15 @@ import type { Json } from "@/integrations/supabase/types";
 import { BLOCKS, proposalFindings, type Depth, type Finding, type Opinion } from "@/lib/onboarding";
 import { MAX_FILES } from "@/lib/onboarding-files-limit";
 import type { SetupProposal } from "@/lib/setup-extraction";
+import {
+  allotBudget,
+  ownsPath,
+  statusOf,
+  statusLabel,
+  type SourceRef,
+  type SourceStatus,
+} from "@/lib/onboarding-source-refs";
+import { MAX_SOURCES } from "@/lib/onboarding-files-limit";
 
 type Ctx = ToolCtx & { orgName: string };
 type Input = {
@@ -13,6 +22,7 @@ type Input = {
   url?: string;
   text?: string;
   files?: { filename: string; dataUrl: string }[];
+  sources?: SourceRef[];
 };
 
 const OPINIONS_SCHEMA = {
@@ -57,6 +67,7 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
       proposal: null,
       opinions: null,
       block_status: {} as unknown as Json,
+      source_status: [] as unknown as Json,
     })
     .eq("org_id", c.orgId)
     .eq("user_id", c.userId);
@@ -103,6 +114,34 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
   }
   for (const f of files) await note(`Leyendo el documento ${f.filename}`, f.filename);
 
+  // Documents by reference: downloaded and extracted here, then cut to a fair share of one global budget.
+  const refs = (input.sources ?? []).slice(0, MAX_SOURCES);
+  const statuses: SourceStatus[] = [];
+  let docs = "";
+  if (refs.length) {
+    await step(`Leyendo ${refs.length} ${refs.length === 1 ? "documento" : "documentos"}`);
+    const texts: { s: SourceRef; text: string; reason?: string }[] = [];
+    for (const s of refs) {
+      try {
+        texts.push({ s, text: await extractSource(c, s) });
+      } catch (e) {
+        texts.push({ s, text: "", reason: e instanceof Error ? e.message : "no se pudo leer" });
+      }
+    }
+    const allowed = allotBudget(texts.map((t) => t.text.length));
+    texts.forEach((t, i) => {
+      const st = statusOf(t.s, allowed[i], t.text.length, t.reason ?? (t.text ? undefined : "está vacío"));
+      statuses.push(st);
+      if (allowed[i] > 0) docs += `\n\n--- ${t.s.name} ---\n${t.text.slice(0, allowed[i])}`;
+    });
+    for (const st of statuses) await note(`${st.name}: ${statusLabel(st)}`.slice(0, 300), st.name);
+    await c.db
+      .from("onboarding_sessions")
+      .update({ source_status: statuses as unknown as Json })
+      .eq("org_id", c.orgId)
+      .eq("user_id", c.userId);
+  }
+
   let extra = "";
   if (depth === "deep") {
     await step("Mercado y competidores");
@@ -146,7 +185,7 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
 
   await step("Proponiendo tu estrategia");
   const { extractSetupCore } = await import("@/lib/setup-extract.server");
-  const proposal = await extractSetupCore(c, { url, site, text, files, extra });
+  const proposal = await extractSetupCore(c, { url, site, text: (text + docs).trim(), files, extra });
   for (const f of proposalFindings(proposal)) await note(f.text, f.source);
 
   let opinions: Opinion[] = [];
@@ -188,6 +227,29 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
     needs_decision: true,
     findings: findings.length,
   };
+}
+
+/** Text of one referenced source. Storage paths must sit in the caller's own folder; Drive keeps the company-folder rule. */
+async function extractSource(c: Ctx, s: SourceRef): Promise<string> {
+  if (s.kind === "drive") {
+    const { readFile } = await import("@/lib/drive-core");
+    const r = await readFile({ db: c.db, orgId: c.orgId, userId: c.userId }, s.ref);
+    return r.text;
+  }
+  if (!ownsPath(s.ref, c.orgId, c.userId)) throw new Error("el archivo no es de esta empresa");
+  const { data, error } = await c.db.storage.from("onboarding-sources").download(s.ref);
+  if (error || !data) throw new Error("no se encontró el archivo subido");
+  if (!/\.pdf$/i.test(s.ref)) return await data.text();
+  const bytes = new Uint8Array(await data.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000)
+    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+  const { ask } = await import("@/lib/ai-gateway");
+  return ask(
+    "Transcribe el documento a Markdown fiel al original: títulos, listas y tablas. No resumas, no comentes, no añadas nada. Si una página es solo imagen, describe en una línea lo que muestra.",
+    `Documento: ${s.name}`,
+    { effort: "low", files: [{ filename: s.name, dataUrl: `data:application/pdf;base64,${btoa(bin)}` }] },
+  );
 }
 
 async function cLevelOpinions(c: Ctx, p: SetupProposal): Promise<Opinion[]> {

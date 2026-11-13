@@ -3409,6 +3409,7 @@ export type Database = {
           org_id: string
           proposal: Json | null
           read_job_id: string | null
+          source_status: Json
           sources: Json
           step: string
           updated_at: string
@@ -3426,6 +3427,7 @@ export type Database = {
           org_id?: string
           proposal?: Json | null
           read_job_id?: string | null
+          source_status?: Json
           sources?: Json
           step?: string
           updated_at?: string
@@ -3443,6 +3445,7 @@ export type Database = {
           org_id?: string
           proposal?: Json | null
           read_job_id?: string | null
+          source_status?: Json
           sources?: Json
           step?: string
           updated_at?: string
@@ -5532,6 +5535,24 @@ export type Database = {
       is_finance_member: { Args: { _org: string }; Returns: boolean }
       is_org_member: { Args: { _org: string }; Returns: boolean }
       is_platform_admin: { Args: { _user: string }; Returns: boolean }
+      knowledge_doc_is_binding: {
+        Args: { _mandatory: boolean; _scope: string; _section: string }
+        Returns: boolean
+      }
+      money_notify: {
+        Args: {
+          _at?: string
+          _entity: string
+          _kind: string
+          _org: string
+          _owner: string
+        }
+        Returns: undefined
+      }
+      onboarding_source_path_ok: {
+        Args: { _name: string; _own: boolean }
+        Returns: boolean
+      }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
