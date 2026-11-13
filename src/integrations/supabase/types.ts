@@ -1724,6 +1724,47 @@ export type Database = {
           },
         ]
       }
+      email_verifications: {
+        Row: {
+          checked_at: string
+          email: string
+          org_id: string
+          provider: string
+          provider_status: string | null
+          requested_by: string | null
+          source: string
+          status: string
+        }
+        Insert: {
+          checked_at: string
+          email: string
+          org_id?: string
+          provider: string
+          provider_status?: string | null
+          requested_by?: string | null
+          source: string
+          status: string
+        }
+        Update: {
+          checked_at?: string
+          email?: string
+          org_id?: string
+          provider?: string
+          provider_status?: string | null
+          requested_by?: string | null
+          source?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_verifications_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       field_edit_log: {
         Row: {
           after: Json | null
