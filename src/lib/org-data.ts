@@ -327,14 +327,12 @@ export async function loadSnapshot(
     if (!vErr) {
       const { effectiveEmailStatus } = await import("@/lib/email-verification");
       leadEmailStatus = new Map(
-        leadEmails.map((e) => [
-          e,
-          effectiveEmailStatus(
-            e,
-            (vrows ?? []).find((v) => v.email === e) ?? null,
-            now,
-          ),
-        ]),
+        leadEmails.map((e) => {
+          // Narrow cast: PostgREST types status as string; the table CHECK limits it to EmailStatus.
+          const row = ((vrows ?? []).find((v) => v.email === e) ??
+            null) as import("@/lib/email-verification").EmailVerification | null;
+          return [e, effectiveEmailStatus(e, row, now)];
+        }),
       );
     }
   }
@@ -445,7 +443,11 @@ export async function syncSuggestions(
   await syncStrategySuggestions(db, orgId, strategic);
   if (found.length) {
     await db.from("suggestions").upsert(
-      found.map((f) => ({ ...f, org_id: orgId, action: f.action as unknown as Json })),
+      // email_block is not a column: it only feeds the email_draft_blocks registry below.
+      found.map((f) => {
+        const { email_block: _drop, ...row } = f;
+        return { ...row, org_id: orgId, action: f.action as unknown as Json };
+      }),
       { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
     );
   }
