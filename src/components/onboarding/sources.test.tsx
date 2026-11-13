@@ -10,7 +10,7 @@ vi.mock("@tanstack/react-start", () => ({ useServerFn: (f: unknown) => f }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/">{children}</a>,
 }));
-vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null }));
+vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null, DriveRefButton: () => null }));
 vi.mock("@/lib/background.functions", () => ({ startBackgroundJob: vi.fn() }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: (m: string) => state.error(m) } }));
 
