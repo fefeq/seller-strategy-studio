@@ -4,6 +4,19 @@ import { executeTool, type ToolCtx } from "@/lib/agent/tools";
 // NK-0173 SDD 3: draft_followup applies the graduated gate (block invalid/catch-all with a reason
 // and a registry row, mark unverified) and the reveal tools answer with estado_email.
 
+// Blocked-draft rows are written only by the privileged client (migration 0091): record them here.
+const admin = vi.hoisted(() => ({ log: [] as { table: string; payload: unknown }[] }));
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: (table: string) => ({
+      insert: async (payload: unknown) => {
+        admin.log.push({ table, payload });
+        return { error: null };
+      },
+    }),
+  },
+}));
+
 vi.mock("@/lib/ai-gateway", async (orig) => ({
   ...(await orig<typeof import("@/lib/ai-gateway")>()),
   ask: async () => "Borrador de prueba.",
@@ -97,6 +110,7 @@ function worldWith(status: string | null) {
 
 describe("draft_followup email gate", () => {
   it("CA-3 an invalid email blocks the draft with the reason and registers it without the email", async () => {
+    admin.log.length = 0;
     const { db, log } = fakeDb(worldWith("invalid"));
     const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
     expect(out.bloqueado).toBe(true);
@@ -104,7 +118,8 @@ describe("draft_followup email gate", () => {
       "Este email es inválido: no preparo el borrador. Busca otro contacto de la cuenta.",
     );
     expect(out.borrador).toBeUndefined();
-    const blocks = log.filter((q) => q.table === "email_draft_blocks" && q.op === "insert");
+    expect(log.filter((q) => q.table === "email_draft_blocks")).toHaveLength(0); // never the member client
+    const blocks = admin.log.filter((q) => q.table === "email_draft_blocks");
     expect(blocks).toHaveLength(1);
     expect(blocks[0].payload).toMatchObject({
       org_id: ORG,
@@ -120,12 +135,14 @@ describe("draft_followup email gate", () => {
     expect(out.motivo).toMatch(/catch-all/);
   });
   it("CA-4 an unverified email drafts with the visible mark", async () => {
+    admin.log.length = 0;
     const { db, log } = fakeDb(worldWith(null));
     const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
     expect(out.bloqueado).toBeUndefined();
     expect(out.borrador).toBeTruthy();
     expect(out.marca_email).toBe("email sin verificar");
     expect(log.filter((q) => q.table === "email_draft_blocks")).toHaveLength(0);
+    expect(admin.log).toHaveLength(0);
   });
   it("CA-4 a verified email drafts with no mark", async () => {
     const { db } = fakeDb(worldWith("verified"));

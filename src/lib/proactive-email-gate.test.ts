@@ -1,7 +1,20 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { detect } from "@/lib/proactive";
 import type { Snapshot } from "@/lib/proactive/types";
-import { syncSuggestions } from "@/lib/org-data";
+import { syncSuggestions, type Db } from "@/lib/org-data";
+
+// Blocked-draft rows are written only by the privileged client (migration 0091): record them here.
+const admin = vi.hoisted(() => ({ inserts: [] as Record<string, unknown>[] }));
+vi.mock("@/integrations/supabase/client.server", () => ({
+  supabaseAdmin: {
+    from: (table: string) => ({
+      insert: async (row: Record<string, unknown>) => {
+        if (table === "email_draft_blocks") admin.inserts.push(row);
+        return { error: null };
+      },
+    }),
+  },
+}));
 
 // NK-0173 SDD 3: the automatic follow-up surface applies the same graduated gate; blocked steps
 // produce a suggestion without draft or action, and syncing it registers the block (no email).
@@ -104,14 +117,15 @@ describe("syncSuggestions registers blocked drafts (CA-6)", () => {
       return proxy;
     };
     const s = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "invalid" }])).find((x) => x.detector === "followup_sequence")!;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the fake only records inserts
-    await syncSuggestions({ from } as any, "o1", [s], []);
-    expect(inserts).toHaveLength(1);
-    expect(inserts[0]).toMatchObject({
+    // Narrow cast: the recording fake implements only from(); syncSuggestions needs nothing else here.
+    await syncSuggestions({ from } as unknown as Db, "o1", [s], []);
+    expect(inserts).toHaveLength(0); // the member client never writes the registry
+    expect(admin.inserts).toHaveLength(1);
+    expect(admin.inserts[0]).toMatchObject({
       org_id: "o1",
       surface: "followup_sequence",
       status: "invalid",
     });
-    expect(JSON.stringify(inserts[0])).not.toContain("ana@example.invalid");
+    expect(JSON.stringify(admin.inserts[0])).not.toContain("ana@example.invalid");
   });
 });
