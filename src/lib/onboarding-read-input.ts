@@ -35,4 +35,7 @@ export const onboardingReadInput = z
       .max(MAX_SOURCES)
       .default([]),
   })
-  .refine((i) => i.url || i.text.trim() || i.files.length || i.sources.length, "Añade una web, texto o un documento");
+  .refine(
+    (i) => i.url || i.text.trim() || i.files.length || i.sources.length,
+    "Añade una web, texto o un documento",
+  );

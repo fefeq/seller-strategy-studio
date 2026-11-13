@@ -21,10 +21,17 @@ export function parseSourceStatuses(value: unknown): SourceStatus[] {
   for (const row of value) {
     if (!row || typeof row !== "object") continue;
     const { name, kind, state, read, total, reason } = row;
-    if (typeof name !== "string" || !["storage", "drive"].includes(kind) ||
-        !["full", "partial", "unread"].includes(state) ||
-        !Number.isSafeInteger(read) || !Number.isSafeInteger(total) || read < 0 || total < read ||
-        (reason !== undefined && typeof reason !== "string")) continue;
+    if (
+      typeof name !== "string" ||
+      !["storage", "drive"].includes(kind) ||
+      !["full", "partial", "unread"].includes(state) ||
+      !Number.isSafeInteger(read) ||
+      !Number.isSafeInteger(total) ||
+      read < 0 ||
+      total < read ||
+      (reason !== undefined && typeof reason !== "string")
+    )
+      continue;
     const expected = read === 0 ? "unread" : read === total ? "full" : "partial";
     if (state !== expected) continue;
     out.push({ name, kind, state, read, total, ...(reason ? { reason } : {}) });
@@ -108,7 +115,11 @@ export function perSourceFloor(n: number, budget = TEXT_BUDGET) {
 
 /** Storage path for an upload: <org>/<user>/<uuid>-<safe name>. */
 export function storagePath(orgId: string, userId: string, id: string, name: string) {
-  const safe = name.normalize("NFKD").replace(/[^\w.-]+/g, "_").slice(-120) || "documento";
+  const safe =
+    name
+      .normalize("NFKD")
+      .replace(/[^\w.-]+/g, "_")
+      .slice(-120) || "documento";
   return `${orgId}/${userId}/${id}-${safe}`;
 }
 

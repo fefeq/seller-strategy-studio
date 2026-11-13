@@ -131,7 +131,12 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
     }
     const allowed = allotBudget(texts.map((t) => t.text.length));
     texts.forEach((t, i) => {
-      const st = statusOf(t.s, allowed[i], t.total, t.reason ?? (t.text ? undefined : "está vacío"));
+      const st = statusOf(
+        t.s,
+        allowed[i],
+        t.total,
+        t.reason ?? (t.text ? undefined : "está vacío"),
+      );
       statuses.push(st);
       if (allowed[i] > 0) docs += `\n\n--- ${t.s.name} ---\n${t.text.slice(0, allowed[i])}`;
     });
@@ -186,7 +191,13 @@ export async function runOnboardingRead(c: Ctx, input: Input, step: (s: string) 
 
   await step("Proponiendo tu estrategia");
   const { extractSetupCore } = await import("@/lib/setup-extract.server");
-  const proposal = await extractSetupCore(c, { url, site, text: (text + docs).trim(), files, extra });
+  const proposal = await extractSetupCore(c, {
+    url,
+    site,
+    text: (text + docs).trim(),
+    files,
+    extra,
+  });
   for (const f of proposalFindings(proposal)) await note(f.text, f.source);
 
   let opinions: Opinion[] = [];
@@ -254,7 +265,10 @@ async function extractSource(c: Ctx, s: SourceRef): Promise<{ text: string; tota
   const text = await ask(
     "Transcribe el documento a Markdown fiel al original: títulos, listas y tablas. No resumas, no comentes, no añadas nada. Si una página es solo imagen, describe en una línea lo que muestra.",
     `Documento: ${s.name}`,
-    { effort: "low", files: [{ filename: s.name, dataUrl: `data:application/pdf;base64,${btoa(bin)}` }] },
+    {
+      effort: "low",
+      files: [{ filename: s.name, dataUrl: `data:application/pdf;base64,${btoa(bin)}` }],
+    },
   );
   return { text, total: text.length };
 }

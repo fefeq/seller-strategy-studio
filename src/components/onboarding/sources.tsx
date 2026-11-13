@@ -52,7 +52,7 @@ export function SourcesStep({
     const previous = currentItems.current;
     const active = previous.filter((x) => x.state !== "error");
     const r = mergeRefs(active, list);
-    updateItems(() => [...previous.filter((x) => x.state === "error"), ...r.sources as Item[]]);
+    updateItems(() => [...previous.filter((x) => x.state === "error"), ...(r.sources as Item[])]);
     return { dropped: r.dropped, duplicated: r.duplicated };
   }
   const notify = (r: { dropped: string[]; duplicated: string[] }) => {
@@ -69,7 +69,11 @@ export function SourcesStep({
     if (!orgId || !userId) return;
     const ok: { f: File; item: Item }[] = [];
     // Each upload gets a new path, so the same file chosen again is recognised by name (already listed or twice in one selection).
-    const seen = new Set(currentItems.current.filter((x) => x.kind === "storage" && x.state !== "error").map((x) => x.name));
+    const seen = new Set(
+      currentItems.current
+        .filter((x) => x.kind === "storage" && x.state !== "error")
+        .map((x) => x.name),
+    );
     const again: string[] = [];
     for (const f of Array.from(list ?? [])) {
       const bad = uploadProblem(f);
@@ -95,13 +99,25 @@ export function SourcesStep({
         .map(async ({ f, item }) => {
           const task = (async () => {
             try {
-              const mime = /\.pdf$/i.test(f.name) ? "application/pdf" : /\.md$/i.test(f.name) ? "text/markdown" : /\.csv$/i.test(f.name) ? "text/csv" : "text/plain";
-              const { error } = await supabase.storage.from("onboarding-sources").upload(item.ref, f, { contentType: mime });
+              const mime = /\.pdf$/i.test(f.name)
+                ? "application/pdf"
+                : /\.md$/i.test(f.name)
+                  ? "text/markdown"
+                  : /\.csv$/i.test(f.name)
+                    ? "text/csv"
+                    : "text/plain";
+              const { error } = await supabase.storage
+                .from("onboarding-sources")
+                .upload(item.ref, f, { contentType: mime });
               if (error) throw error;
-              updateItems((xs) => xs.map((x) => x.ref === item.ref ? { ...x, state: "ready" } : x));
+              updateItems((xs) =>
+                xs.map((x) => (x.ref === item.ref ? { ...x, state: "ready" } : x)),
+              );
             } catch (error) {
               toast.error(`${f.name}: ${errorText(error)}`);
-              updateItems((xs) => xs.map((x) => x.ref === item.ref ? { ...x, state: "error" } : x));
+              updateItems((xs) =>
+                xs.map((x) => (x.ref === item.ref ? { ...x, state: "error" } : x)),
+              );
             }
           })();
           pendingUploads.current.set(item.ref, task);
@@ -112,7 +128,7 @@ export function SourcesStep({
   }
 
   async function remove(it: Item) {
-    updateItems((xs) => xs.map((x) => x.ref === it.ref ? { ...x, removing: true } : x));
+    updateItems((xs) => xs.map((x) => (x.ref === it.ref ? { ...x, removing: true } : x)));
     try {
       await pendingUploads.current.get(it.ref);
       const latest = currentItems.current.find((x) => x.ref === it.ref);
@@ -123,7 +139,7 @@ export function SourcesStep({
       updateItems((xs) => xs.filter((x) => x.ref !== it.ref));
     } catch (error) {
       toast.error(errorText(error));
-      updateItems((xs) => xs.map((x) => x.ref === it.ref ? { ...x, removing: false } : x));
+      updateItems((xs) => xs.map((x) => (x.ref === it.ref ? { ...x, removing: false } : x)));
     }
   }
 
@@ -183,7 +199,8 @@ export function SourcesStep({
             Documentos: business plan, P&L, decks, battlecards, ICP
           </label>
           <p className="mt-1 text-xs text-ink-mid">
-            Hasta {MAX_SOURCES} entre archivos (PDF, TXT, MD o CSV, máx. {MAX_UPLOAD_MB} MB) y Drive.
+            Hasta {MAX_SOURCES} entre archivos (PDF, TXT, MD o CSV, máx. {MAX_UPLOAD_MB} MB) y
+            Drive.
           </p>
           <Input
             id="ob-files"
@@ -201,7 +218,9 @@ export function SourcesStep({
           <div className="mt-2">
             <DriveRefButton
               onPick={(f) =>
-                notify(add([{ kind: "drive", ref: f.id, name: `${f.name} (Drive)`, state: "ready" }]))
+                notify(
+                  add([{ kind: "drive", ref: f.id, name: `${f.name} (Drive)`, state: "ready" }]),
+                )
               }
             />
           </div>
@@ -222,7 +241,9 @@ export function SourcesStep({
           {/* NK-0165: the box stops at TEXT_LIMIT, so it says so instead of cutting a paste in silence. */}
           <p className="mt-1 text-xs text-ink-mid" aria-live="polite">
             {text.length.toLocaleString("es-ES")}/{TEXT_LIMIT.toLocaleString("es-ES")} caracteres
-            {text.length >= TEXT_LIMIT ? ". Has llegado al máximo: si tu texto es más largo, súbelo como archivo." : ""}
+            {text.length >= TEXT_LIMIT
+              ? ". Has llegado al máximo: si tu texto es más largo, súbelo como archivo."
+              : ""}
           </p>
         </div>
         <p className="text-sm text-ink-mid">
@@ -246,11 +267,21 @@ export function SourcesStep({
             <li key={it.ref} className="flex flex-wrap items-center gap-2">
               <span className="min-w-0 [overflow-wrap:anywhere]">{it.name}</span>
               <span className={it.state === "error" ? "text-destructive" : "text-ink-faint"}>
-                {it.state === "uploading" ? "subiendo…" : it.state === "error" ? "error al subir" : "lista"}
+                {it.state === "uploading"
+                  ? "subiendo…"
+                  : it.state === "error"
+                    ? "error al subir"
+                    : "lista"}
               </span>
-              {quit(() => { void remove(it); }, !!it.removing)}
+              {quit(() => {
+                void remove(it);
+              }, !!it.removing)}
               {it.state === "uploading" && (
-                <div role="progressbar" aria-label={`Subiendo ${it.name}`} className="h-1.5 w-full overflow-hidden rounded-sm bg-paper-sunk">
+                <div
+                  role="progressbar"
+                  aria-label={`Subiendo ${it.name}`}
+                  className="h-1.5 w-full overflow-hidden rounded-sm bg-paper-sunk"
+                >
                   <div className="h-full w-1/2 bg-primary motion-safe:animate-pulse" />
                 </div>
               )}
@@ -267,8 +298,8 @@ export function SourcesStep({
         {items.length > 0 && (
           <p className="mt-2 text-xs text-ink-mid">
             {count}/{MAX_SOURCES} documentos. Si son largos, de cada uno se leerán al menos{" "}
-            {perSourceFloor(ready.length || 1).toLocaleString("es-ES")} caracteres; al terminar te digo
-            cuáles se leyeron enteros.
+            {perSourceFloor(ready.length || 1).toLocaleString("es-ES")} caracteres; al terminar te
+            digo cuáles se leyeron enteros.
           </p>
         )}
         <p className="mt-4 text-sm">
