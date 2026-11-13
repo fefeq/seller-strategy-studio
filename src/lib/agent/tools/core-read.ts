@@ -544,7 +544,9 @@ export const CORE_READ_TOOLS: AgentTool[] = [
           .eq("org_id", c.orgId)
           .eq("email", l.email.trim().toLowerCase())
           .maybeSingle();
-        const status = emailStatusFor(l.email, vrow ?? null, new Date());
+        // Database CHECK constrains this string to the shared five-state union.
+        const verification = vrow ? { ...vrow, status: vrow.status as import("@/lib/email-verification").EmailStatus } : null;
+        const status = emailStatusFor(l.email, verification, new Date());
         const reason = status ? emailBlockReason(status) : null;
         if (reason && status) {
           const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
