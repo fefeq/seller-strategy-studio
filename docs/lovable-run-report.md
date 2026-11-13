@@ -49,7 +49,7 @@ Son las tres políticas del catálogo consultado; todas filtran bucket_id. La fu
 
 No probado: Drive real Doc/Sheet/Slides/PDF, usuarios reales de otros roles, lectura con IA real, Node 26, build completo de producción y entorno nuevo aprovisionado. RLS/Drive indicados arriba son simulaciones, no estas verificaciones externas.
 
-No se publicó ni desplegó. Torre de control GTM y Salida de Lovable intactas. No cambié pruebas, código funcional, migraciones ni snapshots en esta entrega documental. NK-0159, NK-0160 y el resto de la cola no iniciados. NK-0176 se redacta como SDD Borrador, sin cambiar status.ts ni el PRD hasta aprobación.
+No se publicó ni desplegó. Torre de control GTM y Salida de Lovable intactas. No cambié pruebas, código funcional, migraciones ni snapshots en esta entrega documental. NK-0159, NK-0160 y el resto de la cola no iniciados. NK-0176 se presentó como SDD Borrador y Fede aprobó el plan durante esta sesión; su entrega se documenta debajo.
 
 ## Anexo: cambios de pruebas autorizados en una entrega anterior
 Este registro histórico no autoriza nuevos cambios de pruebas.
@@ -61,3 +61,16 @@ Motivo común: la Fase 1 cambió la subida (cada archivo va al almacenamiento pr
 3. sources.test.tsx «past the limit…»: `MAX_FILES` (3) y selecciones de 3 → `MAX_SOURCES` (20) y selecciones de 5; se conservan «lo listado se queda», «se nombra lo que queda fuera» y «N documentos»; el filtro del texto «pendiente» → estados reales «subiendo/lista/error al subir»; se añade: lo que queda fuera nunca se sube.
 4. sources-limit.test.tsx «one selection past the limit…»: aviso exacto antiguo «Una lectura admite hasta 3 documentos… súbelos a Drive…» → «Una lectura admite hasta 20 documentos entre archivos y Drive. Se quedan fuera: doc-21.pdf, doc-22.pdf. Quita alguno de la lista si quieres añadirlos.» (el antiguo era falso con el tope de 20); `MAX_FILES` → `MAX_SOURCES`; nombre «mergeFiles» → «mergeRefs» (la función real); se añade: solo se suben 20.
 Nota: en la ronda anterior se añadió solo el stub `DriveRefButton` al mock de src/routes/_authenticated/-onboarding.test.tsx (sin tocar aserciones), necesario porque la Fase 1 importa ese componente.
+
+## Entrega NK-0176 — aprobada y verificada, 13-11-2026
+- Fede aprobó el plan y el SDD enlazado, incluidos únicamente tres cambios de expectativas y la verificación textual sin fail-first artificial.
+- Cambios: dos cadenas de `BLOCKER_TEXT.linkedin_d2`; D2 cerrada en la fila de decisiones y exclusión del PRD. No se cambió catálogo, identificadores, activación, permisos ni herramientas.
+- Pruebas protegidas: solo dos expectativas de label en `src/lib/plays/status.test.ts` y una en `src/lib/agent/tools/plays.test.ts`: «Bloqueado: falta una decisión de LinkedIn» → «Bloqueado: falta una integración con la API oficial de LinkedIn». Conservadas todas las aserciones de bloqueo, 28 plays, no escrituras y aislamiento. Ninguna otra prueba existente cambiada.
+- Tres pruebas nuevas CA-1/2/3 en `src/lib/plays/linkedin-d2.test.ts`: pasan antes 3/3 y después. Son invariantes de regresión, no pruebas de copy ni fail-first.
+- Checker `oj typecheck -b --noEmit`: exit 0. Node 22.23.5; Node 26 y tsc literal no ejecutados.
+- Primera suite posterior sin limitar concurrencia: 331 archivos pasan, 3 fallan; 5555 pruebas pasan, 6 expiran y 12 se omiten por timeout del beforeAll. Expiraciones: cinco casos de factory-ledger (5 s), un caso de safe-logs-notes (5 s) y preparación de knowledge-rules-unique.pg (60 s). No se modificaron pruebas ni timeouts.
+- Repetición de esos tres archivos con un worker: 32/32 pasan. **Suite completa repetida con `--maxWorkers=4`: 334/334 archivos y 5573/5573 pruebas**, exit 0, 478,68 s. Ninguna omitida. Factory-ledger pasa también en esta suite.
+- Build automático: **build OK 2026-11-13T12:28:07Z**, posterior al cambio de producto. Build manual de producción no ejecutado.
+- Navegador con sesión válida, `/plays`: seis tarjetas de LinkedIn con el nuevo bloqueo; activación deshabilitada y texto antiguo ausente. Escritorio 1280 y móvil 375, claro/oscuro; cuatro capturas de tarjeta inspeccionadas. Sin overflow horizontal ni errores de página. Se cargaron lecturas reales; no se activó ningún play, no se lanzó IA ni se hicieron envíos. La coherencia del asistente se comprueba por su prueba y estado compartido, no por una conversación IA real.
+- Sin migraciones, publicación ni despliegue. F12 intacto; Torre de control GTM y Salida de Lovable intactas. Revisión técnica independiente del SDD no realizada, sin inventar un pase de gate. SDD permanece En curso hasta revisión/aceptación de la entrega por Fede.
+- Informe emitido; NK-0159 y los siguientes SDD no iniciados en esta sesión.

@@ -16,8 +16,8 @@ export type EffectiveState = {
 /** Why a blocker stops a play (`label` goes after «Bloqueado: ») and what has to be decided to unblock it. */
 const BLOCKER_TEXT: Record<PlayBlocker, { label: string; decide: string }> = {
   linkedin_d2: {
-    label: "falta una decisión de LinkedIn",
-    decide: "Decide si NOKKO puede usar datos de LinkedIn (decisión D2)",
+    label: "falta una integración con la API oficial de LinkedIn",
+    decide: "Este play requiere una integración con la API oficial de LinkedIn",
   },
   proveedor_datos: {
     label: "falta un proveedor de datos",

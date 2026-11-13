@@ -2,7 +2,8 @@
 ## Cola de Fede — 13-11-2026
 Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Solo redactar NK-0176; no construir sin aprobación. Mandan docs/decisiones-fede-20261113.md; PRD aprobado no autoriza implementación. Un SDD en docs/sdd/ cada vez, aprobación de Fede antes de construir e informe antes del siguiente.
 - [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
-- [ ] NK-0176: implementar y emitir informe (bloqueado: aprobación de Fede del SDD y de las tres expectativas de texto protegidas).
+- [x] NK-0176: implementar tras aprobación y emitir informe; 5573/5573, checker limpio, build automático OK y navegador verificado.
+- [ ] NK-0176: revisión independiente y aceptación final de la entrega por Fede; SDD En curso, no se declara gate técnico.
 - [ ] NK-0159: SDD corto, después de la entrega anterior.
 - [ ] NK-0160: SDD corto, después de la entrega anterior.
 - [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.

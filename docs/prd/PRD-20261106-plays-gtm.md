@@ -75,7 +75,7 @@ Nunca hay línea base estimada.
 ## 5. No-objetivos
 - Enviar mensajes, publicar o cambiar datos sin confirmación humana (borradores y sugerencias solamente).
 - Tocar los cinco playbooks de venta existentes.
-- Scraping de LinkedIn ni valoración de personas a partir de LinkedIn, hasta que Fede cierre la decisión D2.
+- Scraping de LinkedIn y análisis o puntuación de perfiles quedan excluidos; solo API oficial, conforme a D2 cerrada.
 - Contratar proveedores nuevos; los plays externos usan solo lo ya conectado y esperan la comparativa de proveedores.
 - Plataformas de anuncios (la parte «Ads» de ABM + Ads).
 - Copiar el texto de Frontal: los plays se redactan con palabras propias, en español y «tú».
@@ -88,7 +88,7 @@ Nunca hay línea base estimada.
 | Uso | Interno, no producto para vender | Fede, 2026-11-06 |
 | Salida de los plays | Solo sugerencias, tareas y borradores | Regla de NOKKO, `AGENTS.md` y SDD 11 |
 | A qué GTM sirve NOKKO (Postin, Getnet o ambos) | **Abierta** | Fede |
-| Scraping de LinkedIn (D2) | **Abierta**: SDD 11 lo excluye hasta que decidas | Fede |
+| LinkedIn (D2) | **Cerrada**: solo API oficial de LinkedIn; Nokko no analiza ni puntúa perfiles. Los plays siguen bloqueados hasta una integración autorizada y construida. | Fede, decisión del traspaso ratificada al aprobar SDD-20261113-linkedin-blocker-d2, 2026-11-13 |
 | Proveedor de datos para señales externas (Lusha, Clay, Apollo) | **Abierta** (comparativa de proveedores pendiente) | Fede |
 | Nombre: «Plays GTM» frente a «playbooks» | Propuesto en este PRD | Fede, al aprobar |
 

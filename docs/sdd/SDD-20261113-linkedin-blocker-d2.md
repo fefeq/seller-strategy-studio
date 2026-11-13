@@ -1,7 +1,7 @@
 # SDD-20261113-linkedin-blocker-d2 · [Mejora] NK-0176: bloqueo de LinkedIn y cierre de D2
 
 **Tipo:** Mejora acotada · **Prioridad:** Alta por orden de Fede
-**Estado:** Borrador — pendiente de aprobación de Fede · **Fecha:** 2026-11-13
+**Estado:** En curso — aprobado por Fede el 2026-11-13 mediante el plan, incluidos tres cambios de expectativas y excepción textual de fail-first · **Fecha:** 2026-11-13
 **Pide y aprueba:** Fede · **PRD:** docs/prd/PRD-20261106-plays-gtm.md
 **Depende de:** cierre autorizado F1–F11, documentado en docs/lovable-run-report.md sobre main 734c202.
 
@@ -78,4 +78,4 @@ Tras aprobación: texto final en pantalla/asistente y suite completa después de
 Pendiente; no realizada por el autor ni se presenta el gate de entrada F1–F11 como revisión de este SDD.
 
 ## 18. Delta de implementación
-Sin implementación. status.ts, PRD, pruebas, migraciones y producto intactos. No publicar ni desplegar.
+Implementación mínima iniciada tras aprobación: dos cadenas en status.ts, cierre D2 en dos puntos del PRD y únicamente las tres expectativas autorizadas. Tres pruebas nuevas de invariantes pasan antes del cambio (3/3), como regresión; no se afirma fail-first. Verificación final: checker limpio, 5573/5573 pruebas con cuatro workers tras expiraciones documentadas, build automático OK, /plays comprobado con sesión válida en escritorio/375 px y claro/oscuro. Informe en docs/lovable-run-report.md. Sin migraciones, publicación ni despliegue. Estado En curso hasta revisión independiente y aceptación de la entrega; no se afirma gate técnico aprobado.
