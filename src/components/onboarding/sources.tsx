@@ -11,7 +11,8 @@ import { startBackgroundJob } from "@/lib/background.functions";
 import { readingCost, type Depth } from "@/lib/onboarding";
 import { errorText } from "@/lib/errors";
 import { FieldActions } from "@/components/field-actions";
-import { MAX_FILES, mergeFiles, removeFileText } from "@/lib/onboarding-sources";
+import { FILES_HOW_TO_GO_ON, MAX_FILES } from "@/lib/onboarding-files-limit";
+import { mergeFiles, removeFileText } from "@/lib/onboarding-sources";
 
 const TEXT_LIMIT = 40_000;
 const FILE_LIMIT = 4 * 1024 * 1024;
@@ -35,7 +36,7 @@ export function SourcesStep({
   const [busy, setBusy] = useState(false);
 
   async function onFiles(list: FileList | null) {
-    const arr = Array.from(list ?? []).slice(0, 3);
+    const arr = Array.from(list ?? []);
     const read = await Promise.all(
       arr.map(async (f) => {
         if (/^text\/|\.md$|\.csv$/i.test(f.type || f.name)) {
@@ -64,7 +65,7 @@ export function SourcesStep({
     setFiles(merged.files);
     if (merged.dropped.length)
       toast.error(
-        `Una lectura admite hasta ${MAX_FILES} documentos. Se quedan fuera: ${merged.dropped.join(", ")}.`,
+        `Una lectura admite hasta ${MAX_FILES} documentos. Se quedan fuera: ${merged.dropped.join(", ")}. ${FILES_HOW_TO_GO_ON}`,
       );
   }
 

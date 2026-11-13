@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
+import { onboardingReadInput } from "@/lib/onboarding-read-input";
 
 export const backgroundStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -134,25 +135,7 @@ const JobIn = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("account_research"), input: z.object({ accountId: uuid }), label }),
   z.object({
     kind: z.literal("onboarding_read"),
-    input: z
-      .object({
-        depth: z.enum(["express", "standard", "deep"]),
-        url: z.string().trim().max(500).default(""),
-        text: z.string().max(40_000).default(""),
-        files: z
-          .array(
-            z.object({
-              filename: z.string().max(200),
-              dataUrl: z.string().startsWith("data:").max(6_000_000),
-            }),
-          )
-          .max(3)
-          .default([]),
-      })
-      .refine(
-        (i) => i.url || i.text.trim() || i.files.length,
-        "Añade una web, texto o un documento",
-      ),
+    input: onboardingReadInput,
     label,
   }),
   z.object({
