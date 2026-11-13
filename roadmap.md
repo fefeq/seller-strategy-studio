@@ -1,7 +1,8 @@
 # Roadmap
 ## Cola de Fede — 13-11-2026
-No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-20261113.md; PRD aprobado no autoriza implementación. Un SDD en docs/sdd/ cada vez, aprobación de Fede antes de construir e informe antes del siguiente.
-- [ ] NK-0176: SDD corto; solo texto del bloqueador y cierre D2 en PRD-20261106-plays-gtm.md.
+Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Solo redactar NK-0176; no construir sin aprobación. Mandan docs/decisiones-fede-20261113.md; PRD aprobado no autoriza implementación. Un SDD en docs/sdd/ cada vez, aprobación de Fede antes de construir e informe antes del siguiente.
+- [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
+- [ ] NK-0176: implementar y emitir informe (bloqueado: aprobación de Fede del SDD y de las tres expectativas de texto protegidas).
 - [ ] NK-0159: SDD corto, después de la entrega anterior.
 - [ ] NK-0160: SDD corto, después de la entrega anterior.
 - [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
@@ -17,16 +18,16 @@ No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-202611
 - [x] F2: estado/políticas reales auditados; creación reproducible por API, no SQL; configuración real MIME sin restricción documentada.
 - [x] F3: nuevas pruebas de RLS, referencias, presupuesto y fallos de Drive, sin editar pruebas existentes.
 - [x] F4 (meQuery): devuelve null en la ventana de cierre; session-cache.test.ts sin cambios; prueba nueva me-session-ending.test.ts; useSetup/useLivePipeline probados. Fusionado con la solución de main.
-- [ ] F5: producto permitido formateado; formato de pruebas existentes/autogenerados requiere permiso/regeneración.
+- [x] F5: todos los archivos de producto permitidos pasan Prettier; cierre de alcance autorizado, sin formato de pruebas/autogenerados ni lint global declarado.
 - [x] F6–F7: errores en español y notas de lectura fuera del recuento de hallazgos.
 - [x] F8: subida, eliminación, límite y progreso indeterminado de fuentes.
 - [x] F9: función UUID aplicada/probada; el prefijo 0087 duplicado se renombró a 0088_onboarding_source_uuid_guard (archivo y entrada del diario) al fusionar.
 - [x] F10: validar source_status.
 - [x] F11: documentación corregida y correspondencia de snapshots informada sin renombrarlos.
-- [x] Tipos limpios, build automático OK, navegador real escritorio/375 px claro/oscuro e informe final.
-- [x] Suite completa verde tras la fusión: 5570/5570 en Node 22; tsc limpio.
+- [x] Checker de tipos permitido limpio; navegador real escritorio/375 px claro/oscuro e informe final. Servidor recompiló y sirve onboarding; build de producción no ejecutado (restricción del entorno).
+- [x] Suite completa repetida sobre 734c202: 5570/5570 en Node 22.23.5; oj typecheck limpio. Node 26 y tsc literal no ejecutados.
 - [x] F12: decisión documentada — los documentos de onboarding-sources nunca se borran automáticamente.
-- [ ] Heredados NK-0159/NK-0176/escáner NK-0160 — bloqueados por decisión o permiso; no modificar pruebas existentes.
+- Heredados NK-0159 y escáner NK-0160: siguen en la cola anterior; no iniciados. NK-0176 espera aprobación.
 
 ## Segundo plano y avisos
 - [x] Centro de avisos (En marcha / Avisos) y aviso automático al terminar cada tarea
