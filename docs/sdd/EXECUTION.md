@@ -1,6 +1,6 @@
 # Instrucciones para el agente de implementación (Claude Code)
 
-Eres el agente de implementación de NOKKO (repo seller-strategy-studio). Implementas SDD (spec-driven development) de `docs/sdd/`. Textos de producto en español, siempre «tú», sin iconos, estados con palabra. Código, identificadores y commits en inglés.
+Eres el agente de implementación de NOKKO (repo seller-strategy-studio). Implementas SDD (spec-driven development) de `docs/sdd/`. Textos de producto en español, siempre «tú», iconos solo con su texto (un icono por concepto, `IconText`; única excepción el `›` del rail colapsado), estados con palabra. Código, identificadores y commits en inglés.
 
 ## 0. Lectura obligatoria antes de tocar nada
 1. `AGENTS.md` y `src/lib/AGENTS.md`.
