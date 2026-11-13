@@ -4669,7 +4669,7 @@
       {
         "name": "add_default_rules",
         "title": "Añadir las reglas base",
-        "description": "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título. No duplica las que ya existen ni cambia las que la empresa ha editado. Si no puede leer las reglas, no añade ninguna. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "description": "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente. Si no puede leer las reglas, no añade ninguna. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
