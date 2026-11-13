@@ -631,6 +631,13 @@
       "when": 1794585136571,
       "tag": "0090_email_draft_blocks",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1794593564579,
+      "tag": "0090_email_draft_blocks_privileged_writes",
+      "breakpoints": true
     }
   ]
 }
