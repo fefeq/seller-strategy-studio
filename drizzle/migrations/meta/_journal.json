@@ -617,6 +617,13 @@
       "when": 1794571200003,
       "tag": "0088_onboarding_source_uuid_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1794581590018,
+      "tag": "0088_email_verification_model",
+      "breakpoints": true
     }
   ]
 }
