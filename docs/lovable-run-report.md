@@ -201,3 +201,10 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - SDD: `docs/sdd/SDD-20261113-plays-a-medida-ejecucion.md`. Prueba nueva `engine.test.ts` (9), falló primero.
 - Migración `0093_custom_plays_execution` (renumerada desde 0092 duplicado; check limpio; columnas verificadas en la base).
 - Catálogo de campos: 6 columnas y conceptos nuevos. Ninguna prueba existente modificada.
+
+## NK-0171 SDD 4 U-4a · coordinador seguro (13-11, 23:42 UTC)
+- Entrega acotada: `plays/custom/execution.ts` coordina una ejecución ya solicitada mediante puertos tipados. Comprueba estado activo, pertenencia, empresa no archivada, definición, identificadores únicos de pasos y fuentes; adquiere lease; consulta recibos confirmados; revisa pausa/cancelación/presupuesto por paso; Q-6 respeta lo manual. Denegación/saldo/rate limit/rechazo persisten pausa sin reintentar ni cambiar de proveedor. Salida durable solo estado y contadores.
+- Pruebas nuevas: `execution.test.ts` (12). Falló primero porque el módulo no existía; 46/46 en selección; suite completa 356/356 archivos y 5754/5754 pruebas (143,49 s). Ninguna prueba existente modificada.
+- Compilación automática: `build OK` 23:39:39 UTC. Tipos no comprobados manualmente por restricción del entorno; no se afirma una ejecución manual de tipos.
+- Límite importante: los puertos aún no tienen adaptadores persistentes ni llamador. No hay lease ni checkpoint real usados, ni ejecución real verificada. U-4b conectará almacenamiento transaccional y proveedores; U-5 seguirá con activar/pausar y resultado de prueba. La unidad no cambia pantallas, por lo que no procede revisión visual de un flujo aún inexistente.
+- Sin llamadas a proveedores ni gasto real, sin cambios de base, publicación/despliegue, envíos, fusión o copia de empresas. NK-0167, NK-0174 y hallazgos del onboarding siguen pendientes en el orden registrado.
