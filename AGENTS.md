@@ -34,3 +34,4 @@
 - Onboarding storage provisioning is an explicit native Storage API operation (scripts/provision-onboarding-storage.ts), never a page-load side effect or storage.buckets SQL, because the platform manages the storage schema.
 - Durable autopilot step outputs use an explicit count-only projection before returning from step.run; core notes remain internal so Inngest history never persists customer titles or error text from them.
 - The title/name log audit is a local AST scanner under scripts, exercised by a new guard alongside the protected legacy scanner; never bundle compiler-based audit tooling into served code.
+- Email verification semantics live in a pure shared module keyed by normalized address; consumers must reuse its expiry and draft gate rather than delegate those decisions to a model.
