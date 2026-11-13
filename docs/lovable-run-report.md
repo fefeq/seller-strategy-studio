@@ -196,3 +196,8 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - Código: `propose.ts`, `fingerprints.data.ts` (solo hashes), `agent/tools/custom-plays.ts`, registro, TITLES y manifiesto MCP.
 - Suite 354/354 archivos, 5727/5727. Tipos limpios. Ninguna prueba existente modificada.
 - Límite: el coste de IA de la propuesta se guarda como «ai:sin_dato» con importe 0 porque la tabla no admite nulo.
+
+## NK-0171 SDD 4 U-1..U-3 (13-11)
+- SDD: `docs/sdd/SDD-20261113-plays-a-medida-ejecucion.md`. Prueba nueva `engine.test.ts` (9), falló primero.
+- Migración `0093_custom_plays_execution` (renumerada desde 0092 duplicado; check limpio; columnas verificadas en la base).
+- Catálogo de campos: 6 columnas y conceptos nuevos. Ninguna prueba existente modificada.
