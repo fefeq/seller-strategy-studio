@@ -264,6 +264,7 @@ export async function readFile(s: DriveScope, ref: string) {
     modified: file.modifiedTime ?? null,
     text,
     truncated,
+    originalLength: cleanText(raw, Number.MAX_SAFE_INTEGER).text.length,
   };
 }
 
