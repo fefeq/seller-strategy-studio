@@ -289,5 +289,5 @@ Orden: 1, 2, 3, 4 y después 5. Sin el 1 no hay nada que probar; sin el 2 el 3 n
 | 1 | FAIL (4 MAJOR, 12 MINOR) sobre `f709c62` | `.factory/evidence/NK-0174/prd-gate-pass1.md` |
 | Corrección | Pasada 1 FAIL → corregido en `345591b` | M-1 a M-4 y m-1 a m-12 resueltos en este documento |
 | 2 | FAIL (0 BLOCKER, 2 MAJOR N-1 y N-2, 11 MINOR) sobre `a03a1d5` | `.factory/evidence/NK-0174/prd-gate-pass2.md` |
-| Corrección | pasada 2 FAIL → corregido en <sha>; pasada 3 pendiente | N-1, N-2 y m-1 a m-11 de la pasada 2 resueltos en este documento (m-10 como propuesta de texto y prueba para el SDD 4) |
+| Corrección | pasada 2 FAIL → corregido en `103b88a`; pasada 3 pendiente | N-1, N-2 y m-1 a m-11 de la pasada 2 resueltos en este documento (m-10 como propuesta de texto y prueba para el SDD 4) |
 | 3 | Pendiente | Gate de contexto limpio sobre el commit de la corrección; lo lanza el coordinador |
