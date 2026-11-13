@@ -148,7 +148,11 @@ export function NotificationCenter({
   }
 
   // NK-0179: on a 375 px top bar the long label pushed the page sideways; below sm only the number is shown.
-  const short = running.length ? `Avisos · ${running.length}` : unread ? `Avisos · ${unread}` : "Avisos";
+  const short = running.length
+    ? `Avisos · ${running.length}`
+    : unread
+      ? `Avisos · ${unread}`
+      : "Avisos";
   const label = running.length
     ? `Avisos · ${running.length} en marcha`
     : unread
