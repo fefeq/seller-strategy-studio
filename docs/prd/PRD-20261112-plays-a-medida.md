@@ -287,7 +287,7 @@ Orden dentro de la iniciativa: 1, luego 2, luego 3 y después el 4 (el 4 depende
 ## 9.1 Registro del gate
 | Pasada | Resultado | Evidencia | Estado |
 |---|---|---|---|
-| 1 | FAIL (0 BLOCKER, 7 MAJOR, 9 MINOR) sobre `4f143c3` | `.factory/evidence/NK-0171/prd-gate-pass1.md` | pasada 1 FAIL → corregido en fa7a87f; pasada 2 FAIL → corregido en b02fb12; pasada 3 FAIL → 0bc93e0; pasada 4 PASS-WITH-FIXES (0 mayores) → menores corregidos en <sha> |
+| 1 | FAIL (0 BLOCKER, 7 MAJOR, 9 MINOR) sobre `4f143c3` | `.factory/evidence/NK-0171/prd-gate-pass1.md` | pasada 1 FAIL → corregido en fa7a87f; pasada 2 FAIL → corregido en b02fb12; pasada 3 FAIL → 0bc93e0; pasada 4 PASS-WITH-FIXES (0 mayores) → menores corregidos en 152581c |
 
 Qué se hizo con cada hallazgo (el coordinador verificó cada uno contra `origin/main` @ d5e6a56):
 | Hallazgo | Veredicto | Dónde se corrigió |
