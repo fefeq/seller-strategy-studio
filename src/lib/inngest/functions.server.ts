@@ -25,7 +25,15 @@ function build() {
       const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
       const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
       const discoveries = await step.run("discoveries", async () => { const { discoverForOrg } = await import("@/lib/discoveries.server"); return discoverForOrg(await admin(), orgId); });
-      const autopilot = await step.run("autopilot", async () => { const { autopilotForOrg } = await import("@/lib/autopilot.server"); const db = await admin(); const r = await autopilotForOrg(db, orgId); const { notifyAutopilot } = await import("@/lib/notices.server"); await notifyAutopilot(db, orgId, r); return r; });
+      const autopilot = await step.run("autopilot", async () => {
+        const { autopilotForOrg } = await import("@/lib/autopilot.server");
+        const db = await admin();
+        const r = await autopilotForOrg(db, orgId);
+        const { notifyAutopilot } = await import("@/lib/notices.server");
+        await notifyAutopilot(db, orgId, r);
+        // Durable step output is persisted by Inngest: never return private notes or spread the core result.
+        return { researched: r.researched, prepped: r.prepped, cooling: r.cooling, noteCount: r.notes.length };
+      });
       const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
       if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
       return { suggestions, stripe, posthog, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };

@@ -32,3 +32,4 @@
 - Card decks (Sugerencias, Inicio) use SwipeDeck (src/components/swipe-deck.tsx, motion) with gesture rules in src/lib/swipe.ts (tested); decisions commit only after the undo window, so a swipe is always reversible.
 - RevOps analysis (reconciled funnel, lost, cohorts, weekly trend) is pure in src/lib/revops.ts (tested, ported from the RevOps Dashboard engine) and shown as sections of /metrics selected by ?seccion=.
 - Onboarding storage provisioning is an explicit native Storage API operation (scripts/provision-onboarding-storage.ts), never a page-load side effect or storage.buckets SQL, because the platform manages the storage schema.
+- Durable autopilot step outputs use an explicit count-only projection before returning from step.run; core notes remain internal so Inngest history never persists customer titles or error text from them.
