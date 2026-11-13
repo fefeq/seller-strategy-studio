@@ -48,7 +48,9 @@ export function SourcesStep({
   }
   const notify = (r: { dropped: string[]; duplicated: string[] }) => {
     if (r.dropped.length)
-      toast.error(`${sourcesLimitText()} Se quedan fuera: ${r.dropped.join(", ")}.`);
+      toast.error(
+        `${sourcesLimitText()} Se quedan fuera: ${r.dropped.join(", ")}. Quita alguno de la lista si quieres añadirlos.`,
+      );
     if (r.duplicated.length) toast.info(`Ya estaba en la lista: ${r.duplicated.join(", ")}.`);
   };
 
@@ -57,10 +59,14 @@ export function SourcesStep({
     const userId = me?.user.id;
     if (!orgId || !userId) return;
     const ok: { f: File; item: Item }[] = [];
+    // Each upload gets a new path, so the same file chosen again is recognised by name (already listed or twice in one selection).
+    const seen = new Set(items.filter((x) => x.kind === "storage").map((x) => x.name));
+    const again: string[] = [];
     for (const f of Array.from(list ?? [])) {
       const bad = uploadProblem(f);
       if (bad) toast.error(bad);
-      else
+      else if (seen.has(f.name)) again.push(f.name);
+      else if (seen.add(f.name))
         ok.push({
           f,
           item: {
@@ -72,7 +78,7 @@ export function SourcesStep({
         });
     }
     const r = add(ok.map((x) => x.item));
-    notify(r);
+    notify({ dropped: r.dropped, duplicated: [...again, ...r.duplicated] });
     const skip = new Set(r.dropped);
     await Promise.all(
       ok
