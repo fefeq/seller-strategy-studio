@@ -51,25 +51,26 @@ describe("SourcesStep: adding files keeps the ones already listed (CA-12)", () =
     render(<SourcesStep depth="express" onStarted={() => {}} />);
     const names = (from: number, n: number) =>
       Array.from({ length: n }, (_, k) => `doc-${from + k}.pdf`);
-    // The step takes 3 files per selection; four selections go past MAX_FILES (10).
-    for (const [from, n] of [
-      [1, 3],
-      [4, 3],
-      [7, 3],
-    ] as const) {
-      add(...names(from, n).map(pdf));
-      await waitFor(() =>
-        expect(listed().filter((t) => /\.pdf/.test(t))).toHaveLength(from - 1 + n),
-      );
-    }
-    add(...names(10, 3).map(pdf));
-    await waitFor(() => expect(state.error).toHaveBeenCalled());
-    expect(
+    const per = 3; // selection size (equals MAX_FILES); the partial-fit case is covered in src/lib/onboarding-sources.test.ts
+    const shown = () =>
       listed()
         .filter((t) => /\.pdf/.test(t))
-        .map((t) => t.replace(/\s*pendiente.*$/, "")),
-    ).toEqual(names(1, 10));
-    expect(state.error.mock.calls[0]?.[0]).toMatch(/doc-11\.pdf, doc-12\.pdf/);
+        .map((t) => t.replace(/\s*pendiente.*$/, ""));
+    // D-S8-2: derived from MAX_FILES, not a literal. Selections that still fit accumulate...
+    let have = 0;
+    while (have + per <= MAX_FILES) {
+      add(...names(have + 1, per).map(pdf));
+      have += per;
+      await waitFor(() => expect(shown()).toHaveLength(have));
+    }
+    // ...and the next selection goes past MAX_FILES.
+    const last = names(have + 1, per);
+    add(...last.map(pdf));
+    await waitFor(() => expect(state.error).toHaveBeenCalled());
+    const all = [...names(1, have), ...last];
+    expect(shown()).toEqual(all.slice(0, MAX_FILES));
+    const dropped = all.slice(MAX_FILES);
+    expect(state.error.mock.calls[0]?.[0]).toContain(dropped.join(", "));
     expect(state.error.mock.calls[0]?.[0]).toContain(`${MAX_FILES} documentos`);
   });
 });
