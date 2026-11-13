@@ -1,4 +1,17 @@
 # Roadmap
+## Cola de Fede — 13-11-2026
+No iniciar hasta cerrar F1–F11 con informe. Mandan docs/decisiones-fede-20261113.md; PRD aprobado no autoriza implementación. Un SDD en docs/sdd/ cada vez, aprobación de Fede antes de construir e informe antes del siguiente.
+- [ ] NK-0176: SDD corto; solo texto del bloqueador y cierre D2 en PRD-20261106-plays-gtm.md.
+- [ ] NK-0159: SDD corto, después de la entrega anterior.
+- [ ] NK-0160: SDD corto, después de la entrega anterior.
+- [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
+- [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.
+- [ ] NK-0168: SDD 1 (registro, plantilla SDD, EXECUTION.md, nokko-shape), luego 2 y 3.
+- [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos sobre copia y autorización.
+- [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
+- [ ] NK-0174: SDD 1; Workspace Internal, solo Fede hasta confirmación legal para otros buzones.
+- F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
+
 ## Verificación independiente (13-11-2026; prioridad antes de iniciativas nuevas)
 - [ ] F1: truncamiento de Drive visible y probado en el job.
 - [ ] F2: estado y políticas reales de Storage; creación reproducible por API (INSERT en storage.buckets no permitido por la plataforma).
@@ -10,7 +23,7 @@
 - [ ] F9–F10: validar rutas UUID y source_status.
 - [ ] F11: corregir documentación e informar correspondencia de snapshots sin renombrarlos.
 - [ ] Verificar suite completa, tipos disponibles, navegador escritorio/375 px claro/oscuro e informe final.
-- [ ] F12: retención — bloqueado, requiere decisión de Fede; no implementar.
+- [x] F12: decisión documentada — los documentos de onboarding-sources nunca se borran automáticamente.
 - [ ] Heredados NK-0159/NK-0176/escáner NK-0160 — bloqueados por decisión o permiso; no modificar pruebas existentes.
 
 ## Segundo plano y avisos
