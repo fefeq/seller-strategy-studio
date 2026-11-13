@@ -1,4 +1,6 @@
-import { Menu, X } from "lucide-react";
+import { Cable, Menu, Spline, X, type LucideIcon } from "lucide-react";
+// NK-0168: one icon per concept, always with its label.
+const NAV_ICONS: Record<string, LucideIcon> = { "/theory-u": Spline, "/connect": Cable };
 import { IconText } from "@/components/icon-text";
 import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
@@ -136,7 +138,7 @@ function Shell() {
                       to={n.to as never}
                       className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime-soft data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
                     >
-                      {n.label}
+                      {NAV_ICONS[n.to] ? <IconText icon={NAV_ICONS[n.to]} size="nav">{n.label}</IconText> : n.label}
                     </Link>
                   ))}
               </div>
