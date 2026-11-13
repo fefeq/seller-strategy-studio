@@ -22,6 +22,7 @@ import { KeyPeopleButton } from "@/components/orchestrator";
 import { ApolloReveal } from "@/components/apollo";
 import { askConfirm } from "@/components/confirm-dialog";
 import type { Tables } from "@/integrations/supabase/types";
+import { EmailVerificationMark, useEmailVerifications } from "@/components/email-verification";
 
 type Stakeholder = Tables<"stakeholders">;
 
@@ -37,6 +38,7 @@ export function StakeholdersTab({
   onChange: () => void;
 }) {
   const [sel, setSel] = useState<Stakeholder | null>(null);
+  const verification = useEmailVerifications([...list.map((s) => s.email), sel?.email]);
   const detailRef = useRevealOnMobile(sel?.id);
   const stakeJob = useJob("stakeholder_research", {
     targetId: sel?.id ?? null,
@@ -172,6 +174,7 @@ export function StakeholdersTab({
                 value={sel.email ?? ""}
                 onChange={(e) => setSel({ ...sel, email: e.target.value })}
               />
+              <EmailVerificationMark email={sel.email} rows={verification.data} error={verification.error} />
             </Field>
             <Field label="Teléfono">
               <Input
@@ -212,6 +215,7 @@ export function StakeholdersTab({
           </div>
           <ApolloReveal
             stakeholderId={sel.id}
+            hasEmail={!!sel.email?.trim()}
             onChange={async () => {
               const { data: fresh } = await supabase
                 .from("stakeholders")

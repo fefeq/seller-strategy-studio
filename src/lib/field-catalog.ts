@@ -47,6 +47,9 @@ export type ConceptId =
   | "direccion_email"
   | "estado_email"
   | "estado_proveedor_email"
+  | "clave_registro"
+  | "superficie_borrador"
+  | "motivo_bloqueo_email"
   | "alta_sistema";
 
 export type Concept = {
@@ -65,6 +68,9 @@ export type Concept = {
 };
 
 export const CONCEPTS: Concept[] = [
+  { id: "clave_registro", label: "Registro (clave)", meaning: "Identificador único de un registro de sistema.", kind: "text", format: "uuid", display: "No se muestra" },
+  { id: "superficie_borrador", label: "Origen del borrador", meaning: "Superficie en la que se bloqueó la preparación de un borrador.", kind: "enum", format: "Valor cerrado", allowed: ["draft_followup", "followup_sequence"], display: "Agente o seguimiento proactivo" },
+  { id: "motivo_bloqueo_email", label: "Motivo del bloqueo", meaning: "Razón del bloqueo y siguiente paso, sin dirección de email.", kind: "text", format: "Máximo 300 caracteres", display: "Motivo en español" },
   { id: "clave_empresa", label: "Empresa (clave)", meaning: "Empresa propietaria de un registro.", kind: "text", format: "uuid", display: "No se muestra" },
   { id: "direccion_email", label: "Email", meaning: "Dirección normalizada de contacto.", kind: "text", format: "Minúsculas sin espacios exteriores", display: "Dirección" },
   { id: "estado_email", label: "Estado del email", meaning: "Estado comunicado por el proveedor para una dirección.", kind: "enum", format: "Valor cerrado", allowed: ["verified", "catch_all", "unverifiable", "invalid", "unverified"], display: "Estado efectivo en español" },
@@ -301,6 +307,12 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  { table: "email_draft_blocks", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "email_draft_blocks", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "email_draft_blocks", column: "surface", concept: "superficie_borrador", persistence: saved },
+  { table: "email_draft_blocks", column: "status", concept: "estado_email", persistence: saved },
+  { table: "email_draft_blocks", column: "reason", concept: "motivo_bloqueo_email", persistence: saved },
+  { table: "email_draft_blocks", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "email_verifications", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "email_verifications", column: "email", concept: "direccion_email", persistence: saved },
   { table: "email_verifications", column: "status", concept: "estado_email", persistence: saved },
@@ -601,6 +613,9 @@ export function allowedValues(table: string, column: string): readonly string[] 
 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
+  clave_registro: ["src/integrations/supabase/types.ts"],
+  superficie_borrador: ["src/lib/agent/tools/core-read.ts", "src/lib/org-data.ts"],
+  motivo_bloqueo_email: ["src/lib/email-status.ts"],
   pais: [
     "src/components/country-pick.tsx",
     "src/components/account/fit-fields.tsx",
@@ -665,7 +680,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   clave_usuario: ["src/integrations/supabase/types.ts"],
   clave_empresa: ["src/integrations/supabase/types.ts"],
   direccion_email: ["src/lib/email-verification.ts"],
-  estado_email: ["src/lib/email-verification.ts"],
+  estado_email: ["src/lib/email-verification.ts", "src/components/email-verification.tsx"],
   estado_proveedor_email: ["src/integrations/supabase/types.ts"],
   alta_sistema: ["src/integrations/supabase/types.ts"],
 };

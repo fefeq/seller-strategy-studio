@@ -23,6 +23,8 @@ import { Field } from "@/components/fields";
 import { CountryPick } from "@/components/country-pick";
 import { countryName } from "@/lib/assignment";
 import { errorText } from "@/lib/errors";
+import { CAPABILITIES } from "@/lib/orchestrator/planner";
+import { useCurrency } from "@/hooks/use-me";
 import {
   APOLLO_SENIORITY,
   accountInsertFromDraft,
@@ -479,11 +481,16 @@ function ApolloPeople({ accountId, onAdded }: { accountId: string; onAdded: () =
 export function ApolloReveal({
   stakeholderId,
   onChange,
+  hasEmail = false,
 }: {
   stakeholderId: string;
   onChange: () => void;
+  hasEmail?: boolean;
 }) {
   const reveal = useServerFn(apolloRevealStakeholder);
+  const qc = useQueryClient();
+  const { money } = useCurrency();
+  const cost = CAPABILITIES.find_email.options.find((o) => o.service === "apollo")?.cost;
   const [busy, setBusy] = useState<"email" | "phone" | null>(null);
   const { data: pending, refetch } = useQuery({
     queryKey: ["phone-reveal", stakeholderId],
@@ -527,6 +534,7 @@ export function ApolloReveal({
         );
       onChange();
       refetch();
+      qc.invalidateQueries({ queryKey: ["email-verifications"] });
     } catch (e) {
       toast.error(errorText(e));
     } finally {
@@ -537,7 +545,7 @@ export function ApolloReveal({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" variant="outline" disabled={!!busy} onClick={() => run(false)}>
-        {busy === "email" ? "Revelando…" : "Conseguir email"}
+        {busy === "email" ? (hasEmail ? "Verificando…" : "Revelando…") : (hasEmail ? "Verificar email" : "Conseguir email")}
       </Button>
       <Button
         size="sm"
@@ -547,6 +555,7 @@ export function ApolloReveal({
       >
         {busy === "phone" ? "Pidiendo…" : "Conseguir móvil"}
       </Button>
+      <span className="basis-full text-xs text-muted-foreground">Fuentes: Apollo · coste aprox. {cost == null ? "sin dato" : money(cost)}</span>
       {pending?.status === "pending" && (
         <span className="text-xs text-muted-foreground">
           Móvil pedido: llegará en unos minutos.

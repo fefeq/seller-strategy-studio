@@ -21,6 +21,7 @@ import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox"
 import { QualificationPanel } from "@/components/leads/lead-qualification";
 import { LeadFlowPanel } from "@/components/leads/lead-flow";
 import { askConfirm } from "@/components/confirm-dialog";
+import { EmailVerificationMark, useEmailVerifications } from "@/components/email-verification";
 
 const STAGE_OPTS = Object.fromEntries([...LEAD_STAGES, DISQUALIFIED].map((s) => [s.id, s.label]));
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("es-ES", { day: "2-digit", month: "short", year: "numeric" }) : "—");
@@ -29,6 +30,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
   const { symbol } = useCurrency();
   const qc = useQueryClient();
   const [f, setF] = useState(lead);
+  const verification = useEmailVerifications([f.email]);
   const touchLead = useLeadTouched();
   useEffect(() => setF(lead), [lead]);
   const set = <K extends keyof Lead>(k: K, v: Lead[K]) => setF((p) => ({ ...p, [k]: v }));
@@ -100,7 +102,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
         <Field label="Responsable"><Pick value={f.owner_id ?? ""} options={{ "": "Sin asignar", ...Object.fromEntries(data.members.map((m) => [m.id, m.full_name])) }} onChange={(v) => set("owner_id", v || null)} /></Field>
         <Field label="Empresa"><EntityCombobox items={accounts} value={f.company} selectedId={f.account_id ?? null} onChange={(t, a) => setF((p) => ({ ...p, company: t, account_id: a?.id ?? null }))} noun="cuenta nueva" logos ariaLabel="Empresa" /></Field>
         <Field label="Contacto"><Input value={f.contact_name ?? ""} onChange={(e) => set("contact_name", e.target.value)} /></Field>
-        <Field label="Email"><Input value={f.email ?? ""} onChange={(e) => set("email", e.target.value)} /></Field>
+        <Field label="Email"><Input value={f.email ?? ""} onChange={(e) => set("email", e.target.value)} /><EmailVerificationMark email={f.email} rows={verification.data} error={verification.error} /></Field>
         <Field label="Cargo"><Input value={f.title ?? ""} onChange={(e) => set("title", e.target.value)} /></Field>
         <Field label="Origen"><Input value={f.source ?? ""} onChange={(e) => set("source", e.target.value)} /></Field>
         <Field label="Segmento"><Pick value={f.segment_id ?? ""} options={{ "": "Sin segmento", ...Object.fromEntries(data.segments.map((s) => [s.id, s.name])) }} onChange={(v) => set("segment_id", v || null)} /></Field>

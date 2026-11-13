@@ -35,3 +35,4 @@
 - Durable autopilot step outputs use an explicit count-only projection before returning from step.run; core notes remain internal so Inngest history never persists customer titles or error text from them.
 - The title/name log audit is a local AST scanner under scripts, exercised by a new guard alongside the protected legacy scanner; never bundle compiler-based audit tooling into served code.
 - Email verification semantics live in a pure shared module keyed by normalized address; consumers must reuse its expiry and draft gate rather than delegate those decisions to a model.
+- Contact screens batch visible email verification reads through one member-client helper scoped by organization; the shared mark reuses the pure expiry rule, so errors or changed addresses never appear verified.
