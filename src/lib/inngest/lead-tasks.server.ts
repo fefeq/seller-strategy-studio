@@ -369,7 +369,7 @@ export async function followupStep(db: Admin, orgId: string, leadId: string, now
   const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
   for (const f of found) {
     if (!f.email_block) continue;
-    await recordEmailDraftBlock(db, orgId, { surface: "followup_sequence", ...f.email_block });
+    await recordEmailDraftBlock(orgId, { surface: "followup_sequence", ...f.email_block });
   }
   return { stop: false as const, created: found.length };
 }

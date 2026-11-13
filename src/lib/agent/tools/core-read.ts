@@ -550,7 +550,7 @@ export const CORE_READ_TOOLS: AgentTool[] = [
         const reason = status ? emailBlockReason(status) : null;
         if (reason && status) {
           const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
-          await recordEmailDraftBlock(c.db, c.orgId, {
+          await recordEmailDraftBlock(c.orgId, {
             surface: "draft_followup",
             status,
             reason,

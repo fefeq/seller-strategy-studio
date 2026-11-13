@@ -154,3 +154,9 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - **Base real, solo lectura:** information_schema confirma email_verifications (ocho columnas) y email_draft_blocks (seis). Ambas migraciones estaban aplicadas antes de esta continuación, no dependen de publicar; no se ejecutó SQL de escritura ni se tocaron datos reales.
 - **Límite visual:** sesión de Fede restaurada correctamente mediante la herramienta, pero navegación local a Personas/Cuentas quedó en esqueleto incluso tras 90 s; peticiones de módulos abortadas y un favicon ausente, sin excepción de página. No se declara CA-2/CA-8 verificado en navegador ni desktop/móvil/claro/oscuro completados. No se pulsó revelado ni hubo gasto real. SDD permanece En curso; revisión independiente pendiente.
 - **Sin publicar/desplegar/fusionar**, sin envíos ni copia de empresas. F12 intacto. No se inició otra iniciativa en esta continuación; NK-0168, NK-0171, NK-0167 y NK-0174 siguen en su orden, con sus paradas documentadas.
+
+## NK-0173 — correcciones de Fede (13-11-2026)
+- `proactive-email-gate.test.ts`: `as any` → `as unknown as Db` con motivo; la aserción de inserción pasa del cliente del miembro al privilegiado (mock de client.server) y se añade «el miembro no escribe» (0 inserciones). Motivo: punto 2 de Fede.
+- `agent-tools-email-gate.test.ts` (prueba nueva de este mismo ticket): mismas aserciones, leídas del cliente privilegiado, más «0 escrituras del miembro». Motivo: punto 2.
+- Migración `0091_email_draft_blocks_privileged_writes`: quita la política de insert y el INSERT de `authenticated`; vuelta atrás en la cabecera. Prueba PGlite nueva `email-draft-blocks-privileged.pg.test.ts` (falla con solo 0090, pasa con 0091). `email-draft-blocks.pg.test.ts` intacta: sigue probando 0090 por sí sola.
+- Revisión visual: bloqueada. La base no tiene ninguna empresa (0 organizaciones, 0 leads); la cuenta de Fede abre en «Crea una empresa». No se crean datos sin permiso.
