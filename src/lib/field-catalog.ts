@@ -50,7 +50,15 @@ export type ConceptId =
   | "clave_registro"
   | "superficie_borrador"
   | "motivo_bloqueo_email"
-  | "alta_sistema";
+  | "alta_sistema"
+  | "clave_play"
+  | "nombre_play"
+  | "definicion_play"
+  | "solo_verificado"
+  | "url_evidencia"
+  | "cita_evidencia"
+  | "fecha_evento"
+  | "cambio_sistema";
 
 export type Concept = {
   id: ConceptId;
@@ -68,6 +76,14 @@ export type Concept = {
 };
 
 export const CONCEPTS: Concept[] = [
+  { id: "clave_play", label: "Play a medida (clave)", meaning: "Clave del play a medida dentro de la empresa.", kind: "text", format: "custom: + minúsculas, números, - o _", display: "No se muestra" },
+  { id: "nombre_play", label: "Nombre del play", meaning: "Nombre visible del play a medida.", kind: "text", format: "1 a 200 caracteres", display: "Nombre" },
+  { id: "definicion_play", label: "Definición del play", meaning: "Receta validada del play a medida (puertas, mensaje, prueba).", kind: "text", format: "JSON validado por plays/custom/model", display: "No se muestra" },
+  { id: "solo_verificado", label: "Solo contacto verificado", meaning: "El play solo usa contactos con email verificado.", kind: "enum", format: "Sí/No, por defecto No", allowed: ["true", "false"], display: "Interruptor" },
+  { id: "url_evidencia", label: "Fuente de la prueba", meaning: "Dirección pública que respalda una afirmación.", kind: "text", format: "http(s)://", display: "Enlace" },
+  { id: "cita_evidencia", label: "Cita", meaning: "Fragmento literal de la fuente, sin emails ni teléfonos.", kind: "text", format: "Máximo 280 caracteres", display: "Cita entre comillas" },
+  { id: "fecha_evento", label: "Fecha del evento", meaning: "Fecha en que ocurrió la señal citada, no la de lectura.", kind: "text", format: "AAAA-MM-DD o vacía si es ambigua", display: "Fecha corta" },
+  { id: "cambio_sistema", label: "Última modificación", meaning: "Momento del último cambio de un registro de sistema.", kind: "text", format: "Fecha y hora", display: "No se muestra" },
   { id: "clave_registro", label: "Registro (clave)", meaning: "Identificador único de un registro de sistema.", kind: "text", format: "uuid", display: "No se muestra" },
   { id: "superficie_borrador", label: "Origen del borrador", meaning: "Superficie en la que se bloqueó la preparación de un borrador.", kind: "enum", format: "Valor cerrado", allowed: ["draft_followup", "followup_sequence"], display: "Agente o seguimiento proactivo" },
   { id: "motivo_bloqueo_email", label: "Motivo del bloqueo", meaning: "Razón del bloqueo y siguiente paso, sin dirección de email.", kind: "text", format: "Máximo 300 caracteres", display: "Motivo en español" },
@@ -307,6 +323,27 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  { table: "custom_plays", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "custom_plays", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "custom_plays", column: "key", concept: "clave_play", persistence: saved },
+  { table: "custom_plays", column: "name", concept: "nombre_play", persistence: saved },
+  { table: "custom_plays", column: "definition", concept: "definicion_play", persistence: saved },
+  { table: "custom_plays", column: "verified_only", concept: "solo_verificado", persistence: saved },
+  { table: "custom_plays", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "custom_plays", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  { table: "custom_play_evidence", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_evidence", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "custom_play_evidence", column: "play_id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_evidence", column: "url", concept: "url_evidencia", persistence: saved },
+  { table: "custom_play_evidence", column: "quote", concept: "cita_evidencia", persistence: saved },
+  { table: "custom_play_evidence", column: "event_date", concept: "fecha_evento", persistence: saved },
+  { table: "custom_play_evidence", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "custom_play_costs", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "custom_play_costs", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "custom_play_costs", column: "play_key", concept: "clave_play", persistence: saved },
+  { table: "custom_play_costs", column: "provider", concept: "fuente_citada", persistence: saved },
+  { table: "custom_play_costs", column: "amount", concept: "importe", persistence: saved },
+  { table: "custom_play_costs", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "email_draft_blocks", column: "id", concept: "clave_registro", persistence: saved },
   { table: "email_draft_blocks", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "email_draft_blocks", column: "surface", concept: "superficie_borrador", persistence: saved },
@@ -614,6 +651,14 @@ export function allowedValues(table: string, column: string): readonly string[] 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
   clave_registro: ["src/integrations/supabase/types.ts"],
+  clave_play: ["src/lib/plays/custom/model.ts"],
+  nombre_play: ["src/lib/plays/custom/model.ts"],
+  definicion_play: ["src/lib/plays/custom/model.ts"],
+  solo_verificado: ["src/lib/plays/custom/model.ts"],
+  url_evidencia: ["src/lib/plays/custom/model.ts"],
+  cita_evidencia: ["src/lib/plays/custom/model.ts"],
+  fecha_evento: ["src/lib/plays/custom/model.ts"],
+  cambio_sistema: ["src/integrations/supabase/types.ts"],
   superficie_borrador: ["src/lib/agent/tools/core-read.ts", "src/lib/org-data.ts"],
   motivo_bloqueo_email: ["src/lib/email-status.ts"],
   pais: [
