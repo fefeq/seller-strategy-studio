@@ -3,26 +3,26 @@
 **Tipo:** Iniciativa · **Prioridad propuesta:** Media-alta (reutiliza catálogo, estado por empresa, puertas, herramientas del asistente y conectores que ya existen; el coste es de ingeniería y de IA por propuesta; no depende de proveedores nuevos en la tanda 0; sin datos de uso, es una apuesta declarada)
 **Estado:** Borrador · **Pide:** Fede (entrevista, 2026-11-12) · **Aprueba:** Fede · **Fecha:** 2026-11-12
 **Ticket:** NK-0171 (LOGGED, `.factory/ledger.json`, registrado el 2026-11-12)
-**SDD que lo desarrollan:** pendiente (sección 8)
+**SDD que lo desarrollan:** pendientes (sección 8): cuatro en la tanda 0 (modelo, biblioteca, asistente, motor de ejecución) y uno por conector o vertical después
 **Cola del sprint siguiente (decidida por Fede, 2026-11-12):** NK-0156, esta iniciativa, NK-0167, NK-0168
 
 > Un PRD dice qué se quiere y por qué. No dice cómo se construye ni cómo se prueba: eso es del SDD.
 
 ## 1. Problema
-Hoy NOKKO tiene 28 plays fijos en código, escritos de forma general, y solo 12 se pueden construir con datos que ya guarda; los demás están bloqueados. Una empresa cuya estrategia pide otra cosa (otro nicho, otra señal, otra zona) no tiene dónde ponerlo: no puede pedir un play pensado para su ICP, su oferta y su mercado, ni sabe si la señal en la que se apoya es verificable, está fresca o se puede probar con una muestra pequeña antes de escalar.
+Hoy NOKKO tiene 28 plays fijos en código, escritos de forma general. En `src/lib/plays/catalog.ts` (`main` @ d5e6a56) 16 están `bloqueado`, 11 `parcial` y 1 `planificado`: ninguno de los 28 se crea a medida de una empresa. Una empresa cuya estrategia pide otra cosa (otro nicho, otra señal, otra zona) no tiene dónde ponerlo: no puede pedir un play pensado para su ICP, su oferta y su mercado, ni sabe si la señal en la que se apoya es verificable, está fresca o se puede probar con una muestra pequeña antes de escalar.
 
 Fede quiere replicar la **estructura** del catálogo público de plays de Glider (63 plays, cada uno con disparador, fuentes por paso, evidencia citada, entregable, verificación manual y prueba) y usarla como base para **crear plays nuevos alineados con la estrategia de cada empresa**, dentro del flujo de NOKKO. Límite duro: se replican estructura y patrones con palabras propias; no se copia ningún nombre, hook ni mensaje de ejemplo de Glider.
 
 ## 2. Para quién
-- **Owner y Sales Leader** de cada empresa: proponen, aprueban, activan y pausan plays a medida (igual que hoy con `set_play_enabled`, `src/lib/plays/status.ts:39`).
+- **Owner y Sales Leader** de cada empresa: proponen, aprueban, activan y pausan plays a medida (igual que hoy con `set_play_enabled`, `src/lib/agent/tools/plays.ts:75`, y la regla de roles `canTogglePlays`, `src/lib/plays/status.ts:39`).
 - **Resto de miembros:** ven los plays y reciben sus sugerencias; no aprueban.
 - Mercado global, con clientes de nicho y B2B general (decisión 7). No se diseña para un solo sector.
 
 ## 3. Evidencia y por qué ahora
-**Qué se ha leído** (solo lectura, `main` @ 48f05ff, 2026-11-12):
+**Qué se ha leído** (solo lectura; primera redacción sobre `main` @ 48f05ff, corregido tras el gate sobre `main` @ d5e6a56, 2026-11-13):
 - Análisis de los 63 plays: `docs/prd/annex/glider-plays-analysis-20261112.md`. **Lo hizo un modelo pequeño resumiendo páginas**, no es lectura literal; solo se comprobó el texto en 2 páginas. Los recuentos de abajo son suyos y valen como orden de magnitud, no como dato.
 - Código a reutilizar: `src/lib/plays/{types,catalog,teams,gating,gates,run-log,recommend,status}.ts`; migración `drizzle/migrations/0077_plays_library_core.sql` (`play_states`, `play_runs`); herramientas `src/lib/agent/tools/plays.ts`; reglas de `src/lib/AGENTS.md` (nunca inventar datos, cada handler filtra por `org_id`, la IA propone y el código puro valida y ordena, nada se envía solo).
-- **Diagnóstico de plays** (`src/lib/plays/diagnosis.ts`, `src/lib/agent/tools/play-diagnosis.ts`, SDD-20261112-diagnosis-in-chat): **no está en `main` todavía**; existe en la rama `integration/sprint8b-diagnosis-20261112`. Esta iniciativa lo trata como dependencia suave: [Por verificar] su estado de integración antes de redactar el SDD 3.
+- **Diagnóstico de plays** (`src/lib/plays/diagnosis.ts`, `src/lib/agent/tools/play-diagnosis.ts` con `diagnose_play_teams` y `save_play_plan`; SDD-20261112-diagnosis-in-chat; NK-0153): **ya está en `main`** (@ d5e6a56, comprobado). Deja de ser una dependencia pendiente; el asistente de plays a medida (SDD 3) se apoya en él.
 
 **Lo que el análisis dice del formato de Glider (y por qué sirve):**
 1. Cada play arranca de un **evento verificable** (un cambio público), no de un segmento.
@@ -39,40 +39,42 @@ Fede quiere replicar la **estructura** del catálogo público de plays de Glider
 | Falta | Hoy | Consecuencia |
 |---|---|---|
 | Cadena de evidencia con cita por paso | `play_runs` guarda solo ids y un motivo corto de descarte (`run-log.ts:21`) | No se puede auditar de dónde sale cada afirmación de un mensaje |
+| Quien ejecute un play a medida | En `main`, `runGates` y `runRow` no tienen llamador en producción y `play_runs` solo se lee (`components/plays/play-card.tsx:19`); las puertas son funciones en código (`plays/types.ts:9-12`) | Un play guardado en una tabla no haría nada: hace falta un intérprete de puertas declarativas y un motor que ejecute (SDD 4) |
 | Entregable de una página como borrador | `OUTPUTS` = suggestion, task, draft (`catalog.ts`); no hay un tipo de borrador «página» | El valor previo al contacto no tiene dónde vivir |
 | Verificación manual explícita | No existe como paso | Un humano aprueba el borrador, pero no hay lista de riesgos concretos por play |
 | Diseño de prueba (muestra y umbral) | No existe | No hay forma de decidir qué es éxito antes de escalar |
 | Parámetros por empresa (zona, oficio, umbrales) | `play_states.settings` es jsonb libre, sin validar | Un play general no se adapta |
-| Ventana de frescura obligatoria | Las señales de cuenta tienen fecha, pero ningún play obliga a declarar una | Una señal vieja puede parecer actual |
-| Comprobación de fuente contra los conectores de la empresa | El estado `bloqueado` es una etiqueta fija en código (`BLOCKERS`) | No se calcula contra lo que la empresa tiene conectado |
+| Ventana de frescura obligatoria, sobre la fecha del evento | Las señales de cuenta tienen fecha, pero ningún play obliga a declarar una; los datos de origen traen la fecha del evento solo a veces (Perplexity devuelve `date \| null`, `perplexity.ts:21,62`) | Una señal vieja puede parecer actual si solo se guarda cuándo se leyó |
+| Comprobación de fuente contra lo que NOKKO puede leer | El estado `bloqueado` es una etiqueta fija en código (`BLOCKERS`, `catalog.ts:31`). El estado «conectado» de Clay, Apollo, Parallel, Firecrawl, Perplexity, Apify y Drive es de toda la plataforma: `connectedServices()` no recibe empresa y mira variables de entorno (`orchestrator/runner.ts:31-43`; `src/lib/AGENTS.md`); `integrations` no tiene `org_id`. Solo PostHog es por empresa | No se calcula contra nada: hace falta un registro en código de lo que NOKKO lee y con qué herramienta, más PostHog por empresa |
 | Planes propios de la empresa | El catálogo es código y solo guarda estado por empresa | No se puede crear un play que no esté en el código |
 
-**Por qué ahora:** el catálogo, el estado por empresa, las puertas y el diagnóstico ya existen o están a punto; añadir el molde y la creación a medida es más barato antes de que se construya la lógica de cada uno de los 28 plays bloqueados. Sin datos de uso: todas las líneas base son «sin dato».
+**Por qué ahora:** el catálogo, el estado por empresa, las puertas y el diagnóstico ya existen; añadir el molde y la creación a medida es más barato antes de que se construya la lógica de cada uno de los 16 plays bloqueados y los 11 parciales. Sin datos de uso: todas las líneas base son «sin dato».
 
 ## 4. Objetivos
 | ID | Objetivo | Cómo se mide | Línea base | Fuente |
 |---|---|---|---|---|
 | G-1 | Que las empresas tengan plays creados para ellas y en uso | Empresas con al menos un play «Creado para tu empresa» activado | Sin dato (no existe) | Tabla nueva de plays por empresa (estado activado, por `org_id`), tras el lanzamiento |
-| G-2 | Que las propuestas del asistente sean útiles | Propuestas aprobadas frente a descartadas por empresa | Sin dato (no existe) | `agent_pending_actions` (`tool`, `status`, `decided_at`; ya existe y registra confirmaciones y cancelaciones), con apoyo de la tabla nueva |
-| G-3 | Que los plays se prueben antes de escalar | Plays activados con resultado de prueba registrado (muestra, éxitos, fecha) | Sin dato (no existe) | Tabla nueva (campos de prueba y resultado) |
+| G-2 | Que las propuestas del asistente sean útiles | De las propuestas **decididas** (`status` en `confirmed` o `cancelled`), la parte confirmada, por empresa. Denominador: solo decididas; las `pending` que nadie decide y las `failed` se cuentan aparte, no entran. Confirmar la acción **es** aprobar el play (P-3) | Sin dato (no existe) | `agent_pending_actions` (`tool`, `status`, `decided_at`, migración 0007) como única fuente. La tabla nueva no guarda «propuesto» ni «descartado» (P-3), así no hay dos fuentes. Lectura por consulta de producto, no por pantalla: la RLS de esa tabla es «own read» por usuario (0007) |
+| G-3 | Que los plays se prueben antes de escalar | Plays activados con resultado de prueba registrado (muestra, éxitos, fecha) | Sin dato (no existe) | Tabla nueva (campos de prueba y resultado). Lo construye el SDD 4 (motor de ejecución): registrar el resultado es parte de ejecutar |
 | G-4 | Que un play mal definido no se pueda guardar | Planes guardados con muestra y umbral incoherentes, sin ventana de frescura o con un paso sin fuente | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la validación pura |
-| G-5 | Que un play sin fuente conectada nunca finja | Plays activados cuya fuente no está conectada en esa empresa | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la comprobación de fuentes |
-| G-6 | Que ninguna afirmación de un mensaje salga sin cita | Borradores guardados con una afirmación sin paso de evidencia, o que cita un paso inexistente o más viejo que la ventana | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la validación de borradores |
-| G-7 | Conocer el coste real de IA por propuesta y por empresa antes de poner un tope (la tanda 0 está abierta a todas las empresas y sin tope: decisión 15) | Coste real (tokens y coste) de cada propuesta y de cada ejecución, **por empresa**, en la tanda 0; toda propuesta debe dejar su registro | Sin dato (no se mide hoy por play) | `integration_usage` (`service`, `need`, `cost`, `created_at`; migración 0041), [Por verificar] si registra las llamadas de IA o solo las de proveedores |
+| G-5 | Que un play sin fuente disponible nunca finja | Plays activados o ejecutados con un paso cuya fuente no está en el registro de fuentes de NOKKO, no está disponible en la plataforma (`connectedServices`) o, si es PostHog, no está conectada en esa empresa | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la comprobación de fuentes (SDD 1: función pura; SDD 4: se aplica al activar y en cada ejecución) |
+| G-6 | Que ninguna afirmación de un mensaje salga sin cita | Borradores guardados con una afirmación sin paso de evidencia, que cita un paso inexistente, o cuyo hecho tiene **fecha del evento** fuera de la ventana o desconocida | Sin dato; se verifica por prueba: debe ser 0 | Prueba automática de la validación de borradores (SDD 1: validación pura; SDD 4: se aplica al guardar cada borrador) |
+| G-7 | Que cada propuesta y cada ejecución dejen registrado su coste, para decidir un tope con datos y no con suposiciones (tanda 0 abierta y sin freno de IA: decisión 15) | Propuestas y ejecuciones con registro de coste, por empresa. Cada registro guarda tokens y coste cuando el proveedor los devuelve y «sin dato» cuando no. **Solo registrar: que el registro falle no impide guardar la propuesta ni ejecutar** | Sin dato: **hoy esto no se mide en ningún sitio** (ver 6.5) | **Registro nuevo**, instrumentado en el SDD 3 (propuestas) y el SDD 4 (ejecuciones). No se puede medir con las tablas actuales |
 
-Nunca hay línea base estimada. G-4, G-5 y G-6 son invariantes de seguridad: se prueban, no se miden con datos de uso. **Las medidas G-1 a G-3 y G-7 incluyen el coste de IA por empresa**, para poder decidir después el tope con datos reales.
+Nunca hay línea base estimada. G-4, G-5 y G-6 son invariantes de seguridad: se prueban, no se miden con datos de uso. G-7 es de instrumentación: su éxito es que el registro exista y se rellene (con «sin dato» cuando el proveedor no devuelve el coste), no una cifra. El coste que se registre se podrá cruzar con G-1 a G-3 por empresa cuando haya filas.
 
 ## 5. No-objetivos
 - **Copiar texto de Glider:** nombres, hooks, mensajes de ejemplo y títulos quedan fuera. Solo estructura y patrones (decisión 9).
 - **Enviar o publicar nada solo.** Un play produce sugerencia, tarea o borrador; lo aprueba una persona (reglas de `src/lib/AGENTS.md`).
-- **Inventar la fuente que falta.** Si la empresa no tiene la herramienta conectada, el play queda bloqueado por fuente externa con el motivo.
-- **Tope o freno de coste de IA en la tanda 0:** Fede eligió solo registrar el coste, sin freno (decisión 15). No se inventa ninguna cifra; el tope, si llega, se decide después con el coste medido.
+- **Inventar la fuente que falta.** Si NOKKO no puede leer una fuente (no está en el registro de fuentes o no está disponible en la plataforma), el play queda bloqueado por fuente externa con el motivo.
+- **Tabla de conexiones por empresa:** no se crea en esta iniciativa. Si algún día cada empresa debe traer sus propias claves de Clay, Apollo u otros, es un SDD aparte (ver C-1).
+- **Tope o freno de coste de IA en la tanda 0:** Fede eligió solo registrar el coste, sin freno (decisión 15). No se inventa ninguna cifra; el tope, si llega, se decide después con el coste registrado. Esto es solo del coste de **IA**: los pasos con proveedor (Apify, Clay, Apollo, Firecrawl, Parallel) pasan por el runner del orquestador y `org_budgets` sigue pausando el trabajo **automático** al 100 % (`orchestrator/runner.ts`, `src/lib/AGENTS.md`); las claves de esos proveedores son de NOKKO y compartidas.
 - **Motor de envío (decisión de posicionamiento confirmada por Fede, 2026-11-12):** NOKKO no construye un motor de envío. Decide y prepara; otras herramientas envían.
-- **Plays basados en registros oficiales** (P1 a P7 del análisis) en la tanda 0: dependen de fuentes por país sin verificar. Son SDD 4+.
+- **Plays basados en registros oficiales** (P1 a P7 del análisis) en la tanda 0: dependen de fuentes por país sin verificar. Son SDD 5+.
 - **Cambiar los 28 plays existentes** ni migrarlos al molde nuevo.
 - **Contacto verificado propio:** NOKKO sigue usando Clay y Apollo para encontrar contacto; no se construye un proveedor de contactos.
 - **Pantalla nueva de creación** en la tanda 0: la propuesta y la aprobación ocurren en el asistente y en la vista de plays que ya existe.
-- **Presentar una receta como análisis o puntuación de perfiles de personas:** nunca. Una receta trata de una señal pública y un motivo para escribir (decisión 12). Las recetas sobre perfiles públicos de LinkedIn están permitidas por Fede (decisión 12), pero no están entre las tres de la tanda 0 (decisión 11). [Por verificar] si la decisión 12 supera a la D2 del PRD de plays; no se toca aquí.
+- **Presentar una receta como análisis o puntuación de perfiles de personas:** nunca. Una receta trata de una señal pública y un motivo para escribir (decisión 12). Fede respondió «Sí, con las integraciones que ya usamos» a si entran recetas basadas en perfiles de LinkedIn (decisión 12), pero no están entre las tres de la tanda 0. Si esa respuesta cierra la D2 del PRD de plays (abierta) y qué pasa con los seis plays del catálogo que siguen `blockedBy: "linkedin_d2"` es la pregunta Q-7 (7.3); no se toca aquí.
 - **Aplicar a Postin:** NOKKO y Postin son productos separados.
 
 ## 6. Decisiones tomadas y abiertas
@@ -89,21 +91,34 @@ Decididas por Fede en la entrevista del 2026-11-12 (origen: NK-0171):
 | 8 | Vocabulario | Todo es «play». Se distingue solo por origen: «De la biblioteca» o «Creado para tu empresa». Sin nombres nuevos tipo «recetas» en la interfaz | Fede, 2026-11-12 |
 | 9 | Texto de Glider | No se copia: solo estructura y patrones, con palabras propias (límite del coordinador, confirmado por Fede) | Fede / coordinador, 2026-11-12 |
 | 10 | Cola | NK-0156, esta iniciativa, NK-0167, NK-0168 | Fede, 2026-11-12 |
-| 11 (antes Q-1) | Recetas de la tanda 0 | Las tres recetas R-1, R-2 y R-3 quedan confirmadas | Fede, 2026-11-12 |
-| 12 (antes Q-2) | Recetas con perfiles públicos de LinkedIn | **Permitidas**, usando solo las integraciones que NOKKO ya usa (Apollo, Clay, Apify). Fede no pidió ninguna salvaguarda más allá del aviso. Una receta nunca se presenta como análisis o puntuación de perfiles: trata de una señal pública y un motivo para escribir. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
+| 11 (antes Q-1) | Recetas de la tanda 0 | «Confirmo las tres»: R-1, R-2 y R-3 (tal como se propusieron; ver 6.4, donde R-3 lleva un ajuste del coordinador pendiente de que Fede lo vea) | Fede, 2026-11-12 |
+| 12 (antes Q-2) | ¿Entran recetas basadas en perfiles de LinkedIn? | «Sí, con las integraciones que ya usamos» (literal de Fede). Alcance y choque con D2: ver Q-7 (7.3). Riesgo: ver 7.2 | Fede, 2026-11-12 |
 | 13 (antes Q-3) | Contacto de personas de la UE (RGPD) | **Permitido**, con un aviso en el paso de verificación manual. Sin interruptor por empresa. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
-| 14 (antes Q-4) | Revisión legal (consentimiento en transcripciones y grabaciones públicas; uso de registros públicos) | **Ninguna acción legal por ahora.** Queda como riesgo abierto aceptado (7.2). El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 4 en adelante); la decisión sigue siendo de Fede | Fede, 2026-11-12 |
+| 14 (antes Q-4) | Revisión legal (consentimiento en transcripciones y grabaciones públicas; uso de registros públicos) | **Ninguna acción legal por ahora.** Queda como riesgo abierto aceptado (7.2). El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 5 en adelante, tras añadir el motor de ejecución (C-3)); la decisión sigue siendo de Fede | Fede, 2026-11-12 |
 | 15 (antes Q-5) | Alcance de la tanda 0 y coste de IA | La tanda 0 se abre a **todas las empresas desde el principio**, no solo a la organización de Fede. Coste de IA: **solo registrar el coste, sin freno** (Fede eligió esto frente a contarlo contra `org_budgets` y frente a limitar a solo bajo demanda). Sin tope y sin cifra inventada. Riesgo aceptado: ver 7.2 | Fede, 2026-11-12 |
 
 **Decisiones de diseño que propone este PRD** (Fede las confirma al aprobar; no están decididas):
 | # | Tema | Propuesta |
 |---|---|---|
 | P-1 | Término interno | «Molde» es solo un término de ingeniería para la estructura común; en la interfaz no existe (decisión 8) |
-| P-2 | Los 28 plays existentes | Se quedan como están en `catalog.ts` y se muestran como «De la biblioteca». Los 3 plays nuevos de la tanda 0 se escriben con el molde nuevo y también son «De la biblioteca». Nada se migra |
-| P-3 | Estado de un play a medida | Propuesto, aprobado y activo, pausado, descartado. Activar reutiliza `checkToggle` y añade la comprobación de fuentes |
+| P-2 | Los 28 plays existentes | Se quedan como están en `catalog.ts` y se muestran con la etiqueta de origen de los del catálogo (decisión 8, ver P-7). Los 3 plays nuevos de la tanda 0 se escriben con el molde nuevo y también llevan la etiqueta de origen de los del catálogo (P-7). Nada se migra |
+| P-3 | Estado de un play a medida | En la tabla nueva solo existen: aprobado, activo, pausado y archivado. «Propuesto» y «descartado» viven solo en `agent_pending_actions` (`pending` y `cancelled`): confirmar la acción crea la fila (aprobado); cancelarla no crea nada. «Bloqueado» no se guarda: se calcula con la comprobación de fuentes. Activar y pausar son del motor (SDD 4): `checkToggle` solo acepta un `Play` del catálogo (`status.ts:69`), así que se necesita una versión para plays a medida que reutilice `canTogglePlays` y la comprobación de fuentes |
 | P-4 | Estado de los de la biblioteca | Sigue en `play_states` (por `play_id`); un play a medida usa su propia fila |
-| P-5 | Cómo se mide G-2 | Con `agent_pending_actions` (`tool` de la propuesta), igual que la medida de G-1 del PRD de diagnóstico (decisión 33) |
-| P-6 | Datos personales en la evidencia | La cadena de evidencia guarda hechos públicos y la URL de la fuente; el contacto sigue en las tablas de contactos que ya existen. Se confirma en el SDD 1 |
+| P-5 | Cómo se mide G-2 | Con `agent_pending_actions` (`tool` de la propuesta), igual que la medida de G-1 del PRD de diagnóstico (decisión 33), con el denominador y la definición de «aprobar» de G-2 |
+| P-6 | Datos personales en la evidencia | **La cadena de evidencia puede contener datos de una persona identificable** (una reseña o publicación citada). Regla: guardar el mínimo (URL de la fuente, fecha observada, fecha del evento, cita corta con tope de longitud), **sin datos de contacto en la fila de evidencia** (el contacto sigue en las tablas de contactos que ya existen), con retención como parámetro, borrado junto con el play y a petición, y nunca en logs. Detalle en 7 |
+| P-7 | Etiqueta de origen | Fede fijó «De la biblioteca» y «Creado para tu empresa» (decisión 8). «De la biblioteca» se parece a «Biblioteca de jugadas de Nokko» (`components/hub/hub-screen.tsx:321`) y «Biblioteca de playbooks» (`inngest/events.ts:51`), que son los guiones de venta, no estos plays. Propuesta: **«De NOKKO»** frente a **«Creado para tu empresa»**. Fede decide (Q-9) |
+
+**Decisiones del coordinador** (Fede está dormido y delegó la ejecución; el coordinador las toma para corregir el gate de la pasada 1. **Ninguna anula las decisiones 1 a 15 de Fede**, que siguen tal como él las dio; Fede las confirma o las revierte al aprobar):
+| # | Tema | Decisión del coordinador | Por qué (gate pasada 1) |
+|---|---|---|---|
+| C-1 | Qué es «fuente conectada» | Se redefine como: la fuente está **disponible en la plataforma** (`connectedServices()`) **y** figura en un **registro en código** de lo que NOKKO sabe leer, con la herramienta que la lee (6.2); y, solo donde existe por empresa (PostHog), **conectada en esa empresa**. Una receta cuya fuente la plataforma no tiene queda `bloqueado` por fuente externa con el motivo (decisión 3, sin cambio). No se crea una tabla de conexiones por empresa; si hiciera falta, es un SDD aparte | M-1: `connectedServices()` no recibe empresa y `integrations` no tiene `org_id`; la premisa «por empresa» era falsa |
+| C-2 | Coste (G-7) | G-7 pasa a «instrumentar y registrar el coste de cada propuesta y ejecución». Solo registrar: un fallo del registro **no bloquea** guardar la propuesta (Fede: «solo registrar, sin freno»). Se retira la afirmación de que se puede medir con las tablas actuales (6.5) | M-2 |
+| C-3 | Alguien ejecuta | Se añade a la tanda 0 un SDD «Motor de ejecución de plays a medida» (SDD 4). **Es una consecuencia de alcance de las decisiones de Fede, no una decisión nueva suya**: sin ejecutor, un play guardado no hace nada. Amplía el tamaño de la tanda 0 (ver 8) | M-3 |
+| C-4 | Frescura | La ventana se aplica a la fecha del **evento o de publicación**, no a la de lectura (6.1) | M-4 |
+| C-5 | Viabilidad de las recetas | R-1 y R-2 se apoyan en los competidores que la empresa ya declara y en fuentes públicas sobre ellos. R-3 se **ajusta por inviabilidad verificada** (6.4). Fede dijo «confirmo las tres» (decisión 11): el texto original de R-3 sigue visible en 6.4 y el ajuste queda **pendiente de que Fede lo vea** (Q-8) | M-5 |
+| C-6 | Datos personales en la evidencia | Se sustituye la afirmación de que la evidencia no guarda datos de personas por una regla de minimización, retención y borrado (6.1, P-6, 7) | M-6 |
+| C-7 | Decisión 12 | Registrada literal. El choque con D2 y con los seis plays aún bloqueados por LinkedIn pasa a pregunta Q-7. La regla de redacción de Postin deja de presentarse como decisión de Fede y pasa a [Por verificar] (7.2, Q-6) | M-7 |
+| C-8 | Etiqueta de origen | Se propone una etiqueta que no choque con «Biblioteca de jugadas» ni «Biblioteca de playbooks» (P-7). La de Fede (decisión 8) queda visible. Q-9 | m-7 |
 
 ### 6.1 Qué define el molde (lo nuevo que falta)
 Todo se valida con código puro antes de guardar. La IA solo propone; el código acepta o rechaza con el motivo en palabras.
@@ -111,19 +126,20 @@ Todo se valida con código puro antes de guardar. La IA solo propone; el código
 | Parte del molde | Regla que debe cumplir |
 |---|---|
 | **Disparador** | Un evento verificable en una fuente nombrada, no un segmento |
-| **Ventana de frescura** | **Obligatoria**: un número de días positivo. Si falta, el play no se guarda. Una señal más vieja que la ventana se descarta con el motivo (reutiliza el motor de puertas: un dato desconocido nunca pasa, `gates.ts:10`) |
-| **Pasos de evidencia** | Cada paso numerado declara una fuente (de una lista cerrada), qué pregunta y qué dato devuelve. Cada hecho guarda: número de paso, fuente, URL, fecha de lectura y la cita corta |
-| **Entregable de una página** | Un borrador de un tipo nuevo («página») que se construye antes del contacto. Sigue siendo borrador: no se publica ni se envía |
+| **Ventana de frescura** | **Obligatoria**: un número de días positivo. Si falta, el play no se guarda. **Se aplica a la fecha del evento o de publicación, nunca a la fecha de lectura**: un anuncio de hace dos años leído hoy no pasa. Si la fecha del evento es desconocida, no pasa (reutiliza el motor de puertas: un dato desconocido nunca pasa, `gates.ts:4,14-19`). Una señal fuera de la ventana se descarta con el motivo |
+| **Pasos de evidencia** | Cada paso numerado declara una fuente (de una lista cerrada), qué pregunta y qué dato devuelve. Cada hecho guarda: número de paso, fuente, URL, **fecha observada** (cuándo lo leyó NOKKO), **fecha del evento** y **de dónde sale esa fecha** (dato de la fuente, fecha visible en la página, o desconocida) y una cita corta con tope de longitud. Sin datos de contacto en la fila (P-6) |
+| **Entregable de una página** | Un borrador de un tipo nuevo («página») que se construye antes del contacto. Sigue siendo borrador: no se publica ni se envía. Lo crea el motor de ejecución (SDD 4) |
 | **Verificación manual** | Lista explícita de comprobaciones que una persona hace antes de usar el borrador, con los riesgos concretos de ese play. Sin ella, no se puede activar |
 | **Contacto** | Quién y por qué canal, resuelto con Clay o Apollo si el play lo pide; si no hay contacto, se dice «sin dato» |
 | **Mensaje citado** | Tres bloques: hechos con su número de paso, lo construido para esa persona, una petición pequeña. Cada afirmación cita un paso que existe y entra en la ventana. Se rechaza el borrador que no cumple |
 | **Diseño de prueba** | Muestra (n), éxito (k) y base. Se **rechaza** si la base no es la muestra, si k > n, si k es 0 o si falta cualquiera de los tres. Se declara antes de enviar. Sin cifras por defecto: las pone la empresa |
 | **Parámetros por empresa** | Zona, oficio y umbrales como campos con tipo y rango, no un jsonb libre |
-| **Comprobación de fuentes** | Cada fuente de los pasos se contrasta con lo que la empresa tiene conectado. Si falta una, el play queda `bloqueado` por fuente externa con el motivo (decisión 3); nunca se activa ni simula resultados |
+| **Comprobación de fuentes** | Cada fuente de los pasos se contrasta con (a) el registro en código de lo que NOKKO sabe leer y la herramienta que lo lee, (b) su disponibilidad en la plataforma (`connectedServices()`, por entorno, igual para todas las empresas) y (c) solo para PostHog, la conexión de esa empresa (C-1). Si falta una, el play queda `bloqueado` por fuente externa con el motivo (decisión 3); nunca se activa ni simula resultados. «Disponible» no garantiza saldo: si una llamada falla en la ejecución, el paso devuelve «sin dato» y se registra, no se rellena |
 | **Salida** | Solo `suggestion`, `task` o `draft`. Nunca un envío automático |
 | **Redacción** | La receta habla de una señal pública y de un motivo para escribir; nunca dice que analiza o puntúa perfiles de personas (decisión 12) |
 | **Aviso de UE** | Si el contacto es una persona de la UE, el paso de verificación manual incluye un aviso (decisión 13). No hay interruptor por empresa |
-| **Coste registrado** | Toda propuesta y toda ejecución registra su coste real (tokens y coste) **por empresa**. Sin ese registro no se guarda la propuesta. No hay tope ni freno en la tanda 0 (decisión 15) |
+| **Coste registrado** | Toda propuesta y toda ejecución intenta registrar sus tokens y su coste **por empresa**, con «sin dato» cuando el proveedor no lo devuelve. **El registro nunca bloquea**: si falla, la propuesta se guarda igual y el fallo se anota. No hay tope ni freno de IA en la tanda 0 (decisión 15) |
+| **Puertas declarativas** | Las puertas de un play a medida son datos con un formato cerrado (campo, operador, valor), interpretados por código puro; nunca código guardado. El catálogo sigue con sus `GateDef` en código. Lo construyen los SDD 1 (formato y validación) y 4 (intérprete en ejecución) |
 
 El diseño de prueba existe porque en el análisis 25 de 61 tests de Glider tenían muestra y base incoherentes (cifra de un resumen automático, confirmada en 2 páginas): aquí es una regla que el código aplica, no una convención.
 
@@ -131,15 +147,16 @@ El diseño de prueba existe porque en el análisis 25 de 61 tests de Glider ten�
 Comprobado en `src/lib/AGENTS.md` y `src/lib/agent/tools/` (lectura):
 | Fuente | Qué hay | Límite relevante |
 |---|---|---|
-| Firecrawl | Lectura de páginas públicas y búsqueda (`firecrawl.ts`, `web-research.ts`) | Solo URLs públicas |
-| Perplexity | Solo `POST /search`, por pasarela gestionada | **No** admite chat ni investigación profunda: no sirve para preguntar a un buscador de IA y ver qué cita |
-| Parallel | Búsqueda, extracción y tareas con citas (`parallel.ts`) | Ejecuciones largas en `research_runs` |
+| Firecrawl | Lectura de páginas públicas y búsqueda (`firecrawl.ts`, `web-research.ts`); clave de plataforma `FIRECRAWL_API_KEY` | Solo URLs públicas |
+| Perplexity | Solo `POST /search`, por pasarela gestionada (`perplexity.ts`); la fecha del resultado puede venir `null` | **No** admite chat ni investigación profunda: no sirve para preguntar a un buscador de IA y ver qué cita |
+| Parallel | Búsqueda, tareas de investigación con citas y respuestas (`parallel.ts`, `parallel-gateway.ts`: solo `/v1/search`, `/v1/tasks/runs` y `/v1/responses`). No hay llamada de extracción | Ejecuciones largas en `research_runs`. El campo `technology` (`parallel.ts:258`) es enriquecimiento en texto libre, no detección de uso |
+| Búsqueda web combinada | `searchBoth` (`web-search.ts:10-58`): en `main` @ d5e6a56 lanza **tres** búsquedas a la vez, Firecrawl, Perplexity y Parallel Search (esta última solo si se le pasan consultas y existe `PARALLEL_API_KEY`), y las fusiona sin duplicados. El gate describió dos porque `src/lib/AGENTS.md` aún dice «Firecrawl + Perplexity» en una línea y «tercera fuente» en otra: el código manda | Cualquiera puede fallar y las otras responden; `newsItems` puede dejar la fecha vacía |
 | Apify | Cuatro robots: publicaciones de empresa y de persona en LinkedIn, ofertas de empleo, reseñas de G2 (`apify.ts`, `ACTORS`) | No hay robot de tiendas de apps; perfiles públicos de LinkedIn permitidos (decisión 12), con el riesgo de términos de uso de 7.2 |
 | Clay y Apollo | Búsqueda y enriquecimiento de empresas y personas; revelado de contacto (escritura, gasta créditos) | Contacto en la UE permitido con aviso (decisión 13; riesgo en 7.2) |
 | PostHog | Uso de producto por empresa, con clave del Owner | Solo para planes de producto |
 | Google Drive | Carpeta «Nokko / empresa» | Solo lectura y escritura en esa carpeta |
 
-[Por verificar] dónde se lee el estado de «conectado» de cada fuente por empresa (la comprobación de fuentes necesita una función pura sobre ese estado; el SDD 1 la ubica).
+**Respondido por el gate (pasada 1) y verificado en `main`:** el estado «conectado» de Clay, Apollo, Parallel, Firecrawl, Perplexity, Apify y Drive **no es por empresa**: `connectedServices()` (`orchestrator/runner.ts:31-43`) mira variables de entorno y no recibe empresa; `integrations` no tiene `org_id`. Solo PostHog es por empresa (`src/lib/AGENTS.md`). Por eso la comprobación de fuentes usa un **registro en código** (fuente, herramienta que la lee, qué fecha de evento aporta) más PostHog por empresa (C-1). Lo ubica el SDD 1 como función pura sobre la lista de servicios disponibles.
 
 ### 6.3 Patrones de Glider frente a lo que NOKKO ya tiene
 Los 12 patrones salen del análisis (§2.1, hechos suyos; la asignación a un patrón es opinión del analista). «Existente» = play del catálogo o regla proactiva de NOKKO.
@@ -159,73 +176,115 @@ Los 12 patrones salen del análisis (§2.1, hechos suyos; la asignación a un pa
 | P12 Emparejamiento de excedente con demanda | 2 | 1 / 1 / 0 | Ninguno | No |
 La señal de contratación (`hiring-signal-monitoring`, bloqueado por D2) no es un patrón propio en el análisis, sino una señal secundaria que aparece en 9 plays.
 
-### 6.4 Las tres recetas de la tanda 0 (propuesta)
-Criterio: grado A, fuentes que NOKKO ya tiene hoy, sin registro oficial, sin perfiles de LinkedIn de personas, sin conectores nuevos. Los nombres son provisionales y propios; no usan los de Glider.
-| # | Play propuesto | Patrón | Fuentes de NOKKO | Por qué entra |
-|---|---|---|---|---|
-| R-1 | Un competidor retira o deja de mantener un producto o plan | P8 | Firecrawl y búsqueda combinada (Firecrawl, Perplexity, Parallel) para documentación, registro de cambios y prensa; Clay o Apollo para el contacto | La señal es pública y fechable, vale en cualquier idioma y mercado, y no necesita ningún conector nuevo |
-| R-2 | Clientes de un competidor explican por qué se van o qué les falta | P9 | Apify (reseñas de G2, ya con `motivo_cambio`) y búsqueda web de foros; Clay o Apollo | Ya existe `competitor_reviews` y `create_battlecard_from_reviews` (`linkedin.ts`); la receta añade evidencia citada, verificación y prueba |
-| R-3 | Un problema que tu producto resuelve se describe en público | P9 | Búsqueda combinada y lectura de páginas con texto (foros, comunidades, medios, transcripciones publicadas); Clay o Apollo | Es el patrón más amplio, el que mejor se adapta a nichos, y no depende de ningún registro |
+### 6.4 Las tres recetas de la tanda 0 (propuesta, corregida tras el gate)
+Criterio: grado A, fuentes que NOKKO ya tiene hoy, sin registro oficial, sin conectores nuevos, **y con una forma de elegir a quién escribir que funcione con datos que NOKKO ya guarda**. El gate (M-5) comprobó que «cuentas del ICP que usan el competidor X» no existe: `tech-stack-signal-detection` está `bloqueado` por `proveedor_datos` precisamente porque falta «Tecnología de cada cuenta y sus altas y bajas» (`plays/catalog.ts:320-326`). Por eso las recetas parten de los **competidores que la empresa ya declara** y, para llegar a una cuenta, usan solo lo que NOKKO ya tiene: la alternativa competitiva del posicionamiento (`positioning.competitive_alternative`), el campo de competidores del plan de cuenta (`account_plans.competitors`) y el competidor de los negocios perdidos (`deals.lost_competitor`). [Por verificar en el SDD 2] que esos campos se rellenan lo bastante para elegir cuentas. Si no hay cuenta o persona que se pueda hallar, la receta entrega **la señal como sugerencia a nivel de empresa** y dice «sin dato» en contacto; nunca la inventa. Los nombres son provisionales y propios; no usan los de Glider.
+| # | Play propuesto | Patrón | Fuentes de NOKKO | A quién | Por qué entra |
+|---|---|---|---|---|---|
+| R-1 | Un competidor tuyo retira o deja de mantener un producto o plan | P8 | Firecrawl y búsqueda combinada (`searchBoth`: Firecrawl, Perplexity y Parallel Search) sobre documentación, registro de cambios y prensa **de los competidores declarados**; fecha del evento de la propia publicación | Cuentas ya registradas cuyo plan o negocio perdido nombra a ese competidor; Clay o Apollo para el contacto de esas cuentas. Sin ellas: sugerencia de empresa con contacto «sin dato» | La señal es pública y fechable, vale en cualquier idioma y mercado, y no necesita ningún conector nuevo |
+| R-2 | Clientes de un competidor tuyo explican por qué se van o qué les falta | P9 | Apify (robot de reseñas de G2, `apify.ts:10`, `automation-lab~g2-scraper`; ya con `motivo_cambio`, `apify-core.ts:305`) y, para el contexto, Firecrawl/Perplexity sobre sus páginas públicas | Las reseñas son anónimas o sin contacto: **no se contacta al autor**. La señal («motivo de cambio más repetido») se entrega como argumento y se aplica a las cuentas ya registradas que nombran a ese competidor (igual que R-1). Sin ellas: sugerencia de empresa | Ya existen `competitor_reviews` y `create_battlecard_from_reviews` (`agent/tools/linkedin.ts:44,54`); la receta añade evidencia citada, verificación y prueba |
+| R-3 (ajuste del coordinador, ver abajo) | Una empresa o un rol describe en público un problema que tu producto resuelve | P9 | Búsqueda combinada y lectura de páginas con texto de **publicaciones que nombran a una empresa o a una persona por su nombre real** (medios, blogs de empresa, notas de prensa, páginas de comunidades con firma). Sin transcripciones (NOKKO no tiene fuente de transcripciones) | La empresa que lo escribe o es citada: se busca en las cuentas y por Clay o Apollo. **No se intenta identificar a usuarios con seudónimo en foros**: si quien lo escribe no se puede nombrar, la señal va como sugerencia de empresa con contacto «sin dato» | Es el patrón más amplio y se adapta a nichos; sin registro oficial |
 
-**Descartadas con motivo:** `ai-search-cites-competitors` (la pasarela de Perplexity solo admite `/search`; no se puede preguntar a un buscador de IA); `reviews-say-app-crashes` (no hay robot de tiendas de apps; leerlas con Firecrawl es [Por verificar]); `redesign-threw-away-backlinks` (necesita una herramienta de enlaces entrantes y de historial de webs que NOKKO no tiene); los dos basados en LinkedIn (no están entre las tres confirmadas, decisión 11; las recetas con perfiles públicos están permitidas para después, decisión 12).
-**Cautela de R-2:** las reseñas de G2 suelen ser anónimas o no traen contacto; el play no «contacta al autor»: usa la señal para elegir cuentas del ICP que usan ese competidor. El SDD 2 lo detalla.
-**Límite de la tanda 0:** cada receta puede quedar `bloqueada` en una empresa concreta si le falta un conector (por ejemplo Apollo o Clay para el contacto). Es el comportamiento previsto (decisión 3).
+**R-3 original, tal como se confirmó (decisión 11, «confirmo las tres»), que se mantiene visible:** «Un problema que tu producto resuelve se describe en público. Fuentes: búsqueda combinada y lectura de páginas con texto (foros, comunidades, medios, transcripciones publicadas); Clay o Apollo.»
+**Ajuste del coordinador por inviabilidad verificada, pendiente de que Fede lo vea (Q-8):** se quitan las transcripciones publicadas (NOKKO no tiene ninguna fuente de transcripciones de YouTube ni de podcasts) y se deja de depender de identificar a quien escribe en un foro (quien lo hace suele usar seudónimo y Clay o Apollo no lo resuelven). Si Fede no acepta el ajuste, la alternativa es **bajar R-3 a la tanda 1** y que la tanda 0 salga con R-1 y R-2; no se propone una receta de sustitución porque las candidatas (precios, P10) dependen de fuentes por verificar.
+**Descartadas con motivo:** `ai-search-cites-competitors` (la pasarela de Perplexity solo admite `/search`; no se puede preguntar a un buscador de IA); `reviews-say-app-crashes` (no hay robot de tiendas de apps; leerlas con Firecrawl es [Por verificar]); `redesign-threw-away-backlinks` (necesita una herramienta de enlaces entrantes y de historial de webs que NOKKO no tiene); los dos basados en LinkedIn (no están entre las tres confirmadas, decisión 11; Q-7 trata qué permite la decisión 12).
+**Límite de la tanda 0:** cada receta queda `bloqueada` **para todas las empresas a la vez** si la plataforma no tiene la fuente (por ejemplo, sin `APIFY_API_KEY` R-2 no corre; sin Clay ni Apollo, el contacto es «sin dato» y la receta entrega sugerencia de empresa). Es el comportamiento previsto (decisión 3 con C-1). Solo PostHog sería por empresa y ninguna de las tres lo usa.
+
+### 6.5 Qué registra hoy el código sobre coste (comprobado en `main` @ d5e6a56)
+Esto sustituye la afirmación anterior de que G-7 se medía con `integration_usage`.
+- `integration_usage` guarda `org_id, user_id, service, need, trigger, cost, created_at` (migración 0041): **no tiene tokens**. Sus escritores son `orchestrator/runner.ts:70` (`logUsage`, un coste **estimado** por servicio; también lo usa `onboarding.server.ts`) y `strategy-review-db.ts:90` (un coste fijo estimado, «Rough cost» en `strategy-review-core.ts:17`).
+- Las llamadas de IA de `ask()` (`ai-gateway.ts`) y del agente (`agent/agent.server.ts`) **no registran coste ni tokens**.
+- El único coste de IA **medido** está en `askPinned` (`ai-pinned.ts`), en USD, y puede ser `null` (no se estima nunca). Solo lo usa GTM Lab.
+- Las ejecuciones de Apify por `apify-core` no escriben en `integration_usage`.
+- Consecuencia: el registro de coste de propuestas y ejecuciones **es una pieza nueva** (SDD 3 y SDD 4). Debe guardar: moneda, tokens cuando existan, coste medido o «sin dato», servicio, empresa y a qué propuesta o ejecución pertenece, y también el gasto de los proveedores de los pasos. Dónde vive (columnas nuevas o tabla) lo fija el SDD 3. Un coste `null` se guarda como «sin dato» y la operación sigue.
 
 ## 7. Riesgos y dependencias
 - **Calidad del análisis de origen:** lo resumió un modelo pequeño; los recuentos (17/30/16, 17 de 61, 25 de 61) son orden de magnitud. Nada de lo que construyamos depende de esas cifras; sí lo declaramos aquí.
-- **Copiar por accidente:** la tabla de hechos del anexo contiene los hooks originales de Glider. El anexo es interno; el SDD 2 debe incluir una prueba que compruebe que ningún título, hook ni mensaje de la biblioteca coincide con el anexo [Por verificar] cómo se automatiza sin copiar el texto en código.
-- **Coste de IA:** cada propuesta y cada ejecución gasta IA y, en R-2, saldo de Apify. Sin tope ni freno en la tanda 0 y abierta a todas las empresas (decisión 15): el gasto de IA por empresa no está acotado. Detalle en 7.2.
-- **Datos personales:** el mensaje y el contacto tratan datos de personas. El contacto en la UE está sujeto al RGPD y se permite con aviso (decisión 13; riesgo en 7.2). La evidencia guarda hechos públicos y URL, no datos de personas (P-6).
-- **Fuentes que cambian o se prohíben:** una fuente puede cambiar de formato o de términos de uso. La comprobación de fuentes se ejecuta al activar y en cada ejecución, no solo al guardar.
-- **La IA propone con la estrategia de la empresa:** si la estrategia está vacía, la propuesta es genérica. La herramienta debe negarse a proponer sin ICP y posicionamiento (reutiliza el estado de onboarding, `companyOnboardingStatus`).
-- **Dependencias:** diagnóstico de plays (SDD-20261112-diagnosis-in-chat) aún sin integrar en `main`; NK-0156 (onboarding leído) va antes en la cola y alimenta la estrategia que lee la herramienta; NK-0167 (varias líneas de negocio) puede cambiar cómo se lee el arquetipo. El SDD 3 se redacta cuando estén integrados.
-- **Migración:** tabla nueva con RLS; la numeración (la siguiente libre tras `0085`) se fija en el SDD 1 y se contrasta con otras ramas. Nunca se aplica a una base real desde la rama de implementación (patrón de `0077`).
-- **Solo lectura hasta aquí:** no he ejecutado nada de lo descrito; no he abierto páginas de Glider salvo lo ya recogido en el anexo.
+- **Copiar por accidente:** el anexo contiene 59 hooks literales de Glider y frases de su marketing. El repositorio es privado (comprobado por el gate), pero el texto lo ven Lovable y los agentes que construyan el SDD 2. Requisitos: (1) el anexo lleva un aviso «solo análisis interno, no reutilizable» (puesto en este cambio); (2) **ningún agente lo mete en un prompt ni lo usa como fuente de títulos, hooks o mensajes**; (3) el SDD 2 incluye un **test automático anti-copia** que lee el anexo en tiempo de ejecución y compara cadenas literales con los títulos, hooks y mensajes de la biblioteca, **sin incrustar texto de Glider en el código ni en el test**: normaliza (minúsculas, sin acentos) y compara por huella o por solapamiento de fragmentos de palabras, como la prueba del gate (59 hooks frente a los 28 títulos del catálogo: 0 coincidencias exactas y solapamiento máximo 0, `prd-gate-pass1-nocopy-probe.mjs`). **Límites del test, que se declaran:** no detecta traducciones (el catálogo está en español y los hooks en inglés) ni paráfrasis; y no cubre los plays que la IA genere para una empresa, que son datos de ejecución y no código. Para esos, el control es la validación de la herramienta del asistente (rechaza un texto con coincidencia literal con el anexo) más la revisión humana de Fede al aprobar. [Por verificar] si el anexo debe salir del repositorio a Drive (`Postin Core`/NOKKO) cuando termine el SDD 2.
+- **Coste de IA:** cada propuesta y cada ejecución gasta IA y, en R-2, saldo de Apify. Sin tope ni freno de IA en la tanda 0 y abierta a todas las empresas (decisión 15): el gasto de IA por empresa no está acotado. Los pasos con proveedor sí pasan por el runner y `org_budgets` pausa el trabajo automático al 100 % (no el manual). Detalle en 7.2 y 6.5.
+- **Datos personales en la evidencia (corrige la primera redacción):** la cadena de evidencia **sí** puede guardar datos de una persona identificable (una reseña o una publicación con firma citada). El riesgo RGPD aceptado en la decisión 13 cubre el contacto, no esto; si Fede quiere otro tratamiento, lo decide. Regla propuesta (P-6): guardar el mínimo (URL, fecha observada, fecha del evento, cita corta con tope de longitud); sin nombre cuando no haga falta; sin datos de contacto en la fila de evidencia; **retención como parámetro [Por decidir en SDD 1]**; borrado al borrar el play y a petición de la persona o de la empresa; nunca en logs (`safeErrorLog`, regla de `src/lib/AGENTS.md`). El mensaje y el contacto siguen tratando datos de personas y el contacto en la UE sigue sujeto al RGPD, permitido con aviso (decisión 13).
+- **Fuentes que cambian o se prohíben:** una fuente puede cambiar de formato o de términos de uso. La comprobación de fuentes se ejecuta al activar y en cada ejecución (SDD 4), no solo al guardar.
+- **La IA propone con la estrategia de la empresa:** si la estrategia está vacía, la propuesta es genérica. La herramienta debe negarse a proponer sin ICP y posicionamiento (reutiliza el estado de onboarding, `companyOnboardingStatus`, `onboarding.ts:288`).
+- **Dependencias:** el diagnóstico de plays ya está en `main` (NK-0153, PR #134): no bloquea. NK-0156 (onboarding leído) va antes en la cola y alimenta la estrategia que lee la herramienta; NK-0167 (varias líneas de negocio) puede cambiar cómo se lee el arquetipo. El SDD 3 se redacta cuando NK-0156 y NK-0167 estén integrados o con ese riesgo declarado.
+- **Migración, retroceso y borrado:** las tablas nuevas (plays a medida, cadena de evidencia, resultado de prueba, registro de coste) van en migraciones que **solo añaden**: no cambian columnas de tablas existentes salvo que un SDD lo justifique. Retroceso: borrar las tablas nuevas en orden inverso de dependencia pierde únicamente datos de plays a medida; el catálogo en código no se toca. Todas las filas llevan `org_id` con `ON DELETE CASCADE` desde `organizations`, como el resto de tablas de empresa, así que borrar una empresa borra sus plays, su evidencia y su registro. La evidencia se borra también con su play y a petición (ver arriba). La numeración (la siguiente libre tras `0085`) se fija en el SDD 1 y se contrasta con otras ramas. Nunca se aplica a una base real desde la rama de implementación (patrón de `0077`).
+- **Alcance de la tanda 0:** al añadir el motor de ejecución (C-3) la tanda 0 crece de tres a cuatro SDD y de «definir y guardar» a «definir, guardar y ejecutar». Es el precio de que un play a medida haga algo (ver 8).
+- **Solo lectura hasta aquí:** no he ejecutado nada de lo descrito; el gate ejecutó los tests de los módulos citados (320 verdes, `d5e6a56`) y no abrió páginas de Glider.
 
 ### 7.1 Lo que NO se afirma
 - No se afirma que los plays a medida convertirán mejor o peor que los actuales: sin datos de uso ni resultados de prueba.
 - No se afirma que Glider funcione: ninguna de sus páginas da resultados reales, solo metas (según el análisis, que es un resumen automático).
 - No se afirma que los equivalentes españoles o europeos de los registros de EE. UU. (PLACSP, TED, BORME, CNMV, Catastro, etc.) existan con la cobertura, el formato, el coste y los términos de uso necesarios. Son hipótesis del análisis, por verificar.
-- No se afirma que un cliente real tenga o pueda conectar Clay, Apollo, Apify o PostHog: se comprueba por empresa al activar.
+- No se afirma que un cliente real pueda usar Clay, Apollo, Apify, Firecrawl, Perplexity, Parallel o Drive **por su cuenta**: son de la plataforma (C-1). Se comprueba que NOKKO tiene la fuente, no que la empresa la haya contratado. Solo PostHog es de cada empresa y se comprueba al activar y en cada ejecución.
 - No se afirma ninguna conclusión legal (RGPD, grabación de llamadas, uso de registros públicos, precios de reventa, paridad de tarifas): son avisos para revisar con un abogado.
-- No se afirma qué coste de IA tendrá una propuesta ni qué tope conviene: se registra en la tanda 0 y el tope, si llega, se decide después.
-- No se afirma que «De la biblioteca» tenga un número concreto de plays al lanzar: en la tanda 0 son 28 existentes y 3 nuevos, y se confirma en el SDD 2.
+- No se afirma qué coste de IA tendrá una propuesta ni qué tope conviene: se registra en la tanda 0 y el tope, si llega, se decide después. Tampoco se afirma que hoy exista medida de coste de IA por propuesta (6.5).
+- No se afirma que la etiqueta de origen de los plays del catálogo tenga un número concreto al lanzar: en la tanda 0 son 28 existentes y 3 nuevos, y se confirma en el SDD 2.
 - No se afirma la calidad de los datos de contacto de Clay o Apollo (Glider declara los suyos; tampoco los hemos verificado).
-- No se afirma que `diagnosis.ts` esté en `main`: no está en el commit leído.
+- No se afirma que los campos de competidores (`positioning.competitive_alternative`, `account_plans.competitors`, `deals.lost_competitor`) estén rellenos en ninguna empresa: sin dato.
+- No se afirma que las reseñas de G2 o las páginas de un competidor traigan la fecha del evento: cuando falta, el dato no pasa la ventana.
 
 ### 7.2 Riesgos aceptados por Fede
 Fede decidió estos puntos en la entrevista del 2026-11-12 y aceptó sus consecuencias. Se listan para que nadie las lea mal más adelante. No se suavizan ni se anulan aquí.
 
 | Decisión | Qué se aceptó | Consecuencia que debe quedar clara |
 |---|---|---|
-| 12 (perfiles públicos de LinkedIn) | Recetas basadas en perfiles públicos de LinkedIn permitidas, solo con Apollo, Clay y Apify. Sin salvaguarda más allá del aviso | **Riesgo de términos de uso** de los proveedores y de LinkedIn. Una receta nunca se presenta como análisis o puntuación de perfiles: trata de una señal pública y un motivo para escribir |
+| 12 (LinkedIn) | «Sí, con las integraciones que ya usamos» a si entran recetas basadas en perfiles de LinkedIn | **Riesgo de términos de uso** de los proveedores y de LinkedIn al apoyarse en Apify y en los proveedores que ya se usan. Lo que cierra y lo que deja abierto, en Q-7 |
 | 13 (contacto UE, RGPD) | Contacto de personas de la UE permitido, con un aviso en la verificación manual. Sin interruptor por empresa | **Riesgo RGPD:** NOKKO puede proponer contacto en frío a personas de la UE sin revisión legal previa y sin poder desactivarlo por empresa. El aviso es la única barrera |
-| 14 (legal) | Ninguna acción legal por ahora | **Riesgo abierto aceptado:** consentimiento al usar transcripciones o grabaciones públicas, y uso de registros públicos sin revisión legal. El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 4 en adelante). Sigue siendo decisión de Fede |
-| 15 (tanda 0 abierta y sin freno) | Tanda 0 abierta a todas las empresas desde el principio. Coste de IA: solo registrar, sin freno | **Gasto de IA sin tope por empresa en la tanda 0.** Una empresa puede generar propuestas sin límite. Para poder decidir el tope después, **cada propuesta debe registrar su coste real (tokens y coste) por empresa**, y las medidas de G-1 a G-3 y G-7 lo incluyen. No se inventa ningún tope. Sugerencia del coordinador (no decidida): `org_budgets` ya existe si Fede quiere un freno más adelante |
+| 14 (legal) | Ninguna acción legal por ahora | **Riesgo abierto aceptado:** consentimiento al usar transcripciones o grabaciones públicas, y uso de registros públicos sin revisión legal. El coordinador recomienda una revisión legal antes de los conectores de registros públicos (SDD 5 en adelante). Sigue siendo decisión de Fede |
+| 15 (tanda 0 abierta y sin freno) | Tanda 0 abierta a todas las empresas desde el principio. Coste de IA: solo registrar, sin freno | **Gasto de IA sin tope por empresa en la tanda 0.** Una empresa puede generar propuestas sin límite. Para poder decidir el tope después, cada propuesta y ejecución **intenta** registrar su coste por empresa (G-7); el registro no bloquea. «Sin freno» es solo de IA: los pasos con proveedor siguen bajo `org_budgets` para el trabajo automático. No se inventa ningún tope. Sugerencia del coordinador (no decidida): `org_budgets` ya existe si Fede quiere un freno de IA más adelante |
 
-[Por verificar] Las reglas de la organización Postin (LinkedIn «solo API oficial»; nunca decir que se analizan o puntúan perfiles) se fijaron para Postin y puede que no apliquen a NOKKO. Hasta que Fede lo confirme, este PRD mantiene la regla de redacción de la decisión 12 (nunca presentar una receta como análisis o puntuación de perfiles).
+[Por verificar] Las reglas de la organización Postin (LinkedIn «solo API oficial»; nunca decir que se analizan o puntúan perfiles; el texto de una receta no debe dar a entender que NOKKO analiza o puntúa perfiles) se fijaron para Postin y puede que no apliquen a NOKKO. **No son una decisión de Fede para NOKKO.** Mientras no se confirme, el molde mantiene como regla de redacción prudente (propuesta del coordinador, no de Fede) que una receta hable de una señal pública y un motivo para escribir, y no diga que analiza o puntúa perfiles de personas. Es la pregunta Q-6.
 
 ### 7.3 Preguntas abiertas para Fede
-Las Q-1 a Q-5 originales están decididas (decisiones 11 a 15). Queda una, que no bloquea:
+Las Q-1 a Q-5 originales están decididas (decisiones 11 a 15). Ninguna de estas bloquea la tanda 0, salvo que indico lo contrario:
 | # | Pregunta | Recomendación |
 |---|---|---|
-| Q-6 | ¿Confirmas que las reglas de la organización Postin sobre LinkedIn («solo API oficial», no analizar ni puntuar perfiles) no aplican a las recetas de NOKKO? | Confirmarlo por escrito. No bloquea: la regla de redacción de la decisión 12 se mantiene mientras tanto |
+| Q-6 | ¿Confirmas que las reglas de la organización Postin sobre LinkedIn («solo API oficial», no analizar ni puntuar perfiles) no aplican a las recetas de NOKKO? | Confirmarlo por escrito. No bloquea: la regla de redacción prudente de 7.2 se mantiene mientras tanto |
+| Q-7 | Respondiste «Sí, con las integraciones que ya usamos» a las recetas basadas en perfiles de LinkedIn (decisión 12). Pero la D2 del PRD de plays (`PRD-20261106-plays-gtm.md:91`, «Scraping de LinkedIn») sigue **Abierta**; seis plays del catálogo siguen `blockedBy: "linkedin_d2"` (`catalog.ts`); y Apify ya lee publicaciones de perfiles y de empresa (`apify.ts:8-9`). ¿La decisión 12 **cierra la D2** para los plays del catálogo (y los seis dejan de estar bloqueados por LinkedIn), o solo vale para recetas a medida nuevas? | Decidirlo explícitamente. No bloquea la tanda 0: R-1 a R-3 no usan perfiles de LinkedIn y las integraciones que ya se usan son las permitidas |
+| Q-8 | R-3 tal como la confirmaste no es viable (sin fuente de transcripciones; los usuarios de foros son seudónimos). El coordinador la ha ajustado (6.4). ¿La aceptas o prefieres bajarla a la tanda 1? | Aceptar el ajuste. Si no, tanda 0 con R-1 y R-2 |
+| Q-9 | La etiqueta «De la biblioteca» (decisión 8) se parece a «Biblioteca de jugadas» y «Biblioteca de playbooks» (los guiones de venta). ¿La cambiamos por «De NOKKO» (P-7)? | Cambiarla. Mantener «Creado para tu empresa» |
+| Q-10 | El motor de ejecución (SDD 4, C-3) amplía la tanda 0 de tres a cuatro SDD. ¿Lo aceptas o prefieres una tanda 0 que solo defina, apruebe y guarde, sin ejecutar? | Aceptarlo: sin motor, un play a medida no produce nada y G-3, G-6 y G-7 no se pueden cumplir |
+| Q-11 | ¿Qué retención tiene la cadena de evidencia con datos personales públicos (días) y quién puede pedir su borrado? | Fijar un número en el SDD 1; no se inventa aquí |
 
 ## 8. Orden de entrega
-Cola: tras NK-0156 y antes de NK-0167 y NK-0168. Cada SDD se redacta uno a uno con `nokko-shape` cuando apruebes este PRD. SDD 1 y 2 no dependen del diagnóstico; el SDD 3 sí lo toca.
+Cola: tras NK-0156 y antes de NK-0167 y NK-0168. Cada SDD se redacta uno a uno con `nokko-shape` cuando apruebes este PRD. **Tamaño de la tanda 0: cuatro SDD (el cuarto lo añade C-3), no tres.** Los SDD 1 y 2 no dependen del diagnóstico (que ya está en `main`).
 
 | # | SDD (propuesto) | Tipo | Depende de | Cubre |
 |---|---|---|---|---|
-| 1 | `SDD-…-plays-a-medida-modelo`: tabla por empresa con RLS (migración), tipos del molde, validación pura (frescura, evidencia citada, mensaje citado, diseño de prueba, parámetros, comprobación de fuentes) | Feature | — (revisar con NK-0156) | G-4, G-5, G-6 |
-| 2 | `SDD-…-plays-a-medida-biblioteca`: biblioteca de referencia en código y solo lectura, origen «De la biblioteca» frente a «Creado para tu empresa», 3 recetas R-1, R-2, R-3 | Feature | 1 | G-3, G-5, G-6 |
-| 3 | `SDD-…-plays-a-medida-asistente`: herramienta del asistente para proponer y guardar un play con aprobación (Owner y Sales Leader), lectura de la estrategia, registro del coste real de IA por propuesta y por empresa | Feature | 1, 2; diagnóstico de plays integrado | G-1, G-2, G-7 |
-| 4+ | Un SDD por conector o vertical: registros oficiales por país (P1 a P7), precios (P10), enlaces rotos (P11), LinkedIn de personas, apps | Feature | Resultados de la tanda 0; revisión legal recomendada por el coordinador (decisión 14, riesgo aceptado en 7.2) | G-1 |
+| 1 | `SDD-…-plays-a-medida-modelo`: tablas por empresa con RLS (migración), tipos del molde, formato declarativo de puertas, validación pura (frescura sobre la fecha del evento, evidencia citada, mensaje citado, diseño de prueba, parámetros, registro de fuentes y comprobación de fuentes), regla de minimización y retención de la evidencia | Feature | — (revisar con NK-0156) | G-4, G-5 (función pura), G-6 (validación pura) |
+| 2 | `SDD-…-plays-a-medida-biblioteca`: biblioteca de referencia en código y solo lectura, etiqueta de origen (P-7), 3 recetas R-1, R-2, R-3 con la selección de cuentas de 6.4, test anti-copia (7) | Feature | 1 | G-5, G-6 (contenido de las recetas) |
+| 3 | `SDD-…-plays-a-medida-asistente`: herramienta del asistente para proponer y guardar un play con aprobación (Owner y Sales Leader), lectura de la estrategia, **registro de coste de cada propuesta** (nuevo; no bloquea) | Feature | 1, 2; diagnóstico de plays (ya en `main`) | G-1, G-2, G-7 (propuestas) |
+| 4 | `SDD-…-plays-a-medida-motor`: **motor de ejecución** que interpreta la receta validada (ejecuta los pasos por el runner, escribe la cadena de evidencia, crea el borrador «página» y el mensaje citado, registra el resultado de la prueba, activa y pausa un play a medida, aplica la comprobación de fuentes y la ventana en cada ejecución) y **registra el coste de cada ejecución** | Feature | 1, 2, 3 | G-3, G-5 (en ejecución), G-6 (al guardar borradores), G-7 (ejecuciones) |
+| 5+ | Un SDD por conector o vertical: registros oficiales por país (P1 a P7), precios (P10), enlaces rotos (P11), LinkedIn de personas, apps; y, si algún día hace falta, conexiones por empresa | Feature | Resultados de la tanda 0; revisión legal recomendada por el coordinador (decisión 14, riesgo aceptado en 7.2) | G-1 |
 
-Orden dentro de la iniciativa: 1, luego 2, luego 3. No se lanzan 2 y 3 sin 1 (el molde y la validación son el contrato).
+Orden dentro de la iniciativa: 1, luego 2, luego 3 y 4. No se lanzan 2, 3 ni 4 sin 1 (el molde y la validación son el contrato). Sin el 4 un play a medida se guarda pero no se ejecuta.
 
 ## 9. Aprobación
-- [ ] Fede aprueba el PRD (primer GO de dirección), incluidas las propuestas P-1 a P-6 y las tres recetas R-1 a R-3. Fecha: {…}
+- [ ] Fede aprueba el PRD (primer GO de dirección), incluidas las propuestas P-1 a P-7, las decisiones del coordinador C-1 a C-8 y las tres recetas R-1 a R-3 (con el ajuste de R-3, Q-8). Fecha: {…}
 - Al aprobar, el Estado pasa a «Aprobado». Después se redactan los SDD con `nokko-shape`.
+
+## 9.1 Registro del gate
+| Pasada | Resultado | Evidencia | Estado |
+|---|---|---|---|
+| 1 | FAIL (0 BLOCKER, 7 MAJOR, 9 MINOR) sobre `4f143c3` | `.factory/evidence/NK-0171/prd-gate-pass1.md` | pasada 1 FAIL → corregido en {SHA}; pasada 2 pendiente |
+
+Qué se hizo con cada hallazgo (el coordinador verificó cada uno contra `origin/main` @ d5e6a56):
+| Hallazgo | Veredicto | Dónde se corrigió |
+|---|---|---|
+| M-1 fuentes por empresa | De acuerdo (`runner.ts:31-43`) | Decisión 3 intacta; C-1; G-5; 6.1; 6.2; 6.4; 7.1; 8 |
+| M-2 G-7 no medible | De acuerdo (`integration_usage` sin tokens; `ask()` y agente sin registro; escritores solo `runner.ts:70` y `strategy-review-db.ts:90`) | G-7; 6.1 «Coste registrado» (no bloquea); 6.5; C-2 |
+| M-3 nadie ejecuta | De acuerdo | C-3; SDD 4; G-3, G-5, G-6, G-7; Q-10; puertas declarativas en 6.1 |
+| M-4 frescura | De acuerdo | 6.1 (fecha del evento, origen de la fecha, desconocida no pasa); G-6; C-4 |
+| M-5 viabilidad R-1/R-2/R-3 | De acuerdo | 6.4 (selección desde competidores declarados; R-3 ajustada, texto original visible); C-5; Q-8 |
+| M-6 evidencia con personas | De acuerdo | P-6; 7; C-6; Q-11 |
+| M-7 decisión 12 | De acuerdo | Decisión 12 literal; 7.2; Q-6; Q-7; C-7 |
+| m-1 diagnóstico en `main` | De acuerdo (`diagnosis.ts`, `play-diagnosis.ts`) | 3; 7; 8 |
+| m-2 recuento | De acuerdo: 16 `bloqueado`, 11 `parcial`, 1 `planificado` (`catalog.ts`) | 1; 3 |
+| m-3 cita | De acuerdo: `agent/tools/plays.ts:75` | 2 |
+| m-4 Parallel y `searchBoth` | **Parcialmente en desacuerdo.** Parallel no tiene extracción: de acuerdo. Pero `web-search.ts` en `d5e6a56` sí combina **tres** fuentes (Firecrawl, Perplexity y Parallel Search); es `src/lib/AGENTS.md` el que se contradice. Se mantiene la descripción del código y se anota la contradicción de la documentación | 6.2; 6.4 (R-1) |
+| m-5 medida de G-2 | De acuerdo | G-2; P-3; P-5 |
+| m-6 alcance de «sin freno» | De acuerdo | 5; 7; 7.2; C-2 |
+| m-7 vocabulario | De acuerdo | P-7; C-8; Q-9 |
+| m-8 anexo | De acuerdo | 7 (test anti-copia y límites); aviso en el anexo. No se quitó la columna de hooks (decisión del coordinador: marcarlo) |
+| m-9 preguntas y retroceso | De acuerdo | 7.3 (Q-6 a Q-11); 7 (retroceso y borrado) |
 
 ## 10. Relacionado
 - **NK-0174 (bandeja de respuestas):** Fede eligió «Conectar Gmail u Outlook» (lectura del buzón por OAuth) frente a una dirección de reenvío y a un webhook (2026-11-12). Pertenece al PRD propio de NK-0174, no a esta iniciativa: aquí no se define alcance. La lectura del buzón por OAuth tiene peso de privacidad y permisos que ese PRD debe resolver: reglas de datos de clientes (ningún texto de cliente en logs, ningún dato de una empresa visible para otra) y permisos (scopes) mínimos.

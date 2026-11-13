@@ -1,3 +1,5 @@
+> **SOLO ANÁLISIS INTERNO, NO REUTILIZABLE.** La Parte 1 contiene 59 hooks y frases de marketing literales de Glider. Ningún agente ni persona los copia a NOKKO (títulos, hooks, mensajes, prompts, datos de ejemplo), ni los usa como entrada de un prompt. Un test automático del SDD 2 los compara con la biblioteca (PRD §7).
+
 > **Anexo del PRD `PRD-20261112-plays-a-medida.md`.** Copia sin cambios del análisis de los 63 plays del catálogo público de Glider (lectura del 2026-11-12). **Lo produjo un modelo pequeño resumiendo páginas** (WebFetch), no una lectura literal: abre la página antes de citar cualquier cifra fuera de NOKKO. Es material de referencia interno para entender la estructura y los patrones. Los hooks, nombres y mensajes de ejemplo de la Parte 1 son de Glider y **no se copian a NOKKO** (límite del coordinador y decisión 9 del PRD). Conserva la sección «no se afirma» (Parte 3).
 
 ---
