@@ -184,3 +184,9 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 ## NK-0171 U-2 · almacenamiento de plays a medida
 - Migración `0092_custom_plays_storage` (la herramienta le dio 0091, renombrada; drizzle-kit check limpio), aplicada en la base real: `custom_plays`, `custom_play_evidence` (cascada con el play), `custom_play_costs` (sin FK, sobrevive al borrado). Lectura por miembros, escritura solo cliente privilegiado. CHECK: clave `custom:`, cita ≤280 sin email/teléfono.
 - Prueba nueva `src/lib/custom-plays.pg.test.ts` (5), falló primero (sin migración). Catálogo de campos ampliado. Ninguna prueba existente modificada.
+
+## NK-0171 SDD 2 — biblioteca «De NOKKO» (13-11)
+- SDD: `docs/sdd/SDD-20261113-plays-a-medida-biblioteca.md`.
+- Prueba nueva `src/lib/plays/custom/library.test.ts` (14): falló primero (módulos inexistentes), pasa tras el cambio.
+- Código: `library.ts` (R-1..R-3, etiquetas, selección de cuentas con match.ts), `fingerprints.ts`, Need `reviews` en `planner.ts`, fuente `reviews` en `model.ts`.
+- Pruebas existentes: ninguna modificada. Pendiente: SDD 3 y SDD 4 (incluye `searchBoth` con proveedor).
