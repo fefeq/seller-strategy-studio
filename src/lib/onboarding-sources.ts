@@ -61,6 +61,17 @@ export function findingsDependingOn(source: string, findings: Finding[]): number
   );
 }
 
+/** NK-0156: per source, the findings that name it. A web source carries no count: its label keeps the URL while the server notes only the host, so the shared rule is not reliable there (the web rule wins over an empty core). */
+export function summarizeSources(
+  sources: string[],
+  findings: Finding[],
+): { source: string; indexes: number[]; count: number | null }[] {
+  return sources.map((source) => {
+    const indexes = findingsDependingOn(source, findings);
+    return { source, indexes, count: /^Web\s*·/i.test(source) ? null : indexes.length };
+  });
+}
+
 export type RemovalChoice = "keep" | "discard";
 
 /** CA-11: the source leaves the list; its findings are kept (marked «fuente quitada») or discarded. */
