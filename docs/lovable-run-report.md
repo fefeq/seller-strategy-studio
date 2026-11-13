@@ -190,3 +190,9 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - Prueba nueva `src/lib/plays/custom/library.test.ts` (14): falló primero (módulos inexistentes), pasa tras el cambio.
 - Código: `library.ts` (R-1..R-3, etiquetas, selección de cuentas con match.ts), `fingerprints.ts`, Need `reviews` en `planner.ts`, fuente `reviews` en `model.ts`.
 - Pruebas existentes: ninguna modificada. Pendiente: SDD 3 y SDD 4 (incluye `searchBoth` con proveedor).
+
+## NK-0171 SDD 3 — herramienta del asistente (13-11)
+- SDD: `docs/sdd/SDD-20261113-plays-a-medida-asistente.md`. Prueba nueva `propose.test.ts` (8), falló primero.
+- Código: `propose.ts`, `fingerprints.data.ts` (solo hashes), `agent/tools/custom-plays.ts`, registro, TITLES y manifiesto MCP.
+- Suite 354/354 archivos, 5727/5727. Tipos limpios. Ninguna prueba existente modificada.
+- Límite: el coste de IA de la propuesta se guarda como «ai:sin_dato» con importe 0 porque la tabla no admite nulo.
