@@ -13,7 +13,7 @@ export type ExecutionInput = {
   now: Date;
 };
 export type StepReceipt = { step: number; evidenceCount: number; suggestionCount: number };
-export type PauseReason = "provider_denied" | "credits" | "rate_limit" | "refusal";
+export type PauseReason = "provider_denied" | "credits" | "rate_limit" | "refusal" | "unavailable" | "uncertain";
 export type ExecutionPorts = {
   load(input: ExecutionInput): Promise<{
     status: string; member: boolean; archived: boolean; proposal: Proposal; sources: SourceContext;
@@ -38,6 +38,7 @@ function pauseReason(error: unknown): PauseReason | null {
   if (e.status === 401 || e.status === 403) return "provider_denied";
   if (e.status === 402) return "credits";
   if (e.status === 429) return "rate_limit";
+  if (e.status === 404) return "unavailable";
   return null;
 }
 

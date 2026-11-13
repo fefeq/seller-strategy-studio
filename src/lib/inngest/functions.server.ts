@@ -23,11 +23,6 @@ function build() {
       const suggestions = await step.run("suggestions", async () => t.maintainSuggestions(await admin(), orgId));
       const stripe = await step.run("stripe", async () => t.maintainStripe(await admin(), orgId));
       const posthog = await step.run("posthog", async () => t.maintainPosthog(await admin(), orgId));
-      const customPlays = await step.run("custom-plays", async () => {
-        const { runActiveCustomPlays } = await import("@/lib/plays/custom/adapters.server");
-        const r = await runActiveCustomPlays(await admin(), orgId);
-        return { runs: r.runs, evidenceCount: r.evidenceCount, suggestionCount: r.suggestionCount, paused: r.paused };
-      });
       const signals = await step.run("signals", async () => t.maintainSignals(await admin(), orgId));
       const discoveries = await step.run("discoveries", async () => { const { discoverForOrg } = await import("@/lib/discoveries.server"); return discoverForOrg(await admin(), orgId); });
       const autopilot = await step.run("autopilot", async () => {
@@ -41,7 +36,7 @@ function build() {
       });
       const leads = await step.run("leads-to-enrich", async () => t.leadsToEnrich(await admin(), orgId));
       if (leads.length) await step.run("queue-enrichment", async () => { const { sendEvents } = await import("@/lib/inngest/send.server"); await sendEvents(leads.map((id) => ({ name: EV.leadCreated, data: { org_id: orgId, lead_id: id } }))); });
-      return { suggestions, stripe, posthog, customPlays, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };
+      return { suggestions, stripe, posthog, signals, discoveries: discoveries.skipped ?? discoveries.added, autopilot, leads: leads.length };
     },
   );
 
@@ -89,7 +84,17 @@ function build() {
     },
   );
 
-  return serve({ client: inngest, functions: [ping, orgMaintenance, leadEnrich, followup, backgroundJob, parallelRun], servePath: "/api/public/inngest" });
+  // Independent function on the same authenticated maintenance event: retries/denials of a custom play
+  // cannot change the existing org-maintenance contract or replay unrelated automatic work.
+  const customPlayMaintenance = inngest.createFunction(
+    { id: "custom-play-maintenance", triggers: [{ event: EV.orgMaintenance }], retries: 0, concurrency: { limit: 1, key: "event.data.org_id" }, idempotency: "event.data.org_id + '-' + event.data.hour" },
+    async ({ event, step }) => step.run("custom-plays", async () => {
+      const { runActiveCustomPlays } = await import("@/lib/plays/custom/adapters.server");
+      const r = await runActiveCustomPlays(await admin(), event.data.org_id as string);
+      return { runs: r.runs, evidenceCount: r.evidenceCount, suggestionCount: r.suggestionCount, paused: r.paused };
+    }),
+  );
+  return serve({ client: inngest, functions: [ping, orgMaintenance, customPlayMaintenance, leadEnrich, followup, backgroundJob, parallelRun], servePath: "/api/public/inngest" });
 }
 
 export function inngestHandler() {

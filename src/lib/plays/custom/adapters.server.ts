@@ -79,7 +79,7 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
     checkpoint:async(i,n) => {
       const s = (await prior(i)).find(s => s.step_number === n);
       if(s?.status === "reserved") {
-        await ports.pause(i,"refusal");
+        await ports.pause(i,"uncertain");
         throw new Error("Este paso quedó sin resultado confirmado. Se ha pausado para no repetir gasto; revisa la ejecución.");
       }
       return s?.status === "committed" ? { step:n,evidenceCount:s.evidence_count,suggestionCount:s.suggestion_count } : null;

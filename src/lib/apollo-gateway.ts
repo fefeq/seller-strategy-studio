@@ -79,7 +79,7 @@ async function apollo(
   if (!res.ok) {
     const raw = await res.text();
     console.error(`Apollo ${path} [${res.status}] body ${raw.length} chars`);
-    throw new Error(apolloErrorText(res.status, raw));
+    throw Object.assign(new Error(apolloErrorText(res.status, raw)), { status: res.status });
   }
   return res.json();
 }
