@@ -1,5 +1,5 @@
 import { statusLabel, type SourceStatus } from "@/lib/onboarding-source-refs";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -94,6 +94,16 @@ export function ReadingStep({
   // Counts only once the reading is done: until then the list is still being written (or is partial).
   const summary = summarizeSources(sources, findings);
   const live = findings.flatMap((f, i) => (f.discardedAt ? [] : [{ f, i }]));
+  // NK-0181: a source left without findings closes its panel, so restoring a discarded finding never brings it back open.
+  const emptied = summary.filter((x) => !x.count && open.has(x.source)).map((x) => x.source).join("\n");
+  useEffect(() => {
+    if (!emptied) return;
+    setOpen((prev) => {
+      const next = new Set(prev);
+      for (const z of emptied.split("\n")) next.delete(z);
+      return next;
+    });
+  }, [emptied]);
   const discarded = findings.flatMap((f, i) => (f.discardedAt ? [{ f, i }] : []));
 
   async function dropSource(s: string) {
