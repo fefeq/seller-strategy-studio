@@ -145,7 +145,7 @@ Los SDD se redactan uno a uno con `nokko-shape` tras aprobar este PRD. Cada SDD 
 | Fecha | Quién | Resultado | Notas |
 |---|---|---|---|
 | 2026-11-13 | `nokko-gate`, contexto limpio, sobre este PRD @ ffd2795 | **FAIL** (0 BLOCKER, 6 MAJOR, 8 MINOR) | Informe: `.factory/evidence/NK-0167/prd-gate-pass1.md`. Pasada 1 FAIL → corregido en 5742e10; pasada 2 pendiente |
-| 2026-11-13 | `nokko-gate`, contexto limpio, sobre este PRD @ d059288 | **FAIL** (0 BLOCKER, 2 MAJOR, 9 MINOR) | Informe: `.factory/evidence/NK-0167/prd-gate-pass2.md`. Pasada 2 FAIL → corregido en <sha>; pasada 3 pendiente |
+| 2026-11-13 | `nokko-gate`, contexto limpio, sobre este PRD @ d059288 | **FAIL** (0 BLOCKER, 2 MAJOR, 9 MINOR) | Informe: `.factory/evidence/NK-0167/prd-gate-pass2.md`. Pasada 2 FAIL → corregido en 43ad2b5; pasada 3 pendiente |
 | Pendiente | `nokko-gate`, pasada 3 | — | El gate de cada SDD va aparte; este PRD lo aprueba Fede |
 
 **Decisión del coordinador (propuesta; Fede confirma al aprobar):** regla de migración con sesiones discrepantes, superadmins excluidos y ticket 0 sin línea (decisión 8), escritura doble y migración repetible (decisión 12), etapa por línea (decisión 6), quién borra (decisión 9) y redefinición de G-2 (sección 4). Ninguna consta como decidida por Fede.
