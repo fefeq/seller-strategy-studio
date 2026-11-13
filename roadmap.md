@@ -16,7 +16,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0168 SDD 2: permiso acotado recibido para expectativa ✓ de strategy-screens.test.tsx:421; aún no modificada, no autoriza otras pruebas.
 - [x] NK-0168: entregas 1 y 2 hechas (IconText, mazo, menú, Trash2/X en botones, guardias).
 - [ ] Onboarding: repensar la pantalla de hallazgos (Confirmar/Editar/Descartar): explicar el objetivo de cada fuente y qué tiene que hacer el usuario. Pedido por Fede 13-11 20:05; después de NK-0171.
-- [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado». U-1 y U-2 (almacenamiento) y SDD 2 (biblioteca R-1..R-3, Need de reseñas, huellas anti-copia) hechos; SDD 3 (herramienta del asistente) hecho; SDD 4 U-1..U-3 hechas; U-4a coordinador seguro en verificación, falta U-4b (adaptadores persistentes/proveedores y trabajo en segundo plano) y U-5 (activar/pausar y resultado de prueba). No hay ejecución desde la app todavía.
+- [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado». U-1 y U-2 (almacenamiento) y SDD 2 (biblioteca R-1..R-3, Need de reseñas, huellas anti-copia) hechos; SDD 3 (herramienta del asistente) hecho; SDD 4 U-1..U-3 hechas; U-4a coordinador seguro probado (12 nuevas, suite 5754/5754 y compilación automática OK), falta U-4b (adaptadores persistentes/proveedores y trabajo en segundo plano) y U-5 (activar/pausar y resultado de prueba). No hay ejecución desde la app todavía.
   - [x] SDD 1 U-1: molde puro + Q-7 (model.ts, 25 pruebas).
   - [x] SDD 1 U-2: tablas por empresa con RLS y registro de coste; SDD 2 y 3 terminados. SDD 4 continúa arriba.
 - [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
