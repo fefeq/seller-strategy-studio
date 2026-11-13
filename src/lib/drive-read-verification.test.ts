@@ -3,7 +3,7 @@ import type { DriveScope } from "./drive-core";
 import { GDOC_MIME, FOLDER_MIME, MAX_DOWNLOAD, OUTSIDE_FOLDER } from "./drive";
 
 const h = vi.hoisted(() => ({ get: vi.fn(), export: vi.fn(), download: vi.fn() }));
-vi.mock("@/lib/google-drive", () => ({ getFile: h.get, exportText: h.export, downloadText: h.download }));
+vi.mock("@/lib/google-drive", async (original) => ({ ...(await original<typeof import("./google-drive")>()), getFile: h.get, exportText: h.export, downloadText: h.download }));
 import { readFile } from "./drive-core";
 function scope(): DriveScope {
   const q = { select: () => q, eq: () => q, is: () => q, maybeSingle: async () => ({ data: { folder_id: "synthetic-root", name: "Carpeta sintética", created_by_app: true }, error: null }) };
