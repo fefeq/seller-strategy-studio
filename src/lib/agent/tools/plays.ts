@@ -17,6 +17,21 @@ async function stateRows(c: ToolCtx) {
   return new Map((error ? [] : (data ?? [])).map((r) => [r.play_id, r]));
 }
 
+/**
+ * Same read as stateRows, but a failed read is reported (`ok: false`) instead of being treated as no rows. A write must not read a
+ * failure as «every play at its default» (it would call a paused play active): diagnose_play_teams and save_play_plan use this one.
+ */
+export async function playStateRows(c: ToolCtx) {
+  const { data, error } = await c.db
+    .from("play_states")
+    .select("play_id,enabled")
+    .eq("org_id", c.orgId);
+  return {
+    ok: !error,
+    rows: new Map((error ? [] : (data ?? [])).map((r) => [r.play_id, r])),
+  };
+}
+
 export const PLAY_TOOLS: AgentTool[] = [
   def({
     name: "list_plays",

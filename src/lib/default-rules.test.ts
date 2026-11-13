@@ -403,7 +403,12 @@ describe("no base rule is created without the action (CA-12, source guard)", () 
     const users = walk("src")
       .filter((f) => /\b(addDefaultRulesCore|defaultRules)\b/.test(read(f)))
       .sort();
-    expect(users).toEqual(["src/lib/default-rules.functions.ts", "src/lib/default-rules.ts"]);
+    // play-diagnosis.ts: NK-0153 CA-14 / D-S8-1 (add_default_rules is a confirmed write; the core re-checks the role).
+    expect(users).toEqual([
+      "src/lib/agent/tools/play-diagnosis.ts",
+      "src/lib/default-rules.functions.ts",
+      "src/lib/default-rules.ts",
+    ]);
     const screen = walk("src")
       .filter((f) => /\baddDefaultRules\b/.test(read(f)))
       .sort();
