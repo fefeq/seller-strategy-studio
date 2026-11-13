@@ -116,7 +116,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       out.researched++;
     }
   } catch (e) {
-    out.notes.push(`Investigación: ${(e as Error).message}`);
+    out.notes.push("Investigación: no se pudo terminar."); // NK-0159: step output, no provider text
   }
 
   // 2 · Meetings of the next 36 hours without call prep: prepared the day before.
@@ -166,12 +166,12 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         );
         out.prepped++;
       } catch (e) {
-        out.notes.push(`Reunión ${meta.title}: ${(e as Error).message}`);
+        out.notes.push("Una reunión no se pudo preparar."); // NK-0159: no title nor provider text
         if (/créditos|bloqueado|cuota/i.test((e as Error).message)) break;
       }
     }
   } catch (e) {
-    out.notes.push(`Reuniones: ${(e as Error).message}`);
+    out.notes.push("Reuniones: no se pudo terminar."); // NK-0159
   }
 
   // 3 · Accounts that matter and went quiet: one review per account and week, with a proposed next move.
