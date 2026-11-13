@@ -178,6 +178,8 @@ export type Suggestion = {
   user_id: string | null;
   /** Only strategic suggestions (strategy_* detectors, F0/F1). */
   strategy?: import("@/lib/strategy-suggestions").StrategyMeta;
+  /** Set when the email gate blocked the draft (NK-0173): sync registers it, never with the address. */
+  email_block?: { status: import("@/lib/email-verification").EmailStatus; reason: string };
 };
 
 export type Detector = (s: Snapshot) => Suggestion[];

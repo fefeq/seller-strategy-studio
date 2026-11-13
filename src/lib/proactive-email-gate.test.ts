@@ -49,7 +49,7 @@ describe("followup_sequence email gate", () => {
     expect(s.dedupe_key).toBe("followup:l1:nudge");
     expect(s.body).toContain("Este email es inválido");
     expect(s.body).not.toContain("Borrador");
-    expect(s.action).toBeUndefined();
+    expect(s.action).toBeNull();
     expect(s.email_block).toEqual({
       status: "invalid",
       reason: "Este email es inválido: no preparo el borrador. Busca otro contacto de la cuenta.",
@@ -58,20 +58,20 @@ describe("followup_sequence email gate", () => {
   it("CA-5 a catch-all domain blocks the step too", () => {
     const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "catch_all" }]));
     expect(s.body).toContain("catch-all");
-    expect(s.action).toBeUndefined();
+    expect(s.action).toBeNull();
   });
   it("CA-5 an unverified email keeps the draft and adds the mark", () => {
     const [s] = detect(snap([{ ...baseLead, email: "ana@example.invalid", email_status: "unverified" }]));
     expect(s.body).toContain("Borrador");
     expect(s.body).toContain("email sin verificar");
-    expect(s.action).toBeDefined();
+    expect(s.action).not.toBeNull();
     expect(s.email_block).toBeUndefined();
   });
   it("CA-5 a lead without email behaves exactly as today", () => {
     const [s] = detect(snap([baseLead]));
     expect(s.body).toContain("Borrador");
     expect(s.body).not.toContain("email sin verificar");
-    expect(s.action).toBeDefined();
+    expect(s.action).not.toBeNull();
   });
 });
 
