@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useEffect, useState } from "react";
 import { useLeadTouched } from "@/components/background";
 import { Link } from "@tanstack/react-router";
@@ -115,7 +117,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
       {!converted && f.stage === "opportunity" && <p className="text-xs text-muted-foreground">Al guardar se creará su deal en la primera etapa del pipeline.</p>}
       <div className="flex gap-2">
         <Button className="flex-1" onClick={save}>Guardar</Button>
-        {canDelete && <Button variant="ghost" onClick={remove}>Borrar</Button>}
+        {canDelete && <Button variant="ghost" onClick={remove}><IconText icon={Trash2}>Borrar</IconText></Button>}
       </div>
     </div>
   );

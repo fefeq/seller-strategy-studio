@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { EntityCombobox, useAccountOptions, usePeopleOptions } from "@/components/entity-combobox";
 import { duplicateOf } from "@/lib/match";
@@ -245,7 +247,7 @@ function Targets() {
           />
           <Button onClick={logTouch}>Registrar</Button>
           <Button variant="ghost" onClick={() => setTouchFor(null)}>
-            Cancelar
+            <IconText icon={X}>Cancelar</IconText>
           </Button>
         </div>
       )}

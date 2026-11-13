@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,7 +109,7 @@ export function Editor({
         )}
         {isOwner && !isDraft && (
           <Button variant="ghost" className="ml-auto text-destructive" onClick={onDelete}>
-            Eliminar
+            <IconText icon={Trash2}>Eliminar</IconText>
           </Button>
         )}
       </div>

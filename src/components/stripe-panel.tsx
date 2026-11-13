@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -162,7 +164,7 @@ export function StripeConnect() {
                   disabled={busy}
                   onClick={() => setConfirmOff(false)}
                 >
-                  Cancelar
+                  <IconText icon={X}>Cancelar</IconText>
                 </Button>
               </>
             )}

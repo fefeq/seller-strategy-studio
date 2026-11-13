@@ -1,3 +1,5 @@
+import { X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -213,7 +215,7 @@ function Team() {
                       className="-my-2 shrink-0 px-2 py-2 text-xs text-destructive md:my-0 md:px-0 md:py-0"
                       onClick={() => cancelInvite(i.id)}
                     >
-                      Cancelar
+                      <IconText icon={X}>Cancelar</IconText>
                     </button>
                   )}
                 </div>

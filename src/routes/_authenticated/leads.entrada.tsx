@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -282,7 +284,7 @@ function Sources({
               </label>
               {isOwner && (
                 <Button variant="ghost" size="sm" onClick={() => remove(s.id)}>
-                  Borrar
+                  <IconText icon={Trash2}>Borrar</IconText>
                 </Button>
               )}
             </div>

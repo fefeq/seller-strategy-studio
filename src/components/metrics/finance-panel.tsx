@@ -1,3 +1,5 @@
+import { Trash2 } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { Kpi } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
 import { NativeSelect } from "@/components/native-select";
@@ -456,7 +458,7 @@ function CostLines({
                   )}
                   {isOwner && (
                     <Button size="sm" variant="ghost" onClick={() => remove(l.id, l.name)}>
-                      Borrar
+                      <IconText icon={Trash2}>Borrar</IconText>
                     </Button>
                   )}
                 </div>
@@ -599,7 +601,7 @@ function Invoices({
                     </Button>
                     {isOwner && (
                       <Button size="sm" variant="ghost" onClick={() => remove(i.id, label)}>
-                        Borrar
+                        <IconText icon={Trash2}>Borrar</IconText>
                       </Button>
                     )}
                   </div>
