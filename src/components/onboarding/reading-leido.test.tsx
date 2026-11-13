@@ -134,7 +134,11 @@ describe("ReadingStep: the state in words (NK-0156)", () => {
   });
 
   it("running header with and without step", async () => {
-    for (const step of ["Mercado y competidores", "Proponiendo tu estrategia", "Debate de los C-Levels"]) {
+    for (const step of [
+      "Mercado y competidores",
+      "Proponiendo tu estrategia",
+      "Debate de los C-Levels",
+    ]) {
       showWith([], ["a.md"], "running", { step });
       expect((await screen.findByText(`Estoy leyendo · ${step}`)).getAttribute("data-testid")).toBe(
         "reading-headline",
@@ -150,9 +154,9 @@ describe("ReadingStep: the state in words (NK-0156)", () => {
       cleanup();
     }
     showWith([], ["a.md"], "running", { step: null });
-    expect((await screen.findByText("Estoy leyendo · esperando turno")).getAttribute("data-testid")).toBe(
-      "reading-headline",
-    );
+    expect(
+      (await screen.findByText("Estoy leyendo · esperando turno")).getAttribute("data-testid"),
+    ).toBe("reading-headline");
   });
 
   it("help sentence, no strategy claim", async () => {
