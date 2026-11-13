@@ -457,7 +457,7 @@ export async function syncSuggestions(
     const { recordEmailDraftBlock } = await import("@/lib/email-verification-writer");
     for (const f of emailBlocks) {
       if (!f.email_block) continue;
-      await recordEmailDraftBlock(db, orgId, {
+      await recordEmailDraftBlock(orgId, {
         surface: "followup_sequence",
         status: f.email_block.status,
         reason: f.email_block.reason,

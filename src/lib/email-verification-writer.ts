@@ -3,7 +3,6 @@
 // no insert/update policy for members. Never logs an email address.
 import { apolloEmailStatus, normalizeVerificationEmail, type EmailStatus } from "./email-verification";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
-import type { Db } from "./org-data";
 
 export type VerificationRow = {
   org_id: string;
@@ -48,12 +47,13 @@ export async function recordApolloVerifications(rows: VerificationRow[]): Promis
   if (error) console.error("email_verifications upsert failed", safeErrorLog(error));
 }
 
-/** Registers a blocked draft (surface, state, reason) — never the address. Works with the member's client too. */
+/** Registers a blocked draft (surface, state, reason) — never the address. Members cannot insert
+ *  (migration 0091), so the row is written by the privileged client with an explicit org_id. */
 export async function recordEmailDraftBlock(
-  db: Db,
   orgId: string,
   block: { surface: "draft_followup" | "followup_sequence"; status: EmailStatus; reason: string },
 ): Promise<void> {
-  const { error } = await db.from("email_draft_blocks").insert({ org_id: orgId, ...block });
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("email_draft_blocks").insert({ org_id: orgId, ...block });
   if (error) console.error("email_draft_blocks insert failed", safeErrorLog(error));
 }
