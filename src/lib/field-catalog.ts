@@ -342,7 +342,7 @@ export const BINDINGS: Binding[] = [
   { table: "custom_play_costs", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "custom_play_costs", column: "play_key", concept: "clave_play", persistence: saved },
   { table: "custom_play_costs", column: "provider", concept: "fuente_citada", persistence: saved },
-  { table: "custom_play_costs", column: "amount", concept: "importe", persistence: saved },
+  { table: "custom_play_costs", column: "amount", concept: "importe", persistence: saved, nature: "coste_adquisicion", span: "puntual", note: "Gasto de una ejecución de play a medida; sobrevive al borrado del play" },
   { table: "custom_play_costs", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "email_draft_blocks", column: "id", concept: "clave_registro", persistence: saved },
   { table: "email_draft_blocks", column: "org_id", concept: "clave_empresa", persistence: saved },
