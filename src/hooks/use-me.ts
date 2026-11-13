@@ -1,7 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { validatedUser } from "@/lib/session";
-import { assertSessionOpen } from "@/lib/session-ending";
 import { currencySymbol, formatMoney } from "@/lib/money";
 
 export type Membership = {
@@ -30,8 +29,6 @@ export const meQuery = queryOptions({
   // Remounts (mobile drawer, every screen) reuse the cache; session changes invalidate it (__root).
   staleTime: 5 * 60_000,
   queryFn: async () => {
-    // NK-0169: never read with the previous account while «Cerrar sesión» is in flight.
-    assertSessionOpen();
     // Per-token validated user shared with the route guard: no extra /auth/v1/user per navigation.
     const user = await validatedUser();
     if (!user) {
@@ -48,11 +45,9 @@ export const meQuery = queryOptions({
     const changed = () =>
       new Error("La sesión ha cambiado mientras se cargaba. Vuelve a intentarlo.");
     if (!(await stillSame())) throw changed();
-    assertSessionOpen();
     // Joins any company that invited this email before loading memberships.
     await supabase.rpc("accept_invites");
     if (!(await stillSame())) throw changed();
-    assertSessionOpen();
     const [{ data: profile }, { data: members }] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase
