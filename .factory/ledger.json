@@ -4828,7 +4828,7 @@
       "title": "Onboarding «Tus fuentes»: «Que Nokko lo lea» falla con «Algún valor es demasiado grande» al subir 4 o más documentos (cliente acepta 10, servidor 3; error genérico sin causa ni acción)",
       "kind": "bug",
       "source": "Fede, captura del error 2026-11-12",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": null,
@@ -4847,6 +4847,12 @@
           "at": "2026-11-12T22:25:57.433Z",
           "by": "Fede: captura del error + \"sigue, ejecuta todo tú\" (2026-11-12)",
           "note": "owner=coordinador-sprint8"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-13T00:42:44.578Z",
+          "by": "Fede",
+          "note": "sha=729eb814e3ef9f9e1ecd9e68b772df736ad5cf48"
         }
       ]
     },
