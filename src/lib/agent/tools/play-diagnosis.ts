@@ -237,7 +237,7 @@ export const PLAY_DIAGNOSIS_TOOLS: AgentTool[] = [
     kind: "write",
     roles: ["owner", "sales_leader"],
     description:
-      "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título. No duplica las que ya existen ni cambia las que la empresa ha editado. Si no puede leer las reglas, no añade ninguna.",
+      "Añade a Conocimiento › Reglas las reglas base de NOKKO que la empresa todavía no tiene (tres Nunca, tres Siempre y tres Escalar), comparadas por título: si la empresa renombró o borró una regla base, se vuelve a añadir la original. No duplica las que conservan su título ni cambia ninguna regla existente. Si no puede leer las reglas, no añade ninguna.",
     input: z.object({}),
     summarize: () => "Añadir las reglas base que falten a Reglas",
     run: async (c) => {
