@@ -5,7 +5,8 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0176: implementar tras aprobación y emitir informe; 5573/5573, checker limpio, build automático OK y navegador verificado.
 - [ ] NK-0176: revisión independiente y aceptación final de la entrega por Fede; SDD En curso, no se declara gate técnico.
 - [x] NK-0159: SDD y proyección de contadores dentro del paso durable; prueba nueva falló primero y después pasa; pruebas existentes intactas, suite 5574/5574 y compilación automática OK.
-- [ ] NK-0159: cierre de comprobaciones obligatorio antes de siguiente entrega; checker de tipos no ejecutado por prohibición del entorno, sin resultado separado automático disponible. Inngest alojado no comprobado (no desplegar).
+- [x] NK-0159: bloqueo de tipos cerrado con resultado externo de Claude comunicado por Fede: main 47b0f81, tsc --noEmit limpio en Node 22. No ejecutado por Lovable; Inngest alojado sigue sin comprobar (no desplegar).
+- Regla de continuación 14:25 UTC: tipos sin comprobar por restricción del entorno se informan, no detienen entregas; Fede verifica por lotes.
 - [ ] NK-0160: SDD corto, después de la entrega anterior.
 - [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
 - [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.
