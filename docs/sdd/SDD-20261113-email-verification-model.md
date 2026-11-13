@@ -40,14 +40,14 @@ Sin email no es destinatario; sin fila no verificado. Fechas inválidas/futuras 
 Estados con palabra en español. Sin cambio visual en esta unidad. Decisión NK-0168 revoca la regla histórica sin iconos; no introducir iconos aquí. Error al usuario por errorText en futuros consumidores.
 
 ## 10. Datos, permisos y privacidad
-Tabla propuesta email_verifications: org_id default current_org, email normalizado, status, provider_status corto, provider, source, checked_at, requested_by. FK organización con cascade; miembros SELECT de empresa activa, service_role escritura; ninguna política INSERT/UPDATE para authenticated. Q-5: eliminar fila huérfana al cambiar/borrar último contacto y al borrar organización. No aplicar en base compartida de producción: EXECUTION §5.2 exige local/pruebas; la herramienta disponible aplica a base compartida. Parada de esquema hasta aclarar destino permitido.
+Tabla email_verifications: org_id default current_org, email normalizado, status, provider_status corto, provider, source, checked_at, requested_by. FK organización con cascade; miembros SELECT de empresa activa, service_role escritura; ninguna política INSERT/UPDATE para authenticated. Q-5: eliminar fila huérfana al cambiar/borrar último contacto y al borrar organización. Fede autorizó expresamente esquema nuevo aditivo en backend compartido; no copiar empresas existentes ni publicar/desplegar.
 
 ## 11. Llamadas a IA
 Ninguna. Regla determinista, coste cero de esta unidad; no revelados de prueba.
 
 ## 12. Unidades de trabajo
 U-1: modelo puro CA-1–5, src/lib/email-verification.test.ts falla primero.
-U-2: esquema/retención/RLS CA-6, prueba PGlite falla primero; detenida por destino compartido no autorizado en EXECUTION.
+U-2: esquema/retención/RLS CA-6, prueba PGlite falla primero; destino compartido autorizado expresamente por Fede.
 
 ## 13. Notas técnicas [Sugerencia — la revisión del gate las valida]
 Un módulo puro separado de I/O; futuros consumidores lo reutilizan. No tipos ni columnas manuales autogeneradas. Prefijo siguiente candidato 0089, aún no creado. Sin cambios de diario.
@@ -59,10 +59,10 @@ Apollo show no demuestra lista bulk_match; desconocidos degradan. No afirma deli
 Decisiones Q-1/3/4/5/6/7 en docs/decisiones-fede-20261113.md aplican; no reabrirlas. Falta aclarar destino de migraciones frente a EXECUTION local/pruebas. No publicar/desplegar.
 
 ## 16. Pendiente de verificar
-RLS y retención por último contacto no implementados ni probados; schema live no aplicado. Tipos sin comprobar por restricción del entorno. Bulk_match exhaustivo no afirmado. No SDD 2b.
+RLS/retención probadas con PGlite; columnas y política reales consultadas tras aplicación. No escrituras reales de emails de clientes ni navegador con estado persistido (consumidores aún no conectados). Tipos sin comprobar por restricción del entorno. Bulk_match exhaustivo no afirmado. No SDD 2b.
 
 ## 17. Revisión técnica independiente (la hace nokko-gate, no quien redactó)
 No revisado; no se rellena veredicto independiente.
 
 ## 18. Delta de implementación
-U-1 implementada: cinco pruebas fallaron primero y pasan después; suite completa 338 archivos y 5593 pruebas en verde, 296,00 s. Compilación automática OK 14:44:37 UTC. Tipos sin comprobar por restricción del entorno. U-2 parada ante destino de migración compartido; CA-6 abierto. Ningún consumidor conectado, interfaz sin cambios, ninguna migración o proveedor real ejecutado. No se declara SDD completo; informe emitido en docs/lovable-run-report.md.
+U-1 y U-2 implementadas: pruebas de reglas y esquema fallaron primero; selección final 35/35 y suite completa 339 archivos y 5595 pruebas en verde, 268,64 s. Compilación automática OK 14:54:18 UTC. Tipos sin comprobar por restricción del entorno. Esquema aplicado por herramienta como 0088 duplicado, reparado únicamente nuevo archivo/tag a 0089; snapshots históricos intactos. Catálogo ampliado para nuevas columnas sin ampliar baseline. Columnas y política reales comprobadas por consultas de lectura. Ningún consumidor conectado, interfaz sin cambios, sin llamadas de proveedor. Informe emitido; revisión independiente pendiente, Estado En curso.
