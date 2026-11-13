@@ -263,7 +263,9 @@ export async function applyAutoChanges(
         { field: ch.field, current: ch.current, proposed: ch.proposed, source: ch.source },
         acc.field_sources,
       );
-      return { ...sug, org_id: c.orgId, action: sug.action as unknown as Json };
+      // email_block is not a column: strip it before writing (it only feeds the draft-block registry).
+      const { email_block: _drop, ...row } = sug;
+      return { ...row, org_id: c.orgId, action: sug.action as unknown as Json };
     });
     const { error: e } = await c.db
       .from("suggestions")
