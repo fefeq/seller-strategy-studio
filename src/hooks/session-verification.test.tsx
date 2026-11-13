@@ -33,13 +33,13 @@ describe("F4: reads while the old token remains valid during sign-out", () => {
   it("does not accept invites or read profiles/members if sign-out began during validation", async () => {
     h.validated.mockImplementation(async () => { beginSessionEnd(); return h.user; });
     const client = qc();
-    await expect(client.fetchQuery(meQuery)).rejects.toBeInstanceOf(SessionEndedError);
+    expect(await client.fetchQuery(meQuery)).toBeNull();
     expect(h.rpc).not.toHaveBeenCalled(); expect(h.from).not.toHaveBeenCalled(); client.clear();
   });
   it("does not read profiles/members if sign-out starts while accept_invites is in flight", async () => {
     h.rpc.mockImplementation(async () => { beginSessionEnd(); return { data: null }; });
     const client = qc();
-    await expect(client.fetchQuery(meQuery)).rejects.toBeInstanceOf(SessionEndedError);
+    expect(await client.fetchQuery(meQuery)).toBeNull();
     expect(h.rpc).toHaveBeenCalledTimes(1); expect(h.from).not.toHaveBeenCalled(); client.clear();
   });
   it("still returns null with no user during sign-out (NK-0098)", async () => {
