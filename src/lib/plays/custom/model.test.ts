@@ -104,10 +104,10 @@ describe("6.2 source registry derived from CAPABILITIES", () => {
 });
 
 describe("Q-7 optional «solo contacto verificado»", () => {
-  it("off: any status goes; on: only valid", () => {
+  it("off: any status goes; on: only verified", () => {
     expect(contactGate(false, "unverified").ok).toBe(true);
     expect(contactGate(true, "unverified").ok).toBe(false);
-    expect(contactGate(true, "valid").ok).toBe(true);
+    expect(contactGate(true, "verified").ok).toBe(true);
     expect(contactGate(true, null).ok).toBe(false);
   });
 });
