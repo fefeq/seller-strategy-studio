@@ -278,5 +278,5 @@ Orden: 1, 2, 3, 4 y después 5. Sin el 1 no hay nada que probar; sin el 2 el 3 n
 | Pasada | Resultado | Evidencia |
 |---|---|---|
 | 1 | FAIL (4 MAJOR, 12 MINOR) sobre `f709c62` | `.factory/evidence/NK-0174/prd-gate-pass1.md` |
-| Corrección | Pasada 1 FAIL → corregido en {sha de la corrección} | M-1 a M-4 y m-1 a m-12 resueltos en este documento |
+| Corrección | Pasada 1 FAIL → corregido en `345591b`; pasada 2 pendiente | M-1 a M-4 y m-1 a m-12 resueltos en este documento |
 | 2 | Pendiente | Gate de contexto limpio sobre el commit de la corrección; lo lanza el coordinador |
