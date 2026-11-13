@@ -149,9 +149,9 @@ export function ReadingStep({
               <span className="text-ink-faint">{time(f.at)}</span>
               <span>
                 {f.text}
-                {f.source && <span className="text-ink-mid"> · {f.source}</span>}
-                {f.sourceRemoved && <span className="text-ink-mid"> · fuente quitada</span>}
-                {f.edited && <span className="text-ink-mid"> · editado</span>}
+                {!!f.source && <span className="text-ink-mid"> · {f.source}</span>}
+                {!!f.sourceRemoved && <span className="text-ink-mid"> · fuente quitada</span>}
+                {!!f.edited && <span className="text-ink-mid"> · editado</span>}
                 {done && (
                   <span className="mt-1 flex flex-wrap items-center gap-x-3 font-sans text-xs">
                     <span className="text-ink-mid">
@@ -272,7 +272,7 @@ export function ReadingStep({
                     {hint}
                   </p>
                 )}
-                {done && count && isOpen && (
+                {done && !!count && isOpen && (
                   <div
                     id={panelId}
                     data-testid="source-findings"
