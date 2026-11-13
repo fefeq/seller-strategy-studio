@@ -12,6 +12,8 @@ import {
   revealToAccount,
 } from "@/lib/apollo-gateway";
 import { countryName } from "@/lib/assignment";
+import { apolloEmailStatus } from "@/lib/email-verification";
+import { EMAIL_STATUS_LABEL } from "@/lib/email-status";
 import { def, type AgentTool } from "../tool-kit";
 
 const list = z.array(z.string().min(1).max(120)).max(15).optional();
@@ -186,7 +188,7 @@ export const APOLLO_TOOLS: AgentTool[] = [
           ? `Apollo propone otro email: ${r.proposedEmail}. No lo he cambiado; edítalo tú si quieres usarlo`
           : null,
       ].filter(Boolean);
-      return { mensaje: `Apollo: ${parts.join("; ")}.` };
+      return { mensaje: `Apollo: ${parts.join("; ")}.`, estado_email: estadoEmail };
     },
   }),
 ];
