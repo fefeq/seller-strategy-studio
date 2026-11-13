@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { storageGet, storageSet } from "@/lib/safe-storage";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -80,15 +81,16 @@ export function useSuggestions() {
     if (!orgId) return;
     const k = `gtm-detect-${orgId}`;
     const touched = readResolving(orgId);
-    const last = Number(sessionStorage.getItem(k) ?? 0);
+    // NK-0161: blocked or full storage never takes the app down.
+    const last = Number(storageGet("session", k) ?? 0);
     if (!touched.length && Date.now() - last < 5 * 60_000) return;
-    sessionStorage.setItem(k, String(Date.now()));
+    storageSet("session", k, String(Date.now()));
     refresh({ data: { touched } })
       .then(() => {
         if (touched.length) clearResolving(orgId);
         qc.invalidateQueries({ queryKey: ["suggestions"] });
       })
-      .catch((e) => console.warn("[suggestions] background recheck failed", e));
+      .catch((e) => console.warn("[suggestions] background recheck failed", e instanceof Error ? e.name : "unknown"));
   }, [orgId, refresh, qc]);
   return useQuery({
     queryKey: ["suggestions", orgId, (me?.roles ?? []).join(",")],
