@@ -299,5 +299,5 @@ Orden: 1, 2, 3, 4 y después 5. Sin el 1 no hay nada que probar; sin el 2 el 3 n
 | 2 | FAIL (0 BLOCKER, 2 MAJOR N-1 y N-2, 11 MINOR) sobre `a03a1d5` | `.factory/evidence/NK-0174/prd-gate-pass2.md` |
 | Corrección | pasada 2 FAIL → corregido en `103b88a`; pasada 3 pendiente | N-1, N-2 y m-1 a m-11 de la pasada 2 resueltos en este documento (m-10 como propuesta de texto y prueba para el SDD 4) |
 | 3 | FAIL (0 BLOCKER, 1 MAJOR N-3, 6 MINOR) sobre `f56d502` | `.factory/evidence/NK-0174/prd-gate-pass3.md` |
-| Corrección | pasada 3 FAIL → corregido en el commit siguiente a `f56d502` que fusiona `origin/main` @ `3ee53f1`; pasada 4 pendiente | N-3 (la pausa ya no depende de `contacted_at`; Q-10 b queda [Por decidir] con A y B) y m-1 a m-6 de la pasada 3 resueltos en este documento |
+| Corrección | pasada 3 FAIL → corregido en `da16130` (sobre la fusión de `origin/main` @ `3ee53f1`); pasada 4 pendiente | N-3 (la pausa ya no depende de `contacted_at`; Q-10 b queda [Por decidir] con A y B) y m-1 a m-6 de la pasada 3 resueltos en este documento |
 | 4 | Pendiente | Gate de contexto limpio sobre el commit de la corrección; lo lanza el coordinador |
