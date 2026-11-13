@@ -8,9 +8,6 @@
 - Sin probar: subida real desde el navegador, aislamiento con dos empresas reales, Drive real (Doc/Sheet/Slides/PDF), móvil 375 px. El campo de texto pegado sigue con 40.000 caracteres.
 - De paso: arreglado un error de tipos previo en stale-deal.ts.
 
-## Fase 2 y Fase 3 — pendientes
-No empezadas en esta ronda.
-
 ## Fase 2 (seguridad) — hecha
 - NK-0044 y NK-0081: migración 0087_price_suggestions_and_blocked_plays_guard (políticas RESTRICTIVE nuevas; nada existente cambiado). Sugerencias de precio solo para owner, sales_leader y deal_desk (lectura y edición). play_states rechaza enabled=true en plays bloqueados o planificados (función play_enable_allowed). Antes: 0 plays bloqueados activados. Vuelta atrás en el comentario de la migración. Test: src/lib/plays/blocked-db-sync.test.ts (la lista de la base = catálogo).
 - NK-0169: Inicio (homeQuery), useSetup y la invalidación de useLivePipeline respetan la ventana de cierre de sesión. meQuery NO se tocó: la guarda rompía NK-0098 (los cargadores deben recibir null tras SIGNED_OUT) y meQuery ya rechaza si la sesión cambia en vuelo (NK-0115). Test: src/hooks/session-quiet-reads.test.ts.
@@ -39,6 +36,43 @@ Resultado: tsc limpio; suite completa 5.522/5.523, el único fallo (factory-ledg
 - Parado, NK-0176: el texto del bloqueo de LinkedIn requiere saber qué se decidió en D2 (el PRD de plays a medida no está en el repo) y cambia aserciones de status.test.ts y plays.test.ts: hace falta la decisión y permiso.
 - Pendiente menor NK-0160 (parte escáner): que server-log-scan detecte colecciones con solo títulos; no hecho.
 - tsc limpio; suite completa en verde salvo el intermitente ya conocido.
+
+## Verificación independiente — 13-11-2026 (cierre parcial, NO todo en verde)
+
+### Cambios y pruebas
+- **F1:** Drive devuelve `originalLength` además de `truncated`; el job elimina la elipsis de presentación del texto leído y conserva el total original. Documento simulado de 96.000 caracteres: `partial`, 60.000 leídos, 96.000 totales. La prueba falló primero con `full`/60.001 y pasó tras la corrección.
+- **F2:** creación reproducible por API nativa en `scripts/provision-onboarding-storage.ts` y `src/lib/onboarding-storage.server.ts`, explícita, nunca en carga de página. Configuración nueva: privado, 20.971.520 bytes, PDF/TXT/MD/CSV. Tres pruebas de creación, no sobrescritura y rechazo por permisos. No ejecuté el script sobre el bucket existente ni cambié sus MIME permitidos. La plataforma prohíbe INSERT en storage.buckets, por lo que NO se creó la migración de bucket solicitada. En un entorno nuevo con el cliente privilegiado configurado: ejecutar `bun scripts/provision-onboarding-storage.ts`. Retirada del bucket: solo operación explícita de Storage `emptyBucket` seguida de `deleteBucket`, tras inventario y autorización de Fede; no ejecutada, no es una política de retención (F12).
+- **F3:** seis pruebas PGlite aplican 0086/0087 sobre el harness del repo más storage.objects simulado: dos empresas, lectura entre miembros, subida/borrado solo del autor, B no ve A, precios Owner/Sales Leader/Deal Desk y no AE, INSERT/UPDATE de plays bloqueados rechazados y activación normal válida. Pruebas del job: ruta ajena sin descarga, estados persistidos y reparto de 120.000 caracteres. Seis pruebas del cliente de Drive: carpeta ajena, 403, 401, tamaño, vacío y longitud original. Son simulaciones, no roles reales ni llamadas reales de Drive.
+- **F4 DETENIDO:** las guardas en meQuery hicieron fallar dos pruebas existentes de `src/lib/session-cache.test.ts`: «no meQuery consumer or loader ever receives X after SIGNED_OUT» y «SIGNED_IN as another user drops X even without a SIGNED_OUT before (other tab)». La ventana de cambio de cuenta sigue abierta y las pruebas esperan poder leer el usuario nuevo. Revertí SOLO la modificación de meQuery, sin cambiar ninguna prueba existente ni corregir fuera del alcance autorizado. Las dos pruebas nuevas que reproducen el token anterior quedan en rojo, deliberadamente, hasta decidir cómo compatibilizar los contratos. Las pruebas nuevas de useSetup (refetch explícito) y useLivePipeline (refresh diferido) pasan.
+- **F5 parcial:** inventario con `git diff --name-only 387febf 3ee53f1 -- src`: 32 rutas en este checkout. Formateados solo los 13 archivos de producto permitidos que fallaban Prettier, en una operación separada. Todos los archivos de producto permitidos del inventario pasan `prettier --check`; NO formateé pruebas existentes ni archivos autogenerados. No creé commits: el entorno gestiona el historial.
+- **F6–F7:** errores de referencias traducidos por errorText antes de guardarlos; prueba con error SQL sintético verifica que no persiste su texto crudo. Las notas de estado llevan source null, por lo que no cuentan como hallazgos de la fuente. La prueba del recuento falló primero y pasó con el cambio.
+- **F8:** quitar durante una subida espera a que termine y luego elimina; si falla eliminar, conserva la fila y muestra error en español. Las subidas fallidas no consumen los 20 huecos, se usa MAX_UPLOAD_MB y un indicador indeterminado mientras se sube (sin porcentaje inventado). Tres pruebas de comportamiento fallaron antes y pasan después; las pruebas antiguas de fuentes siguen intactas y pasan.
+- **F9 funcional, historial bloqueado:** la herramienta aplicó la nueva función con regex UUID estricto y la consulta de solo lectura confirmó su definición en la base real. La prueba PGlite de 36 caracteres inválidos falló antes por conversión y pasa después. **La herramienta nombró el archivo `0087_onboarding_source_uuid_guard.sql`, duplicando el prefijo 0087 anterior.** El diario añadió idx 87 con when 1794571200003, creciente, pero `migrations-journal.test.ts` rechaza el prefijo duplicado. No edité el diario gestionado ni snapshots históricos para ocultarlo: requiere reparación del nombre y de la última entrada por el mecanismo autorizado de la plataforma. Cabecera de vuelta atrás: restaurar la función anterior de 0086 (restaura también su defecto); no ejecutada.
+- **F10:** parseSourceStatuses valida filas, enteros finitos, estados coherentes y campos permitidos; la ruta ya no fuerza SourceStatus[]. Dos pruebas nuevas fallaron antes y pasan tras añadir el validador.
+- **F11:** quitada la sección falsa «Fase 2 y Fase 3 — pendientes»; corregida la descripción de referencias nuevas en src/lib/AGENTS.md. `meta/0085_snapshot.json` corresponde a 0086 y `meta/0086_snapshot.json` a 0087_price_suggestions_and_blocked_plays_guard; no se renombraron ni editaron. La herramienta añadió `0087_snapshot.json` para su nueva entrada.
+
+### Auditoría real de Storage (solo lectura)
+Bucket `onboarding-sources`: `public=false`, `file_size_limit=20971520`, `allowed_mime_types=null` (el bucket real NO restringe MIME; la configuración reproducible sí lo hace para un entorno nuevo, sin sobrescribir uno existente).
+Todas las políticas reales de storage.objects al consultar el catálogo:
+| Política | Operación | Rol | Condición |
+|---|---|---|---|
+| onboarding sources read | SELECT | authenticated | bucket_id = onboarding-sources AND onboarding_source_path_ok(name,false) |
+| onboarding sources upload | INSERT | authenticated | bucket_id = onboarding-sources AND onboarding_source_path_ok(name,true) |
+| onboarding sources delete | DELETE | authenticated | bucket_id = onboarding-sources AND onboarding_source_path_ok(name,true) |
+Son permisivas; no hay otras políticas de objetos ni ninguna sin filtro de bucket_id en ese catálogo. No se modificaron permisos de Storage.
+
+### Resultado de las verificaciones
+- `oj typecheck -b --noEmit`: salida 0, sin errores. No ejecuté tsc manual ni build manual: el entorno lo prohíbe. Registro de compilación automático más reciente comprobado: **build OK**, 2026-11-13T10:57:50Z.
+- Suite completa final: **5.565 pasan, 3 fallan, 5.568 total; 330 archivos pasan, 2 fallan**. Fallos: dos pruebas NUEVAS de F4 y una EXISTENTE del diario por el prefijo duplicado generado por la herramienta. Ninguna prueba existente fue modificada, debilitada o saltada. No presento la suite como verde.
+- Navegador con sesión real restaurada, /onboarding: cuatro subidas y eliminaciones de TXT exclusivamente sintéticos, escritorio 1280 y móvil 375, claro y oscuro. Cada archivo apareció «lista» y desapareció tras Quitar; ninguna respuesta de Storage >=400 ni error de página; sin scroll horizontal en los cuatro tamaños/temas. Capturas revisadas en `/tmp/browser/onboarding-verification/`; no se adjuntan por contener datos de la sesión real. No se pulsó «Que Nokko lo lea», no se gastó IA ni se hicieron envíos.
+- No verificado: Drive real Doc/Sheet/Slides/PDF, usuarios reales de otros roles, lectura completa con IA real, producción publicada. No publiqué ni inicié ningún PRD nuevo.
+
+### Decisiones y bloqueos
+1. **F4:** resolver el contrato de cambio de usuario antes de reintroducir la guarda; dos pruebas existentes bloquean el cambio y no se tocaron.
+2. **F9/historial:** reparar mediante mecanismo autorizado el prefijo duplicado generado por la herramienta, sin alterar historia antigua.
+3. **F5:** el formato de pruebas existentes/autogenerados no se cambió; requiere permiso o regeneración gestionada, respectivamente.
+4. **F12:** ninguna retención ni borrado tras la lectura implementados: Fede decide.
+5. Heredados NK-0159, NK-0176 y escáner NK-0160: intactos; necesitan decisión o permiso. El documento de traspaso y el PRD anterior discrepan sobre LinkedIn; Fede debe aclararlo antes de ese cambio.
 
 ## 2026-11-13 12:40 — F4 y estado de la unificación
 - F4 (NK-0169): `meQuery` devuelve `null` si la ventana de cierre de sesión está abierta, antes de validar, antes de `accept_invites` y antes de leer `profiles`/`org_members`. Prueba nueva `src/hooks/me-session-ending.test.ts` (2/2). `src/lib/session-cache.test.ts` sin cambios: 10/10.

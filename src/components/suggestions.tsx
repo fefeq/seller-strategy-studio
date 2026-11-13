@@ -90,7 +90,12 @@ export function useSuggestions() {
         if (touched.length) clearResolving(orgId);
         qc.invalidateQueries({ queryKey: ["suggestions"] });
       })
-      .catch((e) => console.warn("[suggestions] background recheck failed", e instanceof Error ? e.name : "unknown"));
+      .catch((e) =>
+        console.warn(
+          "[suggestions] background recheck failed",
+          e instanceof Error ? e.name : "unknown",
+        ),
+      );
   }, [orgId, refresh, qc]);
   return useQuery({
     queryKey: ["suggestions", orgId, (me?.roles ?? []).join(",")],

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMe } from "@/hooks/use-me";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -12,7 +12,7 @@ import { startBackgroundJob } from "@/lib/background.functions";
 import { readingCost, type Depth } from "@/lib/onboarding";
 import { errorText } from "@/lib/errors";
 import { FieldActions } from "@/components/field-actions";
-import { MAX_SOURCES, sourcesLimitText } from "@/lib/onboarding-files-limit";
+import { MAX_SOURCES, MAX_UPLOAD_MB, sourcesLimitText } from "@/lib/onboarding-files-limit";
 import {
   mergeRefs,
   perSourceFloor,
@@ -22,7 +22,7 @@ import {
 } from "@/lib/onboarding-source-refs";
 
 const TEXT_LIMIT = 40_000;
-type Item = SourceRef & { state: "uploading" | "ready" | "error" };
+type Item = SourceRef & { state: "uploading" | "ready" | "error"; removing?: boolean };
 
 /** «Dale tus fuentes»: web, documents, pasted text, Drive and a way into the CRM import. Reading runs in the background. */
 export function SourcesStep({
@@ -39,11 +39,20 @@ export function SourcesStep({
   const [url, setUrl] = useState(me?.currentOrg?.website ?? "");
   const [text, setText] = useState("");
   const [items, setItems] = useState<Item[]>([]);
+  const currentItems = useRef<Item[]>([]);
+  const pendingUploads = useRef(new Map<string, Promise<void>>());
   const [busy, setBusy] = useState(false);
 
+  function updateItems(change: (xs: Item[]) => Item[]) {
+    currentItems.current = change(currentItems.current);
+    setItems(currentItems.current);
+  }
+
   function add(list: Item[]) {
-    const r = mergeRefs(items, list);
-    setItems(r.sources as Item[]);
+    const previous = currentItems.current;
+    const active = previous.filter((x) => x.state !== "error");
+    const r = mergeRefs(active, list);
+    updateItems(() => [...previous.filter((x) => x.state === "error"), ...(r.sources as Item[])]);
     return { dropped: r.dropped, duplicated: r.duplicated };
   }
   const notify = (r: { dropped: string[]; duplicated: string[] }) => {
@@ -60,7 +69,11 @@ export function SourcesStep({
     if (!orgId || !userId) return;
     const ok: { f: File; item: Item }[] = [];
     // Each upload gets a new path, so the same file chosen again is recognised by name (already listed or twice in one selection).
-    const seen = new Set(items.filter((x) => x.kind === "storage").map((x) => x.name));
+    const seen = new Set(
+      currentItems.current
+        .filter((x) => x.kind === "storage" && x.state !== "error")
+        .map((x) => x.name),
+    );
     const again: string[] = [];
     for (const f of Array.from(list ?? [])) {
       const bad = uploadProblem(f);
@@ -84,24 +97,54 @@ export function SourcesStep({
       ok
         .filter((x) => !skip.has(x.item.name))
         .map(async ({ f, item }) => {
-          const { error } = await supabase.storage
-            .from("onboarding-sources")
-            .upload(item.ref, f, { contentType: f.type || undefined });
-          if (error) toast.error(`${f.name}: ${errorText(error)}`);
-          setItems((xs) =>
-            xs.map((x) => (x.ref === item.ref ? { ...x, state: error ? "error" : "ready" } : x)),
-          );
+          const task = (async () => {
+            try {
+              const mime = /\.pdf$/i.test(f.name)
+                ? "application/pdf"
+                : /\.md$/i.test(f.name)
+                  ? "text/markdown"
+                  : /\.csv$/i.test(f.name)
+                    ? "text/csv"
+                    : "text/plain";
+              const { error } = await supabase.storage
+                .from("onboarding-sources")
+                .upload(item.ref, f, { contentType: mime });
+              if (error) throw error;
+              updateItems((xs) =>
+                xs.map((x) => (x.ref === item.ref ? { ...x, state: "ready" } : x)),
+              );
+            } catch (error) {
+              toast.error(`${f.name}: ${errorText(error)}`);
+              updateItems((xs) =>
+                xs.map((x) => (x.ref === item.ref ? { ...x, state: "error" } : x)),
+              );
+            }
+          })();
+          pendingUploads.current.set(item.ref, task);
+          await task;
+          pendingUploads.current.delete(item.ref);
         }),
     );
   }
 
-  function remove(it: Item) {
-    setItems((xs) => xs.filter((x) => x.ref !== it.ref));
-    if (it.kind === "storage" && it.state !== "error")
-      void supabase.storage.from("onboarding-sources").remove([it.ref]);
+  async function remove(it: Item) {
+    updateItems((xs) => xs.map((x) => (x.ref === it.ref ? { ...x, removing: true } : x)));
+    try {
+      await pendingUploads.current.get(it.ref);
+      const latest = currentItems.current.find((x) => x.ref === it.ref);
+      if (latest?.kind === "storage" && latest.state !== "error") {
+        const { error } = await supabase.storage.from("onboarding-sources").remove([it.ref]);
+        if (error) throw error;
+      }
+      updateItems((xs) => xs.filter((x) => x.ref !== it.ref));
+    } catch (error) {
+      toast.error(errorText(error));
+      updateItems((xs) => xs.map((x) => (x.ref === it.ref ? { ...x, removing: false } : x)));
+    }
   }
 
-  const uploading = items.some((x) => x.state === "uploading");
+  const uploading = items.some((x) => x.state === "uploading" || x.removing);
+  const count = items.filter((x) => x.state !== "error").length;
   const ready = items.filter((x) => x.state === "ready");
 
   async function go() {
@@ -125,12 +168,13 @@ export function SourcesStep({
   }
 
   // A source that has not been read yet is simply taken off the list.
-  const quit = (fn: () => void) => (
+  const quit = (fn: () => void, removing = false) => (
     <FieldActions
       kind="onboarding_source"
       roles={me?.roles ?? []}
       labels={{ delete: "Quitar" }}
       handlers={{ delete: fn }}
+      busy={removing}
     />
   );
   const cost = readingCost(depth, !!url.trim());
@@ -155,7 +199,8 @@ export function SourcesStep({
             Documentos: business plan, P&L, decks, battlecards, ICP
           </label>
           <p className="mt-1 text-xs text-ink-mid">
-            Hasta {MAX_SOURCES} entre archivos (PDF, TXT, MD o CSV, máx. 20 MB) y Drive.
+            Hasta {MAX_SOURCES} entre archivos (PDF, TXT, MD o CSV, máx. {MAX_UPLOAD_MB} MB) y
+            Drive.
           </p>
           <Input
             id="ob-files"
@@ -173,7 +218,9 @@ export function SourcesStep({
           <div className="mt-2">
             <DriveRefButton
               onPick={(f) =>
-                notify(add([{ kind: "drive", ref: f.id, name: `${f.name} (Drive)`, state: "ready" }]))
+                notify(
+                  add([{ kind: "drive", ref: f.id, name: `${f.name} (Drive)`, state: "ready" }]),
+                )
               }
             />
           </div>
@@ -194,7 +241,9 @@ export function SourcesStep({
           {/* NK-0165: the box stops at TEXT_LIMIT, so it says so instead of cutting a paste in silence. */}
           <p className="mt-1 text-xs text-ink-mid" aria-live="polite">
             {text.length.toLocaleString("es-ES")}/{TEXT_LIMIT.toLocaleString("es-ES")} caracteres
-            {text.length >= TEXT_LIMIT ? ". Has llegado al máximo: si tu texto es más largo, súbelo como archivo." : ""}
+            {text.length >= TEXT_LIMIT
+              ? ". Has llegado al máximo: si tu texto es más largo, súbelo como archivo."
+              : ""}
           </p>
         </div>
         <p className="text-sm text-ink-mid">
@@ -218,9 +267,24 @@ export function SourcesStep({
             <li key={it.ref} className="flex flex-wrap items-center gap-2">
               <span className="min-w-0 [overflow-wrap:anywhere]">{it.name}</span>
               <span className={it.state === "error" ? "text-destructive" : "text-ink-faint"}>
-                {it.state === "uploading" ? "subiendo…" : it.state === "error" ? "error al subir" : "lista"}
+                {it.state === "uploading"
+                  ? "subiendo…"
+                  : it.state === "error"
+                    ? "error al subir"
+                    : "lista"}
               </span>
-              {quit(() => remove(it))}
+              {quit(() => {
+                void remove(it);
+              }, !!it.removing)}
+              {it.state === "uploading" && (
+                <div
+                  role="progressbar"
+                  aria-label={`Subiendo ${it.name}`}
+                  className="h-1.5 w-full overflow-hidden rounded-sm bg-paper-sunk"
+                >
+                  <div className="h-full w-1/2 bg-primary motion-safe:animate-pulse" />
+                </div>
+              )}
             </li>
           ))}
           {text.trim() && (
@@ -233,9 +297,9 @@ export function SourcesStep({
         </ul>
         {items.length > 0 && (
           <p className="mt-2 text-xs text-ink-mid">
-            {items.length}/{MAX_SOURCES} documentos. Si son largos, de cada uno se leerán al menos{" "}
-            {perSourceFloor(ready.length || 1).toLocaleString("es-ES")} caracteres; al terminar te digo
-            cuáles se leyeron enteros.
+            {count}/{MAX_SOURCES} documentos. Si son largos, de cada uno se leerán al menos{" "}
+            {perSourceFloor(ready.length || 1).toLocaleString("es-ES")} caracteres; al terminar te
+            digo cuáles se leyeron enteros.
           </p>
         )}
         <p className="mt-4 text-sm">
