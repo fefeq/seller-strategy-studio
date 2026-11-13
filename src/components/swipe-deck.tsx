@@ -8,7 +8,9 @@ import {
   type PanInfo,
 } from "motion/react";
 import { toast } from "sonner";
+import { Ban, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { IconText } from "@/components/icon-text";
 import { keyDirection, swipeDirection, type SwipeDir } from "@/lib/swipe";
 
 export type DeckLabels = Record<SwipeDir, string>;
@@ -176,11 +178,10 @@ export function SwipeDeck<T extends { id: string }>({
           <Button
             variant="outline"
             size="lg"
-            className="size-14 rounded-full p-0 text-xl"
-            aria-label={labelsOf(current)["left"]}
+            className="h-12 rounded-full px-5"
             onClick={() => decide("left")}
           >
-            ✕
+            <IconText icon={Ban}>{labelsOf(current)["left"]}</IconText>
           </Button>
           <Button
             variant="outline"
@@ -193,11 +194,10 @@ export function SwipeDeck<T extends { id: string }>({
           </Button>
           <Button
             size="lg"
-            className="size-14 rounded-full p-0 text-xl"
-            aria-label={labelsOf(current)["right"]}
+            className="h-12 rounded-full px-5"
             onClick={() => decide("right")}
           >
-            ✓
+            <IconText icon={Check}>{labelsOf(current)["right"]}</IconText>
           </Button>
         </div>
       )}

@@ -1,3 +1,5 @@
+import { Menu, X } from "lucide-react";
+import { IconText } from "@/components/icon-text";
 import { useEffect, useRef, useState } from "react";
 import { BackgroundJobsWatcher } from "@/components/background";
 import { NotificationCenter } from "@/components/notification-center";
@@ -186,11 +188,9 @@ function Shell() {
               aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={navOpen}
               aria-controls="mobile-nav"
-              className="-mr-2 flex size-11 shrink-0 items-center justify-center text-ink"
+              className="-mr-2 flex h-11 shrink-0 items-center justify-center px-2 text-sm text-ink"
             >
-              <span aria-hidden className="text-xl leading-none">
-                {navOpen ? "✕" : "☰"}
-              </span>
+              <IconText icon={navOpen ? X : Menu} size="nav">{navOpen ? "Cerrar" : "Menú"}</IconText>
             </button>
           </div>
         </header>
