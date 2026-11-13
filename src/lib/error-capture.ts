@@ -20,12 +20,14 @@ export function describeError(error: unknown): string {
   let current: unknown = error;
   for (let depth = 0; depth < CAUSE_DEPTH_LIMIT && current != null; depth++) {
     if (!(current instanceof Error)) {
-      parts.push(typeof current === "string" ? current : safeStringify(current));
+      parts.push(`[cause: ${typeof current}]`); // NK-0158: never the value itself
       break;
     }
     const label = depth === 0 ? "" : "caused by: ";
     const status = describeStatus(current);
-    parts.push(`${label}${current.stack ?? `${current.name}: ${current.message}`}${status}`);
+    // NK-0158: the message may carry customer or provider text, so logs get the error name and stack frames only.
+    const frames = (current.stack ?? "").split("\n").filter((l) => /^\s+at /.test(l)).join("\n");
+    parts.push(`${label}${current.name}${status}${frames ? `\n${frames}` : ""}`);
     current = current.cause;
   }
   return parts.join("\n").slice(0, DESCRIPTION_LENGTH_LIMIT);

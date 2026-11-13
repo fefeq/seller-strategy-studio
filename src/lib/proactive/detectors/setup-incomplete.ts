@@ -1,5 +1,6 @@
 import { guideState, inactive, suggestionAssignee } from "@/lib/setup-guide";
 import type { Detector } from "../types";
+import { onboardingStalled } from "./onboarding-stalled";
 import { setupStepLink } from "../resolve";
 
 /**
@@ -12,6 +13,8 @@ export const setupIncomplete: Detector = (s) => {
   if (!g.next) return [];
   const who = s.members ? suggestionAssignee(g.next.id, s.members) : { user_id: null };
   if (!who) return [];
+  // NK-0152: the same person never gets both reminders; while their onboarding is stalled, «Retoma tu onboarding» covers the setup.
+  if (who.user_id && onboardingStalled(s).some((x) => x.user_id === who.user_id)) return [];
   // A company that left the guide for over a day gets it first. A next step exists by construction, whoever it goes to.
   const stalled = inactive(s.setupActivityAt, s.now);
   // A step whose postponement ended gets a new key with the instant it ended (epoch seconds): suggestions are unique per (company, key),

@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { errorText } from "@/lib/errors";
 
 type Admin = SupabaseClient<Database>;
 const DAY = 86_400_000;
@@ -97,7 +98,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
               .join(" · ")}`,
           );
       } catch (e) {
-        lines.push(`No pude investigar la web: ${(e as Error).message}`);
+        lines.push(`No pude investigar la web: ${errorText(e)}`);
       }
       await db.from("suggestions").upsert(
         {
@@ -166,7 +167,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         out.prepped++;
       } catch (e) {
         out.notes.push(`Reunión ${meta.title}: ${(e as Error).message}`);
-        if (/créditos|bloqueado|cuota/i.test((e as Error).message)) break;
+        if (/créditos|bloqueado|cuota/i.test(e instanceof Error ? e.message : "")) break;
       }
     }
   } catch (e) {
