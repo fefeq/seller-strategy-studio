@@ -42,15 +42,9 @@ export function SourcesStep({
   const [busy, setBusy] = useState(false);
 
   function add(list: Item[]) {
-    let dropped: string[] = [];
-    let duplicated: string[] = [];
-    setItems((prev) => {
-      const r = mergeRefs(prev, list);
-      dropped = r.dropped;
-      duplicated = r.duplicated;
-      return r.sources as Item[];
-    });
-    return { dropped, duplicated };
+    const r = mergeRefs(items, list);
+    setItems(r.sources as Item[]);
+    return { dropped: r.dropped, duplicated: r.duplicated };
   }
   const notify = (r: { dropped: string[]; duplicated: string[] }) => {
     if (r.dropped.length)
