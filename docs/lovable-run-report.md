@@ -160,3 +160,10 @@ Este balance sustituye el estado pendiente de SDD 2/3 del balance anterior. SDD 
 - `agent-tools-email-gate.test.ts` (prueba nueva de este mismo ticket): mismas aserciones, leídas del cliente privilegiado, más «0 escrituras del miembro». Motivo: punto 2.
 - Migración `0091_email_draft_blocks_privileged_writes`: quita la política de insert y el INSERT de `authenticated`; vuelta atrás en la cabecera. Prueba PGlite nueva `email-draft-blocks-privileged.pg.test.ts` (falla con solo 0090, pasa con 0091). `email-draft-blocks.pg.test.ts` intacta: sigue probando 0090 por sí sola.
 - Revisión visual: bloqueada. La base no tiene ninguna empresa (0 organizaciones, 0 leads); la cuenta de Fede abre en «Crea una empresa». No se crean datos sin permiso.
+
+## NK-0173 — revisión visual de la ficha del contacto (13/11/2026)
+- Datos: «Cuenta de prueba Nokko» en «Empresa de prueba Nokko» con 6 contactos sintéticos (@example.com) y 4 estados simulados guardados directamente (sin llamar a Apollo, sin gasto).
+- Visto en escritorio 1280 y 375 px, claro y oscuro: la ficha muestra bajo el email «catch-all · 13/11/2026», «no verificable · 13/11/2026», «inválido · 13/11/2026» (en rojo), «sin verificar» y nada para el contacto sin email. Con email aparece «Verificar email»; sin email, «Conseguir email». No pulsé ninguno. Sin desplazamiento lateral (scrollWidth = ancho en las 4). Consola: un 404 de recurso en la primera carga de escritorio claro; red sin otros fallos.
+- No visto: bloqueo de borradores en pantalla (aparece en sugerencias y agente; generarlos requiere IA). Etiqueta de «verificado» presente en el texto de la ficha de Ana, sin captura dedicada.
+- Empresa activa devuelta a Postin.
+- Commit/SHA: no aplicable; este entorno no permite hacer commits (los gestiona Lovable automáticamente).
