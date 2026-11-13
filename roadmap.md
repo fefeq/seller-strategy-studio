@@ -14,7 +14,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0173 SDD 2: estado de Apollo guardado al revelar (cliente privilegiado, org_id explícito), gasto registrado en los núcleos (pantalla, agente, MCP y orquestador), Q-6 aplicado (lo manual no se pausa y siempre registra), conservar y proponer en revealStakeholder; 3 pruebas nuevas fallaron primero, suite 5617/5617, build OK. Tipos sin comprobar por restricción del entorno. Aviso pendiente a NK-0171 (su PRD documenta lo contrario de Q-6).
 - [ ] NK-0173 SDD 3: U-1–U-5 implementadas; catálogo completo, estado/fecha en las tres fichas, puerta y registro en agente/detector/followup durable, botón Verificar con coste existente. Suite 5648/5648 en 347 archivos y compilación automática OK 16:42:02 UTC; revisión visual CA-2/CA-8 pendiente porque navegador local solo muestra carga inicial y aborta módulos. Ninguna llamada de pago. Nunca 2b.
 - [x] NK-0168 SDD 2: permiso acotado recibido para expectativa ✓ de strategy-screens.test.tsx:421; aún no modificada, no autoriza otras pruebas.
-- [ ] NK-0168: SDD 1 (registro, plantilla SDD, EXECUTION.md, nokko-shape), luego 2 y 3.
+- [~] NK-0168: entrega 1 hecha (IconText, mazo, menú, guardia, reglas); falta entrega 2 (Trash2/Eraser/Ban/X en botones existentes).
 - [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
 - [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
 - [ ] NK-0174: SDD 1; Workspace Internal, solo Fede hasta confirmación legal para otros buzones.
