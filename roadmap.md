@@ -1,16 +1,16 @@
 # Roadmap
 ## Cola de Fede — 13-11-2026
-Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Solo redactar NK-0176; no construir sin aprobación. Mandan docs/decisiones-fede-20261113.md; PRD aprobado no autoriza implementación. Un SDD en docs/sdd/ cada vez, aprobación de Fede antes de construir e informe antes del siguiente.
+Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Autorización general de Fede recibida a las 14:08 UTC: guardar cada SDD y construir sin esperar confirmación entre entregas. Mantener las paradas obligatorias, ninguna prueba existente modificada y suite completa verde e informe antes de la siguiente entrega. La revisión independiente de NK-0176 sigue pendiente, pero la autorización permite continuar la cola.
 - [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
 - [x] NK-0176: implementar tras aprobación y emitir informe; 5573/5573, checker limpio, build automático OK y navegador verificado.
 - [ ] NK-0176: revisión independiente y aceptación final de la entrega por Fede; SDD En curso, no se declara gate técnico.
-- [ ] NK-0159: SDD corto, después de la entrega anterior.
+- [ ] NK-0159: sanear salidas de Inngest sin cambiar las notas retornadas por los cores ni sus pruebas protegidas; SDD y verificación pendientes.
 - [ ] NK-0160: SDD corto, después de la entrega anterior.
 - [ ] NK-0177: SDD para comportamiento personal/equipo, no solo redacción.
 - [ ] NK-0173: SDD 1–3; no escribir 2b. Estado Apollo, regla graduada, gasto registrado y manual con coste sin pausa al límite.
 - [ ] NK-0168: SDD 1 (registro, plantilla SDD, EXECUTION.md, nokko-shape), luego 2 y 3.
-- [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos sobre copia y autorización.
 - [ ] NK-0171: tanda 0 con parámetro opcional «solo contacto verificado».
+- [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
 - [ ] NK-0174: SDD 1; Workspace Internal, solo Fede hasta confirmación legal para otros buzones.
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
 
@@ -28,7 +28,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] Checker de tipos permitido limpio; navegador real escritorio/375 px claro/oscuro e informe final. Servidor recompiló y sirve onboarding; build de producción no ejecutado (restricción del entorno).
 - [x] Suite completa repetida sobre 734c202: 5570/5570 en Node 22.23.5; oj typecheck limpio. Node 26 y tsc literal no ejecutados.
 - [x] F12: decisión documentada — los documentos de onboarding-sources nunca se borran automáticamente.
-- Heredados NK-0159 y escáner NK-0160: siguen en la cola anterior; no iniciados. NK-0176 espera aprobación.
+- Heredados NK-0159 y escáner NK-0160: siguen en la cola anterior. NK-0176 implementado y comprobado; revisión independiente pendiente.
 
 ## Segundo plano y avisos
 - [x] Centro de avisos (En marcha / Avisos) y aviso automático al terminar cada tarea
