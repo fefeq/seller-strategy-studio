@@ -4654,13 +4654,13 @@
       "title": "Onboarding «Nokko lee»: explicar «Leído» y mostrar qué vio en cada fuente (texto de estado y recuento de hallazgos por fuente, sin tocar datos ni IA)",
       "kind": "feature",
       "source": "Fede, 2026-11-12: «haz los dos tickets, la parte 1 en este sprint». Mejora de UI en src/components/onboarding/reading.tsx (líneas 61 y 100). Nivel de documentación: solo ticket, sin SDD ni PRD (decisión de Fede, cambio sin schema ni RLS)",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "coordinador-sprint8",
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261112-onboarding-leido.md",
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "feat/nk-0156-leido",
+      "base_commit": "61faab8ea2661bbb2158e2690702aae52876e3b9",
       "history": [
         {
           "state": "LOGGED",
@@ -4673,6 +4673,12 @@
           "at": "2026-11-12T22:59:37.355Z",
           "by": "tracker",
           "note": "docs: sdd=docs/sdd/SDD-20261112-onboarding-leido.md prd=-"
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-13T00:48:28.619Z",
+          "by": "Fede: \"haz los dos tickets, la parte 1 en este sprint\" + \"sigue, ejecuta todo tú\" (2026-11-12); SDD aprobado (PR #132); copy decidido por el coordinador por delegación",
+          "note": "owner=coordinador-sprint8"
         }
       ]
     },
