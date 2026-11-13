@@ -1019,6 +1019,127 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_play_costs: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          org_id: string
+          play_key: string
+          provider: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          org_id: string
+          play_key: string
+          provider?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          org_id?: string
+          play_key?: string
+          provider?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_play_costs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_play_evidence: {
+        Row: {
+          created_at: string
+          event_date: string | null
+          id: string
+          org_id: string
+          play_id: string
+          quote: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          org_id: string
+          play_id: string
+          quote: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          event_date?: string | null
+          id?: string
+          org_id?: string
+          play_id?: string
+          quote?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_play_evidence_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_play_evidence_play_id_fkey"
+            columns: ["play_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_plays: {
+        Row: {
+          created_at: string
+          definition: Json
+          id: string
+          key: string
+          name: string
+          org_id: string
+          updated_at: string
+          verified_only: boolean
+        }
+        Insert: {
+          created_at?: string
+          definition?: Json
+          id?: string
+          key: string
+          name: string
+          org_id?: string
+          updated_at?: string
+          verified_only?: boolean
+        }
+        Update: {
+          created_at?: string
+          definition?: Json
+          id?: string
+          key?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+          verified_only?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_plays_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deal_lines: {
         Row: {
           billing: string
