@@ -223,7 +223,7 @@ Cada SDD se redacta uno a uno con `nokko-shape` cuando apruebes este PRD. Sin as
 El 2b queda **fuera de la tanda** hasta decidir Q-1 y Q-2. El SDD 4 no puede empezar hasta que el motor de plays de NK-0171 exista.
 
 ## 9. Registro del gate
-- Pasada 1: FAIL (0 BLOCKER, 3 MAJOR, 10 MINOR), informe `.factory/evidence/NK-0173/prd-gate-pass1.md` sobre `16b75e8`. Corregido en <sha>; pasada 2 pendiente.
+- Pasada 1: FAIL (0 BLOCKER, 3 MAJOR, 10 MINOR), informe `.factory/evidence/NK-0173/prd-gate-pass1.md` sobre `16b75e8`. Corregido en 7ed7afa; pasada 2 pendiente.
 
 ## 10. Aprobación
 - [ ] Fede aprueba el PRD (primer GO de dirección), incluidas las propuestas de la sección 6 y los riesgos de 7.2. Fecha: {…}
