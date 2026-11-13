@@ -46,3 +46,14 @@ export async function recordApolloVerifications(rows: VerificationRow[]): Promis
     .upsert(rows, { onConflict: "org_id,email" });
   if (error) console.error("email_verifications upsert failed", safeErrorLog(error));
 }
+
+/** Registers a blocked draft (surface, state, reason) — never the address. Works with the member's client too. */
+export async function recordEmailDraftBlock(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- accepts both the member's client and the privileged one
+  db: any,
+  orgId: string,
+  block: { surface: "draft_followup" | "followup_sequence"; status: EmailStatus; reason: string },
+): Promise<void> {
+  const { error } = await db.from("email_draft_blocks").insert({ org_id: orgId, ...block });
+  if (error) console.error("email_draft_blocks insert failed", safeErrorLog(error));
+}
