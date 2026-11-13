@@ -1022,6 +1022,7 @@ export type Database = {
       custom_play_costs: {
         Row: {
           amount: number
+          cost_kind: string
           created_at: string
           id: string
           org_id: string
@@ -1030,6 +1031,7 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          cost_kind?: string
           created_at?: string
           id?: string
           org_id: string
@@ -1038,6 +1040,7 @@ export type Database = {
         }
         Update: {
           amount?: number
+          cost_kind?: string
           created_at?: string
           id?: string
           org_id?: string
@@ -1103,30 +1106,45 @@ export type Database = {
         Row: {
           created_at: string
           definition: Json
+          first_activated_at: string | null
           id: string
           key: string
           name: string
           org_id: string
+          status: string
+          test_recorded_at: string | null
+          test_sample: number | null
+          test_successes: number | null
           updated_at: string
           verified_only: boolean
         }
         Insert: {
           created_at?: string
           definition?: Json
+          first_activated_at?: string | null
           id?: string
           key: string
           name: string
           org_id?: string
+          status?: string
+          test_recorded_at?: string | null
+          test_sample?: number | null
+          test_successes?: number | null
           updated_at?: string
           verified_only?: boolean
         }
         Update: {
           created_at?: string
           definition?: Json
+          first_activated_at?: string | null
           id?: string
           key?: string
           name?: string
           org_id?: string
+          status?: string
+          test_recorded_at?: string | null
+          test_sample?: number | null
+          test_successes?: number | null
           updated_at?: string
           verified_only?: boolean
         }
