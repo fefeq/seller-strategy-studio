@@ -158,7 +158,7 @@ function Onboarding() {
           orgId={orgId}
           roles={me?.roles ?? []}
           initial={initialDiag}
-          saveDiagnosis={async (d) => { await save({ diagnosis: asJson(d) }); }}
+          saveDiagnosis={async (d) => { if (!(await save({ diagnosis: asJson(d) }))) throw new Error("No se pudo guardar tu diagnóstico personal. Reintenta."); }}
           onNext={() => save({ step: nextStepAfterDiagnosis(!!proposal) })}
         />
       )}
