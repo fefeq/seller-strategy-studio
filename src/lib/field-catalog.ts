@@ -70,12 +70,11 @@ export type ConceptId =
   | "contador_ejecucion"
   | "tokens_ia"
   | "moneda_coste"
-  | "origen_fecha";
-// Business-line concepts are kept distinct from acquisition and sales motions.
-type BusinessLineConceptId = "modelo_negocio" | "friccion_compra" | "etapa_negocio" | "nombre_linea" | "principal_linea" | "posicion_linea" | "origen_linea";
+  | "origen_fecha"
+  | "modelo_negocio" | "friccion_compra" | "etapa_negocio" | "nombre_linea" | "principal_linea" | "posicion_linea" | "origen_linea";
 
 export type Concept = {
-  id: ConceptId | BusinessLineConceptId;
+  id: ConceptId;
   label: string;
   meaning: string;
   kind: ValueKind;
@@ -342,7 +341,7 @@ export type ImporteSpan = "anual" | "trimestral" | "mensual" | "puntual" | "sin_
 export type Binding = {
   table: string;
   column: string;
-  concept: ConceptId | BusinessLineConceptId;
+  concept: ConceptId;
   persistence: Persistence;
   /** Only for importe: what the amount measures. Amounts of different nature are never added or compared. */
   nature?: ImporteNature;
@@ -727,6 +726,13 @@ export function allowedValues(table: string, column: string): readonly string[] 
 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
+  modelo_negocio: ["src/lib/business-lines.ts"],
+  friccion_compra: ["src/lib/business-lines.ts"],
+  etapa_negocio: ["src/lib/business-lines.ts"],
+  nombre_linea: ["src/integrations/supabase/types.ts"],
+  principal_linea: ["src/lib/business-lines.ts"],
+  posicion_linea: ["src/lib/business-lines.ts"],
+  origen_linea: ["src/integrations/supabase/types.ts"],
   paso_ejecucion: ["src/lib/plays/custom/execution.ts"],
   estado_ejecucion: ["src/lib/plays/custom/execution.ts"],
   contador_ejecucion: ["src/lib/plays/custom/execution.ts"],
