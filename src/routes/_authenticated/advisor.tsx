@@ -21,6 +21,7 @@ import {
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
 import { errorText } from "@/lib/errors";
+import { PrimaryLineNote } from "@/components/primary-line-note";
 import { StrategyReviewPanel } from "@/components/strategy-review";
 
 const TITLE = "Asesor GTM — Nokko";

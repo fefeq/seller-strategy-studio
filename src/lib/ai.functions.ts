@@ -18,6 +18,7 @@ import {
   type AdvisorResult,
 } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
+import { primaryLine } from "@/lib/business-lines";
 import type { Json } from "@/integrations/supabase/types";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
