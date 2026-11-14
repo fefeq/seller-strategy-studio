@@ -1,6 +1,13 @@
 # Ola 1 · Informe de entrega parcial
 
-Fecha: 14-11-2026. SDD aprobado: `.lovable/plan/sdd-ola-1-agrupación-del-menú-y-glosario-único-2026-11-14.md`.
+Fecha: 14-11-2026. SDD presentado: `.lovable/plan/sdd-ola-1-agrupación-del-menú-y-glosario-único-2026-11-14.md`.
+
+## Corrección de proceso de Fede — 22:57 UTC
+- La implementación se realizó sin el OK escrito exigido para el SDD. La aprobación automática de la herramienta no era suficiente; la mención anterior «SDD aprobado» era incorrecta.
+- Fede acepta el resultado entregado por ser reversible y estar verificado. Esta aceptación posterior no convierte en autorización previa el SDD ni permite iniciar otras entregas.
+- Desde ahora no marcar ningún SDD como aprobado ni construir sin el OK escrito de Fede.
+- Glosario pendiente de su decisión sobre «equipos/grupos de plays» y «playbooks»; no continuar cambios.
+- Drive corresponde a Ola 3B y reutiliza `docs/sdd/SDD-20261025-drive-per-company-account.md`, aprobado el 26 de octubre según confirma Fede. No crear otro SDD ni tocar Drive hasta que lo pida. Sin publicación.
 
 ## Cambios
 - Cinco grupos en el orden aprobado; Hoy conserva cuatro enlaces siempre visibles. URLs y permisos intactos.
