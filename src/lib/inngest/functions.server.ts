@@ -84,7 +84,17 @@ function build() {
     },
   );
 
-  return serve({ client: inngest, functions: [ping, orgMaintenance, leadEnrich, followup, backgroundJob, parallelRun], servePath: "/api/public/inngest" });
+  // Independent function on the same authenticated maintenance event: retries/denials of a custom play
+  // cannot change the existing org-maintenance contract or replay unrelated automatic work.
+  const customPlayMaintenance = inngest.createFunction(
+    { id: "custom-play-maintenance", triggers: [{ event: EV.orgMaintenance }], retries: 0, concurrency: { limit: 1, key: "event.data.org_id" }, idempotency: "event.data.org_id + '-' + event.data.hour" },
+    async ({ event, step }) => step.run("custom-plays", async () => {
+      const { runActiveCustomPlays } = await import("@/lib/plays/custom/adapters.server");
+      const r = await runActiveCustomPlays(await admin(), event.data.org_id as string);
+      return { runs: r.runs, evidenceCount: r.evidenceCount, suggestionCount: r.suggestionCount, paused: r.paused };
+    }),
+  );
+  return serve({ client: inngest, functions: [ping, orgMaintenance, customPlayMaintenance, leadEnrich, followup, backgroundJob, parallelRun], servePath: "/api/public/inngest" });
 }
 
 export function inngestHandler() {

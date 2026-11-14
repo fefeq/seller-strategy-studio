@@ -525,7 +525,7 @@ export async function syncSuggestions(
     .not(
       "detector",
       "in",
-      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal,onboarding_stalled,plays_diagnosis)",
+      "(weekly_report,setup_question,account_assigned,lead_enriched,discoveries,account_researched,meeting_prepped,account_cooling,field_proposal,onboarding_stalled,plays_diagnosis,custom_play)",
     )
     .not("detector", "like", STRATEGY_DETECTOR_LIKE);
   // An open suggestion keeps its key but its numbers move (coverage, amounts): refresh its text so it

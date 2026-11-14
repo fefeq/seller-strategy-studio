@@ -5,7 +5,7 @@ import { emailDraftGate, type EmailStatus } from "@/lib/email-verification";
 import { emailGateMark } from "@/lib/email-status";
 import { checkFreshness, parseEventDate, validateEvidence, QUOTE_MAX, type Evidence, type FreshnessWindow, type Step } from "./model";
 
-export type Provider = "firecrawl" | "perplexity" | "parallel" | "apify";
+export type Provider = "firecrawl" | "perplexity" | "parallel" | "apify" | "drive";
 export type TaggedItem = NewsItem & { provider: Provider };
 
 /** Merge provider lists, dedupe by URL (first provider wins), cap at max. */

@@ -23,7 +23,7 @@ async function call(
   if (!res.ok && !(init.okStatus ?? []).includes(res.status)) {
     const body = await res.text().catch(() => "");
     console.error(`Parallel ${path.split("?")[0]} [${res.status}] body ${body.length} chars`);
-    throw new Error(parallelErrorText(res.status, body));
+    throw Object.assign(new Error(parallelErrorText(res.status, body)), { status: res.status });
   }
   return res;
 }

@@ -1024,28 +1024,43 @@ export type Database = {
           amount: number
           cost_kind: string
           created_at: string
+          currency: string | null
           id: string
+          input_tokens: number | null
           org_id: string
+          output_tokens: number | null
           play_key: string
           provider: string | null
+          run_id: string | null
+          step_number: number | null
         }
         Insert: {
           amount?: number
           cost_kind?: string
           created_at?: string
+          currency?: string | null
           id?: string
+          input_tokens?: number | null
           org_id: string
+          output_tokens?: number | null
           play_key: string
           provider?: string | null
+          run_id?: string | null
+          step_number?: number | null
         }
         Update: {
           amount?: number
           cost_kind?: string
           created_at?: string
+          currency?: string | null
           id?: string
+          input_tokens?: number | null
           org_id?: string
+          output_tokens?: number | null
           play_key?: string
           provider?: string | null
+          run_id?: string | null
+          step_number?: number | null
         }
         Relationships: [
           {
@@ -1060,29 +1075,44 @@ export type Database = {
       custom_play_evidence: {
         Row: {
           created_at: string
+          date_from: string | null
           event_date: string | null
           id: string
+          observed_at: string | null
           org_id: string
           play_id: string
+          provider: string | null
           quote: string
+          run_id: string | null
+          step_number: number | null
           url: string
         }
         Insert: {
           created_at?: string
+          date_from?: string | null
           event_date?: string | null
           id?: string
+          observed_at?: string | null
           org_id: string
           play_id: string
+          provider?: string | null
           quote: string
+          run_id?: string | null
+          step_number?: number | null
           url: string
         }
         Update: {
           created_at?: string
+          date_from?: string | null
           event_date?: string | null
           id?: string
+          observed_at?: string | null
           org_id?: string
           play_id?: string
+          provider?: string | null
           quote?: string
+          run_id?: string | null
+          step_number?: number | null
           url?: string
         }
         Relationships: [
@@ -1102,13 +1132,109 @@ export type Database = {
           },
         ]
       }
+      custom_play_runs: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          play_id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          org_id?: string
+          play_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          play_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_play_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_play_runs_play_id_fkey"
+            columns: ["play_id"]
+            isOneToOne: false
+            referencedRelation: "custom_plays"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      custom_play_steps: {
+        Row: {
+          created_at: string
+          evidence_count: number
+          org_id: string
+          payload: Json
+          run_id: string
+          status: string
+          step_number: number
+          suggestion_count: number
+        }
+        Insert: {
+          created_at?: string
+          evidence_count?: number
+          org_id?: string
+          payload?: Json
+          run_id: string
+          status?: string
+          step_number: number
+          suggestion_count?: number
+        }
+        Update: {
+          created_at?: string
+          evidence_count?: number
+          org_id?: string
+          payload?: Json
+          run_id?: string
+          status?: string
+          step_number?: number
+          suggestion_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_play_steps_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_play_steps_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "custom_play_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_plays: {
         Row: {
           created_at: string
           definition: Json
+          execution_pause: string | null
           first_activated_at: string | null
           id: string
           key: string
+          lease_token: string | null
+          lease_until: string | null
           name: string
           org_id: string
           status: string
@@ -1121,9 +1247,12 @@ export type Database = {
         Insert: {
           created_at?: string
           definition?: Json
+          execution_pause?: string | null
           first_activated_at?: string | null
           id?: string
           key: string
+          lease_token?: string | null
+          lease_until?: string | null
           name: string
           org_id?: string
           status?: string
@@ -1136,9 +1265,12 @@ export type Database = {
         Update: {
           created_at?: string
           definition?: Json
+          execution_pause?: string | null
           first_activated_at?: string | null
           id?: string
           key?: string
+          lease_token?: string | null
+          lease_until?: string | null
           name?: string
           org_id?: string
           status?: string
@@ -5706,6 +5838,27 @@ export type Database = {
         Args: { _org: string; _step: string }
         Returns: boolean
       }
+      claim_custom_play: {
+        Args: {
+          p_org: string
+          p_play: string
+          p_run: string
+          p_token: string
+          p_user: string
+        }
+        Returns: boolean
+      }
+      commit_custom_play_step: {
+        Args: {
+          p_org: string
+          p_payload: Json
+          p_play: string
+          p_run: string
+          p_step: number
+          p_token: string
+        }
+        Returns: Json
+      }
       company_diagnosis: { Args: { _org: string }; Returns: Json }
       create_organization: {
         Args: { _name: string; _segments?: string }
@@ -5771,6 +5924,16 @@ export type Database = {
       play_enable_allowed: { Args: { _play_id: string }; Returns: boolean }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
+      reserve_custom_play_step: {
+        Args: {
+          p_org: string
+          p_play: string
+          p_run: string
+          p_step: number
+          p_token: string
+        }
+        Returns: boolean
+      }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
       set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }

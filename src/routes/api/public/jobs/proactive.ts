@@ -100,6 +100,14 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
             }
           }
           // Autopilot: research new accounts, prepare tomorrow's meetings, review cooling accounts (bounded per company).
+          const { runActiveCustomPlays } = await import("@/lib/plays/custom/adapters.server");
+          for (const o of orgs ?? []) {
+            try {
+              await runActiveCustomPlays(db, o.id, now);
+            } catch {
+              console.error("custom play maintenance failed");
+            }
+          }
           const { autopilotForOrg } = await import("@/lib/autopilot.server");
           for (const o of orgs ?? []) {
             try {

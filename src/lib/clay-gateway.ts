@@ -64,7 +64,7 @@ async function clay(
     } catch {
       /* plain text */
     }
-    throw new Error(clayErrorText(res.status, msg));
+    throw Object.assign(new Error(clayErrorText(res.status, msg)), { status: res.status });
   }
   return res.json();
 }
