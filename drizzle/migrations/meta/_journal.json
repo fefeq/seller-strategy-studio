@@ -694,6 +694,13 @@
       "when": 1794654037832,
       "tag": "0099_mailbox_links_disconnected",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1794684664621,
+      "tag": "0099_migration",
+      "breakpoints": true
     }
   ]
 }
