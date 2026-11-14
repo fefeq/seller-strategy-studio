@@ -155,6 +155,7 @@ function Onboarding() {
       )}
       {step === "diagnosis" && (
         <BusinessLinesStep
+          key={orgId ?? "none"}
           orgId={orgId ?? null}
           roles={me?.roles ?? []}
           initial={initialDiag}
