@@ -87,6 +87,9 @@ async function linkedinForReading(db: Db, acc: Acc): Promise<string | null> {
 export async function companyLinkedin(_db: Db, acc: Acc): Promise<string | null> {
   const saved = linkedinCompanyUrl(acc.linkedin_url);
   if (saved) return saved;
+  // Legal pause: the saved page stays readable, but the auxiliary search and the URL write stop (SDD pieza A).
+  const { linkedinExtractionPaused } = await import("@/lib/linkedin-legal.server");
+  if (await linkedinExtractionPaused()) return null;
   const name = companyName(acc.name, cleanDomain(acc.domain));
   if (!name) return null;
   const { searchBoth } = await import("@/lib/web-search");
@@ -221,6 +224,9 @@ export async function stakeholderPostsCore(db: Db, stakeholderId: string, scope:
  */
 export async function linkedinSignalItems(db: Db, acc: Acc): Promise<NewsItem[]> {
   if (!process.env["APIFY_API_KEY"]) return [];
+  // Legal pause: no LinkedIn robots in the signal refresh; the web news still answer (SDD pieza A).
+  const { linkedinExtractionPaused } = await import("@/lib/linkedin-legal.server");
+  if (await linkedinExtractionPaused()) return [];
   const name = companyName(acc.name, cleanDomain(acc.domain));
   const url = await linkedinForReading(db, acc);
   const [posts, jobs] = await Promise.all([

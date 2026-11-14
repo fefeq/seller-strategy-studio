@@ -1,6 +1,10 @@
 // Apify through the Lovable connector gateway (gateway-backed: LOVABLE_API_KEY + APIFY_API_KEY, read inside the
 // call). Server-only usage. Runs are synchronous and capped by result count and by spend (maxTotalChargeUsd).
+// Central legal-pause check: every actor not explicitly authorized as non-LinkedIn is checked before running,
+// so screens, agent/MCP, jobs and plays are all covered here (SDD pausa-legal-linkedin-y-gasto, pieza A).
 import { apifyErrorText } from "@/lib/apify";
+import { actorNeedsLegalCheck } from "@/lib/linkedin-legal";
+import { assertLinkedinExtractionAllowed } from "@/lib/linkedin-legal.server";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/apify";
 
@@ -9,6 +13,7 @@ export async function runActor(
   input: object,
   opts: { maxItems: number; timeoutSecs?: number },
 ): Promise<unknown[]> {
+  if (actorNeedsLegalCheck(actor.id)) await assertLinkedinExtractionAllowed();
   const lovable = process.env["LOVABLE_API_KEY"];
   const key = process.env["APIFY_API_KEY"];
   if (!lovable || !key)
