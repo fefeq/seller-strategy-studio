@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { primaryLine } from "@/lib/business-lines";
 import { supabase } from "@/integrations/supabase/client";
 import type { EditableLine, LineEditorPorts } from "@/lib/business-lines-editor";
 import type { DiagnosisInput, Diagnosis } from "@/lib/gtm-diagnosis";
@@ -44,4 +45,10 @@ export function useBusinessLines(
   };
   const refresh = () => qc.invalidateQueries({ queryKey: key });
   return { ...q, ports, refresh };
+}
+
+/** Read-only lines of the active company plus its primary-line diagnosis (Inicio, Estrategia, Métricas, Segmentos). */
+export function usePrimaryLine(orgId: string | null | undefined) {
+  const q = useQuery({ queryKey: ["business-lines", orgId ?? null], queryFn: readLines, enabled: !!orgId });
+  return { ...q, lines: q.data ?? [], primary: primaryLine(q.data ?? []) };
 }

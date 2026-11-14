@@ -8,6 +8,8 @@ import { useSetup } from "@/hooks/use-setup";
 import { onboardingDone, showRoadmapCard } from "@/lib/onboarding";
 import { jsonObject } from "@/lib/json";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
+import { useMe } from "@/hooks/use-me";
+import { usePrimaryLine } from "@/hooks/use-business-lines";
 import { GuideOffer, NextStepMessage } from "@/components/setup/guide";
 
 /** One compact strategy card in Inicio (Owner / Sales Leader) until the strategy is complete or hidden. */
@@ -23,10 +25,13 @@ export function RoadmapCard() {
     enabled: !!g.orgId && !!st,
     queryFn: async () => (await supabase.rpc("company_diagnosis", { _org: g.orgId! })).data,
   });
+  const { data: me } = useMe();
+  const { primary } = usePrimaryLine(me?.currentOrg?.org_id);
   if (!st || !showRoadmapCard(session, pct)) return null;
-  const diag = jsonObject(shared ?? session?.diagnosis ?? null) as {
+  // The primary business line wins; the per-person diagnosis is the fallback during the transition (SDD 3).
+  const diag = primary ? { result: primary.result } : (jsonObject(shared ?? session?.diagnosis ?? null) as {
     result?: { archetype?: string; name?: string; nextStep?: string };
-  } | null;
+  } | null);
   return (
     <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs">
       <div className="flex flex-wrap items-baseline justify-between gap-3">
