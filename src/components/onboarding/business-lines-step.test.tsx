@@ -41,6 +41,6 @@ describe("BusinessLinesStep", () => {
   it("cannot continue without a primary line", () => {
     lines.data = [];
     show(["owner"]);
-    expect((screen.getByRole("button", { name: "Continuar" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((screen.getByRole("button", { name: "Continuar con estas líneas" }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
