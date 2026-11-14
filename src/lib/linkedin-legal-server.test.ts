@@ -1,4 +1,4 @@
-// Server read of the legal pause: fail-closed on missing row, read error and thrown client (SDD pieza A, CA-1).
+// Server read of the legal pause: A0: only an explicit pause blocks; missing row, read error and thrown client do not.
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = vi.hoisted(() => ({
@@ -40,23 +40,24 @@ describe("linkedinExtractionPaused", () => {
     expect(await linkedinExtractionPaused()).toBe(false);
   });
 
-  it("missing row means paused", async () => {
-    expect(await linkedinExtractionPaused()).toBe(true);
+  it("missing row does not block", async () => {
+    expect(await linkedinExtractionPaused()).toBe(false);
   });
 
-  it("a read error means paused (fail-closed)", async () => {
+  it("a read error does not block (fail-open, A0)", async () => {
     state.error = { message: "caído" };
-    expect(await linkedinExtractionPaused()).toBe(true);
+    expect(await linkedinExtractionPaused()).toBe(false);
   });
 
-  it("a broken client means paused (fail-closed)", async () => {
+  it("a broken client does not block (fail-open, A0)", async () => {
     state.throws = true;
-    expect(await linkedinExtractionPaused()).toBe(true);
+    expect(await linkedinExtractionPaused()).toBe(false);
   });
 });
 
 describe("assertLinkedinExtractionAllowed", () => {
   it("throws the pause text while paused", async () => {
+    state.row = { paused: true };
     await expect(assertLinkedinExtractionAllowed()).rejects.toThrow("revisión legal");
   });
 

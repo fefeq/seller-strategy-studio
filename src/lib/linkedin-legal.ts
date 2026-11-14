@@ -1,5 +1,5 @@
-// Legal pause of robotized LinkedIn extraction (SDD pausa-legal-linkedin-y-gasto, pieza A): pure rules.
-// The pause is global and reversible only by a superadmin after the legal review; G2 reviews are NOT paused
+// LinkedIn extraction flag (A0 of PLAN-UX-20261115: pause reverted, extraction active with a notice).
+// An optional pause stays reversible only by a superadmin; G2 reviews are NOT paused
 // and LinkedIn sources already saved stay visible (nothing is deleted or rewritten).
 import { ACTORS } from "@/lib/apify";
 
@@ -24,12 +24,17 @@ export function actorNeedsLegalCheck(actorId: string): boolean {
 export type LegalFlagRow = { paused: boolean } | null;
 
 /**
- * Fail-closed: only a row explicitly saying paused = false lets the extraction run. A missing row or a
- * failed read (the caller passes null then) means paused.
+ * Decision of Fede (27-oct, confirmed 15-nov-2026): LinkedIn extraction is allowed, with a visible notice.
+ * Only a row explicitly saying paused = true (set by a superadmin) stops it; a missing row or a failed read
+ * never blocks the extraction.
  */
 export function extractionPaused(row: LegalFlagRow): boolean {
-  return row?.paused !== false;
+  return row?.paused === true;
 }
+
+/** Informative notice shown in Conexiones while the extraction is active. */
+export const LINKEDIN_ACTIVE_NOTICE =
+  "NOKKO lee datos públicos de LinkedIn mediante robots; puede ir contra los términos de LinkedIn. Revisión legal pendiente.";
 
 /** What the agent answers when someone asks for LinkedIn extraction while paused: what, why, what still works. */
 export function linkedinPauseExplanation(): string {

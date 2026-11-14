@@ -1,5 +1,5 @@
 // Server side of the LinkedIn legal pause (SDD pausa-legal-linkedin-y-gasto, pieza A): reads the global flag
-// with the privileged client before any robotized LinkedIn extraction. Fail-closed: a failed read means paused.
+// with the privileged client before any robotized LinkedIn extraction. A failed read never blocks (A0: extraction active).
 import {
   extractionPaused,
   LINKEDIN_FLAG_KEY,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/linkedin-legal";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
-/** True unless the flag explicitly says the extraction runs. Any read failure pauses (fail-closed). */
+/** True only when a superadmin explicitly paused it. Read failures do not block (fail-open, A0). */
 export async function linkedinExtractionPaused(): Promise<boolean> {
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -19,12 +19,12 @@ export async function linkedinExtractionPaused(): Promise<boolean> {
       .maybeSingle();
     if (error) {
       console.error("platform_legal_flags read failed", safeErrorLog(error));
-      return true;
+      return false;
     }
     return extractionPaused(data as LegalFlagRow);
   } catch (e) {
     console.error("platform_legal_flags read failed", safeErrorLog(e));
-    return true;
+    return false;
   }
 }
 
