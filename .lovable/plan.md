@@ -46,7 +46,7 @@ Auditar también envoltorios de necesidades. Contrato compartido de efectos (lec
 | 7 | Sin muestra comparable se obtiene `null`/«sin dato»; dos muestras medidas 2 y 4 de la misma moneda/volumen producen mediana 3; no usa otra empresa | `tool-cost-history.test.ts` |
 | 8 | Tras confirmar búsqueda se recuperan los resultados de esa acción; otra empresa/usuario no puede leerlos | `confirmed-search-results.test.ts` |
 
-Nuevas pruebas fallando primero, suite/regresiones, tipos, lint y compilación automática. Navegador con sesión: «En pausa», G2 disponible, confirmaciones/cancelación/resultados y avisos en escritorio/móvil claro/oscuro, con proveedores sintéticos, sin gasto real. Revisión independiente de concurrencia y contabilidad antes del cierre. **Ninguna prueba existente se modifica sin permiso específico**; si fija ejecución inmediata de una lectura con coste, parar esa sustitución y pedirlo.
+Pruebas nuevas primero, suite/regresiones, tipos, lint, compilación y navegador autenticado escritorio/móvil claro/oscuro con proveedores sintéticos. Revisión independiente antes del cierre. No modificar pruebas existentes sin permiso; si exigen ejecutar lecturas con coste inmediatamente, parar y pedirlo. Sin gasto real.
 
 ## Archivos y migración propuesta — no aplicar
 +- Pausa: núcleo/estado legal nuevo; `apify-gateway.ts`, `apify-core.ts`, `ai-core.ts`, `web-research-core.ts`, herramientas LinkedIn, `components/linkedin.tsx`, Conexiones y consumidores jobs/plays.
