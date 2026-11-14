@@ -23,6 +23,7 @@ import { PLAY_TOOLS } from "./tools/plays";
 import { CUSTOM_PLAY_TOOLS } from "./tools/custom-plays";
 import { ONBOARDING_TOOLS } from "./tools/onboarding";
 import { PLAY_DIAGNOSIS_TOOLS } from "./tools/play-diagnosis";
+import { BUSINESS_LINE_TOOLS } from "./tools/business-lines";
 
 export type { AgentTool, ToolCtx } from "./tool-kit";
 
@@ -52,6 +53,7 @@ export const TOOLS: AgentTool[] = [
   ...CUSTOM_PLAY_TOOLS,
   ...ONBOARDING_TOOLS,
   ...PLAY_DIAGNOSIS_TOOLS,
+  ...BUSINESS_LINE_TOOLS,
 ];
 
 export function getTool(name: string) {

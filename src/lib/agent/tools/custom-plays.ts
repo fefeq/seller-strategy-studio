@@ -6,6 +6,26 @@ import type { AgentTool } from "../tool-kit";
 import { checkProposal, type Proposal } from "@/lib/plays/custom/propose";
 import { newCustomPlayId } from "@/lib/plays/custom/model";
 import type { Json } from "@/integrations/supabase/types";
+import { controlCustomPlay } from "@/lib/plays/custom/controls-core";
+import { isLeader, ok } from "../tool-kit";
+
+/** Safe projection of a custom play for assistants: name, state and recorded test only (no definition text, no costs). */
+export function customPlayView(r: { id: string; key: string; name: string; status: string; execution_pause: string | null; first_activated_at: string | null; test_sample: number | null; test_successes: number | null }) {
+  return { id: r.id, key: r.key, nombre: r.name, estado: r.status, pausa_seguridad: !!r.execution_pause,
+    activado_alguna_vez: !!r.first_activated_at,
+    prueba: r.test_sample == null ? null : { muestra: r.test_sample, exitos: r.test_successes ?? 0 } };
+}
+
+const controlTool = (name: string, enabled: boolean, description: string) => def({
+  name, kind: "write", roles: ["owner", "sales_leader"], description,
+  input: z.object({ play_id: z.string().uuid().describe("id del play (list_custom_plays)") }),
+  summarize: () => (enabled ? "Activar un play a medida" : "Pausar un play a medida"),
+  run: async (c, a) => {
+    if (!isLeader(c.roles)) throw new Error("Solo el Owner o un Sales Leader pueden activar o pausar plays.");
+    const { customPlayPorts } = await import("@/lib/plays/custom/controls.server");
+    return controlCustomPlay(await customPlayPorts(c.db, c.orgId, a.play_id), c.roles, { kind: "toggle", enabled }, new Date().toISOString());
+  },
+});
 
 const SOURCES = ["news", "web", "reviews_or_cases", "reviews", "competitors", "people", "company", "drive", "posthog"] as const;
 
@@ -34,6 +54,23 @@ export const toProposal = (a: z.infer<typeof input>): Proposal => ({
 });
 
 export const CUSTOM_PLAY_TOOLS: AgentTool[] = [
+  def({
+    name: "list_custom_plays",
+    kind: "read",
+    description: "Lista los plays a medida de la empresa con su estado (activo, pausado, archivado), si tienen pausa de seguridad, últimas ejecuciones y el resultado de prueba registrado. No ejecuta nada.",
+    input: z.object({}),
+    run: async (c) => {
+      const plays = ok(await c.db.from("custom_plays").select("id,key,name,status,execution_pause,first_activated_at,test_sample,test_successes,org_id").eq("org_id", c.orgId).order("created_at"));
+      const mine = (plays ?? []).filter((p) => p.org_id === c.orgId);
+      const runs = mine.length ? ok(await c.db.from("custom_play_runs").select("play_id,status,created_at").eq("org_id", c.orgId).in("play_id", mine.map((p) => p.id)).order("created_at", { ascending: false }).limit(50)) ?? [] : [];
+      return mine.map((p) => {
+        const last = runs.find((r) => r.play_id === p.id);
+        return { ...customPlayView(p), ultima_ejecucion: last ? { estado: last.status, fecha: last.created_at } : null };
+      });
+    },
+  }),
+  controlTool("activate_custom_play", true, "Activa un play a medida para las próximas búsquedas automáticas, tras comprobar fuentes y bloqueos como la pantalla Plays. Nunca quita una pausa de seguridad ni llama a proveedores."),
+  controlTool("pause_custom_play", false, "Pausa un play a medida. Conserva sus pruebas y resultados."),
   def({
     name: "propose_custom_play",
     kind: "write",
