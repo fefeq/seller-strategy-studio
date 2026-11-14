@@ -42,4 +42,4 @@ Pruebas nuevas primero para validación, roles, última línea, filas vacías y 
 ## 17. Revisión independiente
 Pendiente, no efectuada por el autor.
 ## 18. Delta de implementación
-U-1 iniciada, todavía sin pantalla nueva.
+U-1 implementada: business-lines-editor.ts valida respuestas, roles, tope y nombre, usa puertos para RPC y escritura, comprueba filas afectadas y diferencia confirmación de línea de fallo de sincronización personal. Reintento exclusivo de sincronización no repite creación ni RPC. Siete pruebas nuevas fallaron primero por módulo ausente y ahora pasan. Suite 5852/5852, 368 archivos; build automático OK 00:59:43 UTC tras avisos esperados del módulo aún ausente. Ninguna prueba existente modificada. Sin UI nueva ni llamadas IA/externas; no se afirma recorrido visual. U-2 hook/pantalla y U-3 verificación siguen pendientes. Tipos sin ejecución manual por restricción del entorno.

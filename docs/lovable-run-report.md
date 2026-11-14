@@ -3,6 +3,11 @@
 **Estado:** F1–F11 cerrado en el alcance autorizado. NK-0176 implementado y verificado en la entrega de abajo. Autorización general de Fede recibida el 13-11-2026 a las 14:08 UTC para continuar toda la cola sin aprobación SDD a SDD, conservando las paradas obligatorias. Este informe sustituye los balances parciales y bloqueos anteriores, no declara una certificación de producción.
 
 ## 1. Fusión comprobada
+### Entrega NK-0167 SDD 2 U-1 — 14-11-2026
+- Núcleo de edición con puertos: valida respuestas, roles, tope cuatro y nombre; cero filas es fallo. Tras confirmar una línea, sincroniza el diagnóstico personal de la principal. Un fallo de sesión conserva la línea; reintentar solo sincroniza, nunca crea otra línea.
+- Siete pruebas nuevas fallaron primero por módulo ausente; luego pasan. Suite completa **5852/5852**, **368 archivos**, exit 0. Compilación automática OK 00:59:43 UTC; avisos anteriores corresponden al módulo ausente antes de implementación. Pruebas existentes intactas; tipos sin ejecución manual por restricción del entorno.
+- SDD 2 guardado; pantalla/hook y verificación visual siguen pendientes. No hubo cambios reales de datos, IA, gasto, envíos, publicación ni despliegue en esta unidad. Project monitoring tiene una incidencia de altas deshabilitadas; se conserva el cierre previo de registros ordenado por Fede, sin cambiar la configuración ni declarar resuelta la incidencia.
+
 ### Entrega NK-0167 U-3/U-4 — 14-11-2026 00:57 UTC
 - Copia administrativa repetible aplicada (0096); miembros y anon no pueden ejecutarla. Preserva sesiones y líneas editadas, excluye superadmins ajenos y devuelve solo contadores.
 - Copia específica autorizada por Fede: 1 principal creada, 0 refrescadas. Repetición real: 0/0. Lectura real: 1 principal copiada sin nombre, respuestas coincidentes con original, 1 diagnóstico conservado y 0 segmentos enlazados.
