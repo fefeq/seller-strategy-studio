@@ -11,7 +11,8 @@ beforeEach(async () => {
   db = await build();
   ({ A, B } = await seed(db));
   await db.exec(`create table onboarding_sessions(id uuid primary key default gen_random_uuid(), org_id uuid, user_id uuid, diagnosis jsonb, updated_at timestamptz);
-    create table platform_admins(user_id uuid primary key);`);
+    create table platform_admins(user_id uuid primary key);
+    grant select on organizations,org_members,onboarding_sessions,platform_admins to service_role;`);
   for (const suffix of ['business_lines_integrity.sql', 'business_lines_copy.sql']) {
     const file = readdirSync('drizzle/migrations').find(f => f.endsWith(suffix));
     const path = suffix === 'business_lines_copy.sql' && process.env.BUSINESS_LINES_COPY_TEST_SQL
