@@ -126,6 +126,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0173 aceptada tal cual (sin más revelados de Apollo).
 - [x] Gmail: al desconectar se conservan los contadores (estado «disconnected», migración 0099).
 - [x] Prueba lenta safe-logs-notes: el código de pruebas ya no llama a servicios externos reales (5,2 s → 0,2 s); prueba intacta.
-- [ ] NK-0171: 1 búsqueda R-1 más con otro competidor — falta el nombre (Fede).
+- [x] NK-0171: búsqueda R-1 con Buffer hecha (ver abajo).
 - [ ] NK-0174 SDD 3 U-2/U-3 y SDD 4 — pendientes.
 - [ ] Telegram — falta el token del bot.
+- [x] NK-0171 R-1 con Buffer (run 01d53a14, done): 4 señales reales válidas (retirada de Start Page y del API REST antiguo de Buffer), 4 sugerencias. Observado: las 4 sugerencias repiten las mismas 4 pruebas (una por cuenta) y no tienen borrador por falta de contacto. Jugada pausada, posicionamiento restaurado. Pendiente: aceptación de Fede.
