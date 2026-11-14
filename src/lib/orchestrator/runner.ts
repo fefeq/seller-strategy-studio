@@ -50,20 +50,40 @@ export async function monthBudget(c: ToolCtx) {
   const start = new Date();
   start.setUTCDate(1);
   start.setUTCHours(0, 0, 0, 0);
-  const [{ data: b }, { data: rows }] = await Promise.all([
+  const [{ data: b }, { data: rows }, { data: receipts }] = await Promise.all([
     c.db.from("org_budgets").select("monthly_limit").eq("org_id", c.orgId).maybeSingle(),
     c.db
       .from("integration_usage")
-      .select("cost")
+      .select("cost,currency,cost_kind")
+      .eq("org_id", c.orgId)
+      .gte("created_at", start.toISOString()),
+    // Email classification charges (NK-0174) live in their own receipts, measured in USD.
+    c.db
+      .from("inbox_reply_receipts")
+      .select("cost_usd")
       .eq("org_id", c.orgId)
       .gte("created_at", start.toISOString()),
   ]);
-  const spent = (rows ?? []).reduce(
-    (s: number, r: { cost: number | string }) => s + Number(r.cost || 0),
-    0,
-  );
+  const { spendTotals } = await import("@/lib/spend");
+  const t = spendTotals([
+    ...(rows ?? []).map((r) => ({
+      cost: r.cost == null ? null : Number(r.cost),
+      currency: r.currency,
+      cost_kind: r.cost_kind as "measured" | "estimate" | "unknown",
+    })),
+    ...(receipts ?? []).map((r) => ({
+      cost: r.cost_usd == null ? null : Number(r.cost_usd),
+      currency: "USD",
+      cost_kind: (r.cost_usd == null ? "unknown" : "measured") as "measured" | "unknown",
+    })),
+  ]);
+  // The limit is in EUR. Without a verified exchange rate, other currencies are never converted: they are shown
+  // as their own subtotal and the consumption is marked incomplete (decision of Fede, SDD pieza B.5).
+  const spent = t.totals["EUR"] ?? 0;
+  const otherCurrencies = Object.fromEntries(Object.entries(t.totals).filter(([k]) => k !== "EUR"));
+  const complete = t.complete && Object.keys(otherCurrencies).length === 0;
   const limit = b?.monthly_limit == null ? null : Number(b.monthly_limit);
-  return { spent, limit, ...budgetState(spent, limit) };
+  return { spent, limit, otherCurrencies, unknown: t.unknown, complete, ...budgetState(spent, limit) };
 }
 
 async function planNeed(
