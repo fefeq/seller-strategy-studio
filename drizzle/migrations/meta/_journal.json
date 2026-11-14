@@ -689,7 +689,7 @@
       "breakpoints": true
     },
     {
-      "idx": 99,
+      "idx": 98,
       "version": "7",
       "when": 1794684664621,
       "tag": "0099_migration",
