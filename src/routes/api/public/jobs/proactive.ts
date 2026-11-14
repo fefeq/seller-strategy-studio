@@ -41,6 +41,9 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
           {
             const { syncReplies } = await import("@/lib/reply-inbox/sync.server");
             await syncReplies(db, now).catch(() => console.error("reply sync failed"));
+            // NK-0174 SDD 3 U-2: classify up to 10 fresh human replies (reserve before spend, never replayed).
+            const { classifyReplies } = await import("@/lib/reply-inbox/classify-pass.server");
+            await classifyReplies(db, now).catch(() => console.error("reply classify failed"));
           }
           const { data: orgs } = await db
             .from("organizations")
