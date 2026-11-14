@@ -3041,34 +3041,52 @@ export type Database = {
       }
       integration_usage: {
         Row: {
-          cost: number
+          cost: number | null
+          cost_kind: string
           created_at: string
+          currency: string
           id: string
           need: string | null
+          operation_id: string | null
           org_id: string
+          receipt_ref: string | null
           service: string
+          tool: string | null
           trigger: string
           user_id: string | null
+          volume: number | null
         }
         Insert: {
-          cost?: number
+          cost?: number | null
+          cost_kind?: string
           created_at?: string
+          currency?: string
           id?: string
           need?: string | null
+          operation_id?: string | null
           org_id?: string
+          receipt_ref?: string | null
           service: string
+          tool?: string | null
           trigger?: string
           user_id?: string | null
+          volume?: number | null
         }
         Update: {
-          cost?: number
+          cost?: number | null
+          cost_kind?: string
           created_at?: string
+          currency?: string
           id?: string
           need?: string | null
+          operation_id?: string | null
           org_id?: string
+          receipt_ref?: string | null
           service?: string
+          tool?: string | null
           trigger?: string
           user_id?: string | null
+          volume?: number | null
         }
         Relationships: [
           {

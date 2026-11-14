@@ -708,6 +708,13 @@
       "when": 1794699260244,
       "tag": "0101_platform_legal_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1794699680493,
+      "tag": "0101_integration_usage_ledger",
+      "breakpoints": true
     }
   ]
 }
