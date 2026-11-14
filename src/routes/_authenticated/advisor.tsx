@@ -112,6 +112,7 @@ function Advisor() {
 
   return (
     <Page eyebrow="Dirección comercial · IA" title="Asesor GTM">
+      <PrimaryLineNote className="mb-6" />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.7fr]">
         {/* Phones: form → result → history (the left column is `contents` below lg). */}
         <div className="contents lg:block lg:space-y-4">
