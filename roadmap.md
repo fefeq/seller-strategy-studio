@@ -2,7 +2,12 @@
 ## Segunda pieza — solicitud 14-11-2026 23:01 UTC
 - [x] Redactar SDD corto de pausa legal LinkedIn/Apify y contabilidad/confirmación del gasto, basado en lectura del repositorio.
 - [x] Incorporar elección de Fede: conversión USD/EUR con fuente real, conservando importe original, cambio, fuente y fecha; sin autorización escrita para construir todavía.
-- [ ] Esperar OK escrito de Fede antes de implementar o aplicar migraciones. Sin cambios de aplicación, servicios ni datos; G2 se mantiene y Drive/glosario siguen aparcados.
+- [x] OK escrito de Fede recibido 14-11-2026 23:32 UTC («ok») para construir la pieza completa. Sin publicar ni desplegar; G2 se mantiene y Drive/glosario siguen aparcados.
+- [ ] A. Pausa legal LinkedIn: migración de estado global + núcleo fail-closed + bloqueo en ejecutor Apify y consumidores + «En pausa» en UI + explicación del agente. G2 intacto, datos guardados intactos.
+- [ ] B. Libro de gasto por empresa sin duplicados: ampliar integration_usage (operación idempotente, herramienta, volumen, moneda, calidad, recibo), imputar web-search, Apify, clasificación IA; reconciliar cargo con estimación.
+- [ ] C. Avisos 80 %/100 % visibles a todos los miembros; a 100 % solo pausa lo automático.
+- [ ] D. Confirmación con estimación real (mediana del historial o «sin dato») para herramientas con coste/efectos en agente/MCP/pantallas.
+- [ ] E. Conversión USD/EUR con fuente real verificada; sin fuente, subtotales y «presupuesto incompleto».
 ## Ola 1 — solicitud 14-11-2026 22:46 UTC
 - [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
 - [x] Resultado aceptado posteriormente por Fede a las 22:57 UTC: cinco secciones, avanzado local por usuario y ⌘K completo, sin duplicados; ocho pruebas nuevas, suite 4737/4737, tipos y compilación OK; navegador con sesión escritorio/móvil claro/oscuro. Se implementó sin su OK escrito previo: corrección registrada en docs/ola-1-informe-20261114.md. Sin rutas nuevas, migraciones, cambios de integración ni publicación.

@@ -93,7 +93,10 @@ export type ConceptId =
   | "nombre_linea"
   | "principal_linea"
   | "posicion_linea"
-  | "origen_linea";
+  | "origen_linea"
+  | "interruptor_legal"
+  | "pausa_legal"
+  | "motivo_pausa_legal";
 
 export type Concept = {
   id: ConceptId;
@@ -745,6 +748,32 @@ export const CONCEPTS: Concept[] = [
     format: "Fecha y hora con zona horaria",
     display: "No se muestra en pantalla",
   },
+  {
+    id: "interruptor_legal",
+    label: "Interruptor legal",
+    meaning: "Qué extracción está bajo control legal de la plataforma (clave cerrada).",
+    kind: "enum",
+    format: "Clave cerrada",
+    allowed: ["linkedin_extraction"],
+    display: "Nombre de la extracción",
+  },
+  {
+    id: "pausa_legal",
+    label: "Pausa legal",
+    meaning: "Si la extracción está detenida por revisión legal; solo un superadmin la cambia.",
+    kind: "enum",
+    format: "true (en pausa) o false (activa)",
+    allowed: ["true", "false"],
+    display: "«En pausa» o «Activa»",
+  },
+  {
+    id: "motivo_pausa_legal",
+    label: "Motivo de la pausa legal",
+    meaning: "Explicación visible de por qué la extracción está pausada y qué sigue disponible.",
+    kind: "text",
+    format: "Frase en español",
+    display: "Texto en la tarjeta de Conexiones",
+  },
 ];
 
 export type ImporteNature =
@@ -777,6 +806,27 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  // Pausa legal de LinkedIn (SDD pausa-legal-linkedin-y-gasto, pieza A): estado global de la plataforma.
+  { table: "platform_legal_flags", column: "key", concept: "interruptor_legal", persistence: saved },
+  { table: "platform_legal_flags", column: "paused", concept: "pausa_legal", persistence: saved },
+  {
+    table: "platform_legal_flags",
+    column: "reason",
+    concept: "motivo_pausa_legal",
+    persistence: saved,
+  },
+  {
+    table: "platform_legal_flags",
+    column: "updated_by",
+    concept: "clave_usuario",
+    persistence: saved,
+  },
+  {
+    table: "platform_legal_flags",
+    column: "updated_at",
+    concept: "cambio_sistema",
+    persistence: saved,
+  },
   // Ola 0: only the 23 missing scalar columns; persisted derived rows expire after 30 days.
   {
     table: "inbox_replies",
@@ -1529,6 +1579,9 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
   alta_sistema: ["src/integrations/supabase/types.ts"],
+  interruptor_legal: ["src/components/linkedin-legal-card.tsx", "src/lib/linkedin-legal.ts"],
+  pausa_legal: ["src/components/linkedin-legal-card.tsx", "src/lib/linkedin-legal.ts"],
+  motivo_pausa_legal: ["src/components/linkedin-legal-card.tsx"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */

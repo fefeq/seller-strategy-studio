@@ -1,4 +1,13 @@
 import "@testing-library/jest-dom/vitest";
+import { vi } from "vitest";
+
+// The LinkedIn legal pause is a global server flag (SDD pausa-legal-linkedin-y-gasto): unit tests of unrelated
+// behavior run with the pause OFF so they keep meaning what they meant. The pause itself has its own tests
+// (linkedin-legal.test.ts, linkedin-legal-server.test.ts) and any file can override this with its own vi.mock.
+vi.mock("@/lib/linkedin-legal.server", () => ({
+  linkedinExtractionPaused: async () => false,
+  assertLinkedinExtractionAllowed: async () => {},
+}));
 
 // Tests that opt into the node environment (the Postgres migration tests) have no window.
 if (typeof window !== "undefined") {
