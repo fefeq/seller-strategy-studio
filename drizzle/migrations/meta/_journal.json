@@ -701,6 +701,13 @@
       "when": 1794691035876,
       "tag": "0100_reply_inbox_classification",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1794699249673,
+      "tag": "0101_platform_legal_flags",
+      "breakpoints": true
     }
   ]
 }
