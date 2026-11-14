@@ -1,5 +1,6 @@
 # Roadmap
 ## Cola de Fede — 13-11-2026
+- [ ] Pedido 14-11 00:01 UTC: una única ejecución real R-1 con Talpio y cuenta sintética; Fede autoriza gasto de búsqueda/IA para esta prueba, sin envíos ni vigilancia permanente. Mostrar pruebas, sugerencias y coste reales; no inventar una retirada si no aparece evidencia pública válida.
 Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Autorización general de Fede recibida a las 14:08 UTC: guardar cada SDD y construir sin esperar confirmación entre entregas. Mantener las paradas obligatorias, ninguna prueba existente modificada y suite completa verde e informe antes de la siguiente entrega. La revisión independiente de NK-0176 sigue pendiente, pero la autorización permite continuar la cola.
 - [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
 - [x] NK-0176: implementar tras aprobación y emitir informe; 5573/5573, checker limpio, build automático OK y navegador verificado.
