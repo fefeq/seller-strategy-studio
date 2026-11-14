@@ -29,10 +29,10 @@ export function PlaysPanel({ roles }: { roles: string[] }) {
   return (
     <div>
       <p className="mb-6 max-w-2xl text-sm text-muted-foreground">
-        Un play tiene su disparador, sus puertas de descarte explicadas y su salida:
-        siempre una sugerencia, una tarea o un borrador, nunca un envío automático. No son los
-        guías de venta de Conocimiento. Aquí ves cuáles tiene Nokko, cuáles están activados en tu
-        empresa y qué falta para el resto.
+        Un play tiene su disparador, sus puertas de descarte explicadas y su salida: siempre una
+        sugerencia, una tarea o un borrador, nunca un envío automático. No son los guías de venta de
+        Conocimiento. Aquí ves cuáles tiene Nokko, cuáles están activados en tu empresa y qué falta
+        para el resto.
       </p>
       <div className="mb-6 grid max-w-3xl gap-3 sm:grid-cols-3">
         <label className="text-sm">

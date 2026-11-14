@@ -136,11 +136,19 @@ function Shell() {
                     {g.title} <span aria-hidden>{open ? "−" : "+"}</span>
                   </Button>
                 )}
-                {!g.collapsible && <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase text-ink-faint">{g.title}</p>}
+                {!g.collapsible && (
+                  <p className="px-3 pb-1 pt-3 text-xs font-semibold uppercase text-ink-faint">
+                    {g.title}
+                  </p>
+                )}
                 {g.key === "measure" && (
                   <label className="flex items-center justify-between gap-2 px-3 py-2 text-xs text-muted-foreground">
                     Modo avanzado
-                    <Switch checked={advanced} onCheckedChange={setAdvanced} aria-label="Modo avanzado" />
+                    <Switch
+                      checked={advanced}
+                      onCheckedChange={setAdvanced}
+                      aria-label="Modo avanzado"
+                    />
                   </label>
                 )}
                 {open &&
@@ -150,7 +158,13 @@ function Shell() {
                       to={n.to as never}
                       className="my-0.5 flex items-center rounded-lg px-3 py-2.5 text-base text-ink-mid transition-colors hover:bg-paper-sunk hover:text-ink data-[status=active]:bg-lime-soft data-[status=active]:font-semibold data-[status=active]:text-ink md:py-1.5 md:text-sm"
                     >
-                      {NAV_ICONS[n.to] ? <IconText icon={NAV_ICONS[n.to]} size="nav">{n.label}</IconText> : n.label}
+                      {NAV_ICONS[n.to] ? (
+                        <IconText icon={NAV_ICONS[n.to]} size="nav">
+                          {n.label}
+                        </IconText>
+                      ) : (
+                        n.label
+                      )}
                     </Link>
                   ))}
               </div>
@@ -204,7 +218,9 @@ function Shell() {
               aria-controls="mobile-nav"
               className="-mr-2 flex h-11 shrink-0 items-center justify-center px-2 text-sm text-ink"
             >
-              <IconText icon={navOpen ? X : Menu} size="nav">{navOpen ? "Cerrar" : "Menú"}</IconText>
+              <IconText icon={navOpen ? X : Menu} size="nav">
+                {navOpen ? "Cerrar" : "Menú"}
+              </IconText>
             </button>
           </div>
         </header>
