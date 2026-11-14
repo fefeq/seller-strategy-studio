@@ -107,3 +107,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 ## Empresas
 - [x] Cualquier persona con sesión puede crear empresas (formulario «Nueva empresa», selector y paso de la guía)
 - [x] Superadmin (cosentinofede@gmail.com) Owner de todas las empresas; Veta-i borrada
+- [x] Verificación 14-11 (docs/verificacion-20261114.md): hallazgos onboarding vistos y corregido desbordamiento móvil de la barra superior; revisión independiente sin problemas en NK-0176, NK-0171, guía de hallazgos; NK-0174 SDD 1 enmendado y 2 menores corregidos; concurrencia real NK-0167 superada (PostgreSQL local, dos conexiones).
+- [ ] NK-0167: bloqueante de revisión — reiniciar el borrador del paso de líneas al cambiar de empresa; después, aceptación de Fede.
+- [ ] NK-0173: pase visual del resto de estados de email (solo queda Laura «sin verificar» en la empresa de prueba; hacen falta contactos sintéticos con los otros estados).
+- [ ] Aceptación final de Fede: NK-0176, NK-0171, guía de hallazgos, NK-0174 SDD 1.
