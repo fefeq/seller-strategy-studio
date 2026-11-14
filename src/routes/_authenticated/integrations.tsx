@@ -1,4 +1,5 @@
 import { comingSoon } from "@/lib/integration-availability";
+import { LinkedinLegalCard } from "@/components/linkedin-legal-card";
 import { MailboxCard } from "@/components/reply-inbox/mailbox-card";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -170,6 +171,7 @@ function Integrations() {
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <StripeConnect />
           <PosthogConnect />
+          <LinkedinLegalCard />
           {me?.currentOrg && <MailboxCard orgId={me.currentOrg.org_id} />}
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
