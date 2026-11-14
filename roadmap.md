@@ -1,6 +1,7 @@
 # Roadmap
 ## Segunda pieza — solicitud 14-11-2026 23:01 UTC
 - [x] Redactar SDD corto de pausa legal LinkedIn/Apify y contabilidad/confirmación del gasto, basado en lectura del repositorio.
+- [x] Incorporar elección de Fede: conversión USD/EUR con fuente real, conservando importe original, cambio, fuente y fecha; sin autorización escrita para construir todavía.
 - [ ] Esperar OK escrito de Fede antes de implementar o aplicar migraciones. Sin cambios de aplicación, servicios ni datos; G2 se mantiene y Drive/glosario siguen aparcados.
 ## Ola 1 — solicitud 14-11-2026 22:46 UTC
 - [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
