@@ -44,10 +44,9 @@ export function StrategyReviewPanel() {
 
   if (me && !allowed)
     return (
-      <Empty>
-        La revisión estratégica con IA está disponible solo para el Owner y el Sales Leader de la
-        empresa.
-      </Empty>
+      <ScreenState isPending={false} error={null} refetch={() => undefined} forbidden="Solo el Owner y el Sales Leader de la empresa pueden pedir una revisión estratégica con IA. Pídeselo a uno de ellos.">
+        {null}
+      </ScreenState>
     );
 
   async function ask() {
