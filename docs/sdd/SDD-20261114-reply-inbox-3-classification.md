@@ -51,8 +51,8 @@ U-1 no modifica esquema ni datos. Futuro U-2: derivados solo en fila privada baj
 ## 11. Llamadas a IA
 | Llamada | Ruta | Modelo | Coste |
 |---|---|---|---|
-| Clasificación / redacción / resumen estilo (futuras U-2/U-3) | askPinned, OpenRouter → Anthropic, sin respaldo | Pendiente de aprobación concreta de Fede; no se activa | Sin dato |
-U-1 solo usa puertos con proveedor sintético. No se reutiliza el modelo de GTM Lab por inferencia ni la cadena general de ask().
+| Clasificación / redacción / resumen estilo (futuras U-2/U-3) | askPinned, OpenRouter → Anthropic, sin respaldo, data_collection deny y zdr true | anthropic/claude-opus-5.5, elegido por Fede en chat el 14-11 | Sin dato |
+U-1 solo usa puertos con proveedor sintético. Adaptador server-only escrito tras elección de Fede; no conectado al trabajo horario. Opus 5.5 confirmado en catálogo público OpenRouter sin llamada de pago. Si no hay proveedor que cumpla las restricciones de privacidad, falla sin respaldo. La disponibilidad efectiva bajo estas restricciones no se ha probado con una llamada real.
 
 ## 12. Unidades
 - U-1: núcleo + pruebas nuevas fallando primero.
@@ -66,7 +66,7 @@ Núcleo port-based bajo reply-inbox; zod estricto; reutilizar replyKind. Proyecc
 Reglas sensibles solo español/inglés, no detección universal; no garantizan seguridad de otros idiomas. La minimización no sustituye revisión humana. Integración actual SDD 2 tiene limitaciones de emparejado/retención que deberán auditarse en U-2 antes de leer cuerpos.
 
 ## 15. Preguntas para Fede
-Modelo fijo para correo y condiciones de no entrenamiento pendientes según Q-6; se pedirán antes de activar el adaptador, no impiden U-1.
+Modelo resuelto: Fede elige Opus 5.5. Condiciones impuestas en código: sin recogida de datos y retención cero; falta comprobar disponibilidad efectiva y condiciones contractuales antes de transmitir correo real.
 
 ## 16. Pendiente de verificar
 Modelo/no entrenamiento, RLS de derivados futuros, pasada Gmail real, segundo plano alojado y pantalla. Sin publicación ni gasto.
@@ -77,4 +77,4 @@ No revisado. La entrega no declara gate definitivo ni habilita procesamiento rea
 ## 18. Delta de implementación
 U-1 implementada el 14-11: `classification.ts` y `classification-core.ts`, 20 pruebas nuevas en dos archivos. Primera ejecución falló por ausencia del módulo de reglas; segunda, por ausencia del coordinador, con las 13 pruebas de reglas ya verdes. Resultado final: 32/32 pruebas de bandeja incluyendo RLS; suite completa 5936/5936 en 378 archivos; comprobación automática del entorno «build OK» 11:55:48 UTC. Ninguna prueba preexistente editada.
 
-No se activó clasificación sobre el buzón ni se modificó esquema, Gmail, trabajo horario o pantalla. No hay flujo de navegador que verificar en U-1: el comportamiento nuevo es un núcleo no conectado, validado con proveedor sintético. U-2/U-3, revisión independiente, conexión real y comprobación visual siguen pendientes. Q-6 requiere decisión concreta de modelo y condiciones de no entrenamiento antes de escribir/activar el adaptador. No se lee correo, gasta ni publica. No se declara SDD completo.
+No se activó clasificación sobre el buzón ni se modificó esquema, Gmail, trabajo horario o pantalla. No hay flujo de navegador que verificar en U-1: el comportamiento nuevo es un núcleo no conectado, validado con proveedor sintético. U-2/U-3, revisión independiente, conexión real y comprobación visual siguen pendientes. Tras elección de Opus 5.5 se añadió adaptador privado y dos pruebas nuevas: 34/34 de bandeja, suite final 5941/5941 en 379 archivos; compilación automática OK 13:01 UTC. No se lee correo, gasta ni publica. No se declara SDD completo.
