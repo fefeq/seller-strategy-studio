@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { Db } from "@/lib/org-data";
-import { controlCustomPlay, type ControlAction } from "./controls-core";
+import { controlCustomPlay, type ControlAction, type ControlPorts } from "./controls-core";
 import { checkCustomControl } from "./controls";
 import { checkProposal } from "./propose";
 import { checkSources } from "./model";
@@ -26,9 +26,14 @@ export async function saveCustomPlayControl(db: Db, userId: string, orgId: strin
   const roles = (member.data ?? []).map(m => m.role);
   const permission = checkCustomControl(roles, "aprobado", null, false);
   if (!permission.ok) throw new Error(permission.reason);
-  // Privileged writes are imported only after verifying current organization and caller role with RLS.
+  return controlCustomPlay(await customPlayPorts(db, orgId, playId), roles, action, new Date().toISOString());
+}
+
+/** Ports shared by the /plays screen and the agent/MCP tools; callers verify org membership and role before using them. */
+export async function customPlayPorts(db: Db, orgId: string, playId: string): Promise<ControlPorts> {
+  // Privileged writes are imported only after the caller verified organization and role.
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return controlCustomPlay({
+  return {
     load: async () => {
       const r = await db.from("custom_plays").select("*").eq("id", playId).eq("org_id", orgId).maybeSingle();
       if (r.error) throw new Error("No se pudo leer el play. Vuelve a intentarlo.");
@@ -57,5 +62,5 @@ export async function saveCustomPlayControl(db: Db, userId: string, orgId: strin
       const r = await query.select("id").maybeSingle();
       if (r.error || !r.data) throw new Error("El play cambió mientras guardabas. Actualiza la pantalla y revisa su estado.");
     },
-  }, roles, action, new Date().toISOString());
+  };
 }
