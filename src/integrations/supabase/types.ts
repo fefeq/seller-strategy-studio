@@ -4401,6 +4401,30 @@ export type Database = {
           },
         ]
       }
+      platform_legal_flags: {
+        Row: {
+          key: string
+          paused: boolean
+          reason: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          key: string
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          key?: string
+          paused?: boolean
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       play_runs: {
         Row: {
           created_at: string
@@ -6193,6 +6217,10 @@ export type Database = {
         Returns: boolean
       }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
+      set_platform_legal_flag: {
+        Args: { _key: string; _paused: boolean }
+        Returns: undefined
+      }
       set_primary_business_line: { Args: { _line: string }; Returns: string }
       set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }
