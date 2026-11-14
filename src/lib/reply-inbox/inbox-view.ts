@@ -16,3 +16,8 @@ export function repliesHeadline(rows: InboxRow[], now = new Date(), days = 30): 
   if (!n) return "Respuestas";
   return `${n} ${n === 1 ? "respuesta" : "respuestas"} de personas en ${days} días`;
 }
+
+export const CATEGORY_LABEL: Record<string, string> = {
+  interested: "Interesado", more_information: "Pide más información", out_of_office: "Fuera de la oficina",
+  wrong_person: "Persona equivocada", not_interested: "No interesado", unsubscribe: "Pide no recibir más", other: "Otra",
+};
