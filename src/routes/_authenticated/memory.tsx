@@ -72,7 +72,7 @@ function MemoryPage() {
           .order("pinned", { ascending: false })
           .order("updated_at", { ascending: false })
           .limit(500),
-      ) as unknown as Row[],
+      ) as Row[],
   });
   const { data: accounts = [] } = useQuery({
     queryKey: ["memory-accounts"],
