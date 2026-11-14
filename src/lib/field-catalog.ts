@@ -93,7 +93,10 @@ export type ConceptId =
   | "nombre_linea"
   | "principal_linea"
   | "posicion_linea"
-  | "origen_linea";
+  | "origen_linea"
+  | "interruptor_legal"
+  | "pausa_legal"
+  | "motivo_pausa_legal";
 
 export type Concept = {
   id: ConceptId;
@@ -744,6 +747,32 @@ export const CONCEPTS: Concept[] = [
     kind: "text",
     format: "Fecha y hora con zona horaria",
     display: "No se muestra en pantalla",
+  },
+  {
+    id: "interruptor_legal",
+    label: "Interruptor legal",
+    meaning: "Qué extracción está bajo control legal de la plataforma (clave cerrada).",
+    kind: "enum",
+    format: "Clave cerrada",
+    allowed: ["linkedin_extraction"],
+    display: "Nombre de la extracción",
+  },
+  {
+    id: "pausa_legal",
+    label: "Pausa legal",
+    meaning: "Si la extracción está detenida por revisión legal; solo un superadmin la cambia.",
+    kind: "enum",
+    format: "true (en pausa) o false (activa)",
+    allowed: ["true", "false"],
+    display: "«En pausa» o «Activa»",
+  },
+  {
+    id: "motivo_pausa_legal",
+    label: "Motivo de la pausa legal",
+    meaning: "Explicación visible de por qué la extracción está pausada y qué sigue disponible.",
+    kind: "text",
+    format: "Frase en español",
+    display: "Texto en la tarjeta de Conexiones",
   },
 ];
 
