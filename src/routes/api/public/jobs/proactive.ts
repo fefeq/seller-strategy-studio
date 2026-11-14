@@ -37,6 +37,11 @@ export const Route = createFileRoute("/api/public/jobs/proactive")({
             const { flushHeldNotices } = await import("@/lib/notices.server");
             await flushHeldNotices(db, now);
           }
+          // NK-0174 SDD 2: read-only reply detection on linked mailboxes, bounded per pass; never blocks the rest.
+          {
+            const { syncReplies } = await import("@/lib/reply-inbox/sync.server");
+            await syncReplies(db, now).catch(() => console.error("reply sync failed"));
+          }
           const { data: orgs } = await db
             .from("organizations")
             .select("id")
