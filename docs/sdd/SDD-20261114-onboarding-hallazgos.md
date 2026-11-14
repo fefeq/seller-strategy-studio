@@ -41,4 +41,4 @@ Navegador autenticado y regresiones al entregar; suite global tiene bloqueo 0093
 ## 17. Revisión independiente
 Pendiente; no se declara aceptación del gate.
 ## 18. Delta de implementación
-Pendiente de resultados.
+14-11-2026: nueva guía de decisiones, propósito por fuente, separación visual del dato y su procedencia, espaciado legible y aclaración de que continuar no aprueba la estrategia. Los helpers de persistencia y permisos no cambiaron. Las dos pruebas nuevas de comportamiento pasaron antes del cambio (son invariantes existentes, no se afirma fase roja). Regresiones de lectura 21/21. Suite completa 5782/5783: único fallo heredado por prefijo 0093 duplicado. Compilación automática OK 00:16:04 UTC. Pruebas existentes intactas. Navegador con sesión y respuestas sintéticas no pudo abrir la pantalla (límite de error «La página no se ha cargado»); dos intentos, verificación visual detenida y no declarada. No se publicó ni hubo gasto o cambios en datos reales. Sigue pendiente revisión visual y gate independiente.
