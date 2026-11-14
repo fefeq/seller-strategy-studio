@@ -6,6 +6,8 @@ import { PlayTeamsPanel } from "@/components/plays/play-teams-panel";
 import { usePlayStates } from "@/components/plays/use-play-states";
 import { playsHeadline } from "@/lib/headlines";
 import { parsePlaysSearch } from "@/lib/plays/search";
+import { customPlaysQuery } from "@/components/plays/custom-play-queries";
+import { CustomPlaysPanel } from "@/components/plays/custom-plays-panel";
 
 const TITLE = "Plays GTM — Nokko";
 const DESC =
@@ -23,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/plays")({
     ],
   }),
   validateSearch: parsePlaysSearch,
+  loader: ({ context }) => context.queryClient.ensureQueryData(customPlaysQuery),
   component: PlaysPage,
 });
 
@@ -52,7 +55,7 @@ function PlaysPage() {
           </Link>
         ))}
       </nav>
-      {vista === "equipos" ? <PlayTeamsPanel roles={roles} /> : <PlaysPanel roles={roles} />}
+      {vista === "equipos" ? <PlayTeamsPanel roles={roles} /> : <><CustomPlaysPanel roles={roles} /><PlaysPanel roles={roles} /></>}
     </Page>
   );
 }
