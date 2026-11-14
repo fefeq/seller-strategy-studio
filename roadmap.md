@@ -115,6 +115,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0171: list_custom_plays, activate_custom_play, pause_custom_play en Agente/MCP (mismas reglas que /plays; activar/pausar solo Owner/Sales Leader tras confirmación).
 
 ## Gate formal 14-11-2026
+- [ ] Pedido 15:07 UTC: espera Apollo de 15 segundos sin reintento tras resultado incierto, pruebas nuevas y ejecución única R-1 Taplio; sin nuevo revelado Apollo ni publicación.
 - [x] NK-0176, guía de hallazgos, NK-0167 SDD 1–3 — aceptado por Fede
 - [ ] NK-0171 — R-1 con Taplio: lanzar a partir de las 15:00 UTC (límite de una ejecución por hora)
 - [ ] NK-0173 — Jaime Montenegro no está en Nokko; falta email o web de su empresa
