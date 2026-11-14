@@ -28,17 +28,17 @@ describe("actorNeedsLegalCheck", () => {
   });
 });
 
-describe("extractionPaused (fail-closed)", () => {
+describe("extractionPaused (A0: only an explicit pause stops it)", () => {
   it("paused when the row says so", () => {
     expect(extractionPaused({ paused: true })).toBe(true);
   });
 
-  it("running only when the row explicitly says paused = false", () => {
+  it("running when the row says paused = false", () => {
     expect(extractionPaused({ paused: false })).toBe(false);
   });
 
-  it("a missing row (never configured) means paused", () => {
-    expect(extractionPaused(null)).toBe(true);
+  it("a missing row (never configured) does not block the extraction", () => {
+    expect(extractionPaused(null)).toBe(false);
   });
 });
 
@@ -58,5 +58,14 @@ describe("visible texts", () => {
 
   it("the flag key is stable", () => {
     expect(LINKEDIN_FLAG_KEY).toBe("linkedin_extraction");
+  });
+});
+
+describe("A0 active notice", () => {
+  it("states robots, LinkedIn terms risk and pending legal review", async () => {
+    const { LINKEDIN_ACTIVE_NOTICE } = await import("./linkedin-legal");
+    expect(LINKEDIN_ACTIVE_NOTICE).toContain("mediante robots");
+    expect(LINKEDIN_ACTIVE_NOTICE).toContain("términos de LinkedIn");
+    expect(LINKEDIN_ACTIVE_NOTICE).toContain("Revisión legal pendiente");
   });
 });

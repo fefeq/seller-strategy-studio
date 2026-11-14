@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/lib/errors";
-import { LINKEDIN_FLAG_KEY, LINKEDIN_PAUSE_TEXT } from "@/lib/linkedin-legal";
+import { LINKEDIN_ACTIVE_NOTICE, LINKEDIN_FLAG_KEY, LINKEDIN_PAUSE_TEXT } from "@/lib/linkedin-legal";
 import { useLinkedinLegalPause } from "@/hooks/use-linkedin-legal";
 
 export function LinkedinLegalCard() {
@@ -57,11 +57,11 @@ export function LinkedinLegalCard() {
         {paused
           ? (reason ?? LINKEDIN_PAUSE_TEXT) +
             " Las reseñas de G2 siguen disponibles y las fuentes de LinkedIn ya guardadas se conservan."
-          : "La extracción de LinkedIn está autorizada. Si la revisión legal lo pide, vuelve a ponerla en pausa."}
+          : LINKEDIN_ACTIVE_NOTICE}
       </p>
       {isSuperadmin && (
         <Button size="sm" variant="outline" className="mt-3" onClick={toggle} disabled={busy}>
-          {busy ? "Guardando…" : paused ? "Reanudar tras la revisión legal" : "Volver a pausar"}
+          {busy ? "Guardando…" : paused ? "Reanudar extracción" : "Pausar extracción"}
         </Button>
       )}
     </div>

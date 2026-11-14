@@ -52,10 +52,7 @@ export function AccountJobs({ accountId }: { accountId: string }) {
         )}
       </div>
       {paused && (
-        <p className="text-sm text-muted-foreground">
-          {LINKEDIN_PAUSE_TEXT}. La extracción de LinkedIn está detenida hasta completar la revisión
-          legal; las fuentes ya guardadas se conservan.
-        </p>
+        <p className="text-sm text-muted-foreground">{LINKEDIN_PAUSE_TEXT}.</p>
       )}
       {r &&
         (r.jobs.length === 0 ? (
