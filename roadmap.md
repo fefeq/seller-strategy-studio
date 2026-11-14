@@ -1,4 +1,7 @@
 # Roadmap
+## Segunda pieza — solicitud 14-11-2026 23:01 UTC
+- [x] Redactar SDD corto de pausa legal LinkedIn/Apify y contabilidad/confirmación del gasto, basado en lectura del repositorio.
+- [ ] Esperar OK escrito de Fede antes de implementar o aplicar migraciones. Sin cambios de aplicación, servicios ni datos; G2 se mantiene y Drive/glosario siguen aparcados.
 ## Ola 1 — solicitud 14-11-2026 22:46 UTC
 - [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
 - [x] Resultado aceptado posteriormente por Fede a las 22:57 UTC: cinco secciones, avanzado local por usuario y ⌘K completo, sin duplicados; ocho pruebas nuevas, suite 4737/4737, tipos y compilación OK; navegador con sesión escritorio/móvil claro/oscuro. Se implementó sin su OK escrito previo: corrección registrada en docs/ola-1-informe-20261114.md. Sin rutas nuevas, migraciones, cambios de integración ni publicación.
