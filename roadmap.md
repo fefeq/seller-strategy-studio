@@ -3,11 +3,16 @@
 - [x] Redactar SDD corto de pausa legal LinkedIn/Apify y contabilidad/confirmación del gasto, basado en lectura del repositorio.
 - [x] Incorporar elección de Fede: conversión USD/EUR con fuente real, conservando importe original, cambio, fuente y fecha; sin autorización escrita para construir todavía.
 - [x] OK escrito de Fede recibido 14-11-2026 23:32 UTC («ok») para construir la pieza completa. Sin publicar ni desplegar; G2 se mantiene y Drive/glosario siguen aparcados.
-- [ ] A. Pausa legal LinkedIn: migración de estado global + núcleo fail-closed + bloqueo en ejecutor Apify y consumidores + «En pausa» en UI + explicación del agente. G2 intacto, datos guardados intactos.
-- [ ] B. Libro de gasto por empresa sin duplicados: ampliar integration_usage (operación idempotente, herramienta, volumen, moneda, calidad, recibo), imputar web-search, Apify, clasificación IA; reconciliar cargo con estimación.
-- [ ] C. Avisos 80 %/100 % visibles a todos los miembros; a 100 % solo pausa lo automático.
-- [ ] D. Confirmación con estimación real (mediana del historial o «sin dato») para herramientas con coste/efectos en agente/MCP/pantallas.
-- [ ] E. Conversión USD/EUR con fuente real verificada; sin fuente, subtotales y «presupuesto incompleto».
+- [x] A. Pausa legal LinkedIn (15-11 00:45 Madrid): tabla global 0101 en pausa, RPC solo superadmin, control central en el ejecutor Apify (actor desconocido también bloqueado), búsqueda/escritura de URL y señales detenidas, herramientas del agente explican el bloqueo, «En pausa» en Conexiones y ofertas de empleo. G2 y datos guardados intactos. Pruebas nuevas: linkedin-legal, linkedin-legal-server, apify-core-legal-pause. Pendiente: revisión visual.
+  - Antes: migración de estado global + núcleo fail-closed + bloqueo en ejecutor Apify y consumidores + «En pausa» en UI + explicación del agente. G2 intacto, datos guardados intactos.
+- [~] B. Libro de gasto: hecho 0102 (operación idempotente, herramienta, volumen, moneda, calidad, recibo; importe vacío = «sin dato»), recibos de clasificación sumados en USD, reseñas G2 registradas como «sin dato». Falta: atribuir búsquedas web sueltas (searchBoth) con empresa.
+  - Antes: sin duplicados: ampliar integration_usage (operación idempotente, herramienta, volumen, moneda, calidad, recibo), imputar web-search, Apify, clasificación IA; reconciliar cargo con estimación.
+- [x] C. Avisos 80 %/100 % visibles en Conexiones (probado por umbral 79/80/100).
+  - Antes: visibles a todos los miembros; a 100 % solo pausa lo automático.
+- [ ] D. Confirmación (siguiente): pasar búsquedas Apollo/Clay/Parallel/G2 a confirmables exige guardar sus resultados para leerlos tras confirmar (CA-8); núcleo de estimación por mediana ya hecho (spend.ts).
+  - Antes: (mediana del historial o «sin dato») para herramientas con coste/efectos en agente/MCP/pantallas.
+- [~] E. Sin fuente de cambio verificada aún: USD se muestra aparte y «Presupuesto incompleto»; nunca se suma ni convierte. Falta elegir la fuente real.
+  - Antes: con fuente real verificada; sin fuente, subtotales y «presupuesto incompleto».
 ## Ola 1 — solicitud 14-11-2026 22:46 UTC
 - [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
 - [x] Resultado aceptado posteriormente por Fede a las 22:57 UTC: cinco secciones, avanzado local por usuario y ⌘K completo, sin duplicados; ocho pruebas nuevas, suite 4737/4737, tipos y compilación OK; navegador con sesión escritorio/móvil claro/oscuro. Se implementó sin su OK escrito previo: corrección registrada en docs/ola-1-informe-20261114.md. Sin rutas nuevas, migraciones, cambios de integración ni publicación.
