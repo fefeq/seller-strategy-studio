@@ -19,6 +19,13 @@ vi.mock("@/hooks/use-onboarding", () => ({
   useOnboarding: () => ({ data: state.session, save: state.save }),
   asJson: (v: unknown) => v,
 }));
+// Authorized by Fede (2026-11-14, NK-0167 SDD 2 U-2): the step is now «Líneas de negocio»; one fictitious primary line.
+vi.mock("@/hooks/use-business-lines", () => ({
+  useBusinessLines: () => ({
+    data: [{ id: "l1", model: "b2b", acv: 12000, friction: "committee", stage: "early", name: null, is_primary: true, position: 0 }],
+    isLoading: false, error: null, ports: {}, refresh: vi.fn(),
+  }),
+}));
 vi.mock("@tanstack/react-start", async (orig) => ({
   ...(await orig<typeof import("@tanstack/react-start")>()),
   useServerFn: (f: unknown) => f,
@@ -47,7 +54,7 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("the /onboarding route without a proposal (NK-0009 CA-4)", () => {
-  it("«4. Diagnóstico» is enabled, saves the step and starts no reading", () => {
+  it("«4. Líneas de negocio» is enabled, saves the step and starts no reading", () => {
     state.session = {
       step: "sources",
       depth: "express",
@@ -56,7 +63,7 @@ describe("the /onboarding route without a proposal (NK-0009 CA-4)", () => {
       diagnosis: null,
     };
     render(<Onboarding />);
-    const bar = screen.getByRole("button", { name: "4. Diagnóstico" }) as HTMLButtonElement;
+    const bar = screen.getByRole("button", { name: "4. Líneas de negocio" }) as HTMLButtonElement;
     expect(bar.disabled).toBe(false);
     fireEvent.click(bar);
     expect(state.save).toHaveBeenCalledWith({ step: "diagnosis" });
@@ -100,7 +107,7 @@ describe("the /onboarding route without a proposal (NK-0009 CA-4)", () => {
       diagnosis: null,
     };
     render(<Onboarding />);
-    fireEvent.click(screen.getByRole("button", { name: "Usar este diagnóstico" }));
+    fireEvent.click(screen.getByRole("button", { name: "Continuar con estas líneas" }));
     expect(state.save).toHaveBeenCalledTimes(1);
     const patch = state.save.mock.calls[0]![0] as {
       step: string;

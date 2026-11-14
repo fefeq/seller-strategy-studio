@@ -33,7 +33,7 @@ export function BusinessLinesStep({ orgId, roles, initial, saveDiagnosis, onNext
   roles: readonly string[];
   initial: DiagnosisInput;
   saveDiagnosis: (p: { input: DiagnosisInput; result: Diagnosis }) => Promise<void>;
-  onNext: () => void;
+  onNext: (primary: { input: DiagnosisInput; result: Diagnosis }) => void;
 }) {
   const { money, symbol } = useCurrency();
   const { data: lines, isLoading, error, ports, refresh } = useBusinessLines(orgId, saveDiagnosis);
@@ -148,7 +148,7 @@ export function BusinessLinesStep({ orgId, roles, initial, saveDiagnosis, onNext
         <div className="flex flex-wrap gap-3 border-t border-hairline pt-6">
           {list.length < 4 && <Button variant={list.length ? "outline" : "default"} onClick={startNew}>{list.length ? "Añadir otra línea" : "Crear tu primera línea"}</Button>}
           {list.length >= 4 && <p className="text-sm text-ink-mid">Ya tienes cuatro líneas, el máximo.</p>}
-          <Button disabled={busy || primary.length !== 1 || syncFailed} onClick={onNext}>Continuar</Button>
+          <Button disabled={busy || primary.length !== 1 || syncFailed} onClick={() => { const input = primary.length === 1 ? readLineInput(primary[0]) : null; if (input) onNext({ input, result: diagnose(input) }); }}>Continuar con estas líneas</Button>
         </div>
       )}
     </div>
