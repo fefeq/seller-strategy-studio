@@ -230,7 +230,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
           })}
           <div className="grid grid-cols-3 gap-2 rounded-md bg-muted/50 p-3 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground">Importe (ACV)</p>
+              <p className="text-xs text-muted-foreground">Valor anual (ACV)</p>
               <p className="font-mono">{money(t.amount)}</p>
               {t.oneOff > 0 && (
                 <p className="text-xs text-muted-foreground">+ {money(t.oneOff)} pago único</p>
@@ -248,7 +248,7 @@ export function DealLinesEditor({ dealId, orgId }: { dealId: string; orgId: stri
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            El importe del deal (ACV) es la suma de las líneas recurrentes en un año; los pagos
+            El valor anual (ACV) del deal es la suma de las líneas recurrentes en un año; los pagos
             únicos se suman aparte y no cuentan en el ACV ni en el margen.
             {t.unknownCost
               ? ` ${t.unknownCost === 1 ? "Una línea no tiene" : `${t.unknownCost} líneas no tienen`} coste: sin él no hay margen del deal.`
