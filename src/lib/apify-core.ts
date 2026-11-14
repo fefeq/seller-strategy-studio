@@ -316,7 +316,7 @@ export async function battlecardCore(db: Db, competitor: string, max = 20, scope
   const r = await competitorReviewsCore(
     competitor,
     max,
-    scope ? { db, orgId: scope.orgId, userId: scope.userId ?? null, trigger, tool: "create_battlecard_from_reviews" } : undefined,
+    scope ? { db, orgId: scope.orgId, userId: scope.userId, trigger, tool: "create_battlecard_from_reviews" } : undefined,
   );
   const { data: pos } = await inOrg(
     db
