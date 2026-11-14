@@ -70,7 +70,8 @@ export type ConceptId =
   | "contador_ejecucion"
   | "tokens_ia"
   | "moneda_coste"
-  | "origen_fecha";
+  | "origen_fecha"
+  | "modelo_negocio" | "friccion_compra" | "etapa_negocio" | "nombre_linea" | "principal_linea" | "posicion_linea" | "origen_linea";
 
 export type Concept = {
   id: ConceptId;
@@ -88,6 +89,13 @@ export type Concept = {
 };
 
 export const CONCEPTS: Concept[] = [
+  { id: "modelo_negocio", label: "Modelo de negocio", meaning: "Modelo declarado de una línea, independiente del motion.", kind: "enum", format: "Valor cerrado", allowed: ["b2b", "b2c", "marketplace"], display: "Modelo" },
+  { id: "friccion_compra", label: "Adopción", meaning: "Cómo se decide la compra en esta línea.", kind: "enum", format: "Valor cerrado", allowed: ["self_serve", "committee"], display: "Adopción" },
+  { id: "etapa_negocio", label: "Etapa", meaning: "Etapa declarada de esta línea.", kind: "enum", format: "Valor cerrado", allowed: ["idea", "early", "scale"], display: "Etapa" },
+  { id: "nombre_linea", label: "Nombre de línea", meaning: "Etiqueta opcional escrita por el equipo.", kind: "text", format: "Hasta 200 caracteres", display: "Nombre" },
+  { id: "principal_linea", label: "Línea principal", meaning: "Una sola principal entre las líneas de una empresa.", kind: "enum", format: "Sí/No", allowed: ["true", "false"], display: "Principal" },
+  { id: "posicion_linea", label: "Orden de línea", meaning: "Orden estable de presentación de líneas.", kind: "number", format: "Entero no negativo", display: "Orden" },
+  { id: "origen_linea", label: "Origen de línea", meaning: "Copia autorizada sin editar o línea gestionada por el equipo.", kind: "enum", format: "Valor cerrado", allowed: ["user", "migrated"], display: "Origen" },
   { id: "paso_ejecucion", label: "Paso", meaning: "Paso numerado de una ejecución.", kind: "number", format: "Entero positivo", display: "Número" },
   { id: "estado_ejecucion", label: "Estado de ejecución", meaning: "Estado o motivo de pausa persistente de un trabajo.", kind: "text", format: "Estado de sistema", display: "Estado" },
   { id: "contador_ejecucion", label: "Resultados", meaning: "Número de evidencias o sugerencias guardadas.", kind: "number", format: "Entero no negativo", display: "Número" },
@@ -347,6 +355,19 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  { table: "business_lines", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "business_lines", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "business_lines", column: "model", concept: "modelo_negocio", persistence: saved },
+  { table: "business_lines", column: "acv", concept: "importe", persistence: saved, nature: "acv", span: "anual", note: "Ticket declarado mayor que cero; no se promedia entre líneas" },
+  { table: "business_lines", column: "friction", concept: "friccion_compra", persistence: saved },
+  { table: "business_lines", column: "stage", concept: "etapa_negocio", persistence: saved },
+  { table: "business_lines", column: "name", concept: "nombre_linea", persistence: saved },
+  { table: "business_lines", column: "is_primary", concept: "principal_linea", persistence: saved },
+  { table: "business_lines", column: "position", concept: "posicion_linea", persistence: saved },
+  { table: "business_lines", column: "origin", concept: "origen_linea", persistence: saved },
+  { table: "business_lines", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "business_lines", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  { table: "segments", column: "business_line_id", concept: "clave_registro", persistence: saved },
   { table: "custom_plays", column: "lease_token", concept: "clave_registro", persistence: saved },
   { table: "custom_plays", column: "lease_until", concept: "fecha_revision", persistence: saved },
   { table: "custom_plays", column: "execution_pause", concept: "estado_ejecucion", persistence: saved },
@@ -705,6 +726,13 @@ export function allowedValues(table: string, column: string): readonly string[] 
 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
+  modelo_negocio: ["src/lib/business-lines.ts"],
+  friccion_compra: ["src/lib/business-lines.ts"],
+  etapa_negocio: ["src/lib/business-lines.ts"],
+  nombre_linea: ["src/integrations/supabase/types.ts"],
+  principal_linea: ["src/lib/business-lines.ts"],
+  posicion_linea: ["src/lib/business-lines.ts"],
+  origen_linea: ["src/integrations/supabase/types.ts"],
   paso_ejecucion: ["src/lib/plays/custom/execution.ts"],
   estado_ejecucion: ["src/lib/plays/custom/execution.ts"],
   contador_ejecucion: ["src/lib/plays/custom/execution.ts"],
