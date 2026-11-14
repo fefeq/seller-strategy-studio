@@ -9,8 +9,9 @@ import { useAgent } from "@/components/agent";
 import { useMe } from "@/hooks/use-me";
 import { canUseAdvisor } from "@/lib/advisor";
 import { NAV_GROUPS, visibleItems } from "@/lib/nav";
+import { hitTarget, PALETTE_SCREENS, type HitKind } from "@/lib/palette";
 
-type Hit = { kind: "Cuenta" | "Lead" | "Persona" | "Deal"; id: string; name: string; sub: string | null };
+type Hit = { kind: HitKind; id: string; name: string; sub: string | null };
 
 export function useCommandPalette() {
   const [open, setOpen] = useState(false);
@@ -53,12 +54,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   function go(fn: () => void) { onOpenChange(false); setQ(""); fn(); }
   function openHit(h: Hit) {
-    go(() => {
-      if (h.kind === "Cuenta") navigate({ to: "/accounts/$id", params: { id: h.id } });
-      else if (h.kind === "Deal") navigate({ to: "/deals", search: { deal: h.id } });
-      else if (h.kind === "Lead") navigate({ to: "/leads" });
-      else navigate({ to: "/people" });
-    });
+    go(() => navigate(hitTarget(h) as never));
   }
   const leader = canUseAdvisor(me?.roles ?? []);
 
@@ -84,6 +80,9 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
           </CommandItem>
           <CommandItem value="nuevo lead entrada" onSelect={() => go(() => navigate({ to: "/leads/entrada" }))}>Añadir o importar leads</CommandItem>
           <CommandItem value="buscar empresas icp descubiertos" onSelect={() => go(() => navigate({ to: "/discoveries" }))}>Buscar empresas por ICP</CommandItem>
+          {PALETTE_SCREENS.map((sc) => (
+            <CommandItem key={sc.to} value={`${sc.label} ${sc.keywords}`} onSelect={() => go(() => navigate({ to: sc.to }))}>{sc.label}</CommandItem>
+          ))}
         </CommandGroup>
         {NAV_GROUPS.map((g) => (
           <CommandGroup key={g.key} heading={g.title || "Ir a"}>
