@@ -116,6 +116,6 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 
 ## Gate formal 14-11-2026
 - [x] NK-0176, guía de hallazgos, NK-0167 SDD 1–3 — aceptado por Fede
-- [ ] NK-0171 — 1 señal real (espera competidor elegido por Fede)
-- [ ] NK-0173 — 1 revelado Apollo
-- [ ] NK-0174 SDD 1 — 1 lectura real
+- [ ] NK-0171 — R-1 Supergrow: 0 señales; espera decisión de Fede
+- [ ] NK-0173 — espera contacto real para el revelado
+- [ ] NK-0174 SDD 1 — lectura hecha, sin leads Contactado; Gmail sin consultar

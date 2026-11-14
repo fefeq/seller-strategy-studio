@@ -40,3 +40,8 @@ Sin publicar, sin gasto, sin cambios en pruebas existentes. Capturas en `docs/ve
 - NK-0171: pendiente de 1 señal real válida (autorizado).
 - NK-0173: pendiente de 1 revelado Apollo (autorizado).
 - NK-0174 SDD 1: pendiente de 1 lectura real de solo lectura (autorizada).
+
+### Resultados del gate (14-11-2026, 14:24 UTC)
+- NK-0171: una ejecución real de R-1 con «Supergrow» como competidor (run 037a86e7): 3/3 pasos, 0 señales que nombren a Supergrow, 0 sugerencias. Gasto: IA medida 0,00127 USD y búsqueda estimada 0,01 EUR. El play queda en pausa y no se reintenta. Hallazgo: una ejecución de las 09:55 seguía «en curso» con sus pasos ya cerrados. La recuperación devolvió contadores 2/2 que no eran de esa ejecución. Se cerró a mano. Residuo: revisar los contadores de recuperación.
+- NK-0174 SDD 1: una revisión real de solo lectura (fecha guardada a las 14:24, 0 respuestas). En la empresa vinculada no hay leads en «Contactado» con email, así que no se llegó a buscar en Gmail. La lectura real de Gmail sigue sin probar.
+- NK-0173: revelado no lanzado. Los seis contactos de prueba son ficticios (example.com, sin dominio) y Apollo no puede encontrarlos, así que el crédito se perdería. Espera un contacto real que decida Fede.
