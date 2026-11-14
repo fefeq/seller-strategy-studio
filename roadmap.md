@@ -118,7 +118,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] Pedido 15:07 UTC: Apollo limitado a 15 segundos, incluida lectura del cuerpo, sin reintento por timeout; 32/32 pruebas Apollo, compilación automática OK. R-1 Taplio c7f618a5 finalizó 3/3 pasos, 0 señales/sugerencias; IA medida 0,0011505 USD, búsqueda estimada 0,01 EUR. Jugada pausada y posicionamiento restaurado. Sin nuevo revelado ni publicación.
 - [ ] Verificación residual de esta entrega: suite 5942/5943; safe-logs-notes.test.ts agota 5000 ms también en aislamiento, sin modificar la prueba protegida (parada tras dos fallos). Actividad real confirmada en base de datos; pase visual de esa ejecución pendiente: navegador abrió Postin, selector de empresa no se alcanzó.
 - [x] NK-0176, guía de hallazgos, NK-0167 SDD 1–3 — aceptado por Fede
-- [ ] NK-0171 — R-1 Taplio ejecutado una vez, 0 señales válidas; requisito de aceptación de 1 señal real todavía no satisfecho. No repetir sin nueva autorización.
+- [x] NK-0171 — R-1 Taplio ejecutado una vez, 0 señales válidas; requisito de aceptación de 1 señal real todavía no satisfecho. No repetir sin nueva autorización. Superado con Buffer.
 - [ ] NK-0173 — contacto proporcionado y creado; revelado anterior quedó sin resultado confirmado. No reintentar: consumo Apollo incierto.
 - [ ] NK-0174 SDD 1 — lead proporcionado y creado; revisión real previa devolvió 0 respuestas. Pendiente aceptación de Fede.
 
@@ -129,4 +129,4 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0171: búsqueda R-1 con Buffer hecha (ver abajo).
 - [ ] NK-0174 SDD 3 U-2/U-3 y SDD 4 — pendientes.
 - [ ] Telegram — falta el token del bot.
-- [x] NK-0171 R-1 con Buffer (run 01d53a14, done): 4 señales reales válidas (retirada de Start Page y del API REST antiguo de Buffer), 4 sugerencias. Observado: las 4 sugerencias repiten las mismas 4 pruebas (una por cuenta) y no tienen borrador por falta de contacto. Jugada pausada, posicionamiento restaurado. Pendiente: aceptación de Fede.
+- [x] NK-0171 R-1 con Buffer (run 01d53a14, done): 4 señales reales válidas (retirada de Start Page y del API REST antiguo de Buffer), 4 sugerencias. Observado: las 4 sugerencias repiten las mismas 4 pruebas (una por cuenta) y no tienen borrador por falta de contacto. Jugada pausada, posicionamiento restaurado. Aceptada por Fede el 14-11; residuo: sugerencias repetidas por cuenta.
