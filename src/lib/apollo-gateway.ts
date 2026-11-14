@@ -66,10 +66,13 @@ async function apollo(
 ): Promise<any> {
   const url = new URL(`${GATEWAY_URL}${path}`);
   for (const [k, v] of params) url.searchParams.append(k, v);
+  const signal = AbortSignal.timeout(15_000);
+  try {
   const res = await fetch(url, {
     method: "POST",
     headers: headers(),
     body: body === undefined ? undefined : JSON.stringify(body),
+    signal,
   });
   if (res.status === 429 && retry) {
     const wait = Math.min(Number(res.headers.get("retry-after")) || 2, 8);
@@ -81,7 +84,15 @@ async function apollo(
     console.error(`Apollo ${path} [${res.status}] body ${raw.length} chars`);
     throw Object.assign(new Error(apolloErrorText(res.status, raw)), { status: res.status });
   }
-  return res.json();
+  return await res.json();
+  } catch (error) {
+    if (signal.aborted) {
+      throw Object.assign(new Error(
+        "Apollo no respondió en 15 segundos. No se ha reintentado para evitar un posible doble cobro. No podemos confirmar si Apollo consumió créditos; comprueba el consumo antes de repetir.",
+      ), { code: "APOLLO_TIMEOUT" });
+    }
+    throw error;
+  }
 }
 
 /** Webhook URL (with its secret) Apollo posts phones to. `base` comes from the request host when there is one. */
