@@ -121,3 +121,11 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [ ] NK-0171 — R-1 Taplio ejecutado una vez, 0 señales válidas; requisito de aceptación de 1 señal real todavía no satisfecho. No repetir sin nueva autorización.
 - [ ] NK-0173 — contacto proporcionado y creado; revelado anterior quedó sin resultado confirmado. No reintentar: consumo Apollo incierto.
 - [ ] NK-0174 SDD 1 — lead proporcionado y creado; revisión real previa devolvió 0 respuestas. Pendiente aceptación de Fede.
+
+## Decisiones de Fede 2026-11-14 (plan completo)
+- [x] NK-0173 aceptada tal cual (sin más revelados de Apollo).
+- [x] Gmail: al desconectar se conservan los contadores (estado «disconnected», migración 0099).
+- [x] Prueba lenta safe-logs-notes: el código de pruebas ya no llama a servicios externos reales (5,2 s → 0,2 s); prueba intacta.
+- [ ] NK-0171: 1 búsqueda R-1 más con otro competidor — falta el nombre (Fede).
+- [ ] NK-0174 SDD 3 U-2/U-3 y SDD 4 — pendientes.
+- [ ] Telegram — falta el token del bot.

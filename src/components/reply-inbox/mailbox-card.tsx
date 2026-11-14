@@ -36,7 +36,8 @@ export function MailboxCard({ orgId }: { orgId: string }) {
     }
     qc.invalidateQueries({ queryKey: ["mailbox-link", orgId] });
   }
-  const row = data?.row;
+  const saved = data?.row;
+  const row = saved && saved.status !== "disconnected" ? saved : null;
   return (
     <section className="rounded-xl border bg-card p-5 shadow-xs">
       <p className="eyebrow">Bandeja de respuestas · Gmail</p>
@@ -45,6 +46,9 @@ export function MailboxCard({ orgId }: { orgId: string }) {
           ? `Conectado: ${row.address}. Cada hora NOKKO mira si tus leads en Contactado te han respondido y, si es así, detiene su secuencia de seguimiento. Solo lee remitente y fecha; nunca envía desde él.`
           : "Sin buzón conectado. Al conectarlo, NOKKO detecta las respuestas de tus leads y detiene su secuencia de seguimiento."}
       </p>
+      {!row && saved && (
+        <p className="mt-1 text-xs text-ink-mid">{`Antes conectado: ${saved.address} · ${saved.replies_count} respuestas detectadas`}</p>
+      )}
       {row && (
         <p className="mt-1 text-xs text-ink-mid">
           {row.last_synced_at
@@ -59,7 +63,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             <Button
               variant="outline"
               onClick={async () => {
-                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas y borrará lo leído. Los leads marcados como «respondió» siguen sin secuencia.", confirmLabel: "Desconectar" }))
+                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas y borrará lo leído; conservará el contador. Los leads marcados como «respondió» siguen sin secuencia.", confirmLabel: "Desconectar" }))
                   run(() => unlink({ data: { orgId } }), "Buzón desconectado");
               }}
             >
