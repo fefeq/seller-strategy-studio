@@ -4,11 +4,30 @@ import { bindingOf, conceptById } from "./field-catalog";
 const fields = {
   inbox_replies: ["classify_status"],
   inbox_reply_derived: [
-    "brake", "category", "confidence", "created_at", "draft", "expires_at", "org_id",
-    "proposal", "referred_email", "referred_name", "reply_id", "return_date", "state", "user_id",
+    "brake",
+    "category",
+    "confidence",
+    "created_at",
+    "draft",
+    "expires_at",
+    "org_id",
+    "proposal",
+    "referred_email",
+    "referred_name",
+    "reply_id",
+    "return_date",
+    "state",
+    "user_id",
   ],
   inbox_reply_receipts: [
-    "cost_usd", "created_at", "id", "input_tokens", "operation", "org_id", "outcome", "output_tokens",
+    "cost_usd",
+    "created_at",
+    "id",
+    "input_tokens",
+    "operation",
+    "org_id",
+    "outcome",
+    "output_tokens",
   ],
 };
 
@@ -28,7 +47,8 @@ describe("Ola 0: los 23 campos autorizados de la bandeja", () => {
 
   it("mantiene el coste medido en USD separado de importes en moneda de empresa", () => {
     expect(bindingOf("inbox_reply_receipts", "cost_usd")).toMatchObject({
-      concept: "coste_ia_usd", persistence: "permanent",
+      concept: "coste_ia_usd",
+      persistence: "permanent",
     });
   });
 });

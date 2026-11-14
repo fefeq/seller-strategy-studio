@@ -4,9 +4,19 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { DERIVED_TTL_DAYS } from "@/lib/reply-inbox/classification";
-import { CATEGORY_LABEL, FILTER_LABEL, KIND_LABEL, repliesHeadline, viewReplies, type InboxFilter, type InboxRow } from "@/lib/reply-inbox/inbox-view";
+import {
+  CATEGORY_LABEL,
+  FILTER_LABEL,
+  KIND_LABEL,
+  repliesHeadline,
+  viewReplies,
+  type InboxFilter,
+  type InboxRow,
+} from "@/lib/reply-inbox/inbox-view";
 
-type Row = InboxRow & { category: string | null; draft: string | null } & { lead: { contact_name: string | null; email: string | null } | null };
+type Row = InboxRow & { category: string | null; draft: string | null } & {
+  lead: { contact_name: string | null; email: string | null } | null;
+};
 
 export function useReplies() {
   return useQuery({
@@ -24,11 +34,20 @@ export function useReplies() {
         : { data: [] };
       const rids = (data ?? []).map((r) => r.id);
       const { data: derived } = rids.length
-        ? await supabase.from("inbox_reply_derived").select("reply_id,category,draft").in("reply_id", rids)
+        ? await supabase
+            .from("inbox_reply_derived")
+            .select("reply_id,category,draft")
+            .in("reply_id", rids)
         : { data: [] };
       const der = new Map((derived ?? []).map((d) => [d.reply_id, d]));
       const by = new Map((leads ?? []).map((l) => [l.id, l]));
-      return (data ?? []).map((r) => ({ ...r, kind: r.kind as InboxRow["kind"], lead: r.lead_id ? by.get(r.lead_id) ?? null : null, category: der.get(r.id)?.category ?? null, draft: der.get(r.id)?.draft ?? null })) as Row[];
+      return (data ?? []).map((r) => ({
+        ...r,
+        kind: r.kind as InboxRow["kind"],
+        lead: r.lead_id ? (by.get(r.lead_id) ?? null) : null,
+        category: der.get(r.id)?.category ?? null,
+        draft: der.get(r.id)?.draft ?? null,
+      })) as Row[];
     },
   });
 }
@@ -66,13 +85,25 @@ export function RepliesList({ rows }: { rows: Row[] }) {
           {list.map((r) => {
             const name = r.lead?.contact_name || r.lead?.email || "Lead eliminado";
             return (
-              <li key={r.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 p-4">
+              <li
+                key={r.id}
+                className="flex min-w-0 flex-wrap items-center justify-between gap-2 p-4"
+              >
                 <div className="min-w-0">
                   <p className="truncate font-medium">{name}</p>
                   <p className="text-xs text-ink-mid">
-                    {r.category ? `${CATEGORY_LABEL[r.category] ?? r.category} · ` : ""}{KIND_LABEL[r.kind]} · {new Date(r.received_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}
+                    {r.category ? `${CATEGORY_LABEL[r.category] ?? r.category} · ` : ""}
+                    {KIND_LABEL[r.kind]} ·{" "}
+                    {new Date(r.received_at).toLocaleString("es-ES", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })}
                   </p>
-                  {r.draft && <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">Borrador sugerido (no se envía): {r.draft}</p>}
+                  {r.draft && (
+                    <p className="mt-2 whitespace-pre-wrap rounded-lg bg-muted p-3 text-sm">
+                      Borrador sugerido (no se envía): {r.draft}
+                    </p>
+                  )}
                 </div>
                 {r.lead_id && (
                   <Link to="/leads" className="text-sm underline underline-offset-2">
@@ -84,7 +115,13 @@ export function RepliesList({ rows }: { rows: Row[] }) {
           })}
         </ul>
       )}
-      <p className="text-xs text-ink-mid">Solo ves las respuestas de tu propio buzón. Nokko guarda los datos de cada respuesta (mensaje, hilo, lead, fecha y si es humana o automática). La IA lee el texto de las respuestas humanas solo para clasificarlas y proponerte un borrador; ese texto no se guarda. Se guardan la categoría, el borrador y los datos que deduce (persona referida, fecha de vuelta), que se borran a los {DERIVED_TTL_DAYS} días.</p>
+      <p className="text-xs text-ink-mid">
+        Solo ves las respuestas de tu propio buzón. Nokko guarda los datos de cada respuesta
+        (mensaje, hilo, lead, fecha y si es humana o automática). La IA lee el texto de las
+        respuestas humanas solo para clasificarlas y proponerte un borrador; ese texto no se guarda.
+        Se guardan la categoría, el borrador y los datos que deduce (persona referida, fecha de
+        vuelta), que se borran a los {DERIVED_TTL_DAYS} días.
+      </p>
     </div>
   );
 }
