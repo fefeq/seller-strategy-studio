@@ -8,7 +8,6 @@ import { useSetup } from "@/hooks/use-setup";
 import { onboardingDone, showRoadmapCard } from "@/lib/onboarding";
 import { jsonObject } from "@/lib/json";
 import { useSetupGuide } from "@/hooks/use-setup-guide";
-import { useMe } from "@/hooks/use-me";
 import { usePrimaryLine } from "@/hooks/use-business-lines";
 import { GuideOffer, NextStepMessage } from "@/components/setup/guide";
 
@@ -25,8 +24,7 @@ export function RoadmapCard() {
     enabled: !!g.orgId && !!st,
     queryFn: async () => (await supabase.rpc("company_diagnosis", { _org: g.orgId! })).data,
   });
-  const { data: me } = useMe();
-  const { primary } = usePrimaryLine(me?.currentOrg?.org_id);
+  const { primary } = usePrimaryLine(g.orgId);
   if (!st || !showRoadmapCard(session, pct)) return null;
   // The primary business line wins; the per-person diagnosis is the fallback during the transition (SDD 3).
   const diag = primary ? { result: primary.result } : (jsonObject(shared ?? session?.diagnosis ?? null) as {
