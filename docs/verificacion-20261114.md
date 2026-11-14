@@ -32,3 +32,11 @@ Sin publicar, sin gasto, sin cambios en pruebas existentes. Capturas en `docs/ve
 ## Estado para cierre
 - Listas para tu aceptación: NK-0176, NK-0171 (U-1..U-5), guía de hallazgos, NK-0174 SDD 1.
 - También listas para tu aceptación: NK-0167 (bloqueante corregido, concurrencia superada) y NK-0173 (pase visual completo salvo email alternativo).
+
+## Aceptación formal (14-11-2026)
+- NK-0176: aceptado por Fede.
+- Guía de hallazgos del onboarding: aceptado por Fede.
+- NK-0167 SDD 1–3: aceptado por Fede.
+- NK-0171: pendiente de 1 señal real válida (autorizado).
+- NK-0173: pendiente de 1 revelado Apollo (autorizado).
+- NK-0174 SDD 1: pendiente de 1 lectura real de solo lectura (autorizada).
