@@ -1,3 +1,4 @@
+import { comingSoon } from "@/lib/integration-availability";
 import { MailboxCard } from "@/components/reply-inbox/mailbox-card";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -192,7 +193,12 @@ function Integrations() {
                   .map((i) => (
                     <div key={i.id} className="rounded-lg border bg-card p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <span className="min-w-0 break-words font-medium">{i.name}</span>
+                        <span className="min-w-0 break-words font-medium">
+                          {i.name}
+                          {comingSoon(i.name) && (
+                            <span className="ml-2 rounded bg-muted px-1.5 text-xs font-normal text-ink-mid">Próximamente</span>
+                          )}
+                        </span>
                         <span
                           className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${i.status === "connected" ? "bg-muted text-foreground" : i.status === "in_progress" ? "bg-warning/25" : "bg-muted text-muted-foreground"}`}
                         >

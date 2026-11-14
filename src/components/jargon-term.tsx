@@ -1,8 +1,9 @@
 // Ola 0.6: a jargon word with its definition from the help catalogue. A popover, not a hover tooltip, so it also opens with a tap or the keyboard.
+import type { ReactNode } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { resolveHelp } from "@/lib/field-help";
 
-export function JargonTerm({ term, children }: { term: string; children?: React.ReactNode }) {
+export function JargonTerm({ term, children }: { term: string; children?: ReactNode }) {
   const h = resolveHelp(term);
   return (
     <Popover>
