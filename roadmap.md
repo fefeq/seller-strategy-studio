@@ -1,6 +1,6 @@
 # Roadmap
 ## Cola de Fede — 13-11-2026
-- [ ] Pedido 14-11 00:35 UTC: NK-0167 SDD 1 redactado en docs/sdd/SDD-20261114-business-lines-model.md; cuatro conteos agregados leídos: (a) 0 discrepancias; (b) 0 tickets cero/inputs inválidos; (c) 1 empresa elegible; (d) 0 sesiones de superadmins ajenos/empresas sin línea. Presentados para autorización específica de copia. Sin esquema ni datos modificados; detenido antes de copia.
+- [ ] Pedido 14-11 00:35 UTC: NK-0167 SDD 1 redactado; conteos (a) 0, (b) 0, (c) 1, (d) 0. Fede autorizó expresamente la copia. U-1 reglas puras y 10 pruebas nuevas implementadas; suite 5826/5826, compilación automática OK. Pendientes U-2..U-4 (integridad, RPC, catálogo y copia); aún sin esquema ni datos modificados. Tipos sin ejecución manual por restricción del entorno.
 - [x] Pedido 14-11 00:27 UTC: checkpoints renombrados a 0094 (solo archivo/tag; idx/when/SQL/snapshots intactos), check y suite 5816/5816 verdes. U-5 visible en /plays: activar/pausar y resultado manual con rol/empresa comprobados, pausas de seguridad intactas, evidencia/sugerencias y costes separados. Navegador autenticado guardó/releyó resultado sintético y se restauró a null; Postin restaurada. Sin publicar ni gasto; revisión independiente pendiente, overflow de 6 px en barra móvil existente.
 - [ ] Pedido 14-11 00:01 UTC: única ejecución real R-1 con Talpio realizada; búsqueda Perplexity y paso guardados, selección OpenRouter detenida por provider_denied (401/403). 0 pruebas aceptadas y 0 sugerencias; 0,01 EUR de búsqueda estimados, IA sin coste informado. Play pausado y empresa activa restaurada a Postin; informe docs/r1-talpio-real-test-20261114.md. Resultado completo bloqueado por denegación IA; no repetir gasto sin autorización.
 Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Autorización general de Fede recibida a las 14:08 UTC: guardar cada SDD y construir sin esperar confirmación entre entregas. Mantener las paradas obligatorias, ninguna prueba existente modificada y suite completa verde e informe antes de la siguiente entrega. La revisión independiente de NK-0176 sigue pendiente, pero la autorización permite continuar la cola.
@@ -23,7 +23,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
   - [x] Pedido 23:43 UTC U-4b: adaptadores conectados; bloqueo del prefijo cerrado el 14-11 a 0094 sin reaplicar SQL, suite 5816/5816. Prueba real única R-1 previa detenida por denegación IA; no se repitió gasto.
   - [x] SDD 1 U-1: molde puro + Q-7 (model.ts, 25 pruebas).
   - [x] SDD 1 U-2: tablas por empresa con RLS y registro de coste; SDD 2 y 3 terminados. SDD 4 continúa arriba.
-- [ ] NK-0167: SDD 1→2→3→4; migración de existentes bloqueada hasta cuatro conteos de lectura y autorización.
+- [ ] NK-0167: SDD 1→2→3→4; conteos leídos y copia autorizada por Fede el 14-11. SDD 1 U-1 implementada; integridad, RPC y copia siguen pendientes, sin bloqueo externo de autorización.
 - [ ] NK-0174: SDD 1; Workspace Internal, solo Fede hasta confirmación legal para otros buzones.
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
 

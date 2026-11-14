@@ -83,17 +83,17 @@ Reutilizar DiagnosisInput, archetypeOf y diagnose; módulo business-lines puro. 
 SDD 1→2→3→4 estrictos, no paralelos. Los consumidores no leen líneas hasta sus entregas. No retirar escritura de sesiones hasta cerrar el sprint siguiente a SDD 4. La copia puede cambiar la vista de usuarios con sesiones distintas; los conteos actuales no garantizan ausencia futura de excepciones. El SDD 4 propone cambiar una prueba protegida del PRD: necesitará permiso específico antes de esa entrega, no queda autorizado aquí.
 
 ## 15. Preguntas para Fede y para la revisión técnica
-Fede: vistos los conteos 0 / 0 / 1 / 0, ¿autorizas copiar el diagnóstico válido existente a una línea principal, manteniendo intacta su sesión original? No se interpreta «continúa» como permiso específico de copia.
+Fede autorizó expresamente la copia tras ver los conteos mediante la respuesta «Sí, autorizar copia» el 14-11-2026. Conservar intacta la sesión original. No volver a pedir este permiso.
 Revisión: integridad concurrente en READ COMMITTED, aislamiento de empresa y protección del indicador de copia.
 
 ## 16. Pendiente de verificar
-- Permiso específico de copia: Fede; bloqueo actual.
+- Permiso específico de copia: resuelto por Fede; copia todavía no ejecutada.
 - FK con limpieza selectiva y concurrencia: pruebas nuevas antes de aplicar DDL.
-- Tipos/suite: todavía no hay código nuevo; ejecutar tras implementación.
+- Suite U-1: 5826/5826, 365 archivos; compilación automática OK 00:38:20 UTC. Tipos sin ejecución manual por restricción del entorno.
 - Concurrencia real: PGlite de una conexión no la demuestra.
 
 ## 17. Revisión técnica independiente
 Pendiente de nokko-gate; no realizada por el autor.
 
 ## 18. Delta de implementación
-14-11-2026: solo SDD y recuentos agregados de lectura; sin esquema nuevo, código, copia, llamadas IA, gasto, envíos ni publicación. Entrega detenida en U-0 para presentar resultados a Fede.
+14-11-2026: U-0 y U-1 realizadas. Fede autorizó la copia después de los conteos. Reglas puras en business-lines.ts reutilizan diagnose; rechazan ticket cero, inputs incompletos y valores no finitos. Resumen seguro sin nombre ni ticket. Diez pruebas nuevas fallaron primero por módulo ausente y ahora pasan; ninguna prueba existente modificada. Suite 5826/5826 y compilación automática OK. Sin cambios de pantalla, no corresponde recorrido visual para U-1. Pendientes U-2..U-4 (integridad, RPC, catálogo y copia autorizada); aún no se aplicó esquema ni se copiaron datos. Sin IA, gasto, envíos, publicación/despliegue/fusión. No se declara NK-0167 completado.
