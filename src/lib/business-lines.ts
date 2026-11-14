@@ -20,7 +20,7 @@ export function lineDiagnosis(raw: unknown) {
 type SummarySource = { id: string; is_primary: boolean; position: number };
 
 /** Safe projection for future agent readers: no customer labels or ticket-bearing reasons. */
-export function summarizeLines(lines: readonly SummarySource[]) {
+export function summarizeLines<T extends SummarySource>(lines: readonly T[]) {
   return [...lines].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id)).flatMap((line) => {
     const input = readLineInput(line);
     if (!input) return [];
