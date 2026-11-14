@@ -75,4 +75,6 @@ Modelo/no entrenamiento, RLS de derivados futuros, pasada Gmail real, segundo pl
 No revisado. La entrega no declara gate definitivo ni habilita procesamiento real.
 
 ## 18. Delta de implementación
-Pendiente de ejecutar pruebas y documentar U-1; U-2/U-3 siguen abiertas.
+U-1 implementada el 14-11: `classification.ts` y `classification-core.ts`, 20 pruebas nuevas en dos archivos. Primera ejecución falló por ausencia del módulo de reglas; segunda, por ausencia del coordinador, con las 13 pruebas de reglas ya verdes. Resultado final: 32/32 pruebas de bandeja incluyendo RLS; suite completa 5936/5936 en 378 archivos; comprobación automática del entorno «build OK» 11:55:48 UTC. Ninguna prueba preexistente editada.
+
+No se activó clasificación sobre el buzón ni se modificó esquema, Gmail, trabajo horario o pantalla. No hay flujo de navegador que verificar en U-1: el comportamiento nuevo es un núcleo no conectado, validado con proveedor sintético. U-2/U-3, revisión independiente, conexión real y comprobación visual siguen pendientes. Q-6 requiere decisión concreta de modelo y condiciones de no entrenamiento antes de escribir/activar el adaptador. No se lee correo, gasta ni publica. No se declara SDD completo.
