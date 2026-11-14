@@ -12,7 +12,7 @@ const initial: Finding[] = [
   { text: "Cliente objetivo sintético", source: "plan.md", at: "2026-11-14T00:00:00Z" },
   { text: "Segundo dato sintético", source: "plan.md", at: "2026-11-14T00:00:00Z" },
 ];
-function show(save: ReturnType<typeof vi.fn>) {
+function show(save: (patch: { findings?: Finding[]; sources?: string[] }) => void) {
   function Harness() {
     const [findings, setFindings] = useState(initial);
     return <ReadingStep jobId="synthetic-job" findings={findings} sources={["plan.md"]} onNext={() => {}} onBack={() => {}} onChange={async patch => { save(patch); if (patch.findings) setFindings(patch.findings); }} />;
