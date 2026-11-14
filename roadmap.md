@@ -1,4 +1,6 @@
 # Roadmap
+## Ola 0 — cierre adicional autorizado 14-11-2026
+- [x] Corregir el aviso de Respuestas y catalogar únicamente los 23 campos pendientes: cuatro pruebas nuevas, suite 4729/4729 y compilación automática OK; aviso visto con sesión en escritorio/móvil claro/oscuro. Pruebas existentes, Gmail y respaldo de IA intactos; sin publicación. Informe actualizado; lint global con errores ajenos al alcance y tipos manuales sin comprobar.
 ## Cola de Fede — 13-11-2026
 - [x] Pedido 14-11 00:58 UTC: NK-0167 SDD 2 U-1, núcleo de edición y escritura doble implementado; valida roles, ticket, tope y nombre; reintento de sesión no duplica líneas. Siete pruebas nuevas; suite 5852/5852, 368 archivos, build automático OK 00:59:43 UTC. Pruebas protegidas intactas. Sin pantalla ni cambios reales de datos en esta unidad, IA/gasto/publicación. Tipos sin ejecución manual por restricción del entorno.
 - [ ] NK-0167 SDD 2 U-2/U-3: conectar hook miembro y pantalla de líneas, repetir copia administrativa y comprobar edición/guardado en empresa sintética escritorio/móvil claro/oscuro. Project monitoring señala altas cerradas: no reabrir registros sin autorización, cierre previo de Fede conservado; incidencia no reclamada ni resuelta porque este pedido no solicita cambiar las altas.
