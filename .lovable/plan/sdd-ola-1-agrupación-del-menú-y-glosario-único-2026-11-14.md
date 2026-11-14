@@ -1,6 +1,6 @@
 # SDD · Ola 1: agrupación del menú y glosario único
 
-**Estado: Borrador, pendiente de aprobación de Fede.** Fecha: 14-11-2026.
+**Estado: presentado sin OK escrito previo; resultado implementado y aceptado posteriormente por Fede a las 22:57 UTC.** Fecha: 14-11-2026. No registrar este SDD como aprobado: la aceptación posterior del resultado no constituye aprobación previa.
 **Referencia:** `docs/ux-audit/AUDITORIA-UX-20261114.md`, sección 5.2; alcance aprobado en chat a las 22:46 UTC. No se implementará antes de aprobar este SDD.
 
 ## Objetivo y cambio

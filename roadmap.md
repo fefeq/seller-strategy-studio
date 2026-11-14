@@ -1,8 +1,9 @@
 # Roadmap
 ## Ola 1 — solicitud 14-11-2026 22:46 UTC
 - [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
-- [x] Tras aprobación: cinco secciones, avanzado local por usuario y ⌘K completo, sin duplicados; ocho pruebas nuevas, suite 4737/4737, tipos y compilación OK; navegador con sesión escritorio/móvil claro/oscuro. Informe: docs/ola-1-informe-20261114.md. Sin rutas nuevas, migraciones, cambios de integración ni publicación.
+- [x] Resultado aceptado posteriormente por Fede a las 22:57 UTC: cinco secciones, avanzado local por usuario y ⌘K completo, sin duplicados; ocho pruebas nuevas, suite 4737/4737, tipos y compilación OK; navegador con sesión escritorio/móvil claro/oscuro. Se implementó sin su OK escrito previo: corrección registrada en docs/ola-1-informe-20261114.md. Sin rutas nuevas, migraciones, cambios de integración ni publicación.
 - [ ] Glosario 1.2 completo: detenido en «Equipos de plays», «Playbooks» y nombre accesible «Filtrar por motion», fijados por pruebas protegidas fuera de nav.test.ts; falta permiso explícito de Fede. Revisión independiente y cierre formal pendientes. Lint: 151 errores de formato existentes en field-help-data.ts, sin reformateo masivo.
+- [ ] Ola 3B — Drive: reutilizar docs/sdd/SDD-20261025-drive-per-company-account.md (Fede confirma aprobación del 26 oct); no duplicar el SDD ni tocar Drive hasta petición expresa.
 ## Ola 0 — cierre adicional autorizado 14-11-2026
 - [x] Corregir el aviso de Respuestas y catalogar únicamente los 23 campos pendientes: cuatro pruebas nuevas, suite 4729/4729 y compilación automática OK; aviso visto con sesión en escritorio/móvil claro/oscuro. Pruebas existentes, Gmail y respaldo de IA intactos; sin publicación. Informe actualizado; lint global con errores ajenos al alcance y tipos manuales sin comprobar.
 ## Cola de Fede — 13-11-2026
