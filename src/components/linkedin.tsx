@@ -26,6 +26,7 @@ type Jobs = Awaited<ReturnType<typeof accountJobs>>;
 /** All open job offers of the account on LinkedIn (last 30 days), on request: each look spends Apify balance. */
 export function AccountJobs({ accountId }: { accountId: string }) {
   const run = useServerFn(accountJobs);
+  const { paused } = useLinkedinLegalPause();
   const [busy, setBusy] = useState(false);
   const [r, setR] = useState<Jobs | null>(null);
   async function go() {
@@ -42,10 +43,20 @@ export function AccountJobs({ accountId }: { accountId: string }) {
     <div className="space-y-3 border-t pt-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="eyebrow">Ofertas de empleo en LinkedIn</p>
-        <Button size="sm" variant="outline" onClick={go} disabled={busy}>
-          {busy ? "Buscando ofertas…" : r ? "Volver a buscar" : "Ver ofertas abiertas"}
-        </Button>
+        {paused ? (
+          <span className="rounded bg-warning/25 px-1.5 font-mono text-xs uppercase">En pausa</span>
+        ) : (
+          <Button size="sm" variant="outline" onClick={go} disabled={busy}>
+            {busy ? "Buscando ofertas…" : r ? "Volver a buscar" : "Ver ofertas abiertas"}
+          </Button>
+        )}
       </div>
+      {paused && (
+        <p className="text-sm text-muted-foreground">
+          {LINKEDIN_PAUSE_TEXT}. La extracción de LinkedIn está detenida hasta completar la revisión
+          legal; las fuentes ya guardadas se conservan.
+        </p>
+      )}
       {r &&
         (r.jobs.length === 0 ? (
           <p className="text-sm text-muted-foreground">
