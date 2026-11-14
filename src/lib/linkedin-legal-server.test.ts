@@ -18,7 +18,10 @@ vi.mock("@/integrations/supabase/client.server", () => ({
   },
 }));
 
-import { assertLinkedinExtractionAllowed, linkedinExtractionPaused } from "./linkedin-legal.server";
+// setup.ts mocks this module as «not paused» for unrelated tests; here we need the real one.
+const { assertLinkedinExtractionAllowed, linkedinExtractionPaused } = await vi.importActual<
+  typeof import("./linkedin-legal.server")
+>("./linkedin-legal.server");
 
 beforeEach(() => {
   state.row = null;
