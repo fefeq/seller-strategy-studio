@@ -14,8 +14,10 @@ beforeEach(async () => {
     create table platform_admins(user_id uuid primary key);`);
   for (const suffix of ['business_lines_integrity.sql', 'business_lines_copy.sql']) {
     const file = readdirSync('drizzle/migrations').find(f => f.endsWith(suffix));
-    if (!file) throw new Error(`Missing ${suffix}`);
-    await db.exec(readFileSync(`drizzle/migrations/${file}`, 'utf8'));
+    const path = suffix === 'business_lines_copy.sql' && process.env.BUSINESS_LINES_COPY_TEST_SQL
+      ? process.env.BUSINESS_LINES_COPY_TEST_SQL : file ? `drizzle/migrations/${file}` : null;
+    if (!path) throw new Error(`Missing ${suffix}`);
+    await db.exec(readFileSync(path, 'utf8'));
   }
 }, 60000);
 afterEach(async () => { await db?.close(); });
