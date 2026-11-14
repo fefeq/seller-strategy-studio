@@ -66,8 +66,8 @@ it("CA-4 only Owner removes, promotes next primary, rejects last and unknown lin
 it("CA-5 segment linkage rejects cross-company and null org, deletes only link", async () => {
   const first=await add(); await add();
   await expect(db.query("insert into segments(name,org_id,business_line_id) values('Synthetic',$1,$2)",[B,first])).rejects.toMatchObject({ code:"23503" });
-  await expect(db.query("insert into segments(name,org_id,business_line_id) values('Synthetic',null,$1)",[first])).rejects.toMatchObject({ code:"23514" });
   await db.query("insert into segments(name,org_id,business_line_id) values('Synthetic',$1,$2)",[A,first]);
+  await expect(db.query("update segments set org_id=null where business_line_id=$1",[first])).rejects.toMatchObject({ code:"23514" });
   await as(db,U.ownerA,() => db.query("select remove_business_line($1)",[first]));
   expect((await db.query("select name,org_id,business_line_id from segments")).rows).toEqual([{ name:"Synthetic",org_id:A,business_line_id:null }]);
 });
