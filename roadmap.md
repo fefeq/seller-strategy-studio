@@ -113,3 +113,9 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [ ] Aceptación final de Fede: NK-0176, NK-0171, guía de hallazgos, NK-0174 SDD 1, NK-0167 SDD 1–3, NK-0173.
 - [x] NK-0167 SDD 4: list_business_lines en Agente/MCP (proyección segura, nunca el ticket; probado).
 - [x] NK-0171: list_custom_plays, activate_custom_play, pause_custom_play en Agente/MCP (mismas reglas que /plays; activar/pausar solo Owner/Sales Leader tras confirmación).
+
+## Gate formal 14-11-2026
+- [x] NK-0176, guía de hallazgos, NK-0167 SDD 1–3 — aceptado por Fede
+- [ ] NK-0171 — 1 señal real (espera competidor elegido por Fede)
+- [ ] NK-0173 — 1 revelado Apollo
+- [ ] NK-0174 SDD 1 — 1 lectura real
