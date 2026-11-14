@@ -29,7 +29,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
   - [x] SDD 1 U-2: tablas por empresa con RLS y registro de coste; SDD 2 y 3 terminados. SDD 4 continúa arriba.
 - [ ] NK-0167: SDD 1→2→3→4; conteos leídos y copia autorizada por Fede el 14-11. SDD 1 U-1/U-2 y catálogo implementados; copia repetible, cierre, pantalla y consumidores siguen pendientes, sin bloqueo externo de autorización.
 - [x] NK-0174 SDD 1: Gmail de Fede conectado a Postin (somos@postinapp.com), solo lectura, puerta legal.
-- [ ] NK-0174 SDD 2: sincronización, detección de respuestas y pausa de secuencia (Q-10 b = B).
+- [x] NK-0174 SDD 2: detección de respuestas (solo remitente y fecha), marca «respondió» y pausa de secuencia; pruebas OK. Pendiente: primera pasada real (corre en el trabajo horario publicado).
 - [ ] NK-0174 SDD 3: clasificación en 7 clases y sugerencias (askPinned, sin respaldo).
 - [ ] NK-0174 SDD 4: pantalla Respuestas.
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
