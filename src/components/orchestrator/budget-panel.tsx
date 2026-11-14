@@ -58,7 +58,7 @@ export function BudgetPanel() {
           {others.map(([cur, v]) => (
             <p key={cur} className="text-xs text-muted-foreground">Además {v.toFixed(2).replace(".", ",")} {cur}, sin convertir: no hay un tipo de cambio verificado.</p>
           ))}
-          {!s.complete && <p className="text-xs font-medium">Presupuesto incompleto{s.unknown ? `: ${s.unknown} cargo${s.unknown === 1 ? "" : "s"} sin dato de coste` : ""}.</p>}
+          {s.complete === false && <p className="text-xs font-medium">Presupuesto incompleto{s.unknown ? `: ${s.unknown} cargo${s.unknown === 1 ? "" : "s"} sin dato de coste` : ""}.</p>}
         </div>
         <div className="text-sm">
           <p className="eyebrow">Por servicio</p>
