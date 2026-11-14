@@ -10,7 +10,9 @@ Sin publicar, sin gasto, sin cambios en pruebas existentes. Capturas en `docs/ve
 
 ## 2. Verificación de email (NK-0173)
 - Personas en la empresa de prueba, escritorio/móvil, claro/oscuro: Laura Prueba muestra email y «sin verificar»; 0 px de desbordamiento en las cuatro combinaciones.
-- Limitación: los otros cinco contactos sintéticos ya no existen en la base (solo queda Laura), así que solo se vio el estado «sin verificar». Los estados verificado / caducado / error / sin email / alternativo propuesto no se vieron en este pase. El menú «Acciones» (Verificar / Conseguir email) no se abrió.
+- Ampliado (11:50): los seis contactos sintéticos siguen como personas clave de «Cuenta de prueba Nokko» (no en Personas). Abiertos uno a uno en escritorio/móvil, claro/oscuro: verificado, catch-all, no verificable, inválido (en rojo), sin verificar → «Verificar email»; sin email → «Conseguir email». 0 px de desbordamiento en las 24 combinaciones.
+- Caducidad: un email verificado hace 120 días se mostró como «sin verificar» en Personas (regla de 90 días). Datos temporales borrados después.
+- No probado: email alternativo propuesto (no hay caso sintético) y pulsar los botones (gastaría créditos de Apollo).
 
 ## 3. Revisiones independientes (revisor separado, solo lectura)
 | Entrega | Resultado | Detalle |
@@ -19,7 +21,7 @@ Sin publicar, sin gasto, sin cambios en pruebas existentes. Capturas en `docs/ve
 | NK-0171 Plays | Sin problemas | Reserva antes de llamar, sin repetir reservas inciertas, commit atómico, activación no borra pausas, Inngest solo contadores. |
 | Guía de hallazgos | Sin problemas | No promete recalcular; reutiliza las acciones existentes. |
 | NK-0174 SDD 1 | Bloqueante resuelto por enmienda; 2 menores corregidos | R-1 pedía coincidir con el login, pero el buzón de Fede es otro: SDD enmendado (riesgo aceptado mientras haya un solo superadmin). Corregidos: el registro de errores de Gmail ya no guarda el cuerpo de la respuesta; la tarjeta ya no promete detección/pausa que llegan en SDD 2. |
-| NK-0167 Líneas | **1 bloqueante abierto**, 1 menor | Bloqueante: en el paso de líneas, un borrador abierto sobrevive al cambiar de empresa y se guardaría en la nueva (falta reiniciar el formulario por empresa). Menor: un borrado directo del Owner fuera de la pantalla puede dejar cero líneas (permitido por el SDD §8). |
+| NK-0167 Líneas | Bloqueante **corregido**, 1 menor | Corregido el 14-11 (el paso se reinicia al cambiar de empresa; prueba nueva): en el paso de líneas, un borrador abierto sobrevive al cambiar de empresa y se guardaría en la nueva (falta reiniciar el formulario por empresa). Menor: un borrado directo del Owner fuera de la pantalla puede dejar cero líneas (permitido por el SDD §8). |
 
 ### Concurrencia NK-0167 (dos conexiones reales, PostgreSQL 16 local desechable, migración 0095 tal cual)
 - Dos sesiones eligen principal a la vez → queda exactamente 1 principal; ambas terminan.
@@ -29,4 +31,4 @@ Sin publicar, sin gasto, sin cambios en pruebas existentes. Capturas en `docs/ve
 
 ## Estado para cierre
 - Listas para tu aceptación: NK-0176, NK-0171 (U-1..U-5), guía de hallazgos, NK-0174 SDD 1.
-- Sin cierre: NK-0167 hasta corregir el borrador al cambiar de empresa. NK-0173 visual parcial (faltan los demás estados).
+- También listas para tu aceptación: NK-0167 (bloqueante corregido, concurrencia superada) y NK-0173 (pase visual completo salvo email alternativo).
