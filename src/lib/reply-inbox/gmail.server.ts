@@ -17,8 +17,7 @@ async function call<T>(op: GmailOperation, path: string): Promise<T> {
     },
   });
   if (!res.ok) {
-    const body = await res.text();
-    console.error(`gmail ${op} failed [${res.status}]: ${body.slice(0, 300)}`);
+    console.error(`gmail ${op} failed [${res.status}]`);
     throw new Error(`Gmail no respondió (${res.status}). Prueba de nuevo en unos minutos.`);
   }
   return (await res.json()) as T;
