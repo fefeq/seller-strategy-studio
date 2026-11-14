@@ -48,4 +48,4 @@ Llamadas reales y mantenimiento publicado; prohibidos en esta entrega. No se afi
 ## 17. Revisión técnica independiente
 No revisado; no se suplanta nokko-gate ni aceptación de Fede.
 ## 18. Delta de implementación
-Pendiente de evidencia al entregar.
+Implementados adaptadores, reserva/commit RPC, OpenRouter medido y mantenimiento independiente Inngest + fallback cron. Pruebas de adaptadores con proveedor sintético y PGlite pasan. Suite final 5777/5778; único fallo por prefijo 0093 duplicado generado por la herramienta. Cambio aplicado en la base y permisos comprobados. No se reescribió el diario (prohibido fuera de reparación draft); pendiente reparar archivo/tag nuevo a 0094 por vía autorizada. Compilación automática OK 23:57:11 UTC. No se declara Hecho ni aceptación de gate. Sugerencias carga en las cuatro vistas; overflow móvil observado, flujo de play alojado y proveedores reales no verificados por prohibición de gasto/publicación. Ninguna prueba existente modificada.
