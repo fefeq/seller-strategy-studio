@@ -3,6 +3,13 @@
 **Estado:** F1–F11 cerrado en el alcance autorizado. NK-0176 implementado y verificado en la entrega de abajo. Autorización general de Fede recibida el 13-11-2026 a las 14:08 UTC para continuar toda la cola sin aprobación SDD a SDD, conservando las paradas obligatorias. Este informe sustituye los balances parciales y bloqueos anteriores, no declara una certificación de producción.
 
 ## 1. Fusión comprobada
+### Entrega NK-0167 U-3/U-4 — 14-11-2026 00:57 UTC
+- Copia administrativa repetible aplicada (0096); miembros y anon no pueden ejecutarla. Preserva sesiones y líneas editadas, excluye superadmins ajenos y devuelve solo contadores.
+- Copia específica autorizada por Fede: 1 principal creada, 0 refrescadas. Repetición real: 0/0. Lectura real: 1 principal copiada sin nombre, respuestas coincidentes con original, 1 diagnóstico conservado y 0 segmentos enlazados.
+- Siete pruebas nuevas fallaron primero por cambio ausente. Suite completa **5842/5842**, **367 archivos**, exit 0; ninguna prueba existente modificada. Compilación automática OK 00:57:11 UTC. Tipos sin comprobar por restricción del entorno.
+- Herramienta generó prefijo 0095 duplicado; nuevo archivo y tag renombrados a 0096, sin cambiar SQL, idx, when ni snapshot; sin reaplicar.
+- Procedimiento persistente: docs/business-lines-copy-operation.md. Sin pantalla nueva ni consumidor nuevo; no corresponde recorrido visual de esta unidad. Concurrencia real de dos conexiones y revisión independiente no demostradas; SDD siguientes todavía pendientes. Sin IA, gasto, envíos, publicación/despliegue/fusión.
+
 - Base verificada: `734c2026ab2be2312514b3ad491218c2dea6d13d`, idéntica al ref local `main`. El entorno usa una rama temporal `edit/…`; no cambié de rama ni hice operaciones de escritura de Git.
 - `git merge-base --is-ancestor` devuelve 0 para `cc71f2a`, `5bbd0b7` y `734c202`. El historial incluye la fusión normal `d53d601` y PR #146 `734c202`.
 - El diff de la fusión conserva el trabajo funcional de lovable-sync, `docs/decisiones-fede-20261113.md` y los PRD. Los documentos de decisiones/PRD se conservan frente al primer padre; frente al segundo se incorpora el documento de decisiones. Los conflictos documentales se consolidan en este cierre, sin mantener estados contradictorios.

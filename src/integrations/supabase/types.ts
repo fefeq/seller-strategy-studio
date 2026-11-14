@@ -5923,6 +5923,7 @@ export type Database = {
         Returns: Json
       }
       company_diagnosis: { Args: { _org: string }; Returns: Json }
+      copy_business_lines: { Args: never; Returns: Json }
       create_organization: {
         Args: { _name: string; _segments?: string }
         Returns: string
