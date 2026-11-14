@@ -38,7 +38,7 @@ export const gmail = {
         out.push(
           await call(
             "getMetadata",
-            `/users/me/messages/${encodeURIComponent(id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=In-Reply-To&metadataHeaders=Auto-Submitted`,
+            `/users/me/messages/${encodeURIComponent(id)}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date&metadataHeaders=In-Reply-To&metadataHeaders=Auto-Submitted&metadataHeaders=Precedence&metadataHeaders=X-Autoreply&metadataHeaders=X-Auto-Response-Suppress&fields=id,threadId,internalDate,payload/headers`,
           ),
         );
     return out;

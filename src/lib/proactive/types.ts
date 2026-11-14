@@ -69,6 +69,8 @@ export type Snapshot = {
     /** Email and its effective verification state (NK-0173); absent in older snapshots = the rule does not apply. */
     email?: string | null;
     email_status?: import("@/lib/email-verification").EmailStatus;
+    /** NK-0174: anonymous «respondió» mark exists. */
+    replied?: boolean;
   }[];
   leadSla?: import("@/lib/lead-funnel").LeadSla;
   /** For the cold-deal threshold: every deal with its dates and segment, the segments with ACV ranges, and the company override. Optional so older snapshots still work. */

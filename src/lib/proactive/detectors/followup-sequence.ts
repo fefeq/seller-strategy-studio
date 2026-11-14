@@ -11,7 +11,7 @@ import { emailBlockReason, emailGateMark } from "@/lib/email-status";
  */
 export const followupSequence: Detector = (s) =>
   (s.leads ?? []).flatMap((l) => {
-    const st = followupStatus({ stage: l.stage, contacted_at: l.contacted_at ?? null, next_step_at: l.next_step_at, contact_name: l.contact_name, company: l.company }, s.now);
+    const st = followupStatus({ stage: l.stage, contacted_at: l.contacted_at ?? null, next_step_at: l.next_step_at, contact_name: l.contact_name, company: l.company, replied: !!l.replied }, s.now);
     if (!st.due || !l.contacted_at) return [];
     const status = l.email?.trim() ? (l.email_status ?? "unverified") : null;
     const reason = status ? emailBlockReason(status) : null;

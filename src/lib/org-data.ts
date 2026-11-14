@@ -317,6 +317,15 @@ export async function loadSnapshot(
       leadRows.map((l) => l.email?.trim().toLowerCase()).filter((e): e is string => !!e),
     ),
   ];
+  // NK-0174: leads with the anonymous «respondió» mark (a failed read marks none, as before the feature).
+  const repliedIds = new Set<string>();
+  {
+    const contacted = leadRows.filter((l) => l.stage === "contacted").map((l) => l.id);
+    if (contacted.length) {
+      const r = await db.from("lead_replied_marks").select("lead_id").eq("org_id", orgId).in("lead_id", contacted.slice(0, 500));
+      for (const m of r.data ?? []) repliedIds.add(m.lead_id);
+    }
+  }
   let leadEmailStatus = new Map<string, import("@/lib/email-verification").EmailStatus>();
   if (leadEmails.length) {
     const { data: vrows, error: vErr } = await db
@@ -361,6 +370,7 @@ export async function loadSnapshot(
       email_status: l.email?.trim()
         ? leadEmailStatus.get(l.email.trim().toLowerCase())
         : undefined,
+      ...(repliedIds.has(l.id) ? { replied: true } : {}),
     })),
     leadSla: readSla(leadSettings.data?.sla),
     cycleDeals: (deals.data ?? []).map((d) => ({ ...d, meddpicc: jsonObject(d.meddpicc) })),
