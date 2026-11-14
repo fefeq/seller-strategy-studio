@@ -1,9 +1,11 @@
 // NK-0174 SDD 1: link / unlink the company's mailbox. Writes are privileged after role checks.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { canLinkMailbox } from "./rules";
 
-async function gate(supabase: any, userId: string, orgId: string) {
+async function gate(supabase: SupabaseClient<Database>, userId: string, orgId: string) {
   const [{ data: admin }, { data: member }] = await Promise.all([
     supabase.rpc("is_platform_admin", { _user: userId }),
     supabase.rpc("is_org_member", { _org: orgId }),

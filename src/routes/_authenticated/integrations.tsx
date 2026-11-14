@@ -111,7 +111,7 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
 /** Native connections not built yet. Listed so nobody looks for them in the plan below. */
 const NOT_YET = [
   "HubSpot, Pipedrive, Attio o Salesforce en sincronización nativa (hoy entran por webhook)",
-  "Google Calendar y Gmail",
+  "Google Calendar",
   "Gong y Fireflies",
 ];
 
