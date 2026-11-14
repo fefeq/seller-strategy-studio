@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
 import { Button } from "@/components/ui/button";
-import { Empty } from "@/components/page";
+import { Empty, ScreenState } from "@/components/page";
 import { StrategyBadge, StrategyEvidence } from "@/components/strategy-evidence";
 import { canUseAdvisor } from "@/lib/advisor";
 import { errorText } from "@/lib/errors";
