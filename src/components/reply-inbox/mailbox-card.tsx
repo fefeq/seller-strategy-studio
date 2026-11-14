@@ -52,7 +52,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             <Button
               variant="outline"
               onClick={async () => {
-                if (await askConfirm({ title: "¿Desconectar el buzón?", body: "NOKKO dejará de leer las respuestas." }))
+                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas.", confirmLabel: "Desconectar" }))
                   run(() => unlink({ data: { orgId } }), "Buzón desconectado");
               }}
             >
