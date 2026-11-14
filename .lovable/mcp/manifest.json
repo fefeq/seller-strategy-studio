@@ -4536,6 +4536,77 @@
         "outputSchema": null
       },
       {
+        "name": "list_custom_plays",
+        "title": "Ver los plays a medida",
+        "description": "Lista los plays a medida de la empresa con su estado (activo, pausado, archivado), si tienen pausa de seguridad, últimas ejecuciones y el resultado de prueba registrado. No ejecuta nada.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "activate_custom_play",
+        "title": "Activar un play a medida",
+        "description": "Activa un play a medida para las próximas búsquedas automáticas, tras comprobar fuentes y bloqueos como la pantalla Plays. Nunca quita una pausa de seguridad ni llama a proveedores. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "play_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "id del play (list_custom_plays)"
+            }
+          },
+          "required": [
+            "play_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "pause_custom_play",
+        "title": "Pausar un play a medida",
+        "description": "Pausa un play a medida. Conserva sus pruebas y resultados. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "play_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$",
+              "description": "id del play (list_custom_plays)"
+            }
+          },
+          "required": [
+            "play_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "propose_custom_play",
         "title": "Proponer un play a medida",
         "description": "Propone un play «Creado para tu empresa»: disparador público con fecha, ventana de frescura, pasos de evidencia con fuente, mensaje donde cada hecho cita un paso, y prueba (muestra y éxitos). Se guarda solo si el Owner o un Sales Leader lo confirma y pasa las reglas (incluida la de no copiar plays de otras empresas). No lo ejecuta. (Queda pendiente: el usuario la confirma en Nokko.)",
@@ -4820,6 +4891,23 @@
         "annotations": {
           "readOnlyHint": false,
           "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_business_lines",
+        "title": "Ver las líneas de negocio",
+        "description": "Lista las líneas de negocio de la empresa (hasta 4) con su arquetipo GTM, motion, etapa y siguiente paso, marcando la principal. Nunca devuelve el ticket anual.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
           "openWorldHint": false
         },
         "inputSchema": {
