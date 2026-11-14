@@ -667,6 +667,59 @@ export type Database = {
           },
         ]
       }
+      business_lines: {
+        Row: {
+          acv: number
+          created_at: string
+          friction: string
+          id: string
+          is_primary: boolean
+          model: string
+          name: string | null
+          org_id: string
+          origin: string
+          position: number
+          stage: string
+          updated_at: string
+        }
+        Insert: {
+          acv: number
+          created_at?: string
+          friction: string
+          id?: string
+          is_primary?: boolean
+          model: string
+          name?: string | null
+          org_id?: string
+          origin?: string
+          position?: number
+          stage: string
+          updated_at?: string
+        }
+        Update: {
+          acv?: number
+          created_at?: string
+          friction?: string
+          id?: string
+          is_primary?: boolean
+          model?: string
+          name?: string | null
+          org_id?: string
+          origin?: string
+          position?: number
+          stage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_lines_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cac_costs: {
         Row: {
           amount: number
@@ -4833,6 +4886,7 @@ export type Database = {
           acv_min: number | null
           ae_per_se: number | null
           ae_quota: number | null
+          business_line_id: string | null
           cac_target: number | null
           created_at: string
           created_by: string | null
@@ -4858,6 +4912,7 @@ export type Database = {
           acv_min?: number | null
           ae_per_se?: number | null
           ae_quota?: number | null
+          business_line_id?: string | null
           cac_target?: number | null
           created_at?: string
           created_by?: string | null
@@ -4883,6 +4938,7 @@ export type Database = {
           acv_min?: number | null
           ae_per_se?: number | null
           ae_quota?: number | null
+          business_line_id?: string | null
           cac_target?: number | null
           created_at?: string
           created_by?: string | null
@@ -4903,6 +4959,13 @@ export type Database = {
           win_rate_target?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "segments_business_line_same_org"
+            columns: ["business_line_id", "org_id"]
+            isOneToOne: false
+            referencedRelation: "business_lines"
+            referencedColumns: ["id", "org_id"]
+          },
           {
             foreignKeyName: "segments_org_id_fkey"
             columns: ["org_id"]
@@ -5922,6 +5985,7 @@ export type Database = {
         Returns: boolean
       }
       play_enable_allowed: { Args: { _play_id: string }; Returns: boolean }
+      remove_business_line: { Args: { _line: string }; Returns: string }
       remove_stripe_key: { Args: never; Returns: undefined }
       reorder_deal_stages: { Args: { _keys: string[] }; Returns: undefined }
       reserve_custom_play_step: {
@@ -5935,6 +5999,7 @@ export type Database = {
         Returns: boolean
       }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
+      set_primary_business_line: { Args: { _line: string }; Returns: string }
       set_stripe_key: { Args: { _key: string }; Returns: undefined }
       shares_org: { Args: { _user: string }; Returns: boolean }
       strategy_meta_valid: { Args: { m: Json }; Returns: boolean }
