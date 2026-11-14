@@ -18,6 +18,8 @@ import { AiText } from "@/components/ai-text";
 import { errorText } from "@/lib/errors";
 import { ageText } from "@/lib/web-research";
 import { accountJobs, battlecardFromReviews } from "@/lib/apify.functions";
+import { useLinkedinLegalPause } from "@/hooks/use-linkedin-legal";
+import { LINKEDIN_PAUSE_TEXT } from "@/lib/linkedin-legal";
 
 type Jobs = Awaited<ReturnType<typeof accountJobs>>;
 
