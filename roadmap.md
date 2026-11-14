@@ -111,3 +111,5 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0167: bloqueante de revisión corregido (paso de líneas se reinicia al cambiar de empresa, prueba nueva).
 - [x] NK-0173: pase visual de los seis estados en la ficha de cuenta, claro/oscuro, escritorio/móvil (sin caso de email alternativo).
 - [ ] Aceptación final de Fede: NK-0176, NK-0171, guía de hallazgos, NK-0174 SDD 1, NK-0167 SDD 1–3, NK-0173.
+- [x] NK-0167 SDD 4: list_business_lines en Agente/MCP (proyección segura, nunca el ticket; probado).
+- [x] NK-0171: list_custom_plays, activate_custom_play, pause_custom_play en Agente/MCP (mismas reglas que /plays; activar/pausar solo Owner/Sales Leader tras confirmación).
