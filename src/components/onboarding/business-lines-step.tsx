@@ -68,7 +68,7 @@ export function BusinessLinesStep({ orgId, roles, initial, saveDiagnosis, onNext
     if (input) setEditing({ id: l.id, draft: { ...input, name: l.name ?? "" } });
   };
   async function remove(l: EditableLine) {
-    if (await askConfirm(`¿Quitar la línea «${l.name || "sin nombre"}»?`, { description: l.is_primary ? "Otra línea pasará a ser la principal." : "Puedes volver a crearla después." }))
+    if (await askConfirm(`¿Quitar la línea «${l.name || "sin nombre"}»?`, { body: l.is_primary ? "Otra línea pasará a ser la principal." : "Puedes volver a crearla después.", confirmLabel: "Quitar" }))
       void run({ kind: "remove", id: l.id });
   }
 
