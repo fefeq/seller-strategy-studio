@@ -47,6 +47,8 @@ export type ConceptId =
   | "direccion_email"
   | "estado_email"
   | "estado_proveedor_email"
+  | "proveedor_buzon"
+  | "estado_buzon"
   | "clave_registro"
   | "superficie_borrador"
   | "motivo_bloqueo_email"
@@ -122,6 +124,8 @@ export const CONCEPTS: Concept[] = [
   { id: "clave_empresa", label: "Empresa (clave)", meaning: "Empresa propietaria de un registro.", kind: "text", format: "uuid", display: "No se muestra" },
   { id: "direccion_email", label: "Email", meaning: "Dirección normalizada de contacto.", kind: "text", format: "Minúsculas sin espacios exteriores", display: "Dirección" },
   { id: "estado_email", label: "Estado del email", meaning: "Estado comunicado por el proveedor para una dirección.", kind: "enum", format: "Valor cerrado", allowed: ["verified", "catch_all", "unverifiable", "invalid", "unverified"], display: "Estado efectivo en español" },
+  { id: "proveedor_buzon", label: "Proveedor del buzón", meaning: "Servicio de correo del buzón conectado a la bandeja de respuestas.", kind: "enum", format: "gmail", display: "Nombre del servicio" },
+  { id: "estado_buzon", label: "Estado del buzón", meaning: "Si el buzón de la empresa está conectado o desconectado.", kind: "enum", format: "connected | disconnected", display: "Conectado / Desconectado" },
   { id: "estado_proveedor_email", label: "Estado del proveedor", meaning: "Valor original corto para auditoría de verificación.", kind: "text", format: "Máximo 120 caracteres", display: "No se muestra" },
   {
     id: "pais",
@@ -428,6 +432,12 @@ export const BINDINGS: Binding[] = [
   { table: "email_draft_blocks", column: "created_at", concept: "alta_sistema", persistence: saved },
   { table: "email_verifications", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "email_verifications", column: "email", concept: "direccion_email", persistence: saved },
+  { table: "mailbox_links", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "mailbox_links", column: "user_id", concept: "clave_usuario", persistence: saved },
+  { table: "mailbox_links", column: "address", concept: "direccion_email", persistence: saved },
+  { table: "mailbox_links", column: "provider", concept: "proveedor_buzon", persistence: saved },
+  { table: "mailbox_links", column: "status", concept: "estado_buzon", persistence: saved },
+  { table: "mailbox_links", column: "linked_at", concept: "alta_sistema", persistence: saved },
   { table: "email_verifications", column: "status", concept: "estado_email", persistence: saved },
   { table: "email_verifications", column: "provider_status", concept: "estado_proveedor_email", persistence: saved },
   { table: "email_verifications", column: "provider", concept: "fuente_citada", persistence: saved },
@@ -822,6 +832,8 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   direccion_email: ["src/lib/email-verification.ts"],
   estado_email: ["src/lib/email-verification.ts", "src/components/email-verification.tsx"],
   estado_proveedor_email: ["src/integrations/supabase/types.ts"],
+  proveedor_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
+  estado_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
   alta_sistema: ["src/integrations/supabase/types.ts"],
 };
 
