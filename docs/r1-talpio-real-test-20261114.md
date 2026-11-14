@@ -15,3 +15,14 @@ Fecha: 14-11-2026 UTC. Fede autorizó una sola ejecución con gasto de búsqueda
 - No se cambiaron código de producto, pruebas existentes, migraciones ni diario. Sigue pendiente la colisión 0093 ya documentada; esta prueba no cierra U-4b/U-5 ni declara suite verde.
 
 Siguiente paso: diagnosticar la denegación de OpenRouter sin nueva ejecución de pago; una nueva prueba requiere nueva autorización.
+
+## Nueva ejecución autorizada — petición 14-11-2026 07:55 UTC
+
+- Clave `OPENROUTER_API_KEY` sustituida mediante formulario seguro; comprobación gratuita de autenticación HTTP 200. No se registró su valor ni información derivada.
+- Ejecución nueva: `6dbb089a-523b-46a9-abde-5e0cb22ac65b`. El registro previo y sus checkpoints se conservaron intactos. Coordinador y adaptadores existentes, invocación local puntual, sin cron ni Inngest global.
+- Resultado comprobado mediante lectura independiente del almacenamiento: **done**, tres pasos **committed**, **0 evidencias, 0 sugerencias**. La selección no conservó una señal válida; esto no demuestra que el competidor nunca haya retirado productos. El paso de personas terminó sin llamadas de enriquecimiento al no haber cuentas seleccionadas por señales.
+- Coste IA medido: **0,001716 USD**, 2.133 tokens de entrada y 31 de salida. Búsqueda: **0,01 EUR estimados**, separada del coste IA.
+- Tras terminar, la consulta auxiliar del informe usó por error `play_costs` en lugar de `custom_play_costs`; provocó una marca precautoria `uncertain` posterior a la ejecución. Lectura independiente confirmó todos los pasos comprometidos y `done`; se retiró únicamente esa marca auxiliar. No se repitió la ejecución ni gasto alguno.
+- Play finalmente **pausado**, `execution_pause=null`, lease liberado; bloqueo de proveedor recuperado únicamente en la empresa sintética. Sin vigilancia permanente, mensajes, publicación ni cambios de producto/pruebas/migraciones.
+- Navegador autenticado abrió Plays de Postin; actividad de la empresa sintética no verificada visualmente tras dos fallos del selector. No se cambió la empresa activa. Los resultados anteriores son lecturas persistidas, no una afirmación de verificación visual.
+- La nueva clave funciona en este entorno; su incorporación a la aplicación publicada queda sin verificar y requiere publicación, no realizada en este pedido.
