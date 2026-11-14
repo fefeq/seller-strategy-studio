@@ -3408,6 +3408,41 @@ export type Database = {
           },
         ]
       }
+      mailbox_links: {
+        Row: {
+          address: string
+          linked_at: string
+          org_id: string
+          provider: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          linked_at?: string
+          org_id: string
+          provider?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          linked_at?: string
+          org_id?: string
+          provider?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mailbox_links_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       meetings: {
         Row: {
           account_id: string | null
