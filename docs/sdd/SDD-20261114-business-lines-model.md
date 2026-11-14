@@ -88,7 +88,7 @@ Revisión: integridad concurrente en READ COMMITTED, aislamiento de empresa y pr
 
 ## 16. Pendiente de verificar
 - Permiso específico de copia: resuelto por Fede; copia todavía no ejecutada.
-- FK con limpieza selectiva y concurrencia: pruebas nuevas antes de aplicar DDL.
+- FK con limpieza selectiva: comprobada en PGlite y restricción real leída; concurrencia de dos conexiones todavía pendiente.
 - Suite U-1: 5826/5826, 365 archivos; compilación automática OK 00:38:20 UTC. Tipos sin ejecución manual por restricción del entorno.
 - Concurrencia real: PGlite de una conexión no la demuestra.
 
@@ -96,4 +96,6 @@ Revisión: integridad concurrente en READ COMMITTED, aislamiento de empresa y pr
 Pendiente de nokko-gate; no realizada por el autor.
 
 ## 18. Delta de implementación
+14-11-2026 00:44 UTC: U-2 aplicada y catálogo completo. Tabla business_lines con RLS, permisos explícitos, límite cuatro, org_id inmutable, una principal diferida y RPC invoker de principal/borrado con comprobación explícita de rol y filas. Enlace compuesto de segmentos elimina solo business_line_id. Nueve pruebas nuevas fallaron primero por esquema ausente; una prueba nueva de org_id nulo se ajustó para usar UPDATE y alcanzar el CHECK, evitando que el trigger set_audit anterior rechazase antes la inserción. Pruebas protegidas intactas. Suite 5835/5835, 366 archivos, build automático OK 00:48:34 UTC; tipos sin ejecución manual por restricción del entorno. Herramienta generó prefijo 0094 duplicado; solo nuevo archivo/tag corregidos a 0095, SQL/idx/when/snapshot intactos y sin reaplicar. Lectura real confirma tabla vacía, RLS, cuatro políticas, grants y dos restricciones de segmentos. No hay UI cambiada en esta unidad; no se afirma recorrido de pantalla. Concurrencia real de dos conexiones no demostrada. U-3 copia repetible autorizada, U-4 cierre final y revisión independiente pendientes. Sin copia de datos, IA/gasto/envíos/publicación/despliegue/fusión.
+
 14-11-2026: U-0 y U-1 realizadas. Fede autorizó la copia después de los conteos. Reglas puras en business-lines.ts reutilizan diagnose; rechazan ticket cero, inputs incompletos y valores no finitos. Resumen seguro sin nombre ni ticket. Diez pruebas nuevas fallaron primero por módulo ausente y ahora pasan; ninguna prueba existente modificada. Suite 5826/5826 y compilación automática OK. Sin cambios de pantalla, no corresponde recorrido visual para U-1. Pendientes U-2..U-4 (integridad, RPC, catálogo y copia autorizada); aún no se aplicó esquema ni se copiaron datos. Sin IA, gasto, envíos, publicación/despliegue/fusión. No se declara NK-0167 completado.
