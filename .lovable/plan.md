@@ -5,7 +5,7 @@
 ## Objetivo y evidencia actual
 Pausar únicamente la extracción robotizada de LinkedIn y contabilizar el gasto con transparencia, sin bloquear el gasto manual por presupuesto.
 
-Lectura del repositorio: `apify-gateway.ts` ejecuta actores síncronos y devuelve resultados sin recibo de cargo; sus `maxUsd` son topes técnicos, **no costes medidos**. `web-search.ts` llama a tres proveedores sin atribución de empresa. La clasificación guarda USD en `inbox_reply_receipts`, pero no entra en `monthBudget`, que suma solo `integration_usage.cost`, tratado como EUR. Los plays guardan costes medidos USD y estimaciones EUR por separado. Las búsquedas Apollo/Clay y Apify se declaran `read` y se ejecutan sin confirmación; las consultas Parallel de informes en marcha pueden actualizar registros. No se consultaron servicios externos ni se calcularon precios a partir de tarifas estáticas.
+Código revisado: Apify devuelve resultados sin recibo de cargo (`maxUsd` es un tope técnico, no precio); `web-search.ts` no atribuye gasto a empresa. Clasificación guarda USD en recibos, mientras `monthBudget` suma solo `integration_usage.cost` como EUR. Plays separa USD medido y EUR estimado. Las búsquedas Apollo/Clay/Apify se ejecutan como `read` sin confirmación. No se consultaron proveedores ni se calcularon tarifas.
 
 ## A. Pausa legal reversible (3B.4)
 - Interruptor **global**, inicialmente «En pausa», visible en Conexiones; solo superadmin puede cambiarlo. Esta restricción evita que una empresa eluda la pausa legal para toda la plataforma. Reanudación exclusivamente tras autorización de Fede por revisión legal.
@@ -30,9 +30,9 @@ Lectura del repositorio: `apify-gateway.ts` ejecuta actores síncronos y devuelv
 | Consulta con coste y posible escritura | `linkedin_company_posts` y resto LinkedIn: pausadas legalmente; al reanudar exigirían confirmación. Informes Parallel en marcha que actualizan registros: no etiquetarlos como lectura pura |
 | Acción con coste/escritura ya confirmable | `start_account_report`, `start_icp_account_list`, revelados Apollo y battlecards: mantener confirmación y añadir estimación sustentada |
 
-Auditar el registro completo, incluidos envoltorios de necesidades que llaman a esas operaciones: la clasificación se declara una vez por sus efectos, no por el nombre `read`. Mantener `kind` compatible para crear acciones pendientes y añadir metadatos explícitos de lectura pura, coste, escritura y pausa. Agente/MCP/canales reutilizan ese contrato. La confirmación identifica herramienta, volumen, efectos, estimación y aviso presupuestario; cancelar no llama al proveedor ni guarda resultados. Reclamar atómicamente antes de ejecutar, sin doble gasto por doble clic.
+Auditar también envoltorios de necesidades. Contrato compartido de efectos (lectura pura, coste, escritura, pausa), compatible con acciones pendientes y MCP. Confirmación: herramienta, volumen, efectos, estimación y aviso; cancelar no ejecuta. Reclamo atómico evita doble gasto.
 
-**Resultados tras confirmar:** las consultas dejan de devolver resultados inmediatamente al modelo; guardar una proyección acotada y accesible solo a empresa/usuario en la acción o trabajo existente y devolver un enlace/lectura de ese resultado. No perder personas o empresas encontradas al convertir `read` en confirmable. Las acciones manuales equivalentes en pantallas también muestran confirmación de coste; el automatismo autorizado no pide un clic por cada operación, pero respeta la pausa presupuestaria.
+**Resultados:** conservar proyección acotada por empresa/usuario en la acción/trabajo y devolver su enlace/lectura tras confirmar. No perder resultados al convertir búsquedas en confirmables. Pantallas manuales también confirman coste; automatismos autorizados respetan presupuesto sin pedir clic por operación.
 
 ## Criterios de aceptación: prueba primero
 | CA | Regla concreta | Prueba nueva propuesta |
@@ -49,11 +49,11 @@ Auditar el registro completo, incluidos envoltorios de necesidades que llaman a 
 Nuevas pruebas fallando primero, suite/regresiones, tipos, lint y compilación automática. Navegador con sesión: «En pausa», G2 disponible, confirmaciones/cancelación/resultados y avisos en escritorio/móvil claro/oscuro, con proveedores sintéticos, sin gasto real. Revisión independiente de concurrencia y contabilidad antes del cierre. **Ninguna prueba existente se modifica sin permiso específico**; si fija ejecución inmediata de una lectura con coste, parar esa sustitución y pedirlo.
 
 ## Archivos y migración propuesta — no aplicar
-- Pausa: nuevo núcleo/estado legal y función autenticada; `apify-gateway.ts`, `apify-core.ts`, `ai-core.ts`, `web-research-core.ts`, herramientas LinkedIn, `components/linkedin.tsx`, Conexiones y consumidores de jobs/plays.
-- Gasto: `orchestrator/usage.ts`, `runner.ts`, `planner.ts`, `orchestrator.functions.ts`, panel de presupuesto; `web-search.ts` y sus consumidores; gateways Apollo/Clay/Parallel/Apify y adaptación del registro de IA/plays; recibos de clasificación sin alterar modelo ni contenidos de correo.
-- Confirmación: `agent/tool-kit.ts`, registro/herramientas afectadas, `agent/agent.server.ts`, `agent.functions.ts`, adaptador MCP/manifiesto y presentación de acciones/resultados. Pruebas nuevas, catálogo de campos y reglas de arquitectura.
-- **Se requiere migración nueva**, no editar migraciones existentes: estado global legal (lectura autenticada mínima, escritura solo superadmin comprobado); ampliar `integration_usage` con identidad idempotente de operación, herramienta, volumen, estado de coste/moneda y referencia de recibo; importe desconocido nullable; recibos correlacionables y proyección de resultados si los campos existentes no bastan. RLS, GRANT y RPC atómicos de registro/conciliación. Los antiguos registros conservan sus importes como estimaciones históricas, nunca se reclasifican como medidos. Sin borrado ni copia de datos empresariales.
-- Número de migración a asignar al implementar tras comprobar el diario. Este SDD **no crea archivo SQL ni aplica cambios**.
++- Pausa: núcleo/estado legal nuevo; `apify-gateway.ts`, `apify-core.ts`, `ai-core.ts`, `web-research-core.ts`, herramientas LinkedIn, `components/linkedin.tsx`, Conexiones y consumidores jobs/plays.
++- Gasto: `orchestrator/{usage,runner,planner}.ts`, estado/panel de presupuesto; `web-search.ts` y consumidores; gateways, recibos de clasificación y adaptadores de IA/plays.
++- Confirmación: `agent/tool-kit.ts`, herramientas afectadas, `agent/agent.server.ts`, `agent.functions.ts`, adaptador MCP/manifiesto y presentación de acciones/resultados. Pruebas nuevas, catálogo de campos y reglas de arquitectura.
++- **Migración nueva necesaria:** estado legal global; ampliar `integration_usage` con operación idempotente, herramienta, volumen, moneda, calidad del coste y referencia de recibo; importe desconocido nullable; correlación de recibos y proyección de resultados si campos actuales no bastan. GRANT, RLS y RPC atómicos. Lectura legal mínima autenticada, escritura solo superadmin comprobado. Conservar registros antiguos como estimaciones, nunca medidos.
++- Número a asignar tras comprobar el diario. No editar migraciones existentes, borrar datos ni copiar empresas. **No se crea SQL ni se aplica migración con este SDD.**
 
 ## Riesgos, reversión y límites
 - Registro incompleto/proveedor sin recibo: conservar intento «sin dato» y reconciliar después por ID, no relanzar consumo. Si falla la persistencia antes de llamar, detener ese intento por integridad, no por un tope presupuestario.
