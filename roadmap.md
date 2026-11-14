@@ -31,7 +31,7 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [x] NK-0174 SDD 1: Gmail de Fede conectado a Postin (somos@postinapp.com), solo lectura, puerta legal.
 - [x] NK-0174 SDD 2: detección de respuestas (solo remitente y fecha), marca «respondió» y pausa de secuencia; pruebas OK. Pendiente: primera pasada real (corre en el trabajo horario publicado).
 - [ ] NK-0174 SDD 3 (pedido de Fede 14-11 11:52 UTC): U-1 núcleo aislado y adaptador privado Opus 5.5 entregados; 22 pruebas nuevas, suite 5941/5941 y compilación automática OK. Modelo elegido por Fede y confirmado en catálogo OpenRouter; sin respaldo, recogida de datos denegada y retención cero. U-2/U-3 pendientes: persistencia privada/retención, recibos durables e integración horaria, resumen de estilo y revisión independiente. Adaptador no conectado ni disponibilidad privada real probada. Sin publicación, envíos, lectura real ni gasto.
-- [ ] NK-0174 SDD 4: pantalla Respuestas.
+- [ ] NK-0174 SDD 4: U-1 hecho 14-11 — pantalla /replies de solo lectura (lead, fecha, persona/automática, filtros), enlace desde la tarjeta Gmail; 6 pruebas nuevas. Pendiente: categoría IA cuando SDD 3 U-2/U-3 se conecte, revisión visual.
 - F12 decidido: documentos de onboarding-sources nunca se borran automáticamente. Sin publicar/desplegar; Torre de control GTM y Salida de Lovable aparcados.
 
 ## Verificación independiente (13-11-2026; prioridad antes de iniciativas nuevas)
