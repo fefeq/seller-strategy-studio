@@ -1,3 +1,4 @@
+import { MailboxCard } from "@/components/reply-inbox/mailbox-card";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -168,6 +169,7 @@ function Integrations() {
         <div className="mt-3 grid gap-3 md:grid-cols-2">
           <StripeConnect />
           <PosthogConnect />
+          {me?.currentOrg && <MailboxCard orgId={me.currentOrg.org_id} />}
         </div>
         <p className="mt-4 text-xs text-muted-foreground">
           Aún sin conexión nativa: {NOT_YET.join(" · ")}.
