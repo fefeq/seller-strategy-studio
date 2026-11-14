@@ -1,4 +1,10 @@
 // ⌘K destinations: where a record hit opens, and screens reachable from ⌘K outside the menu (src/lib/nav.ts).
+import { ASSISTANTS_NAV, visibleItems, type NavGroup } from "./nav";
+
+export function paletteItems(group: NavGroup, leader: boolean) {
+  const items = visibleItems(group, leader, true);
+  return group.key === "settings" ? [...items, ASSISTANTS_NAV] : items;
+}
 export type HitKind = "Cuenta" | "Lead" | "Persona" | "Deal";
 
 export function hitTarget(h: { kind: HitKind; id: string }) {

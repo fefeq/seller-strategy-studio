@@ -16,8 +16,8 @@ import {
 import { useAgent } from "@/components/agent";
 import { useMe } from "@/hooks/use-me";
 import { canUseAdvisor } from "@/lib/advisor";
-import { NAV_GROUPS, visibleItems } from "@/lib/nav";
-import { hitTarget, PALETTE_SCREENS, type HitKind } from "@/lib/palette";
+import { NAV_GROUPS } from "@/lib/nav";
+import { hitTarget, paletteItems, type HitKind } from "@/lib/palette";
 
 type Hit = { kind: HitKind; id: string; name: string; sub: string | null };
 
@@ -147,19 +147,10 @@ export function CommandPalette({
           >
             Buscar empresas por ICP
           </CommandItem>
-          {PALETTE_SCREENS.map((sc) => (
-            <CommandItem
-              key={sc.to}
-              value={`${sc.label} ${sc.keywords}`}
-              onSelect={() => go(() => navigate({ to: sc.to }))}
-            >
-              {sc.label}
-            </CommandItem>
-          ))}
         </CommandGroup>
         {NAV_GROUPS.map((g) => (
           <CommandGroup key={g.key} heading={g.title || "Ir a"}>
-            {visibleItems(g, leader).map((n) => (
+            {paletteItems(g, leader).map((n) => (
               <CommandItem
                 key={n.to}
                 value={`${n.label} ${n.keywords ?? ""}`}
