@@ -1,5 +1,6 @@
 # Roadmap
 ## Cola de Fede — 13-11-2026
+- [ ] Pedido 14-11 00:27 UTC: reparar el prefijo de checkpoints a 0094 sin volver a aplicar SQL ya aplicado; implementar U-5 (lista propia, activar/pausar, resultados y evidencia/costes), pruebas nuevas primero, suite completa y navegador; sin publicar ni gasto real.
 - [ ] Pedido 14-11 00:01 UTC: única ejecución real R-1 con Talpio realizada; búsqueda Perplexity y paso guardados, selección OpenRouter detenida por provider_denied (401/403). 0 pruebas aceptadas y 0 sugerencias; 0,01 EUR de búsqueda estimados, IA sin coste informado. Play pausado y empresa activa restaurada a Postin; informe docs/r1-talpio-real-test-20261114.md. Resultado completo bloqueado por denegación IA; no repetir gasto sin autorización.
 Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre 734c202 (13-11-2026). Autorización general de Fede recibida a las 14:08 UTC: guardar cada SDD y construir sin esperar confirmación entre entregas. Mantener las paradas obligatorias, ninguna prueba existente modificada y suite completa verde e informe antes de la siguiente entrega. La revisión independiente de NK-0176 sigue pendiente, pero la autorización permite continuar la cola.
 - [x] NK-0176: SDD corto redactado en docs/sdd/SDD-20261113-linkedin-blocker-d2.md; solo texto del bloqueador y cierre D2.
