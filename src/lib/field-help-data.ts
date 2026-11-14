@@ -138,7 +138,7 @@ export const FIELD_HELP: HelpEntry[] = [
   // ---------------- Pipeline y deals ----------------
   { labels: ["Nombre del deal", "Deal"], description: "Nombre de la oportunidad, normalmente empresa + producto.", goal: "Identifica el deal en el pipeline, el forecast y los avisos.", example: "Acme · Plan Pro", format: "solo el nombre." },
   { labels: ["Etapa"], description: "En qué punto del proceso de venta está.", goal: "Mueve el pipeline, la cobertura y el forecast.", prompt: false },
-  { labels: ["Importe (ACV)", "Importe", "Valor anual del contrato (ACV)", "Valor estimado", "Valor"], description: "Valor anual del contrato (ACV) esperado.", goal: "Suma en pipeline, cobertura, forecast y CAC.", ask: "estima el ACV de este deal según el tamaño de la cuenta y los precios del producto.", format: NUMBER },
+  { labels: ["Valor anual (ACV)", "Importe (ACV)", "Importe", "Valor anual del contrato (ACV)", "Valor estimado", "Valor"], description: "Valor anual del contrato (ACV) esperado.", goal: "Suma en pipeline, cobertura, forecast y CAC.", ask: "estima el ACV de este deal según el tamaño de la cuenta y los precios del producto.", format: NUMBER },
   { labels: ["Fecha de cierre"], description: "Cuándo esperas cerrar el deal.", goal: "Sin fecha, el deal no cuenta en la cobertura del trimestre.", prompt: false },
   { labels: ["Probabilidad", "Probabilidad (%)"], description: "Probabilidad de ganar el deal, en porcentaje.", goal: "Pondera el forecast.", prompt: false },
   { labels: ["Categoría de forecast"], description: "Cómo cuentas el deal en la previsión: commit, best case, pipeline u omitido.", goal: "Hace el forecast más preciso (objetivo: error menor al 10 %).", prompt: false },
