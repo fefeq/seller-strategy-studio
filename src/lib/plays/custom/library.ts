@@ -114,3 +114,19 @@ export function accountsForCompetitor(
   for (const l of d.lostDeals) if (l.account_id && names(competitor, l.lost_competitor)) ids.add(l.account_id);
   return [...ids];
 }
+
+const fold = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+/** Plays that depend on declared competitors: the query names them in quotes and a signal only counts
+ *  when its title, snippet or URL names one of them as a whole word. Generic news never passes. */
+export function competitorQuery(base: string, competitors: string[]): string {
+  return competitors.length ? `${competitors.map((c) => `"${c}"`).join(" OR ")} ${base}` : base;
+}
+export function namesCompetitor(s: { title?: string | null; snippet?: string | null; url?: string | null }, competitors: string[]): boolean {
+  const text = fold(`${s.title ?? ""} ${s.snippet ?? ""} ${s.url ?? ""}`);
+  return competitors.some((c) => {
+    const n = fold(c.trim());
+    if (n.length < 2) return false;
+    const esc = n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return new RegExp(`(^|[^a-z0-9])${esc}([^a-z0-9]|$)`).test(text);
+  });
+}

@@ -5,7 +5,7 @@ import { executeCustomPlay, type ExecutionInput, type ExecutionPorts } from "./e
 import type { Proposal } from "./propose";
 import { jsonObject } from "@/lib/json";
 import { fetchAll } from "@/lib/fetch-all";
-import { accountsForCompetitor, splitCompetitors } from "./library";
+import { accountsForCompetitor, splitCompetitors, competitorQuery, namesCompetitor } from "./library";
 import { effectiveEmailStatus } from "@/lib/email-verification";
 import { loadEmailVerifications } from "@/lib/email-verification-read";
 import { buildStepPayload, type StepPayload } from "./step-output";
@@ -143,10 +143,13 @@ export function createExecutionPorts(db:Db, token:string): ExecutionPorts {
           signals.push({ title:file.name,url:file.webViewLink ?? `https://drive.google.com/file/d/${file.id}`,snippet:text.slice(0,280),date:null,source:"Drive",provider:"drive" });
         }
       } else {
-        const query = i.step.source === "reviews" ? competitors[0] : `${i.step.question} ${competitors.join(" ")} ${pos?.product_name ?? ""} ${pos?.need ?? ""}`.slice(0,1500);
+        // A play that starts from declared competitors only accepts signals that name one of them.
+        const byCompetitor = i.proposal.steps.some(s => s.source === "competitors");
+        if(byCompetitor && !competitors.length) throw new Error("Falta un competidor declarado. Completa el posicionamiento.");
+        const query = i.step.source === "reviews" ? competitors[0] : byCompetitor ? competitorQuery(i.step.question,competitors).slice(0,1500) : `${i.step.question} ${pos?.product_name ?? ""} ${pos?.need ?? ""}`.slice(0,1500);
         if(!query) throw new Error("Falta un competidor declarado para buscar reseñas. Completa el posicionamiento.");
         const read = await readStepSource(c,{ ...i.step,question:query },i.trigger);
-        signals = read.signals;usage=read.usage;
+        signals = byCompetitor && i.step.source !== "reviews" ? read.signals.filter(s => namesCompetitor(s,competitors)) : read.signals;usage=read.usage;
         costs = usage.map(u => ({ provider:u.service,amount:u.cost,cost_kind:"provider_estimated",currency:"EUR",input_tokens:null,output_tokens:null }));
       }
       if(signals.length) {
