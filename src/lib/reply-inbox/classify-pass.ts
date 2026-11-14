@@ -1,6 +1,6 @@
 // NK-0174 SDD 3 U-2 (port-based, tested): one bounded classification pass. Reserve before any read or spend;
 // a reservation is never replayed. Reply text lives only in memory; receipts carry counters and cost only.
-import { DERIVED_TTL_DAYS } from "./classification";
+import { DERIVED_TTL_DAYS, publicReplyContext } from "./classification";
 import { prepareReply, type PreparedReply, type ReplyPorts } from "./classification-core";
 
 export const MAX_CLASSIFY_PER_PASS = 10;
@@ -52,7 +52,7 @@ export async function runClassifyPass(ports: PassPorts, now = new Date()) {
     catch { console.error("reply classify: read failed"); await ports.finish(row.id, "failed").catch(() => {}); failed++; continue; }
     try {
       const prepared = await prepareReply(
-        { kind: "human", text, now, forbidden: ctx.forbidden, context: { positioning: ctx.positioning, pillars: ctx.pillars, contact: { firstName: String(ctx.lead.contact_name ?? "").split(/\s+/)[0] ?? "", role: String(ctx.lead.title ?? ""), company: String(ctx.lead.company ?? "") } } as never },
+        { kind: "human", text, now, forbidden: ctx.forbidden, context: publicReplyContext(ctx.positioning, ctx.pillars, { contact_name: ctx.lead.contact_name, role: ctx.lead.title, company_name: ctx.lead.company }) },
         { ...ports.model, record: (r) => ports.receipt(row, r) },
       );
       await ports.save(row, prepared, new Date(now.getTime() + DERIVED_TTL_DAYS * 86_400_000).toISOString());
