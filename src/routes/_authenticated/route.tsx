@@ -168,7 +168,7 @@ function Shell() {
         <header
           className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}
         >
-          <div className="flex h-14 items-center justify-between gap-3 px-4">
+          <div className="flex h-14 items-center justify-between gap-1 px-4 min-[400px]:gap-3">
             <Link to="/home" className="shrink-0" aria-label="Inicio">
               <Lockup />
             </Link>
