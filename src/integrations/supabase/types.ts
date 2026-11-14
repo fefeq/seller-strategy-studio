@@ -2905,6 +2905,42 @@ export type Database = {
           },
         ]
       }
+      inbox_replies: {
+        Row: {
+          created_at: string
+          gmail_id: string
+          id: string
+          kind: string
+          lead_id: string | null
+          org_id: string
+          received_at: string
+          thread_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          gmail_id: string
+          id?: string
+          kind: string
+          lead_id?: string | null
+          org_id: string
+          received_at: string
+          thread_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          gmail_id?: string
+          id?: string
+          kind?: string
+          lead_id?: string | null
+          org_id?: string
+          received_at?: string
+          thread_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       integration_usage: {
         Row: {
           cost: number
@@ -3141,6 +3177,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_replied_marks: {
+        Row: {
+          lead_id: string
+          org_id: string
+          replied_at: string
+        }
+        Insert: {
+          lead_id: string
+          org_id: string
+          replied_at: string
+        }
+        Update: {
+          lead_id?: string
+          org_id?: string
+          replied_at?: string
+        }
+        Relationships: []
       }
       lead_settings: {
         Row: {
@@ -3411,25 +3465,31 @@ export type Database = {
       mailbox_links: {
         Row: {
           address: string
+          last_synced_at: string | null
           linked_at: string
           org_id: string
           provider: string
+          replies_count: number
           status: string
           user_id: string
         }
         Insert: {
           address: string
+          last_synced_at?: string | null
           linked_at?: string
           org_id: string
           provider?: string
+          replies_count?: number
           status?: string
           user_id: string
         }
         Update: {
           address?: string
+          last_synced_at?: string | null
           linked_at?: string
           org_id?: string
           provider?: string
+          replies_count?: number
           status?: string
           user_id?: string
         }

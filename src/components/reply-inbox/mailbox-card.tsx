@@ -17,7 +17,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
     queryKey: ["mailbox-link", orgId],
     queryFn: async () => {
       const [{ data: row }, { data: u }] = await Promise.all([
-        supabase.from("mailbox_links").select("address,status,linked_at").eq("org_id", orgId).maybeSingle(),
+        supabase.from("mailbox_links").select("address,status,linked_at,last_synced_at,replies_count").eq("org_id", orgId).maybeSingle(),
         supabase.auth.getSession(),
       ]);
       const uid = u.session?.user.id;
@@ -42,9 +42,16 @@ export function MailboxCard({ orgId }: { orgId: string }) {
       <p className="eyebrow">Bandeja de respuestas · Gmail</p>
       <p className="mt-2 text-sm">
         {row
-          ? `Conectado: ${row.address}. Por ahora solo queda vinculado; NOKKO nunca envía desde él.`
-          : "Sin buzón conectado. Esta fase solo vincula Gmail; la detección de respuestas y la pausa de secuencias llegarán después."}
+          ? `Conectado: ${row.address}. Cada hora NOKKO mira si tus leads en Contactado te han respondido y, si es así, detiene su secuencia de seguimiento. Solo lee remitente y fecha; nunca envía desde él.`
+          : "Sin buzón conectado. Al conectarlo, NOKKO detecta las respuestas de tus leads y detiene su secuencia de seguimiento."}
       </p>
+      {row && (
+        <p className="mt-1 text-xs text-ink-mid">
+          {row.last_synced_at
+            ? `Última revisión: ${new Date(row.last_synced_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · ${row.replies_count} respuestas detectadas`
+            : "Aún no se ha revisado: la primera revisión llega en la próxima hora."}
+        </p>
+      )}
       {data && !data.admin && <p className="mt-2 text-xs text-ink-mid">{LEGAL_GATE_TEXT}</p>}
       {data?.admin && (
         <div className="mt-3">
@@ -52,7 +59,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             <Button
               variant="outline"
               onClick={async () => {
-                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas.", confirmLabel: "Desconectar" }))
+                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas y borrará lo leído. Los leads marcados como «respondió» siguen sin secuencia.", confirmLabel: "Desconectar" }))
                   run(() => unlink({ data: { orgId } }), "Buzón desconectado");
               }}
             >

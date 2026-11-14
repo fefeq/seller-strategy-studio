@@ -36,6 +36,9 @@ export const unlinkMailbox = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await gate(context.supabase, context.userId, data.orgId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // NK-0174 Q-3: everything read is deleted; only the anonymous «respondió» marks remain.
+    const del = await supabaseAdmin.from("inbox_replies").delete().eq("org_id", data.orgId);
+    if (del.error) throw new Error("No he podido borrar las respuestas leídas. Prueba de nuevo.");
     const { error } = await supabaseAdmin.from("mailbox_links").delete().eq("org_id", data.orgId);
     if (error) throw new Error("No he podido desconectar el buzón. Prueba de nuevo.");
     return { ok: true };

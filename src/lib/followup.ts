@@ -20,6 +20,8 @@ export type FollowupLead = {
   next_step_at: string | null;
   contact_name?: string | null;
   company: string;
+  /** NK-0174: a human reply from the exact contact was detected; the sequence stops while the lead stays in Contactado. */
+  replied?: boolean;
 };
 
 export type FollowupStatus = {
@@ -29,13 +31,14 @@ export type FollowupStatus = {
   next: { step: FollowupStep; date: string } | null;
   daysSinceContact: number | null;
   /** Reason there is nothing to do, for the UI. */
-  reason: "not_contacted" | "advanced" | "scheduled" | "ended" | null;
+  reason: "not_contacted" | "advanced" | "scheduled" | "ended" | "replied" | null;
 };
 
 /** The sequence runs only while the lead sits in Contactado; a scheduled future follow-up pauses it. */
 export function followupStatus(l: FollowupLead, now = new Date()): FollowupStatus {
   if (l.stage !== "contacted") return { due: null, next: null, daysSinceContact: null, reason: l.stage === "new" ? "not_contacted" : "advanced" };
   if (!l.contacted_at) return { due: null, next: null, daysSinceContact: null, reason: "not_contacted" };
+  if (l.replied) return { due: null, next: null, daysSinceContact: null, reason: "replied" };
   const start = new Date(l.contacted_at);
   const days = Math.floor((now.getTime() - start.getTime()) / DAY);
   const at = (day: number) => isoDay(new Date(start.getTime() + day * DAY));
