@@ -34,6 +34,7 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedPeopleRouteImport } from './routes/_authenticated/people'
 import { Route as AuthenticatedPlaysRouteImport } from './routes/_authenticated/plays'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
+import { Route as AuthenticatedRepliesRouteImport } from './routes/_authenticated/replies'
 import { Route as AuthenticatedSetupRouteImport } from './routes/_authenticated/setup'
 import { Route as AuthenticatedStrategyRouteImport } from './routes/_authenticated/strategy'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
@@ -178,6 +179,11 @@ const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRepliesRoute = AuthenticatedRepliesRouteImport.update({
+  id: '/replies',
+  path: '/replies',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSetupRoute = AuthenticatedSetupRouteImport.update({
   id: '/setup',
   path: '/setup',
@@ -289,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/people': typeof AuthenticatedPeopleRoute
   '/plays': typeof AuthenticatedPlaysRoute
   '/products': typeof AuthenticatedProductsRoute
+  '/replies': typeof AuthenticatedRepliesRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/people': typeof AuthenticatedPeopleRoute
   '/plays': typeof AuthenticatedPlaysRoute
   '/products': typeof AuthenticatedProductsRoute
+  '/replies': typeof AuthenticatedRepliesRoute
   '/setup': typeof AuthenticatedSetupRoute
   '/strategy': typeof AuthenticatedStrategyRoute
   '/team': typeof AuthenticatedTeamRoute
@@ -375,6 +383,7 @@ export interface FileRoutesById {
   '/_authenticated/people': typeof AuthenticatedPeopleRoute
   '/_authenticated/plays': typeof AuthenticatedPlaysRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
+  '/_authenticated/replies': typeof AuthenticatedRepliesRoute
   '/_authenticated/setup': typeof AuthenticatedSetupRoute
   '/_authenticated/strategy': typeof AuthenticatedStrategyRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/plays'
     | '/products'
+    | '/replies'
     | '/setup'
     | '/strategy'
     | '/team'
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/people'
     | '/plays'
     | '/products'
+    | '/replies'
     | '/setup'
     | '/strategy'
     | '/team'
@@ -504,6 +515,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people'
     | '/_authenticated/plays'
     | '/_authenticated/products'
+    | '/_authenticated/replies'
     | '/_authenticated/setup'
     | '/_authenticated/strategy'
     | '/_authenticated/team'
@@ -715,6 +727,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/replies': {
+      id: '/_authenticated/replies'
+      path: '/replies'
+      fullPath: '/replies'
+      preLoaderRoute: typeof AuthenticatedRepliesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/setup': {
       id: '/_authenticated/setup'
       path: '/setup'
@@ -850,6 +869,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleRoute: typeof AuthenticatedPeopleRoute
   AuthenticatedPlaysRoute: typeof AuthenticatedPlaysRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
+  AuthenticatedRepliesRoute: typeof AuthenticatedRepliesRoute
   AuthenticatedSetupRoute: typeof AuthenticatedSetupRoute
   AuthenticatedStrategyRoute: typeof AuthenticatedStrategyRoute
   AuthenticatedTeamRoute: typeof AuthenticatedTeamRoute
@@ -881,6 +901,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleRoute: AuthenticatedPeopleRoute,
   AuthenticatedPlaysRoute: AuthenticatedPlaysRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
+  AuthenticatedRepliesRoute: AuthenticatedRepliesRoute,
   AuthenticatedSetupRoute: AuthenticatedSetupRoute,
   AuthenticatedStrategyRoute: AuthenticatedStrategyRoute,
   AuthenticatedTeamRoute: AuthenticatedTeamRoute,

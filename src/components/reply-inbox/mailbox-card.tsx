@@ -1,4 +1,5 @@
 // NK-0174 SDD 1: Conexiones card for the company's mailbox. Everyone sees whether it is linked; only a superadmin links it (Q-4).
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -55,6 +56,11 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             ? `Última revisión: ${new Date(row.last_synced_at).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" })} · ${row.replies_count} respuestas detectadas`
             : "Aún no se ha revisado: la primera revisión llega en la próxima hora."}
         </p>
+      )}
+      {saved && (
+        <Link to="/replies" className="mt-2 inline-block text-sm underline underline-offset-2">
+          Ver respuestas
+        </Link>
       )}
       {data && !data.admin && <p className="mt-2 text-xs text-ink-mid">{LEGAL_GATE_TEXT}</p>}
       {data?.admin && (
