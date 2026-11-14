@@ -1,4 +1,7 @@
 # Roadmap
+## Ola 1 — solicitud 14-11-2026 22:46 UTC
+- [x] Preparar SDD corto de agrupación del menú y glosario 5.2; revisar Drive solo mediante lectura del código.
+- [ ] Implementar únicamente tras aprobación de Fede: cinco secciones, modo avanzado del menú, listado completo en ⌘K y glosario visible sin renombrar identificadores. Permiso de pruebas existentes limitado a la nueva agrupación en nav.test.ts. Sin rutas nuevas, migraciones, cambios de integración ni publicación.
 ## Ola 0 — cierre adicional autorizado 14-11-2026
 - [x] Corregir el aviso de Respuestas y catalogar únicamente los 23 campos pendientes: cuatro pruebas nuevas, suite 4729/4729 y compilación automática OK; aviso visto con sesión en escritorio/móvil claro/oscuro. Pruebas existentes, Gmail y respaldo de IA intactos; sin publicación. Informe actualizado; lint global con errores ajenos al alcance y tipos manuales sin comprobar.
 ## Cola de Fede — 13-11-2026
