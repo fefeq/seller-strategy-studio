@@ -694,6 +694,13 @@
       "when": 1794684664621,
       "tag": "0099_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1794691035876,
+      "tag": "0099_reply_inbox_classification",
+      "breakpoints": true
     }
   ]
 }

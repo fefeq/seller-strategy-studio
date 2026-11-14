@@ -2907,6 +2907,7 @@ export type Database = {
       }
       inbox_replies: {
         Row: {
+          classify_status: string
           created_at: string
           gmail_id: string
           id: string
@@ -2918,6 +2919,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          classify_status?: string
           created_at?: string
           gmail_id: string
           id?: string
@@ -2929,6 +2931,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          classify_status?: string
           created_at?: string
           gmail_id?: string
           id?: string
@@ -2938,6 +2941,101 @@ export type Database = {
           received_at?: string
           thread_id?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      inbox_reply_derived: {
+        Row: {
+          brake: string | null
+          category: string | null
+          confidence: number | null
+          created_at: string
+          draft: string | null
+          expires_at: string
+          org_id: string
+          proposal: string | null
+          referred_email: string | null
+          referred_name: string | null
+          reply_id: string
+          return_date: string | null
+          state: string
+          user_id: string
+          warnings: Json
+        }
+        Insert: {
+          brake?: string | null
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          draft?: string | null
+          expires_at: string
+          org_id: string
+          proposal?: string | null
+          referred_email?: string | null
+          referred_name?: string | null
+          reply_id: string
+          return_date?: string | null
+          state: string
+          user_id: string
+          warnings?: Json
+        }
+        Update: {
+          brake?: string | null
+          category?: string | null
+          confidence?: number | null
+          created_at?: string
+          draft?: string | null
+          expires_at?: string
+          org_id?: string
+          proposal?: string | null
+          referred_email?: string | null
+          referred_name?: string | null
+          reply_id?: string
+          return_date?: string | null
+          state?: string
+          user_id?: string
+          warnings?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inbox_reply_derived_reply_id_fkey"
+            columns: ["reply_id"]
+            isOneToOne: true
+            referencedRelation: "inbox_replies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inbox_reply_receipts: {
+        Row: {
+          cost_usd: number | null
+          created_at: string
+          id: string
+          input_tokens: number | null
+          operation: string
+          org_id: string
+          outcome: string
+          output_tokens: number | null
+        }
+        Insert: {
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          operation: string
+          org_id: string
+          outcome: string
+          output_tokens?: number | null
+        }
+        Update: {
+          cost_usd?: number | null
+          created_at?: string
+          id?: string
+          input_tokens?: number | null
+          operation?: string
+          org_id?: string
+          outcome?: string
+          output_tokens?: number | null
         }
         Relationships: []
       }
