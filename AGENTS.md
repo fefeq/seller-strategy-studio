@@ -8,6 +8,7 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Onboarding reading guidance stays in a local presentation module and reuses existing finding handlers; explanatory copy must not imply that discards recalculate an already-generated proposal.
 - Strict TS extras (exactOptionalPropertyTypes, noUncheckedIndexedAccess, etc.) are off: Supabase row/form code was too noisy.
 - Data access goes through the browser client with RLS; only AI calls run in server functions (src/lib/ai.functions.ts).
 - Multitenant: every tenant table has org_id defaulting to public.current_org() (profiles.current_org_id); RLS filters to the current org + membership, so client queries never pass org_id except in upsert conflict targets.

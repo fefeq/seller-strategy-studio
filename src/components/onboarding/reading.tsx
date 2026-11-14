@@ -3,6 +3,7 @@ import { useEffect, useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { ReadingGuide, SourcePurpose } from "./reading-guide";
 import { askConfirm, askText, askUnsaved } from "@/components/confirm-dialog";
 import { FieldActions } from "@/components/field-actions";
 import { useMe } from "@/hooks/use-me";
@@ -52,14 +53,16 @@ export function ReadingStep({
     enabled: !!jobId,
     refetchInterval: (q) =>
       q.state.data && ["done", "failed", "cancelled"].includes(q.state.data.status) ? false : 2000,
-    queryFn: async () =>
-      (
+    queryFn: async () => {
+      if (!jobId) return null;
+      return (
         await supabase
           .from("background_jobs")
           .select("status,step,error")
-          .eq("id", jobId!)
+          .eq("id", jobId)
           .maybeSingle()
-      ).data,
+      ).data;
+    },
   });
   const done = job?.status === "done";
   const failed = job?.status === "failed" || job?.status === "cancelled";
@@ -116,7 +119,7 @@ export function ReadingStep({
       const c = await askUnsaved(`Vas a quitar «${s}»`, {
         body: `${deps.length === 1 ? "Un hallazgo viene" : `${deps.length} hallazgos vienen`} de esta fuente: ${deps
           .slice(0, 3)
-          .map((i) => `«${findings[i]!.text}»`)
+          .map((i) => `«${findings[i]?.text ?? ""}»`)
           .join(
             ", ",
           )}${deps.length > 3 ? "…" : ""}. ¿Los mantienes o los descartas? La propuesta no se recalcula: si quieres que esta fuente deje de influir, vuelve a leer.`,
@@ -137,9 +140,10 @@ export function ReadingStep({
     await onChange({ sources: next.sources, findings: next.findings });
   }
   async function edit(i: number) {
-    if (!userId) return;
+    const finding = findings[i];
+    if (!userId || !finding) return;
     const text = await askText("Editar hallazgo", {
-      initial: findings[i]!.text,
+      initial: finding.text,
       maxLength: 300,
       confirmLabel: "Guardar",
     });
@@ -148,32 +152,34 @@ export function ReadingStep({
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_18rem]">
-      <div>
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="min-w-0">
         <p data-testid="reading-headline" className="smallcaps text-ink-mid">
           {headline}
         </p>
+        {done && <ReadingGuide />}
         {done && (
-          <p className="mt-2 text-sm text-ink-mid">
+          <p className="mt-2 text-xs text-ink-mid">
             Cada línea es algo que encontré; si sale de una fuente, la verás al final. Confírmalo,
             edítalo o descártalo.
           </p>
         )}
-        <ol className="mt-3 border-t border-hairline font-mono text-sm" aria-live="polite">
+        <ol className="mt-3 border-t border-hairline text-sm" aria-live="polite">
           {live.map(({ f, i }) => (
             <li
               key={i}
-              className="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-3 border-b border-hairline py-2"
+              className="grid grid-cols-[minmax(0,1fr)] gap-2 border-b border-hairline py-5"
             >
-              <span className="text-ink-faint">{time(f.at)}</span>
+              {!done && <span className="font-mono text-xs text-ink-faint">{time(f.at)}</span>}
               {/* NK-0180: a long source without spaces wraps instead of widening the page. */}
               <span className="min-w-0 [overflow-wrap:anywhere]">
-                {f.text}
-                {!!f.source && <span className="text-ink-mid"> · {f.source}</span>}
+                <span className="block font-medium leading-relaxed text-ink">{f.text}</span>
+                {!!f.source && <span className="mt-2 block text-xs text-ink-mid">Fuente: {f.source}</span>}
+                {!f.source && done && <span className="mt-2 block text-xs text-ink-mid">Sin fuente atribuida: contrasta este dato antes de confirmarlo.</span>}
                 {!!f.sourceRemoved && <span className="text-ink-mid"> · fuente quitada</span>}
                 {!!f.edited && <span className="text-ink-mid"> · editado</span>}
                 {done && (
-                  <span className="mt-1 flex flex-wrap items-center gap-x-3 font-sans text-xs">
+                  <span className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
                     <span className="text-ink-mid">
                       {confirmedText(
                         f.confirmedAt ? { confirmed: true, confirmedAt: f.confirmedAt } : undefined,
@@ -233,10 +239,11 @@ export function ReadingStep({
         )}
         {failed && job?.error && <p className="mt-4 text-sm text-destructive">{job.error}</p>}
       </div>
-      <div className="border-t-2 border-hairline-firm pt-4">
+      <div className="min-w-0 border-t-2 border-hairline-firm pt-4">
         <p id={`${uid}-sources`} className="smallcaps">
           Fuentes
         </p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-mid">La fuente explica de dónde viene el contexto; confirmar un hallazgo solo valida ese dato concreto.</p>
         <ul aria-labelledby={`${uid}-sources`} className="mt-2 space-y-2 text-sm">
           {summary.map(({ source: s, indexes, count }, n) => {
             const panelId = `${uid}-findings-${n}`;
@@ -252,14 +259,14 @@ export function ReadingStep({
                   ? "No atribuí ningún hallazgo a esta fuente por separado."
                   : null;
             return (
-              <li key={s} aria-describedby={hint ? hintId : undefined}>
+              <li key={s} className="border-b border-hairline pb-4 pt-2" aria-describedby={hint ? hintId : undefined}>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="min-w-0 [overflow-wrap:anywhere]">{s}</span>
                   <span data-testid="source-status" className="text-ink-faint">
                     {done && real && real.state !== "full" ? (
                       statusLabel(real)
                     ) : done && count ? (
-                      <button
+                      <Button
                         type="button"
                         id={`${uid}-toggle-${n}`}
                         aria-expanded={isOpen}
@@ -269,7 +276,7 @@ export function ReadingStep({
                         className="min-h-11 min-w-11 text-ink-mid underline underline-offset-2"
                       >
                         {counter}
-                      </button>
+                      </Button>
                     ) : done ? (
                       count === null ? (
                         "Sin recuento para webs"
@@ -291,6 +298,7 @@ export function ReadingStep({
                     />
                   )}
                 </div>
+                <SourcePurpose source={s} />
                 {hint && (
                   <p id={hintId} data-testid="source-hint" className="mt-1 text-xs text-ink-mid">
                     {hint}
@@ -303,7 +311,7 @@ export function ReadingStep({
                     className="mt-1 space-y-1 border-l border-hairline pl-3 text-xs text-ink-mid"
                   >
                     {indexes.map((i) => (
-                      <p key={i}>{findings[i]!.text}</p>
+                      <p key={i}>{findings[i]?.text}</p>
                     ))}
                   </div>
                 )}
@@ -312,10 +320,11 @@ export function ReadingStep({
           })}
         </ul>
         {done && (
-          <Button className="mt-4 w-full" onClick={onNext}>
+          <Button className="mt-4 h-auto min-h-11 w-full whitespace-normal" onClick={onNext}>
             Seguir a tu diagnóstico
           </Button>
         )}
+        {done && <p className="mt-2 text-xs leading-relaxed text-ink-mid">Puedes continuar sin confirmar todo. Aquí no apruebas tu estrategia: revisarás los bloques más adelante.</p>}
         {failed && (
           <Button variant="outline" className="mt-4 w-full" onClick={onBack}>
             Volver a tus fuentes
