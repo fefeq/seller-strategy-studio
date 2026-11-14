@@ -247,16 +247,41 @@ export async function linkedinSignalItems(db: Db, acc: Acc): Promise<NewsItem[]>
 }
 
 /** Reviews of a competitor on G2 (by G2 link or by name). */
+/** Who pays for a robot run: the run is logged in the company ledger as «sin dato» (Apify gives no synchronous charge). */
+export type ApifySpend = { db: Db; orgId: string; userId: string | null; trigger: "manual" | "automatic"; tool: string };
+
+async function logApify(spend: ApifySpend | undefined, volume: number) {
+  if (!spend) return;
+  const { logUsage } = await import("@/lib/orchestrator/usage");
+  await logUsage(
+    { db: spend.db, orgId: spend.orgId, userId: spend.userId } as Parameters<typeof logUsage>[0],
+    "reviews",
+    [{ service: "apify", cost: null, tool: spend.tool, volume, currency: "USD" }],
+    spend.trigger,
+  );
+}
+
+/** Runs a G2 actor and logs the attempt, also when it fails after being sent (a failure may still be charged). */
+async function g2Run(spend: ApifySpend | undefined, actor: { id: string; maxUsd: number }, input: object, opts: { maxItems: number; timeoutSecs?: number }) {
+  try {
+    return await runActor(actor, input, opts);
+  } finally {
+    await logApify(spend, opts.maxItems);
+  }
+}
+
 export async function competitorReviewsCore(
   competitor: string,
   max = 20,
+  spend?: ApifySpend,
 ): Promise<{ product: { name: string; url: string }; reviews: Review[]; average: number | null }> {
   const n = Math.min(Math.max(Math.round(max), 5), 40);
   let product: { name: string; url: string } | null = null;
   const direct = g2ReviewsUrl(competitor);
   if (direct) product = { name: direct.split("/products/")[1]!.split("/")[0]!, url: direct };
   else {
-    const found = await runActor(
+    const found = await g2Run(
+      spend,
       { ...ACTORS.g2, maxUsd: 0.05 },
       { mode: "product_search", searchQuery: competitor.trim(), maxProducts: 5 },
       { maxItems: 5 },
@@ -267,7 +292,8 @@ export async function competitorReviewsCore(
     throw new Error(
       `No encuentro «${competitor}» en G2. Prueba con el nombre exacto del producto o pega su enlace de G2.`,
     );
-  const raw = await runActor(
+  const raw = await g2Run(
+    spend,
     ACTORS.g2,
     { mode: "product_reviews", productUrls: [product.url], maxReviews: n, sortReviews: "newest" },
     { maxItems: n, timeoutSecs: 90 },
@@ -286,8 +312,12 @@ export async function competitorReviewsCore(
 }
 
 /** A battlecard (Markdown) written from a competitor's G2 reviews and our positioning. Saves nothing. */
-export async function battlecardCore(db: Db, competitor: string, max = 20, scope: AiScope = null) {
-  const r = await competitorReviewsCore(competitor, max);
+export async function battlecardCore(db: Db, competitor: string, max = 20, scope: AiScope = null, trigger: "manual" | "automatic" = "manual") {
+  const r = await competitorReviewsCore(
+    competitor,
+    max,
+    scope ? { db, orgId: scope.orgId, userId: scope.userId, trigger, tool: "create_battlecard_from_reviews" } : undefined,
+  );
   const { data: pos } = await inOrg(
     db
       .from("positioning")

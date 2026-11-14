@@ -59,9 +59,9 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
     name: "competitor_reviews", kind: "read",
     description: "Reseñas recientes de un competidor en G2 (por nombre del producto o enlace de G2): nota, qué valoran, qué critican y por qué se cambian. Gasta saldo de Apify (unos 0,06 $ por cada 10 reseñas).",
     input: z.object({ competitor: z.string().min(2).max(200), max: z.number().int().min(5).max(40).optional().describe("Reseñas a leer (20 por defecto)") }),
-    run: async (_c, a) => {
+    run: async (c, a) => {
       const { competitorReviewsCore } = await import("@/lib/apify-core");
-      const r = await competitorReviewsCore(a.competitor, a.max ?? 20);
+      const r = await competitorReviewsCore(a.competitor, a.max ?? 20, { db: c.db, orgId: c.orgId, userId: c.userId, trigger: "manual", tool: "competitor_reviews" });
       return { producto: r.product.name, g2: r.product.url, nota_media: r.average, resenas: r.reviews.map((x) => ({ titulo: x.title, estrellas: x.rating, fecha: x.date, texto: x.text.slice(0, 700), motivo_cambio: x.switchedReason || undefined, url: x.url })) };
     },
   }),

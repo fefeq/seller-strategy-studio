@@ -96,7 +96,12 @@ export type ConceptId =
   | "origen_linea"
   | "interruptor_legal"
   | "pausa_legal"
-  | "motivo_pausa_legal";
+  | "motivo_pausa_legal"
+  | "calidad_coste"
+  | "herramienta_gasto"
+  | "volumen_operacion"
+  | "clave_operacion"
+  | "referencia_recibo";
 
 export type Concept = {
   id: ConceptId;
@@ -774,6 +779,47 @@ export const CONCEPTS: Concept[] = [
     format: "Frase en español",
     display: "Texto en la tarjeta de Conexiones",
   },
+  {
+    id: "calidad_coste",
+    label: "Calidad del coste",
+    meaning: "Si el importe de gasto es un cargo medido, una estimación o «sin dato» (importe vacío, nunca cero).",
+    kind: "enum",
+    format: "Valor cerrado",
+    allowed: ["measured", "estimate", "unknown"],
+    display: "«medido», «estimado» o «sin dato»",
+  },
+  {
+    id: "herramienta_gasto",
+    label: "Herramienta que gastó",
+    meaning: "Herramienta o acción concreta que originó el gasto; base de la estimación por mediana.",
+    kind: "text",
+    format: "Nombre interno de la herramienta",
+    display: "No se muestra",
+  },
+  {
+    id: "volumen_operacion",
+    label: "Volumen de la operación",
+    meaning: "Cuántos resultados o elementos pidió la operación; solo se comparan estimaciones de volumen parecido.",
+    kind: "number",
+    format: "Entero o vacío",
+    display: "No se muestra",
+  },
+  {
+    id: "clave_operacion",
+    label: "Clave de operación",
+    meaning: "Identificador único de un intento de gasto por empresa, para no contarlo dos veces.",
+    kind: "text",
+    format: "Texto opaco",
+    display: "No se muestra",
+  },
+  {
+    id: "referencia_recibo",
+    label: "Referencia de recibo",
+    meaning: "Identificador del recibo del proveedor que respalda un cargo medido.",
+    kind: "text",
+    format: "Texto opaco o vacío",
+    display: "No se muestra",
+  },
 ];
 
 export type ImporteNature =
@@ -806,6 +852,13 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  // Libro de gasto por empresa (SDD pausa-legal-linkedin-y-gasto, pieza B).
+  { table: "integration_usage", column: "cost_kind", concept: "calidad_coste", persistence: saved },
+  { table: "integration_usage", column: "currency", concept: "moneda_coste", persistence: saved },
+  { table: "integration_usage", column: "tool", concept: "herramienta_gasto", persistence: saved },
+  { table: "integration_usage", column: "volume", concept: "volumen_operacion", persistence: saved },
+  { table: "integration_usage", column: "operation_id", concept: "clave_operacion", persistence: saved },
+  { table: "integration_usage", column: "receipt_ref", concept: "referencia_recibo", persistence: saved },
   // Pausa legal de LinkedIn (SDD pausa-legal-linkedin-y-gasto, pieza A): estado global de la plataforma.
   { table: "platform_legal_flags", column: "key", concept: "interruptor_legal", persistence: saved },
   { table: "platform_legal_flags", column: "paused", concept: "pausa_legal", persistence: saved },
@@ -1582,6 +1635,11 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   interruptor_legal: ["src/components/linkedin-legal-card.tsx", "src/lib/linkedin-legal.ts"],
   pausa_legal: ["src/components/linkedin-legal-card.tsx", "src/lib/linkedin-legal.ts"],
   motivo_pausa_legal: ["src/components/linkedin-legal-card.tsx"],
+  calidad_coste: ["src/components/orchestrator/budget-panel.tsx", "src/lib/spend.ts"],
+  herramienta_gasto: ["src/lib/spend.ts"],
+  volumen_operacion: ["src/lib/orchestrator/usage.ts"],
+  clave_operacion: ["src/lib/orchestrator/usage.ts"],
+  referencia_recibo: ["src/lib/orchestrator/usage.ts"],
 };
 
 /** Every place where a concept is stored (columns) and shown (screens and modules). */

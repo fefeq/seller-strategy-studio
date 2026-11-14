@@ -19,15 +19,18 @@ export const orchestratorStatus = createServerFn({ method: "POST" })
     const c = await userCtx(context.supabase as Db, context.userId);
     const b = await monthBudget(c);
     const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);
-    const { data } = await c.db.from("integration_usage").select("service,cost,trigger").eq("org_id", c.orgId).gte("created_at", start.toISOString());
-    const byService: Record<string, { calls: number; cost: number }> = {};
+    const { data } = await c.db.from("integration_usage").select("service,cost,trigger,currency").eq("org_id", c.orgId).gte("created_at", start.toISOString());
+    // Per service only EUR amounts are added; other currencies and unknown costs are counted, never summed in.
+    const byService: Record<string, { calls: number; cost: number; unknown: number }> = {};
     let automatic = 0;
     for (const r of data ?? []) {
-      const s = (byService[r.service] ??= { calls: 0, cost: 0 });
-      s.calls++; s.cost += Number(r.cost || 0);
-      if (r.trigger === "automatic") automatic += Number(r.cost || 0);
+      const s = (byService[r.service] ??= { calls: 0, cost: 0, unknown: 0 });
+      s.calls++;
+      if (r.cost == null || r.currency !== "EUR") { s.unknown++; continue; }
+      s.cost += Number(r.cost);
+      if (r.trigger === "automatic") automatic += Number(r.cost);
     }
-    return { connected: connectedServices(), spent: b.spent, limit: b.limit, warn: b.warn, paused: b.paused, pct: b.pct, automatic, byService };
+    return { connected: connectedServices(), spent: b.spent, limit: b.limit, warn: b.warn, paused: b.paused, pct: b.pct, automatic, byService, otherCurrencies: b.otherCurrencies, unknown: b.unknown, complete: b.complete };
   });
 
 const Cursor = z.union([
