@@ -6,7 +6,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
-import { Page, Empty } from "@/components/page";
+import { Page, Empty, ScreenState } from "@/components/page";
+import { rowsOrThrow } from "@/lib/query-result";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -58,10 +59,15 @@ function MemoryPage() {
   const { data: me } = useMe();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const { data: rows = [] } = useQuery({
+  const {
+    data: rows = [],
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["memories"],
     queryFn: async () =>
-      ((
+      rowsOrThrow(
         await supabase
           .from("memories")
           .select(
@@ -70,8 +76,8 @@ function MemoryPage() {
           .eq("active", true)
           .order("pinned", { ascending: false })
           .order("updated_at", { ascending: false })
-          .limit(500)
-      ).data ?? []) as Row[],
+          .limit(500),
+      ) as Row[],
   });
   const { data: accounts = [] } = useQuery({
     queryKey: ["memory-accounts"],
@@ -113,45 +119,47 @@ function MemoryPage() {
         onChange={(e) => setQ(e.target.value)}
         aria-label="Buscar en la memoria"
       />
-      <Tabs defaultValue="company">
-        <TabsList>
-          <TabsTrigger value="company">Empresa ({by("company").length})</TabsTrigger>
-          <TabsTrigger value="user">Mío ({by("user").length})</TabsTrigger>
-          <TabsTrigger value="account">Cuentas ({by("account").length})</TabsTrigger>
-        </TabsList>
-        {(["company", "user", "account"] as MemScope[]).map((s) => (
-          <TabsContent key={s} value={s} className="space-y-6 pt-4">
-            <p className="text-xs text-muted-foreground">
-              {s === "company"
-                ? "Lo ve todo el equipo. Lo editan su autor, el Owner y el Sales Leader."
-                : s === "user"
-                  ? "Solo lo ves tú: cómo te gusta trabajar."
-                  : "Lo ve todo el equipo, junto a cada cuenta."}
-            </p>
-            <AddMemory scope={s} accounts={accounts} onSaved={refresh} />
-            {by(s).length ? (
-              <ul className="divide-y border-t">
-                {by(s).map((r) => (
-                  <MemoryRow
-                    key={r.id}
-                    r={r}
-                    editable={!!me && canEditMemory(r, me.user.id, me.roles)}
-                    onChange={refresh}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <Empty>
-                {q
-                  ? "Nada coincide con la búsqueda."
+      <ScreenState isPending={isPending} error={error} refetch={refetch}>
+        <Tabs defaultValue="company">
+          <TabsList>
+            <TabsTrigger value="company">Empresa ({by("company").length})</TabsTrigger>
+            <TabsTrigger value="user">Mío ({by("user").length})</TabsTrigger>
+            <TabsTrigger value="account">Cuentas ({by("account").length})</TabsTrigger>
+          </TabsList>
+          {(["company", "user", "account"] as MemScope[]).map((s) => (
+            <TabsContent key={s} value={s} className="space-y-6 pt-4">
+              <p className="text-xs text-muted-foreground">
+                {s === "company"
+                  ? "Lo ve todo el equipo. Lo editan su autor, el Owner y el Sales Leader."
                   : s === "user"
-                    ? "Aún no recuerda nada tuyo. Dile al agente cómo te gusta trabajar, por ejemplo «respóndeme siempre con tres puntos»."
-                    : "Aún no hay recuerdos aquí. Se irán guardando solos con el uso."}
-              </Empty>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+                    ? "Solo lo ves tú: cómo te gusta trabajar."
+                    : "Lo ve todo el equipo, junto a cada cuenta."}
+              </p>
+              <AddMemory scope={s} accounts={accounts} onSaved={refresh} />
+              {by(s).length ? (
+                <ul className="divide-y border-t">
+                  {by(s).map((r) => (
+                    <MemoryRow
+                      key={r.id}
+                      r={r}
+                      editable={!!me && canEditMemory(r, me.user.id, me.roles)}
+                      onChange={refresh}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <Empty>
+                  {q
+                    ? "Nada coincide con la búsqueda."
+                    : s === "user"
+                      ? "Aún no recuerda nada tuyo. Dile al agente cómo te gusta trabajar, por ejemplo «respóndeme siempre con tres puntos»."
+                      : "Aún no hay recuerdos aquí. Se irán guardando solos con el uso."}
+                </Empty>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </ScreenState>
     </Page>
   );
 }

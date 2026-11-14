@@ -16,6 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useAgent } from "@/components/agent";
 import { MEDDPICC } from "@/lib/roles";
+import { JargonTerm } from "@/components/jargon-term";
 import { stageGate, TRACKS } from "@/lib/bmad/tracks";
 import { errorText } from "@/lib/errors";
 import { mergeServerEdits } from "@/lib/merge-edits";
@@ -588,7 +589,9 @@ function DealDetail({
 
       <div>
         <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-2xl">MEDDPICC</h3>
+          <h3 className="text-2xl">
+            <JargonTerm term="MEDDPICC" />
+          </h3>
           <span className="font-mono text-sm">{total}/24</span>
         </div>
         <div className="space-y-2">

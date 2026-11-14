@@ -1,3 +1,4 @@
+import { JargonTerm } from "@/components/jargon-term";
 import { X } from "lucide-react";
 import { IconText } from "@/components/icon-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -60,6 +61,9 @@ const REG_STATUS: Record<string, string> = {
 function Abm() {
   return (
     <Page eyebrow="Account-based y canal" title="ABM y partners">
+      <p className="mb-4 text-sm text-ink-mid">
+        ¿Qué es <JargonTerm term="ABM" />?
+      </p>
       <Tabs defaultValue="abm">
         <TabsList className="mb-6">
           <TabsTrigger value="abm">Cuentas objetivo</TabsTrigger>

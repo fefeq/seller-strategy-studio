@@ -28,6 +28,9 @@ import type { TablesUpdate } from "@/integrations/supabase/types";
 import { EmailVerificationMark, useEmailVerifications } from "@/components/email-verification";
 
 export const Route = createFileRoute("/_authenticated/people")({
+  validateSearch: (s: Record<string, unknown>): { persona?: string } => ({
+    persona: typeof s.persona === "string" ? s.persona : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Personas — Nokko" },
@@ -58,6 +61,8 @@ const CRM = {
 
 function People() {
   const qc = useQueryClient();
+  const { persona } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState("all");
   const { data } = useQuery({
@@ -86,6 +91,7 @@ function People() {
     return m;
   }, [data]);
   const list = people.filter((p) => {
+    if (persona) return p.id === persona;
     const t = `${p.full_name} ${p.email} ${p.company}`.toLowerCase();
     if (q && !t.includes(q.toLowerCase())) return false;
     const res = byPerson.get(p.id) ?? [];
@@ -196,6 +202,14 @@ function People() {
           {list.length} / {people.length}
         </span>
       </div>
+      {persona && (
+        <p className="mb-4 flex flex-wrap items-center gap-3 text-sm text-ink-mid">
+          Mostrando la persona que abriste desde la búsqueda.
+          <Button size="sm" variant="outline" onClick={() => navigate({ search: {} })}>
+            Ver todas
+          </Button>
+        </p>
+      )}
       {list.length === 0 ? (
         <Empty>Sin personas. Importa un CSV o añade una a mano.</Empty>
       ) : (
@@ -209,7 +223,11 @@ function People() {
                     {p.email}
                     {p.company ? ` · ${p.company}` : ""}
                   </p>
-                  <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
+                  <EmailVerificationMark
+                    email={p.email}
+                    rows={verification.data}
+                    error={verification.error}
+                  />
                   <span className="mt-1 inline-block">
                     <PersonQuickActions person={p} />
                   </span>
@@ -261,7 +279,11 @@ function People() {
                         {p.email}
                         {p.company ? ` · ${p.company}` : ""}
                       </p>
-                      <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
+                      <EmailVerificationMark
+                        email={p.email}
+                        rows={verification.data}
+                        error={verification.error}
+                      />
                     </td>
                     {editors(p).map((e) => (
                       <td key={e.label} className={`px-3 py-2 ${e.w}`}>

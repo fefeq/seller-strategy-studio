@@ -57,14 +57,25 @@ export function ScreenState({
   error,
   refetch,
   skeleton = "list",
+  forbidden,
   children,
 }: {
+  /** «Sin permiso»: the sentence saying which role can do it. Wins over loading and error. */
+  forbidden?: string;
   isPending: boolean;
   error: unknown;
   refetch: () => unknown;
   skeleton?: keyof typeof SKELETON_ROWS;
   children: ReactNode;
 }) {
+  if (forbidden) {
+    return (
+      <div role="note" className="space-y-1 border-t border-hairline py-8 text-sm text-ink-mid">
+        <p className="eyebrow">Sin permiso</p>
+        <p>{forbidden}</p>
+      </div>
+    );
+  }
   if (error) {
     return (
       <div role="alert" className="space-y-3 border-t border-hairline py-8 text-sm text-ink-mid">

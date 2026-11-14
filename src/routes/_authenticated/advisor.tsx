@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
-import { Page, Empty } from "@/components/page";
+import { Page, Empty, ScreenState } from "@/components/page";
 import { Field, Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,9 +103,14 @@ function Advisor() {
   if (me && !allowed) {
     return (
       <Page eyebrow="Dirección comercial" title="Asesor GTM">
-        <Empty>
-          El Asesor GTM está disponible solo para el Owner y el Sales Leader de la empresa.
-        </Empty>
+        <ScreenState
+          isPending={false}
+          error={null}
+          refetch={() => undefined}
+          forbidden="Solo el Owner y el Sales Leader de la empresa pueden usar el Asesor GTM. Pídeselo a uno de ellos."
+        >
+          {null}
+        </ScreenState>
       </Page>
     );
   }
