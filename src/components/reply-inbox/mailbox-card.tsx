@@ -42,8 +42,8 @@ export function MailboxCard({ orgId }: { orgId: string }) {
       <p className="eyebrow">Bandeja de respuestas · Gmail</p>
       <p className="mt-2 text-sm">
         {row
-          ? `Conectado: ${row.address}. NOKKO solo leerá respuestas a tus correos de venta, nunca envía.`
-          : "Sin buzón conectado. Al conectarlo, NOKKO detecta las respuestas de tus leads y pausa su secuencia."}
+          ? `Conectado: ${row.address}. Por ahora solo queda vinculado; NOKKO nunca envía desde él.`
+          : "Sin buzón conectado. Esta fase solo vincula Gmail; la detección de respuestas y la pausa de secuencias llegarán después."}
       </p>
       {data && !data.admin && <p className="mt-2 text-xs text-ink-mid">{LEGAL_GATE_TEXT}</p>}
       {data?.admin && (
