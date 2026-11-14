@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { FILTER_LABEL, KIND_LABEL, repliesHeadline, viewReplies, type InboxFilter, type InboxRow } from "@/lib/reply-inbox/inbox-view";
 
-type Row = InboxRow & { lead: { first_name: string | null; last_name: string | null; email: string | null } | null };
+type Row = InboxRow & { lead: { contact_name: string | null; email: string | null } | null };
 
 export function useReplies() {
   return useQuery({
@@ -19,7 +19,7 @@ export function useReplies() {
       if (error) throw error;
       const ids = [...new Set((data ?? []).map((r) => r.lead_id).filter((x): x is string => !!x))];
       const { data: leads } = ids.length
-        ? await supabase.from("leads").select("id,first_name,last_name,email").in("id", ids)
+        ? await supabase.from("leads").select("id,contact_name,email").in("id", ids)
         : { data: [] };
       const by = new Map((leads ?? []).map((l) => [l.id, l]));
       return (data ?? []).map((r) => ({ ...r, kind: r.kind as InboxRow["kind"], lead: r.lead_id ? by.get(r.lead_id) ?? null : null })) as Row[];
@@ -58,7 +58,7 @@ export function RepliesList({ rows }: { rows: Row[] }) {
       ) : (
         <ul className="divide-y rounded-xl border bg-card">
           {list.map((r) => {
-            const name = [r.lead?.first_name, r.lead?.last_name].filter(Boolean).join(" ") || r.lead?.email || "Lead eliminado";
+            const name = r.lead?.contact_name || r.lead?.email || "Lead eliminado";
             return (
               <li key={r.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 p-4">
                 <div className="min-w-0">
