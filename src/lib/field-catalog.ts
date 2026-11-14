@@ -76,6 +76,17 @@ export type ConceptId =
   | "tokens_ia"
   | "moneda_coste"
   | "origen_fecha"
+  | "categoria_respuesta"
+  | "confianza_respuesta"
+  | "freno_respuesta"
+  | "propuesta_respuesta"
+  | "borrador_respuesta"
+  | "persona_referida"
+  | "fecha_vuelta"
+  | "caducidad_derivado"
+  | "estado_preparacion_respuesta"
+  | "operacion_ia"
+  | "coste_ia_usd"
   | "modelo_negocio" | "friccion_compra" | "etapa_negocio" | "nombre_linea" | "principal_linea" | "posicion_linea" | "origen_linea";
 
 export type Concept = {
@@ -94,6 +105,17 @@ export type Concept = {
 };
 
 export const CONCEPTS: Concept[] = [
+  { id: "categoria_respuesta", label: "Categoría de respuesta", meaning: "Clasificación propuesta para una respuesta humana; no es el correo original.", kind: "enum", format: "Valor cerrado o vacío", allowed: ["interested", "more_information", "out_of_office", "wrong_person", "not_interested", "unsubscribe", "other"], display: "Categoría en español" },
+  { id: "confianza_respuesta", label: "Confianza de clasificación", meaning: "Confianza comunicada por la IA al clasificar una respuesta.", kind: "number", format: "Número entre 0 y 1 o vacío", display: "No se muestra" },
+  { id: "freno_respuesta", label: "Freno de respuesta", meaning: "Motivo de seguridad que impide preparar un borrador.", kind: "enum", format: "Valor cerrado o vacío", allowed: ["unsubscribe", "privacy", "legal", "pricing", "contract"], display: "No se muestra" },
+  { id: "propuesta_respuesta", label: "Acción sugerida de respuesta", meaning: "Acción de revisión propuesta; nunca envío automático.", kind: "enum", format: "Valor cerrado o vacío", allowed: ["review_stage", "review_reply", "postpone", "review_referral", "review_disqualification", "do_not_contact"], display: "No se muestra" },
+  { id: "borrador_respuesta", label: "Borrador de respuesta", meaning: "Texto sugerido por la IA, no el texto original del correo; caduca a los 30 días.", kind: "text", format: "Hasta 6000 caracteres o vacío", display: "Borrador sugerido (no se envía)" },
+  { id: "persona_referida", label: "Persona referida", meaning: "Nombre deducido de una respuesta de contacto equivocado, comprobado contra el texto leído.", kind: "text", format: "Hasta 120 caracteres o vacío", display: "No se muestra" },
+  { id: "fecha_vuelta", label: "Fecha de vuelta", meaning: "Fecha futura deducida de una respuesta de ausencia y validada por las reglas compartidas.", kind: "text", format: "AAAA-MM-DD o vacía", display: "No se muestra" },
+  { id: "caducidad_derivado", label: "Caducidad de derivados", meaning: "Momento a partir del cual se purgan los derivados privados; 30 días desde su preparación.", kind: "text", format: "Fecha y hora con zona horaria", display: "No se muestra" },
+  { id: "estado_preparacion_respuesta", label: "Estado de preparación", meaning: "Estado del resultado de clasificación y preparación de borrador.", kind: "enum", format: "Valor cerrado", allowed: ["automatic", "pending", "prepared", "review"], display: "No se muestra" },
+  { id: "operacion_ia", label: "Operación de IA de respuesta", meaning: "Operación registrada en un recibo sin texto de correo.", kind: "enum", format: "classification | draft", allowed: ["classification", "draft"], display: "No se muestra" },
+  { id: "coste_ia_usd", label: "Coste medido de IA en USD", meaning: "Coste comunicado por el proveedor en USD; no usa la moneda de la empresa ni se convierte.", kind: "number", format: "USD medidos o vacío si el proveedor no informa", display: "No se muestra" },
   { id: "modelo_negocio", label: "Modelo de negocio", meaning: "Modelo declarado de una línea, independiente del motion.", kind: "enum", format: "Valor cerrado", allowed: ["b2b", "b2c", "marketplace"], display: "Modelo" },
   { id: "friccion_compra", label: "Adopción", meaning: "Cómo se decide la compra en esta línea.", kind: "enum", format: "Valor cerrado", allowed: ["self_serve", "committee"], display: "Adopción" },
   { id: "etapa_negocio", label: "Etapa", meaning: "Etapa declarada de esta línea.", kind: "enum", format: "Valor cerrado", allowed: ["idea", "early", "scale"], display: "Etapa" },
@@ -365,6 +387,30 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  // Ola 0: only the 23 missing scalar columns; persisted derived rows expire after 30 days.
+  { table: "inbox_replies", column: "classify_status", concept: "estado_ejecucion", persistence: saved, note: "pending / reserved / done / failed / skipped; no replay after reservation" },
+  { table: "inbox_reply_derived", column: "brake", concept: "freno_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "category", concept: "categoria_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "confidence", concept: "confianza_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "inbox_reply_derived", column: "draft", concept: "borrador_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "expires_at", concept: "caducidad_derivado", persistence: saved },
+  { table: "inbox_reply_derived", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "inbox_reply_derived", column: "proposal", concept: "propuesta_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "referred_email", concept: "direccion_email", persistence: saved, note: "Private derived address; expires with the classification" },
+  { table: "inbox_reply_derived", column: "referred_name", concept: "persona_referida", persistence: saved },
+  { table: "inbox_reply_derived", column: "reply_id", concept: "clave_registro", persistence: saved },
+  { table: "inbox_reply_derived", column: "return_date", concept: "fecha_vuelta", persistence: saved },
+  { table: "inbox_reply_derived", column: "state", concept: "estado_preparacion_respuesta", persistence: saved },
+  { table: "inbox_reply_derived", column: "user_id", concept: "clave_usuario", persistence: saved },
+  { table: "inbox_reply_receipts", column: "cost_usd", concept: "coste_ia_usd", persistence: saved },
+  { table: "inbox_reply_receipts", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "inbox_reply_receipts", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "inbox_reply_receipts", column: "input_tokens", concept: "tokens_ia", persistence: saved },
+  { table: "inbox_reply_receipts", column: "operation", concept: "operacion_ia", persistence: saved },
+  { table: "inbox_reply_receipts", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "inbox_reply_receipts", column: "outcome", concept: "estado_ejecucion", persistence: saved, note: "completed / failed; fixed outcome without provider error text" },
+  { table: "inbox_reply_receipts", column: "output_tokens", concept: "tokens_ia", persistence: saved },
   { table: "business_lines", column: "id", concept: "clave_registro", persistence: saved },
   { table: "business_lines", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "business_lines", column: "model", concept: "modelo_negocio", persistence: saved },
@@ -756,6 +802,17 @@ export function allowedValues(table: string, column: string): readonly string[] 
 
 /** Screens and modules that show or edit each concept (CA-11). The test checks that every file exists. */
 export const SHOWN_IN: Record<ConceptId, string[]> = {
+  categoria_respuesta: ["src/components/reply-inbox/replies-list.tsx"],
+  confianza_respuesta: ["src/lib/reply-inbox/classification.ts"],
+  freno_respuesta: ["src/lib/reply-inbox/classification.ts"],
+  propuesta_respuesta: ["src/lib/reply-inbox/classification-core.ts"],
+  borrador_respuesta: ["src/components/reply-inbox/replies-list.tsx"],
+  persona_referida: ["src/lib/reply-inbox/classification.ts"],
+  fecha_vuelta: ["src/lib/reply-inbox/classification.ts"],
+  caducidad_derivado: ["src/lib/reply-inbox/classify-pass.ts"],
+  estado_preparacion_respuesta: ["src/lib/reply-inbox/classification-core.ts"],
+  operacion_ia: ["src/lib/reply-inbox/classification-core.ts"],
+  coste_ia_usd: ["src/lib/reply-inbox/classify-pass.server.ts"],
   modelo_negocio: ["src/lib/business-lines.ts"],
   friccion_compra: ["src/lib/business-lines.ts"],
   etapa_negocio: ["src/lib/business-lines.ts"],

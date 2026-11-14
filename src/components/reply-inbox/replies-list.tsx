@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { DERIVED_TTL_DAYS } from "@/lib/reply-inbox/classification";
 import { CATEGORY_LABEL, FILTER_LABEL, KIND_LABEL, repliesHeadline, viewReplies, type InboxFilter, type InboxRow } from "@/lib/reply-inbox/inbox-view";
 
 type Row = InboxRow & { category: string | null; draft: string | null } & { lead: { contact_name: string | null; email: string | null } | null };
@@ -83,7 +84,7 @@ export function RepliesList({ rows }: { rows: Row[] }) {
           })}
         </ul>
       )}
-      <p className="text-xs text-ink-mid">Solo ves las respuestas de tu propio buzón. NOKKO guarda remitente, fecha y la categoría que propone la IA, nunca el texto del correo; la categoría y el borrador se borran a los 30 días.</p>
+      <p className="text-xs text-ink-mid">Solo ves las respuestas de tu propio buzón. Nokko guarda los datos de cada respuesta (mensaje, hilo, lead, fecha y si es humana o automática). La IA lee el texto de las respuestas humanas solo para clasificarlas y proponerte un borrador; ese texto no se guarda. Se guardan la categoría, el borrador y los datos que deduce (persona referida, fecha de vuelta), que se borran a los {DERIVED_TTL_DAYS} días.</p>
     </div>
   );
 }
