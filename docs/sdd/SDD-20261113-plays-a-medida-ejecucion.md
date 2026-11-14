@@ -8,7 +8,7 @@
 - **U-3 (hecha):** migración `0093_custom_plays_execution`: estado (aprobado/activo/pausado/archivado), primera activación, resultado de prueba, `cost_kind` (IA medido / IA sin dato / proveedor estimado). Prefijo duplicado 0092 → 0093, `drizzle-kit check` limpio.
 - **U-4a (hecha, contrato probado; adaptadores pendientes):** coordinador de ejecución con puertos tipados: comprobar play activo, pertenencia y fuentes; lease de base de datos; pasos secuenciales con recibos persistentes; releer pausa/cancelación/presupuesto antes de cada paso; parar ante denegación, falta de saldo, límite de peticiones o rechazo. Devuelve solo estado y contadores. Pruebas sin proveedores ni gasto real.
 - **U-4b (implementada, cierre bloqueado):** adaptadores persistentes, reserva/commit RPC, fuentes por Need con proveedor explícito, selección OpenRouter medida y función Inngest independiente + fallback cron. Guarda evidencia/sugerencias/coste y recibo. Detalle: `SDD-20261113-plays-execution-adapters.md`. Suite 5777/5778: prefijo 0093 duplicado generado por herramienta pendiente de reparación autorizada; no se declara flujo alojado ni proveedores reales verificados.
-- **U-5 (pendiente):** herramientas activar/pausar y registrar resultado de prueba (Owner y Sales Leader).
+- **U-5 (interfaz implementada, 14-11):** /plays muestra plays guardados, activar/pausar y registrar resultado manual para Owner/Sales Leader; pausas de seguridad no se limpian. SDD-20261114-plays-controls. Herramientas del agente fuera del pedido de interfaz; revisión independiente pendiente.
 
 ## Pruebas
 `engine.test.ts` (9): falló primero. Ninguna prueba existente modificada. Catálogo de campos ampliado con las 6 columnas nuevas (no es una prueba).

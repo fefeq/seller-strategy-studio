@@ -42,7 +42,7 @@ function CustomPlayRow({ row, roles }: { row: Tables<"custom_plays">; roles: str
     } catch (e) { toast.error(errorText(e)); } finally { setBusy(false); }
   }
   return <li className="min-w-0 border-t py-5">
-    <p className="eyebrow">{d?.origin === "biblioteca" ? "De Nokko" : "Creado para tu empresa"}</p>
+    <p className="eyebrow">{d?.origin === "biblioteca" || (typeof d?.id === "string" && ["nokko:r1", "nokko:r2", "nokko:r3"].includes(d.id)) ? "De Nokko" : "Creado para tu empresa"}</p>
     <h3 className="mt-1 break-words text-lg font-medium">{row.name}</h3>
     <p className="mt-1 text-sm text-muted-foreground">{STATUS[row.status] ?? "Estado sin dato"}{row.verified_only ? " · Solo contactos verificados" : ""}</p>
     {typeof d?.trigger === "string" && <p className="mt-2 break-words text-sm">{d.trigger}</p>}

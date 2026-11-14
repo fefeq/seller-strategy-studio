@@ -43,4 +43,5 @@ Proveedor real y trabajo alojado: no se ejecutan. Tipos manuales: restricción d
 ## 17. Revisión independiente
 No revisado; no se declara aceptación final.
 ## 18. Delta
-Pendiente de resultados de suite y navegador.
+14-11: archivo/tag checkpoints renombrados a 0094, SQL/idx/when/snapshots intactos; check limpio y suite completa 5816/5816 en 364 archivos. CA-2–4: 8 pruebas; CA-5: una prueba nueva. controls.test y activity.test fallaron primero por módulos ausentes. Ninguna prueba existente modificada. Compilación automática OK 00:31:23 UTC; tipos no ejecutados manualmente.
+Navegador con sesión de Fede: resultado sintético 20/0 guardado y releído tras recarga en empresa de prueba, después restaurado a null para no inventar resultado real. Se vio pausa por denegación, 0 pruebas, 0 sugerencias y 0,01 EUR estimados previos. No se activó ni ejecutó play; Postin restaurada. Escritorio 1280 y móvil 375 claro/oscuro, 0 errores de página; 6 px de overflow en barra móvil existente, no modificado fuera de alcance. Revisión independiente pendiente.

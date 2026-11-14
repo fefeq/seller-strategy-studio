@@ -34,6 +34,7 @@ export function CustomPlayActivity({ playId, playKey }: { playId: string; playKe
       {!q.data.costs.length && <p className="text-muted-foreground">Sin gasto registrado.</p>}
       {costs.totals.map(c => <p key={`${c.kind}:${c.currency}`}>{c.kind === "ai_measured" ? "IA · medido" : "Proveedor · estimado"}: {new Intl.NumberFormat("es-ES", { style: "currency", currency: c.currency, minimumFractionDigits: 2, maximumFractionDigits: 6 }).format(c.amount)}</p>)}
       {!!costs.unknown && <p className="text-muted-foreground">{costs.unknown} registro(s) sin coste informado; no se suman como cero medido.</p>}
+      {!q.data.costs.some(c => c.cost_kind === "ai_measured") && <p className="text-muted-foreground">IA: sin coste medido informado.</p>}
     </section>
   </div>;
 }
