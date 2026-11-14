@@ -687,6 +687,13 @@
       "when": 1794654036832,
       "tag": "0098_reply_inbox_sync",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1794654037832,
+      "tag": "0099_mailbox_links_disconnected",
+      "breakpoints": true
     }
   ]
 }
