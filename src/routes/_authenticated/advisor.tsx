@@ -21,6 +21,7 @@ import {
 import { ROLES, type Role } from "@/lib/roles";
 import { generateGtmAdvice } from "@/lib/ai.functions";
 import { errorText } from "@/lib/errors";
+import { PrimaryLineNote } from "@/components/primary-line-note";
 import { StrategyReviewPanel } from "@/components/strategy-review";
 
 const TITLE = "Asesor GTM — Nokko";
@@ -111,6 +112,7 @@ function Advisor() {
 
   return (
     <Page eyebrow="Dirección comercial · IA" title="Asesor GTM">
+      <PrimaryLineNote className="mb-6" />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.7fr]">
         {/* Phones: form → result → history (the left column is `contents` below lg). */}
         <div className="contents lg:block lg:space-y-4">

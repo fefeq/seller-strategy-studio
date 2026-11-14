@@ -18,6 +18,7 @@ import {
   type AdvisorResult,
 } from "@/lib/advisor";
 import type { Stage } from "@/lib/stages";
+import { primaryLine } from "@/lib/business-lines";
 import type { Json } from "@/integrations/supabase/types";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
@@ -72,7 +73,7 @@ export const structureIcp = createServerFn({ method: "POST" })
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the caller passes the request-scoped client; its table chain is read untyped here (pre-existing)
 async function strategyContext(supabase: any) {
-  const [pos, pillars, icp, segments] = await Promise.all([
+  const [pos, pillars, icp, segments, lines] = await Promise.all([
     supabase
       .from("positioning")
       .select(
@@ -83,12 +84,27 @@ async function strategyContext(supabase: any) {
     supabase.from("messaging_pillars").select("title,pain,message").order("position"),
     supabase.from("icp_profiles").select("name,industries,company_size,why_fit,anti_icp").limit(5),
     supabase.from("segments").select("name,acv,motion").limit(10),
+    supabase
+      .from("business_lines")
+      .select("id,model,acv,friction,stage,name,is_primary,position")
+      .order("position"),
   ]);
+  const primary = primaryLine(lines.data ?? []);
   return {
     posicionamiento: pos.data,
     pilares: pillars.data,
     icp: icp.data,
     segmentos: segments.data,
+    // The archetype comes from the primary business line, never the old per-person diagnosis.
+    linea_principal: primary
+      ? {
+          nombre: primary.label,
+          arquetipo: primary.result.archetype,
+          arquetipo_nombre: primary.result.name,
+          motion: primary.result.motion,
+          etapa: primary.input.stage,
+        }
+      : null,
   };
 }
 
