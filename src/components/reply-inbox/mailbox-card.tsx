@@ -19,7 +19,11 @@ export function MailboxCard({ orgId }: { orgId: string }) {
     queryKey: ["mailbox-link", orgId],
     queryFn: async () => {
       const [{ data: row }, { data: u }] = await Promise.all([
-        supabase.from("mailbox_links").select("address,status,linked_at,last_synced_at,replies_count").eq("org_id", orgId).maybeSingle(),
+        supabase
+          .from("mailbox_links")
+          .select("address,status,linked_at,last_synced_at,replies_count")
+          .eq("org_id", orgId)
+          .maybeSingle(),
         supabase.auth.getSession(),
       ]);
       const uid = u.session?.user.id;
@@ -70,14 +74,21 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             <Button
               variant="outline"
               onClick={async () => {
-                if (await askConfirm("¿Desconectar el buzón?", { body: DISCONNECT_TEXT, confirmLabel: "Desconectar" }))
+                if (
+                  await askConfirm("¿Desconectar el buzón?", {
+                    body: DISCONNECT_TEXT,
+                    confirmLabel: "Desconectar",
+                  })
+                )
                   run(() => unlink({ data: { orgId } }), "Buzón desconectado");
               }}
             >
               Desconectar
             </Button>
           ) : (
-            <Button onClick={() => run(() => link({ data: { orgId } }), "Buzón conectado")}>Conectar mi Gmail</Button>
+            <Button onClick={() => run(() => link({ data: { orgId } }), "Buzón conectado")}>
+              Conectar mi Gmail
+            </Button>
           )}
         </div>
       )}

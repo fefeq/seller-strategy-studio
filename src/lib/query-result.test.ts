@@ -12,6 +12,10 @@ describe("rowsOrThrow", () => {
   it("throws the error instead of returning empty", () => {
     const error = { message: "permission denied", code: "42501" };
     expect(() => rowsOrThrow({ data: null, error })).toThrow();
-    try { rowsOrThrow({ data: null, error }); } catch (e) { expect(e).toBe(error); }
+    try {
+      rowsOrThrow({ data: null, error });
+    } catch (e) {
+      expect(e).toBe(error);
+    }
   });
 });

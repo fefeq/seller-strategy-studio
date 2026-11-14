@@ -223,7 +223,11 @@ function People() {
                     {p.email}
                     {p.company ? ` · ${p.company}` : ""}
                   </p>
-                  <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
+                  <EmailVerificationMark
+                    email={p.email}
+                    rows={verification.data}
+                    error={verification.error}
+                  />
                   <span className="mt-1 inline-block">
                     <PersonQuickActions person={p} />
                   </span>
@@ -275,7 +279,11 @@ function People() {
                         {p.email}
                         {p.company ? ` · ${p.company}` : ""}
                       </p>
-                      <EmailVerificationMark email={p.email} rows={verification.data} error={verification.error} />
+                      <EmailVerificationMark
+                        email={p.email}
+                        rows={verification.data}
+                        error={verification.error}
+                      />
                     </td>
                     {editors(p).map((e) => (
                       <td key={e.label} className={`px-3 py-2 ${e.w}`}>

@@ -103,7 +103,12 @@ function Advisor() {
   if (me && !allowed) {
     return (
       <Page eyebrow="Dirección comercial" title="Asesor GTM">
-        <ScreenState isPending={false} error={null} refetch={() => undefined} forbidden="Solo el Owner y el Sales Leader de la empresa pueden usar el Asesor GTM. Pídeselo a uno de ellos.">
+        <ScreenState
+          isPending={false}
+          error={null}
+          refetch={() => undefined}
+          forbidden="Solo el Owner y el Sales Leader de la empresa pueden usar el Asesor GTM. Pídeselo a uno de ellos."
+        >
           {null}
         </ScreenState>
       </Page>

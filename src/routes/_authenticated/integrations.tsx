@@ -196,7 +196,9 @@ function Integrations() {
                         <span className="min-w-0 break-words font-medium">
                           {i.name}
                           {comingSoon(i.name) && (
-                            <span className="ml-2 rounded bg-muted px-1.5 text-xs font-normal text-ink-mid">Próximamente</span>
+                            <span className="ml-2 rounded bg-muted px-1.5 text-xs font-normal text-ink-mid">
+                              Próximamente
+                            </span>
                           )}
                         </span>
                         <span

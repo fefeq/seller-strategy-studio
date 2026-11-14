@@ -7,10 +7,16 @@ describe("hitTarget", () => {
     expect(hitTarget({ kind: "Lead", id: "l1" })).toEqual({ to: "/leads", search: { lead: "l1" } });
   });
   it("opens the exact person", () => {
-    expect(hitTarget({ kind: "Persona", id: "p1" })).toEqual({ to: "/people", search: { persona: "p1" } });
+    expect(hitTarget({ kind: "Persona", id: "p1" })).toEqual({
+      to: "/people",
+      search: { persona: "p1" },
+    });
   });
   it("keeps accounts and deals", () => {
-    expect(hitTarget({ kind: "Cuenta", id: "a1" })).toEqual({ to: "/accounts/$id", params: { id: "a1" } });
+    expect(hitTarget({ kind: "Cuenta", id: "a1" })).toEqual({
+      to: "/accounts/$id",
+      params: { id: "a1" },
+    });
     expect(hitTarget({ kind: "Deal", id: "d1" })).toEqual({ to: "/deals", search: { deal: "d1" } });
   });
 });

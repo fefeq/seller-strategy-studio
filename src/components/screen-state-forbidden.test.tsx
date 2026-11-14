@@ -8,7 +8,12 @@ afterEach(cleanup);
 describe("ScreenState forbidden", () => {
   it("shows who can do it and hides the content", () => {
     render(
-      <ScreenState isPending={false} error={null} refetch={vi.fn()} forbidden="Solo el Owner y el Sales Leader pueden usar el Asesor GTM.">
+      <ScreenState
+        isPending={false}
+        error={null}
+        refetch={vi.fn()}
+        forbidden="Solo el Owner y el Sales Leader pueden usar el Asesor GTM."
+      >
         <p>contenido</p>
       </ScreenState>,
     );
@@ -19,7 +24,11 @@ describe("ScreenState forbidden", () => {
     expect(screen.queryByRole("button", { name: "Reintentar" })).not.toBeInTheDocument();
   });
   it("forbidden wins over loading", () => {
-    render(<ScreenState isPending error={null} refetch={vi.fn()} forbidden="Solo el Owner."><p>x</p></ScreenState>);
+    render(
+      <ScreenState isPending error={null} refetch={vi.fn()} forbidden="Solo el Owner.">
+        <p>x</p>
+      </ScreenState>,
+    );
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByRole("note")).toHaveTextContent("Solo el Owner.");
   });

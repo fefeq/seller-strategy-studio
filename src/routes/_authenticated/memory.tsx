@@ -59,7 +59,12 @@ function MemoryPage() {
   const { data: me } = useMe();
   const qc = useQueryClient();
   const [q, setQ] = useState("");
-  const { data: rows = [], isPending, error, refetch } = useQuery({
+  const {
+    data: rows = [],
+    isPending,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["memories"],
     queryFn: async () =>
       rowsOrThrow(
@@ -115,45 +120,45 @@ function MemoryPage() {
         aria-label="Buscar en la memoria"
       />
       <ScreenState isPending={isPending} error={error} refetch={refetch}>
-      <Tabs defaultValue="company">
-        <TabsList>
-          <TabsTrigger value="company">Empresa ({by("company").length})</TabsTrigger>
-          <TabsTrigger value="user">Mío ({by("user").length})</TabsTrigger>
-          <TabsTrigger value="account">Cuentas ({by("account").length})</TabsTrigger>
-        </TabsList>
-        {(["company", "user", "account"] as MemScope[]).map((s) => (
-          <TabsContent key={s} value={s} className="space-y-6 pt-4">
-            <p className="text-xs text-muted-foreground">
-              {s === "company"
-                ? "Lo ve todo el equipo. Lo editan su autor, el Owner y el Sales Leader."
-                : s === "user"
-                  ? "Solo lo ves tú: cómo te gusta trabajar."
-                  : "Lo ve todo el equipo, junto a cada cuenta."}
-            </p>
-            <AddMemory scope={s} accounts={accounts} onSaved={refresh} />
-            {by(s).length ? (
-              <ul className="divide-y border-t">
-                {by(s).map((r) => (
-                  <MemoryRow
-                    key={r.id}
-                    r={r}
-                    editable={!!me && canEditMemory(r, me.user.id, me.roles)}
-                    onChange={refresh}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <Empty>
-                {q
-                  ? "Nada coincide con la búsqueda."
+        <Tabs defaultValue="company">
+          <TabsList>
+            <TabsTrigger value="company">Empresa ({by("company").length})</TabsTrigger>
+            <TabsTrigger value="user">Mío ({by("user").length})</TabsTrigger>
+            <TabsTrigger value="account">Cuentas ({by("account").length})</TabsTrigger>
+          </TabsList>
+          {(["company", "user", "account"] as MemScope[]).map((s) => (
+            <TabsContent key={s} value={s} className="space-y-6 pt-4">
+              <p className="text-xs text-muted-foreground">
+                {s === "company"
+                  ? "Lo ve todo el equipo. Lo editan su autor, el Owner y el Sales Leader."
                   : s === "user"
-                    ? "Aún no recuerda nada tuyo. Dile al agente cómo te gusta trabajar, por ejemplo «respóndeme siempre con tres puntos»."
-                    : "Aún no hay recuerdos aquí. Se irán guardando solos con el uso."}
-              </Empty>
-            )}
-          </TabsContent>
-        ))}
-      </Tabs>
+                    ? "Solo lo ves tú: cómo te gusta trabajar."
+                    : "Lo ve todo el equipo, junto a cada cuenta."}
+              </p>
+              <AddMemory scope={s} accounts={accounts} onSaved={refresh} />
+              {by(s).length ? (
+                <ul className="divide-y border-t">
+                  {by(s).map((r) => (
+                    <MemoryRow
+                      key={r.id}
+                      r={r}
+                      editable={!!me && canEditMemory(r, me.user.id, me.roles)}
+                      onChange={refresh}
+                    />
+                  ))}
+                </ul>
+              ) : (
+                <Empty>
+                  {q
+                    ? "Nada coincide con la búsqueda."
+                    : s === "user"
+                      ? "Aún no recuerda nada tuyo. Dile al agente cómo te gusta trabajar, por ejemplo «respóndeme siempre con tres puntos»."
+                      : "Aún no hay recuerdos aquí. Se irán guardando solos con el uso."}
+                </Empty>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
       </ScreenState>
     </Page>
   );
