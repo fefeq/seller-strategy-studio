@@ -197,11 +197,13 @@ export function budgetState(spent: number, limit: number | null) {
   return { remaining: Math.max(0, limit - spent), warn: pct >= 0.8, paused: pct >= 1, pct };
 }
 
-export function sourcesLine(used: { service: Service; cost: number }[]) {
+export function sourcesLine(used: { service: Service; cost: number | null }[]) {
   if (!used.length) return "";
-  const total = used.reduce((s, u) => s + u.cost, 0);
   const names = [...new Set(used.map((u) => u.service))]
     .map((s) => s[0].toUpperCase() + s.slice(1))
     .join(", ");
+  // An unknown cost is never added as zero: the line says «sin dato» instead of a total.
+  if (used.some((u) => u.cost === null)) return `Fuentes: ${names} · coste: sin dato`;
+  const total = used.reduce((s, u) => s + (u.cost ?? 0), 0);
   return `Fuentes: ${names} · coste aprox. ${total.toFixed(2).replace(".", ",")} €`;
 }
