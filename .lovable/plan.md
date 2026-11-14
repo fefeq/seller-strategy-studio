@@ -11,9 +11,9 @@ Código revisado: Apify devuelve resultados sin recibo de cargo (`maxUsd` es un 
 - Interruptor **global**, inicialmente «En pausa», visible en Conexiones; solo superadmin puede cambiarlo. Esta restricción evita que una empresa eluda la pausa legal para toda la plataforma. Reanudación exclusivamente tras autorización de Fede por revisión legal.
 - Guardar estado persistente y comprobarlo en servidor antes de buscar un LinkedIn auxiliar, escribir su URL o lanzar un robot. Fallo de lectura del interruptor = extracción pausada.
 - Bloquear `linkedin_company_posts`, `linkedin_profile_posts`, `company_job_postings`, actores actuales de LinkedIn y cualquier actor nuevo que no esté explícitamente autorizado como no-LinkedIn. Control central en el ejecutor de Apify más controles en los consumidores.
-- Cubrir pantallas, agente, MCP, Telegram, investigación de stakeholders, señales, jobs y plays; trabajos en cola también vuelven a comprobar la pausa antes de llamar. No iniciar más runs ni repetir los inciertos. Un run ya enviado no puede deshacerse: registrarlo, sin relanzarlo.
+- Cubrir pantallas, agente/MCP/Telegram, investigación, señales, jobs y plays, incluida cola existente. Comprobar antes de cada llamada; runs ya enviados se registran sin repetirlos.
 - Mostrar «En pausa · pendiente de revisión legal» donde se ofrece esa extracción. El agente explica el bloqueo, no prepara una acción ejecutable ni lo sortea mediante otro robot. G2 continúa disponible; también siguen visibles las fuentes LinkedIn ya guardadas, sin borrar ni reescribirlas.
-- No pausar por asociación las búsquedas Apollo/Clay ni borrar enlaces de LinkedIn. Una búsqueda web pública no equivale a lanzar un robot contra LinkedIn; impedir extracción robotizada directa por rutas alternativas, no ocultar citas existentes.
+- No pausar Apollo/Clay ni borrar enlaces. Impedir extracción robotizada directa por rutas alternativas, no ocultar citas o búsquedas web públicas.
 
 ## B. Gasto y confirmaciones
 1. **Libro por empresa, sin duplicados:** identificar cada intento por operación, proveedor, empresa y origen; registrar cargo medido, estimación histórica o «sin dato», con moneda y evidencia. Atribuir también llamadas fallidas/cobradas y resultados vacíos. Nunca asumir cero porque no hay resultados ni repetir para recuperar un recibo.
@@ -56,11 +56,10 @@ Nuevas pruebas fallando primero, suite/regresiones, tipos, lint y compilación a
 +- Número a asignar tras comprobar el diario. No editar migraciones existentes, borrar datos ni copiar empresas. **No se crea SQL ni se aplica migración con este SDD.**
 
 ## Riesgos, reversión y límites
-- Registro incompleto/proveedor sin recibo: conservar intento «sin dato» y reconciliar después por ID, no relanzar consumo. Si falla la persistencia antes de llamar, detener ese intento por integridad, no por un tope presupuestario.
-- La respuesta síncrona actual de Apify no permite medir el coste real: hará falta iniciar una sola ejecución y consultar su recibo por ID, con espera espaciada hasta terminal; no ejecutar dos veces para obtener datos.
-- Las cotizaciones antiguas no prueban precios y las monedas dificultan el porcentaje; decisión monetaria pendiente. Costes ya ocurridos sin evidencia no se reconstruyen inventando cifras.
-- Los límites técnicos por ejecución de Apify actuales no son un tope mensual manual: conservarlos como protección del actor, sin usarlos como estimación ni añadir nuevos topes duros.
-- Revertir por pieza el código de contabilidad/confirmación manteniendo recibos y datos; migración aditiva conservada. **Nunca revertir la pausa legal para reactivar LinkedIn sin autorización.** El interruptor permite reanudación expresa tras revisión legal, no automática.
-- Sin pantallas nuevas, publicación, envíos, lectura real de buzones, robots reales ni gasto. Drive (SDD existente, Ola 3B) y glosario pendientes no se tocan.
+- Recibo ausente o fallo tras cobrar: conservar «sin dato», reconciliar por ID y no relanzar. Si falla persistencia antes de llamar, detener por integridad, no por presupuesto.
+- Apify síncrono no entrega cargo medido: iniciar una ejecución y consultar su recibo por ID hasta terminal con espera espaciada; nunca ejecutar dos veces para medir.
+- Conservar límites técnicos actuales de actores: no son un tope mensual manual ni una estimación. Costes históricos sin evidencia no se reconstruyen.
+- Revertir código por pieza manteniendo datos y recibos; migración aditiva conservada. Nunca reactivar LinkedIn mediante una reversión: solo interruptor tras autorización legal expresa.
+- Sin pantallas nuevas, publicación, envíos, lectura real de buzones, robots reales ni gasto. Drive y glosario pendientes intactos.
 
-**Pendientes de Fede:** OK escrito para construir; política de comparación entre USD/EUR; permisos específicos si alguna prueba protegida exige el comportamiento antiguo. No se declara el SDD aprobado.
+**Pendientes de Fede:** OK escrito para construir; comparación USD/EUR; permisos específicos ante pruebas protegidas incompatibles. No se declara el SDD aprobado.
