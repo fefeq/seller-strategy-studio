@@ -68,28 +68,31 @@ async function apollo(
   for (const [k, v] of params) url.searchParams.append(k, v);
   const signal = AbortSignal.timeout(15_000);
   try {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: headers(),
-    body: body === undefined ? undefined : JSON.stringify(body),
-    signal,
-  });
-  if (res.status === 429 && retry) {
-    const wait = Math.min(Number(res.headers.get("retry-after")) || 2, 8);
-    await new Promise((r) => setTimeout(r, wait * 1000 + Math.random() * 400));
-    return apollo(path, params, body, false);
-  }
-  if (!res.ok) {
-    const raw = await res.text();
-    console.error(`Apollo ${path} [${res.status}] body ${raw.length} chars`);
-    throw Object.assign(new Error(apolloErrorText(res.status, raw)), { status: res.status });
-  }
-  return await res.json();
+    const res = await fetch(url, {
+      method: "POST",
+      headers: headers(),
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal,
+    });
+    if (res.status === 429 && retry) {
+      const wait = Math.min(Number(res.headers.get("retry-after")) || 2, 8);
+      await new Promise((r) => setTimeout(r, wait * 1000 + Math.random() * 400));
+      return apollo(path, params, body, false);
+    }
+    if (!res.ok) {
+      const raw = await res.text();
+      console.error(`Apollo ${path} [${res.status}] body ${raw.length} chars`);
+      throw Object.assign(new Error(apolloErrorText(res.status, raw)), { status: res.status });
+    }
+    return await res.json();
   } catch (error) {
     if (signal.aborted) {
-      throw Object.assign(new Error(
-        "Apollo no respondió en 15 segundos. No se ha reintentado para evitar un posible doble cobro. No podemos confirmar si Apollo consumió créditos; comprueba el consumo antes de repetir.",
-      ), { code: "APOLLO_TIMEOUT" });
+      throw Object.assign(
+        new Error(
+          "Apollo no respondió en 15 segundos. No se ha reintentado para evitar un posible doble cobro. No podemos confirmar si Apollo consumió créditos; comprueba el consumo antes de repetir.",
+        ),
+        { code: "APOLLO_TIMEOUT" },
+      );
     }
     throw error;
   }
@@ -332,10 +335,22 @@ export async function revealStakeholder(
             .eq("org_id", c.orgId)
             .eq("id", s.id),
         );
-      return { found: true, contact: null, phone: "cached", phoneNumber: cached, proposedEmail: null };
+      return {
+        found: true,
+        contact: null,
+        phone: "cached",
+        phoneNumber: cached,
+        proposedEmail: null,
+      };
     }
     if (last?.status === "pending")
-      return { found: true, contact: null, phone: "pending", phoneNumber: null, proposedEmail: null };
+      return {
+        found: true,
+        contact: null,
+        phone: "pending",
+        phoneNumber: null,
+        proposedEmail: null,
+      };
   }
   const [m] = await bulkMatch(
     [
@@ -349,10 +364,13 @@ export async function revealStakeholder(
     !!a.phone,
     a.webhookBase,
   );
-  if (!m) return { found: false, contact: null, phone: "no", phoneNumber: null, proposedEmail: null };
+  if (!m)
+    return { found: false, contact: null, phone: "no", phoneNumber: null, proposedEmail: null };
   // Keep and propose (Fede, NK-0173): a different email from Apollo never overwrites the saved one.
   const proposedEmail =
-    m.email && s.email && normalizeVerificationEmail(m.email) !== normalizeVerificationEmail(s.email)
+    m.email &&
+    s.email &&
+    normalizeVerificationEmail(m.email) !== normalizeVerificationEmail(s.email)
       ? m.email
       : null;
   const patch = {
@@ -377,7 +395,13 @@ export async function revealStakeholder(
     now: new Date(),
   });
   if (verification) await recordApolloVerifications([verification]);
-  return { found: true, contact: m, phone: a.phone ? "requested" : "no", phoneNumber: null, proposedEmail };
+  return {
+    found: true,
+    contact: m,
+    phone: a.phone ? "requested" : "no",
+    phoneNumber: null,
+    proposedEmail,
+  };
 }
 
 export type CompanyHit = AccountDraft & { existingId: string | null };
