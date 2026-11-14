@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { askConfirm } from "@/components/confirm-dialog";
 import { errorText } from "@/lib/errors";
 import { LEGAL_GATE_TEXT } from "@/lib/reply-inbox/rules";
+import { CONNECTED_TEXT, DISCONNECT_TEXT } from "./mailbox-copy";
 import { linkMailbox, unlinkMailbox } from "@/lib/reply-inbox/mailbox.functions";
 
 export function MailboxCard({ orgId }: { orgId: string }) {
@@ -44,7 +45,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
       <p className="eyebrow">Bandeja de respuestas · Gmail</p>
       <p className="mt-2 text-sm">
         {row
-          ? `Conectado: ${row.address}. Cada hora NOKKO mira si tus leads en Contactado te han respondido y, si es así, detiene su secuencia de seguimiento. Solo lee remitente y fecha; nunca envía desde él.`
+          ? CONNECTED_TEXT(row.address)
           : "Sin buzón conectado. Al conectarlo, NOKKO detecta las respuestas de tus leads y detiene su secuencia de seguimiento."}
       </p>
       {!row && saved && (
@@ -69,7 +70,7 @@ export function MailboxCard({ orgId }: { orgId: string }) {
             <Button
               variant="outline"
               onClick={async () => {
-                if (await askConfirm("¿Desconectar el buzón?", { body: "NOKKO dejará de leer las respuestas y borrará lo leído; conservará el contador. Los leads marcados como «respondió» siguen sin secuencia.", confirmLabel: "Desconectar" }))
+                if (await askConfirm("¿Desconectar el buzón?", { body: DISCONNECT_TEXT, confirmLabel: "Desconectar" }))
                   run(() => unlink({ data: { orgId } }), "Buzón desconectado");
               }}
             >
