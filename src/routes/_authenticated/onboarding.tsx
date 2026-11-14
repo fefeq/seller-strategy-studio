@@ -3,12 +3,11 @@ import { Page } from "@/components/page";
 import { useMe } from "@/hooks/use-me";
 import { useOnboarding, asJson } from "@/hooks/use-onboarding";
 import { jsonObject } from "@/lib/json";
-import { DepthStep, RoadmapStep } from "@/components/onboarding/steps";
+import { DepthStep, DiagnosisStep, RoadmapStep } from "@/components/onboarding/steps";
 import { SourcesStep } from "@/components/onboarding/sources";
 import { ReadingStep } from "@/components/onboarding/reading";
 import { parseSourceStatuses } from "@/lib/onboarding-source-refs";
 import { BlocksStep } from "@/components/onboarding/blocks";
-import { BusinessLinesStep } from "@/components/onboarding/business-lines-step";
 import { GuestOnboarding } from "@/components/onboarding/guest";
 import type { SetupProposal } from "@/lib/setup-extraction";
 import type { Diagnosis, DiagnosisInput } from "@/lib/gtm-diagnosis";
@@ -28,7 +27,7 @@ const LABELS: Record<Step, string> = {
   depth: "Profundidad",
   sources: "Tus fuentes",
   reading: "Nokko lee",
-  diagnosis: "Líneas de negocio",
+  diagnosis: "Diagnóstico",
   blocks: "Aprobar",
   roadmap: "Tu roadmap",
 };
@@ -58,7 +57,7 @@ function Onboarding() {
   const leader = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const pre = useOnboarding();
   const step = (pre.data?.step as Step) ?? "depth";
-  const { data: session, save, orgId } = useOnboarding({ poll: step === "reading" });
+  const { data: session, save } = useOnboarding({ poll: step === "reading" });
 
   if (me && !leader)
     return (
@@ -154,12 +153,11 @@ function Onboarding() {
         />
       )}
       {step === "diagnosis" && (
-        <BusinessLinesStep
-          orgId={orgId}
-          roles={me?.roles ?? []}
+        <DiagnosisStep
           initial={initialDiag}
-          saveDiagnosis={async (d) => { if (!(await save({ diagnosis: asJson(d) }))) throw new Error("No se pudo guardar tu diagnóstico personal. Reintenta."); }}
-          onNext={() => save({ step: nextStepAfterDiagnosis(!!proposal) })}
+          onDone={(input, result) =>
+            save({ step: nextStepAfterDiagnosis(!!proposal), diagnosis: asJson({ input, result }) })
+          }
         />
       )}
       {step === "blocks" && proposal && (
