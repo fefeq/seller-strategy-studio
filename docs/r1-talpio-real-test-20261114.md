@@ -31,3 +31,4 @@ Siguiente paso: diagnosticar la denegación de OpenRouter sin nueva ejecución d
 - Perplexity devolvió 8 resultados reales; la IA seleccionó 2 (LibreOffice 26.2 fin de soporte; Windows 11 23H2 fin de soporte). **Ninguno menciona a Talpio**: falso positivo. La consulta no exige el nombre del competidor y la selección no lo comprueba.
 - Coste: búsqueda 0,01 EUR estimada; IA medida 0,00172425 USD (2.139/32 tokens). Sin envíos ni publicación.
 - Corrección (14-11 09:53): las búsquedas de plays basados en competidores ponen sus nombres entre comillas y descartan señales que no los nombren (namesCompetitor, competitor-filter.test.ts). Las 2 sugerencias falsas se descartaron. Sin repetir la búsqueda real.
+- Cuarta ejecución b6c819e4 (filtro nuevo): done, 3/3; Perplexity 8 resultados, ninguno nombra a Talpio → 0 señales, 0 pruebas, 0 sugerencias. Búsqueda 0,01 EUR estimada; IA medida 0,000738 USD. Posicionamiento restaurado, play pausado.
