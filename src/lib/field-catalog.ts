@@ -49,6 +49,9 @@ export type ConceptId =
   | "estado_proveedor_email"
   | "proveedor_buzon"
   | "estado_buzon"
+  | "tipo_respuesta"
+  | "id_mensaje_correo"
+  | "contador_respuestas"
   | "clave_registro"
   | "superficie_borrador"
   | "motivo_bloqueo_email"
@@ -125,6 +128,9 @@ export const CONCEPTS: Concept[] = [
   { id: "direccion_email", label: "Email", meaning: "Dirección normalizada de contacto.", kind: "text", format: "Minúsculas sin espacios exteriores", display: "Dirección" },
   { id: "estado_email", label: "Estado del email", meaning: "Estado comunicado por el proveedor para una dirección.", kind: "enum", format: "Valor cerrado", allowed: ["verified", "catch_all", "unverifiable", "invalid", "unverified"], display: "Estado efectivo en español" },
   { id: "proveedor_buzon", label: "Proveedor del buzón", meaning: "Servicio de correo del buzón conectado a la bandeja de respuestas.", kind: "enum", format: "gmail", display: "Nombre del servicio" },
+  { id: "tipo_respuesta", label: "Tipo de respuesta", meaning: "Respuesta de una persona o automática, por cabeceras.", kind: "enum", format: "human | auto", display: "Persona / Automática" },
+  { id: "id_mensaje_correo", label: "Id del mensaje", meaning: "Identificador del mensaje o hilo en Gmail; nunca su contenido.", kind: "text", format: "Id de Gmail", display: "No se muestra" },
+  { id: "contador_respuestas", label: "Respuestas detectadas", meaning: "Respuestas guardadas desde que se conectó el buzón.", kind: "number", format: "Entero ≥ 0", display: "Número" },
   { id: "estado_buzon", label: "Estado del buzón", meaning: "Si el buzón de la empresa está conectado o desconectado.", kind: "enum", format: "connected | disconnected", display: "Conectado / Desconectado" },
   { id: "estado_proveedor_email", label: "Estado del proveedor", meaning: "Valor original corto para auditoría de verificación.", kind: "text", format: "Máximo 120 caracteres", display: "No se muestra" },
   {
@@ -438,6 +444,20 @@ export const BINDINGS: Binding[] = [
   { table: "mailbox_links", column: "provider", concept: "proveedor_buzon", persistence: saved },
   { table: "mailbox_links", column: "status", concept: "estado_buzon", persistence: saved },
   { table: "mailbox_links", column: "linked_at", concept: "alta_sistema", persistence: saved },
+  { table: "mailbox_links", column: "last_synced_at", concept: "fecha_revision", persistence: saved },
+  { table: "mailbox_links", column: "replies_count", concept: "contador_respuestas", persistence: saved },
+  { table: "inbox_replies", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "inbox_replies", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "inbox_replies", column: "user_id", concept: "clave_usuario", persistence: saved },
+  { table: "inbox_replies", column: "gmail_id", concept: "id_mensaje_correo", persistence: saved },
+  { table: "inbox_replies", column: "thread_id", concept: "id_mensaje_correo", persistence: saved },
+  { table: "inbox_replies", column: "lead_id", concept: "clave_registro", persistence: saved },
+  { table: "inbox_replies", column: "received_at", concept: "fecha_evento", persistence: saved },
+  { table: "inbox_replies", column: "kind", concept: "tipo_respuesta", persistence: saved },
+  { table: "inbox_replies", column: "created_at", concept: "alta_sistema", persistence: saved },
+  { table: "lead_replied_marks", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "lead_replied_marks", column: "lead_id", concept: "clave_registro", persistence: saved },
+  { table: "lead_replied_marks", column: "replied_at", concept: "fecha_evento", persistence: saved },
   { table: "email_verifications", column: "status", concept: "estado_email", persistence: saved },
   { table: "email_verifications", column: "provider_status", concept: "estado_proveedor_email", persistence: saved },
   { table: "email_verifications", column: "provider", concept: "fuente_citada", persistence: saved },
@@ -834,6 +854,9 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   estado_proveedor_email: ["src/integrations/supabase/types.ts"],
   proveedor_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
   estado_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
+  tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
+  id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
+  contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
   alta_sistema: ["src/integrations/supabase/types.ts"],
 };
 
