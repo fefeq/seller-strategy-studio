@@ -7,7 +7,7 @@ const response = () => new Response(JSON.stringify({
 }), { status: 200 });
 describe("NK-0174 fixed Opus route", () => {
   it("uses exactly Opus 5.5, Anthropic, no fallback, data collection denied and zero retention", async () => {
-    const fetcher = vi.fn(async () => response());
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => response());
     const ports = replyModelPorts(async () => {}, { OPENROUTER_API_KEY: "synthetic-test-key" }, fetcher);
     const result = await ports.classify('{"untrusted_reply":"synthetic message"}');
     expect(REPLY_MODEL).toBe("anthropic/claude-opus-5.5");
@@ -21,7 +21,7 @@ describe("NK-0174 fixed Opus route", () => {
     expect(result.usage?.costUsd).toBe(0.001);
   });
   it("does not retry or fall back if no privacy-compatible provider is available", async () => {
-    const fetcher = vi.fn(async () => new Response("Provider unavailable", { status: 404 }));
+    const fetcher = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => new Response("Provider unavailable", { status: 404 }));
     const ports = replyModelPorts(async () => {}, { OPENROUTER_API_KEY: "synthetic-test-key" }, fetcher);
     await expect(ports.classify("synthetic")).rejects.toThrow();
     expect(fetcher).toHaveBeenCalledTimes(1);
