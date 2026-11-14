@@ -1,3 +1,4 @@
+import { PrimaryLineNote } from "@/components/primary-line-note";
 import { createFileRoute } from "@tanstack/react-router";
 import { Page } from "@/components/page";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,6 +45,7 @@ function Strategy() {
   const { tab } = Route.useSearch();
   return (
     <Page eyebrow="Capa estratégica" title="Estrategia GTM">
+      <PrimaryLineNote className="mb-6" />
       <Tabs key={tab ?? "motions"} defaultValue={tab ?? "motions"}>
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Modelos de venta por segmento</TabsTrigger>

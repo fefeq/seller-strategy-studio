@@ -29,3 +29,15 @@ export function summarizeLines<T extends SummarySource>(lines: readonly T[]) {
       motion: result.motion, stage: input.stage, nextStep: result.nextStep }];
   });
 }
+type PrimarySource = SummarySource & { name: string | null };
+
+/** The company's archetype comes from its single valid primary line; none or several = null (never a guess). */
+export function primaryLine<T extends PrimarySource>(lines: readonly T[]) {
+  const primary = lines.filter((l) => l.is_primary);
+  if (primary.length !== 1) return null;
+  const line = primary[0]!;
+  const input = readLineInput(line);
+  if (!input) return null;
+  const result = diagnose(input);
+  return { id: line.id, label: line.name || result.name, input, result, extra: lines.length - 1 };
+}

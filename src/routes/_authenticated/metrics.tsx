@@ -1,3 +1,4 @@
+import { PrimaryLineNote } from "@/components/primary-line-note";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -200,6 +201,7 @@ function Metrics() {
         </NativeSelect>
       }
     >
+      <PrimaryLineNote className="mb-4" />
       <nav
         aria-label="Secciones de Métricas"
         className="sticky top-0 z-20 -mx-4 mb-6 flex gap-1 overflow-x-auto border-b bg-background/95 px-4 py-2 backdrop-blur md:top-14 md:mx-0 md:px-0"

@@ -1,3 +1,4 @@
+import { usePrimaryLine } from "@/hooks/use-business-lines";
 import { Trash2 } from "lucide-react";
 import { IconText } from "@/components/icon-text";
 import { Link } from "@tanstack/react-router";
@@ -103,6 +104,7 @@ export function Motions() {
   const { currency, symbol, money } = useCurrency();
   const isOwner = me?.roles.includes("owner");
   const canEditMotion = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
+  const { lines, primary } = usePrimaryLine(me?.currentOrg?.org_id);
   const [acvManual, setAcvManual] = useState<number | null>(null);
   const [basis, setBasis] = useState<"target" | "real">("target");
   const [forced, setForced] = useState("");
@@ -304,6 +306,32 @@ export function Motions() {
 
   return (
     <div className="space-y-8">
+      {lines.length > 0 && segs.length > 0 && (
+        <section className="rounded-lg border bg-card p-6">
+          <p className="eyebrow">Segmentos por línea de negocio</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Sin línea, un segmento usa la principal{primary ? ` (${primary.label}, arquetipo ${primary.result.archetype})` : ""}.
+            {!canEditMotion && " Solo Owner y Sales Leader los asignan."}
+          </p>
+          <ul className="mt-4 grid gap-3 md:grid-cols-2">
+            {segs.map((s) => {
+              const own = lines.find((l) => l.id === s.business_line_id);
+              return (
+                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-sm font-medium">{s.name}</span>
+                  <Pick
+                    aria-label={`Línea de negocio de ${s.name}`}
+                    disabled={!canEditMotion}
+                    value={own?.id ?? ""}
+                    options={{ "": "Principal (por defecto)", ...Object.fromEntries(lines.map((l) => [l.id, l.name || `Línea ${l.position + 1}`])) }}
+                    onChange={(v) => upd(s.id, { business_line_id: v === "" ? null : v })}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
       <div className="grid gap-6 rounded-lg border bg-card p-6 md:grid-cols-[1fr_2fr]">
         <div className="space-y-4">
           <p className="eyebrow">Calculadora de estrategia GTM</p>
