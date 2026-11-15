@@ -61,6 +61,16 @@ describe("A+ role changes", () => {
   it("same role (accents/case/legal suffix) is no change", () => {
     expect(roleChange({ title: "vp sales", company: "Acme" }, currentRole(raw))?.changed).toBe(false);
   });
+  it("legal suffixes are ignored; similar prefixes are different companies", () => {
+    const now = { title: "CEO", company: "Acme Ltd", since: null };
+    expect(roleChange({ title: "CEO", company: "Acme Inc" }, now)?.companyChanged).toBe(false);
+    expect(roleChange({ title: "CEO", company: "Meta" }, { ...now, company: "Metabase" })?.companyChanged).toBe(true);
+  });
+  it("empty stored title → title found, not «sin cambios»", () => {
+    const r = roleChange({ title: "", company: "Acme" }, currentRole(raw));
+    expect(r?.titleMissing).toBe(true);
+    expect(r?.changed).toBe(false);
+  });
   it("no current role → unknown (null), never «sin cambios»", () => {
     expect(roleChange({ title: "x", company: "y" }, currentRole([{ experience: [] }]))).toBeNull();
   });

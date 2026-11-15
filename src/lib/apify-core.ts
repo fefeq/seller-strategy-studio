@@ -212,8 +212,12 @@ export async function accountPostsCore(db: Db, accountId: string, scope: AiScope
     throw new Error(
       "No encuentro la página de LinkedIn de esta cuenta. Añádela en la ficha de la cuenta (LinkedIn de la empresa).",
     );
-  const posts = await companyPosts(url, 8, "3months");
-  await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts.length);
+  let posts: Awaited<ReturnType<typeof companyPosts>> | undefined;
+  try {
+    posts = await companyPosts(url, 8, "3months");
+  } finally {
+    await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts?.length ?? 0);
+  }
   const { engagement } = await import("@/lib/linkedin-insights");
   return { linkedin: url, posts, engagement: engagement(posts) };
 }
@@ -223,8 +227,12 @@ export async function accountJobsCore(db: Db, accountId: string, scope: AiScope 
   const acc = await loadAccount(db, accountId, scope);
   const name = companyName(acc.name, cleanDomain(acc.domain));
   const url = await linkedinForReading(db, acc);
-  const jobs = await companyJobs(name, url, 20);
-  await logLinkedinRun(db, acc.org_id, "company_job_postings", jobs.length);
+  let jobs: Awaited<ReturnType<typeof companyJobs>> | undefined;
+  try {
+    jobs = await companyJobs(name, url, 20);
+  } finally {
+    await logLinkedinRun(db, acc.org_id, "company_job_postings", jobs?.length ?? 0);
+  }
   const { hiringSignals } = await import("@/lib/linkedin-insights");
   return { linkedin: url, jobs, hiring: hiringSignals(jobs) };
 }
@@ -239,12 +247,17 @@ export async function stakeholderRoleCore(db: Db, stakeholderId: string, scope: 
   const url = linkedinProfileUrl(s.linkedin_url);
   if (!url) throw new Error(`Añade el LinkedIn de ${s.name} para comprobar su cargo.`);
   const { data: acc } = await inOrg(db.from("accounts").select("name").eq("id", s.account_id as string), scope).maybeSingle();
-  const raw = await runActor(
-    ACTORS.profile,
-    { profileScraperMode: "Profile details no email ($4 per 1k)", queries: [url] },
-    { maxItems: 1 },
-  );
-  await logLinkedinRun(db, s.org_id as string, "linkedin_role_check", Array.isArray(raw) ? raw.length : 0);
+  let raw: unknown;
+  try {
+    raw = await runActor(
+      ACTORS.profile,
+      { profileScraperMode: "Profile details no email ($4 per 1k)", queries: [url] },
+      { maxItems: 1 },
+    );
+  } finally {
+    // Logged even when the run fails: Apify may have charged it (cost «sin dato»).
+    await logLinkedinRun(db, s.org_id as string, "linkedin_role_check", Array.isArray(raw) ? raw.length : 0);
+  }
   const { currentRole, roleChange } = await import("@/lib/linkedin-insights");
   const now = currentRole(raw);
   return {
@@ -263,8 +276,12 @@ export async function stakeholderPostsCore(db: Db, stakeholderId: string, scope:
   if (!s) throw new Error("No encuentro esa persona en esta empresa.");
   const url = linkedinProfileUrl(s.linkedin_url);
   if (!url) throw new Error(`Añade el LinkedIn de ${s.name} para leer sus publicaciones.`);
-  const posts = await profilePosts(url, 5);
-  await logLinkedinRun(db, s.org_id as string, "linkedin_profile_posts", posts.length);
+  let posts: Awaited<ReturnType<typeof profilePosts>> | undefined;
+  try {
+    posts = await profilePosts(url, 5);
+  } finally {
+    await logLinkedinRun(db, s.org_id as string, "linkedin_profile_posts", posts?.length ?? 0);
+  }
   const { engagement } = await import("@/lib/linkedin-insights");
   return { name: s.name as string, linkedin: url, posts, engagement: engagement(posts) };
 }

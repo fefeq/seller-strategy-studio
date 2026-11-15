@@ -215,6 +215,7 @@ export function StakeholdersTab({
             </Field>
           </div>
           <RoleCheck
+            key={sel.id}
             stakeholderId={sel.id}
             hasLinkedin={!!sel.linkedin_url?.trim()}
             onUseTitle={(title) => setSel((cur) => (cur && cur.id === sel.id ? { ...cur, title } : cur))}

@@ -78,13 +78,22 @@ export function currentRole(raw: unknown): CurrentRole | null {
   return { title, company, since: blank(open?.startDate?.text ?? open?.startDate) || null };
 }
 
-export type RoleChange = { changed: boolean; companyChanged: boolean; before: { title: string; company: string }; now: CurrentRole } | null;
+const LEGAL = new Set(["sl", "sa", "slu", "sau", "inc", "ltd", "llc", "corp", "corporation", "gmbh", "bv", "srl", "spa", "plc", "co", "company", "group", "limited"]);
+/** Company name without punctuation, accents or trailing legal suffixes. */
+export function companyKey(name: string): string {
+  const t = plain(name).split(" ").filter(Boolean);
+  while (t.length > 1 && LEGAL.has(t[t.length - 1]!)) t.pop();
+  return t.join(" ");
+}
+
+export type RoleChange = { changed: boolean; companyChanged: boolean; /** No stored title to compare: the LinkedIn title is new data, not a change. */ titleMissing: boolean; before: { title: string; company: string }; now: CurrentRole } | null;
 
 /** Compare what NOKKO stores with LinkedIn; null when LinkedIn gave no current role (unknown, never «sin cambios»). */
 export function roleChange(stored: { title: string | null; company: string | null }, now: CurrentRole | null): RoleChange {
   if (!now) return null;
   const before = { title: blank(stored.title), company: blank(stored.company) };
-  const companyChanged = !!before.company && !!now.company && !plain(now.company).includes(plain(before.company)) && !plain(before.company).includes(plain(now.company));
+  const companyChanged = !!before.company && !!now.company && companyKey(before.company) !== companyKey(now.company);
+  const titleMissing = !before.title && !!now.title;
   const titleChanged = !!before.title && !!now.title && plain(before.title) !== plain(now.title);
-  return { changed: companyChanged || titleChanged, companyChanged, before, now };
+  return { changed: companyChanged || titleChanged, companyChanged, titleMissing, before, now };
 }

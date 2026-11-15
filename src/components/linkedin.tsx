@@ -60,10 +60,12 @@ export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakehol
               ? r.change.companyChanged
                 ? `Ha cambiado de empresa: ahora ${r.change.now.title || "—"} en ${r.change.now.company}.`
                 : `Ha cambiado de cargo: ahora ${r.change.now.title}.`
-              : `Sin cambios: ${r.change.now.title}${r.change.now.company ? ` en ${r.change.now.company}` : ""}.`}
+              : r.change.titleMissing
+                ? `Cargo encontrado: ${r.change.now.title}${r.change.now.company ? ` en ${r.change.now.company}` : ""}.`
+                : `Sin cambios: ${r.change.now.title}${r.change.now.company ? ` en ${r.change.now.company}` : ""}.`}
             {r.change.now.since ? ` Desde ${r.change.now.since}.` : ""}
           </p>
-          {r.change.changed && r.change.now.title && (
+          {(r.change.changed || r.change.titleMissing) && r.change.now.title && (
             <Button size="sm" variant="outline" onClick={() => onUseTitle(r.change!.now.title)}>
               Usar el cargo nuevo (luego Guardar)
             </Button>
