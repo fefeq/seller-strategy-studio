@@ -12,6 +12,14 @@ const EXTERNAL =
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  start_onboarding_read: "Empezar el onboarding desde la web",
+  list_onboarding_blocks: "Bloques de la propuesta de onboarding",
+  approve_onboarding_block: "Aprobar un bloque del onboarding",
+  list_memories: "Ver la Memoria",
+  remember: "Guardar en Memoria",
+  list_rules: "Reglas del equipo",
+  list_connections: "Estado de las conexiones",
+  get_advisor_recommendations: "Recomendaciones del Asesor GTM",
   update_icp: "Editar un ICP",
   update_pillar: "Editar un pilar de mensaje",
   check_delete: "Qué se pierde al borrar (segmento, ICP o pilar)",

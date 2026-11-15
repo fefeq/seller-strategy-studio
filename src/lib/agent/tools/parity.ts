@@ -51,7 +51,7 @@ export const PARITY_TOOLS: AgentTool[] = [
     run: async (c) => {
       const r = await loadAgentRules(c);
       if (!r.ok) return { aviso: RULES_READ_FAILED, reglas: [] };
-      return { reglas: r.rules.map((x) => ({ titulo: x.title, texto: x.body })), enlace: "/strategy?tab=rules" };
+      return { reglas: r.rules.map((x) => ({ titulo: x.titulo, texto: x.texto })), enlace: "/strategy?tab=rules" };
     },
   }),
   def({
