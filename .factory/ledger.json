@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 181,
+  "seq": 182,
   "tickets": [
     {
       "id": "NK-0001",
@@ -5233,6 +5233,27 @@
           "state": "LOGGED",
           "at": "2026-11-13T01:39:54.215Z",
           "by": "tracker",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0182",
+      "title": "CI en GitHub (tipos, tests y build en main y en cada PR) y dos tests que dependían de variables de entorno del host",
+      "kind": "feature",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:48:34.675Z",
+          "by": "claude",
           "note": ""
         }
       ]
