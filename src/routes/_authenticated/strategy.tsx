@@ -10,6 +10,8 @@ import { FunnelDiagnosisPanel } from "@/components/strategy/funnel-diagnosis";
 import { Pillars, Positioning } from "@/components/strategy/positioning";
 import { StrategyReviewPanel } from "@/components/strategy-review";
 import { RecentChanges } from "@/components/recent-changes";
+import { HubScreen } from "@/components/hub/hub-screen";
+import { RULES_SECTIONS } from "@/lib/legacy-redirects";
 
 const STRATEGY_TABS = [
   "motions",
@@ -20,13 +22,24 @@ const STRATEGY_TABS = [
   "positioning",
   "pillars",
   "review",
+  "rules",
 ] as const;
+type StrategySearch = { tab?: (typeof STRATEGY_TABS)[number]; seccion?: string; doc?: string; q?: string };
 
 export const Route = createFileRoute("/_authenticated/strategy")({
-  validateSearch: (s: Record<string, unknown>): { tab?: (typeof STRATEGY_TABS)[number] } =>
-    STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number])
-      ? { tab: s.tab as (typeof STRATEGY_TABS)[number] }
-      : {},
+  // seccion/doc/q belong to the embedded «Reglas y voz» tab (same keys Conocimiento used).
+  validateSearch: (s: Record<string, unknown>): StrategySearch => {
+    const tab = STRATEGY_TABS.includes(s.tab as (typeof STRATEGY_TABS)[number])
+      ? (s.tab as (typeof STRATEGY_TABS)[number])
+      : undefined;
+    if (!tab) return {};
+    if (tab !== "rules") return { tab };
+    return {
+      tab,
+      ...((RULES_SECTIONS as readonly unknown[]).includes(s.seccion) ? { seccion: s.seccion as string } : {}),
+      ...(typeof s.doc === "string" ? { doc: s.doc } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Estrategia GTM — Nokko" },
@@ -56,6 +69,7 @@ function Strategy() {
           <TabsTrigger value="positioning">Posicionamiento</TabsTrigger>
           <TabsTrigger value="pillars">Mensajes</TabsTrigger>
           <TabsTrigger value="review">Revisión con IA</TabsTrigger>
+          <TabsTrigger value="rules">Reglas y voz</TabsTrigger>
         </TabsList>
         <TabsContent value="motions">
           <Motions />
@@ -80,6 +94,9 @@ function Strategy() {
         </TabsContent>
         <TabsContent value="review">
           <StrategyReviewPanel />
+        </TabsContent>
+        <TabsContent value="rules">
+          <HubScreen only={RULES_SECTIONS} />
         </TabsContent>
       </Tabs>
       <RecentChanges />

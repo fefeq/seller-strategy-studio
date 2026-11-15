@@ -1,4 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { SetupCompletion } from "@/components/setup/completion";
+import { SETUP_VIEW } from "@/lib/legacy-redirects";
 import { Page } from "@/components/page";
 import { useMe } from "@/hooks/use-me";
 import { useOnboarding, asJson } from "@/hooks/use-onboarding";
@@ -34,6 +36,8 @@ const LABELS: Record<Step, string> = {
 };
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
+  validateSearch: (s: Record<string, unknown>): { vista?: typeof SETUP_VIEW } =>
+    s.vista === SETUP_VIEW ? { vista: SETUP_VIEW } : {},
   head: () => ({
     meta: [
       { title: "Crea tu estrategia GTM — Nokko" },
@@ -53,7 +57,35 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
   component: Onboarding,
 });
 
+/** B1: two views of one place — the guided onboarding and «Completar» (the former Configuración). */
+function OnboardingViews({ vista }: { vista?: typeof SETUP_VIEW }) {
+  const cls = (on: boolean) =>
+    `rounded-md border px-3 py-1.5 text-sm ${on ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`;
+  return (
+    <nav aria-label="Vistas de onboarding" className="mb-6 flex flex-wrap gap-2">
+      <Link to="/onboarding" search={{}} className={cls(!vista)}>
+        Onboarding guiado
+      </Link>
+      <Link to="/onboarding" search={{ vista: SETUP_VIEW }} className={cls(vista === SETUP_VIEW)}>
+        Completar con IA, entrevista o formulario
+      </Link>
+    </nav>
+  );
+}
+
 function Onboarding() {
+  const { vista } = Route.useSearch();
+  if (vista === SETUP_VIEW)
+    return (
+      <Page eyebrow="Onboarding" title="Completa tu estrategia">
+        <OnboardingViews vista={vista} />
+        <SetupCompletion />
+      </Page>
+    );
+  return <GuidedOnboarding />;
+}
+
+function GuidedOnboarding() {
   const { data: me } = useMe();
   const leader = !!me?.roles.some((r) => r === "owner" || r === "sales_leader");
   const pre = useOnboarding();
@@ -102,6 +134,7 @@ function Onboarding() {
 
   return (
     <Page eyebrow="Onboarding" title="Tu estrategia GTM, a tu ritmo">
+      {leader && <OnboardingViews />}
       <ol className="mb-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-3 text-sm">
         {STEP_IDS.map((id, n) => (
           <li key={id}>
