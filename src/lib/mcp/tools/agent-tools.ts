@@ -12,6 +12,10 @@ const EXTERNAL =
 
 // Human titles shown by Claude, ChatGPT, Codex… A tool missing here falls back to its id.
 export const TITLES: Record<string, string> = {
+  list_my_pending_actions: "Mis pendientes y umbral del piloto",
+  set_autopilot_threshold: "Proponer umbral del piloto",
+  autopilot_prepare_meeting: "Preparar reunión del piloto",
+  autopilot_review_account: "Repasar cuenta del piloto",
   start_onboarding_read: "Empezar el onboarding desde la web",
   list_onboarding_blocks: "Bloques de la propuesta de onboarding",
   approve_onboarding_block: "Aprobar un bloque del onboarding",
