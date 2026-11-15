@@ -7,7 +7,7 @@ import { def, mustFind, type AgentTool } from "../tool-kit";
 import { linkedinPauseExplanation } from "@/lib/linkedin-legal";
 
 const scope = (c: { orgId: string; userId: string }) => ({ orgId: c.orgId, userId: c.userId });
-const post = (p: { url: string; text: string; date: string | null; repost: boolean; likes: number }) => ({ fecha: p.date, texto: p.text, url: p.url, compartida: p.repost, me_gusta: p.likes });
+const post = (p: { url: string; text: string; date: string | null; repost: boolean; likes: number | null }) => ({ fecha: p.date, texto: p.text, url: p.url, compartida: p.repost, me_gusta: p.likes });
 
 /** The pause explanation when the legal pause is on, else null. The agent relays it and prepares nothing. */
 async function pausedMessage(): Promise<{ mensaje: string; pausado: true } | null> {
