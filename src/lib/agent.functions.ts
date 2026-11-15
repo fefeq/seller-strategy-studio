@@ -243,7 +243,7 @@ export const applySetupItems = createServerFn({ method: "POST" })
     for (const it of data.items) {
       try {
         // A2: setup proposals never spend; a spending tool here is refused instead of running unconfirmed.
-        if (it.tool in SPEND_TOOLS) throw new Error("Esta acción gasta saldo: lánzala desde el agente para confirmar su coste.");
+        if (it.tool in SPEND_TOOLS || it.tool === "set_autopilot_threshold") throw new Error("Esta acción requiere confirmación individual: lánzala desde el agente.");
         const r = await executeTool(ctx, it.tool, it.args);
         results.push({ tool: it.tool, ok: true, undo: undoRefFor(it.tool, it.args, r) });
       } catch (e) {

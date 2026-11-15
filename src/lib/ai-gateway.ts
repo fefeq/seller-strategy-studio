@@ -159,12 +159,13 @@ async function askOpenRouter(system: string, user: string, opts: TrackedAskOpts)
     console.error("OpenRouter error", res.status, { bodyLength: body.length });
     throw new ProviderError(openrouterErrorMessage(res.status), res.status, body, "openrouter");
   }
-  try {
-    const json = JSON.parse(body) as {
+  let json: {
       choices?: { message?: { content?: string } }[];
       error?: { code?: number; message?: string };
       usage?: { is_byok?: boolean; cost?: number; cost_details?: { upstream_inference_cost?: number } };
-    };
+  };
+  try { json = JSON.parse(body); }
+  catch { throw new Error("OpenRouter devolvió una respuesta inválida tras la petición. Revisa la actividad antes de repetirla."); }
     if (json.error)
       throw new ProviderError(
         openrouterErrorMessage(json.error.code ?? 502),
@@ -175,10 +176,6 @@ async function askOpenRouter(system: string, user: string, opts: TrackedAskOpts)
     const amount = json.usage?.is_byok === true ? json.usage.cost_details?.upstream_inference_cost : json.usage?.is_byok === false ? json.usage.cost : null;
     await opts.onCost?.(typeof amount === "number" && Number.isFinite(amount) && amount >= 0 ? amount : null, "openrouter");
     return json.choices?.[0]?.message?.content ?? "";
-  } catch (e) {
-    if (e instanceof ProviderError) throw e;
-    throw new ProviderError("OpenRouter devolvió una respuesta inválida.", 502, body, "openrouter");
-  }
 }
 
 export function openrouterErrorMessage(status: number) {

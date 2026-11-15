@@ -5,6 +5,18 @@ import { loadAgentRules, rulesBlock } from "@/lib/knowledge-rules";
 
 /** Same paid core for a newly reserved automatic action and a manually confirmed action. */
 export async function executeAutopilotAi(c: ToolCtx, tool: string, args: { meeting_id?: string; account_id?: string; week?: string }) {
+  const logicalKey = tool === "autopilot_prepare_meeting" && args.meeting_id ? `meeting:${args.meeting_id}` : tool === "autopilot_review_account" && args.account_id && args.week ? `cooling:${args.account_id}:${args.week}` : null;
+  if (!logicalKey) throw new Error("La propuesta del piloto no es válida.");
+  const member = await c.db.from("org_members").select("user_id").eq("org_id", c.orgId).eq("user_id", c.userId).maybeSingle();
+  if (member.error || !member.data) throw new Error("No perteneces a esta empresa.");
+  const table = tool === "autopilot_prepare_meeting" ? "meetings" : "accounts";
+  const record = await c.db.from(table).select("id").eq("org_id", c.orgId).eq("id", args.meeting_id ?? args.account_id ?? "").maybeSingle();
+  if (record.error || !record.data) throw new Error("El registro no existe en esta empresa.");
+  // Permanent logical reservation, also across distinct confirmed action IDs. Never replay uncertain spend.
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const lease = await supabaseAdmin.from("job_locks").insert({ name: `autopilot-ai:${c.orgId}:${logicalKey}`, last_run_at: new Date().toISOString() });
+  if (lease.error?.code === "23505") return { mensaje: "Esta operación ya se reservó. No se ha repetido la IA. Revisa la actividad." };
+  if (lease.error) throw new Error("No pude reservar la operación. No se ha llamado a la IA.");
   const scope = { orgId: c.orgId, userId: c.userId };
   const onCost = async (cost: number | null, provider: string) => {
     const { error } = await c.db.from("integration_usage").insert({

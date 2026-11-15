@@ -49,7 +49,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         }).select("id").single();
         if (error?.code === "23505") return null;
         if (error) throw error;
-        return data?.id ?? null;
+        if (!data?.id) throw new Error("No se pudo reservar la acción pendiente. Reintenta.");
+        return data.id;
       },
       execute: async id => {
         const roles = await db.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId);
@@ -147,7 +148,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         const state = await gated("autopilot_prepare_meeting", { meeting_id: m.id }, `meeting:${m.id}`, meta.created_by ?? actor, `Preparar reunión «${meta.title}»`);
         if (state === "executed") out.prepped++;
       } catch (e) {
-        out.notes.push(`Reunión: ${errorText(e)}`);
+        out.notes.push(`Reunión ${meta.title}: ${errorText(e)}`);
       }
     }
   } catch (e) {

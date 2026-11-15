@@ -196,7 +196,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
     decisionLock.current = true; setDeciding(true);
     try {
       const r = await decide({ data: { id: a.id, decision } });
-      setMsgs((x) => x.map((m) => m.id !== msgId ? m : { ...m, actions: m.actions?.map((y) => y.id === a.id ? { ...y, status: r.status, result: r.result } : y) }));
+      setMsgs((x) => [...x.map((m) => ({ ...m, actions: m.actions?.map((y) => y.id === a.id ? { ...y, status: r.status, result: r.result } : y) })), { id: `decision-${a.id}-${Date.now()}`, role: "assistant", content: r.status === "cancelled" ? `Descartado: ${a.summary}` : r.result || `Estado: ${r.status}` }]);
       if (r.status === "failed") toast.error(`No se ha podido hacer. ${r.result || "Vuelve a intentarlo."}.`);
       if (r.status === "confirmed") qc.invalidateQueries();
       await pendingState.refetch();
