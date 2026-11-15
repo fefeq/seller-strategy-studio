@@ -188,6 +188,21 @@ export async function companyJobs(
   return jobItems(raw, name, linkedinUrl, max);
 }
 
+/** A+: every LinkedIn robot run lands in the company ledger as «sin dato» (Apify gives no synchronous charge). */
+async function logLinkedinRun(db: Db, orgId: string, tool: string, volume: number, trigger: "manual" | "automatic" = "manual") {
+  try {
+    const { logUsage } = await import("@/lib/orchestrator/usage");
+    await logUsage(
+      { db, orgId, userId: null } as Parameters<typeof logUsage>[0],
+      "linkedin",
+      [{ service: "apify", cost: null, tool, volume, currency: "USD" }],
+      trigger,
+    );
+  } catch (e) {
+    console.error("LinkedIn run not logged", safeErrorLog(e));
+  }
+}
+
 /** Posts of the last month by the account's LinkedIn page. */
 export async function accountPostsCore(db: Db, accountId: string, scope: AiScope = null) {
   const acc = await loadAccount(db, accountId, scope);
@@ -196,7 +211,10 @@ export async function accountPostsCore(db: Db, accountId: string, scope: AiScope
     throw new Error(
       "No encuentro la página de LinkedIn de esta cuenta. Añádela en la ficha de la cuenta (LinkedIn de la empresa).",
     );
-  return { linkedin: url, posts: await companyPosts(url, 8, "3months") };
+  const posts = await companyPosts(url, 8, "3months");
+  await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts.length);
+  const { engagement } = await import("@/lib/linkedin-insights");
+  return { linkedin: url, posts, engagement: engagement(posts) };
 }
 
 /** Open job offers of the account (last 30 days on LinkedIn). */
@@ -204,19 +222,25 @@ export async function accountJobsCore(db: Db, accountId: string, scope: AiScope 
   const acc = await loadAccount(db, accountId, scope);
   const name = companyName(acc.name, cleanDomain(acc.domain));
   const url = await linkedinForReading(db, acc);
-  return { linkedin: url, jobs: await companyJobs(name, url, 20) };
+  const jobs = await companyJobs(name, url, 20);
+  await logLinkedinRun(db, acc.org_id, "company_job_postings", jobs.length);
+  const { hiringSignals } = await import("@/lib/linkedin-insights");
+  return { linkedin: url, jobs, hiring: hiringSignals(jobs) };
 }
 
 /** Recent posts of a stakeholder with a LinkedIn profile. */
 export async function stakeholderPostsCore(db: Db, stakeholderId: string, scope: AiScope = null) {
   const { data: s } = await inOrg(
-    db.from("stakeholders").select("id,name,linkedin_url").eq("id", stakeholderId),
+    db.from("stakeholders").select("id,org_id,name,linkedin_url").eq("id", stakeholderId),
     scope,
   ).maybeSingle();
   if (!s) throw new Error("No encuentro esa persona en esta empresa.");
   const url = linkedinProfileUrl(s.linkedin_url);
   if (!url) throw new Error(`Añade el LinkedIn de ${s.name} para leer sus publicaciones.`);
-  return { name: s.name as string, linkedin: url, posts: await profilePosts(url, 5) };
+  const posts = await profilePosts(url, 5);
+  await logLinkedinRun(db, s.org_id as string, "linkedin_profile_posts", posts.length);
+  const { engagement } = await import("@/lib/linkedin-insights");
+  return { name: s.name as string, linkedin: url, posts, engagement: engagement(posts) };
 }
 
 /**
@@ -244,6 +268,8 @@ export async function linkedinSignalItems(db: Db, acc: Acc): Promise<NewsItem[]>
         })
       : Promise.resolve([] as Job[]),
   ]);
+  if (url) await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts.length, "automatic");
+  if (name) await logLinkedinRun(db, acc.org_id, "company_job_postings", jobs.length, "automatic");
   return linkedinNews(posts, jobs.slice(0, 8));
 }
 
