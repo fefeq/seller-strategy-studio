@@ -2,8 +2,7 @@
 // quarantine. Runs with the privileged client only after the connection key was verified.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-// checkIntake stays the pure reference of the same rules (tested in import-batch.test.ts).
-import { checkIntake, type QuarantineRow } from "@/lib/import-batch";
+import type { QuarantineRow } from "@/lib/import-batch";
 
 type Db = SupabaseClient<Database>;
 export type IntakeSource = {
