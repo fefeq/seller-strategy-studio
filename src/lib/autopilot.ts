@@ -116,3 +116,11 @@ export function weekKey(now = new Date()): string {
   d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() + 6) % 7));
   return d.toISOString().slice(0, 10);
 }
+
+/** Paid steps the autopilot may only propose for a new account (never run without confirmation). */
+export function autopilotSpendProposals(_acc: { id: string }, autoEnrich: boolean) {
+  const out: { tool: "complete_account" | "research_account"; label: string }[] = [];
+  if (autoEnrich) out.push({ tool: "complete_account", label: "Completar datos de la cuenta" });
+  out.push({ tool: "research_account", label: "Investigar en la web la cuenta" });
+  return out;
+}

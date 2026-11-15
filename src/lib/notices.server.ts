@@ -131,7 +131,7 @@ export async function notifyAutopilot(
 ) {
   const parts = [
     out.researched &&
-      `investigué ${out.researched} ${out.researched === 1 ? "cuenta nueva" : "cuentas nuevas"}`,
+      `dejé ${out.researched} ${out.researched === 1 ? "cuenta nueva" : "cuentas nuevas"} con la investigación pendiente de tu confirmación`,
     out.prepped && `preparé ${out.prepped} ${out.prepped === 1 ? "reunión" : "reuniones"}`,
     out.cooling &&
       `repasé ${out.cooling} ${out.cooling === 1 ? "cuenta que se enfría" : "cuentas que se enfrían"}`,
