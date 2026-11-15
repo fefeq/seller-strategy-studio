@@ -1,3 +1,4 @@
+import type { Json } from "@/integrations/supabase/types";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { executeTool, type ToolCtx } from "@/lib/agent/tools";
@@ -201,8 +202,11 @@ export const applySetupItems = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
     const results: { tool: string; ok: boolean; error?: string; undo?: UndoRef | null }[] = [];
+    const { SPEND_TOOLS } = await import("@/lib/agent/spend-confirm");
     for (const it of data.items) {
       try {
+        // A2: setup proposals never spend; a spending tool here is refused instead of running unconfirmed.
+        if (it.tool in SPEND_TOOLS) throw new Error("Esta acción gasta saldo: lánzala desde el agente para confirmar su coste.");
         const r = await executeTool(ctx, it.tool, it.args);
         results.push({ tool: it.tool, ok: true, undo: undoRefFor(it.tool, it.args, r) });
       } catch (e) {
@@ -372,6 +376,30 @@ export async function decideSuggestionCore(
   if (!claimed?.length) return { status: "approved", message: "Ya estaba gestionada" };
   const action = s.action as { tool: string; args: Record<string, unknown> } | null;
   let note = "";
+  const { SPEND_TOOLS, spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
+  if (action?.tool && action.tool in SPEND_TOOLS) {
+    // A2: approving a suggestion that spends prepares the action with its cost estimate; it runs only on confirm.
+    const { summarizeAction } = await import("@/lib/agent/tools");
+    const summary = withEstimate(
+      summarizeAction(action.tool, action.args),
+      action.tool,
+      await spendEstimateLine(ctx.db, ctx.orgId, action.tool),
+    );
+    const { error } = await ctx.db.from("agent_pending_actions").insert({
+      org_id: ctx.orgId,
+      user_id: ctx.userId,
+      tool: action.tool,
+      args: action.args as unknown as Json,
+      summary,
+    });
+    if (error) {
+      await ctx.db.from("suggestions").update({ status: "pending" }).eq("id", id);
+      throw new Error(errorText(error));
+    }
+    const { rememberDecision } = await import("@/lib/memory.server");
+    await rememberDecision(ctx, s, "approve");
+    return { status: "approved", message: `Gasta saldo: confírmalo en Sugerencias (${summary}).` };
+  }
   if (action?.tool) {
     try {
       const out = await executeTool(ctx, action.tool, action.args);

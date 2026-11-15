@@ -62,6 +62,8 @@ export function AccountJobs({ accountId }: { accountId: string }) {
             Sin ofertas publicadas en LinkedIn en los últimos 30 días.
           </p>
         ) : (
+          <>
+          {r.hiring?.headline && <p className="text-sm font-medium">{r.hiring.headline}</p>}
           <ul className="divide-y border-t">
             {r.jobs.map((j) => (
               <li key={j.url} className="py-2.5 text-sm">
@@ -74,6 +76,7 @@ export function AccountJobs({ accountId }: { accountId: string }) {
               </li>
             ))}
           </ul>
+          </>
         ))}
     </div>
   );
