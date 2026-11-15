@@ -53,8 +53,7 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       const { enqueue } = await import("@/lib/background-jobs.server");
       const input = { depth: a.depth, url: a.url, text: a.text ?? "", files: [], sources: [] };
-      const r = await enqueue({ ...c, orgName: "" }, { kind: "onboarding_read", input, label: "Nokko lee tus fuentes" } as Parameters<typeof enqueue>[1]);
-      const jobId = (r as { jobId?: string }).jobId ?? null;
+      const { jobId } = await enqueue({ ...c, orgName: "" }, { kind: "onboarding_read", input, label: "Nokko lee tus fuentes" });
       const { error } = await c.db.from("onboarding_sessions").upsert(
         { org_id: c.orgId, user_id: c.userId, depth: a.depth, step: "reading", read_job_id: jobId, sources: [`Web · ${a.url}`] as unknown as Json },
         { onConflict: "org_id,user_id" },
