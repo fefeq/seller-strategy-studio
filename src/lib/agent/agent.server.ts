@@ -224,7 +224,11 @@ async function runWith(
               return { error: (e as Error).message };
             }
           }
-          const summary = summarizeAction(t.name, args);
+          let summary = summarizeAction(t.name, args);
+          if (t.spends) {
+            const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
+            summary = withEstimate(summary, t.name, await spendEstimateLine(ctx.db, ctx.orgId, t.name));
+          }
           const { data, error } = await ctx.db
             .from("agent_pending_actions")
             .insert({

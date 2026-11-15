@@ -18,7 +18,7 @@ async function pausedMessage(): Promise<{ mensaje: string; pausado: true } | nul
 export const LINKEDIN_TOOLS: AgentTool[] = [
   def({
     name: "linkedin_company_posts", kind: "read",
-    description: "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+    description: "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const paused = await pausedMessage();
@@ -31,7 +31,7 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
   }),
   def({
     name: "linkedin_profile_posts", kind: "read",
-    description: "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+    description: "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify.",
     input: z.object({ stakeholder_id: z.string().uuid() }),
     run: async (c, a) => {
       const paused = await pausedMessage();
@@ -44,7 +44,7 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
   }),
   def({
     name: "company_job_postings", kind: "read",
-    description: "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+    description: "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify.",
     input: z.object({ account_id: z.string().uuid() }),
     run: async (c, a) => {
       const paused = await pausedMessage();
