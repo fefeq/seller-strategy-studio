@@ -193,8 +193,9 @@ async function logLinkedinRun(db: Db, orgId: string, tool: string, volume: numbe
   try {
     const { logUsage } = await import("@/lib/orchestrator/usage");
     await logUsage(
-      { db, orgId, userId: null } as Parameters<typeof logUsage>[0],
-      "linkedin",
+      // Server-side robot run: no acting user is recorded (narrow cast: the ledger column is nullable).
+      { db, orgId, userId: null as unknown as string } as Parameters<typeof logUsage>[0],
+      null,
       [{ service: "apify", cost: null, tool, volume, currency: "USD" }],
       trigger,
     );
