@@ -23,6 +23,7 @@ import { generateGtmAdvice } from "@/lib/ai.functions";
 import { errorText } from "@/lib/errors";
 import { PrimaryLineNote } from "@/components/primary-line-note";
 import { StrategyReviewPanel } from "@/components/strategy-review";
+import { strategyTargetFor } from "@/lib/advisor-target";
 
 const TITLE = "Asesor GTM — Nokko";
 const DESC =
@@ -246,6 +247,7 @@ function AdviceView({ goal, result }: { goal: string; result: AdvisorResult }) {
 
 function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) {
   const [saved, setSaved] = useState(false);
+  const target = strategyTargetFor(rec);
   async function toPrototype() {
     const { error } = await supabase.from("gtm_experiments").insert({
       title: rec.title,
