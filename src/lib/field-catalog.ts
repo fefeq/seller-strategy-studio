@@ -98,6 +98,7 @@ export type ConceptId =
   | "pausa_legal"
   | "motivo_pausa_legal"
   | "calidad_coste"
+  | "umbral_piloto"
   | "herramienta_gasto"
   | "volumen_operacion"
   | "clave_operacion"
@@ -817,6 +818,7 @@ export const CONCEPTS: Concept[] = [
     allowed: ["measured", "estimate", "unknown"],
     display: "«medido», «estimado» o «sin dato»",
   },
+  { id: "umbral_piloto", label: "Umbral del piloto", meaning: "Importe máximo por acción de IA automática en moneda de empresa; cero requiere confirmación siempre.", kind: "number", format: "Número no negativo", display: "Umbral por acción" },
   {
     id: "herramienta_gasto",
     label: "Herramienta que gastó",
@@ -881,6 +883,7 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
+  { table: "lead_settings", column: "autopilot_action_threshold", concept: "umbral_piloto", persistence: saved },
   // Libro de gasto por empresa (SDD pausa-legal-linkedin-y-gasto, pieza B).
   { table: "integration_usage", column: "cost_kind", concept: "calidad_coste", persistence: saved },
   { table: "integration_usage", column: "currency", concept: "moneda_coste", persistence: saved },
@@ -1681,6 +1684,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   pausa_legal: ["src/components/linkedin-legal-card.tsx", "src/lib/linkedin-legal.ts"],
   motivo_pausa_legal: ["src/components/linkedin-legal-card.tsx"],
   calidad_coste: ["src/components/orchestrator/budget-panel.tsx", "src/lib/spend.ts"],
+  umbral_piloto: ["src/components/agent.tsx", "src/lib/autopilot-threshold.ts"],
   herramienta_gasto: ["src/lib/spend.ts"],
   volumen_operacion: ["src/lib/orchestrator/usage.ts"],
   clave_operacion: ["src/lib/orchestrator/usage.ts"],

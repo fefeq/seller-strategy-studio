@@ -1,4 +1,9 @@
 # Roadmap
+## Encargo 15-11-2026 08:22 UTC — piloto y chat
+- [x] Pruebas nuevas: umbral por acción, permisos, no marcar propuestas como hechas y confirmación única; reserva lógica entre acciones.
+- [x] Umbral en ajustes existentes, ejecución compartida y costes reales o sin dato; sin proveedores reales.
+- [x] Pendientes y cambio confirmado de umbral en chat mediante ConvBlocks y decidePending.
+- [x] Navegador sintético 1280/375 claro/oscuro, limpieza y restauración de empresa; informe docs/lovable-run-report.md.
 ## Segunda pieza — solicitud 14-11-2026 23:01 UTC
 - [x] Redactar SDD corto de pausa legal LinkedIn/Apify y contabilidad/confirmación del gasto, basado en lectura del repositorio.
 - [x] Incorporar elección de Fede: conversión USD/EUR con fuente real, conservando importe original, cambio, fuente y fecha; sin autorización escrita para construir todavía.

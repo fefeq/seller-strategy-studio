@@ -3382,6 +3382,7 @@ export type Database = {
       lead_settings: {
         Row: {
           auto_enrich: boolean
+          autopilot_action_threshold: number
           org_id: string
           qualification: Json
           sla: Json
@@ -3390,6 +3391,7 @@ export type Database = {
         }
         Insert: {
           auto_enrich?: boolean
+          autopilot_action_threshold?: number
           org_id?: string
           qualification?: Json
           sla?: Json
@@ -3398,6 +3400,7 @@ export type Database = {
         }
         Update: {
           auto_enrich?: boolean
+          autopilot_action_threshold?: number
           org_id?: string
           qualification?: Json
           sla?: Json

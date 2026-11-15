@@ -26,6 +26,8 @@ export const Route = createFileRoute("/_authenticated/home")({
       { name: "description", content: "Tu vista según tu rol." },
       { property: "og:title", content: "Inicio — Nokko" },
       { property: "og:description", content: "Tu vista según tu rol." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   loader: ({ context }) => settle(context.queryClient.ensureQueryData(homeQuery)),

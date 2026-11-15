@@ -27,6 +27,7 @@ import { PLAY_DIAGNOSIS_TOOLS } from "./tools/play-diagnosis";
 import { BUSINESS_LINE_TOOLS } from "./tools/business-lines";
 import { ONBOARDING_CHAT_TOOLS } from "./tools/onboarding-chat";
 import { PARITY_TOOLS } from "./tools/parity";
+import { AUTOPILOT_TOOLS } from "./tools/autopilot";
 
 export type { AgentTool, ToolCtx } from "./tool-kit";
 
@@ -59,6 +60,7 @@ const REGISTRY: AgentTool[] = [
   ...BUSINESS_LINE_TOOLS,
   ...ONBOARDING_CHAT_TOOLS,
   ...PARITY_TOOLS,
+  ...AUTOPILOT_TOOLS,
 ];
 
 /**

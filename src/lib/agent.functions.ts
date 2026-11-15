@@ -91,6 +91,31 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       conversationId = conv.id;
     }
+    const { localAutopilotRequest } = await import("@/lib/autopilot-chat");
+    const request = localAutopilotRequest(data.text);
+    if (request) {
+      const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
+      const state = await pendingAutopilotState(ctx);
+      if (request.kind === "threshold") {
+        if (!state.canChange) throw new Error("Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.");
+        const currency = request.currency ?? ctx.currency;
+        if (currency !== ctx.currency) throw new Error("Indica el umbral en la moneda de tu empresa; no se convierten importes.");
+        const { error } = await ctx.db.from("agent_pending_actions").insert({
+          org_id: ctx.orgId, user_id: ctx.userId, conversation_id: conversationId,
+          tool: "set_autopilot_threshold", args: { threshold: request.threshold, currency },
+          summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
+        });
+        if (error) throw error;
+      }
+      const latest = request.kind === "threshold" ? await pendingAutopilotState(ctx) : state;
+      const text = `Umbral actual del piloto: ${state.threshold} ${state.currency} por acción. ${state.threshold === 0 ? "Todo requiere confirmación." : "Los costes desconocidos o en otra moneda requieren confirmación."}\n\n${request.kind === "threshold" ? "Cambio propuesto, todavía no guardado. Confirma la acción para aplicarlo." : latest.pending.length ? "Estas son tus acciones pendientes." : "No tienes acciones pendientes."}`;
+      const { error } = await ctx.db.from("agent_messages").insert([
+        { conversation_id: conversationId, role: "user", content: data.text },
+        { conversation_id: conversationId, role: "assistant", content: text },
+      ]);
+      if (error) throw error;
+      return { conversationId, text, pending: latest.pending };
+    }
     const { runAgent } = await import("@/lib/agent/agent.server");
     const out = await runAgent(ctx, {
       conversationId,
@@ -115,6 +140,14 @@ export const decideAgentAction = createServerFn({ method: "POST" })
     return decidePending(ctx, data.id, data.decision);
   });
 
+export const readAgentPendingState = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = await userCtx(context.supabase as Db, context.userId);
+    const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
+    return pendingAutopilotState(ctx);
+  });
+
 export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm" | "cancel") {
   const { data: act } = await ctx.db
     .from("agent_pending_actions")
@@ -126,19 +159,23 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
   if (!act) throw new Error("Acción no encontrada");
   if (act.status !== "pending") return { status: act.status, result: act.result };
   if (decision === "cancel") {
-    await ctx.db
+    const { data: cancelled, error } = await ctx.db
       .from("agent_pending_actions")
       .update({ status: "cancelled", decided_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId).eq("status", "pending").select("id");
+    if (error) throw error;
+    if (!cancelled?.length) return { status: "confirmed", result: "La acción ya se está procesando." };
     return { status: "cancelled", result: "" };
   }
   // Claim first so a double click cannot execute twice.
-  const { data: claimed } = await ctx.db
+  const { data: claimed, error: claimError } = await ctx.db
     .from("agent_pending_actions")
     .update({ status: "confirmed", decided_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("org_id", ctx.orgId).eq("user_id", ctx.userId)
     .eq("status", "pending")
     .select("id");
+  if (claimError) throw claimError;
   if (!claimed?.length) return { status: "confirmed", result: "" };
   try {
     const out = await executeTool(ctx, act.tool, act.args);
@@ -155,16 +192,19 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
       : note
         ? `Hecho: ${act.summary}. ${note}`
         : `Hecho: ${act.summary}`;
-    await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id);
-    if (act.conversation_id)
-      await ctx.db
+    const saved = await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    if (saved.error) return { status: "confirmed", result: `${result}\nNo pude guardar el recibo de la acción. No la repitas; conserva este resultado.` };
+    if (act.conversation_id) {
+      const transcript = await ctx.db
         .from("agent_messages")
         .insert({ conversation_id: act.conversation_id, role: "assistant", content: result.length > 8000 ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)` : result });
+      if (transcript.error) return { status: "confirmed", result: `${result}\nNo pude añadirlo al historial del chat. El resultado queda en la acción.` };
+    }
     return { status: "confirmed", result };
   } catch (e) {
     const result = errorText(e);
-    await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id);
-    return { status: "failed", result };
+    const failed = await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    return { status: "failed", result: failed.error ? `${result}\nNo pude guardar el fallo. No repitas la acción hasta revisar la actividad.` : result };
   }
 }
 
@@ -206,7 +246,7 @@ export const applySetupItems = createServerFn({ method: "POST" })
     for (const it of data.items) {
       try {
         // A2: setup proposals never spend; a spending tool here is refused instead of running unconfirmed.
-        if (it.tool in SPEND_TOOLS) throw new Error("Esta acción gasta saldo: lánzala desde el agente para confirmar su coste.");
+        if (it.tool in SPEND_TOOLS || it.tool === "set_autopilot_threshold") throw new Error("Esta acción requiere confirmación individual: lánzala desde el agente.");
         const r = await executeTool(ctx, it.tool, it.args);
         results.push({ tool: it.tool, ok: true, undo: undoRefFor(it.tool, it.args, r) });
       } catch (e) {

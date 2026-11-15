@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState, ty
 import { ConvBlocks } from "@/components/conv-blocks";
 import { chipIntent, replyBlocks } from "@/lib/conversation";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ import { useMe } from "@/hooks/use-me";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { decideAgentAction, sendAgentMessage } from "@/lib/agent.functions";
+import { decideAgentAction, sendAgentMessage, readAgentPendingState } from "@/lib/agent.functions";
 import { getPersona, personasFor } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
 import { errorText } from "@/lib/errors";
@@ -59,6 +59,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const send = useServerFn(sendAgentMessage);
   const decide = useServerFn(decideAgentAction);
+  const readPending = useServerFn(readAgentPendingState);
   const [isOpen, setOpen] = useState(false);
   const [docked, setDocked] = useState(false);
   const [side, setSide] = useState<"left" | "right">("right");
@@ -72,6 +73,10 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   const [workflowId, setWorkflowId] = useState<string | null>(null);
   const persona = getPersona(personaId);
   const [busy, setBusy] = useState(false);
+  const [deciding, setDeciding] = useState(false);
+  const decisionLock = useRef(false);
+  const pendingState = useQuery({ queryKey: ["agent-pending-chat", orgId], enabled: isOpen && !!orgId,
+    queryFn: () => readPending(), retry: false });
   const endRef = useRef<HTMLDivElement>(null);
   const loadedFor = useRef<string | null>(null);
 
@@ -187,12 +192,16 @@ export function AgentProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function onDecide(msgId: string, a: Action, decision: "confirm" | "cancel") {
+    if (decisionLock.current) return;
+    decisionLock.current = true; setDeciding(true);
     try {
       const r = await decide({ data: { id: a.id, decision } });
-      setMsgs((x) => x.map((m) => m.id !== msgId ? m : { ...m, actions: m.actions?.map((y) => y.id === a.id ? { ...y, status: r.status, result: r.result } : y) }));
+      setMsgs((x) => [...x.map((m) => ({ ...m, actions: m.actions?.map((y) => y.id === a.id ? { ...y, status: r.status, result: r.result } : y) })), { id: `decision-${a.id}-${Date.now()}`, role: "assistant", content: r.status === "cancelled" ? `Descartado: ${a.summary}` : r.result || `Estado: ${r.status}` }]);
       if (r.status === "failed") toast.error(`No se ha podido hacer. ${r.result || "Vuelve a intentarlo."}.`);
       if (r.status === "confirmed") qc.invalidateQueries();
+      await pendingState.refetch();
     } catch (e) { toast.error(errorText(e)); }
+    finally { decisionLock.current = false; setDeciding(false); }
   }
 
   function newChat() { setConvId(null); setMsgs([]); setMode("chat"); setWorkflowId(null); }
@@ -225,6 +234,21 @@ export function AgentProvider({ children }: { children: ReactNode }) {
             {workflowId && <p className="mt-1 text-xs text-muted-foreground">Flujo activo: {getWorkflow(workflowId)?.label}</p>}
           </SheetHeader>
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
+            <details open className="border-b pb-4">
+              <summary className="min-h-11 cursor-pointer font-medium">Mis pendientes y umbral del piloto</summary>
+              {pendingState.isPending ? <p role="status">Cargando pendientes…</p> : pendingState.isError ? <div role="alert"><p>{errorText(pendingState.error)}</p><Button variant="outline" onClick={() => pendingState.refetch()}>Reintentar</Button></div> : pendingState.data && <div className="space-y-3">
+                <p className="text-sm">Umbral: {pendingState.data.threshold} {pendingState.data.currency} por acción{pendingState.data.threshold === 0 ? " · todo requiere confirmación" : ""}</p>
+                {pendingState.data.canChange && <Button variant="outline" size="sm" onClick={() => setText(`Cambiar umbral del piloto a ${pendingState.data?.threshold ?? 0} ${pendingState.data?.currency ?? ""}`)}>Proponer cambio de umbral</Button>}
+                {!pendingState.data.pending.length && <p className="text-sm text-muted-foreground">No tienes acciones pendientes.</p>}
+                <ConvBlocks blocks={replyBlocks("", pendingState.data.pending)} busy={deciding || busy} onChip={v => {
+                  const intent = chipIntent(v);
+                  if (intent?.kind !== "action") return;
+                  const action = pendingState.data?.pending.find(a => a.id === intent.id);
+                  if (action) onDecide("", action, intent.decision);
+                }} />
+                {deciding && <p role="status" className="text-sm">Procesando acción…</p>}
+              </div>}
+            </details>
             {/* CA-9 / CA-10: with steps pending the guide's next step is the first suggestion; right after finishing one it says what was done and proposes the next. */}
             <GuideOffer scope="agent" orgId={me?.currentOrg?.org_id} onStart={(id) => submit(`Quiero completar este paso de mi estrategia GTM: ${SETUP_ITEMS.find((i) => i.id === id)?.label ?? id}. Empieza por lo que falte y propónmelo para confirmar.`, "interview", convId)}
               wrap={(b) => <div className="rounded-lg border bg-card p-4"><p className="eyebrow mb-2">Primera sugerencia</p>{b}</div>} />
@@ -249,10 +273,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                         <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
                           <span className="min-w-0 break-words text-sm">{a.summary}</span>
                           {a.status === "pending" ? (
-                            <span className="flex shrink-0 gap-1.5">
-                              <Button size="sm" onClick={() => onDecide(m.id, a, "confirm")}>Confirmar</Button>
-                              <Button size="sm" variant="ghost" onClick={() => onDecide(m.id, a, "cancel")}>Descartar</Button>
-                            </span>
+                            <ConvBlocks blocks={replyBlocks("", [{ id: a.id, summary: "" }])} busy={deciding || busy} onChip={v => { const intent = chipIntent(v); if (intent?.kind === "action") onDecide(m.id, a, intent.decision); }} />
                           ) : <span className={`shrink-0 text-xs ${a.status === "failed" ? "text-destructive" : "text-muted-foreground"}`}>{a.status === "confirmed" ? "Hecho" : a.status === "cancelled" ? "Cancelado" : a.result || "Error"}</span>}
                         </div>
                       ))}

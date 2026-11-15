@@ -8,6 +8,10 @@ import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { autopilotSpendProposals } from "@/lib/autopilot";
 import { errorText } from "@/lib/errors";
+import { runAutopilotAction } from "@/lib/autopilot-threshold";
+import { spendEstimateLine, spendEstimate, withEstimate } from "@/lib/agent/spend-confirm";
+import { decidePending } from "@/lib/agent.functions";
+import type { Json } from "@/integrations/supabase/types";
 
 type Admin = SupabaseClient<Database>;
 const DAY = 86_400_000;
@@ -30,7 +34,32 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
     .eq("id", orgId)
     .maybeSingle();
   const ctx = { db, orgId, userId: actor, roles: ["owner"], currency: org?.currency ?? "EUR" };
-  const scope = { orgId, userId: actor };
+  const settings = await db.from("lead_settings").select("autopilot_action_threshold").eq("org_id", orgId).maybeSingle();
+  const threshold = settings.error ? 0 : Number(settings.data?.autopilot_action_threshold ?? 0);
+  async function gated(tool: string, args: Record<string, string>, key: string, userId: string, label: string) {
+    if (!userId) return "pending";
+    // spendEstimateLine is the same visible estimate used by the new-account proposals.
+    const line = await spendEstimateLine(db, orgId, tool);
+    const estimate = await spendEstimate(db, orgId, tool, ctx.currency);
+    return runAutopilotAction(estimate.value, threshold, {
+      propose: async () => {
+        const { data, error } = await db.from("agent_pending_actions").insert({ org_id: orgId, user_id: userId,
+          tool, args: { ...args, autopilot_key: key } as Json, source: "autopilot",
+          summary: withEstimate(`Piloto automático · ${label}`, tool, line).slice(0, 500),
+        }).select("id").single();
+        if (error?.code === "23505") return null;
+        if (error) throw error;
+        if (!data?.id) throw new Error("No se pudo reservar la acción pendiente. Reintenta.");
+        return data.id;
+      },
+      execute: async id => {
+        const roles = await db.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId);
+        if (roles.error || !roles.data?.length) throw new Error("La persona ya no pertenece a esta empresa.");
+        const result = await decidePending({ ...ctx, userId, roles: roles.data.map(r => r.role) }, id, "confirm");
+        if (result.status !== "confirmed") throw new Error(result.result || "La preparación no se completó.");
+      },
+    });
+  }
 
   // 1 · New accounts: complete empty fields and research the web into the empty parts of the account plan.
   try {
@@ -44,43 +73,32 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
     const autoEnrich =
       (await db.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data
         ?.auto_enrich !== false;
-    const { spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
+
     for (const a of accountsToResearch(accs ?? [], now)) {
-      // Marked first: one proposal per new account, never repeated every hour.
-      await db
-        .from("accounts")
-        .update({ auto_researched_at: now.toISOString() })
-        .eq("org_id", orgId)
-        .eq("id", a.id);
-      const acc = (accs ?? []).find((x) => x.id === a.id)!;
+      const acc = (accs ?? []).find((x) => x.id === a.id);
+      if (!acc) continue;
       // Spending is never automatic: each paid step becomes a pending action with its estimated cost,
       // run only when the person confirms it (decidePending). No permanent per-company permission.
       const proposals = autopilotSpendProposals(acc, autoEnrich);
       const owner = acc.owner_id ?? actor;
       const lines: string[] = [];
+      let executed = 0;
       for (const pr of proposals) {
-        const line = await spendEstimateLine(db, orgId, pr.tool);
-        const summary = withEstimate(`Piloto automático · ${pr.label} «${acc.name}»`, pr.tool, line);
-        let error: unknown = null;
         try {
-          ({ error } = await db.from("agent_pending_actions").insert({
-          org_id: orgId,
-          user_id: owner,
-          tool: pr.tool,
-          args: { account_id: a.id },
-          summary: summary.slice(0, 500),
-          source: "autopilot",
-          }));
+          const state = await gated(pr.tool, { account_id: a.id }, `new-account:${a.id}:${pr.tool}`, owner, `${pr.label} «${acc.name}»`);
+          if (state === "executed") executed++;
+          lines.push(`${pr.label}: ${state === "executed" ? "ejecutado" : "pendiente"}.`);
         } catch (e) {
-          error = e;
-        }
-        if (error) {
-          const e = error;
           console.error("autopilot proposal", safeErrorLog(e));
           // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
           if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(e)}`);
         }
-        else lines.push(`${pr.label}: ${line}.`);
+      }
+      if (executed === proposals.length && executed > 0) {
+        const marked = await db.from("accounts").update({ auto_researched_at: now.toISOString() }).eq("org_id", orgId).eq("id", a.id);
+        if (marked.error) throw marked.error;
+        out.researched++;
+        continue;
       }
       if (!lines.length) continue;
       await db.from("suggestions").upsert(
@@ -90,13 +108,12 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
           dedupe_key: `account_researched:${a.id}`,
           priority: 3,
           title: `Cuenta nueva ${acc.name}: investigación pendiente de tu confirmación`.slice(0, 200),
-          body: `No he gastado nada. Confírmalo en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
+          body: `Confirma las acciones pendientes en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
           link: `/accounts/${a.id}`,
           user_id: acc.owner_id,
         },
         { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
       );
-      out.researched++;
     }
   } catch (e) {
     out.notes.push(`Investigación: ${(e as Error).message}`);
@@ -111,46 +128,14 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       .gt("scheduled_at", now.toISOString())
       .lte("scheduled_at", new Date(now.getTime() + 1.5 * DAY).toISOString())
       .limit(50);
-    const { meetingBriefCore } = await import("@/lib/ai-core");
     for (const m of meetingsToPrep(ms ?? [], now)) {
-      const meta = (ms ?? []).find((x) => x.id === m.id)!;
+      const meta = (ms ?? []).find(x => x.id === m.id);
+      if (!meta) continue;
       try {
-        await meetingBriefCore(db, m.id, { orgId, userId: meta.created_by ?? actor });
-        await db
-          .from("meetings")
-          .update({ auto_prepped_at: now.toISOString() })
-          .eq("org_id", orgId)
-          .eq("id", m.id);
-        // The «sin preparación» reminder is answered: close it now instead of at the next sync.
-        await db
-          .from("suggestions")
-          .update({ status: "resolved", updated_at: now.toISOString() })
-          .eq("org_id", orgId)
-          .eq("dedupe_key", `meeting_no_prep:${m.id}`)
-          .in("status", ["pending", "snoozed"]);
-        const when = new Date(meta.scheduled_at!).toLocaleString("es-ES", {
-          weekday: "long",
-          hour: "2-digit",
-          minute: "2-digit",
-          timeZone: "Europe/Madrid",
-        });
-        await db.from("suggestions").upsert(
-          {
-            org_id: orgId,
-            detector: "meeting_prepped",
-            dedupe_key: `meeting_prepped:${m.id}`,
-            priority: 2,
-            title: `Preparé tu reunión «${meta.title}»`.slice(0, 200),
-            body: `Es el ${when}. La preparación de llamada ya está en la reunión: brief, stakeholders, preguntas, objeciones y próximo paso.`,
-            link: meta.account_id ? `/accounts/${meta.account_id}` : null,
-            user_id: meta.created_by,
-          },
-          { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
-        );
-        out.prepped++;
+        const state = await gated("autopilot_prepare_meeting", { meeting_id: m.id }, `meeting:${m.id}`, meta.created_by ?? actor, `Preparar reunión «${meta.title}»`);
+        if (state === "executed") out.prepped++;
       } catch (e) {
-        out.notes.push(`Reunión ${meta.title}: ${(e as Error).message}`);
-        if (/créditos|bloqueado|cuota/i.test(e instanceof Error ? e.message : "")) break;
+        out.notes.push(`Reunión ${meta.title}: ${errorText(e)}`);
       }
     }
   } catch (e) {
@@ -191,7 +176,11 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         .limit(5000),
       db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     ]);
-    const { data: st } = await db.from("deal_stages").select("key,kind").eq("org_id", orgId);
+    const { data: st, error: stageError } = await db.from("deal_stages").select("key,kind").eq("org_id", orgId);
+    if (stageError) throw stageError;
+    for (const read of [accs, touches, calls, meetings, deals, sla]) {
+      if (read.error) throw read.error;
+    }
     const closed = new Set(
       (st ?? [])
         .filter((s) => s.kind !== "open")
@@ -225,45 +214,9 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         cold.map((c) => `account_cooling:${c.id}:${week}`),
       );
     const doneKeys = new Set((done ?? []).map((d) => d.dedupe_key));
-    const { accountContext } = await import("@/lib/ai-core");
-    const { ask } = await import("@/lib/ai-gateway");
-    for (const c of cold.filter((x) => !doneKeys.has(`account_cooling:${x.id}:${week}`))) {
-      let review = "";
-      try {
-        review = await ask(
-          "Eres un director comercial B2B. Repasa esta cuenta que se está enfriando y responde en español neutro (tú), sin signos de exclamación ni emoji, en 3 líneas cortas: «Dónde estábamos:» (lo último que pasó), «Riesgo:» (qué se pierde si no se actúa) y «Siguiente paso:» (una acción concreta con quién y qué decir, usando señales o casos del contexto si los hay). Usa solo los datos dados.",
-          `Días sin actividad: ${c.idleDays}\nDeals abiertos: ${c.openDeals.map((d) => d.name).join(", ") || "ninguno"}\n\n${(await accountContext(db, c.id, scope)).slice(0, 18_000)}`,
-          { effort: "low" },
-        );
-      } catch (e) {
-        console.error("autopilot cooling review", safeErrorLog(e));
-      }
-      await db.from("suggestions").upsert(
-        {
-          org_id: orgId,
-          detector: "account_cooling",
-          dedupe_key: `account_cooling:${c.id}:${week}`,
-          priority: c.openDeals.length ? 1 : 2,
-          title: `${c.name} se está enfriando: ${c.idleDays} días sin actividad`.slice(0, 200),
-          body: (
-            review.trim() ||
-            `Nadie ha tocado la cuenta en ${c.idleDays} días${c.openDeals.length ? ` y tiene ${c.openDeals.length} deal abierto` : ""}. Te propongo una tarea para retomar el contacto.`
-          ).slice(0, 2000),
-          link: `/accounts/${c.id}`,
-          user_id: c.owner_id,
-          action: {
-            tool: "create_task",
-            args: {
-              title: `Retomar contacto: ${c.name}`,
-              account_id: c.id,
-              due_date: new Date(now.getTime() + 2 * DAY).toISOString().slice(0, 10),
-              owner_id: c.owner_id,
-            },
-          } as never,
-        },
-        { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
-      );
-      out.cooling++;
+    for (const c of cold.filter(x => !doneKeys.has(`account_cooling:${x.id}:${week}`))) {
+      const state = await gated("autopilot_review_account", { account_id: c.id, week }, `cooling:${c.id}:${week}`, c.owner_id ?? actor, `Repasar cuenta «${c.name}»`);
+      if (state === "executed") out.cooling++;
     }
   } catch (e) {
     out.notes.push(`Cuentas que se enfrían: ${(e as Error).message}`);

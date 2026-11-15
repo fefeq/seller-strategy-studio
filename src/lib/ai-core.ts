@@ -53,7 +53,7 @@ async function rulesFor(
 type Guidance = LoadedRules & { voice: LoadedVoice; withPerson: boolean };
 
 /** withPerson: a person reads the answer now (see rulesFor). */
-export type AiOptions = { withPerson?: boolean };
+export type AiOptions = { withPerson?: boolean; onCost?: (cost: number | null, provider: string) => Promise<void> };
 
 /**
  * The system text with the rules block after it; without rules, the system text as it was. With voice examples it adds the one
@@ -172,6 +172,7 @@ export async function meetingBriefCore(
       `Reunión: ${JSON.stringify({ titulo: m.title, objetivo: m.objective, asistentes: m.attendees, agenda: m.agenda, resultado_deseado: m.desired_outcome })}\n\nContexto del equipo:\n${ctx}`,
       rules,
     ),
+    { onCost: opts.onCost },
   );
   const brief = warned(text, rules);
   await inOrg(db.from("meetings").update({ ai_brief: brief }).eq("id", m.id), scope);
