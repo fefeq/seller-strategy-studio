@@ -6170,6 +6170,32 @@ export type Database = {
           },
         ]
       }
+      user_agent_prefs: {
+        Row: {
+          autonomy: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          autonomy?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          autonomy?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_agent_prefs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
