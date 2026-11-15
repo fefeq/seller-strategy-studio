@@ -172,6 +172,9 @@ flowchart LR
 
 ### 5.2 Vocabulario y glosario propuesto
 
+> **Decisión de Fede (15-nov-2026):** se mantienen «Equipo de plays», «Playbook», «Valor anual (ACV)» y «Modelo de venta». Menú en 5 secciones aceptado. Residuo: nombre accesible «Filtrar por motion» fijado por `-plays.test.tsx` (intocable).
+
+
 | Término único | Variantes encontradas | Definición |
 |---|---|---|
 | Cuenta | empresas, clientes | Empresa a la que vendes o vendiste |

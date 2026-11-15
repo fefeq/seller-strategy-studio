@@ -14,7 +14,7 @@ export const WEB_TOOLS: AgentTool[] = [
     run: async (c, a) => {
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { researchAccountCore } = await import("@/lib/web-research-core");
-      const r = await researchAccountCore(c.db, a.account_id, { orgId: c.orgId, userId: c.userId });
+      const r = await researchAccountCore(c.db, a.account_id, { orgId: c.orgId, userId: c.userId }, true);
       return { resumen: r.summary, propuesta_plan: Object.fromEntries(Object.entries(r.fields).map(([k, v]) => [`${PLAN_LABEL[k] ?? k} (${k})`, v])), fuentes: r.sources };
     },
   }),

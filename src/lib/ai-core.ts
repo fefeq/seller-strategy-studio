@@ -318,6 +318,9 @@ export async function researchStakeholderCore(
         maxResults: 4,
       },
       8,
+      s.org_id
+        ? { db, orgId: s.org_id, userId: scope?.userId || null, tool: "research_stakeholder", trigger: "manual" }
+        : undefined,
     );
     if (!web.length) webNote = "No he encontrado resultados en internet sobre esta persona.";
   } catch (e) {

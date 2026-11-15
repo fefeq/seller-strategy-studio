@@ -715,6 +715,20 @@
       "when": 1794699680493,
       "tag": "0102_integration_usage_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1794701449337,
+      "tag": "0103_intake_atomic_counters",
+      "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1794701961286,
+      "tag": "0104_intake_quota_pause_inside",
+      "breakpoints": true
     }
   ]
 }

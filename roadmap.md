@@ -151,3 +151,9 @@ Gate de entrada abierto tras cierre autorizado de F1–F11 y verificación sobre
 - [ ] NK-0174 SDD 3 U-2/U-3 y SDD 4 — pendientes.
 - [ ] Telegram — falta el token del bot.
 - [x] NK-0171 R-1 con Buffer (run 01d53a14, done): 4 señales reales válidas (retirada de Start Page y del API REST antiguo de Buffer), 4 sugerencias. Observado: las 4 sugerencias repiten las mismas 4 pruebas (una por cuenta) y no tienen borrador por falta de contacto. Jugada pausada, posicionamiento restaurado. Aceptada por Fede el 14-11; residuo: sugerencias repetidas por cuenta.
+
+## Plan UX 15-nov (orden autónoma v2) — ver docs/plan/PLAN-UX-20261115.md
+- [ ] A2 confirmación antes de gastar + búsquedas web por empresa
+- [ ] A1 glosario/Ola 1 · A3 contador atómico + secreto webhook Apollo
+- [ ] B3 bandeja única en Hoy (4 filtros, solo superficie) + Hoy simplificado (titular, siguiente paso, 3 KPI, reuniones hoy, respuestas); headlines tests intactos
+- [ ] B4 Asesor: propuesta aceptada abre el campo afectado en Estrategia

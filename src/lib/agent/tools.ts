@@ -14,6 +14,7 @@ import { PRODUCT_TOOLS } from "./tools/product";
 import { PARALLEL_TOOLS } from "./tools/parallel";
 import { NEED_TOOLS } from "./tools/needs";
 import { type AgentTool, type ToolCtx } from "./tool-kit";
+import { SPEND_TOOLS, SPENDING_READS, spendSummary } from "./spend-confirm";
 import { CORE_READ_TOOLS } from "./tools/core-read";
 import { CORE_WRITE_TOOLS } from "./tools/core-write";
 import { STRATEGY_TOOLS } from "./tools/strategy";
@@ -35,7 +36,7 @@ const CORE_TOOLS: AgentTool[] = [
   ...CYCLE_TOOLS,
 ];
 
-export const TOOLS: AgentTool[] = [
+const REGISTRY: AgentTool[] = [
   ...CORE_TOOLS,
   ...ACCOUNT_TOOLS,
   ...PIPELINE_TOOLS,
@@ -55,6 +56,26 @@ export const TOOLS: AgentTool[] = [
   ...PLAY_DIAGNOSIS_TOOLS,
   ...BUSINESS_LINE_TOOLS,
 ];
+
+/**
+ * A2 (PLAN-UX-20261115): a read that spends becomes a proposal the person confirms, with a cost estimate;
+ * every spending tool is flagged so the card shows the estimate and the confirmed result is kept.
+ */
+export const TOOLS: AgentTool[] = REGISTRY.map((t) => {
+  if (!(t.name in SPEND_TOOLS)) return t;
+  const spendingRead = (SPENDING_READS as readonly string[]).includes(t.name);
+  return {
+    ...t,
+    spends: true,
+    ...(spendingRead
+      ? {
+          kind: "write" as const,
+          summarize: t.summarize ?? ((a: unknown) => spendSummary(t.name, a)),
+          description: `${t.description} Gasta saldo: el resultado llega al confirmar.`,
+        }
+      : {}),
+  };
+});
 
 export function getTool(name: string) {
   return TOOLS.find((t) => t.name === name);

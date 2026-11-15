@@ -1,0 +1,4 @@
+# SDD B3/B4 — Bandeja única en Hoy y Asesor que vuelve a Estrategia
+Estado: Aprobado por delegación general de Fede, 15-nov-2026.
+- B3: `src/lib/today-inbox.ts` (puro, probado) une sugerencias, aprobaciones (solo líderes), tareas propias abiertas y acciones pendientes del agente; filtros Todo/Sugerencias/Aprobaciones/Tareas/Del agente; cada elemento enlaza a la pantalla que lo decide. Sin cambios de tablas. Hoy queda con titular (homeHeadline sin cambios), un siguiente mejor paso, 3 KPI, reuniones de hoy y respuestas (últimos 7 días). Lo retirado de Hoy (briefing, payback, próximos pasos, personas/cuentas) sigue en sus pantallas.
+- B4: `src/lib/advisor-target.ts` asigna cada propuesta a una pestaña de Estrategia por palabras clave (título primero); el botón abre esa pestaña. Interpretación: «campo afectado» = sección de Estrategia, porque la propuesta no trae campo.

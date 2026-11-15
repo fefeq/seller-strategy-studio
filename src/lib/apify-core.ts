@@ -82,7 +82,7 @@ async function linkedinForReading(db: Db, acc: Acc): Promise<string | null> {
  * Saved only into an empty field or one a person did not write, marked web / fuente / not confirmed (never «persona»,
  * SDD field-sources-on-tracked-writers U-4); the mark is read right before writing and the page saved with the admin
  * client (decision of Fede, 2026-10-29), always filtered by the account's own org_id. «A person's value» is only the
- * `kind persona` mark: the URL is never interpreted. The client the caller passes is not used here (kept for callers).
+ * `kind persona` mark: the URL is never interpreted. The caller's client only writes the auxiliary web search to the company's ledger.
  */
 export async function companyLinkedin(_db: Db, acc: Acc): Promise<string | null> {
   const saved = linkedinCompanyUrl(acc.linkedin_url);
@@ -97,6 +97,7 @@ export async function companyLinkedin(_db: Db, acc: Acc): Promise<string | null>
     { query: `"${name}" site:linkedin.com/company`, limit: 5, sources: ["web"] },
     { queries: [`${name} LinkedIn company page`], maxResults: 5 },
     10,
+    { db: _db, orgId: acc.org_id, userId: null, tool: "linkedin_company_page", trigger: "automatic" },
   ).catch(() => [] as NewsItem[]);
   const url = pickLinkedinCompany(
     found.filter((r) => r.title.toLowerCase().includes(name.toLowerCase().split(" ")[0] ?? "")),

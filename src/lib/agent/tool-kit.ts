@@ -16,6 +16,8 @@ export type AgentTool<S extends z.ZodTypeAny = z.ZodTypeAny> = {
   roles?: Role[]; // allowed roles; undefined = every member
   input: S;
   summarize?: (args: z.infer<S>) => string;
+  /** Spends provider credits or balance: the confirmation card shows an estimate and the result is kept (A2). */
+  spends?: boolean;
   /** Write tools may return { mensaje } to tell the user something after confirming (a warning, where it went). */
   run: (ctx: ToolCtx, args: z.infer<S>) => Promise<unknown>;
 };

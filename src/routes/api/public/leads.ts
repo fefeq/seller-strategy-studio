@@ -192,13 +192,8 @@ export const Route = createFileRoute("/api/public/leads")({
             })),
           );
         }
-        await db
-          .from("lead_sources")
-          .update({
-            received_count: source.received_count + records.length,
-            last_received_at: new Date().toISOString(),
-          })
-          .eq("id", source.id);
+        const { bumpReceived } = await import("@/lib/intake-counter.server");
+        await bumpReceived(db, source, records.length);
         const ok = results.filter((r) => r.status !== "error").length;
         return json(
           { ok: ok > 0, received: records.length, saved: ok, results },

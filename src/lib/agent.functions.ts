@@ -146,12 +146,19 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
       out && typeof out === "object" && typeof (out as { mensaje?: unknown }).mensaje === "string"
         ? (out as { mensaje: string }).mensaje
         : "";
-    const result = note ? `Hecho: ${act.summary}. ${note}` : `Hecho: ${act.summary}`;
+    const { getTool } = await import("@/lib/agent/tools");
+    const { SPENDING_READS, spendResultText } = await import("@/lib/agent/spend-confirm");
+    // A2: a confirmed spending read keeps its full result here and in the conversation (paid data is never lost).
+    const result = (SPENDING_READS as readonly string[]).includes(act.tool) && getTool(act.tool)
+      ? spendResultText(act.summary, out)
+      : note
+        ? `Hecho: ${act.summary}. ${note}`
+        : `Hecho: ${act.summary}`;
     await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id);
     if (act.conversation_id)
       await ctx.db
         .from("agent_messages")
-        .insert({ conversation_id: act.conversation_id, role: "assistant", content: result });
+        .insert({ conversation_id: act.conversation_id, role: "assistant", content: result.length > 8000 ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)` : result });
     return { status: "confirmed", result };
   } catch (e) {
     const result = errorText(e);

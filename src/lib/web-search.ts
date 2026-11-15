@@ -6,6 +6,55 @@ import { perplexitySearch } from "@/lib/perplexity";
 import { parallelSearch } from "@/lib/parallel-gateway";
 import { newsItems, type NewsItem } from "@/lib/web-research";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import type { Db } from "@/lib/org-data";
+
+/**
+ * Who pays a loose web search (A2 of PLAN-UX-20261115): when given, every provider actually called is written
+ * to the company's ledger as one row with an unknown cost («sin dato», never zero). Callers already wrapped by
+ * trackedRun (which logs the planner's estimate) do not pass it, so nothing is counted twice.
+ */
+export type WebSpend = {
+  db: Db;
+  orgId: string;
+  userId: string | null;
+  tool: string;
+  trigger: "manual" | "automatic";
+};
+
+export type WebProvider = "firecrawl" | "perplexity" | "parallel";
+
+/** Ledger rows for the providers a search called: unknown cost, the tool that asked, the company that pays. */
+export function webSpendRows(spend: WebSpend, providers: WebProvider[]) {
+  return providers.map((service) => ({
+    org_id: spend.orgId,
+    user_id: spend.userId || null,
+    service,
+    need: null,
+    trigger: spend.trigger,
+    cost: null,
+    cost_kind: "unknown",
+    tool: spend.tool,
+    volume: 1,
+  }));
+}
+
+async function logWebSpend(spend: WebSpend | undefined, providers: WebProvider[]) {
+  if (!spend || !providers.length) return;
+  try {
+    const { error } = await spend.db.from("integration_usage").insert(webSpendRows(spend, providers));
+    if (error) console.error("integration_usage insert failed", safeErrorLog(error));
+  } catch (e) {
+    console.error("integration_usage insert failed", safeErrorLog(e));
+  }
+}
+
+function calledProviders(firecrawl: unknown, perplexity: unknown): WebProvider[] {
+  const out: WebProvider[] = [];
+  if (firecrawl) out.push("firecrawl");
+  if (perplexity && process.env["PERPLEXITY_API_KEY"]) out.push("perplexity");
+  if (perplexity && process.env["PARALLEL_API_KEY"]) out.push("parallel");
+  return out;
+}
 
 export async function searchBoth(
   firecrawl: { query: string; limit?: number; sources?: ("web" | "news")[]; tbs?: string } | null,
@@ -15,7 +64,9 @@ export async function searchBoth(
     recency?: "day" | "week" | "month" | "year";
   } | null,
   max = 12,
+  spend?: WebSpend,
 ): Promise<NewsItem[]> {
+  await logWebSpend(spend, calledProviders(firecrawl, perplexity));
   const afterDate = perplexity?.recency
     ? new Date(
         Date.now() -
@@ -59,7 +110,9 @@ export async function searchTagged(
   firecrawl: Parameters<typeof searchBoth>[0],
   perplexity: Parameters<typeof searchBoth>[1],
   max = 12,
+  spend?: WebSpend,
 ): Promise<import("@/lib/plays/custom/engine").TaggedItem[]> {
+  await logWebSpend(spend, calledProviders(firecrawl, perplexity));
   const { mergeTagged } = await import("@/lib/plays/custom/engine");
   const tag = (p: "firecrawl" | "perplexity" | "parallel") => (xs: NewsItem[]) => xs.map((x) => ({ ...x, provider: p }));
   const [fc, px, pl] = await Promise.allSettled([

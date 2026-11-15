@@ -3287,10 +3287,10 @@
       {
         "name": "clay_find_companies",
         "title": "Buscar empresas en Clay",
-        "description": "Busca empresas nuevas en Clay para prospectar (por palabras clave en su descripción, sector de LinkedIn en inglés, país ISO, empleados e ingresos). Marca las que ya están en Nokko. Gasta cupo de Clay: pide pocos resultados. Para guardarlas usa create_account; para más resultados repite con search_id.",
+        "description": "Busca empresas nuevas en Clay para prospectar (por palabras clave en su descripción, sector de LinkedIn en inglés, país ISO, empleados e ingresos). Marca las que ya están en Nokko. Gasta cupo de Clay: pide pocos resultados. Para guardarlas usa create_account; para más resultados repite con search_id. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3377,10 +3377,10 @@
       {
         "name": "clay_find_people",
         "title": "Buscar personas de una cuenta en Clay",
-        "description": "Busca en Clay personas de una cuenta de Nokko (por su dominio): cargos y seniority. Marca las que ya están en su mapa de stakeholders. Gasta cupo de Clay. Para añadirlas usa create_stakeholder con nombre, cargo y LinkedIn.",
+        "description": "Busca en Clay personas de una cuenta de Nokko (por su dominio): cargos y seniority. Marca las que ya están en su mapa de stakeholders. Gasta cupo de Clay. Para añadirlas usa create_stakeholder con nombre, cargo y LinkedIn. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3454,10 +3454,10 @@
       {
         "name": "clay_enrich_account",
         "title": "Completar cuenta con Clay",
-        "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: clay (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay.",
+        "description": "Consulta en Clay los datos de una cuenta de Nokko por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: clay (sector→industry, tamaño→size, país→country, descripción→notes), preferiblemente solo con los vacíos. Gasta 1 de cupo de Clay. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3540,10 +3540,10 @@
       {
         "name": "apollo_find_companies",
         "title": "Buscar empresas en Apollo",
-        "description": "Busca empresas nuevas en Apollo por palabras clave, país ISO y empleados. Gasta créditos de Apollo por página: pide solo las páginas necesarias. Marca las que ya están en Nokko; para guardarlas usa create_account.",
+        "description": "Busca empresas nuevas en Apollo por palabras clave, país ISO y empleados. Gasta créditos de Apollo por página: pide solo las páginas necesarias. Marca las que ya están en Nokko; para guardarlas usa create_account. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3594,10 +3594,10 @@
       {
         "name": "apollo_enrich_account",
         "title": "Completar cuenta con Apollo",
-        "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: apollo. Gasta 1 crédito de Apollo.",
+        "description": "Consulta en Apollo los datos de una cuenta por su dominio (sector, tamaño, país, descripción) y dice qué campos están vacíos o son distintos. No cambia nada: para aplicarlo usa update_account con source: apollo. Gasta 1 crédito de Apollo. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3688,10 +3688,10 @@
       {
         "name": "research_account",
         "title": "Investigar una cuenta en la web",
-        "description": "Investiga una cuenta en la web (su web y noticias del último año) y propone qué escribir en su plan de cuenta (situación, dolores, iniciativas, competencia, riesgos, whitespace) con fuentes. No guarda nada: para guardarlo usa upsert_account_plan. Tarda unos segundos y gasta créditos de lectura web.",
+        "description": "Investiga una cuenta en la web (su web y noticias del último año) y propone qué escribir en su plan de cuenta (situación, dolores, iniciativas, competencia, riesgos, whitespace) con fuentes. No guarda nada: para guardarlo usa upsert_account_plan. Tarda unos segundos y gasta créditos de lectura web. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3966,10 +3966,10 @@
       {
         "name": "linkedin_company_posts",
         "title": "Publicaciones de LinkedIn de una cuenta",
-        "description": "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+        "description": "Publicaciones recientes (3 meses) de la página de LinkedIn de una cuenta. Si la cuenta no tiene su LinkedIn guardado, lo busca y lo guarda. Gasta saldo de Apify. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -3992,10 +3992,10 @@
       {
         "name": "linkedin_profile_posts",
         "title": "Publicaciones de LinkedIn de un stakeholder",
-        "description": "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+        "description": "Publicaciones recientes en LinkedIn de un stakeholder (necesita su LinkedIn en la ficha): de qué habla y qué comparte. Gasta saldo de Apify. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -4018,10 +4018,10 @@
       {
         "name": "company_job_postings",
         "title": "Ofertas de empleo de una cuenta",
-        "description": "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify. En pausa por revisión legal: explica el bloqueo.",
+        "description": "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -4044,10 +4044,10 @@
       {
         "name": "competitor_reviews",
         "title": "Reseñas de un competidor en G2",
-        "description": "Reseñas recientes de un competidor en G2 (por nombre del producto o enlace de G2): nota, qué valoran, qué critican y por qué se cambian. Gasta saldo de Apify (unos 0,06 $ por cada 10 reseñas).",
+        "description": "Reseñas recientes de un competidor en G2 (por nombre del producto o enlace de G2): nota, qué valoran, qué critican y por qué se cambian. Gasta saldo de Apify (unos 0,06 $ por cada 10 reseñas). Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {
@@ -4254,10 +4254,10 @@
       {
         "name": "enrich_accounts_table",
         "title": "Completar cuentas en tabla (Parallel)",
-        "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account con source: parallel. Gasta créditos.",
+        "description": "Busca con Parallel sector, tamaño, país, financiación y herramientas de hasta 25 cuentas a la vez, con fuente. No guarda nada: para guardar usa update_account con source: parallel. Gasta créditos. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
         "annotations": {
-          "readOnlyHint": true,
-          "idempotentHint": false,
+          "readOnlyHint": false,
+          "destructiveHint": false,
           "openWorldHint": true
         },
         "inputSchema": {

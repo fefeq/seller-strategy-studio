@@ -2,14 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrency, useMe } from "@/hooks/use-me";
-import { GuideOffer } from "@/components/setup/guide";
 import { useSetup } from "@/hooks/use-setup";
-import { Briefing } from "@/components/briefing";
-import { NextSteps } from "@/components/next-steps";
 import { useAgent } from "@/components/agent";
-import { PaybackCard } from "@/components/payback-card";
 import { RoadmapCard } from "@/components/onboarding/home-card";
 import { GuideCard } from "@/components/home/guide-card";
+import { TodayInbox } from "@/components/home/today-inbox";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { useSuggestions } from "@/components/suggestions";
 import { SuggestionDeck } from "@/components/suggestion-deck";
@@ -80,6 +77,10 @@ function HomePage() {
     fallback: `Hola, ${firstName}`,
   });
 
+  const meetingsToday = (data?.meetings ?? []).filter((m) => m.scheduled_at?.slice(0, 10) === today);
+
+  // B3 (PLAN-UX-20261115): Hoy simplificado — titular, un siguiente mejor paso, tres KPI, reuniones de hoy,
+  // respuestas y la bandeja única. El resto vive en Métricas, Pipeline y Cuentas.
   return (
     <Page
       eyebrow={firstName ? `Hola, ${firstName} · ${ROLES[role]?.label ?? ""}` : ROLES[role]?.label}
@@ -87,28 +88,13 @@ function HomePage() {
     >
       <p className="-mt-4 mb-6 text-sm text-muted-foreground">Tu foco: {ROLES[role]?.focus}.</p>
       <GuideCard />
-      <section className="mb-8">
-        <p className="eyebrow mb-3">Tu siguiente paso</p>
-        <SuggestionDeck items={nextSteps} keyboard={false} />
-      </section>
-      <Briefing />
       {leader && <RoadmapCard />}
-      {!hideSetup && (
-        <GuideOffer
-          scope="home"
-          onlyWhenDue
-          orgId={me?.currentOrg?.org_id}
-          wrap={(b) => (
-            <section className="mb-8 rounded-xl border bg-card p-5 shadow-xs">
-              <p className="eyebrow mb-2">Llevas más de un día sin avanzar</p>
-              {b}
-            </section>
-          )}
-        />
-      )}
-      <div className="grid gap-4 md:grid-cols-4">
+      <section className="mb-8">
+        <p className="eyebrow mb-3">Tu siguiente mejor paso</p>
+        <SuggestionDeck items={nextSteps.slice(0, 1)} keyboard={false} />
+      </section>
+      <div className="grid gap-4 md:grid-cols-3">
         <Kpi size="hero" label="Pipeline abierto" value={fmt(pipeline)} />
-        <Kpi size="hero" label="Forecast ponderado" value={fmt(weighted)} />
         <Kpi
           size="hero"
           label="Deals en riesgo"
@@ -121,100 +107,69 @@ function HomePage() {
           value={String(data?.approvals.length ?? 0)}
         />
       </div>
-      <div className="mt-8">
-        <PaybackCard />
-      </div>
-      <div className="mt-8">
-        <NextSteps />
-      </div>
       <div className="mt-8 grid gap-6 lg:grid-cols-2">
-        <Panel
-          title="Próximas reuniones"
-          action={
-            <Link to="/accounts" className="shrink-0 py-2 text-xs text-signal md:py-0">
-              Ver cuentas →
-            </Link>
-          }
-        >
-          {(data?.meetings ?? []).length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Sin reuniones planificadas. Planifica una desde una cuenta.
-            </p>
-          )}
-          {data?.meetings.map((m) => (
-            <Link
-              key={m.id}
-              to="/accounts/$id"
-              params={{ id: m.account_id ?? "" }}
-              className="flex justify-between gap-3 border-b py-2.5 text-sm last:border-0 hover:text-signal"
-            >
-              <span className="min-w-0 truncate">{m.title}</span>
-              <span className="shrink-0 font-mono text-xs text-muted-foreground">
-                {m.scheduled_at
-                  ? new Date(m.scheduled_at).toLocaleString("es-ES", {
-                      dateStyle: "short",
-                      timeStyle: "short",
-                    })
-                  : ""}
-              </span>
-            </Link>
-          ))}
-        </Panel>
-        <Panel
-          title={role === "sales_leader" || role === "owner" ? "Deals en riesgo" : "Mis deals"}
-          action={
-            <Link
-              to="/deals"
-              search={{ deal: undefined }}
-              className="shrink-0 py-2 text-xs text-signal md:py-0"
-            >
-              Ver pipeline →
-            </Link>
-          }
-        >
-          {(role === "sales_leader" || role === "owner" ? risk : mine).slice(0, 6).map((d) => (
-            <div
-              key={d.id}
-              className="flex items-center justify-between gap-3 border-b py-2.5 text-sm last:border-0"
-            >
-              <span className="min-w-0 break-words">{d.name}</span>
-              <span className="flex shrink-0 items-center gap-3">
-                <span className="text-muted-foreground">{stageLabel(d.stage, stages)}</span>
-                <HealthDot value={d.health} />
-              </span>
-            </div>
-          ))}
-          {(role === "sales_leader" || role === "owner" ? risk : mine).length === 0 && (
-            <p className="text-sm text-muted-foreground">Nada por aquí todavía.</p>
-          )}
-        </Panel>
-        <Panel
-          title="Base de personas"
-          action={
-            <Link to="/people" className="shrink-0 py-2 text-xs text-signal md:py-0">
-              Abrir →
-            </Link>
-          }
-        >
-          <p className="text-sm">
-            {data?.people.length ?? 0} personas ·{" "}
-            {data?.people.filter((p) => p.tier === "A").length ?? 0} tier A
-          </p>
-        </Panel>
-        <Panel
-          title="Cuentas"
-          action={
-            <Link to="/accounts" className="shrink-0 py-2 text-xs text-signal md:py-0">
-              Abrir →
-            </Link>
-          }
-        >
-          <p className="text-sm">
-            {data?.accounts.length ?? 0} cuentas ·{" "}
-            {data?.accounts.filter((a) => a.health === "red").length ?? 0} en riesgo
-          </p>
-        </Panel>
+        <TodayInbox />
+        <div className="space-y-6">
+          <Panel
+            title="Reuniones de hoy"
+            action={
+              <Link to="/accounts" className="shrink-0 py-2 text-xs text-signal md:py-0">
+                Ver cuentas →
+              </Link>
+            }
+          >
+            {meetingsToday.length === 0 && (
+              <p className="text-sm text-muted-foreground">Hoy no tienes reuniones.</p>
+            )}
+            {meetingsToday.map((m) => (
+              <Link
+                key={m.id}
+                to="/accounts/$id"
+                params={{ id: m.account_id ?? "" }}
+                className="flex justify-between gap-3 border-b py-2.5 text-sm last:border-0 hover:text-signal"
+              >
+                <span className="min-w-0 truncate">{m.title}</span>
+                <span className="shrink-0 font-mono text-xs text-muted-foreground">
+                  {m.scheduled_at
+                    ? new Date(m.scheduled_at).toLocaleTimeString("es-ES", { timeStyle: "short" })
+                    : ""}
+                </span>
+              </Link>
+            ))}
+          </Panel>
+          <RepliesPanel />
+        </div>
       </div>
     </Page>
+  );
+}
+
+function RepliesPanel() {
+  const { data: count = 0 } = useQuery({
+    queryKey: ["home-replies"],
+    queryFn: async () => {
+      const since = new Date(Date.now() - 7 * 864e5).toISOString();
+      const { count } = await supabase
+        .from("inbox_replies")
+        .select("id", { count: "exact", head: true })
+        .gte("received_at", since);
+      return count ?? 0;
+    },
+  });
+  return (
+    <Panel
+      title="Respuestas"
+      action={
+        <Link to="/replies" className="shrink-0 py-2 text-xs text-signal md:py-0">
+          Abrir →
+        </Link>
+      }
+    >
+      <p className="text-sm">
+        {count === 0
+          ? "Sin respuestas nuevas en los últimos 7 días."
+          : `${count} ${count === 1 ? "respuesta" : "respuestas"} en los últimos 7 días.`}
+      </p>
+    </Panel>
   );
 }

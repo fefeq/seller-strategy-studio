@@ -173,7 +173,11 @@ export const agentMcpTools = TOOLS.map((t) =>
         throw new ToolError(
           `Datos no válidos: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
         );
-      const summary = summarizeAction(t.name, parsed.data);
+      let summary = summarizeAction(t.name, parsed.data);
+      if (t.spends) {
+        const { spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
+        summary = withEstimate(summary, t.name, await spendEstimateLine(c.db, c.orgId, t.name));
+      }
       const { error } = await c.db.from("agent_pending_actions").insert({
         org_id: c.orgId,
         user_id: c.userId,

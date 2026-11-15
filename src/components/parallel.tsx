@@ -1,3 +1,4 @@
+import { confirmSpend } from "@/lib/confirm-spend";
 import { NativeSelect } from "@/components/native-select";
 // Parallel on the screens: the deep report of an account (cited, with confidence), lists of companies that match
 // the ICP to import as accounts, and the enrichment table. Long runs are polled here while the screen is open
@@ -491,6 +492,7 @@ export function EnrichTableButton() {
     setBusy(true);
     setRows(null);
     try {
+      if (!(await confirmSpend("enrich_accounts_table", "Completar datos de cuentas con Parallel", "Parallel"))) return;
       setRows(await run({ data: { accountIds: chosen.slice(0, 25) } }));
     } catch (e) {
       toast.error(errorText(e));
