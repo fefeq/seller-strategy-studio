@@ -6,6 +6,11 @@ describe("A+ hiring signals from job offers", () => {
     expect(hiringTeam("Senior Account Executive")).toBe("Ventas");
     expect(hiringTeam("Backend Engineer")).toBe("Ingeniería");
     expect(hiringTeam("Recepcionista")).toBe("Otros");
+    expect(hiringTeam("Ingeniero de backend")).toBe("Ingeniería");
+    expect(hiringTeam("Ingeniería de ventas")).toBe("Ventas");
+  });
+  it("lead/principal individual contributors are not counted as directivos", () => {
+    expect(hiringSignals([{ title: "Lead Developer", level: "" }, { title: "Principal Engineer", level: "" }]).senior).toBe(0);
   });
   it("headline names the top teams and senior roles", () => {
     const s = hiringSignals([
@@ -30,6 +35,9 @@ describe("A+ engagement from posts", () => {
       { url: "c", likes: 999, repost: true },
     ]);
     expect(e).toEqual({ posts: 2, avgLikes: 20, top: { url: "b", likes: 30 } });
+  });
+  it("unmeasured likes are unknown, not zero", () => {
+    expect(engagement([{ url: "a", likes: null, repost: false }])).toEqual({ posts: 1, avgLikes: null, top: null });
   });
   it("no posts → null average, never zero", () => {
     expect(engagement([]).avgLikes).toBeNull();
