@@ -59,6 +59,7 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
     const goOn = () =>
@@ -117,6 +118,15 @@ function AuthPage() {
     }
   }
 
+  async function forgot() {
+    if (!email) return toast.error("Escribe tu email arriba y vuelve a pulsar «¿Olvidaste tu contraseña?».");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) return toast.error(errorText(error));
+    toast.success("Si existe una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña.");
+  }
+
   async function google() {
     try {
       sessionStorage.setItem(OAUTH_PENDING, "1");
@@ -157,18 +167,32 @@ function AuthPage() {
             </div>
           )}
           <div className="space-y-1.5">
-            <Label>Email</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Label htmlFor="auth-email">Email</Label>
+            <Input id="auth-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           </div>
           <div className="space-y-1.5">
-            <Label>Contraseña</Label>
-            <Input
-              type="password"
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="flex items-baseline justify-between gap-2">
+              <Label htmlFor="auth-password">Contraseña</Label>
+              {mode === "in" && (
+                <button type="button" onClick={forgot} className="min-h-11 text-sm text-ink underline decoration-hairline-firm underline-offset-4">
+                  ¿Olvidaste tu contraseña?
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Input
+                id="auth-password"
+                type={show ? "text" : "password"}
+                autoComplete={mode === "in" ? "current-password" : "new-password"}
+                minLength={6}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <Button type="button" variant="outline" className="min-h-11 shrink-0" aria-pressed={show} onClick={() => setShow(!show)}>
+                {show ? "Ocultar" : "Mostrar"}
+              </Button>
+            </div>
           </div>
           <Button className="w-full" disabled={busy}>
             {mode === "in" ? "Entrar" : "Crear cuenta"}
