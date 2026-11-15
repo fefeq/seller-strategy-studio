@@ -2236,7 +2236,7 @@
       "title": "Deal Ganado con closed_at en el futuro genera 2 avisos, caso no cubierto por el SDD: decidir si es comportamiento aceptado y documentarlo",
       "kind": "bug",
       "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9), informativo. Evidencia: .factory/evidence/NK-0030/",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2261,6 +2261,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: sin validación de closed_at futuro al marcar Ganado."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "PR #150 fusionado (aba01d3); gate.mjs PASS sobre ea17758fc9aa (6.305/6.305) y revisión independiente sin bloqueantes. Sin prueba en navegador. Pendiente menor: elegir «hoy» antes de las 12:00 UTC guarda un instante aún futuro (closedAtFromDay fija mediodía UTC); un ganado ya importado con fecha futura no se corrige al reimportar."
         }
       ]
     },
@@ -2395,7 +2401,7 @@
       "title": "Plays GTM 1: «Ver actividad» se queda en «Cargando…» si falla la consulta de play_runs (p. ej. antes de aplicar 0077)",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2414,6 +2420,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/components/plays/play-card.tsx:15-28 sin rama de error."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "PR #150 fusionado (aba01d3); gate.mjs PASS sobre ea17758fc9aa (6.305/6.305) y revisión independiente sin bloqueantes. Sin prueba en navegador."
         }
       ]
     },
@@ -2422,7 +2434,7 @@
       "title": "Plays GTM 1: togglePlay devuelve error.message en crudo al Agente y a MCP (en pantalla pasa por errorText)",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2441,6 +2453,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/lib/plays/toggle.ts:29."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "PR #150 fusionado (aba01d3); gate.mjs PASS sobre ea17758fc9aa (6.305/6.305) y revisión independiente sin bloqueantes. Sin prueba en navegador."
         }
       ]
     },
@@ -2764,7 +2782,7 @@
       "title": "RevOps: un perdido sin transición se imputa a la primera etapa o a la más avanzada (revops.ts:26-27) y llega al titular de Perdidos",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2783,6 +2801,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/lib/revops.ts:39-40."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "PR #150 fusionado (aba01d3); gate.mjs PASS sobre ea17758fc9aa (6.305/6.305) y revisión independiente sin bloqueantes. Sin prueba en navegador. El titular nombra la etapa registrada con más pérdidas aunque la mayoría no tenga etapa: texto por confirmar con Fede."
         }
       ]
     },
@@ -5176,7 +5200,7 @@
       "title": "NK-0150: SessionEndedError puede mostrar «datos antiguos» durante la ventana de logout en la guía (caso sintético); la consulta de miembros ignora el error de Supabase y devuelve lista vacía",
       "kind": "bug",
       "source": "gate de NK-0150 en ea65a9b (prioridad baja), evidencia .factory/evidence/sprint8-gate/gate-ea65a9b.md",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5195,6 +5219,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/hooks/use-setup-guide.ts:91-97 y :150."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "PR #150 fusionado (aba01d3); gate.mjs PASS sobre ea17758fc9aa (6.305/6.305) y revisión independiente sin bloqueantes. Sin prueba en navegador."
         }
       ]
     },
@@ -5594,6 +5624,12 @@
           "at": "2026-11-15T21:54:58.272Z",
           "by": "claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T22:12:52.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "No se arregla: src/lib/safe-logs-notes.test.ts (NK-0149) fija que las notas del piloto llevan el texto del error y solo prohíbe registrarlo en consola. Necesita decisión de Fede: mantener ese diseño o traducir las notas y cambiar esa expectativa."
         }
       ]
     },
