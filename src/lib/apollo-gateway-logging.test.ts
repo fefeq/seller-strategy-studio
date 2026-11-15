@@ -4,7 +4,10 @@ import type { ToolCtx } from "@/lib/agent/tool-kit";
 // NK-0173 SDD 2: reveals log their spend from every path, store the email status Apollo already
 // returns, and never overwrite a saved email — a different one is only proposed.
 
-const upserts: { rows: { org_id: string; email: string; status: string }[]; onConflict?: string }[] = [];
+const upserts: {
+  rows: { org_id: string; email: string; status: string }[];
+  onConflict?: string;
+}[] = [];
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: {
     from: () => ({
@@ -19,7 +22,9 @@ vi.mock("@/integrations/supabase/client.server", () => ({
 import { revealStakeholder, revealToAccount } from "@/lib/apollo-gateway";
 
 type Q = { table: string; op: string; payload?: Record<string, unknown>; filters: unknown[][] };
-function fakeDb(reply: (q: Q) => { data?: unknown; error?: { message: string } | null } | undefined) {
+function fakeDb(
+  reply: (q: Q) => { data?: unknown; error?: { message: string } | null } | undefined,
+) {
   const log: Q[] = [];
   const from = (table: string) => {
     const q: Q = { table, op: "select", filters: [] };
@@ -53,7 +58,13 @@ function fakeDb(reply: (q: Q) => { data?: unknown; error?: { message: string } |
 
 const ORG = "org-1";
 const ME = "11111111-1111-4111-8111-111111111111";
-const ctx = (db: ToolCtx["db"]): ToolCtx => ({ db, orgId: ORG, userId: ME, roles: ["ae"], currency: "EUR" });
+const ctx = (db: ToolCtx["db"]): ToolCtx => ({
+  db,
+  orgId: ORG,
+  userId: ME,
+  roles: ["ae"],
+  currency: "EUR",
+});
 
 function stubApollo(matches: unknown[]) {
   vi.stubGlobal(
@@ -88,12 +99,27 @@ describe("reveal spend logging (CA-5)", () => {
       if (q.table === "stakeholders" && q.op === "insert") return { data: { id: "st-1" } };
       return undefined;
     });
-    const r = await revealToAccount(ctx(db), { accountId: "acc-1", apolloIds: ["abc123", "def456"] });
+    const r = await revealToAccount(ctx(db), {
+      accountId: "acc-1",
+      apolloIds: ["abc123", "def456"],
+    });
     expect(r).toHaveLength(2);
     const usage = log.filter((q) => q.table === "integration_usage" && q.op === "insert");
     expect(usage).toHaveLength(1);
-    const rows = [usage[0].payload].flat() as { service: string; need: string; cost: number; trigger: string; org_id: string }[];
-    expect(rows[0]).toMatchObject({ service: "apollo", need: "find_email", cost: 0.04, trigger: "manual", org_id: ORG });
+    const rows = [usage[0].payload].flat() as {
+      service: string;
+      need: string;
+      cost: number;
+      trigger: string;
+      org_id: string;
+    }[];
+    expect(rows[0]).toMatchObject({
+      service: "apollo",
+      need: "find_email",
+      cost: 0.04,
+      trigger: "manual",
+      org_id: ORG,
+    });
   });
   it("revealStakeholder logs find_phone when the mobile is asked", async () => {
     // A phone reveal needs the webhook secret to build its callback address; a synthetic one keeps the test independent of the host.
@@ -101,12 +127,26 @@ describe("reveal spend logging (CA-5)", () => {
     stubApollo([MATCH]);
     const { db, log } = fakeDb((q) => {
       if (q.table === "stakeholders" && q.op === "select")
-        return { data: { id: "st-1", name: "Persona Sintética", email: null, linkedin_url: null, title: null, phone: null, account_id: "acc-1" } };
+        return {
+          data: {
+            id: "st-1",
+            name: "Persona Sintética",
+            email: null,
+            linkedin_url: null,
+            title: null,
+            phone: null,
+            account_id: "acc-1",
+          },
+        };
       if (q.table === "accounts") return { data: { id: "acc-1", domain: "example.invalid" } };
       if (q.table === "phone_reveals") return { data: [] };
       return undefined;
     });
-    await revealStakeholder(ctx(db), { stakeholderId: "st-1", phone: true, webhookBase: "https://example.invalid" });
+    await revealStakeholder(ctx(db), {
+      stakeholderId: "st-1",
+      phone: true,
+      webhookBase: "https://example.invalid",
+    });
     const usage = log.filter((q) => q.table === "integration_usage" && q.op === "insert");
     expect(usage).toHaveLength(1);
     const rows = [usage[0].payload].flat() as { need: string; cost: number }[];
@@ -126,7 +166,11 @@ describe("email status storage (CA-3, CA-4)", () => {
     await revealToAccount(ctx(db), { accountId: "acc-1", apolloIds: ["abc123"] });
     expect(upserts).toHaveLength(1);
     expect(upserts[0].onConflict).toBe("org_id,email");
-    expect(upserts[0].rows[0]).toMatchObject({ org_id: ORG, email: "nueva@example.invalid", status: "verified" });
+    expect(upserts[0].rows[0]).toMatchObject({
+      org_id: ORG,
+      email: "nueva@example.invalid",
+      status: "verified",
+    });
   });
   it("an unknown provider value is stored as unverifiable, never verified", async () => {
     stubApollo([{ ...MATCH, email_status: "extrapolated" }]);
@@ -168,7 +212,8 @@ describe("keep and propose (CA-6, CA-7)", () => {
   it("an empty email is filled as today and nothing is proposed", async () => {
     stubApollo([MATCH]);
     const { db, log } = fakeDb((q) => {
-      if (q.table === "stakeholders" && q.op === "select") return { data: { ...existing, email: null } };
+      if (q.table === "stakeholders" && q.op === "select")
+        return { data: { ...existing, email: null } };
       if (q.table === "accounts") return { data: { id: "acc-1", domain: "example.invalid" } };
       return undefined;
     });
