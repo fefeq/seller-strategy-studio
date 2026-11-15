@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { ConvBlocks } from "@/components/conv-blocks";
+import { chipIntent, replyBlocks } from "@/lib/conversation";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
@@ -242,6 +244,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                   : <div className="space-y-2 text-sm leading-relaxed">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{m.content}</ReactMarkdown>
                       <SpeakButton text={m.content} />
+                      <ConvBlocks blocks={replyBlocks(m.content)} busy={busy} onChip={(v) => { const it = chipIntent(v); if (it?.kind === "say") submit(it.text, mode, convId); }} />
                       {m.actions?.map((a) => (
                         <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
                           <span className="min-w-0 break-words text-sm">{a.summary}</span>
