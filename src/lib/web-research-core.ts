@@ -140,6 +140,14 @@ export async function researchAccountCore(
         : undefined,
     ).catch(() => [] as NewsItem[]),
   ]);
+  // A2: the website read (Firecrawl) is paid too; the agent path is not under trackedRun, so log it here.
+  if (logSpend && scope) {
+    const { webSpendRows } = await import("@/lib/web-search");
+    const { error: logError } = await db
+      .from("integration_usage")
+      .insert(webSpendRows({ db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }, ["firecrawl"]));
+    if (logError) console.error("integration_usage insert failed", safeErrorLog(logError));
+  }
   if (!site.text && !news.length)
     throw siteError ?? new Error("No he podido leer la web ni encontrar noticias de esta cuenta.");
   const ctx = await accountContext(db, accountId, scope);
