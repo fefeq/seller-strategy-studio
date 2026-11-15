@@ -1,4 +1,5 @@
 // Apollo on the screens: prospecting on Cuentas, people search + reveal on the account map,
+import { confirmSpend } from "@/lib/confirm-spend";
 // email/mobile reveal on a stakeholder, «Completar con Apollo» and the list of revealed phones.
 import { useAccountOptions } from "@/components/entity-combobox";
 import { markKnown } from "@/lib/match";
@@ -89,6 +90,7 @@ function ApolloProspect() {
   async function run(next: number) {
     setBusy(true);
     try {
+      if (!(await confirmSpend("apollo_find_companies", "Buscar empresas en Apollo", "Apollo"))) return;
       const r = await search({
         data: {
           page: next,
@@ -587,6 +589,7 @@ export function ApolloEnrich({
   async function run() {
     setBusy(true);
     try {
+      if (!(await confirmSpend("apollo_enrich_account", "Consultar los datos de la cuenta en Apollo", "Apollo"))) return;
       const r = await enrich({ data: { accountId: account.id } });
       setResult(r);
       setPicked(r.changes.filter((c) => c.empty).map((c) => c.field));

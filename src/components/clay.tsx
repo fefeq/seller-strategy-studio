@@ -1,4 +1,5 @@
 // Clay on the screens: prospecting on Cuentas, stakeholders on the account map and «Completar con Clay»
+import { confirmSpend } from "@/lib/confirm-spend";
 // on the account's fit data. Searches run on the server; saving uses the browser client (RLS).
 import { useAccountOptions } from "@/components/entity-combobox";
 import { markKnown } from "@/lib/match";
@@ -122,6 +123,7 @@ function ClayProspect() {
       const revenues = revFrom
         ? CLAY_REVENUES.slice(CLAY_REVENUES.indexOf(revFrom as (typeof CLAY_REVENUES)[number]))
         : [];
+      if (!(await confirmSpend("clay_find_companies", "Buscar empresas en Clay", "Clay"))) return;
       const r = await search({
         data:
           more && searchId
@@ -431,6 +433,7 @@ function ClayPeople({ accountId, onAdded }: { accountId: string; onAdded: () => 
   async function run(more: boolean) {
     setBusy(true);
     try {
+      if (!(await confirmSpend("clay_find_people", "Buscar personas en Clay", "Clay"))) return;
       const r = await search({
         data:
           more && searchId
@@ -608,6 +611,7 @@ export function ClayEnrich({
   async function run() {
     setBusy(true);
     try {
+      if (!(await confirmSpend("clay_enrich_account", "Consultar los datos de la cuenta en Clay", "Clay"))) return;
       const r = await enrich({ data: { accountId: account.id } });
       setResult(r);
       setPicked(r.changes.filter((c) => c.empty).map((c) => c.field));

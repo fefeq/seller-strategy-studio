@@ -1,3 +1,4 @@
+import { confirmSpend } from "@/lib/confirm-spend";
 import { NativeSelect } from "@/components/native-select";
 // Apify on the screens: open job offers of an account and battlecards written from competitors' G2 reviews.
 import { useState } from "react";
@@ -32,6 +33,7 @@ export function AccountJobs({ accountId }: { accountId: string }) {
   async function go() {
     setBusy(true);
     try {
+      if (!(await confirmSpend("company_job_postings", "Ver las ofertas de empleo en LinkedIn", "Apify"))) return;
       setR(await run({ data: { accountId } }));
     } catch (e) {
       toast.error(errorText(e));
@@ -91,6 +93,7 @@ export function BattlecardFromReviews({ onSaved }: { onSaved: (docId: string) =>
     setBusy(true);
     setCard(null);
     try {
+      if (!(await confirmSpend("create_battlecard_from_reviews", "Leer reseñas de G2 y redactar la battlecard", "Apify"))) return;
       setCard(await run({ data: { competitor: competitor.trim(), max } }));
     } catch (e) {
       toast.error(errorText(e));
