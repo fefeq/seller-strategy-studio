@@ -1,3 +1,4 @@
+import { SelectBox, SelectionBar, useSelection } from "@/components/bulk-select";
 import { NativeSelect } from "@/components/native-select";
 import { createFileRoute } from "@tanstack/react-router";
 import { EntityCombobox, useAccountOptions } from "@/components/entity-combobox";
@@ -101,6 +102,7 @@ function People() {
     return true;
   });
   const verification = useEmailVerifications(list.map((p) => p.email));
+  const pick = useSelection(list.map((p) => p.id));
 
   async function update(id: string, patch: TablesUpdate<"people">) {
     const { error } = await supabase.from("people").update(patch).eq("id", id);
@@ -214,11 +216,18 @@ function People() {
         <Empty>Sin personas. Importa un CSV o añade una a mano.</Empty>
       ) : (
         <>
+          <div className="mb-2 flex items-center gap-2 md:hidden">
+            <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
+            <span className="text-xs text-muted-foreground">Seleccionar todas</span>
+          </div>
           <ul className="border-t md:hidden">
             {list.map((p) => (
               <li key={p.id} className="space-y-3 border-b py-4 text-sm">
                 <div>
-                  <p className="break-words font-medium">{p.full_name || "—"}</p>
+                  <p className="flex items-start gap-2 break-words font-medium">
+                    <SelectBox checked={pick.has(p.id)} onChange={() => pick.flip(p.id)} label={`Seleccionar ${p.full_name || p.email}`} />
+                    <span className="min-w-0">{p.full_name || "—"}</span>
+                  </p>
                   <p className="break-all text-xs text-muted-foreground">
                     {p.email}
                     {p.company ? ` · ${p.company}` : ""}
@@ -254,6 +263,9 @@ function People() {
             <table className="w-full text-sm">
               <thead className="border-b bg-muted/50 text-left">
                 <tr>
+                  <th className="w-10 px-3 py-3">
+                    <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
+                  </th>
                   {[
                     "Persona",
                     "Fuente",
@@ -273,6 +285,9 @@ function People() {
               <tbody>
                 {list.map((p) => (
                   <tr key={p.id} className="border-b last:border-0">
+                    <td className="px-3 py-2">
+                      <SelectBox checked={pick.has(p.id)} onChange={() => pick.flip(p.id)} label={`Seleccionar ${p.full_name || p.email}`} />
+                    </td>
                     <td className="px-3 py-2">
                       <p className="font-medium">{p.full_name || "—"}</p>
                       <p className="text-xs text-muted-foreground">
@@ -305,6 +320,15 @@ function People() {
               </tbody>
             </table>
           </div>
+          <SelectionBar
+            count={pick.sel.size}
+            onClear={pick.clear}
+            filename="personas.csv"
+            csv={() => ({
+              header: ["Nombre", "Email", "Empresa"],
+              rows: list.filter((p) => pick.has(p.id)).map((p) => [p.full_name, p.email, p.company]),
+            })}
+          />
         </>
       )}
       <ApolloPhones />
