@@ -36,7 +36,7 @@ describe("estimate comes only from measured history", () => {
   it("median per currency, currencies never merged", () => {
     const m = (cost: number, currency: string) => ({ cost, currency, cost_kind: "measured" as const, tool: "x" });
     const t = estimateText([m(1, "EUR"), m(3, "EUR"), m(2, "USD")], "x");
-    expect(t).toContain("2 €");
+    expect(t).toMatch(/2\s€/);
     expect(t).toContain("US$");
     expect(t).toContain(" + ");
   });
