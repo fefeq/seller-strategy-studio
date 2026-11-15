@@ -48,7 +48,7 @@ export function ConnectionsStatusPanel() {
           const u = row?.usage;
           const spent = u ? Object.entries(u.byCurrency).map(([c, n]) => money(n, c)) : [];
           return (
-            <li key={s.id} className="grid min-w-0 gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+            <li key={s.id} id={`conexion-${s.id}`} className="scroll-mt-24 grid min-w-0 gap-2 p-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
               <div className="min-w-0">
                 <p className="flex flex-wrap items-center gap-2">
                   <span className="font-medium">{s.name}</span>

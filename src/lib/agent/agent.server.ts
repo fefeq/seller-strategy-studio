@@ -94,6 +94,9 @@ export async function runAgent(
     workflowId?: string | null;
   },
 ) {
+  // E3: a message that looks like a secret is never stored nor sent to the model.
+  const { looksLikeSecret, SECRET_REFUSAL } = await import("./secret-guard");
+  if (looksLikeSecret(opts.text)) return { text: SECRET_REFUSAL, pending: [] as PendingAction[] };
   const chain = aiProviders(process.env);
   if (chain.length === 1 && chain[0] === "lovable" && !process.env["LOVABLE_API_KEY"])
     throw new Error("La IA no está configurada");
