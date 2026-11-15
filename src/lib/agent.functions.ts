@@ -126,19 +126,23 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
   if (!act) throw new Error("Acción no encontrada");
   if (act.status !== "pending") return { status: act.status, result: act.result };
   if (decision === "cancel") {
-    await ctx.db
+    const { data: cancelled, error } = await ctx.db
       .from("agent_pending_actions")
       .update({ status: "cancelled", decided_at: new Date().toISOString() })
-      .eq("id", id);
+      .eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId).eq("status", "pending").select("id");
+    if (error) throw error;
+    if (!cancelled?.length) return { status: "confirmed", result: "La acción ya se está procesando." };
     return { status: "cancelled", result: "" };
   }
   // Claim first so a double click cannot execute twice.
-  const { data: claimed } = await ctx.db
+  const { data: claimed, error: claimError } = await ctx.db
     .from("agent_pending_actions")
     .update({ status: "confirmed", decided_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("org_id", ctx.orgId).eq("user_id", ctx.userId)
     .eq("status", "pending")
     .select("id");
+  if (claimError) throw claimError;
   if (!claimed?.length) return { status: "confirmed", result: "" };
   try {
     const out = await executeTool(ctx, act.tool, act.args);

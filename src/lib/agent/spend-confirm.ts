@@ -31,6 +31,8 @@ export const SPEND_TOOLS: Record<string, string> = {
   complete_account: "apollo/clay/web",
   find_key_people: "apollo/clay",
   find_icp_companies: "apollo/clay",
+  autopilot_prepare_meeting: "ia",
+  autopilot_review_account: "ia",
 };
 
 /** Read tools that spend and therefore need the person's confirmation before running. */
@@ -101,6 +103,11 @@ export function estimateText(rows: SpendRow[], tool: string): string {
 
 /** Reads the company's ledger for this tool and returns the «coste aprox.» line; a failed read says «sin dato». */
 export async function spendEstimateLine(db: Db, orgId: string, tool: string): Promise<string> {
+  return (await spendEstimate(db, orgId, tool, "EUR")).line;
+}
+
+/** A numeric estimate is comparable only in the organization's currency, with no foreign subtotal. */
+export async function spendEstimate(db: Db, orgId: string, tool: string, currency: string): Promise<{ line: string; value: number | null }> {
   try {
     const { data, error } = await db
       .from("integration_usage")
@@ -110,10 +117,12 @@ export async function spendEstimateLine(db: Db, orgId: string, tool: string): Pr
       .eq("cost_kind", "measured")
       .order("created_at", { ascending: false })
       .limit(200);
-    if (error) return estimateText([], tool);
-    return estimateText((data ?? []) as SpendRow[], tool);
+    if (error) return { line: estimateText([], tool), value: null };
+    const rows = (data ?? []) as SpendRow[];
+    const other = rows.some(r => r.currency !== currency);
+    return { line: estimateText(rows, tool), value: other ? null : estimateCost(rows, tool, currency).value };
   } catch {
-    return estimateText([], tool);
+    return { line: estimateText([], tool), value: null };
   }
 }
 
