@@ -91,6 +91,31 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       conversationId = conv.id;
     }
+    const { localAutopilotRequest } = await import("@/lib/autopilot-chat");
+    const request = localAutopilotRequest(data.text);
+    if (request) {
+      const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
+      const state = await pendingAutopilotState(ctx);
+      if (request.kind === "threshold") {
+        if (!state.canChange) throw new Error("Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.");
+        const currency = request.currency ?? ctx.currency;
+        if (currency !== ctx.currency) throw new Error("Indica el umbral en la moneda de tu empresa; no se convierten importes.");
+        const { error } = await ctx.db.from("agent_pending_actions").insert({
+          org_id: ctx.orgId, user_id: ctx.userId, conversation_id: conversationId,
+          tool: "set_autopilot_threshold", args: { threshold: request.threshold, currency },
+          summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
+        });
+        if (error) throw error;
+      }
+      const latest = request.kind === "threshold" ? await pendingAutopilotState(ctx) : state;
+      const text = `Umbral actual del piloto: ${state.threshold} ${state.currency} por acción. ${state.threshold === 0 ? "Todo requiere confirmación." : "Los costes desconocidos o en otra moneda requieren confirmación."}\n\n${request.kind === "threshold" ? "Cambio propuesto, todavía no guardado. Confirma la acción para aplicarlo." : latest.pending.length ? "Estas son tus acciones pendientes." : "No tienes acciones pendientes."}`;
+      const { error } = await ctx.db.from("agent_messages").insert([
+        { conversation_id: conversationId, role: "user", content: data.text },
+        { conversation_id: conversationId, role: "assistant", content: text },
+      ]);
+      if (error) throw error;
+      return { conversationId, text, pending: latest.pending };
+    }
     const { runAgent } = await import("@/lib/agent/agent.server");
     const out = await runAgent(ctx, {
       conversationId,
@@ -113,6 +138,14 @@ export const decideAgentAction = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
     return decidePending(ctx, data.id, data.decision);
+  });
+
+export const readAgentPendingState = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const ctx = await userCtx(context.supabase as Db, context.userId);
+    const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
+    return pendingAutopilotState(ctx);
   });
 
 export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm" | "cancel") {

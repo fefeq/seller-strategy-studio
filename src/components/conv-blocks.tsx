@@ -1,6 +1,7 @@
 // E2: app renderer of the neutral conversation blocks (src/lib/conversation.ts). Telegram uses toTelegram().
 import { Link } from "@tanstack/react-router";
 import type { ConvBlock } from "@/lib/conversation";
+import { Button } from "@/components/ui/button";
 
 export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onChip?: (value: string) => void; busy?: boolean }) {
   return (
@@ -24,7 +25,7 @@ export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onCh
             {b.prompt && <p className="mb-1.5">{b.prompt}</p>}
             <div role="radiogroup" aria-label={b.prompt ?? "Opciones"} className="flex flex-wrap gap-2">
               {b.chips.map((c) => (
-                <button
+                <Button
                   key={c.value}
                   type="button"
                   role="radio"
@@ -34,7 +35,7 @@ export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onCh
                   className={`min-h-11 rounded-full border px-4 ${c.selected ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-signal"}`}
                 >
                   {c.label}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
