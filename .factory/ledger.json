@@ -5611,7 +5611,7 @@
       "title": "Piloto automático: src/lib/autopilot.server.ts sigue metiendo (e as Error).message en out.notes (3 sitios), que llega al cuerpo del trabajo autopilot_now; mismo patrón que NK-0162",
       "kind": "bug",
       "source": "auditoría 2026-11-15",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5630,6 +5630,12 @@
           "at": "2026-11-15T22:12:52.000Z",
           "by": "claude (encargo de Fede 2026-11-15)",
           "note": "No se arregla: src/lib/safe-logs-notes.test.ts (NK-0149) fija que las notas del piloto llevan el texto del error y solo prohíbe registrarlo en consola. Necesita decisión de Fede: mantener ese diseño o traducir las notas y cambiar esa expectativa."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T22:23:13.000Z",
+          "by": "claude (encargo de Fede 2026-11-15)",
+          "note": "Decisión de Fede (2026-11-15): las notas se traducen. PR #152 fusionado (620657f); gate.mjs PASS sobre e60f001bb8ca (6.308/6.308). Incluye las cuatro notas de Descubiertos. La revisión independiente encontró que errorText cambiaba mensajes propios de proveedor con status (401, 402, 429); corregido con noteErrorText en el mismo PR. Cambia la expectativa de safe-logs-notes.test.ts (NK-0149). Pendiente menor: el paso «discoveries» de Inngest sigue devolviendo las notas completas como salida (functions.server.ts), a diferencia del de autopilot."
         }
       ]
     },
