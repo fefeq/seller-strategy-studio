@@ -31,7 +31,7 @@ async function itemsByBlock(c: ToolCtx) {
     loadSetupData(c.db, c.orgId),
   ]);
   const all = proposalItems(s.proposal as unknown as SetupProposal, segs.data ?? [], c.currency);
-  const { items, kept } = protectManual(all, setup.data);
+  const { items, kept } = protectManual(all, setup);
   return { items, kept, status: jsonObject(s.block_status) ?? {} };
 }
 
