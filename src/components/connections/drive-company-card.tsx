@@ -64,9 +64,8 @@ export function DriveCompanyCard() {
   }
 
   async function off() {
-    const ok = await askConfirm({
-      title: "¿Desconectar el Drive de la empresa?",
-      description: "NOKKO dejará de leer de esa cuenta ahora mismo. Lo ya importado se conserva con su origen.",
+    const ok = await askConfirm("¿Desconectar el Drive de la empresa?", {
+      body: "NOKKO dejará de leer de esa cuenta ahora mismo. Lo ya importado se conserva con su origen.",
       confirmLabel: "Desconectar",
     });
     if (!ok) return;
