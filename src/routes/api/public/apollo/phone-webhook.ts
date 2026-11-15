@@ -3,13 +3,15 @@
 // every company that asked for that person, and the stakeholder's phone.
 import { createFileRoute } from "@tanstack/react-router";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
-import { phonesFromWebhook, sameSecret } from "@/lib/apollo";
+import { phonesFromWebhook, sameSecret, webhookSecretFrom } from "@/lib/apollo";
 
 export const Route = createFileRoute("/api/public/apollo/phone-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = new URL(request.url).searchParams.get("secret");
+        // A3: the secret is read from the X-Webhook-Secret header first. Apollo itself only calls the webhook_url it
+        // was given and cannot add headers, so its deliveries still carry ?secret=; that URL is never logged.
+        const secret = webhookSecretFrom(request);
         if (!sameSecret(secret, process.env["APOLLO_WEBHOOK_SECRET"]))
           return new Response("Unauthorized", { status: 401 });
         const raw = await request.text();

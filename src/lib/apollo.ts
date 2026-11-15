@@ -369,3 +369,10 @@ export function sameSecret(a: string | null | undefined, b: string | null | unde
   for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
   return diff === 0;
 }
+
+/** Webhook secret: the X-Webhook-Secret header wins; the ?secret= query stays because Apollo cannot send headers. */
+export function webhookSecretFrom(request: Request): string | null {
+  const h = request.headers.get("x-webhook-secret");
+  if (h) return h;
+  return new URL(request.url).searchParams.get("secret");
+}

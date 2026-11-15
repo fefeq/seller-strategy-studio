@@ -1,0 +1,34 @@
+// A3: the daily quota is reserved by the atomic RPC; received_count is incremented atomically.
+import { describe, expect, it, vi } from "vitest";
+import { bumpReceived, enforceLimits } from "./intake.server";
+
+const src = { id: "s1", org_id: "o1", max_per_request: 10, daily_limit: 5, day_count: 0, day_date: null, received_count: 3 } as never;
+function fakeDb(rpcResult: unknown, rpcError: unknown = null) {
+  const updates: unknown[] = [];
+  const rpc = vi.fn(async () => ({ data: rpcResult, error: rpcError }));
+  const from = () => ({ update: (v: unknown) => { updates.push(v); return { eq: async () => ({}) }; }, insert: async () => ({}) });
+  return { db: { rpc, from } as never, rpc, updates };
+}
+
+describe("enforceLimits uses the atomic reservation", () => {
+  it("ok from the RPC writes nothing else", async () => {
+    const f = fakeDb({ ok: true, dayCount: 2, dayDate: "2026-11-15" });
+    expect(await enforceLimits(f.db, src, 2)).toBeNull();
+    expect(f.rpc).toHaveBeenCalledWith("reserve_intake_quota", expect.objectContaining({ _source: "s1", _n: 2 }));
+    expect(f.updates).toHaveLength(0);
+  });
+  it("a refused reservation pauses with 429", async () => {
+    const f = fakeDb({ ok: false, status: 429, error: "Límite diario", pause: true });
+    expect(await enforceLimits(f.db, src, 9)).toEqual({ status: 429, error: "Límite diario" });
+    expect(f.updates).toContainEqual(expect.objectContaining({ active: false }));
+  });
+});
+
+describe("bumpReceived", () => {
+  it("increments through the RPC, never read-modify-write", async () => {
+    const f = fakeDb(null);
+    await bumpReceived(f.db, src, 4);
+    expect(f.rpc).toHaveBeenCalledWith("bump_intake_received", { _source: "s1", _n: 4 });
+    expect(f.updates).toHaveLength(0);
+  });
+});
