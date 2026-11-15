@@ -40,9 +40,14 @@ export function providerErrorBody(e: ProviderError): string {
   return providerBodies.get(e) ?? "";
 }
 
-export async function ask(system: string, user: string, opts: AskOpts = {}) {
+export type TrackedAskOpts = AskOpts & { onCost?: (cost: number | null, provider: string) => Promise<void> };
+export async function ask(system: string, user: string, opts: TrackedAskOpts = {}) {
   return withFallback(aiProviders(process.env), (p) =>
-    p === "lovable" ? askLovable(system, user, opts) : askOwn(p, system, user, opts),
+    p === "openrouter" ? askOpenRouter(system, user, opts) : (async () => {
+      const text = p === "lovable" ? await askLovable(system, user, opts) : await askOwn(p, system, user, opts);
+      await opts.onCost?.(null, p);
+      return text;
+    })(),
   );
 }
 
@@ -104,7 +109,7 @@ async function askGemini(system: string, user: string, opts: AskOpts) {
   return extractText(await res.json());
 }
 
-async function askOpenRouter(system: string, user: string, opts: AskOpts) {
+async function askOpenRouter(system: string, user: string, opts: TrackedAskOpts) {
   const content = opts.files?.length
     ? [
         { type: "text", text: user },
@@ -138,6 +143,7 @@ async function askOpenRouter(system: string, user: string, opts: AskOpts) {
             }
           : {}),
         ...openrouterRouting(process.env),
+        ...(opts.onCost ? { usage: { include: true } } : {}),
       }),
     });
   } catch {
@@ -157,6 +163,7 @@ async function askOpenRouter(system: string, user: string, opts: AskOpts) {
     const json = JSON.parse(body) as {
       choices?: { message?: { content?: string } }[];
       error?: { code?: number; message?: string };
+      usage?: { is_byok?: boolean; cost?: number; cost_details?: { upstream_inference_cost?: number } };
     };
     if (json.error)
       throw new ProviderError(
@@ -165,6 +172,8 @@ async function askOpenRouter(system: string, user: string, opts: AskOpts) {
         body,
         "openrouter",
       );
+    const amount = json.usage?.is_byok === true ? json.usage.cost_details?.upstream_inference_cost : json.usage?.is_byok === false ? json.usage.cost : null;
+    await opts.onCost?.(typeof amount === "number" && Number.isFinite(amount) && amount >= 0 ? amount : null, "openrouter");
     return json.choices?.[0]?.message?.content ?? "";
   } catch (e) {
     if (e instanceof ProviderError) throw e;
