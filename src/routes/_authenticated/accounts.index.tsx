@@ -1,3 +1,4 @@
+import { SelectBox, SelectionBar, useSelection } from "@/components/bulk-select";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AccountQuickActions } from "@/components/quick-actions";
 import { CompanyLogo } from "@/components/company-logo";
@@ -116,6 +117,7 @@ function Accounts() {
   }
   const filtered = data.filter((a) => a.name.toLowerCase().includes(q.toLowerCase()));
   const list = byName ? filtered : [...filtered].sort(byScore((a) => scores.get(a.id)!));
+  const pick = useSelection(list.map((a) => a.id));
   return (
     <Page
       eyebrow="Cuentas"
