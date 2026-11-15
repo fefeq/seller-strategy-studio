@@ -28,11 +28,12 @@ export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onCh
                 <Button
                   key={c.value}
                   type="button"
+                  variant="outline"
                   role="radio"
                   aria-checked={!!c.selected}
                   disabled={busy}
                   onClick={() => onChip?.(c.value)}
-                  className={`min-h-11 rounded-full border px-4 ${c.selected ? "border-primary bg-primary text-primary-foreground" : "bg-card hover:border-signal"}`}
+                  className={`min-h-11 rounded-full px-4 ${c.selected ? "border-primary bg-primary text-primary-foreground" : "hover:border-signal"}`}
                 >
                   {c.label}
                 </Button>

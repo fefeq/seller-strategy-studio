@@ -75,12 +75,6 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         ?.auto_enrich !== false;
 
     for (const a of accountsToResearch(accs ?? [], now)) {
-      // Marked first: one proposal per new account, never repeated every hour.
-      await db
-        .from("accounts")
-        .update({ auto_researched_at: now.toISOString() })
-        .eq("org_id", orgId)
-        .eq("id", a.id);
       const acc = (accs ?? []).find((x) => x.id === a.id);
       if (!acc) continue;
       // Spending is never automatic: each paid step becomes a pending action with its estimated cost,
@@ -88,29 +82,23 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       const proposals = autopilotSpendProposals(acc, autoEnrich);
       const owner = acc.owner_id ?? actor;
       const lines: string[] = [];
+      let executed = 0;
       for (const pr of proposals) {
-        const line = await spendEstimateLine(db, orgId, pr.tool);
-        const summary = withEstimate(`Piloto automático · ${pr.label} «${acc.name}»`, pr.tool, line);
-        let error: unknown = null;
         try {
-          ({ error } = await db.from("agent_pending_actions").insert({
-          org_id: orgId,
-          user_id: owner,
-          tool: pr.tool,
-          args: { account_id: a.id },
-          summary: summary.slice(0, 500),
-          source: "autopilot",
-          }));
+          const state = await gated(pr.tool, { account_id: a.id }, `new-account:${a.id}:${pr.tool}`, owner, `${pr.label} «${acc.name}»`);
+          if (state === "executed") executed++;
+          lines.push(`${pr.label}: ${state === "executed" ? "ejecutado" : "pendiente"}.`);
         } catch (e) {
-          error = e;
-        }
-        if (error) {
-          const e = error;
           console.error("autopilot proposal", safeErrorLog(e));
           // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
           if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(e)}`);
         }
-        else lines.push(`${pr.label}: ${line}.`);
+      }
+      if (executed === proposals.length && executed > 0) {
+        const marked = await db.from("accounts").update({ auto_researched_at: now.toISOString() }).eq("org_id", orgId).eq("id", a.id);
+        if (marked.error) throw marked.error;
+        out.researched++;
+        continue;
       }
       if (!lines.length) continue;
       await db.from("suggestions").upsert(
@@ -120,13 +108,12 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
           dedupe_key: `account_researched:${a.id}`,
           priority: 3,
           title: `Cuenta nueva ${acc.name}: investigación pendiente de tu confirmación`.slice(0, 200),
-          body: `No he gastado nada. Confírmalo en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
+          body: `Confirma las acciones pendientes en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
           link: `/accounts/${a.id}`,
           user_id: acc.owner_id,
         },
         { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
       );
-      out.researched++;
     }
   } catch (e) {
     out.notes.push(`Investigación: ${(e as Error).message}`);
