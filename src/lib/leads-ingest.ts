@@ -21,6 +21,13 @@ export function closedAtFor(
   const nowIso = now.toISOString();
   return given && !(stage === "won" && given > nowIso) ? given : nowIso;
 }
+/** The close day stored next to it: the given one, or today for a won deal whose day is still to come. */
+export function closeDayFor(stage: string, closeDate: string | null, now = new Date()) {
+  if (!closeDate) return closeDate;
+  return stage === "won" && `${closeDate}T12:00:00Z` > now.toISOString()
+    ? now.toISOString().slice(0, 10)
+    : closeDate;
+}
 
 export type IngestCtx = {
   orgId: string;
@@ -330,6 +337,8 @@ export async function ingestLead(
       null;
   }
   const closedAt = closedAtFor(stage, closed(stage), lead.closeDate ?? null);
+  // The close day follows the close moment: a won deal capped to now is not left with a day still to come.
+  const closeDay = closeDayFor(stage, lead.closeDate ?? null);
   const stageLabel = lead.stageGiven && known ? stageName(stage) : "sin cambio de etapa";
   let status: IngestResult["status"] = "updated";
 
@@ -341,7 +350,7 @@ export async function ingestLead(
       if (closedAt && !closed(deal.stage)) patch.closed_at = closedAt;
     }
     if (lead.amount != null) patch.amount = lead.amount;
-    if (lead.closeDate) patch.close_date = lead.closeDate;
+    if (closeDay) patch.close_date = closeDay;
     if (segmentId) patch.segment_id = segmentId;
     if (lead.externalId) patch.external_id = lead.externalId;
     if (Object.keys(patch).length) {
@@ -358,7 +367,7 @@ export async function ingestLead(
         stage,
         probability: target.probability,
         amount: lead.amount,
-        close_date: lead.closeDate,
+        close_date: closeDay,
         source: lead.source ?? "Entrada de leads",
         external_id: lead.externalId,
         lead_source_id: ctx.sourceId ?? null,

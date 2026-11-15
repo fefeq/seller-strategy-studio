@@ -91,6 +91,7 @@ export function useSetupGuide({ activity = false }: { activity?: boolean } = {})
     queryKey: ["setup-guide-members", orgId],
     enabled: !!orgId && needsMembers && !quiet,
     staleTime: 5 * 60_000,
+    retry: retryWhileOpen(2),
     queryFn: ({ signal }): Promise<GuideMember[]> => {
       assertSessionOpen();
       return loadGuideMembers(supabase, orgId!, signal);
