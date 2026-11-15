@@ -76,3 +76,20 @@ Plan: docs/plan/PLAN-UX-20261115.md (cerrado). Autorización: delegación genera
 - [ ] Decisión sobre el gasto del piloto automático (recomendado antes de publicar).
 - [ ] Prueba manual tuya del onboarding por chat con una web real (gasta lo estimado).
 - Telegram y Drive por empresa pueden publicarse desactivados: se muestran «Sin conectar» / «Por preparar».
+
+## Addenda 2026-11-16 — antes de publicar
+
+**1. Las cuatro pruebas de fuentes y límites (autorizadas en el mensaje #414; cambio en el commit 9e9e4c99).**
+- `src/components/onboarding/sources.test.tsx` · «two files added one after the other are both listed»: antes, 2 archivos en memoria; ahora, 2 archivos subidos a la carpeta privada de la empresa y un documento de Drive que se suma sin reemplazar (3). Motivo: fuentes guardadas + Drive. Cobertura: sube.
+- Mismo archivo · «adding the same file again does not list it twice»: antes, sin duplicado en la lista; ahora, además, no se vuelve a subir, aviso exacto «Ya estaba en la lista…», mismo ID de Drive ignorado y distinto ID con el mismo nombre admitido. Cobertura: sube.
+- Mismo archivo · «past the limit it keeps what was listed…»: antes, tope 3; ahora, tope 20, nombra lo excluido y comprueba que lo excluido no se sube. Cobertura: sube.
+- `src/components/onboarding/sources-limit.test.tsx` · «one selection past the limit»: antes, 3 + 2 y texto antiguo; ahora, 20 + 2, texto exacto nuevo y solo 20 subidas. Cobertura: sube.
+- Ninguna bajó cobertura; no se ha restaurado nada. Revisión: hecha por mí con el diff; **no hubo revisor independiente disponible en esta sesión**.
+
+**2. Piloto automático.** Ya no gasta solo: por cada cuenta nueva deja «Completar datos» e «Investigar en la web» como acciones pendientes (Hoy → Del agente) con el coste aproximado de su historial («sin dato» si no lo hay). Solo se ejecutan al confirmar. Sin permiso permanente por empresa. Prueba: `src/lib/autopilot-spend.test.ts` (incluye guarda de código: el piloto no llama a ningún servicio de pago). Sigue preparando reuniones y repasando cuentas frías con IA (coste de IA medido, no de proveedores): decisión pendiente si eso también debe pasar por confirmación.
+
+**3. E2 real.** Las respuestas del agente muestran botones: «Siguiente paso» (envía ese paso), «Abrir <pantalla>» (enlaces internos) y, en Telegram, «Confirmar / Descartar» para cada acción pendiente. En la app la confirmación sigue en la tarjeta de la acción (mismos textos). Prueba: `src/lib/conversation-reply.test.ts`. Sin probar con una respuesta real del modelo (gasto) ni con Telegram (sin token).
+
+**4. Hueco de Inicio.** La pila de tarjetas toma el alto de la tarjeta superior. Verificado en navegador 1280/390, claro/oscuro, sin scroll lateral.
+
+**Estado:** 4.896/4.896 pruebas, tipos limpios, compilación para publicar correcta. Prueba protegida NK-0162 intacta (se conserva el texto seguro de error). No publicado.
