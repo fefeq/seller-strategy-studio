@@ -103,6 +103,8 @@ export async function researchAccountCore(
   db: Db,
   accountId: string,
   scope: AiScope = null,
+  /** Only for callers not wrapped by trackedRun (the agent tool): logs the web search on the ledger. */
+  logSpend = false,
 ): Promise<AccountResearch> {
   const { data: acc } = await inOrg(
     db.from("accounts").select("id,name,domain").eq("id", accountId),
@@ -221,6 +223,7 @@ export async function refreshSignalsCore(
   db: Db,
   accountId: string,
   scope: AiScope = null,
+  trigger: "manual" | "automatic" = scope?.userId ? "manual" : "automatic",
 ): Promise<{ checked: number; added: SignalRow[] }> {
   const { data: acc } = await inOrg(
     db.from("accounts").select("id,org_id,name,domain,linkedin_url").eq("id", accountId),
@@ -237,6 +240,10 @@ export async function refreshSignalsCore(
       { query: `"${name}"`, limit: 10, sources: ["news"], tbs: "qdr:m" },
       { queries: signalQueries(name), maxResults: 5, recency: "month" },
       18,
+      { db, orgId: acc.org_id, userId: scope?.userId || null, tool: "refresh_account_signals", trigger },
+      logSpend && scope
+        ? { db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }
+        : undefined,
     ),
     linkedinSignalItems(db, acc).catch((e) => {
       console.error("LinkedIn signals failed", safeErrorLog(e));
