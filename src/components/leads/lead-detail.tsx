@@ -80,7 +80,7 @@ export function LeadDetail({ lead, data, score, canDelete, onClose }: { lead: Le
   return (
     <div className="space-y-5">
       <SheetHeader>
-        <p className="eyebrow pr-10">{leadStageLabel(lead.stage)} · {Math.floor(delay.daysInStage)} días en la etapa</p>
+        <p className="eyebrow pr-10">{leadStageLabel(lead.stage)} · {Math.floor(delay.daysInStage)} {Math.floor(delay.daysInStage) === 1 ? "día" : "días"} en la etapa</p>
         <SheetTitle className="break-words pr-10 text-3xl">{lead.company}</SheetTitle>
       </SheetHeader>
       {delay.late && <p className="rounded-md bg-signal/10 p-3 text-sm text-signal">Con retraso: {delayText(delay)}.</p>}
