@@ -1,7 +1,6 @@
 // Server-only half of the background jobs launched from the screens (background.functions.ts imports it inside its
 // handlers): who may launch a job, the company checks, creating the row and handing it to Inngest. It lives apart so the
 // client bundle, which imports the server functions, never pulls getRequest or the admin client (NK-0095 build fix).
-import { getRequest } from "@tanstack/react-start/server";
 import type { userCtx } from "@/lib/agent.functions";
 import type { JobArgs } from "@/lib/background.functions";
 import { EV, JOB_LABEL } from "@/lib/inngest/events";
@@ -97,8 +96,10 @@ function targetOf(data: JobArgs): { target_type?: string; target_id?: string } {
   return {};
 }
 
-function onPublishedSite() {
+async function onPublishedSite() {
   try {
+    // Loaded lazily: the agent registry (also in the client graph) imports this module dynamically (E3 build fix).
+    const { getRequest } = await import("@tanstack/react-start/server");
     return /(^|\.)nokko\.ai$|^seller-strategy-studio\.lovable\.app$/.test(
       new URL(getRequest().url).hostname,
     );
@@ -131,7 +132,7 @@ export async function enqueue(ctx: Ctx, data: JobArgs, retryOf: string | null = 
   }
   const { inngestReady, sendEvents } = await import("@/lib/inngest/send.server");
   // Inngest calls the published site, so only the published site hands work to it; the preview runs its own code.
-  const ready = onPublishedSite() && (await inngestReady(supabaseAdmin));
+  const ready = (await onPublishedSite()) && (await inngestReady(supabaseAdmin));
   const { data: job, error } = await ctx.db
     .from("background_jobs")
     .insert({
