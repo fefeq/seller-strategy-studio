@@ -1,5 +1,15 @@
 # Informe final de F1–F11 — 13-11-2026
 
+## Piloto y chat — revisión 15-11-2026
+- Umbral por acción en ajustes existentes, cero por defecto; Owner/Sales Leader, modificación confirmada. Por encima o sin dato: pendiente, nunca ejecución ni marca de terminado. Cuentas, reuniones y revisión semanal comparten confirmación.
+- Recibos IA medidos OpenRouter en USD, otros desconocidos. Registro fallido después de respuesta no dispara fallback. Reserva lógica durable evita duplicación de reuniones/cuentas-semana entre acciones distintas; semana canónica calculada en servidor. Fallos de lecturas de actividad abortan la detección de cuentas frías.
+- Chat: panel de pendientes y umbral, chips Confirmar/Descartar, resultados visibles y consulta local sin IA. Botones corregidos tras captura con contraste defectuoso.
+- Nuevas pruebas: umbrales, permisos PostgreSQL, acción única, reserva lógica, coste fallido sin fallback, orquestación sin marcas de ejecución. Ninguna prueba protegida modificada. Revisor independiente comparó las cuatro pruebas históricas: ninguna cobertura global reducida; gap explícito de overflow mixto archivos+Drive.
+- Navegador autenticado 1280/375, claro/oscuro: sin overflow; una confirmada, otra descartada; una tarea y cero registros de gasto. Datos sintéticos eliminados, empresa original restaurada; cero errores de página. Sin llamadas reales de IA/proveedores ni envíos. Telegram excluido por documento de contexto.
+- Migración de umbral aplicada; prefijo repetido corregido a 0107 cambiando solamente archivo/tag, sin reaplicar SQL ni modificar idx/when/snapshots. Catálogo MCP regenerado.
+- Dos revisiones independientes identificaron fallos de duplicación, confirmación, resultados y detección incompleta; corregidos. Suite completa previa 4.917/4.917; prueba adicional de reserva lógica pasa, nueva suite completa pendiente de cierre. Compilación automática/tipos OK. No publicado.
+- Límite: no se verificó IA real ni comparación de calidad/coste; las reservas de gasto incierto no se liberan automáticamente. La preparación de reunión puede reservar antes de lecturas internas de su núcleo; un fallo allí requiere revisión manual, no repetición automática.
+
 **Estado:** F1–F11 cerrado en el alcance autorizado. NK-0176 implementado y verificado en la entrega de abajo. Autorización general de Fede recibida el 13-11-2026 a las 14:08 UTC para continuar toda la cola sin aprobación SDD a SDD, conservando las paradas obligatorias. Este informe sustituye los balances parciales y bloqueos anteriores, no declara una certificación de producción.
 
 ## 1. Fusión comprobada

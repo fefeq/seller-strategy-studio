@@ -176,7 +176,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         .limit(5000),
       db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     ]);
-    const { data: st } = await db.from("deal_stages").select("key,kind").eq("org_id", orgId);
+    const { data: st, error: stageError } = await db.from("deal_stages").select("key,kind").eq("org_id", orgId);
+    if (stageError) throw stageError;
     for (const read of [accs, touches, calls, meetings, deals, sla]) {
       if (read.error) throw read.error;
     }
