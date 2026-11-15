@@ -1,7 +1,8 @@
 // @vitest-environment node
-// NK-0149 gate rework: autopilotForOrg and discoverForOrg collect notes from (e as Error).message plus a meeting
-// title or an ICP name, and used to log the whole array. The notes are still returned as before, but no console.*
-// argument may carry the error text or the customer-written text, only counts. Fictional witnesses.
+// NK-0149 gate rework: autopilotForOrg and discoverForOrg collect notes about what failed plus a meeting title or an
+// ICP name, and used to log the whole array. No console.* argument may carry the error text or the customer-written
+// text, only counts. Since NK-0185 the notes themselves carry the translated text (errorText), never the raw error.
+// Fictional witnesses.
 import { inspect } from "node:util";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -56,10 +57,13 @@ const serialized = () =>
   inspect(logs, { depth: 8, maxStringLength: Infinity, maxArrayLength: null });
 
 describe("notes never carry error text or customer text into console.* (NK-0149 gate rework)", () => {
-  it("autopilotForOrg: an error thrown while reading is returned in the notes, not logged", async () => {
+  it("autopilotForOrg: an error thrown while reading becomes a translated note, and is not logged", async () => {
     const out = await autopilotForOrg(fakeDb(["accounts", "meetings", "account_touches"]), "org-1");
     expect(out.notes.length).toBeGreaterThan(0);
-    expect(out.notes.join(" ")).toContain(WITNESS_ERROR);
+    // NK-0185 (Fede, 2026-11-15): the notes reach the body of a job a person reads, so they say which part failed in Spanish and never the raw error text.
+    expect(out.notes.join(" ")).not.toContain(WITNESS_ERROR);
+    expect(out.notes.join(" ")).toMatch(/Investigación: |Reuniones: |Cuentas que se enfrían: /);
+    for (const n of out.notes) expect(n.split(": ")[1]?.length ?? 0).toBeGreaterThan(10);
     expect(logs.some((a) => a[0] === "autopilot notes")).toBe(true);
     expect(serialized()).not.toContain(WITNESS_ERROR);
   });
@@ -92,11 +96,13 @@ describe("notes never carry error text or customer text into console.* (NK-0149 
     expect(call?.[2]).toEqual({ count: out.notes.length });
   });
 
-  it("discoverForOrg: an error thrown while searching is returned in the notes, not logged", async () => {
+  it("discoverForOrg: an error thrown while searching becomes a translated note, and is not logged", async () => {
     const out = await discoverForOrg(fakeDb(["icp_profiles", "positioning"]), "org-1", new Date(), {
       force: true,
     });
-    expect(out.notes.join(" ")).toContain(WITNESS_ERROR);
+    expect(out.notes.length).toBeGreaterThan(0);
+    expect(out.notes.join(" ")).not.toContain(WITNESS_ERROR);
+    expect(out.notes.join(" ")).toMatch(/Empresas y contactos: |Competidores: /);
     const call = logs.find((a) => a[0] === "discoveries notes");
     expect(call?.[2]).toEqual({ count: out.notes.length });
     expect(serialized()).not.toContain(WITNESS_ERROR);

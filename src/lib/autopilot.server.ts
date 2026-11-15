@@ -161,7 +161,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       );
     }
   } catch (e) {
-    out.notes.push(`Investigación: ${(e as Error).message}`);
+    out.notes.push(`Investigación: ${errorText(e)}`);
   }
 
   // 2 · Meetings of the next 36 hours without call prep: prepared the day before.
@@ -190,7 +190,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       }
     }
   } catch (e) {
-    out.notes.push(`Reuniones: ${(e as Error).message}`);
+    out.notes.push(`Reuniones: ${errorText(e)}`);
   }
 
   // 3 · Accounts that matter and went quiet: one review per account and week, with a proposed next move.
@@ -279,7 +279,7 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       if (state === "executed") out.cooling++;
     }
   } catch (e) {
-    out.notes.push(`Cuentas que se enfrían: ${(e as Error).message}`);
+    out.notes.push(`Cuentas que se enfrían: ${errorText(e)}`);
   }
 
   if (out.notes.length) console.warn("autopilot notes", orgId, { count: out.notes.length });
