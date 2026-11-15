@@ -49,6 +49,7 @@ import { Route as AuthenticatedOnboardingCompletarRouteImport } from './routes/_
 import { Route as ApiPublicAccountsRouteImport } from './routes/api/public/accounts'
 import { Route as ApiPublicInngestRouteImport } from './routes/api/public/inngest'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
+import { Route as ApiOauthGoogleDriveReturnRouteImport } from './routes/api/oauth/google-drive/return'
 import { Route as ApiPublicApolloPhoneWebhookRouteImport } from './routes/api/public/apollo/phone-webhook'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -259,6 +260,12 @@ const ApiPublicLeadsRoute = ApiPublicLeadsRouteImport.update({
   path: '/api/public/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthGoogleDriveReturnRoute =
+  ApiOauthGoogleDriveReturnRouteImport.update({
+    id: '/api/oauth/google-drive/return',
+    path: '/api/oauth/google-drive/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicApolloPhoneWebhookRoute =
   ApiPublicApolloPhoneWebhookRouteImport.update({
     id: '/api/public/apollo/phone-webhook',
@@ -317,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -361,6 +369,7 @@ export interface FileRoutesByTo {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -407,6 +416,7 @@ export interface FileRoutesById {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts/'
     | '/leads/'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts'
     | '/leads'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -542,6 +554,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/_authenticated/accounts/'
     | '/_authenticated/leads/'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -558,6 +571,7 @@ export interface RootRouteChildren {
   ApiPublicAccountsRoute: typeof ApiPublicAccountsRoute
   ApiPublicInngestRoute: typeof ApiPublicInngestRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
+  ApiOauthGoogleDriveReturnRoute: typeof ApiOauthGoogleDriveReturnRoute
   ApiPublicApolloPhoneWebhookRoute: typeof ApiPublicApolloPhoneWebhookRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -845,6 +859,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/google-drive/return': {
+      id: '/api/oauth/google-drive/return'
+      path: '/api/oauth/google-drive/return'
+      fullPath: '/api/oauth/google-drive/return'
+      preLoaderRoute: typeof ApiOauthGoogleDriveReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/apollo/phone-webhook': {
       id: '/api/public/apollo/phone-webhook'
       path: '/api/public/apollo/phone-webhook'
@@ -950,6 +971,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAccountsRoute: ApiPublicAccountsRoute,
   ApiPublicInngestRoute: ApiPublicInngestRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
+  ApiOauthGoogleDriveReturnRoute: ApiOauthGoogleDriveReturnRoute,
   ApiPublicApolloPhoneWebhookRoute: ApiPublicApolloPhoneWebhookRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,
