@@ -18,11 +18,61 @@ import {
 import { AiText } from "@/components/ai-text";
 import { errorText } from "@/lib/errors";
 import { ageText } from "@/lib/web-research";
-import { accountJobs, battlecardFromReviews } from "@/lib/apify.functions";
+import { accountJobs, battlecardFromReviews, stakeholderRole } from "@/lib/apify.functions";
 import { useLinkedinLegalPause } from "@/hooks/use-linkedin-legal";
 import { LINKEDIN_PAUSE_TEXT } from "@/lib/linkedin-legal";
 
 type Jobs = Awaited<ReturnType<typeof accountJobs>>;
+type Role = Awaited<ReturnType<typeof stakeholderRole>>;
+
+/** A+: checks on LinkedIn whether the person changed role or company. Spends Apify after confirmation; never writes by itself. */
+export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakeholderId: string; hasLinkedin: boolean; onUseTitle: (title: string) => void }) {
+  const run = useServerFn(stakeholderRole);
+  const { paused } = useLinkedinLegalPause();
+  const [busy, setBusy] = useState(false);
+  const [r, setR] = useState<Role | null>(null);
+  async function go() {
+    setBusy(true);
+    try {
+      if (!(await confirmSpend("linkedin_role_check", "Comprobar su cargo en LinkedIn", "Apify"))) return;
+      setR(await run({ data: { stakeholderId } }));
+    } catch (e) {
+      toast.error(errorText(e));
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (paused) return <p className="text-sm text-muted-foreground">Cargo en LinkedIn: en pausa. {LINKEDIN_PAUSE_TEXT}.</p>;
+  return (
+    <div className="space-y-2 rounded-md border p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="eyebrow">Cargo en LinkedIn</p>
+        <Button size="sm" variant="outline" onClick={go} disabled={busy || !hasLinkedin}>
+          {busy ? "Comprobando…" : "Comprobar cargo"}
+        </Button>
+      </div>
+      {!hasLinkedin && <p className="text-sm text-muted-foreground">Añade su LinkedIn para comprobarlo.</p>}
+      {r && !r.change && <p className="text-sm text-muted-foreground">LinkedIn no muestra un cargo actual: sin dato.</p>}
+      {r?.change && (
+        <div className="space-y-2 text-sm">
+          <p className={r.change.changed ? "font-medium" : "text-muted-foreground"}>
+            {r.change.changed
+              ? r.change.companyChanged
+                ? `Ha cambiado de empresa: ahora ${r.change.now.title || "—"} en ${r.change.now.company}.`
+                : `Ha cambiado de cargo: ahora ${r.change.now.title}.`
+              : `Sin cambios: ${r.change.now.title}${r.change.now.company ? ` en ${r.change.now.company}` : ""}.`}
+            {r.change.now.since ? ` Desde ${r.change.now.since}.` : ""}
+          </p>
+          {r.change.changed && r.change.now.title && (
+            <Button size="sm" variant="outline" onClick={() => onUseTitle(r.change!.now.title)}>
+              Usar el cargo nuevo (luego Guardar)
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /** All open job offers of the account on LinkedIn (last 30 days), on request: each look spends Apify balance. */
 export function AccountJobs({ accountId }: { accountId: string }) {

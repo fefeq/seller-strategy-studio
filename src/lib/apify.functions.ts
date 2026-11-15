@@ -20,6 +20,16 @@ export const battlecardFromReviews = createServerFn({ method: "POST" })
     return battlecardCore(db, data.competitor, data.max, s);
   });
 
+/** A+: current LinkedIn role of a stakeholder vs the record (read only; the screen offers to copy the new title). */
+export const stakeholderRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => z.object({ stakeholderId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { db, s } = await scope(context);
+    const { stakeholderRoleCore } = await import("@/lib/apify-core");
+    return stakeholderRoleCore(db, data.stakeholderId, s);
+  });
+
 export const accountJobs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ accountId: z.string().uuid() }).parse(d))

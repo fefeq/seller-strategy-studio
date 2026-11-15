@@ -20,6 +20,7 @@ import { BUYING_ROLES, SUPPORT } from "@/lib/roles";
 import { errorText } from "@/lib/errors";
 import { KeyPeopleButton } from "@/components/orchestrator";
 import { ApolloReveal } from "@/components/apollo";
+import { RoleCheck } from "@/components/linkedin";
 import { askConfirm } from "@/components/confirm-dialog";
 import type { Tables } from "@/integrations/supabase/types";
 import { EmailVerificationMark, useEmailVerifications } from "@/components/email-verification";
@@ -213,6 +214,11 @@ export function StakeholdersTab({
               />
             </Field>
           </div>
+          <RoleCheck
+            stakeholderId={sel.id}
+            hasLinkedin={!!sel.linkedin_url?.trim()}
+            onUseTitle={(title) => setSel((cur) => (cur && cur.id === sel.id ? { ...cur, title } : cur))}
+          />
           <ApolloReveal
             stakeholderId={sel.id}
             hasEmail={!!sel.email?.trim()}
