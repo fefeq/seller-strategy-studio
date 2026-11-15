@@ -96,6 +96,8 @@ describe("reveal spend logging (CA-5)", () => {
     expect(rows[0]).toMatchObject({ service: "apollo", need: "find_email", cost: 0.04, trigger: "manual", org_id: ORG });
   });
   it("revealStakeholder logs find_phone when the mobile is asked", async () => {
+    // A phone reveal needs the webhook secret to build its callback address; a synthetic one keeps the test independent of the host.
+    vi.stubEnv("APOLLO_WEBHOOK_SECRET", "synthetic");
     stubApollo([MATCH]);
     const { db, log } = fakeDb((q) => {
       if (q.table === "stakeholders" && q.op === "select")
