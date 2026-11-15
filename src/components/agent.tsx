@@ -17,6 +17,7 @@ import { GuideOffer } from "@/components/setup/guide";
 import { SETUP_ITEMS } from "@/lib/setup-schema";
 import { AutonomyPicker, useAutonomy } from "@/components/autonomy-picker";
 import { AUTONOMY } from "@/lib/autonomy";
+import { DictateButton, SpeakButton } from "@/components/voice-controls";
 
 /** E1: the level is always visible in the agent and can be changed there. */
 function AgentLevel() {
@@ -240,6 +241,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                   ? <div className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-sm bg-primary px-4 py-2 text-sm text-primary-foreground">{m.content}</div>
                   : <div className="space-y-2 text-sm leading-relaxed">
                       <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{m.content}</ReactMarkdown>
+                      <SpeakButton text={m.content} />
                       {m.actions?.map((a) => (
                         <div key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border bg-card p-3">
                           <span className="min-w-0 break-words text-sm">{a.summary}</span>
@@ -260,6 +262,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
           <form className="flex items-end gap-2 border-t p-4" onSubmit={(e) => { e.preventDefault(); submit(text, mode, convId); }}>
             <Textarea value={text} onChange={(e) => setText(e.target.value)} rows={2} placeholder={mode === "interview" ? "Responde o di «sí» para aceptar la propuesta…" : "Pregunta o pide una acción…"} className="min-h-[44px] resize-none"
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(text, mode, convId); } }} />
+            <DictateButton disabled={busy} onText={(t) => setText((x) => (x.trim() ? `${x.trim()} ${t}` : t))} />
             <Button type="submit" size="icon" disabled={busy || !text.trim()} aria-label="Enviar">→</Button>
           </form>
         </SheetContent>
