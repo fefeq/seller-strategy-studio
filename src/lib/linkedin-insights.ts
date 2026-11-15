@@ -59,3 +59,32 @@ export function engagement(posts: Pick<Post, "url" | "likes" | "repost">[]): Eng
   const best = measured.reduce((a, b) => (b.likes > a.likes ? b : a));
   return { posts: own.length, avgLikes: Math.round(total / measured.length), top: { url: best.url, likes: best.likes } };
 }
+
+// ---- Cambios de cargo (A+) ----
+export type CurrentRole = { title: string; company: string; since: string | null };
+
+const blank = (v: unknown) => String(v ?? "").replace(/\s+/g, " ").trim();
+const plain = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Current role from a LinkedIn profile scrape (harvestapi~linkedin-profile-scraper): the first experience with no end date. */
+export function currentRole(raw: unknown): CurrentRole | null {
+  const p = (Array.isArray(raw) ? raw[0] : raw) as Record<string, any> | undefined;
+  if (!p || typeof p !== "object") return null;
+  const exp = (Array.isArray(p.experience) ? p.experience : []) as Record<string, any>[];
+  const open = exp.find((e) => !e?.endDate || /present|actualidad|hoy/i.test(blank(e?.endDate?.text ?? e?.endDate)));
+  const title = blank(open?.position ?? open?.title);
+  const company = blank(open?.companyName ?? p.currentPosition?.[0]?.companyName);
+  if (!title && !company) return null;
+  return { title, company, since: blank(open?.startDate?.text ?? open?.startDate) || null };
+}
+
+export type RoleChange = { changed: boolean; companyChanged: boolean; before: { title: string; company: string }; now: CurrentRole } | null;
+
+/** Compare what NOKKO stores with LinkedIn; null when LinkedIn gave no current role (unknown, never «sin cambios»). */
+export function roleChange(stored: { title: string | null; company: string | null }, now: CurrentRole | null): RoleChange {
+  if (!now) return null;
+  const before = { title: blank(stored.title), company: blank(stored.company) };
+  const companyChanged = !!before.company && !!now.company && !plain(now.company).includes(plain(before.company)) && !plain(before.company).includes(plain(now.company));
+  const titleChanged = !!before.title && !!now.title && plain(before.title) !== plain(now.title);
+  return { changed: companyChanged || titleChanged, companyChanged, before, now };
+}
