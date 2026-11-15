@@ -1,9 +1,9 @@
 // Server-only half of the background jobs launched from the screens (background.functions.ts imports it inside its
 // handlers): who may launch a job, the company checks, creating the row and handing it to Inngest. It lives apart so the
 // client bundle, which imports the server functions, never pulls getRequest or the admin client (NK-0095 build fix).
-import { getRequest } from "@tanstack/react-start/server";
 import type { userCtx } from "@/lib/agent.functions";
 import type { JobArgs } from "@/lib/background.functions";
+import { getRequest } from "@tanstack/react-start/server";
 import { EV, JOB_LABEL } from "@/lib/inngest/events";
 
 /** Company-wide tasks: one at a time per company, and only leadership may launch them. */

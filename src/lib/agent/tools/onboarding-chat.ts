@@ -8,6 +8,7 @@ import { BLOCKS, BLOCK_LABEL, blockOf, protectManual, readingCost, type BlockId 
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 import { loadSetupData } from "@/lib/org-data";
 import { jsonObject } from "@/lib/json";
+import { undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import type { Json } from "@/integrations/supabase/types";
 
 const BLOCK_IDS = BLOCKS.map((b) => b.id) as [BlockId, ...BlockId[]];
@@ -51,14 +52,24 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       return `Leer ${a.url} (${a.depth}) para preparar la estrategia por bloques · coste estimado ${cost ? `≈ ${cost} USD en fuentes de pago` : "sin dato"}`;
     },
     run: async (c, a) => {
-      const { enqueue } = await import("@/lib/background-jobs.server");
+      // Same job row the Fuentes step creates. The screens' enqueue() reads the request host (server-only import that the
+      // client graph of this registry cannot carry), so the chat path runs the job in this request, as enqueue does without Inngest.
       const input = { depth: a.depth, url: a.url, text: a.text ?? "", files: [], sources: [] };
-      const { jobId } = await enqueue({ ...c, orgName: "" }, { kind: "onboarding_read", input, label: "Nokko lee tus fuentes" });
+      const { data: job, error: jobErr } = await c.db.from("background_jobs")
+        .insert({ kind: "onboarding_read", input: input as unknown as Json, label: "Nokko lee tus fuentes", org_id: c.orgId, user_id: c.userId })
+        .select("id").single();
+      if (jobErr) throw new Error(jobErr.message);
+      const jobId = job.id;
       const { error } = await c.db.from("onboarding_sessions").upsert(
         { org_id: c.orgId, user_id: c.userId, depth: a.depth, step: "reading", read_job_id: jobId, sources: [`Web · ${a.url}`] as unknown as Json },
         { onConflict: "org_id,user_id" },
       );
       if (error) throw new Error(error.message);
+      const [{ supabaseAdmin }, { runBackgroundJob }] = await Promise.all([
+        import("@/integrations/supabase/client.server"),
+        import("@/lib/inngest/tasks.server"),
+      ]);
+      await runBackgroundJob(supabaseAdmin, jobId).catch(() => undefined);
       return { jobId, mensaje: "Estoy leyendo tus fuentes. Te aviso al terminar; después repasamos los bloques uno a uno (también puedes verlo en /onboarding)." };
     },
   }),
@@ -100,12 +111,13 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       const { executeTool } = await import("../tools");
       const { SPEND_TOOLS } = await import("../spend-confirm");
       let saved = 0;
+      const undo: UndoRef[] = [];
       const errors: string[] = [];
       for (const it of chosen) {
         if (it.tool in SPEND_TOOLS) { errors.push(`${it.label}: gasta saldo`); continue; }
-        try { await executeTool(c, it.tool, it.args); saved++; } catch (e) { errors.push(`${it.label}: ${(e as Error).message}`); }
+        try { const r = await executeTool(c, it.tool, it.args); saved++; const u = undoRefFor(it.tool, it.args, r); if (u) undo.push(u); } catch (e) { errors.push(`${it.label}: ${(e as Error).message}`); }
       }
-      const next = { ...status, [a.block]: { status: "approved", at: new Date().toISOString(), undo: [] } };
+      const next = { ...status, [a.block]: { status: "approved", at: new Date().toISOString(), undo } };
       const { error } = await c.db.from("onboarding_sessions").update({ block_status: next as unknown as Json })
         .eq("org_id", c.orgId).eq("user_id", c.userId);
       if (error) throw new Error(error.message);

@@ -77,7 +77,7 @@ export function leadDelay(lead: Pick<LeadRow, "stage" | "stage_entered_at" | "ne
 
 export function delayText(d: LeadDelay) {
   const parts: string[] = [];
-  if (d.reasons.includes("stalled")) parts.push(`${Math.floor(d.daysInStage)} días en la etapa (máx. ${d.limit})`);
+  if (d.reasons.includes("stalled")) parts.push(`${Math.floor(d.daysInStage)} ${Math.floor(d.daysInStage) === 1 ? "día" : "días"} en la etapa (máx. ${d.limit})`);
   if (d.reasons.includes("followup")) parts.push(`seguimiento vencido hace ${d.followupOverdueDays} ${d.followupOverdueDays === 1 ? "día" : "días"}`);
   return parts.join(" · ");
 }
