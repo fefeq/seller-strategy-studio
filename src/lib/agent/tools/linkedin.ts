@@ -26,7 +26,7 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { accountPostsCore } = await import("@/lib/apify-core");
       const r = await accountPostsCore(c.db, a.account_id, scope(c));
-      return { linkedin: r.linkedin, publicaciones: r.posts.map(post) };
+      return { linkedin: r.linkedin, publicaciones: r.posts.map(post), engagement: r.engagement };
     },
   }),
   def({
