@@ -691,9 +691,20 @@ function DealDetail({
             <option value="cliente">Cliente</option>
           </NativeSelect>
           <Button disabled={!newItem} onClick={addItem}>
-            +
+            Añadir hito
           </Button>
         </div>
+      </div>
+        </TabsContent>
+      </Tabs>
+      {/* One save for every tab's deal fields (D2). Stage, product lines and plan milestones save on their own. */}
+      <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 px-6 py-3 backdrop-blur">
+        <span className="text-xs text-muted-foreground" aria-live="polite">
+          {dirty ? "Tienes cambios sin guardar." : "Todo guardado."}
+        </span>
+        <Button onClick={save} disabled={!dirty || saving}>
+          {saving ? "Guardando…" : "Guardar deal"}
+        </Button>
       </div>
     </div>
   );
