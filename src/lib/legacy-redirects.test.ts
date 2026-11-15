@@ -3,7 +3,7 @@ import { hubRedirect, setupRedirect } from "./legacy-redirects";
 
 describe("B1 /setup", () => {
   it("goes to Onboarding › Completar", () => {
-    expect(setupRedirect()).toEqual({ to: "/onboarding", search: { vista: "completar" } });
+    expect(setupRedirect()).toEqual({ to: "/onboarding/completar" });
   });
 });
 describe("B2 old Conocimiento rules/voice", () => {

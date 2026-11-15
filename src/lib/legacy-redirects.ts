@@ -1,12 +1,11 @@
 // B1/B2 (PLAN-UX-20261115): old addresses keep working. Pure, tested.
 // /setup → Configuración inside Onboarding; /hub?seccion=rules|voice → Estrategia › Reglas y voz.
 
-export const SETUP_VIEW = "completar" as const;
 export const RULES_TAB = "rules" as const;
 export const RULES_SECTIONS = ["rules", "voice"] as const;
 
-export function setupRedirect(): { to: "/onboarding"; search: { vista: typeof SETUP_VIEW } } {
-  return { to: "/onboarding", search: { vista: SETUP_VIEW } };
+export function setupRedirect(): { to: "/onboarding/completar" } {
+  return { to: "/onboarding/completar" };
 }
 
 /** Where an old Conocimiento address for rules or voice goes now; null keeps it in Conocimiento. */
