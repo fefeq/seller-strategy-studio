@@ -10,7 +10,9 @@ export type InboxItem = {
   /** 1 urgent · 2 important · 3 when you can. */
   priority: 1 | 2 | 3;
   at: string;
-  href: "/inbox" | "/approvals" | "/team";
+  /** Screen that decides it; a task opens its account, or nothing when it has none. */
+  href: "/inbox" | "/approvals" | null;
+  accountId?: string | null;
 };
 
 export const INBOX_FILTERS: { id: InboxFilter; label: string }[] = [
@@ -23,7 +25,7 @@ export const INBOX_FILTERS: { id: InboxFilter; label: string }[] = [
 
 type Sug = { id: string; title: string; priority?: number | null; created_at: string };
 type Appr = { id: string; title: string; created_at: string };
-type Task = { id: string; title: string; due_date: string | null; created_at: string };
+type Task = { id: string; title: string; due_date: string | null; created_at: string; account_id?: string | null };
 type Act = { id: string; summary: string; created_at: string };
 
 const prio = (n: number | null | undefined): 1 | 2 | 3 => (n === 1 ? 1 : n === 3 ? 3 : 2);
@@ -41,7 +43,7 @@ export function mergeInbox(
   const items: InboxItem[] = [
     ...s.suggestions.map((x) => ({ id: `s:${x.id}`, kind: "sugerencia" as const, title: x.title, priority: prio(x.priority), at: x.created_at, href: "/inbox" as const })),
     ...s.approvals.map((x) => ({ id: `a:${x.id}`, kind: "aprobacion" as const, title: x.title, priority: 1 as const, at: x.created_at, href: "/approvals" as const })),
-    ...s.tasks.map((x) => ({ id: `t:${x.id}`, kind: "tarea" as const, title: x.title, priority: taskPriority(x.due_date, today), at: x.due_date ?? x.created_at, href: "/team" as const })),
+    ...s.tasks.map((x) => ({ id: `t:${x.id}`, kind: "tarea" as const, title: x.title, priority: taskPriority(x.due_date, today), at: x.due_date ?? x.created_at, href: null, accountId: x.account_id ?? null })),
     ...s.actions.map((x) => ({ id: `g:${x.id}`, kind: "agente" as const, title: x.summary, priority: 1 as const, at: x.created_at, href: "/inbox" as const })),
   ];
   return items.sort((a, b) => a.priority - b.priority || a.at.localeCompare(b.at));

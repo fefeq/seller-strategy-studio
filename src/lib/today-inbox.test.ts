@@ -25,7 +25,7 @@ describe("B3 unified inbox", () => {
   it("each kind links to the screen that decides it", () => {
     const m = mergeInbox(src, today);
     expect(m.find((i) => i.kind === "aprobacion")!.href).toBe("/approvals");
-    expect(m.find((i) => i.kind === "tarea")!.href).toBe("/team");
+    expect(m.find((i) => i.kind === "tarea")!.href).toBeNull();
   });
   it("filters and counts", () => {
     const m = mergeInbox(src, today);
