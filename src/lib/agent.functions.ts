@@ -192,16 +192,19 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
       : note
         ? `Hecho: ${act.summary}. ${note}`
         : `Hecho: ${act.summary}`;
-    await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id);
-    if (act.conversation_id)
-      await ctx.db
+    const saved = await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    if (saved.error) return { status: "confirmed", result: `${result}\nNo pude guardar el recibo de la acción. No la repitas; conserva este resultado.` };
+    if (act.conversation_id) {
+      const transcript = await ctx.db
         .from("agent_messages")
         .insert({ conversation_id: act.conversation_id, role: "assistant", content: result.length > 8000 ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)` : result });
+      if (transcript.error) return { status: "confirmed", result: `${result}\nNo pude añadirlo al historial del chat. El resultado queda en la acción.` };
+    }
     return { status: "confirmed", result };
   } catch (e) {
     const result = errorText(e);
-    await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id);
-    return { status: "failed", result };
+    const failed = await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    return { status: "failed", result: failed.error ? `${result}\nNo pude guardar el fallo. No repitas la acción hasta revisar la actividad.` : result };
   }
 }
 
