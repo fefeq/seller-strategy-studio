@@ -17,4 +17,7 @@ describe("B2 old Conocimiento rules/voice", () => {
     expect(hubRedirect({ seccion: "playbooks" })).toBeNull();
     expect(hubRedirect({})).toBeNull();
   });
+  it("a search link stays in Conocimiento (keeps its filter)", () => {
+    expect(hubRedirect({ seccion: "rules", q: "precio" })).toBeNull();
+  });
 });

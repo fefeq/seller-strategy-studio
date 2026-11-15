@@ -129,6 +129,7 @@ export function HubScreen({ only }: { only?: readonly string[] } = {}) {
   // Embedded in Strategy the URL belongs to /strategy (same doc/q/seccion keys), so the read is route-agnostic.
   const { doc: docParam, q: qParam, seccion } = useSearch({ strict: false }) as { doc?: string; q?: string; seccion?: string };
   const navigate = useNavigate({ from: embedded ? "/strategy" : "/hub" }) as unknown as ReturnType<typeof useNavigate<never, "/hub">>;
+  const navigateAny = useNavigate();
   // NK-0100: a stale ?seccion= or a blank ?q= in the address bar is rewritten clean (replace).
   useCleanUrl(sectionIds, true);
   const [section, setSection] = useUrlSection(
@@ -208,6 +209,11 @@ export function HubScreen({ only }: { only?: readonly string[] } = {}) {
   // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
   // The section of that document wins over ?seccion= at that moment and is written back, keeping doc.
   useOpenDocFromUrl(docParam, docs, (d) => {
+    // Embedded (Reglas y voz): a document from another section opens in Conocimiento, never under this tab.
+    if (embedded && !sectionIds.includes(d.section as (typeof HUB_SECTIONS)[number])) {
+      void navigateAny({ to: "/hub", search: { doc: d.id, seccion: d.section }, replace: true });
+      return;
+    }
     setSection(d.section);
     setSelected(d);
     if (d.section !== sectionOf(sectionIds, defaultSection, seccion)) {
