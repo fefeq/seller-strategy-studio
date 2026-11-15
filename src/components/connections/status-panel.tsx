@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { ScreenState } from "@/components/screen-state";
+import { ScreenState } from "@/components/page";
 import { connectionsStatus, testConnection } from "@/lib/connections.functions";
 import { SERVICES, STATE_LABEL, connectionState, type ConnState, type Test } from "@/lib/connections";
 import { errorText } from "@/lib/errors";

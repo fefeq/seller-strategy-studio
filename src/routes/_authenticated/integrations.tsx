@@ -13,6 +13,7 @@ import { confirmed } from "@/lib/save";
 import { StripeConnect } from "@/components/stripe-panel";
 import { PosthogConnect } from "@/components/posthog-panel";
 import { BudgetPanel } from "@/components/orchestrator";
+import { ConnectionsStatusPanel } from "@/components/connections/status-panel";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({
@@ -111,6 +112,13 @@ const WORKING: { name: string; what: string; to: string; hash?: string; pending?
   },
 ];
 
+/** Entry points that are not services with a key (webhooks, CSV, assistants). */
+const ENTRY_POINTS = [
+  "Formularios, Zapier, Make y CRMs por webhook",
+  "CSV de leads y de cuentas",
+  "Claude, ChatGPT y Codex (MCP)",
+];
+
 /** Native connections not built yet. Listed so nobody looks for them in the plan below. */
 const NOT_YET = [
   "HubSpot, Pipedrive, Attio o Salesforce en sincronización nativa (hoy entran por webhook)",
@@ -140,31 +148,19 @@ function Integrations() {
     <Page eyebrow="Stack comercial" title="Conexiones">
       <BudgetPanel />
       <section className="mb-10">
-        <h2 className="text-3xl">Lo que se conecta hoy</h2>
+        <h2 className="text-3xl">Conexiones</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Estas conexiones están hechas en Nokko y mueven datos de verdad. Las marcadas con un paso
-          pendiente están programadas y se activan cuando el equipo de Nokko lo complete.
+          Estado real de cada servicio: incluido en NOKKO, con la cuenta de tu empresa, sin conectar o con error.
+          Las claves nunca se muestran ni las recibe el agente.
         </p>
+        <div className="mt-4">
+          <ConnectionsStatusPanel />
+        </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
-          {WORKING.map((w) => (
-            <Link
-              key={w.name}
-              to={w.to}
-              hash={w.hash}
-              className="block rounded-lg border bg-card p-4 hover:border-signal"
-            >
-              <span className="flex items-start justify-between gap-3">
-                <span className="min-w-0 break-words font-medium">{w.name}</span>
-                <span
-                  className={`shrink-0 rounded px-1.5 font-mono text-xs uppercase ${w.pending ? "bg-warning/25" : "bg-success/15 text-success"}`}
-                >
-                  {w.pending ? "Falta un paso" : "Disponible"}
-                </span>
-              </span>
+          {WORKING.filter((w) => ENTRY_POINTS.includes(w.name)).map((w) => (
+            <Link key={w.name} to={w.to} hash={w.hash} className="block rounded-lg border bg-card p-4 hover:border-signal">
+              <span className="font-medium">{w.name}</span>
               <span className="mt-1 block text-sm text-muted-foreground">{w.what}</span>
-              {w.pending && (
-                <span className="mt-1 block text-xs text-muted-foreground">{w.pending}.</span>
-              )}
             </Link>
           ))}
         </div>
