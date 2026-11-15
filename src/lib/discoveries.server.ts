@@ -2,7 +2,8 @@
 // Per ICP (up to 3): companies that fit (Apollo → Clay, judged by the AI) and contacts with the ICP's titles,
 // first in its target accounts with an empty power map, then in the best companies just found. Competitors: web search + AI reading. Everything goes through the budget (automatic work
 // pauses at 100 %), every find is unique per company, and a dismissed one never returns.
-import { errorText } from "@/lib/errors";
+import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { noteErrorText } from "@/lib/errors";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import {
@@ -231,7 +232,8 @@ export async function discoverForOrg(
               }
             }
           } catch (e) {
-            notes.push(`Empresas de «${icp.name}»: ${errorText(e)}`);
+            console.error("discoveries note", safeErrorLog(e));
+            notes.push(`Empresas de «${icp.name}»: ${noteErrorText(e)}`);
           }
 
         // Contacts for this ICP: who its titles/levels say, in its empty target accounts and then in the companies just found.
@@ -304,11 +306,13 @@ export async function discoverForOrg(
               }
             }
           } catch (e) {
-            notes.push(`Contactos de «${icp.name}»: ${errorText(e)}`);
+            console.error("discoveries note", safeErrorLog(e));
+            notes.push(`Contactos de «${icp.name}»: ${noteErrorText(e)}`);
           }
       }
     } catch (e) {
-      notes.push(`Empresas y contactos: ${errorText(e)}`);
+      console.error("discoveries note", safeErrorLog(e));
+      notes.push(`Empresas y contactos: ${noteErrorText(e)}`);
     }
 
   // 3 · Competitors from the web, read by the AI (only new names).
@@ -355,7 +359,8 @@ export async function discoverForOrg(
         }
       } else notes.push("Competidores: falta la categoría del producto en el posicionamiento.");
     } catch (e) {
-      notes.push(`Competidores: ${errorText(e)}`);
+      console.error("discoveries note", safeErrorLog(e));
+      notes.push(`Competidores: ${noteErrorText(e)}`);
     }
 
   if (rows.length) {

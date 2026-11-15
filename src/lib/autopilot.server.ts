@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { autopilotSpendProposals } from "@/lib/autopilot";
-import { errorText } from "@/lib/errors";
+import { errorText, noteErrorText } from "@/lib/errors";
 import { runAutopilotAction } from "@/lib/autopilot-threshold";
 import { spendEstimateLine, spendEstimate, withEstimate } from "@/lib/agent/spend-confirm";
 import { decidePending } from "@/lib/agent.functions";
@@ -161,7 +161,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       );
     }
   } catch (e) {
-    out.notes.push(`Investigación: ${errorText(e)}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Investigación: ${noteErrorText(e)}`);
   }
 
   // 2 · Meetings of the next 36 hours without call prep: prepared the day before.
@@ -190,7 +191,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       }
     }
   } catch (e) {
-    out.notes.push(`Reuniones: ${errorText(e)}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Reuniones: ${noteErrorText(e)}`);
   }
 
   // 3 · Accounts that matter and went quiet: one review per account and week, with a proposed next move.
@@ -279,7 +281,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       if (state === "executed") out.cooling++;
     }
   } catch (e) {
-    out.notes.push(`Cuentas que se enfrían: ${errorText(e)}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Cuentas que se enfrían: ${noteErrorText(e)}`);
   }
 
   if (out.notes.length) console.warn("autopilot notes", orgId, { count: out.notes.length });

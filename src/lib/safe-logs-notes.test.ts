@@ -20,6 +20,7 @@ vi.mock("@/lib/orchestrator/runner", async (importOriginal) => ({
 }));
 
 import { autopilotForOrg } from "@/lib/autopilot.server";
+import { NOTE_FALLBACK } from "@/lib/errors";
 import { discoverForOrg } from "@/lib/discoveries.server";
 
 type Db = Parameters<typeof autopilotForOrg>[0];
@@ -63,7 +64,7 @@ describe("notes never carry error text or customer text into console.* (NK-0149 
     // NK-0185 (Fede, 2026-11-15): the notes reach the body of a job a person reads, so they say which part failed in Spanish and never the raw error text.
     expect(out.notes.join(" ")).not.toContain(WITNESS_ERROR);
     expect(out.notes.join(" ")).toMatch(/Investigación: |Reuniones: |Cuentas que se enfrían: /);
-    for (const n of out.notes) expect(n.split(": ")[1]?.length ?? 0).toBeGreaterThan(10);
+    for (const n of out.notes) expect(n.split(": ")[1]).toBe(NOTE_FALLBACK);
     expect(logs.some((a) => a[0] === "autopilot notes")).toBe(true);
     expect(serialized()).not.toContain(WITNESS_ERROR);
   });
@@ -114,6 +115,7 @@ describe("notes never carry error text or customer text into console.* (NK-0149 
     });
     const out = await discoverForOrg(db, "org-1", new Date(), { force: true });
     expect(out.notes.join(" ")).toContain(`«${WITNESS_TITLE}»`);
+    expect(out.notes.join(" ")).not.toContain(WITNESS_ERROR);
     expect(logs.some((a) => a[0] === "discoveries notes")).toBe(true);
     expect(serialized()).not.toContain(WITNESS_TITLE);
     expect(serialized()).not.toContain(WITNESS_ERROR);

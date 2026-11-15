@@ -170,3 +170,15 @@ export function errorText(e: unknown, fallback = GENERIC): string {
   if (msg && looksSpanish(msg)) return msg;
   return fallback;
 }
+
+/** For the line of a background job: there is no page to reload and nobody to retry at once. */
+export const NOTE_FALLBACK = "No se pudo completar esta parte. Vuelve a intentarlo más tarde.";
+/**
+ * Text of an error for a note a person reads later (autopilot, discoveries). A message we wrote ourselves, in Spanish,
+ * stays as it is: the status and keyword rules above are for errors of the session and the database, and would turn
+ * «clave de Gemini inválida» (401) into «Tu sesión ha caducado». Anything else never shows its raw text.
+ */
+export function noteErrorText(e: unknown): string {
+  const msg = e instanceof Error ? e.message : typeof e === "string" ? e : "";
+  return msg && looksSpanish(msg) ? msg : errorText(e, NOTE_FALLBACK);
+}
