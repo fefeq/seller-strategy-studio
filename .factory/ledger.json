@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 182,
+  "seq": 183,
   "tickets": [
     {
       "id": "NK-0001",
@@ -5253,6 +5253,27 @@
         {
           "state": "LOGGED",
           "at": "2026-11-15T21:48:34.675Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0183",
+      "title": "El guardián de la paleta de color de NK-0051 (1.370 casos: valores, contraste y colores escritos a mano) desapareció el 14-nov: el commit 37fb359 sobrescribió src/lib/palette.test.ts con pruebas del buscador ⌘K",
+      "kind": "bug",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:52:47.928Z",
           "by": "claude",
           "note": ""
         }
