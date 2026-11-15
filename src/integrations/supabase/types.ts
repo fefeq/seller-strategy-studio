@@ -6132,6 +6132,10 @@ export type Database = {
         Args: { _archived: boolean; _org: string }
         Returns: undefined
       }
+      bump_intake_received: {
+        Args: { _n: number; _source: string }
+        Returns: undefined
+      }
       can_complete_setup_step: {
         Args: { _org: string; _step: string }
         Returns: boolean
@@ -6233,6 +6237,10 @@ export type Database = {
           p_token: string
         }
         Returns: boolean
+      }
+      reserve_intake_quota: {
+        Args: { _n: number; _source: string; _today: string }
+        Returns: Json
       }
       seed_deal_stages: { Args: { _org: string }; Returns: undefined }
       set_platform_legal_flag: {
