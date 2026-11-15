@@ -14,7 +14,11 @@ export const WON_ISSUE_LABEL: Record<WonIssue, string> = {
 /** Date stored for a day picked in the UI: midday UTC so the quarter never shifts with the time zone. */
 export const closedAtFromDay = (day: string) => `${day}T12:00:00Z`;
 
-export function wonDealRows<T extends WonDealLike>(deals: T[], segments: SegLike[], range: { start: Date; end: Date }) {
+export function wonDealRows<T extends WonDealLike>(
+  deals: T[],
+  segments: SegLike[],
+  range: { start: Date; end: Date },
+) {
   return deals
     .filter((d) => d.stage === "won")
     .map((d) => {
@@ -45,7 +49,11 @@ export type WonDealRow = ReturnType<typeof wonDealRows>[number];
 export function wonSummary(rows: WonDealRow[], segments: SegLike[]) {
   const bySegment = segments.map((s) => {
     const xs = rows.filter((r) => r.segmentId === s.id);
-    return { segment: s, deals: xs.length, amount: xs.reduce((t, r) => t + Number(r.deal.amount ?? 0), 0) };
+    return {
+      segment: s,
+      deals: xs.length,
+      amount: xs.reduce((t, r) => t + Number(r.deal.amount ?? 0), 0),
+    };
   });
   return {
     bySegment,
