@@ -1,3 +1,4 @@
+import { AutonomyPicker } from "@/components/autonomy-picker";
 import { X } from "lucide-react";
 import { IconText } from "@/components/icon-text";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -112,6 +113,10 @@ function MemoryPage() {
         {learned > 0 && `${learned} ${learned === 1 ? "lo aprendió" : "las aprendió"} solo. `}Si
         algo está mal, corrígelo; si sobra, olvídalo.
       </p>
+      <section className="mb-8 max-w-2xl rounded-lg border bg-card p-4" aria-labelledby="nivel-nokko">
+        <h2 id="nivel-nokko" className="mb-2 text-xl">Cómo trabaja Nokko contigo</h2>
+        <AutonomyPicker />
+      </section>
       <Input
         className="mb-6 max-w-md"
         placeholder="Buscar en la memoria…"

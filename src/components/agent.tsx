@@ -15,6 +15,23 @@ import { getWorkflow } from "@/lib/bmad/workflows";
 import { errorText } from "@/lib/errors";
 import { GuideOffer } from "@/components/setup/guide";
 import { SETUP_ITEMS } from "@/lib/setup-schema";
+import { AutonomyPicker, useAutonomy } from "@/components/autonomy-picker";
+import { AUTONOMY } from "@/lib/autonomy";
+
+/** E1: the level is always visible in the agent and can be changed there. */
+function AgentLevel() {
+  const q = useAutonomy();
+  return (
+    <details className="mt-2 text-xs">
+      <summary className="min-h-9 cursor-pointer py-2 text-muted-foreground">
+        Nivel: <span className="font-medium text-foreground">{q.data ? AUTONOMY[q.data].label : "…"}</span> · cambiar
+      </summary>
+      <div className="pt-1">
+        <AutonomyPicker compact />
+      </div>
+    </details>
+  );
+}
 
 type Mode = "chat" | "interview";
 type Action = { id: string; summary: string; status: string; result?: string };
@@ -201,6 +218,7 @@ export function AgentProvider({ children }: { children: ReactNode }) {
                 ))}
               </div>
             )}
+            <AgentLevel />
             {workflowId && <p className="mt-1 text-xs text-muted-foreground">Flujo activo: {getWorkflow(workflowId)?.label}</p>}
           </SheetHeader>
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-4">
