@@ -75,9 +75,10 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
           error = e;
         }
         if (error) {
-          console.error("autopilot proposal", safeErrorLog(error));
+          const e = error;
+          console.error("autopilot proposal", safeErrorLog(e));
           // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
-          if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(error)}`);
+          if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(e)}`);
         }
         else lines.push(`${pr.label}: ${line}.`);
       }
