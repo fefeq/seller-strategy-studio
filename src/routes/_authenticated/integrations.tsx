@@ -14,6 +14,7 @@ import { StripeConnect } from "@/components/stripe-panel";
 import { PosthogConnect } from "@/components/posthog-panel";
 import { BudgetPanel } from "@/components/orchestrator";
 import { ConnectionsStatusPanel } from "@/components/connections/status-panel";
+import { DriveCompanyCard } from "@/components/connections/drive-company-card";
 
 export const Route = createFileRoute("/_authenticated/integrations")({
   head: () => ({
@@ -155,6 +156,9 @@ function Integrations() {
         </p>
         <div className="mt-4">
           <ConnectionsStatusPanel />
+        </div>
+        <div className="mt-4">
+          <DriveCompanyCard />
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {WORKING.filter((w) => ENTRY_POINTS.includes(w.name)).map((w) => (

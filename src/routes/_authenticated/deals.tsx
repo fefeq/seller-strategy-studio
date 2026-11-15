@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScoreRadio } from "@/components/deal/score-radio";
 import { useAgent } from "@/components/agent";
 import { MEDDPICC } from "@/lib/roles";
 import { JargonTerm } from "@/components/jargon-term";
@@ -439,11 +441,15 @@ function DealDetail({
     },
   });
   const total = MEDDPICC.reduce((s, [k]) => s + (m[k]?.score ?? 0), 0);
+  const FORM_KEYS = ["name", "amount", "close_date", "probability", "health", "meddpicc", "forecast_category", "source", "segment_id", "partner_id"] as const;
+  const dirty = FORM_KEYS.some((k) => JSON.stringify(d[k] ?? null) !== JSON.stringify(deal[k] ?? null));
+  const [saving, setSaving] = useState(false);
   // With product lines the amount is theirs (the database recomputes it): the form must not overwrite it.
   const { data: lines = [] } = useDealLines(deal.id);
   const hasLines = lines.length > 0;
 
   async function save() {
+    setSaving(true);
     const { error } = await supabase
       .from("deals")
       .update({
@@ -459,6 +465,7 @@ function DealDetail({
         partner_id: d.partner_id || null,
       })
       .eq("id", d.id);
+    setSaving(false);
     if (error) return toast.error(errorText(error));
     toast.success("Deal guardado.");
     onSaved();
@@ -494,6 +501,14 @@ function DealDetail({
           Abrir cuenta y plan →
         </Link>
       )}
+      <Tabs defaultValue="resumen">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="resumen">Resumen</TabsTrigger>
+          <TabsTrigger value="productos">Productos</TabsTrigger>
+          <TabsTrigger value="meddpicc">MEDDPICC {total}/24</TabsTrigger>
+          <TabsTrigger value="plan">Plan conjunto</TabsTrigger>
+        </TabsList>
+        <TabsContent value="resumen" className="space-y-4 pt-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}
         <Field label="Etapa">
@@ -580,13 +595,20 @@ function DealDetail({
         </Field>
       </div>
       {deal.stage === "lost" && <LossSection deal={deal} onSaved={onSaved} />}
-      <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
       {d.slip_count > 0 && (
         <p className="text-xs text-signal">
           La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.
         </p>
       )}
-
+      <Button variant="outline" onClick={requestDiscount}>
+        Pedir descuento
+      </Button>
+        </TabsContent>
+        <TabsContent value="productos" className="pt-4">
+          {/* Product lines save on their own; the deal amount follows them. */}
+          <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
+        </TabsContent>
+        <TabsContent value="meddpicc" className="pt-4">
       <div>
         <div className="mb-2 flex items-baseline justify-between">
           <h3 className="text-2xl">
@@ -600,19 +622,13 @@ function DealDetail({
               key={k}
               className={`rounded-md border p-3 ${(m[k]?.score ?? 0) === 0 ? "border-signal/50" : ""}`}
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <span className="min-w-0 text-sm font-medium">{label}</span>
-                <div className="flex shrink-0 gap-1">
-                  {[0, 1, 2, 3].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setD({ ...d, meddpicc: { ...m, [k]: { ...m[k], score: n } } })}
-                      className={`size-9 rounded md:size-6 font-mono text-xs ${(m[k]?.score ?? 0) === n ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+                <ScoreRadio
+                  label={label}
+                  value={m[k]?.score ?? 0}
+                  onChange={(n) => setD({ ...d, meddpicc: { ...m, [k]: { ...m[k], score: n } } })}
+                />
               </div>
               <Textarea
                 rows={1}
@@ -630,15 +646,11 @@ function DealDetail({
           ))}
         </div>
       </div>
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={save}>Guardar deal</Button>
-        <Button variant="outline" onClick={requestDiscount}>
-          Pedir descuento
-        </Button>
-      </div>
-
+        </TabsContent>
+        <TabsContent value="plan" className="pt-4">
       <div>
         <h3 className="mb-2 text-2xl">Plan de acción conjunto</h3>
+        <p className="mb-2 text-xs text-muted-foreground">Cada hito se guarda al añadirlo o marcarlo.</p>
         <div className="space-y-1.5">
           {items.map((i) => (
             <label
@@ -679,9 +691,20 @@ function DealDetail({
             <option value="cliente">Cliente</option>
           </NativeSelect>
           <Button disabled={!newItem} onClick={addItem}>
-            +
+            Añadir hito
           </Button>
         </div>
+      </div>
+        </TabsContent>
+      </Tabs>
+      {/* One save for every tab's deal fields (D2). Stage, product lines and plan milestones save on their own. */}
+      <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-between gap-2 border-t bg-background/95 px-6 py-3 backdrop-blur">
+        <span className="text-xs text-muted-foreground" aria-live="polite">
+          {dirty ? "Tienes cambios sin guardar." : "Todo guardado."}
+        </span>
+        <Button onClick={save} disabled={!dirty || saving}>
+          {saving ? "Guardando…" : "Guardar deal"}
+        </Button>
       </div>
     </div>
   );

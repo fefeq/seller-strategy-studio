@@ -101,7 +101,9 @@ export type ConceptId =
   | "herramienta_gasto"
   | "volumen_operacion"
   | "clave_operacion"
-  | "referencia_recibo";
+  | "referencia_recibo"
+  | "clave_conexion_cifrada"
+  | "estado_conexion_drive";
 
 export type Concept = {
   id: ConceptId;
@@ -536,6 +538,23 @@ export const CONCEPTS: Concept[] = [
     kind: "number",
     format: "Entero ≥ 0",
     display: "Número",
+  },
+  {
+    id: "clave_conexion_cifrada",
+    label: "Clave de conexión cifrada",
+    meaning: "Credencial de la cuenta conectada, cifrada en el servidor. Nunca se muestra ni llega al navegador.",
+    kind: "text",
+    format: "base64 opaco",
+    display: "No se muestra",
+  },
+  {
+    id: "estado_conexion_drive",
+    label: "Estado del Drive de la empresa",
+    meaning: "Si la cuenta de Drive conectada funciona o hay que volver a conectarla.",
+    kind: "enum",
+    format: "active | reconnect",
+    allowed: ["active", "reconnect"],
+    display: "Tu cuenta / Sin acceso",
   },
   {
     id: "estado_buzon",
@@ -1166,6 +1185,16 @@ export const BINDINGS: Binding[] = [
   },
   { table: "email_verifications", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "email_verifications", column: "email", concept: "direccion_email", persistence: saved },
+  { table: "drive_company_connections", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "drive_company_connections", column: "connection_key_enc", concept: "clave_conexion_cifrada", persistence: saved },
+  { table: "drive_company_connections", column: "account_email", concept: "direccion_email", persistence: saved },
+  { table: "drive_company_connections", column: "connected_by", concept: "clave_usuario", persistence: saved },
+  { table: "drive_company_connections", column: "connected_at", concept: "alta_sistema", persistence: saved },
+  { table: "drive_company_connections", column: "status", concept: "estado_conexion_drive", persistence: saved },
+  { table: "drive_company_connections", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  { table: "drive_folders_backup", column: "id", concept: "clave_registro", persistence: saved },
+  { table: "drive_folders_backup", column: "org_id", concept: "clave_empresa", persistence: saved },
+  { table: "drive_folders_backup", column: "backed_up_at", concept: "alta_sistema", persistence: saved },
   { table: "mailbox_links", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "mailbox_links", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "mailbox_links", column: "address", concept: "direccion_email", persistence: saved },
@@ -1628,6 +1657,8 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   estado_proveedor_email: ["src/integrations/supabase/types.ts"],
   proveedor_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
   estado_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
+  clave_conexion_cifrada: ["src/components/connections/drive-company-card.tsx"],
+  estado_conexion_drive: ["src/components/connections/drive-company-card.tsx"],
   tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],

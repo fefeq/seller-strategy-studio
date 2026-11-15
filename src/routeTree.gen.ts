@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AuthenticatedAbmRouteImport } from './routes/_authenticated/abm'
@@ -49,6 +50,7 @@ import { Route as AuthenticatedOnboardingCompletarRouteImport } from './routes/_
 import { Route as ApiPublicAccountsRouteImport } from './routes/api/public/accounts'
 import { Route as ApiPublicInngestRouteImport } from './routes/api/public/inngest'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
+import { Route as ApiOauthGoogleDriveReturnRouteImport } from './routes/api/oauth/google-drive/return'
 import { Route as ApiPublicApolloPhoneWebhookRouteImport } from './routes/api/public/apollo/phone-webhook'
 import { Route as ApiPublicJobsProactiveRouteImport } from './routes/api/public/jobs/proactive'
 import { Route as ApiPublicTelegramWebhookRouteImport } from './routes/api/public/telegram/webhook'
@@ -70,6 +72,11 @@ const AuthRoute = AuthRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -259,6 +266,12 @@ const ApiPublicLeadsRoute = ApiPublicLeadsRouteImport.update({
   path: '/api/public/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOauthGoogleDriveReturnRoute =
+  ApiOauthGoogleDriveReturnRouteImport.update({
+    id: '/api/oauth/google-drive/return',
+    path: '/api/oauth/google-drive/return',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicApolloPhoneWebhookRoute =
   ApiPublicApolloPhoneWebhookRouteImport.update({
     id: '/api/public/apollo/phone-webhook',
@@ -281,6 +294,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/abm': typeof AuthenticatedAbmRoute
@@ -317,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -325,6 +340,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/abm': typeof AuthenticatedAbmRoute
@@ -361,6 +377,7 @@ export interface FileRoutesByTo {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/accounts': typeof AuthenticatedAccountsIndexRoute
   '/leads': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -371,6 +388,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/abm': typeof AuthenticatedAbmRoute
@@ -407,6 +425,7 @@ export interface FileRoutesById {
   '/api/public/leads': typeof ApiPublicLeadsRoute
   '/_authenticated/accounts/': typeof AuthenticatedAccountsIndexRoute
   '/_authenticated/leads/': typeof AuthenticatedLeadsIndexRoute
+  '/api/oauth/google-drive/return': typeof ApiOauthGoogleDriveReturnRoute
   '/api/public/apollo/phone-webhook': typeof ApiPublicApolloPhoneWebhookRoute
   '/api/public/jobs/proactive': typeof ApiPublicJobsProactiveRoute
   '/api/public/telegram/webhook': typeof ApiPublicTelegramWebhookRoute
@@ -417,6 +436,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/mcp'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/.well-known/oauth-protected-resource'
     | '/abm'
@@ -453,6 +473,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts/'
     | '/leads/'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -461,6 +482,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/mcp'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/.well-known/oauth-protected-resource'
     | '/abm'
@@ -497,6 +519,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/accounts'
     | '/leads'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -506,6 +529,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/mcp'
+    | '/reset-password'
     | '/sitemap.xml'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/abm'
@@ -542,6 +566,7 @@ export interface FileRouteTypes {
     | '/api/public/leads'
     | '/_authenticated/accounts/'
     | '/_authenticated/leads/'
+    | '/api/oauth/google-drive/return'
     | '/api/public/apollo/phone-webhook'
     | '/api/public/jobs/proactive'
     | '/api/public/telegram/webhook'
@@ -552,12 +577,14 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicAccountsRoute: typeof ApiPublicAccountsRoute
   ApiPublicInngestRoute: typeof ApiPublicInngestRoute
   ApiPublicLeadsRoute: typeof ApiPublicLeadsRoute
+  ApiOauthGoogleDriveReturnRoute: typeof ApiOauthGoogleDriveReturnRoute
   ApiPublicApolloPhoneWebhookRoute: typeof ApiPublicApolloPhoneWebhookRoute
   ApiPublicJobsProactiveRoute: typeof ApiPublicJobsProactiveRoute
   ApiPublicTelegramWebhookRoute: typeof ApiPublicTelegramWebhookRoute
@@ -591,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -845,6 +879,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/oauth/google-drive/return': {
+      id: '/api/oauth/google-drive/return'
+      path: '/api/oauth/google-drive/return'
+      fullPath: '/api/oauth/google-drive/return'
+      preLoaderRoute: typeof ApiOauthGoogleDriveReturnRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/apollo/phone-webhook': {
       id: '/api/public/apollo/phone-webhook'
       path: '/api/public/apollo/phone-webhook'
@@ -943,6 +984,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
@@ -950,6 +992,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAccountsRoute: ApiPublicAccountsRoute,
   ApiPublicInngestRoute: ApiPublicInngestRoute,
   ApiPublicLeadsRoute: ApiPublicLeadsRoute,
+  ApiOauthGoogleDriveReturnRoute: ApiOauthGoogleDriveReturnRoute,
   ApiPublicApolloPhoneWebhookRoute: ApiPublicApolloPhoneWebhookRoute,
   ApiPublicJobsProactiveRoute: ApiPublicJobsProactiveRoute,
   ApiPublicTelegramWebhookRoute: ApiPublicTelegramWebhookRoute,

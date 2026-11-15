@@ -1905,6 +1905,44 @@ export type Database = {
           },
         ]
       }
+      drive_company_connections: {
+        Row: {
+          account_email: string | null
+          connected_at: string
+          connected_by: string | null
+          connection_key_enc: string
+          org_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_email?: string | null
+          connected_at?: string
+          connected_by?: string | null
+          connection_key_enc: string
+          org_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          account_email?: string | null
+          connected_at?: string
+          connected_by?: string | null
+          connection_key_enc?: string
+          org_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_company_connections_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: true
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       drive_doc_summaries: {
         Row: {
           account_id: string | null
@@ -1994,6 +2032,35 @@ export type Database = {
           },
           {
             foreignKeyName: "drive_folders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drive_folders_backup: {
+        Row: {
+          backed_up_at: string
+          folder_row: Json
+          id: string
+          org_id: string
+        }
+        Insert: {
+          backed_up_at?: string
+          folder_row: Json
+          id?: string
+          org_id: string
+        }
+        Update: {
+          backed_up_at?: string
+          folder_row?: Json
+          id?: string
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "drive_folders_backup_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
@@ -6191,6 +6258,15 @@ export type Database = {
       delete_organization: {
         Args: { _confirm_name: string; _org: string }
         Returns: undefined
+      }
+      drive_company_connection_status: {
+        Args: { _org: string }
+        Returns: {
+          account_email: string
+          connected_at: string
+          connected_by: string
+          status: string
+        }[]
       }
       has_org_role: {
         Args: { _org: string; _role: Database["public"]["Enums"]["app_role"] }
