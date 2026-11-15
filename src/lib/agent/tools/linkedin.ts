@@ -7,7 +7,7 @@ import { def, mustFind, type AgentTool } from "../tool-kit";
 import { linkedinPauseExplanation } from "@/lib/linkedin-legal";
 
 const scope = (c: { orgId: string; userId: string }) => ({ orgId: c.orgId, userId: c.userId });
-const post = (p: { url: string; text: string; date: string | null; repost: boolean; likes: number }) => ({ fecha: p.date, texto: p.text, url: p.url, compartida: p.repost, me_gusta: p.likes });
+const post = (p: { url: string; text: string; date: string | null; repost: boolean; likes: number | null }) => ({ fecha: p.date, texto: p.text, url: p.url, compartida: p.repost, me_gusta: p.likes });
 
 /** The pause explanation when the legal pause is on, else null. The agent relays it and prepares nothing. */
 async function pausedMessage(): Promise<{ mensaje: string; pausado: true } | null> {
@@ -26,7 +26,7 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { accountPostsCore } = await import("@/lib/apify-core");
       const r = await accountPostsCore(c.db, a.account_id, scope(c));
-      return { linkedin: r.linkedin, publicaciones: r.posts.map(post) };
+      return { linkedin: r.linkedin, publicaciones: r.posts.map(post), engagement: r.engagement };
     },
   }),
   def({

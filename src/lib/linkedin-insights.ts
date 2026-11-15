@@ -8,7 +8,7 @@ const TEAM_RULES: [HiringTeam, RegExp][] = [
   ["Ventas", /\b(sales|ventas|account executive|sdr|bdr|business development|comercial|account manager)\b/i],
   ["Marketing", /\b(marketing|growth|seo|content|brand|demand gen|comunicaci[oó]n)\b/i],
   ["Datos", /\b(data|datos|analytics|analyst|bi|machine learning|ml|ai engineer)\b/i],
-  ["Ingeniería", /\b(engineer|developer|desarrollador|ingenier|devops|backend|frontend|full ?stack|software|sre|qa)\b/i],
+  ["Ingeniería", /\b(engineer|developer|desarrollador|ingenier(?:o|a|os|as|[ií]a)|devops|backend|frontend|full ?stack|software|sre|qa)\b/i],
   ["Producto", /\b(product|producto|ux|ui|designer|dise[nñ]ador)\b/i],
   ["Atención al cliente", /\b(customer success|support|soporte|atenci[oó]n al cliente|cs manager)\b/i],
   ["Finanzas", /\b(finance|finanzas|accountant|contable|controller|cfo)\b/i],
@@ -20,7 +20,7 @@ export function hiringTeam(title: string): HiringTeam {
   return TEAM_RULES.find(([, re]) => re.test(title))?.[0] ?? "Otros";
 }
 
-const SENIOR = /\b(head|director|vp|vice president|chief|c[teo]o|lead|principal|jefe|responsable)\b/i;
+const SENIOR = /\b(head|director|directora|vp|vice president|chief|c[teo]o|jefe|jefa)\b/i;
 
 export type HiringSignals = {
   total: number;
@@ -53,8 +53,9 @@ export type Engagement = { posts: number; avgLikes: number | null; top: { url: s
 /** Engagement of own (non-repost) posts; no posts = null average, never zero. */
 export function engagement(posts: Pick<Post, "url" | "likes" | "repost">[]): Engagement {
   const own = posts.filter((p) => !p.repost);
-  if (!own.length) return { posts: 0, avgLikes: null, top: null };
-  const total = own.reduce((s, p) => s + p.likes, 0);
-  const best = own.reduce((a, b) => (b.likes > a.likes ? b : a));
-  return { posts: own.length, avgLikes: Math.round(total / own.length), top: { url: best.url, likes: best.likes } };
+  const measured = own.filter((p): p is typeof p & { likes: number } => p.likes != null);
+  if (!measured.length) return { posts: own.length, avgLikes: null, top: null };
+  const total = measured.reduce((s, p) => s + p.likes, 0);
+  const best = measured.reduce((a, b) => (b.likes > a.likes ? b : a));
+  return { posts: own.length, avgLikes: Math.round(total / measured.length), top: { url: best.url, likes: best.likes } };
 }

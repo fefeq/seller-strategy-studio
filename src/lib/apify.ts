@@ -40,7 +40,7 @@ const clipText = (s: unknown, n: number) => {
   return t.length > n ? `${t.slice(0, n)}…` : t;
 };
 
-export type Post = { url: string; text: string; date: string | null; author: string; repost: boolean; likes: number };
+export type Post = { url: string; text: string; date: string | null; author: string; repost: boolean; likes: number | null };
 
 /** LinkedIn posts (company or person), newest first, without empty ones. */
 export function postItems(raw: unknown, max = 10): Post[] {
@@ -50,7 +50,7 @@ export function postItems(raw: unknown, max = 10): Post[] {
     const url = String(p?.linkedinUrl ?? p?.shareLinkedinUrl ?? "");
     const text = clipText(p?.content, 1200);
     if (!/^https:\/\//.test(url) || !text) continue;
-    out.push({ url, text, date: p?.postedAt?.date ?? null, author: String(p?.author?.name ?? ""), repost: !!p?.repostedBy, likes: Number(p?.engagement?.likes ?? 0) || 0 });
+    out.push({ url, text, date: p?.postedAt?.date ?? null, author: String(p?.author?.name ?? ""), repost: !!p?.repostedBy, likes: p?.engagement?.likes == null || !Number.isFinite(Number(p.engagement.likes)) ? null : Number(p.engagement.likes) });
   }
   return out.sort((a, b) => (b.date ?? "").localeCompare(a.date ?? "")).slice(0, max);
 }

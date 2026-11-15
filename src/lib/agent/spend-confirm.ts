@@ -26,10 +26,17 @@ export const SPEND_TOOLS: Record<string, string> = {
   research_account: "web",
   research_stakeholder: "web",
   refresh_account_signals: "web",
+  // Orchestrator tools that may fall back to paid providers (Apollo → Clay → web).
+  complete_account: "apollo/clay/web",
+  find_key_people: "apollo/clay",
+  find_icp_companies: "apollo/clay",
 };
 
 /** Read tools that spend and therefore need the person's confirmation before running. */
 export const SPENDING_READS = [
+  "complete_account",
+  "find_key_people",
+  "find_icp_companies",
   "apollo_find_companies",
   "apollo_enrich_account",
   "clay_find_companies",
