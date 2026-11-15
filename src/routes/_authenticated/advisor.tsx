@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
@@ -295,9 +295,16 @@ function RecCard({ rec, index }: { rec: AdvisorRecommendation; index: number }) 
           </b>{" "}
           · KPI: {rec.kpi} · Objetivo: {rec.target}
         </span>
-        <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}>
-          {saved ? "En Prototipos" : "Convertir en prototipo"}
-        </Button>
+        <span className="flex flex-wrap gap-2">
+          <Button size="sm" asChild>
+            <Link to="/strategy" search={{ tab: target.tab }}>
+              Aceptar y abrir en Estrategia · {target.label}
+            </Link>
+          </Button>
+          <Button size="sm" variant="outline" onClick={toPrototype} disabled={saved}>
+            {saved ? "En Prototipos" : "Convertir en prototipo"}
+          </Button>
+        </span>
       </div>
     </div>
   );
