@@ -135,6 +135,9 @@ export async function researchAccountCore(
         recency: "year",
       },
       12,
+      logSpend && scope
+        ? { db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }
+        : undefined,
     ).catch(() => [] as NewsItem[]),
   ]);
   if (!site.text && !news.length)
@@ -241,9 +244,6 @@ export async function refreshSignalsCore(
       { queries: signalQueries(name), maxResults: 5, recency: "month" },
       18,
       { db, orgId: acc.org_id, userId: scope?.userId || null, tool: "refresh_account_signals", trigger },
-      logSpend && scope
-        ? { db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }
-        : undefined,
     ),
     linkedinSignalItems(db, acc).catch((e) => {
       console.error("LinkedIn signals failed", safeErrorLog(e));
