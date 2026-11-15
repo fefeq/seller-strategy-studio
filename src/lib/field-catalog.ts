@@ -103,7 +103,8 @@ export type ConceptId =
   | "clave_operacion"
   | "referencia_recibo"
   | "clave_conexion_cifrada"
-  | "estado_conexion_drive";
+  | "estado_conexion_drive"
+  | "nivel_agente";
 
 export type Concept = {
   id: ConceptId;
@@ -555,6 +556,15 @@ export const CONCEPTS: Concept[] = [
     format: "active | reconnect",
     allowed: ["active", "reconnect"],
     display: "Tu cuenta / Sin acceso",
+  },
+  {
+    id: "nivel_agente",
+    label: "Nivel de Nokko",
+    meaning: "Cuánto propone y explica el agente a cada persona. Ningún nivel se salta confirmaciones ni envía nada por el usuario.",
+    kind: "enum",
+    format: "guided | copilot | autopilot",
+    allowed: ["guided", "copilot", "autopilot"],
+    display: "Guiado / Copiloto / Autopilot",
   },
   {
     id: "estado_buzon",
@@ -1195,6 +1205,9 @@ export const BINDINGS: Binding[] = [
   { table: "drive_folders_backup", column: "id", concept: "clave_registro", persistence: saved },
   { table: "drive_folders_backup", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "drive_folders_backup", column: "backed_up_at", concept: "alta_sistema", persistence: saved },
+  { table: "user_agent_prefs", column: "user_id", concept: "clave_usuario", persistence: saved },
+  { table: "user_agent_prefs", column: "autonomy", concept: "nivel_agente", persistence: saved },
+  { table: "user_agent_prefs", column: "updated_at", concept: "cambio_sistema", persistence: saved },
   { table: "mailbox_links", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "mailbox_links", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "mailbox_links", column: "address", concept: "direccion_email", persistence: saved },
@@ -1659,6 +1672,7 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   estado_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
   clave_conexion_cifrada: ["src/components/connections/drive-company-card.tsx"],
   estado_conexion_drive: ["src/components/connections/drive-company-card.tsx"],
+  nivel_agente: ["src/components/autonomy-picker.tsx"],
   tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
