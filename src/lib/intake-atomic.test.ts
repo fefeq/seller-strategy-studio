@@ -1,6 +1,7 @@
 // A3: the daily quota is reserved by the atomic RPC; received_count is incremented atomically.
 import { describe, expect, it, vi } from "vitest";
-import { bumpReceived, enforceLimits } from "./intake.server";
+import { enforceLimits } from "./intake.server";
+import { bumpReceived } from "./intake-counter.server";
 
 const src = { id: "s1", org_id: "o1", max_per_request: 10, daily_limit: 5, day_count: 0, day_date: null, received_count: 3 } as never;
 function fakeDb(rpcResult: unknown, rpcError: unknown = null) {

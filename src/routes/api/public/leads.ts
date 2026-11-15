@@ -192,7 +192,7 @@ export const Route = createFileRoute("/api/public/leads")({
             })),
           );
         }
-        const { bumpReceived } = await import("@/lib/intake.server");
+        const { bumpReceived } = await import("@/lib/intake-counter.server");
         await bumpReceived(db, source, records.length);
         const ok = results.filter((r) => r.status !== "error").length;
         return json(

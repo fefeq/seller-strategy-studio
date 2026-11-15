@@ -37,13 +37,8 @@ export async function quarantine(db: Db, s: IntakeSource, kind: "leads" | "accou
     org_id: s.org_id, batch_id: batch.id, line: r.line, raw: r.raw as Json, summary: r.summary.slice(0, 300), action: r.action, reason: r.reason,
   })));
   if (e2) throw new Error(e2.message);
+  const { bumpReceived } = await import("@/lib/intake-counter.server");
   await bumpReceived(db, s, rows.length);
   return batch.id as string;
 }
 
-/** A3: atomic received_count increment (never read-modify-write); falls back to the old update if the RPC fails. */
-export async function bumpReceived(db: Db, s: IntakeSource, n: number) {
-  const { error } = await db.rpc("bump_intake_received", { _source: s.id, _n: n });
-  if (error)
-    await db.from("lead_sources").update({ received_count: s.received_count + n, last_received_at: new Date().toISOString() }).eq("id", s.id);
-}
