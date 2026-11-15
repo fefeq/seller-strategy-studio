@@ -7,6 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { autopilotSpendProposals } from "@/lib/autopilot";
+import { errorText } from "@/lib/errors";
 
 type Admin = SupabaseClient<Database>;
 const DAY = 86_400_000;
@@ -60,15 +61,24 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       for (const pr of proposals) {
         const line = await spendEstimateLine(db, orgId, pr.tool);
         const summary = withEstimate(`Piloto automático · ${pr.label} «${acc.name}»`, pr.tool, line);
-        const { error } = await db.from("agent_pending_actions").insert({
+        let error: unknown = null;
+        try {
+          ({ error } = await db.from("agent_pending_actions").insert({
           org_id: orgId,
           user_id: owner,
           tool: pr.tool,
           args: { account_id: a.id },
           summary: summary.slice(0, 500),
           source: "autopilot",
-        });
-        if (error) console.error("autopilot proposal", safeErrorLog(error));
+          }));
+        } catch (e) {
+          error = e;
+        }
+        if (error) {
+          console.error("autopilot proposal", safeErrorLog(error));
+          // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
+          if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(error)}`);
+        }
         else lines.push(`${pr.label}: ${line}.`);
       }
       if (!lines.length) continue;

@@ -236,6 +236,7 @@ function DeckCard({
     const el = box.current;
     if (!el || !onHeight) return;
     onHeight(el.offsetHeight);
+    if (typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver(() => onHeight(el.offsetHeight));
     ro.observe(el);
     return () => ro.disconnect();
