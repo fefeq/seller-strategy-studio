@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 183,
+  "seq": 189,
   "tickets": [
     {
       "id": "NK-0001",
@@ -602,6 +602,12 @@
           "at": "2026-10-28T21:29:48.486Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Parcial: siguen sin formato src/components/apollo.tsx y src/lib/apollo.test.ts. Lint global hoy: 6.545 errores, 6.475 de formato."
         }
       ]
     },
@@ -1001,6 +1007,12 @@
           "at": "2026-10-31T19:40:25.609Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: apollo-gateway.ts:65 y clay-gateway.ts:46."
         }
       ]
     },
@@ -1280,6 +1292,12 @@
           "at": "2026-10-31T23:03:48.040Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sin medir en esta pasada; sigue aplazado."
         }
       ]
     },
@@ -1288,7 +1306,7 @@
       "title": "Sugerencias de precio: la base de datos deja leerlas a cualquier miembro (RLS de suggestions); el filtro por rol es solo de interfaz y servidor. Requiere migración",
       "kind": "bug",
       "source": "",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "coordinador-sprint3",
       "duplicate_of": null,
       "sdd": null,
@@ -1307,6 +1325,12 @@
           "at": "2026-11-09T18:06:54.238Z",
           "by": "Fede (delegado al coordinador)",
           "note": "owner=coordinador-sprint3"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit fc17f39 (0087: policy restrictiva de lectura por rol en suggestions). Sin comprobar que 0087 esté aplicada en la base. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -2078,6 +2102,12 @@
           "at": "2026-11-08T19:04:59.394Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Parcial: 0078 ya es reaplicable (aec4f07); el orden del diario (0078 antes que 0077) y la comparación con la base siguen sin revisar."
         }
       ]
     },
@@ -2138,6 +2168,12 @@
           "at": "2026-11-08T19:04:59.490Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: money-notices.pg.test.ts:582."
         }
       ]
     },
@@ -2146,7 +2182,7 @@
       "title": "money-notices.pg.test.ts sigue diciendo «migration 0074» en describe y cabeceras; renombrar a 0078 (cosmético)",
       "kind": "bug",
       "source": "Gate independiente post-merge de NK-0030 sobre PR #93, commit a7334705cda3 (merge bbe67b9). Evidencia: .factory/evidence/NK-0030/",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2159,6 +2195,12 @@
           "at": "2026-11-08T19:04:59.551Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit aec4f07. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -2180,6 +2222,12 @@
           "at": "2026-11-08T19:04:59.600Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: nokko-release/SKILL.md:12 y src/lib/AGENTS.md:58 citan un script que no existe."
         }
       ]
     },
@@ -2207,6 +2255,12 @@
           "at": "2026-11-08T19:24:33.122Z",
           "by": "fede-decisions-20261108",
           "note": "Decisión de Fede (2026-11-08): un deal ganado no puede tener fecha de cierre futura; se valida al marcar Ganado. Va con la épica «Ganado íntegro»"
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: sin validación de closed_at futuro al marcar Ganado."
         }
       ]
     },
@@ -2228,6 +2282,12 @@
           "at": "2026-11-08T19:04:59.703Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: GROUND-RULES no cambia desde el 31-oct."
         }
       ]
     },
@@ -2348,6 +2408,12 @@
           "at": "2026-11-08T20:34:44.178Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/components/plays/play-card.tsx:15-28 sin rama de error."
         }
       ]
     },
@@ -2369,6 +2435,12 @@
           "at": "2026-11-08T20:34:44.240Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/lib/plays/toggle.ts:29."
         }
       ]
     },
@@ -2377,7 +2449,7 @@
       "title": "Plays GTM 1: RLS permite a un líder poner enabled=true en un play bloqueado escribiendo directo; CA-9 solo se cumple en código (CHECK/policy o aceptar y documentar)",
       "kind": "bug",
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2390,6 +2462,12 @@
           "at": "2026-11-08T20:34:44.303Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit fc17f39 (0087: play_enable_allowed y policies en play_states). Sin comprobar que esté aplicada en la base. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -2453,6 +2531,12 @@
           "at": "2026-11-08T20:34:44.470Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: sin regla nueva; la evidencia sigue sin versionar."
         }
       ]
     },
@@ -2507,6 +2591,12 @@
           "at": "2026-11-08T20:34:44.589Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Parcial: el ledger sigue con la rama de promoción y no hay evidencia de gate de NK-0065 versionada."
         }
       ]
     },
@@ -2687,6 +2777,12 @@
           "at": "2026-11-08T20:48:34.061Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/lib/revops.ts:39-40."
         }
       ]
     },
@@ -2845,7 +2941,7 @@
       "title": "Legibilidad: marcas de dato de /metrics con text-[10px]/[11px] por debajo de 12 px (seguimiento de NK-0051)",
       "kind": "bug",
       "source": "Sprint 1 pantallas core, decisión de Fede 2026-11-06",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2858,6 +2954,12 @@
           "at": "2026-11-08T20:48:34.327Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 5a81304. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -2912,6 +3014,12 @@
           "at": "2026-11-08T20:48:37.629Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. No verificable solo con código: requiere observar la red."
         }
       ]
     },
@@ -2986,7 +3094,7 @@
       "title": "Logs: los errores de proveedor de IA se registran con message recortado a 300 caracteres pero sin limpiar; un proveedor que repita el prompt en el error filtraría parte de él",
       "kind": "alert",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -2999,6 +3107,12 @@
           "at": "2026-11-08T20:48:37.791Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 2d24bcb (safeErrorLog ya no registra el mensaje). Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -3743,6 +3857,12 @@
           "at": "2026-11-09T22:37:48.899Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. No verificable solo con código: el mecanismo no ha cambiado (route.tsx:49-53)."
         }
       ]
     },
@@ -3764,6 +3884,12 @@
           "at": "2026-11-09T22:37:48.943Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: GROUND-RULES y la plantilla de brief siguen igual."
         }
       ]
     },
@@ -4633,7 +4759,7 @@
       "title": "Confirmar D-7 (medida de G-1) y D-8 de NK-0153",
       "kind": "alert",
       "source": "SDD-20261112-diagnosis-in-chat §14: D-7 y D-8 no constan como decisión aparte de Fede el 2026-11-12; revisar al revisar G-1 y la reapertura de sugerencias aprobadas",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261112-diagnosis-in-chat.md",
@@ -4646,6 +4772,12 @@
           "at": "2026-11-12T20:28:50.317Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 0447e3d (D-7 y D-8 constan decididas en el SDD). Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4714,7 +4846,7 @@
       "title": "src/lib/error-capture.ts expande Error a mensaje+stack+cause: cualquier console.error(error) (p. ej. src/routes/__root.tsx:50, logging interno de h3) puede llevar texto de error a los logs del servidor",
       "kind": "alert",
       "source": "Sprint 8, gate ronda 2. Evidencia: src/lib/error-capture.ts; src/routes/__root.tsx:50",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4727,6 +4859,12 @@
           "at": "2026-11-12T22:16:16.724Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit d10e111; sin test dedicado. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4735,7 +4873,7 @@
       "title": "Inngest guarda como salida de step.run las notes con texto de error y títulos (src/lib/inngest/functions.server.ts:27-28)",
       "kind": "alert",
       "source": "Sprint 8, gate. Evidencia: src/lib/inngest/functions.server.ts:27-28",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4748,6 +4886,12 @@
           "at": "2026-11-12T22:16:16.801Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 5012080. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4756,7 +4900,7 @@
       "title": "Escaneo server-log-scan: no detecta colecciones que solo reciben títulos/nombres sin .message; plus src/components/suggestions.tsx:91 console.warn(..., e) en navegador",
       "kind": "bug",
       "source": "Sprint 8, gate. Evidencia: escaneo server-log-scan; src/components/suggestions.tsx:91",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4769,6 +4913,12 @@
           "at": "2026-11-12T22:16:16.856Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit a53fe07 y 662b9bc (escáner de títulos y suggestions.tsx). Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4777,7 +4927,7 @@
       "title": "src/components/suggestions.tsx:83-85 usa sessionStorage sin try/catch: si setItem lanza cae toda la app autenticada",
       "kind": "bug",
       "source": "Walkthrough sprint8, flujo 3. Evidencia: src/components/suggestions.tsx:83-85",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4790,6 +4940,12 @@
           "at": "2026-11-12T22:16:16.996Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 662b9bc. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4798,7 +4954,7 @@
       "title": "src/lib/autopilot.server.ts:100 pone (e as Error).message en el cuerpo de una sugerencia visible; viola errorText()",
       "kind": "bug",
       "source": "Sprint 8, gate. Evidencia: src/lib/autopilot.server.ts:100; regla errorText() (src/lib/errors.ts)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4811,6 +4967,12 @@
           "at": "2026-11-12T22:16:17.092Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 26fed21; el mismo patrón sigue en out.notes (ver NK-0185). Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4832,6 +4994,12 @@
           "at": "2026-11-12T22:16:17.192Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: sin rastro de la corrección en el repo."
         }
       ]
     },
@@ -4873,7 +5041,7 @@
       "title": "Onboarding «Tus fuentes»: el texto de archivos de texto/Drive se corta en silencio a 40 000 caracteres y sus nombres siguen figurando como fuentes; avisar al cortar y mostrar qué fuentes no llegaron a la lectura (hermano de NK-0156/NK-0164)",
       "kind": "bug",
       "source": "Coordinador: SDD NK-0156 §3.9 y sonda del gate pasada 2 (.factory/evidence/NK-0156/sdd-gate-pass2-probe.json en el checkout principal); src/components/onboarding/sources.tsx:16,43,137; src/lib/onboarding.server.ts:21; docs/sdd/SDD-20261112-onboarding-leido.md §3.9",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4886,6 +5054,12 @@
           "at": "2026-11-12T22:59:37.424Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 19415bc y c9e44e8; queda un slice(0, 40_000) en servidor al que la interfaz ya no llega. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -4907,6 +5081,12 @@
           "at": "2026-11-12T22:59:40.140Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. No verificable solo con código: la CI fija Node 22."
         }
       ]
     },
@@ -4928,6 +5108,12 @@
           "at": "2026-11-12T22:59:40.199Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Construido por Lovable fuera de la factory; SDD 1 a 3 aceptados por Fede el 14-11; falta la aceptación final con el SDD 4 (agente y MCP)."
         }
       ]
     },
@@ -4949,6 +5135,12 @@
           "at": "2026-11-12T22:59:40.254Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Entregas 1 y 2 hechas por Lovable (roadmap.md); sin aceptación formal registrada."
         }
       ]
     },
@@ -4970,6 +5162,12 @@
           "at": "2026-11-12T23:19:01.626Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Parcial: las cuatro lecturas citadas ya tienen guardia (5497973, c58a797, 641b9c3), pero solo 5 de 98 archivos con consultas la usan."
         }
       ]
     },
@@ -4991,6 +5189,12 @@
           "at": "2026-11-12T23:19:01.685Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Sigue abierto: src/hooks/use-setup-guide.ts:91-97 y :150."
         }
       ]
     },
@@ -4999,7 +5203,7 @@
       "title": "Plays a medida: molde de receta de señal (inspirado en el catálogo público de Glider, reescrito con palabras propias) + biblioteca de referencia + plays por empresa propuestos por el asistente a partir de la estrategia y aprobados por una persona",
       "kind": "feature",
       "source": "Fede, entrevista 2026-11-12. Decisiones: (1) almacenamiento = tabla por empresa con org_id y RLS (migración); biblioteca de referencia en código, solo lectura. (2) proponer y aprobar: Owner y Sales Leader. (3) receta sin fuente conectada = play bloqueado por fuente externa con el motivo, nunca finge. (4) tanda 0 = molde validado por código (disparador, evidencia con fuente por paso y cita, entregable, verificación manual, contacto, mensaje citado, diseño de prueba) + 3 recetas horizontales con herramientas ya disponibles + herramienta del asistente para proponer/guardar un play con aprobación. (5) coste de IA: medirlo en la tanda 0 y fijar tope después (sin tope inventado). (6) éxito: empresas con >=1 play a medida activado; propuestas aprobadas vs descartadas; plays con resultado de prueba. (7) mercado global, clientes de nicho y B2B general. (8) vocabulario unificado: todo es «play», distinguido solo por origen («De la biblioteca» / «Creado para tu empresa»), sin nombres nuevos tipo «recetas». (9) no copiar texto de Glider: solo estructura y patrones. (10) orden de cola del siguiente sprint: NK-0156, esta iniciativa, NK-0167, NK-0168. Evidencia: scratchpad glider-plays-analysis.md (fuera del repo, sin commit); src/lib/plays/{types,catalog,teams,gating,run-log}.ts; docs/prd/PRD-20261110-diagnostico-y-equipos-de-plays.md (otra iniciativa, relacionada, no enlazada como PRD). SDD y PRD: pendientes (nokko-shape).",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5012,6 +5216,12 @@
           "at": "2026-11-12T23:45:12.908Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Entregado por el agente de Lovable fuera de la factory (13 y 14-nov) y aceptado por Fede el 14-11 tras R-1 con señales reales (docs/verificacion-20261114.md). Sin gate de la factory. Residuos en NK-0186."
         }
       ]
     },
@@ -5066,6 +5276,12 @@
           "at": "2026-11-12T23:49:00.308Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Construido por Lovable fuera de la factory; pendiente de aceptación: el revelado real de Apollo quedó sin resultado confirmado."
         }
       ]
     },
@@ -5087,6 +5303,12 @@
           "at": "2026-11-12T23:49:00.373Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Reconciliación sobre main fb12ce0. Construido en parte por Lovable: conexión Gmail, pasada horaria y pantalla de solo lectura. Falta conectar la clasificación al trabajo horario, terminar la pantalla y una lectura real de Gmail."
         }
       ]
     },
@@ -5095,7 +5317,7 @@
       "title": "src/lib/AGENTS.md:29 dice que searchBoth combina Firecrawl + Perplexity; el código (src/lib/web-search.ts:1-3, 27-54) combina tres fuentes (Firecrawl, Perplexity y Parallel Search); AGENTS.md:34 ya lo dice",
       "kind": "bug",
       "source": "Gate PRD NK-0171, pasada 2 (.factory/evidence/NK-0171/prd-gate-pass2.md)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5108,6 +5330,12 @@
           "at": "2026-11-13T00:34:52.617Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit 662b9bc. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5116,7 +5344,7 @@
       "title": "src/lib/plays/status.ts:18-21: los plays bloqueados por LinkedIn siguen mostrando «falta una decisión» aunque la decisión D2 quedó cerrada por Fede el 2026-11-13 (entrevista, PRD-20261112-plays-a-medida decisión 17); actualizar el texto del bloqueador y registrar el cierre de D2 en PRD-20261106-plays-gtm.md:91",
       "kind": "bug",
       "source": "Gate PRD NK-0171, pasada 4 (.factory/evidence/NK-0171/prd-gate-pass4.md, q-7)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5129,6 +5357,12 @@
           "at": "2026-11-13T00:34:52.679Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit bbdcaf8; aceptado por Fede el 14-11 (docs/verificacion-20261114.md). Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5137,7 +5371,7 @@
       "title": "add_default_rules / diagnose_play_teams: una regla personal con el título de una regla base hace que la herramienta diga «Ya tenías todas las reglas base» y no vuelva la de equipo (readTitles no filtra por scope; afecta a missingDefaultRuleTitles y al diagnóstico de plays). Decide Fede: redacción o comportamiento (comportamiento requiere SDD)",
       "kind": "bug",
       "source": "Gate sprint8d de NK-0172 (MINOR-1), .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:75-91, src/lib/knowledge-rules.ts:176-189",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5150,6 +5384,12 @@
           "at": "2026-11-13T00:57:12.833Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit b15aacf. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5158,7 +5398,7 @@
       "title": "add_default_rules: la descripción dice «comparadas por título» sin precisar que se ignoran mayúsculas y espacios normales de los extremos; un cambio solo de mayúsculas no cuenta como renombrar (wording)",
       "kind": "bug",
       "source": "Gate sprint8d de NK-0172, .factory/evidence/sprint8d-gate/gate-91f5716.md; src/lib/default-rules.ts:60,127",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5171,6 +5411,12 @@
           "at": "2026-11-13T00:57:12.879Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit b15aacf. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5179,7 +5425,7 @@
       "title": "Móvil 375 px: con un trabajo de lectura en marcha (queued/running) la barra superior del shell muestra «Avisos · 1 en marcha» y la página desborda en horizontal (417 px de ancho); con done no desborda",
       "kind": "bug",
       "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5192,6 +5438,12 @@
           "at": "2026-11-13T01:39:54.122Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit fe2e4fb; sin volver a medir a 375 px. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5200,7 +5452,7 @@
       "title": "Onboarding «Nokko lee», lista de hallazgos: pinta « · {source}» sin overflow-wrap; con un source de 94 caracteres sin espacios la página mide 626 px a 375 px (src/components/onboarding/reading.tsx; la columna «Fuentes» sí lo tiene)",
       "kind": "bug",
       "source": "NK-0156 walkthrough, .factory/evidence/sprint8e-walkthrough/summary-sprint8e-3298d4a.md",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5213,6 +5465,12 @@
           "at": "2026-11-13T01:39:54.166Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit fe2e4fb; sin medir a 375 px. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5221,7 +5479,7 @@
       "title": "NK-0156: tres comportamientos solo los fija la sonda del gate y ningún test del repo: ids de desplegable únicos con varias fuentes abiertas, el texto de apoyo no sale mientras la lectura sigue en curso, la clase min-w-0 de la etiqueta; el trim() de la regla Leyendo/Leí sin test; el desplegable abierto se guarda por el texto de la fuente y reaparece abierto al recuperar un hallazgo descartado",
       "kind": "bug",
       "source": "NK-0156 gate, .factory/evidence/sprint8e-gate/gate-3298d4a.md",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5234,6 +5492,12 @@
           "at": "2026-11-13T01:39:54.215Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "Cerrado en la reconciliación: resuelto en el código de main fb12ce0, commit bb7d27d; test leído, no ejecutado aparte. Verificado leyendo el código, sin gate propio de este ticket. Cierre autorizado por Fede el 2026-11-15."
         }
       ]
     },
@@ -5242,7 +5506,7 @@
       "title": "CI en GitHub (tipos, tests y build en main y en cada PR) y dos tests que dependían de variables de entorno del host",
       "kind": "feature",
       "source": "auditoría 2026-11-15",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5255,12 +5519,66 @@
           "at": "2026-11-15T21:48:34.675Z",
           "by": "claude",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "PR #147 fusionado (7cec2ac); gate.mjs PASS sobre ba659450c1df. Hecho por encargo de Fede del 2026-11-15. El flujo no corre hasta activar Actions (NK-0189)."
         }
       ]
     },
     {
       "id": "NK-0183",
       "title": "El guardián de la paleta de color de NK-0051 (1.370 casos: valores, contraste y colores escritos a mano) desapareció el 14-nov: el commit 37fb359 sobrescribió src/lib/palette.test.ts con pruebas del buscador ⌘K",
+      "kind": "bug",
+      "source": "auditoría 2026-11-15",
+      "state": "SHIPPED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:52:47.928Z",
+          "by": "claude",
+          "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-15T21:54:58.000Z",
+          "by": "claude (auditoría 2026-11-15)",
+          "note": "PR #148 fusionado (fb12ce0); gate.mjs PASS sobre bc410d11e7a6, 6.288/6.288."
+        }
+      ]
+    },
+    {
+      "id": "NK-0184",
+      "title": "El webhook de Apollo sigue llevando el secreto en la URL (?secret=); Apollo no admite cabeceras propias: decidir mitigación (secreto rotado por empresa o firma del cuerpo)",
+      "kind": "alert",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.221Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0185",
+      "title": "Piloto automático: src/lib/autopilot.server.ts sigue metiendo (e as Error).message en out.notes (3 sitios), que llega al cuerpo del trabajo autopilot_now; mismo patrón que NK-0162",
       "kind": "bug",
       "source": "auditoría 2026-11-15",
       "state": "LOGGED",
@@ -5273,7 +5591,91 @@
       "history": [
         {
           "state": "LOGGED",
-          "at": "2026-11-15T21:52:47.928Z",
+          "at": "2026-11-15T21:54:58.272Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0186",
+      "title": "Plays a medida (NK-0171): sugerencias repetidas por cuenta y contadores de recuperación que no corresponden a la ejecución recuperada (residuos de la aceptación del 14-nov)",
+      "kind": "bug",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.322Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0187",
+      "title": "safe-logs-notes.test.ts: el caso de ICP roza o supera los 5 s por defecto; acelerar lo que comprueba sin alargar el timeout",
+      "kind": "bug",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.377Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0188",
+      "title": "Confirmación de coste antes de gastar en las búsquedas de Apollo, Clay, Parallel y G2: exige guardar el resultado para leerlo tras confirmar (pieza D del SDD de gasto, CA-8)",
+      "kind": "feature",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.428Z",
+          "by": "claude",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0189",
+      "title": "GitHub Actions está desactivado en el repositorio: el flujo de CI de NK-0182 no se ejecuta hasta que Fede lo active",
+      "kind": "alert",
+      "source": "auditoría 2026-11-15",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-15T21:54:58.481Z",
           "by": "claude",
           "note": ""
         }
