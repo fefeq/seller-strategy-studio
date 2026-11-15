@@ -8,6 +8,7 @@ import { BLOCKS, BLOCK_LABEL, blockOf, protectManual, readingCost, type BlockId 
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 import { loadSetupData } from "@/lib/org-data";
 import { jsonObject } from "@/lib/json";
+import { undoRefFor, type UndoRef } from "@/lib/setup-undo";
 import type { Json } from "@/integrations/supabase/types";
 
 const BLOCK_IDS = BLOCKS.map((b) => b.id) as [BlockId, ...BlockId[]];
@@ -100,12 +101,13 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       const { executeTool } = await import("../tools");
       const { SPEND_TOOLS } = await import("../spend-confirm");
       let saved = 0;
+      const undo: UndoRef[] = [];
       const errors: string[] = [];
       for (const it of chosen) {
         if (it.tool in SPEND_TOOLS) { errors.push(`${it.label}: gasta saldo`); continue; }
-        try { await executeTool(c, it.tool, it.args); saved++; } catch (e) { errors.push(`${it.label}: ${(e as Error).message}`); }
+        try { const r = await executeTool(c, it.tool, it.args); saved++; const u = undoRefFor(it.tool, it.args, r); if (u) undo.push(u); } catch (e) { errors.push(`${it.label}: ${(e as Error).message}`); }
       }
-      const next = { ...status, [a.block]: { status: "approved", at: new Date().toISOString(), undo: [] } };
+      const next = { ...status, [a.block]: { status: "approved", at: new Date().toISOString(), undo } };
       const { error } = await c.db.from("onboarding_sessions").update({ block_status: next as unknown as Json })
         .eq("org_id", c.orgId).eq("user_id", c.userId);
       if (error) throw new Error(error.message);
