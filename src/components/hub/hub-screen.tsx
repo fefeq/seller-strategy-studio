@@ -2,7 +2,7 @@ import { useSearch, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -96,7 +96,16 @@ const NO_DOCS: Doc[] = [];
 const SEARCH_URL_DEBOUNCE_MS = 300;
 type DocsCache = { rows: Doc[]; truncated: boolean };
 
-export function HubScreen() {
+/** B2: Reglas y voz live as a Strategy tab; the same screen renders embedded with only those sections (no page frame, Drive or search). */
+function Frame({ embedded, children, ...page }: ComponentProps<typeof Page> & { embedded: boolean; children?: ReactNode }) {
+  return embedded ? <>{children}</> : <Page {...page}>{children}</Page>;
+}
+
+export function HubScreen({ only }: { only?: readonly string[] } = {}) {
+  const embedded = !!only?.length;
+  const sectionIds = embedded ? HUB_SECTIONS.filter((id) => only!.includes(id)) : HUB_SECTIONS;
+  const defaultSection = embedded ? sectionIds[0]! : HUB_DEFAULT_SECTION;
+  const shownSections = embedded ? SECTIONS.filter(([id]) => only!.includes(id)) : SECTIONS;
   const qc = useQueryClient();
   const { data: me } = useMe();
   const [selected, setSelected] = useState<Doc | null>(null);
@@ -117,12 +126,14 @@ export function HubScreen() {
       ),
   });
   const docs = data?.rows ?? NO_DOCS;
-  const { doc: docParam, q: qParam, seccion } = useSearch({ from: "/_authenticated/hub" });
-  const navigate = useNavigate({ from: "/hub" });
+  // Embedded in Strategy the URL belongs to /strategy (same doc/q/seccion keys), so the read is route-agnostic.
+  const { doc: docParam, q: qParam, seccion } = useSearch({ strict: false }) as { doc?: string; q?: string; seccion?: string };
+  const navigate = useNavigate({ from: embedded ? "/strategy" : "/hub" }) as unknown as ReturnType<typeof useNavigate<never, "/hub">>;
+  const navigateAny = useNavigate();
   // NK-0100: a stale ?seccion= or a blank ?q= in the address bar is rewritten clean (replace).
-  useCleanUrl(HUB_SECTIONS, true);
+  useCleanUrl(sectionIds, true);
   const [section, setSection] = useUrlSection(
-    sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion),
+    sectionOf(sectionIds, defaultSection, seccion),
   );
   const list = docs.filter((d) => d.section === section);
   // How many rules the agent reads, counted with the reader's own function (SDD-20261106-agent-rules-reader, CA-6).
@@ -154,7 +165,7 @@ export function HubScreen() {
         nextSearchOnSectionChange(
           waiting === null ? prev : nextSearch(prev, waiting),
           id,
-          HUB_DEFAULT_SECTION,
+          defaultSection,
         ),
       replace: true,
     });
@@ -198,11 +209,16 @@ export function HubScreen() {
   // The document named by ?doc= opens once; creating, deleting or importing another never moves the person's selection.
   // The section of that document wins over ?seccion= at that moment and is written back, keeping doc.
   useOpenDocFromUrl(docParam, docs, (d) => {
+    // Embedded (Reglas y voz): a document from another section opens in Conocimiento, never under this tab.
+    if (embedded && !sectionIds.includes(d.section as (typeof HUB_SECTIONS)[number])) {
+      void navigateAny({ to: "/hub", search: { doc: d.id, seccion: d.section }, replace: true });
+      return;
+    }
     setSection(d.section);
     setSelected(d);
-    if (d.section !== sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion)) {
+    if (d.section !== sectionOf(sectionIds, defaultSection, seccion)) {
       navigate({
-        search: (prev) => searchWithSection(prev, d.section, HUB_DEFAULT_SECTION),
+        search: (prev) => searchWithSection(prev, d.section, defaultSection),
         replace: true,
       });
     }
@@ -310,7 +326,8 @@ export function HubScreen() {
   });
 
   return (
-    <Page
+    <Frame
+      embedded={embedded}
       eyebrow="Una sola fuente de verdad"
       title="Conocimiento"
       actions={
@@ -326,7 +343,7 @@ export function HubScreen() {
       <div className="grid gap-6 lg:grid-cols-[220px_280px_1fr]">
         {/* Phones: sections as a horizontal chip row; a column from lg. */}
         <div className="min-w-0 space-y-3">
-          {section !== DRIVE_TAB && (
+          {section !== DRIVE_TAB && !embedded && (
             <div className="relative">
               <Input
                 value={text}
@@ -352,7 +369,7 @@ export function HubScreen() {
             </div>
           )}
           <nav className="-mx-4 flex gap-2 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-5 sm:px-5 lg:mx-0 lg:block lg:space-y-1 lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
-            {SECTIONS.map(([id, label]) => (
+            {shownSections.map(([id, label]) => (
               <button
                 key={id}
                 onClick={() => goToSection(id)}
@@ -367,12 +384,12 @@ export function HubScreen() {
                 )}
               </button>
             ))}
-            <button
+            {!embedded && <button
               onClick={() => goToSection(DRIVE_TAB)}
               className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
             >
               Drive por cuenta
-            </button>
+            </button>}
           </nav>
         </div>
         {section === DRIVE_TAB ? (
@@ -496,6 +513,6 @@ export function HubScreen() {
           </>
         )}
       </div>
-    </Page>
+    </Frame>
   );
 }

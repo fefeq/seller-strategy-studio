@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { hubRedirect } from "@/lib/legacy-redirects";
 import { HubScreen } from "@/components/hub/hub-screen";
 import { cleanQuery } from "@/lib/hub-search";
 import { HUB_SECTIONS, validSection } from "@/lib/screen-sections";
@@ -14,6 +15,11 @@ export const Route = createFileRoute("/_authenticated/hub")({
       ...(q ? { q } : {}),
       ...(seccion ? { seccion } : {}),
     };
+  },
+  // B2: Reglas y Voz moved to Estrategia › Reglas y voz; old links land there.
+  beforeLoad: ({ search }) => {
+    const to = hubRedirect(search);
+    if (to) throw redirect({ ...to, replace: true });
   },
   head: () => ({
     meta: [

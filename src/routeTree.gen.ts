@@ -45,6 +45,7 @@ import { Route as AuthenticatedAccountsIdRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAccountsAssignmentRouteImport } from './routes/_authenticated/accounts.assignment'
 import { Route as AuthenticatedLeadsIndexRouteImport } from './routes/_authenticated/leads.index'
 import { Route as AuthenticatedLeadsEntradaRouteImport } from './routes/_authenticated/leads.entrada'
+import { Route as AuthenticatedOnboardingCompletarRouteImport } from './routes/_authenticated/onboarding_.completar'
 import { Route as ApiPublicAccountsRouteImport } from './routes/api/public/accounts'
 import { Route as ApiPublicInngestRouteImport } from './routes/api/public/inngest'
 import { Route as ApiPublicLeadsRouteImport } from './routes/api/public/leads'
@@ -237,6 +238,12 @@ const AuthenticatedLeadsEntradaRoute =
     path: '/leads/entrada',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedOnboardingCompletarRoute =
+  AuthenticatedOnboardingCompletarRouteImport.update({
+    id: '/onboarding_/completar',
+    path: '/onboarding/completar',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicAccountsRoute = ApiPublicAccountsRouteImport.update({
   id: '/api/public/accounts',
   path: '/api/public/accounts',
@@ -304,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/onboarding/completar': typeof AuthenticatedOnboardingCompletarRoute
   '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
@@ -347,6 +355,7 @@ export interface FileRoutesByTo {
   '/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/onboarding/completar': typeof AuthenticatedOnboardingCompletarRoute
   '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
@@ -392,6 +401,7 @@ export interface FileRoutesById {
   '/_authenticated/accounts/$id': typeof AuthenticatedAccountsIdRoute
   '/_authenticated/accounts/assignment': typeof AuthenticatedAccountsAssignmentRoute
   '/_authenticated/leads/entrada': typeof AuthenticatedLeadsEntradaRoute
+  '/_authenticated/onboarding_/completar': typeof AuthenticatedOnboardingCompletarRoute
   '/api/public/accounts': typeof ApiPublicAccountsRoute
   '/api/public/inngest': typeof ApiPublicInngestRoute
   '/api/public/leads': typeof ApiPublicLeadsRoute
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts/assignment'
     | '/leads/entrada'
+    | '/onboarding/completar'
     | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
@@ -480,6 +491,7 @@ export interface FileRouteTypes {
     | '/accounts/$id'
     | '/accounts/assignment'
     | '/leads/entrada'
+    | '/onboarding/completar'
     | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
@@ -524,6 +536,7 @@ export interface FileRouteTypes {
     | '/_authenticated/accounts/$id'
     | '/_authenticated/accounts/assignment'
     | '/_authenticated/leads/entrada'
+    | '/_authenticated/onboarding_/completar'
     | '/api/public/accounts'
     | '/api/public/inngest'
     | '/api/public/leads'
@@ -804,6 +817,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLeadsEntradaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/onboarding_/completar': {
+      id: '/_authenticated/onboarding_/completar'
+      path: '/onboarding/completar'
+      fullPath: '/onboarding/completar'
+      preLoaderRoute: typeof AuthenticatedOnboardingCompletarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/accounts': {
       id: '/api/public/accounts'
       path: '/api/public/accounts'
@@ -877,6 +897,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountsIdRoute: typeof AuthenticatedAccountsIdRoute
   AuthenticatedAccountsAssignmentRoute: typeof AuthenticatedAccountsAssignmentRoute
   AuthenticatedLeadsEntradaRoute: typeof AuthenticatedLeadsEntradaRoute
+  AuthenticatedOnboardingCompletarRoute: typeof AuthenticatedOnboardingCompletarRoute
   AuthenticatedAccountsIndexRoute: typeof AuthenticatedAccountsIndexRoute
   AuthenticatedLeadsIndexRoute: typeof AuthenticatedLeadsIndexRoute
 }
@@ -909,6 +930,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountsIdRoute: AuthenticatedAccountsIdRoute,
   AuthenticatedAccountsAssignmentRoute: AuthenticatedAccountsAssignmentRoute,
   AuthenticatedLeadsEntradaRoute: AuthenticatedLeadsEntradaRoute,
+  AuthenticatedOnboardingCompletarRoute: AuthenticatedOnboardingCompletarRoute,
   AuthenticatedAccountsIndexRoute: AuthenticatedAccountsIndexRoute,
   AuthenticatedLeadsIndexRoute: AuthenticatedLeadsIndexRoute,
 }

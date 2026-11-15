@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { OnboardingViews } from "@/components/onboarding/views";
 import { Page } from "@/components/page";
 import { useMe } from "@/hooks/use-me";
 import { useOnboarding, asJson } from "@/hooks/use-onboarding";
@@ -102,6 +103,7 @@ function Onboarding() {
 
   return (
     <Page eyebrow="Onboarding" title="Tu estrategia GTM, a tu ritmo">
+      {leader && <OnboardingViews />}
       <ol className="mb-8 flex flex-wrap gap-x-6 gap-y-2 border-b border-hairline pb-3 text-sm">
         {STEP_IDS.map((id, n) => (
           <li key={id}>
