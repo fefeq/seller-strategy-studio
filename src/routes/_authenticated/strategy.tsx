@@ -56,10 +56,17 @@ export const Route = createFileRoute("/_authenticated/strategy")({
 
 function Strategy() {
   const { tab } = Route.useSearch();
+  const navigate = Route.useNavigate();
   return (
     <Page eyebrow="Capa estratégica" title="Estrategia GTM">
       <PrimaryLineNote className="mb-6" />
-      <Tabs key={tab ?? "motions"} defaultValue={tab ?? "motions"}>
+      {/* Controlled by ?tab= so the embedded «Reglas y voz» can keep its own ?seccion= in the same URL. */}
+      <Tabs
+        value={tab ?? "motions"}
+        onValueChange={(v) =>
+          navigate({ search: { tab: v as (typeof STRATEGY_TABS)[number] }, replace: true })
+        }
+      >
         <TabsList className="mb-6">
           <TabsTrigger value="motions">Modelos de venta por segmento</TabsTrigger>
           <TabsTrigger value="diagnosis">Diagnóstico AARRR</TabsTrigger>
