@@ -97,12 +97,21 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
       const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
       const state = await pendingAutopilotState(ctx);
       if (request.kind === "threshold") {
-        if (!state.canChange) throw new Error("Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.");
+        if (!state.canChange)
+          throw new Error(
+            "Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.",
+          );
         const currency = request.currency ?? ctx.currency;
-        if (currency !== ctx.currency) throw new Error("Indica el umbral en la moneda de tu empresa; no se convierten importes.");
+        if (currency !== ctx.currency)
+          throw new Error(
+            "Indica el umbral en la moneda de tu empresa; no se convierten importes.",
+          );
         const { error } = await ctx.db.from("agent_pending_actions").insert({
-          org_id: ctx.orgId, user_id: ctx.userId, conversation_id: conversationId,
-          tool: "set_autopilot_threshold", args: { threshold: request.threshold, currency },
+          org_id: ctx.orgId,
+          user_id: ctx.userId,
+          conversation_id: conversationId,
+          tool: "set_autopilot_threshold",
+          args: { threshold: request.threshold, currency },
           summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
         });
         if (error) throw error;
@@ -162,9 +171,14 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
     const { data: cancelled, error } = await ctx.db
       .from("agent_pending_actions")
       .update({ status: "cancelled", decided_at: new Date().toISOString() })
-      .eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId).eq("status", "pending").select("id");
+      .eq("id", id)
+      .eq("org_id", ctx.orgId)
+      .eq("user_id", ctx.userId)
+      .eq("status", "pending")
+      .select("id");
     if (error) throw error;
-    if (!cancelled?.length) return { status: "confirmed", result: "La acción ya se está procesando." };
+    if (!cancelled?.length)
+      return { status: "confirmed", result: "La acción ya se está procesando." };
     return { status: "cancelled", result: "" };
   }
   // Claim first so a double click cannot execute twice.
@@ -172,7 +186,8 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
     .from("agent_pending_actions")
     .update({ status: "confirmed", decided_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("org_id", ctx.orgId).eq("user_id", ctx.userId)
+    .eq("org_id", ctx.orgId)
+    .eq("user_id", ctx.userId)
     .eq("status", "pending")
     .select("id");
   if (claimError) throw claimError;
@@ -187,24 +202,53 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
     const { getTool } = await import("@/lib/agent/tools");
     const { SPENDING_READS, spendResultText } = await import("@/lib/agent/spend-confirm");
     // A2: a confirmed spending read keeps its full result here and in the conversation (paid data is never lost).
-    const result = (SPENDING_READS as readonly string[]).includes(act.tool) && getTool(act.tool)
-      ? spendResultText(act.summary, out)
-      : note
-        ? `Hecho: ${act.summary}. ${note}`
-        : `Hecho: ${act.summary}`;
-    const saved = await ctx.db.from("agent_pending_actions").update({ result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
-    if (saved.error) return { status: "confirmed", result: `${result}\nNo pude guardar el recibo de la acción. No la repitas; conserva este resultado.` };
+    const result =
+      (SPENDING_READS as readonly string[]).includes(act.tool) && getTool(act.tool)
+        ? spendResultText(act.summary, out)
+        : note
+          ? `Hecho: ${act.summary}. ${note}`
+          : `Hecho: ${act.summary}`;
+    const saved = await ctx.db
+      .from("agent_pending_actions")
+      .update({ result })
+      .eq("id", id)
+      .eq("org_id", ctx.orgId)
+      .eq("user_id", ctx.userId);
+    if (saved.error)
+      return {
+        status: "confirmed",
+        result: `${result}\nNo pude guardar el recibo de la acción. No la repitas; conserva este resultado.`,
+      };
     if (act.conversation_id) {
-      const transcript = await ctx.db
-        .from("agent_messages")
-        .insert({ conversation_id: act.conversation_id, role: "assistant", content: result.length > 8000 ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)` : result });
-      if (transcript.error) return { status: "confirmed", result: `${result}\nNo pude añadirlo al historial del chat. El resultado queda en la acción.` };
+      const transcript = await ctx.db.from("agent_messages").insert({
+        conversation_id: act.conversation_id,
+        role: "assistant",
+        content:
+          result.length > 8000
+            ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)`
+            : result,
+      });
+      if (transcript.error)
+        return {
+          status: "confirmed",
+          result: `${result}\nNo pude añadirlo al historial del chat. El resultado queda en la acción.`,
+        };
     }
     return { status: "confirmed", result };
   } catch (e) {
     const result = errorText(e);
-    const failed = await ctx.db.from("agent_pending_actions").update({ status: "failed", result }).eq("id", id).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
-    return { status: "failed", result: failed.error ? `${result}\nNo pude guardar el fallo. No repitas la acción hasta revisar la actividad.` : result };
+    const failed = await ctx.db
+      .from("agent_pending_actions")
+      .update({ status: "failed", result })
+      .eq("id", id)
+      .eq("org_id", ctx.orgId)
+      .eq("user_id", ctx.userId);
+    return {
+      status: "failed",
+      result: failed.error
+        ? `${result}\nNo pude guardar el fallo. No repitas la acción hasta revisar la actividad.`
+        : result,
+    };
   }
 }
 
@@ -246,7 +290,8 @@ export const applySetupItems = createServerFn({ method: "POST" })
     for (const it of data.items) {
       try {
         // A2: setup proposals never spend; a spending tool here is refused instead of running unconfirmed.
-        if (it.tool in SPEND_TOOLS || it.tool === "set_autopilot_threshold") throw new Error("Esta acción requiere confirmación individual: lánzala desde el agente.");
+        if (it.tool in SPEND_TOOLS || it.tool === "set_autopilot_threshold")
+          throw new Error("Esta acción requiere confirmación individual: lánzala desde el agente.");
         const r = await executeTool(ctx, it.tool, it.args);
         results.push({ tool: it.tool, ok: true, undo: undoRefFor(it.tool, it.args, r) });
       } catch (e) {
@@ -416,7 +461,8 @@ export async function decideSuggestionCore(
   if (!claimed?.length) return { status: "approved", message: "Ya estaba gestionada" };
   const action = s.action as { tool: string; args: Record<string, unknown> } | null;
   let note = "";
-  const { SPEND_TOOLS, spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
+  const { SPEND_TOOLS, spendEstimateLine, withEstimate } =
+    await import("@/lib/agent/spend-confirm");
   if (action?.tool && action.tool in SPEND_TOOLS) {
     // A2: approving a suggestion that spends prepares the action with its cost estimate; it runs only on confirm.
     const { summarizeAction } = await import("@/lib/agent/tools");
@@ -451,7 +497,7 @@ export async function decideSuggestionCore(
         note = (out as { mensaje: string }).mensaje;
     } catch (e) {
       await ctx.db.from("suggestions").update({ status: "pending" }).eq("id", id);
-      throw new Error((e as Error).message);
+      throw new Error(errorText(e));
     }
   }
   const { rememberDecision } = await import("@/lib/memory.server");

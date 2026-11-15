@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useCurrency } from "@/hooks/use-me";
 import {
   cohorts,
+  LOST_STAGE_UNKNOWN,
   lostAnalysis,
   reconciledFunnel,
   weeklyTrend,
@@ -136,6 +137,9 @@ export function RevopsLost({
   const { money } = useCurrency();
   const seg = useSegmentNames();
   const l = useMemo(() => lostAnalysis(deals, history, path), [deals, history, path]);
+  const stageName = (k: string) => (k === LOST_STAGE_UNKNOWN ? "Etapa sin registrar" : label(k));
+  // The headline names a stage only when one was recorded.
+  const worst = l.byStage.find((g) => g.key !== LOST_STAGE_UNKNOWN);
   if (!l.total)
     return (
       <Card title="Deals perdidos">
@@ -171,12 +175,18 @@ export function RevopsLost({
   return (
     <div className="space-y-5">
       <p className="text-lg">
-        {l.total} {l.total === 1 ? "deal perdido" : "deals perdidos"} por {money(l.amount)}. Donde
-        más se pierden: <strong>{label(l.byStage[0].key)}</strong>.
+        {l.total} {l.total === 1 ? "deal perdido" : "deals perdidos"} por {money(l.amount)}.{" "}
+        {worst ? (
+          <>
+            Donde más se pierden: <strong>{label(worst.key)}</strong>.
+          </>
+        ) : (
+          "No hay registro de la etapa en la que se perdieron."
+        )}
       </p>
       <div className="grid gap-5 lg:grid-cols-3">
         <Card title="Etapa en la que se pierden">
-          <List rows={l.byStage} name={label} />
+          <List rows={l.byStage} name={stageName} />
         </Card>
         <Card title="Por segmento">
           <List rows={l.bySegment} name={seg} />

@@ -1,6 +1,7 @@
 import { CATALOG, type Play } from "./catalog";
 import { checkToggle } from "./status";
 import type { ToolCtx } from "@/lib/agent/tool-kit";
+import { errorText } from "@/lib/errors";
 
 // The one write of play_states, shared by the /plays screen (plays.functions.ts) and the agent tool set_play_enabled, so both answer the same:
 // role and block are checked here because privileged clients (Telegram, cron) skip RLS and the database does not know the catalogue.
@@ -25,7 +26,11 @@ export async function togglePlay(
       { org_id: c.orgId, play_id: play.id, enabled, updated_by: c.userId },
       { onConflict: "org_id,play_id" },
     );
-  if (error) throw new Error(error.message);
+  // The agent and the assistants server show this text as it comes: never the database wording.
+  if (error)
+    throw new Error(
+      errorText(error, "No he podido guardar el cambio del play. Vuelve a intentarlo."),
+    );
   const closes = !enabled && play.detectors.length > 0;
   return {
     play_id: play.id,

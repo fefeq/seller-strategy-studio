@@ -212,6 +212,28 @@ export const loadSetupSnoozes = async (
 export const loadSetupGuideExtras = (db: Db, orgId: string, signal?: AbortSignal) =>
   readSetupGuide(db, orgId, true, signal);
 
+/** Who belongs to the company, with their role and name: the guide uses it to say who can complete a step. A failed read throws; it is never «nobody». */
+export async function loadGuideMembers(db: Db, orgId: string, signal?: AbortSignal) {
+  let q = db.from("org_members").select("user_id,role").eq("org_id", orgId);
+  if (signal) q = q.abortSignal(signal);
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  const ids = (rows ?? []).map((r) => r.user_id);
+  const names = new Map<string, string | null>();
+  if (ids.length) {
+    let p = db.from("profiles").select("id,full_name").in("id", ids);
+    if (signal) p = p.abortSignal(signal);
+    const { data: profiles, error: profilesError } = await p;
+    if (profilesError) throw profilesError;
+    for (const x of profiles ?? []) names.set(x.id, x.full_name);
+  }
+  return (rows ?? []).map((r) => ({
+    user_id: r.user_id,
+    role: String(r.role),
+    name: names.get(r.user_id) ?? null,
+  }));
+}
+
 /** `fitKey: false` skips the domain-proposal data (extra queries) for callers that never use it, like the per-lead follow-up. */
 export async function loadSnapshot(
   db: Db,
@@ -313,16 +335,18 @@ export async function loadSnapshot(
   // leaves the state out: the gate then treats the address as unverified (marked), never blocked.
   const leadRows = leads.data ?? [];
   const leadEmails = [
-    ...new Set(
-      leadRows.map((l) => l.email?.trim().toLowerCase()).filter((e): e is string => !!e),
-    ),
+    ...new Set(leadRows.map((l) => l.email?.trim().toLowerCase()).filter((e): e is string => !!e)),
   ];
   // NK-0174: leads with the anonymous «respondió» mark (a failed read marks none, as before the feature).
   const repliedIds = new Set<string>();
   {
     const contacted = leadRows.filter((l) => l.stage === "contacted").map((l) => l.id);
     if (contacted.length) {
-      const r = await db.from("lead_replied_marks").select("lead_id").eq("org_id", orgId).in("lead_id", contacted.slice(0, 500));
+      const r = await db
+        .from("lead_replied_marks")
+        .select("lead_id")
+        .eq("org_id", orgId)
+        .in("lead_id", contacted.slice(0, 500));
       for (const m of r.data ?? []) repliedIds.add(m.lead_id);
     }
   }
@@ -338,8 +362,8 @@ export async function loadSnapshot(
       leadEmailStatus = new Map(
         leadEmails.map((e) => {
           // Narrow cast: PostgREST types status as string; the table CHECK limits it to EmailStatus.
-          const row = ((vrows ?? []).find((v) => v.email === e) ??
-            null) as import("@/lib/email-verification").EmailVerification | null;
+          const row = ((vrows ?? []).find((v) => v.email === e) ?? null) as
+            import("@/lib/email-verification").EmailVerification | null;
           return [e, effectiveEmailStatus(e, row, now)];
         }),
       );
@@ -367,9 +391,7 @@ export async function loadSnapshot(
     segments: segs.data ?? [],
     leads: leadRows.map((l) => ({
       ...l,
-      email_status: l.email?.trim()
-        ? leadEmailStatus.get(l.email.trim().toLowerCase())
-        : undefined,
+      email_status: l.email?.trim() ? leadEmailStatus.get(l.email.trim().toLowerCase()) : undefined,
       ...(repliedIds.has(l.id) ? { replied: true } : {}),
     })),
     leadSla: readSla(leadSettings.data?.sla),

@@ -14,7 +14,19 @@ export const WON_ISSUE_LABEL: Record<WonIssue, string> = {
 /** Date stored for a day picked in the UI: midday UTC so the quarter never shifts with the time zone. */
 export const closedAtFromDay = (day: string) => `${day}T12:00:00Z`;
 
-export function wonDealRows<T extends WonDealLike>(deals: T[], segments: SegLike[], range: { start: Date; end: Date }) {
+/** Today as YYYY-MM-DD in the person's own time zone. */
+export const localDay = (now = new Date()) =>
+  `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+/** A won deal cannot close on a day that has not arrived (Fede, 2026-11-08). */
+export const isFutureDay = (day: string, now = new Date()) => day > localDay(now);
+export const FUTURE_WON_DAY =
+  "Un deal ganado no puede tener una fecha de cierre futura. Elige hoy o un día anterior.";
+
+export function wonDealRows<T extends WonDealLike>(
+  deals: T[],
+  segments: SegLike[],
+  range: { start: Date; end: Date },
+) {
   return deals
     .filter((d) => d.stage === "won")
     .map((d) => {
@@ -45,7 +57,11 @@ export type WonDealRow = ReturnType<typeof wonDealRows>[number];
 export function wonSummary(rows: WonDealRow[], segments: SegLike[]) {
   const bySegment = segments.map((s) => {
     const xs = rows.filter((r) => r.segmentId === s.id);
-    return { segment: s, deals: xs.length, amount: xs.reduce((t, r) => t + Number(r.deal.amount ?? 0), 0) };
+    return {
+      segment: s,
+      deals: xs.length,
+      amount: xs.reduce((t, r) => t + Number(r.deal.amount ?? 0), 0),
+    };
   });
   return {
     bySegment,
