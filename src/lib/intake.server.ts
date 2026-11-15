@@ -2,6 +2,7 @@
 // quarantine. Runs with the privileged client only after the connection key was verified.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
+// checkIntake stays the pure reference of the same rules (tested in import-batch.test.ts).
 import { checkIntake, type QuarantineRow } from "@/lib/import-batch";
 
 type Db = SupabaseClient<Database>;
@@ -13,21 +14,24 @@ export type IntakeSource = {
 /** Returns an error response body when the send is over a limit (pausing the connection on the daily one). */
 export async function enforceLimits(db: Db, s: IntakeSource, count: number) {
   const today = new Date().toISOString().slice(0, 10);
-  // A3: the quota is reserved atomically in the database (row lock), so two simultaneous sends cannot both pass
-  // the daily limit. Same rules as checkIntake; it is the fallback only when the RPC is unavailable.
-  const { data: rpc, error: rpcError } = await db.rpc("reserve_intake_quota", { _source: s.id, _n: count, _today: today });
-  const r = !rpcError && rpc
-    ? (rpc as unknown as ReturnType<typeof checkIntake>)
-    : checkIntake(count, { maxPerRequest: s.max_per_request, dailyLimit: s.daily_limit, dayCount: s.day_count, dayDate: s.day_date }, today);
-  if (r.ok) {
-    if (rpcError || !rpc) await db.from("lead_sources").update({ day_count: r.dayCount, day_date: r.dayDate }).eq("id", s.id);
-    return null;
+  // A3: the quota is reserved atomically in the database (row lock): it checks the connection is active, reserves
+  // the rows and, past the daily limit, pauses it in the same step. If the reservation cannot be made, nothing is
+  // accepted (retryable 503): there is no non-atomic fallback.
+  let rpc: unknown = null;
+  let failed = false;
+  try {
+    const r = await db.rpc("reserve_intake_quota", { _source: s.id, _n: count, _today: today });
+    rpc = r.data;
+    failed = !!r.error || !rpc;
+  } catch {
+    failed = true;
   }
-  if (r.pause) {
-    await db.from("lead_sources").update({ active: false, paused_reason: r.error }).eq("id", s.id);
-    await db.from("lead_events").insert({ org_id: s.org_id, lead_source_id: s.id, channel: "link", status: "error", summary: "Conexión pausada", error: r.error });
-  }
-  return { status: r.status, error: r.error };
+  if (failed) return { status: 503, error: "No se ha podido reservar el cupo de la conexión. Vuelve a intentarlo en unos minutos." };
+  const r = rpc as { ok: boolean; status?: number; error?: string; pause?: boolean };
+  if (r.ok) return null;
+  if (r.pause)
+    await db.from("lead_events").insert({ org_id: s.org_id, lead_source_id: s.id, channel: "link", status: "error", summary: "Conexión pausada", error: r.error ?? null });
+  return { status: r.status ?? 429, error: r.error ?? "Límite superado" };
 }
 
 export async function quarantine(db: Db, s: IntakeSource, kind: "leads" | "accounts", rows: QuarantineRow[]) {

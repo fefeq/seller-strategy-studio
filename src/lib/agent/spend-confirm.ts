@@ -24,6 +24,7 @@ export const SPEND_TOOLS: Record<string, string> = {
   start_account_report: "parallel",
   start_icp_account_list: "parallel",
   research_account: "web",
+  research_stakeholder: "web",
   refresh_account_signals: "web",
 };
 
@@ -113,7 +114,7 @@ export function withEstimate(summary: string, tool: string, line: string): strin
 }
 
 /** What the person sees after confirming a spending read: the full result, clipped so a message stays readable. */
-export function spendResultText(summary: string, out: unknown, max = 6000): string {
+export function spendResultText(summary: string, out: unknown, max = 60_000): string {
   const note =
     out && typeof out === "object" && typeof (out as { mensaje?: unknown }).mensaje === "string"
       ? ` ${(out as { mensaje: string }).mensaje}`

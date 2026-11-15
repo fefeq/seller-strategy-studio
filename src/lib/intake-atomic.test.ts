@@ -18,10 +18,20 @@ describe("enforceLimits uses the atomic reservation", () => {
     expect(f.rpc).toHaveBeenCalledWith("reserve_intake_quota", expect.objectContaining({ _source: "s1", _n: 2 }));
     expect(f.updates).toHaveLength(0);
   });
-  it("a refused reservation pauses with 429", async () => {
+  it("a refused reservation returns 429 (the pause happens inside the RPC)", async () => {
     const f = fakeDb({ ok: false, status: 429, error: "Límite diario", pause: true });
     expect(await enforceLimits(f.db, src, 9)).toEqual({ status: 429, error: "Límite diario" });
-    expect(f.updates).toContainEqual(expect.objectContaining({ active: false }));
+    expect(f.updates).toHaveLength(0);
+  });
+  it("a failed reservation accepts nothing (503), no non-atomic fallback", async () => {
+    const f = fakeDb(null, { message: "down" });
+    expect((await enforceLimits(f.db, src, 1))!.status).toBe(503);
+    expect(f.updates).toHaveLength(0);
+  });
+  it("an RPC failure never overwrites the counter", async () => {
+    const f = fakeDb(null, { message: "down" });
+    await bumpReceived(f.db, src, 4);
+    expect(f.updates).toHaveLength(0);
   });
 });
 
@@ -30,6 +40,11 @@ describe("bumpReceived", () => {
     const f = fakeDb(null);
     await bumpReceived(f.db, src, 4);
     expect(f.rpc).toHaveBeenCalledWith("bump_intake_received", { _source: "s1", _n: 4 });
+    expect(f.updates).toHaveLength(0);
+  });
+  it("an RPC failure never overwrites the counter", async () => {
+    const f = fakeDb(null, { message: "down" });
+    await bumpReceived(f.db, src, 4);
     expect(f.updates).toHaveLength(0);
   });
 });
