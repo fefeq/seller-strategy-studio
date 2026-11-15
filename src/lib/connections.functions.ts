@@ -40,8 +40,8 @@ export const connectionsStatus = createServerFn({ method: "GET" })
     for (const r of [stripe, posthog, mailbox]) if (r.error) throw new Error(errorText(r.error));
     const rows = usage.rows;
     const company: Record<string, { by: string | null; at: string | null; err: string | null; ok: boolean } | null> = {
-      stripe_connections: stripe.data ? { by: stripe.data.connected_by, at: stripe.data.created_at, err: stripe.data.status === "active" && !stripe.data.last_error ? null : BROKEN, ok: stripe.data.status !== "disconnected" } : null,
-      posthog_connections: posthog.data ? { by: posthog.data.created_by, at: posthog.data.created_at, err: posthog.data.status === "active" && !posthog.data.last_error ? null : BROKEN, ok: posthog.data.status !== "disconnected" } : null,
+      stripe_connections: stripe.data ? { by: stripe.data.connected_by, at: stripe.data.created_at, err: stripe.data.status !== "error" && !stripe.data.last_error ? null : BROKEN, ok: stripe.data.status !== "disconnected" } : null,
+      posthog_connections: posthog.data ? { by: posthog.data.created_by, at: posthog.data.created_at, err: posthog.data.status !== "error" && !posthog.data.last_error ? null : BROKEN, ok: posthog.data.status !== "disconnected" } : null,
       mailbox_links: mailbox.data ? { by: mailbox.data.user_id, at: mailbox.data.linked_at, err: mailbox.data.status === "active" ? null : BROKEN, ok: mailbox.data.status !== "disconnected" } : null,
     };
     const ids = [...new Set(Object.values(company).map((x) => x?.by).filter((x): x is string => !!x))];
