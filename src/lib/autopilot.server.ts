@@ -1,4 +1,4 @@
-// Autopilot (server-only, admin client, always filtered by company): researches new accounts, prepares the
+// Autopilot (server-only, admin client, always filtered by company): proposes (pending, with estimated cost) the paid research of new accounts, prepares the
 // meetings of the next 36 hours and reviews accounts that are cooling down. Bounded per run (AUTOPILOT_LIMITS),
 // each item marked so it is done once; web research goes through the orchestrator budget (automatic work pauses
 // at 100 %). Nokko only writes empty fields and suggestions: nothing is sent or overwritten.
@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
+import { autopilotSpendProposals } from "@/lib/autopilot";
 import { errorText } from "@/lib/errors";
 
 type Admin = SupabaseClient<Database>;
@@ -43,71 +44,53 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
     const autoEnrich =
       (await db.from("lead_settings").select("auto_enrich").eq("org_id", orgId).maybeSingle()).data
         ?.auto_enrich !== false;
-    const { completeAccount, applyAutoChanges, trackedRun } =
-      await import("@/lib/orchestrator/runner");
-    const { researchAccountCore } = await import("@/lib/web-research-core");
+    const { spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
     for (const a of accountsToResearch(accs ?? [], now)) {
-      // Marked first: a failing source must not retry every hour.
+      // Marked first: one proposal per new account, never repeated every hour.
       await db
         .from("accounts")
         .update({ auto_researched_at: now.toISOString() })
         .eq("org_id", orgId)
         .eq("id", a.id);
       const acc = (accs ?? []).find((x) => x.id === a.id)!;
+      // Spending is never automatic: each paid step becomes a pending action with its estimated cost,
+      // run only when the person confirms it (decidePending). No permanent per-company permission.
+      const proposals = autopilotSpendProposals(acc, autoEnrich);
+      const owner = acc.owner_id ?? actor;
       const lines: string[] = [];
-      if (autoEnrich)
+      for (const pr of proposals) {
+        const line = await spendEstimateLine(db, orgId, pr.tool);
+        const summary = withEstimate(`Piloto automático · ${pr.label} «${acc.name}»`, pr.tool, line);
+        let error: unknown = null;
         try {
-          const c2 = { ...ctx, userId: acc.owner_id ?? actor };
-          const r = await completeAccount(c2, a.id, "automatic");
-          const written = await applyAutoChanges(c2, a.id, r.changes, now.toISOString());
-          if (written.length)
-            lines.push(`Datos completados: ${written.length} campos (${r.sources}).`);
+          ({ error } = await db.from("agent_pending_actions").insert({
+          org_id: orgId,
+          user_id: owner,
+          tool: pr.tool,
+          args: { account_id: a.id },
+          summary: summary.slice(0, 500),
+          source: "autopilot",
+          }));
         } catch (e) {
-          console.error("autopilot complete", safeErrorLog(e));
+          error = e;
         }
-      try {
-        const res = await trackedRun(ctx, "research_account", "automatic", () =>
-          researchAccountCore(db, a.id, scope),
-        );
-        const { data: plan } = await db
-          .from("account_plans")
-          .select("*")
-          .eq("org_id", orgId)
-          .eq("account_id", a.id)
-          .maybeSingle();
-        const empty = Object.fromEntries(
-          Object.entries(res.fields).filter(
-            ([f, v]) =>
-              v && !((plan as Record<string, unknown> | null)?.[f] as string | null)?.trim(),
-          ),
-        ) as Database["public"]["Tables"]["account_plans"]["Update"];
-        if (plan && Object.keys(empty).length)
-          await db.from("account_plans").update(empty).eq("org_id", orgId).eq("id", plan.id);
-        else if (!plan)
-          await db.from("account_plans").insert({ org_id: orgId, account_id: a.id, ...empty });
-        lines.unshift(res.summary);
-        if (Object.keys(empty).length)
-          lines.push(
-            `Plan de cuenta: rellené ${Object.keys(empty).length} apartados vacíos (situación, dolores, iniciativas…). Revísalos.`,
-          );
-        if (res.sources.length)
-          lines.push(
-            `Fuentes: ${res.sources
-              .slice(0, 4)
-              .map((s) => s.url)
-              .join(" · ")}`,
-          );
-      } catch (e) {
-        lines.push(`No pude investigar la web: ${errorText(e)}`);
+        if (error) {
+          const e = error;
+          console.error("autopilot proposal", safeErrorLog(e));
+          // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
+          if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(e)}`);
+        }
+        else lines.push(`${pr.label}: ${line}.`);
       }
+      if (!lines.length) continue;
       await db.from("suggestions").upsert(
         {
           org_id: orgId,
           detector: "account_researched",
           dedupe_key: `account_researched:${a.id}`,
           priority: 3,
-          title: `Investigué la cuenta nueva ${acc.name}`.slice(0, 200),
-          body: lines.filter(Boolean).join("\n").slice(0, 4000),
+          title: `Cuenta nueva ${acc.name}: investigación pendiente de tu confirmación`.slice(0, 200),
+          body: `No he gastado nada. Confírmalo en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
           link: `/accounts/${a.id}`,
           user_id: acc.owner_id,
         },

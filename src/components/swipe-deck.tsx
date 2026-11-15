@@ -45,6 +45,8 @@ export function SwipeDeck<T extends { id: string }>({
   const [gone, setGone] = useState<Map<string, SwipeDir>>(new Map());
   const [exit, setExit] = useState<SwipeDir>("right");
   const [stats, setStats] = useState({ right: 0, left: 0, up: 0 });
+  // The stack takes the height of its top card (plus the peek of the cards behind), so a short card leaves no gap.
+  const [topH, setTopH] = useState(0);
   const total = useRef(0);
   const visible = items.filter((i) => !gone.has(i.id));
   total.current = Math.max(total.current, items.length);
@@ -126,7 +128,7 @@ export function SwipeDeck<T extends { id: string }>({
           transition={{ duration: 0.25 }}
         />
       </div>
-      <div className="relative min-h-[340px]">
+      <div className="relative" style={current ? { minHeight: topH ? topH + Math.min(visible.length - 1, 2) * 12 : 220 } : undefined}>
         <AnimatePresence initial={false} custom={exit}>
           {visible
             .slice(0, 3)
@@ -140,6 +142,7 @@ export function SwipeDeck<T extends { id: string }>({
                   labels={labelsOf(item)}
                   onDecide={decide}
                   exitDir={exit}
+                  onHeight={depth === 0 ? setTopH : undefined}
                 >
                   {render(item)}
                 </DeckCard>
@@ -211,7 +214,9 @@ function DeckCard({
   labels,
   onDecide,
   exitDir,
+  onHeight,
 }: {
+  onHeight?: (h: number) => void;
   children: ReactNode;
   depth: number;
   labels: DeckLabels;
@@ -226,6 +231,16 @@ function DeckCard({
   const noOpacity = useTransform(x, [-110, -20], [1, 0]);
   const laterOpacity = useTransform(y, [-110, -20], [1, 0]);
   const top = depth === 0;
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = box.current;
+    if (!el || !onHeight) return;
+    onHeight(el.offsetHeight);
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => onHeight(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [onHeight]);
   function onDragEnd(_: unknown, info: PanInfo) {
     const d = swipeDirection(info.offset.x, info.offset.y, info.velocity.x, info.velocity.y);
     if (d) onDecide(d);
@@ -237,6 +252,7 @@ function DeckCard({
   }[exitDir];
   return (
     <motion.div
+      ref={box}
       className="absolute inset-x-0 top-0 touch-none select-none"
       style={top ? { x, y, rotate, zIndex: 10 } : { zIndex: 10 - depth }}
       initial={{ scale: 0.92, y: 24, opacity: 0 }}

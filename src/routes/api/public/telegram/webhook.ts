@@ -101,6 +101,11 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
               : `No se ha podido hacer. ${r.result || "Vuelve a intentarlo desde Sugerencias, en la app."}`,
         );
       }
+      if (kind === "q") {
+        const said = String(cq.data ?? "").slice(2);
+        if (said) await agentReply(db, ctx, chatId, said, t);
+        return;
+      }
       if (kind === "n") {
         const { parseAutonomy, AUTONOMY } = await import("@/lib/autonomy");
         const level = parseAutonomy(id);
@@ -192,6 +197,13 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
     return t.sendText(chatId, "Nueva conversación. ¿Qué necesitas?");
   }
 
+  return agentReply(db, ctx, chatId, text, t);
+}
+
+type Ctx = NonNullable<Awaited<ReturnType<(typeof import("@/lib/channel-ctx.server"))["channelCtx"]>>>;
+
+/** Runs the shared agent and answers with the same E2 blocks the app shows (actions, next steps, links). */
+async function agentReply(db: Admin, ctx: Ctx, chatId: string, text: string, t: Tg) {
   await t.tg("sendChatAction", { chat_id: chatId, action: "typing" }).catch(() => {});
   let { data: conv } = await db
     .from("agent_conversations")
@@ -221,14 +233,10 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
       mode: "chat",
       orgName: ctx.orgName,
     });
-    await t.sendText(chatId, out.text);
-    for (const p of out.pending)
-      await t.sendText(chatId, `¿Confirmas? ${p.summary}`, [
-        [
-          { text: "Confirmar", data: `a:${p.id}:c` },
-          { text: "Cancelar", data: `a:${p.id}:x` },
-        ],
-      ]);
+    const { replyBlocks, toTelegram } = await import("@/lib/conversation");
+    const { absoluteUrl } = await import("@/lib/site");
+    const r = toTelegram(replyBlocks(out.text, out.pending), absoluteUrl("/"));
+    await t.sendText(chatId, r.text ? `${out.text}\n\n${r.text}` : out.text, r.buttons.length ? r.buttons : undefined);
   } catch (e) {
     await t.sendText(chatId, errorText(e));
   }
