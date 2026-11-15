@@ -13,9 +13,14 @@ export type IntakeSource = {
 /** Returns an error response body when the send is over a limit (pausing the connection on the daily one). */
 export async function enforceLimits(db: Db, s: IntakeSource, count: number) {
   const today = new Date().toISOString().slice(0, 10);
-  const r = checkIntake(count, { maxPerRequest: s.max_per_request, dailyLimit: s.daily_limit, dayCount: s.day_count, dayDate: s.day_date }, today);
+  // A3: the quota is reserved atomically in the database (row lock), so two simultaneous sends cannot both pass
+  // the daily limit. Same rules as checkIntake; it is the fallback only when the RPC is unavailable.
+  const { data: rpc, error: rpcError } = await db.rpc("reserve_intake_quota", { _source: s.id, _n: count, _today: today });
+  const r = !rpcError && rpc
+    ? (rpc as unknown as ReturnType<typeof checkIntake>)
+    : checkIntake(count, { maxPerRequest: s.max_per_request, dailyLimit: s.daily_limit, dayCount: s.day_count, dayDate: s.day_date }, today);
   if (r.ok) {
-    await db.from("lead_sources").update({ day_count: r.dayCount, day_date: r.dayDate }).eq("id", s.id);
+    if (rpcError || !rpc) await db.from("lead_sources").update({ day_count: r.dayCount, day_date: r.dayDate }).eq("id", s.id);
     return null;
   }
   if (r.pause) {
@@ -32,6 +37,13 @@ export async function quarantine(db: Db, s: IntakeSource, kind: "leads" | "accou
     org_id: s.org_id, batch_id: batch.id, line: r.line, raw: r.raw as Json, summary: r.summary.slice(0, 300), action: r.action, reason: r.reason,
   })));
   if (e2) throw new Error(e2.message);
-  await db.from("lead_sources").update({ received_count: s.received_count + rows.length, last_received_at: new Date().toISOString() }).eq("id", s.id);
+  await bumpReceived(db, s, rows.length);
   return batch.id as string;
+}
+
+/** A3: atomic received_count increment (never read-modify-write); falls back to the old update if the RPC fails. */
+export async function bumpReceived(db: Db, s: IntakeSource, n: number) {
+  const { error } = await db.rpc("bump_intake_received", { _source: s.id, _n: n });
+  if (error)
+    await db.from("lead_sources").update({ received_count: s.received_count + n, last_received_at: new Date().toISOString() }).eq("id", s.id);
 }
