@@ -1657,6 +1657,8 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   estado_proveedor_email: ["src/integrations/supabase/types.ts"],
   proveedor_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
   estado_buzon: ["src/components/reply-inbox/mailbox-card.tsx"],
+  clave_conexion_cifrada: ["src/components/connections/drive-company-card.tsx"],
+  estado_conexion_drive: ["src/components/connections/drive-company-card.tsx"],
   tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
