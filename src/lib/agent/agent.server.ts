@@ -112,7 +112,14 @@ export async function runAgent(
     .insert({ conversation_id: opts.conversationId, role: "user", content: opts.text });
 
   // The team's rules from Conocimiento, every turn and every mode (SDD-20261106-agent-rules-reader).
-  const [memory, rules] = await Promise.all([memoryBlock(ctx), loadAgentRules(ctx)]);
+  const [memory, rules, pref] = await Promise.all([
+    memoryBlock(ctx),
+    loadAgentRules(ctx),
+    ctx.db.from("user_agent_prefs").select("autonomy").eq("user_id", ctx.userId).maybeSingle(),
+  ]);
+  // E1: the person's level only shapes how Nokko proposes; confirmations stay for every level.
+  const { autonomyPrompt, parseAutonomy } = await import("@/lib/autonomy");
+  const level = autonomyPrompt(parseAutonomy(pref.data?.autonomy));
   const pending: PendingAction[] = [];
   const system = systemPrompt(
     ctx,
@@ -122,7 +129,7 @@ export async function runAgent(
     opts.personaId,
     opts.workflowId,
     memory,
-    rulesBlock(rules.rules, { withPerson: true }),
+    `${rulesBlock(rules.rules, { withPerson: true })}\n${level}`,
   );
   const messages: ModelMessage[] = [...history, { role: "user", content: opts.text }];
 

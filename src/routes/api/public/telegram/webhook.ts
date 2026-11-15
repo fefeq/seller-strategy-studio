@@ -101,6 +101,13 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
               : `No se ha podido hacer. ${r.result || "Vuelve a intentarlo desde Sugerencias, en la app."}`,
         );
       }
+      if (kind === "n") {
+        const { parseAutonomy, AUTONOMY } = await import("@/lib/autonomy");
+        const level = parseAutonomy(id);
+        const up = await db.from("user_agent_prefs").upsert({ user_id: ctx.userId, autonomy: level, updated_at: new Date().toISOString() });
+        if (up.error) throw up.error;
+        return t.sendText(chatId, `Nivel cambiado a ${AUTONOMY[level].label}. ${AUTONOMY[level].short} Puedes cambiarlo cuando quieras con /nivel.`);
+      }
       if (
         kind === "s" &&
         (decision === "approve" || decision === "dismiss" || decision === "snooze")
@@ -168,6 +175,15 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
   const ctx = await channelCtx(db, link.user_id);
   if (!ctx)
     return t.sendText(chatId, "No tienes una empresa activa en Nokko. Elige una en la app.");
+
+  if (text === "/nivel") {
+    const { autonomyBlocks } = await import("@/lib/autonomy-blocks");
+    const { toTelegram } = await import("@/lib/conversation");
+    const { data: pref } = await db.from("user_agent_prefs").select("autonomy").eq("user_id", ctx.userId).maybeSingle();
+    const { absoluteUrl } = await import("@/lib/site");
+    const r = toTelegram(autonomyBlocks(pref?.autonomy, "n:"), absoluteUrl("/"));
+    return t.sendText(chatId, r.text, r.buttons);
+  }
 
   if (text === "/nueva") {
     await db

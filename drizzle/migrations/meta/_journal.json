@@ -736,6 +736,13 @@
       "when": 1794703937943,
       "tag": "0105_drive_company_connections",
       "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1794704444776,
+      "tag": "0106_user_agent_prefs",
+      "breakpoints": true
     }
   ]
 }
