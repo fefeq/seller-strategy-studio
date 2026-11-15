@@ -13,6 +13,10 @@ describe("D1 selection", () => {
   it("prune drops ids no longer listed", () => {
     expect([...prune(new Set(["a", "x"]), ["a", "b"])]).toEqual(["a"]);
   });
+  it("csv neutralises formulas", () => {
+    for (const f of ["=1+1", "+1", "-1", "@SUM(A1)", "  =x"]) expect(toCsv(["n"], [[f]]).split("\r\n")[1]).toBe(`"'${f}"`);
+    expect(toCsv(["n"], [[-5]]).split("\r\n")[1]).toBe('"-5"');
+  });
   it("csv escapes quotes, commas and newlines", () => {
     expect(toCsv(["n"], [['A "B", C\nD']])).toBe('"n"\r\n"A ""B"", C\nD"');
   });

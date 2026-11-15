@@ -70,9 +70,13 @@ export function ConnectionsStatusPanel() {
                   </p>
                 )}
               </div>
-              <Button size="sm" variant="outline" disabled={busy === s.id} onClick={() => run(s.id)}>
-                {busy === s.id ? "Probando…" : "Probar conexión"}
-              </Button>
+              {s.source.kind === "shared" ? (
+                <Button size="sm" variant="outline" disabled={busy === s.id} onClick={() => run(s.id)}>
+                  {busy === s.id ? "Probando…" : "Probar conexión"}
+                </Button>
+              ) : (
+                <span className="text-xs text-muted-foreground">Se comprueba en su tarjeta</span>
+              )}
             </li>
           );
         })}

@@ -6,6 +6,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { Db } from "@/lib/org-data";
 import { userCtx } from "@/lib/agent.functions";
 import { SERVICES, monthUsage } from "@/lib/connections";
+import { fetchAll } from "@/lib/fetch-all";
+import { errorText } from "@/lib/errors";
+
+const BROKEN = "La conexión tiene un error: revísala en su tarjeta.";
+/** Free checks still hit shared credentials: one per user and service every 15 s (per server instance). */
+const lastTest = new Map<string, number>();
 
 export type ConnectionRow = {
   id: string;
@@ -24,16 +30,19 @@ export const connectionsStatus = createServerFn({ method: "GET" })
     const now = new Date();
     const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
     const [usage, stripe, posthog, mailbox] = await Promise.all([
-      db.from("integration_usage").select("service,cost,currency,created_at").eq("org_id", c.orgId).gte("created_at", since).limit(5000),
+      fetchAll<{ service: string; cost: number | null; currency: string; created_at: string }>((a, b) =>
+        db.from("integration_usage").select("service,cost,currency,created_at").eq("org_id", c.orgId).gte("created_at", since).order("id").range(a, b),
+      ),
       db.from("stripe_connections").select("connected_by,created_at,status,last_error").eq("org_id", c.orgId).maybeSingle(),
       db.from("posthog_connections").select("created_by,created_at,status,last_error").eq("org_id", c.orgId).maybeSingle(),
       db.from("mailbox_links").select("user_id,linked_at,status").eq("org_id", c.orgId).maybeSingle(),
     ]);
-    const rows = usage.data ?? [];
+    for (const r of [stripe, posthog, mailbox]) if (r.error) throw new Error(errorText(r.error));
+    const rows = usage.rows;
     const company: Record<string, { by: string | null; at: string | null; err: string | null; ok: boolean } | null> = {
-      stripe_connections: stripe.data ? { by: stripe.data.connected_by, at: stripe.data.created_at, err: stripe.data.last_error, ok: stripe.data.status !== "disconnected" } : null,
-      posthog_connections: posthog.data ? { by: posthog.data.created_by, at: posthog.data.created_at, err: posthog.data.last_error, ok: posthog.data.status !== "disconnected" } : null,
-      mailbox_links: mailbox.data ? { by: mailbox.data.user_id, at: mailbox.data.linked_at, err: null, ok: mailbox.data.status !== "disconnected" } : null,
+      stripe_connections: stripe.data ? { by: stripe.data.connected_by, at: stripe.data.created_at, err: stripe.data.status === "active" && !stripe.data.last_error ? null : BROKEN, ok: stripe.data.status !== "disconnected" } : null,
+      posthog_connections: posthog.data ? { by: posthog.data.created_by, at: posthog.data.created_at, err: posthog.data.status === "active" && !posthog.data.last_error ? null : BROKEN, ok: posthog.data.status !== "disconnected" } : null,
+      mailbox_links: mailbox.data ? { by: mailbox.data.user_id, at: mailbox.data.linked_at, err: mailbox.data.status === "active" ? null : BROKEN, ok: mailbox.data.status !== "disconnected" } : null,
     };
     const ids = [...new Set(Object.values(company).map((x) => x?.by).filter((x): x is string => !!x))];
     const names = new Map<string, string>();
@@ -51,7 +60,7 @@ export const connectionsStatus = createServerFn({ method: "GET" })
         present: !!row?.ok,
         by: row?.by ? names.get(row.by) || "Un miembro del equipo" : null,
         at: row?.at ?? null,
-        lastError: row?.err ? "La última sincronización falló." : null,
+        lastError: row?.ok ? row.err : null,
         usage: u,
       };
     });
@@ -66,7 +75,10 @@ export const testConnection = createServerFn({ method: "POST" })
     const at = new Date().toISOString();
     const s = SERVICES.find((x) => x.id === data.id);
     if (!s) return { ok: false, detail: "Servicio desconocido.", at };
-    if (s.source.kind === "company") return { ok: true, detail: "Se prueba desde su tarjeta (sincronizar).", at };
+    if (s.source.kind === "company") throw new Error("Esta conexión se comprueba desde su tarjeta, más abajo.");
+    const k = `${context.userId}:${s.id}`;
+    if (Date.now() - (lastTest.get(k) ?? 0) < 15_000) throw new Error("Acabas de probarla: espera unos segundos.");
+    lastTest.set(k, Date.now());
     const key = process.env[s.source.env];
     if (!key) return { ok: false, detail: "Sin conectar en NOKKO.", at };
     try {

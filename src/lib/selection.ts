@@ -17,6 +17,11 @@ export function prune(sel: ReadonlySet<string>, ids: readonly string[]): Set<str
 }
 /** CSV with a header; quotes every field so commas, quotes and line breaks survive. */
 export function toCsv(header: readonly string[], rows: readonly (readonly (string | number | null | undefined)[])[]): string {
-  const q = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  // Fields starting with = + - @ (after spaces) are prefixed with ' so spreadsheets never run them as formulas.
+  const q = (v: string | number | null | undefined) => {
+    const raw = String(v ?? "");
+    const safe = typeof v === "string" && /^\s*[=+\-@]/.test(raw) ? `'${raw}` : raw;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
   return [header, ...rows].map((r) => r.map(q).join(",")).join("\r\n");
 }
