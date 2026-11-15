@@ -6,7 +6,7 @@ Fecha: 14-11-2026. SDD presentado: `.lovable/plan/sdd-ola-1-agrupación-del-men�
 - La implementación se realizó sin el OK escrito exigido para el SDD. La aprobación automática de la herramienta no era suficiente; la mención anterior «SDD aprobado» era incorrecta.
 - Fede acepta el resultado entregado por ser reversible y estar verificado. Esta aceptación posterior no convierte en autorización previa el SDD ni permite iniciar otras entregas.
 - Desde ahora no marcar ningún SDD como aprobado ni construir sin el OK escrito de Fede.
-- Glosario pendiente de su decisión sobre «equipos/grupos de plays» y «playbooks»; no continuar cambios.
+- Glosario CERRADO (decisión de Fede, 15-nov-2026): se mantienen «Equipo de plays», «Playbook», «Valor anual (ACV)» y «Modelo de venta».
 - Drive corresponde a Ola 3B y reutiliza `docs/sdd/SDD-20261025-drive-per-company-account.md`, aprobado el 26 de octubre según confirma Fede. No crear otro SDD ni tocar Drive hasta que lo pida. Sin publicación.
 
 ## Cambios
@@ -33,3 +33,6 @@ Fecha: 14-11-2026. SDD presentado: `.lovable/plan/sdd-ola-1-agrupación-del-men�
 
 ## Drive (solo lectura de código)
 Actualmente una credencial compartida en `google-drive.ts`, con carpetas por empresa y comprobaciones de pertenencia en `drive-core.ts`; no hay selección de una conexión independiente por empresa. Falta autorización y vinculación por empresa, resolución de su conexión en cada operación, gestión de desconexión y pruebas de aislamiento entre conexiones. La transición de carpetas existentes requiere autorización aparte. No se leyó contenido de Drive ni se verificó su cuenta o vigencia alojada.
+
+## Cierre A1 (15-nov-2026)
+Decisión de Fede: se mantienen «Equipo de plays», «Playbook», «Valor anual (ACV)» y «Modelo de venta». No hace falta cambiar textos ni pruebas protegidas (`-plays.test.tsx`, `hub-screen.test.tsx` intactas). El nombre accesible «Filtrar por motion» queda como está porque lo fija `-plays.test.tsx`, que no se puede tocar; anotado como residuo de glosario menor.
