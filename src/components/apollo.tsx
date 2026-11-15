@@ -360,6 +360,7 @@ function ApolloPeople({ accountId, onAdded }: { accountId: string; onAdded: () =
     if (!ids.length) return;
     setBusy(true);
     try {
+      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo"))) return;
       const r = await reveal({ data: { accountId, apolloIds: ids, phone } });
       const next = new Map(added);
       for (const x of r)
@@ -516,6 +517,7 @@ export function ApolloReveal({
   async function run(phone: boolean) {
     setBusy(phone ? "phone" : "email");
     try {
+      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo"))) return;
       const r = await reveal({ data: { stakeholderId, phone } });
       if (!r.found)
         toast.message(
