@@ -7,7 +7,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { accountsToResearch, coolingAccounts, meetingsToPrep, weekKey } from "@/lib/autopilot";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 import { autopilotSpendProposals } from "@/lib/autopilot";
-import { errorText } from "@/lib/errors";
+import { errorText, noteErrorText } from "@/lib/errors";
 import { runAutopilotAction } from "@/lib/autopilot-threshold";
 import { spendEstimateLine, spendEstimate, withEstimate } from "@/lib/agent/spend-confirm";
 import { decidePending } from "@/lib/agent.functions";
@@ -34,29 +34,57 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
     .eq("id", orgId)
     .maybeSingle();
   const ctx = { db, orgId, userId: actor, roles: ["owner"], currency: org?.currency ?? "EUR" };
-  const settings = await db.from("lead_settings").select("autopilot_action_threshold").eq("org_id", orgId).maybeSingle();
+  const settings = await db
+    .from("lead_settings")
+    .select("autopilot_action_threshold")
+    .eq("org_id", orgId)
+    .maybeSingle();
   const threshold = settings.error ? 0 : Number(settings.data?.autopilot_action_threshold ?? 0);
-  async function gated(tool: string, args: Record<string, string>, key: string, userId: string, label: string) {
+  async function gated(
+    tool: string,
+    args: Record<string, string>,
+    key: string,
+    userId: string,
+    label: string,
+  ) {
     if (!userId) return "pending";
     // spendEstimateLine is the same visible estimate used by the new-account proposals.
     const line = await spendEstimateLine(db, orgId, tool);
     const estimate = await spendEstimate(db, orgId, tool, ctx.currency);
     return runAutopilotAction(estimate.value, threshold, {
       propose: async () => {
-        const { data, error } = await db.from("agent_pending_actions").insert({ org_id: orgId, user_id: userId,
-          tool, args: { ...args, autopilot_key: key } as Json, source: "autopilot",
-          summary: withEstimate(`Piloto automático · ${label}`, tool, line).slice(0, 500),
-        }).select("id").single();
+        const { data, error } = await db
+          .from("agent_pending_actions")
+          .insert({
+            org_id: orgId,
+            user_id: userId,
+            tool,
+            args: { ...args, autopilot_key: key } as Json,
+            source: "autopilot",
+            summary: withEstimate(`Piloto automático · ${label}`, tool, line).slice(0, 500),
+          })
+          .select("id")
+          .single();
         if (error?.code === "23505") return null;
         if (error) throw error;
         if (!data?.id) throw new Error("No se pudo reservar la acción pendiente. Reintenta.");
         return data.id;
       },
-      execute: async id => {
-        const roles = await db.from("org_members").select("role").eq("org_id", orgId).eq("user_id", userId);
-        if (roles.error || !roles.data?.length) throw new Error("La persona ya no pertenece a esta empresa.");
-        const result = await decidePending({ ...ctx, userId, roles: roles.data.map(r => r.role) }, id, "confirm");
-        if (result.status !== "confirmed") throw new Error(result.result || "La preparación no se completó.");
+      execute: async (id) => {
+        const roles = await db
+          .from("org_members")
+          .select("role")
+          .eq("org_id", orgId)
+          .eq("user_id", userId);
+        if (roles.error || !roles.data?.length)
+          throw new Error("La persona ya no pertenece a esta empresa.");
+        const result = await decidePending(
+          { ...ctx, userId, roles: roles.data.map((r) => r.role) },
+          id,
+          "confirm",
+        );
+        if (result.status !== "confirmed")
+          throw new Error(result.result || "La preparación no se completó.");
       },
     });
   }
@@ -85,17 +113,28 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       let executed = 0;
       for (const pr of proposals) {
         try {
-          const state = await gated(pr.tool, { account_id: a.id }, `new-account:${a.id}:${pr.tool}`, owner, `${pr.label} «${acc.name}»`);
+          const state = await gated(
+            pr.tool,
+            { account_id: a.id },
+            `new-account:${a.id}:${pr.tool}`,
+            owner,
+            `${pr.label} «${acc.name}»`,
+          );
           if (state === "executed") executed++;
           lines.push(`${pr.label}: ${state === "executed" ? "ejecutado" : "pendiente"}.`);
         } catch (e) {
           console.error("autopilot proposal", safeErrorLog(e));
           // NK-0162: the visible text never carries the raw error; the proposal could not be left pending.
-          if (pr.tool === "research_account") lines.push(`No pude investigar la web: ${errorText(e)}`);
+          if (pr.tool === "research_account")
+            lines.push(`No pude investigar la web: ${errorText(e)}`);
         }
       }
       if (executed === proposals.length && executed > 0) {
-        const marked = await db.from("accounts").update({ auto_researched_at: now.toISOString() }).eq("org_id", orgId).eq("id", a.id);
+        const marked = await db
+          .from("accounts")
+          .update({ auto_researched_at: now.toISOString() })
+          .eq("org_id", orgId)
+          .eq("id", a.id);
         if (marked.error) throw marked.error;
         out.researched++;
         continue;
@@ -107,8 +146,14 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
           detector: "account_researched",
           dedupe_key: `account_researched:${a.id}`,
           priority: 3,
-          title: `Cuenta nueva ${acc.name}: investigación pendiente de tu confirmación`.slice(0, 200),
-          body: `Confirma las acciones pendientes en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(0, 4000),
+          title: `Cuenta nueva ${acc.name}: investigación pendiente de tu confirmación`.slice(
+            0,
+            200,
+          ),
+          body: `Confirma las acciones pendientes en Hoy → Pendientes del agente:\n${lines.join("\n")}`.slice(
+            0,
+            4000,
+          ),
           link: `/accounts/${a.id}`,
           user_id: acc.owner_id,
         },
@@ -116,7 +161,8 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       );
     }
   } catch (e) {
-    out.notes.push(`Investigación: ${(e as Error).message}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Investigación: ${noteErrorText(e)}`);
   }
 
   // 2 · Meetings of the next 36 hours without call prep: prepared the day before.
@@ -129,17 +175,24 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
       .lte("scheduled_at", new Date(now.getTime() + 1.5 * DAY).toISOString())
       .limit(50);
     for (const m of meetingsToPrep(ms ?? [], now)) {
-      const meta = (ms ?? []).find(x => x.id === m.id);
+      const meta = (ms ?? []).find((x) => x.id === m.id);
       if (!meta) continue;
       try {
-        const state = await gated("autopilot_prepare_meeting", { meeting_id: m.id }, `meeting:${m.id}`, meta.created_by ?? actor, `Preparar reunión «${meta.title}»`);
+        const state = await gated(
+          "autopilot_prepare_meeting",
+          { meeting_id: m.id },
+          `meeting:${m.id}`,
+          meta.created_by ?? actor,
+          `Preparar reunión «${meta.title}»`,
+        );
         if (state === "executed") out.prepped++;
       } catch (e) {
         out.notes.push(`Reunión ${meta.title}: ${errorText(e)}`);
       }
     }
   } catch (e) {
-    out.notes.push(`Reuniones: ${(e as Error).message}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Reuniones: ${noteErrorText(e)}`);
   }
 
   // 3 · Accounts that matter and went quiet: one review per account and week, with a proposed next move.
@@ -176,7 +229,10 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         .limit(5000),
       db.from("lead_settings").select("sla").eq("org_id", orgId).maybeSingle(),
     ]);
-    const { data: st, error: stageError } = await db.from("deal_stages").select("key,kind").eq("org_id", orgId);
+    const { data: st, error: stageError } = await db
+      .from("deal_stages")
+      .select("key,kind")
+      .eq("org_id", orgId);
     if (stageError) throw stageError;
     for (const read of [accs, touches, calls, meetings, deals, sla]) {
       if (read.error) throw read.error;
@@ -214,12 +270,19 @@ export async function autopilotForOrg(db: Admin, orgId: string, now = new Date()
         cold.map((c) => `account_cooling:${c.id}:${week}`),
       );
     const doneKeys = new Set((done ?? []).map((d) => d.dedupe_key));
-    for (const c of cold.filter(x => !doneKeys.has(`account_cooling:${x.id}:${week}`))) {
-      const state = await gated("autopilot_review_account", { account_id: c.id, week }, `cooling:${c.id}:${week}`, c.owner_id ?? actor, `Repasar cuenta «${c.name}»`);
+    for (const c of cold.filter((x) => !doneKeys.has(`account_cooling:${x.id}:${week}`))) {
+      const state = await gated(
+        "autopilot_review_account",
+        { account_id: c.id, week },
+        `cooling:${c.id}:${week}`,
+        c.owner_id ?? actor,
+        `Repasar cuenta «${c.name}»`,
+      );
       if (state === "executed") out.cooling++;
     }
   } catch (e) {
-    out.notes.push(`Cuentas que se enfrían: ${(e as Error).message}`);
+    console.error("autopilot note", safeErrorLog(e));
+    out.notes.push(`Cuentas que se enfrían: ${noteErrorText(e)}`);
   }
 
   if (out.notes.length) console.warn("autopilot notes", orgId, { count: out.notes.length });
