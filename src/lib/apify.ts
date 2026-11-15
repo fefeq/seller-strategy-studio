@@ -7,6 +7,8 @@ export const ACTORS = {
   companyPosts: { id: "harvestapi~linkedin-company-posts", maxUsd: 0.05 },
   profilePosts: { id: "harvestapi~linkedin-profile-posts", maxUsd: 0.03 },
   jobs: { id: "valig~linkedin-jobs-scraper", maxUsd: 0.05 },
+  // A+: profile details without email search (Apify store: 0,004 $ per profile, verified 15-nov-2026).
+  profile: { id: "harvestapi~linkedin-profile-scraper", maxUsd: 0.01 },
   g2: { id: "automation-lab~g2-scraper", maxUsd: 0.3 },
 } as const;
 

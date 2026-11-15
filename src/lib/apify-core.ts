@@ -229,6 +229,31 @@ export async function accountJobsCore(db: Db, accountId: string, scope: AiScope 
   return { linkedin: url, jobs, hiring: hiringSignals(jobs) };
 }
 
+/** A+: current role on LinkedIn vs what NOKKO stores. Reads only; updating the record stays a confirmed write. */
+export async function stakeholderRoleCore(db: Db, stakeholderId: string, scope: AiScope = null) {
+  const { data: s } = await inOrg(
+    db.from("stakeholders").select("id,org_id,name,title,linkedin_url,account_id").eq("id", stakeholderId),
+    scope,
+  ).maybeSingle();
+  if (!s) throw new Error("No encuentro esa persona en esta empresa.");
+  const url = linkedinProfileUrl(s.linkedin_url);
+  if (!url) throw new Error(`Añade el LinkedIn de ${s.name} para comprobar su cargo.`);
+  const { data: acc } = await inOrg(db.from("accounts").select("name").eq("id", s.account_id as string), scope).maybeSingle();
+  const raw = await runActor(
+    ACTORS.profile,
+    { profileScraperMode: "Profile details no email ($4 per 1k)", queries: [url] },
+    { maxItems: 1 },
+  );
+  await logLinkedinRun(db, s.org_id as string, "linkedin_role_check", Array.isArray(raw) ? raw.length : 0);
+  const { currentRole, roleChange } = await import("@/lib/linkedin-insights");
+  const now = currentRole(raw);
+  return {
+    name: s.name as string,
+    linkedin: url,
+    change: roleChange({ title: s.title as string | null, company: (acc?.name as string | undefined) ?? null }, now),
+  };
+}
+
 /** Recent posts of a stakeholder with a LinkedIn profile. */
 export async function stakeholderPostsCore(db: Db, stakeholderId: string, scope: AiScope = null) {
   const { data: s } = await inOrg(
