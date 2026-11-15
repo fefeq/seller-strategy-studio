@@ -2,7 +2,7 @@ import { useSearch, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useJob } from "@/components/background";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMe } from "@/hooks/use-me";
@@ -10,7 +10,7 @@ import { useOpenDocFromUrl } from "@/hooks/use-open-doc-from-url";
 import { useUrlSection } from "@/hooks/use-url-section";
 import { useCleanUrl } from "@/hooks/use-clean-url";
 import {
-  defaultSection,
+  HUB_DEFAULT_SECTION,
   HUB_SECTIONS,
   nextSearchOnSectionChange,
   searchWithSection,
@@ -97,7 +97,7 @@ const SEARCH_URL_DEBOUNCE_MS = 300;
 type DocsCache = { rows: Doc[]; truncated: boolean };
 
 /** B2: Reglas y voz live as a Strategy tab; the same screen renders embedded with only those sections (no page frame, Drive or search). */
-function Frame({ embedded, children, ...page }: React.ComponentProps<typeof Page> & { embedded: boolean }) {
+function Frame({ embedded, children, ...page }: ComponentProps<typeof Page> & { embedded: boolean; children?: ReactNode }) {
   return embedded ? <>{children}</> : <Page {...page}>{children}</Page>;
 }
 
@@ -210,7 +210,7 @@ export function HubScreen({ only }: { only?: readonly string[] } = {}) {
   useOpenDocFromUrl(docParam, docs, (d) => {
     setSection(d.section);
     setSelected(d);
-    if (d.section !== sectionOf(HUB_SECTIONS, HUB_DEFAULT_SECTION, seccion)) {
+    if (d.section !== sectionOf(sectionIds, defaultSection, seccion)) {
       navigate({
         search: (prev) => searchWithSection(prev, d.section, defaultSection),
         replace: true,
