@@ -107,7 +107,8 @@ export const disconnectDriveCompany = createServerFn({ method: "POST" })
     try {
       await disconnectAppUser({ gatewayBaseUrl: GATEWAY, connectionAPIKey: await decryptConnectionKey(row.connection_key_enc), connectorId: DRIVE_CONNECTOR });
     } catch (e) {
-      console.error("drive disconnect at gateway failed", e instanceof Error ? e.message.slice(0, 120) : "");
+      void e;
+      console.error("drive disconnect at gateway failed");
     }
     // CA-4: stop reading at once. Imported knowledge keeps its origin and is never deleted.
     const del = await supabaseAdmin.from("drive_company_connections").delete().eq("org_id", c.orgId);
