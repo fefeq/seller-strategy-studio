@@ -4943,6 +4943,232 @@
           "additionalProperties": false
         },
         "outputSchema": null
+      },
+      {
+        "name": "start_onboarding_read",
+        "title": "Empezar el onboarding desde la web",
+        "description": "Empieza el onboarding desde el chat: Nokko lee la web de la empresa (y el texto que el usuario dé, nunca claves) y prepara la propuesta de estrategia por bloques. Es la misma lectura del paso Fuentes de /onboarding; corre en segundo plano y avisa al terminar. Profundidad: express, standard o deep (deep añade competidores). (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "maxLength": 500,
+              "format": "uri",
+              "description": "Web de la empresa, https://…"
+            },
+            "depth": {
+              "default": "standard",
+              "type": "string",
+              "enum": [
+                "express",
+                "standard",
+                "deep"
+              ]
+            },
+            "text": {
+              "description": "Contexto extra que el usuario escribió (sin claves ni contraseñas)",
+              "type": "string",
+              "maxLength": 8000
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_onboarding_blocks",
+        "title": "Bloques de la propuesta de onboarding",
+        "description": "Solo lee. Los bloques de la propuesta de onboarding de la persona (Empresa, ICP, Segmentos, Posicionamiento, Mensajes, Objetivos): qué guardaría cada uno y si ya está aprobado. Úsalo para repasar bloque a bloque antes de approve_onboarding_block.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "approve_onboarding_block",
+        "title": "Aprobar un bloque del onboarding",
+        "description": "Aprueba y guarda un bloque de la propuesta de onboarding (igual que «Aprobar» en /onboarding). Se puede excluir elementos por su clave. Nunca gasta saldo; lo escrito a mano no se sobrescribe. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "block": {
+              "type": "string",
+              "enum": [
+                "company",
+                "icp",
+                "segments",
+                "positioning",
+                "messages",
+                "goals"
+              ]
+            },
+            "exclude": {
+              "description": "Claves de list_onboarding_blocks que NO se guardan",
+              "maxItems": 40,
+              "type": "array",
+              "items": {
+                "type": "string",
+                "maxLength": 120
+              }
+            }
+          },
+          "required": [
+            "block"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_memories",
+        "title": "Ver la Memoria",
+        "description": "Solo lee. Lo que Nokko recuerda (Memoria): de la empresa, tuyo y de las cuentas, con su tipo y origen. Las memorias personales de otros no aparecen.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "scope": {
+              "type": "string",
+              "enum": [
+                "company",
+                "user",
+                "account"
+              ]
+            },
+            "limit": {
+              "default": 25,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remember",
+        "title": "Guardar en Memoria",
+        "description": "Guarda un dato en la Memoria de Nokko (empresa o personal). Si ya existe uno igual, no lo duplica. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "content": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 500
+            },
+            "scope": {
+              "default": "company",
+              "type": "string",
+              "enum": [
+                "company",
+                "user"
+              ]
+            },
+            "kind": {
+              "default": "business",
+              "type": "string",
+              "enum": [
+                "business",
+                "preference",
+                "outcome",
+                "task"
+              ]
+            }
+          },
+          "required": [
+            "content"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_rules",
+        "title": "Reglas del equipo",
+        "description": "Solo lee. Las reglas obligatorias del equipo (Estrategia › Reglas y voz) que Nokko aplica en cada respuesta.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_connections",
+        "title": "Estado de las conexiones",
+        "description": "Solo lee. Estado de cada conexión (Incluida en NOKKO, Tu cuenta, Sin conectar) y su uso del mes, con el enlace a su tarjeta en Conexiones. Nunca devuelve claves: para conectar algo, manda al usuario al enlace, no le pidas la clave en el chat.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_advisor_recommendations",
+        "title": "Recomendaciones del Asesor GTM",
+        "description": "Solo lee. Las últimas recomendaciones del Asesor GTM (resumen, prioridades, riesgos y datos que faltan). Para pedir un análisis nuevo, manda al usuario a /advisor.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
       }
     ]
   }
