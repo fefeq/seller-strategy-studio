@@ -43,3 +43,35 @@ describe("A+ engagement from posts", () => {
     expect(engagement([]).avgLikes).toBeNull();
   });
 });
+
+import { currentRole, roleChange } from "./linkedin-insights";
+describe("A+ role changes", () => {
+  const raw = [{ experience: [
+    { position: "VP Sales", companyName: "Acme Corp", startDate: { text: "Sep 2026" }, endDate: { text: "Present" } },
+    { position: "Head of Sales", companyName: "Beta", endDate: { text: "Aug 2026" } },
+  ] }];
+  it("reads the open experience", () => {
+    expect(currentRole(raw)).toEqual({ title: "VP Sales", company: "Acme Corp", since: "Sep 2026" });
+  });
+  it("detects a company change", () => {
+    const r = roleChange({ title: "Head of Sales", company: "Beta" }, currentRole(raw));
+    expect(r?.changed).toBe(true);
+    expect(r?.companyChanged).toBe(true);
+  });
+  it("same role (accents/case/legal suffix) is no change", () => {
+    expect(roleChange({ title: "vp sales", company: "Acme" }, currentRole(raw))?.changed).toBe(false);
+  });
+  it("legal suffixes are ignored; similar prefixes are different companies", () => {
+    const now = { title: "CEO", company: "Acme Ltd", since: null };
+    expect(roleChange({ title: "CEO", company: "Acme Inc" }, now)?.companyChanged).toBe(false);
+    expect(roleChange({ title: "CEO", company: "Meta" }, { ...now, company: "Metabase" })?.companyChanged).toBe(true);
+  });
+  it("empty stored title → title found, not «sin cambios»", () => {
+    const r = roleChange({ title: "", company: "Acme" }, currentRole(raw));
+    expect(r?.titleMissing).toBe(true);
+    expect(r?.changed).toBe(false);
+  });
+  it("no current role → unknown (null), never «sin cambios»", () => {
+    expect(roleChange({ title: "x", company: "y" }, currentRole([{ experience: [] }]))).toBeNull();
+  });
+});

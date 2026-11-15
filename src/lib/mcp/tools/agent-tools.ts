@@ -32,6 +32,7 @@ export const TITLES: Record<string, string> = {
   competitor_reviews: "Reseñas de un competidor en G2",
   company_job_postings: "Ofertas de empleo de una cuenta",
   linkedin_profile_posts: "Publicaciones de LinkedIn de un stakeholder",
+  linkedin_role_check: "Cambio de cargo en LinkedIn de un stakeholder",
   linkedin_company_posts: "Publicaciones de LinkedIn de una cuenta",
   add_deal_line: "Añadir línea a un deal",
   add_mutual_action_item: "Añadir hito al plan de acción mutuo",

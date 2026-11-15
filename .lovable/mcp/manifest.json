@@ -4016,6 +4016,32 @@
         "outputSchema": null
       },
       {
+        "name": "linkedin_role_check",
+        "title": "Cambio de cargo en LinkedIn de un stakeholder",
+        "description": "Comprueba en LinkedIn el cargo y la empresa actuales de un stakeholder y los compara con su ficha (cambio de cargo o de empresa). Solo lee; actualizar la ficha es otra acción a confirmar. Gasta saldo de Apify. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": true
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "stakeholder_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
+            }
+          },
+          "required": [
+            "stakeholder_id"
+          ],
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
         "name": "company_job_postings",
         "title": "Ofertas de empleo de una cuenta",
         "description": "Ofertas de empleo abiertas de una cuenta en LinkedIn (últimos 30 días): qué puestos contrata, dónde y con qué nivel. Útil como señal de compra. Gasta saldo de Apify. Gasta saldo: el resultado llega al confirmar. (Queda pendiente: el usuario la confirma en Nokko.)",

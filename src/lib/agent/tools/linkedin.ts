@@ -39,7 +39,21 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
       await mustFind(c, "stakeholders", a.stakeholder_id, "esa persona");
       const { stakeholderPostsCore } = await import("@/lib/apify-core");
       const r = await stakeholderPostsCore(c.db, a.stakeholder_id, scope(c));
-      return { persona: r.name, linkedin: r.linkedin, publicaciones: r.posts.map(post) };
+      return { persona: r.name, linkedin: r.linkedin, publicaciones: r.posts.map(post), engagement: r.engagement };
+    },
+  }),
+  def({
+    name: "linkedin_role_check", kind: "read",
+    description: "Comprueba en LinkedIn el cargo y la empresa actuales de un stakeholder y los compara con su ficha (cambio de cargo o de empresa). Solo lee; actualizar la ficha es otra acción a confirmar. Gasta saldo de Apify.",
+    input: z.object({ stakeholder_id: z.string().uuid() }),
+    run: async (c, a) => {
+      const paused = await pausedMessage();
+      if (paused) return paused;
+      await mustFind(c, "stakeholders", a.stakeholder_id, "esa persona");
+      const { stakeholderRoleCore } = await import("@/lib/apify-core");
+      const r = await stakeholderRoleCore(c.db, a.stakeholder_id, scope(c));
+      if (!r.change) return { persona: r.name, linkedin: r.linkedin, mensaje: "LinkedIn no muestra un cargo actual: sin dato." };
+      return { persona: r.name, linkedin: r.linkedin, cambio: r.change.changed, cambio_empresa: r.change.companyChanged, antes: r.change.before, ahora: r.change.now };
     },
   }),
   def({
@@ -52,7 +66,7 @@ export const LINKEDIN_TOOLS: AgentTool[] = [
       await mustFind(c, "accounts", a.account_id, "esa cuenta");
       const { accountJobsCore } = await import("@/lib/apify-core");
       const r = await accountJobsCore(c.db, a.account_id, scope(c));
-      return { linkedin: r.linkedin, ofertas: r.jobs.map((j) => ({ puesto: j.title, ubicacion: j.location, nivel: j.level, publicada: j.date, url: j.url, extracto: j.description })) };
+      return { linkedin: r.linkedin, crecimiento: r.hiring.headline ?? "Sin ofertas: sin señal de contratación.", ofertas: r.jobs.map((j) => ({ puesto: j.title, ubicacion: j.location, nivel: j.level, publicada: j.date, url: j.url, extracto: j.description })) };
     },
   }),
   def({
