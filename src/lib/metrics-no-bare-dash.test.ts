@@ -21,7 +21,6 @@ const METRICS_DASH_ALLOWED: Record<string, Allowed[]> = {
     ['eur(Number(q.amount)) : "—"', "N"], // quota nobody typed
   ],
   "src/lib/revops.ts": [
-    ['lostFrom ?? "—"', "N"], // lost stage unknown (empty path)
     ['d.segment_id ?? "—"', "K"], // grouping key «Sin segmento»
   ],
   "src/lib/metrics-quarter.ts": [['NO_SOURCE = "—"', "K"]],

@@ -10,6 +10,8 @@ import { ScreenState } from "@/components/page";
 import { quarterRange } from "@/lib/metrics";
 import {
   closedAtFromDay,
+  FUTURE_WON_DAY,
+  isFutureDay,
   wonDealRows,
   wonSummary,
   WON_ISSUE_LABEL,
@@ -220,7 +222,9 @@ function WonRow({
           className="h-10 w-40 text-xs md:h-8"
           value={r.closedOn}
           onChange={(iso) => {
-            if (iso) onUpdate({ closed_at: closedAtFromDay(iso), close_date: iso });
+            if (!iso) return;
+            if (isFutureDay(iso)) return void toast.error(FUTURE_WON_DAY);
+            onUpdate({ closed_at: closedAtFromDay(iso), close_date: iso });
           }}
         />
         {r.dateSource === "estimada" && r.closedOn && (
@@ -326,6 +330,7 @@ function AddWon({
     const value = amount === "" ? null : Number(amount);
     if (!dealId && !name.trim()) return toast.error("Pon un nombre al deal.");
     if (!day) return toast.error("Indica la fecha de cierre.");
+    if (isFutureDay(day)) return toast.error(FUTURE_WON_DAY);
     if (value == null || !Number.isFinite(value) || value <= 0)
       return toast.error("Indica el valor del deal.");
     setSaving(true);

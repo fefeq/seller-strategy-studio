@@ -25,6 +25,8 @@ export type RHistory = {
 const WON = "won";
 const LOST = "lost";
 const DAY = 86_400_000;
+/** Group of the lost deals whose losing stage was never recorded. */
+export const LOST_STAGE_UNKNOWN = "unrecorded";
 
 /** Furthest open stage a deal reached (index in path), and the stage it was in when lost. */
 function journey(d: RDeal, hist: RHistory[], path: string[]) {
@@ -37,7 +39,7 @@ function journey(d: RDeal, hist: RHistory[], path: string[]) {
   }
   if (d.stage === WON) reached = path.length; // won passed every open stage
   if (reached < 0) reached = 0; // unknown stage: counts as having entered the first one
-  if (d.stage === LOST && !lostFrom) lostFrom = path[Math.min(reached, path.length - 1)] ?? null;
+  // A lost deal with no recorded move to «lost» keeps lostFrom empty: guessing a stage would put it in the headline.
   return { reached, lostFrom };
 }
 
@@ -131,7 +133,7 @@ export function lostAnalysis(deals: RDeal[], history: RHistory[], path: string[]
   return {
     total: lost.length,
     amount: lost.reduce((s, d) => s + Number(d.amount ?? 0), 0),
-    byStage: tally((d) => journey(d, h.get(d.id) ?? [], path).lostFrom ?? "—"),
+    byStage: tally((d) => journey(d, h.get(d.id) ?? [], path).lostFrom ?? LOST_STAGE_UNKNOWN),
     bySegment: tally((d) => d.segment_id ?? "—"),
     bySource: tally((d) => d.source ?? NO_SOURCE),
   };

@@ -9,6 +9,19 @@ import { firstOpenStage, sortStages, stageByLabel, type Stage } from "@/lib/stag
 
 type Db = SupabaseClient<Database>;
 /** `stages`: the company's deal stages; loaded on first use when missing (pass them in a CSV loop). */
+/** When a deal that arrives already closed was closed. A won deal with a close date still to come is closed as of now: «won» cannot be in the future (NK-0074). */
+export function closedAtFor(
+  stage: string,
+  isClosed: boolean,
+  closeDate: string | null,
+  now = new Date(),
+) {
+  if (!isClosed) return null;
+  const given = closeDate ? `${closeDate}T12:00:00Z` : null;
+  const nowIso = now.toISOString();
+  return given && !(stage === "won" && given > nowIso) ? given : nowIso;
+}
+
 export type IngestCtx = {
   orgId: string;
   sourceId?: string | null;
@@ -316,11 +329,7 @@ export async function ingestLead(
       ) ??
       null;
   }
-  const closedAt = closed(stage)
-    ? lead.closeDate
-      ? `${lead.closeDate}T12:00:00Z`
-      : new Date().toISOString()
-    : null;
+  const closedAt = closedAtFor(stage, closed(stage), lead.closeDate ?? null);
   const stageLabel = lead.stageGiven && known ? stageName(stage) : "sin cambio de etapa";
   let status: IngestResult["status"] = "updated";
 

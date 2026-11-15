@@ -11,8 +11,13 @@ import { CHANNEL_LABEL, MOTION_LABEL, STATUS_WORD } from "@/lib/plays/view";
 const date = (s: string) =>
   new Date(s).toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" });
 
-function Activity({ playId }: { playId: string }) {
-  const { data: runs } = useQuery({
+export function Activity({ playId }: { playId: string }) {
+  const {
+    data: runs,
+    isError,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: ["play-runs", playId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -25,6 +30,16 @@ function Activity({ playId }: { playId: string }) {
       return data ?? [];
     },
   });
+  // A failed read is not «still loading»: say so and offer the retry.
+  if (isError && !runs)
+    return (
+      <p className="mt-2 text-sm text-muted-foreground">
+        No he podido cargar la actividad de este play.{" "}
+        <button type="button" className="underline" disabled={isFetching} onClick={() => refetch()}>
+          Reintentar
+        </button>
+      </p>
+    );
   if (!runs) return <p className="mt-2 text-sm text-muted-foreground">Cargando…</p>;
   if (!runs.length)
     return (

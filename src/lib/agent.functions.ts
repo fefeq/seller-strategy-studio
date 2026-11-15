@@ -220,16 +220,14 @@ export async function decidePending(ctx: ToolCtx, id: string, decision: "confirm
         result: `${result}\nNo pude guardar el recibo de la acción. No la repitas; conserva este resultado.`,
       };
     if (act.conversation_id) {
-      const transcript = await ctx.db
-        .from("agent_messages")
-        .insert({
-          conversation_id: act.conversation_id,
-          role: "assistant",
-          content:
-            result.length > 8000
-              ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)`
-              : result,
-        });
+      const transcript = await ctx.db.from("agent_messages").insert({
+        conversation_id: act.conversation_id,
+        role: "assistant",
+        content:
+          result.length > 8000
+            ? `${result.slice(0, 8000)}… (resultado completo guardado en la acción confirmada)`
+            : result,
+      });
       if (transcript.error)
         return {
           status: "confirmed",
@@ -499,7 +497,7 @@ export async function decideSuggestionCore(
         note = (out as { mensaje: string }).mensaje;
     } catch (e) {
       await ctx.db.from("suggestions").update({ status: "pending" }).eq("id", id);
-      throw new Error((e as Error).message);
+      throw new Error(errorText(e));
     }
   }
   const { rememberDecision } = await import("@/lib/memory.server");

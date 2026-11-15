@@ -43,6 +43,10 @@ export function assertSessionOpen() {
   if (isSessionQuiet()) throw new SessionEndedError();
 }
 
+/** A read that failed for a real reason. One stopped by the window above is not a failure: nothing was asked, so nothing is out of date. */
+export const failedForReal = (q: { isError: boolean; error: unknown }) =>
+  q.isError && !(q.error instanceof SessionEndedError);
+
 /** React Query `retry` for those reads: up to `max` retries, none once the window is open (the next attempt would send with the previous user's ids). */
 export const retryWhileOpen = (max: number) => (count: number, error: unknown) =>
   count < max && !isSessionQuiet() && !(error instanceof SessionEndedError);

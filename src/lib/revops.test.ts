@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   cohorts,
+  LOST_STAGE_UNKNOWN,
   lostAnalysis,
   reconciledFunnel,
   weeklyTrend,
@@ -55,6 +56,30 @@ describe("lostAnalysis", () => {
     expect(l.total).toBe(1);
     expect(l.amount).toBe(500);
     expect(l.byStage[0]).toMatchObject({ key: "proposal", count: 1 });
+  });
+});
+
+describe("lostAnalysis without a recorded move to lost (NK-0092)", () => {
+  it("does not guess a stage: the deal goes to the unrecorded group, with or without earlier moves", () => {
+    const noHistory = lostAnalysis([d("x", "lost", 300)], [], path);
+    expect(noHistory.byStage).toEqual([{ key: LOST_STAGE_UNKNOWN, count: 1, amount: 300 }]);
+    const movedButNotToLost = lostAnalysis(
+      [d("y", "lost", 200)],
+      [
+        {
+          deal_id: "y",
+          from_stage: "discovery",
+          to_stage: "negotiation",
+          changed_at: "2026-01-10T12:00:00Z",
+        },
+      ],
+      path,
+    );
+    expect(movedButNotToLost.byStage).toEqual([{ key: LOST_STAGE_UNKNOWN, count: 1, amount: 200 }]);
+  });
+  it("a recorded stage still wins the count next to unrecorded ones", () => {
+    const l = lostAnalysis([...deals, d("x", "lost", 300)], history, path);
+    expect(l.byStage.map((g) => g.key).sort()).toEqual(["proposal", LOST_STAGE_UNKNOWN].sort());
   });
 });
 

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { closedAtFromDay, wonDealRows, wonSummary, type WonDealLike } from "./won-deals";
+import {
+  closedAtFromDay,
+  FUTURE_WON_DAY,
+  isFutureDay,
+  localDay,
+  wonDealRows,
+  wonSummary,
+  type WonDealLike,
+} from "./won-deals";
 import { segmentCoverage, type SegLike } from "./segment-coverage";
 import { quarterRange } from "./metrics";
 
@@ -92,5 +100,19 @@ describe("won deals", () => {
   it("a picked day is stored at midday UTC so it stays in its quarter", () => {
     const [r] = wonDealRows([deal({ closed_at: closedAtFromDay("2026-12-31") })], segs, q4);
     expect(r.closedOn).toBe("2026-12-31");
+  });
+});
+
+describe("a won deal cannot close in the future (NK-0074)", () => {
+  const now = new Date(2026, 10, 15, 23, 30); // 15 Nov 2026, late evening, in the person's time zone
+  it("today and earlier days pass; tomorrow does not", () => {
+    expect(localDay(now)).toBe("2026-11-15");
+    expect(isFutureDay("2026-11-15", now)).toBe(false);
+    expect(isFutureDay("2026-11-14", now)).toBe(false);
+    expect(isFutureDay("2026-11-16", now)).toBe(true);
+    expect(isFutureDay("2027-01-01", now)).toBe(true);
+  });
+  it("the refusal says what to do", () => {
+    expect(FUTURE_WON_DAY).toMatch(/fecha de cierre futura/);
   });
 });

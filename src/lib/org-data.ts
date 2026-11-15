@@ -212,6 +212,28 @@ export const loadSetupSnoozes = async (
 export const loadSetupGuideExtras = (db: Db, orgId: string, signal?: AbortSignal) =>
   readSetupGuide(db, orgId, true, signal);
 
+/** Who belongs to the company, with their role and name: the guide uses it to say who can complete a step. A failed read throws; it is never «nobody». */
+export async function loadGuideMembers(db: Db, orgId: string, signal?: AbortSignal) {
+  let q = db.from("org_members").select("user_id,role").eq("org_id", orgId);
+  if (signal) q = q.abortSignal(signal);
+  const { data: rows, error } = await q;
+  if (error) throw error;
+  const ids = (rows ?? []).map((r) => r.user_id);
+  const names = new Map<string, string | null>();
+  if (ids.length) {
+    let p = db.from("profiles").select("id,full_name").in("id", ids);
+    if (signal) p = p.abortSignal(signal);
+    const { data: profiles, error: profilesError } = await p;
+    if (profilesError) throw profilesError;
+    for (const x of profiles ?? []) names.set(x.id, x.full_name);
+  }
+  return (rows ?? []).map((r) => ({
+    user_id: r.user_id,
+    role: String(r.role),
+    name: names.get(r.user_id) ?? null,
+  }));
+}
+
 /** `fitKey: false` skips the domain-proposal data (extra queries) for callers that never use it, like the per-lead follow-up. */
 export async function loadSnapshot(
   db: Db,
