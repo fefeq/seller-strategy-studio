@@ -11,7 +11,13 @@ async function key(): Promise<CryptoKey> {
 
 export async function encryptConnectionKey(plain: string): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(12));
-  const ct = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv }, await key(), new TextEncoder().encode(plain)));
+  const ct = new Uint8Array(
+    await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      await key(),
+      new TextEncoder().encode(plain),
+    ),
+  );
   const out = new Uint8Array(12 + ct.length);
   out.set(iv);
   out.set(ct, 12);
@@ -20,6 +26,10 @@ export async function encryptConnectionKey(plain: string): Promise<string> {
 
 export async function decryptConnectionKey(stored: string): Promise<string> {
   const buf = unb64(stored);
-  const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: buf.subarray(0, 12) }, await key(), buf.subarray(12));
+  const pt = await crypto.subtle.decrypt(
+    { name: "AES-GCM", iv: buf.subarray(0, 12) },
+    await key(),
+    buf.subarray(12),
+  );
   return new TextDecoder().decode(pt);
 }

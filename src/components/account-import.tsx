@@ -45,7 +45,11 @@ export function AccountImport({ onDone }: { onDone?: (created: number) => void }
       // account beyond that would be imported twice.
       const existing: { name: string; domain: string | null }[] = [];
       for (let from = 0; ; from += 1000) {
-        const { data, error } = await supabase.from("accounts").select("name,domain").order("id").range(from, from + 999);
+        const { data, error } = await supabase
+          .from("accounts")
+          .select("name,domain")
+          .order("id")
+          .range(from, from + 999);
         if (error) throw error;
         existing.push(...(data ?? []));
         if (!data || data.length < 1000) break;
@@ -63,12 +67,17 @@ export function AccountImport({ onDone }: { onDone?: (created: number) => void }
         created += data?.length ?? 0;
         // Same as «+ Nueva cuenta»: every account starts with an empty plan.
         if (data?.length) {
-          const { error: planError } = await supabase.from("account_plans").insert(data.map((a) => ({ account_id: a.id })));
+          const { error: planError } = await supabase
+            .from("account_plans")
+            .insert(data.map((a) => ({ account_id: a.id })));
           if (planError) plansFailed += data.length;
         }
       }
       setResult({ created, skipped: plan.skipped });
-      if (plansFailed) toast.warning(`${plansFailed} cuentas se han creado sin plan de cuenta: se crea al guardarlo en su ficha.`);
+      if (plansFailed)
+        toast.warning(
+          `${plansFailed} cuentas se han creado sin plan de cuenta: se crea al guardarlo en su ficha.`,
+        );
       toast.success(
         `${created} ${created === 1 ? "cuenta creada" : "cuentas creadas"}${plan.skipped.length ? ` · ${plan.skipped.length} sin importar` : ""}.`,
       );

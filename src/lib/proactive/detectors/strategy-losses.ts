@@ -5,7 +5,8 @@ import { buildStrategySuggestion } from "@/lib/strategy-suggestions";
 import type { Detector } from "../types";
 
 export const MIN_LOSSES = 3;
-const norm = (x: string) => x.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+const norm = (x: string) =>
+  x.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
 
 export const repeatedLoss: Detector = (s) => {
   const d = s.strategy;
@@ -13,15 +14,24 @@ export const repeatedLoss: Detector = (s) => {
   const lost = d.deals.filter((x) => x.stage === "lost");
   const out = [];
   const reasons = new Map<string, typeof lost>();
-  for (const x of lost) if (x.lost_reason) reasons.set(x.lost_reason, [...(reasons.get(x.lost_reason) ?? []), x]);
+  for (const x of lost)
+    if (x.lost_reason) reasons.set(x.lost_reason, [...(reasons.get(x.lost_reason) ?? []), x]);
   for (const [r, ds] of reasons) {
     if (ds.length < MIN_LOSSES) continue;
-    out.push(buildStrategySuggestion({
-      element: "pipeline", kind: "change", action_type: "commercial_action", cause: `loss_reason:${norm(r)}`, priority: 2,
-      title: `«${lossLabel(r)}» es el motivo de ${ds.length} deals perdidos`,
-      body: `El mismo motivo se repite. Decide qué cambiar para que no siga pasando; los deals están en la evidencia.`,
-      evidence: ds.map((x) => ({ table: "deals", id: x.id, label: x.name })), sample_size: lost.length, link: "/deals",
-    }));
+    out.push(
+      buildStrategySuggestion({
+        element: "pipeline",
+        kind: "change",
+        action_type: "commercial_action",
+        cause: `loss_reason:${norm(r)}`,
+        priority: 2,
+        title: `«${lossLabel(r)}» es el motivo de ${ds.length} deals perdidos`,
+        body: `El mismo motivo se repite. Decide qué cambiar para que no siga pasando; los deals están en la evidencia.`,
+        evidence: ds.map((x) => ({ table: "deals", id: x.id, label: x.name })),
+        sample_size: lost.length,
+        link: "/deals",
+      }),
+    );
   }
   const comps = new Map<string, { label: string; ds: typeof lost }>();
   for (const x of lost) {
@@ -33,12 +43,20 @@ export const repeatedLoss: Detector = (s) => {
   }
   for (const [k, g] of comps) {
     if (g.ds.length < MIN_LOSSES) continue;
-    out.push(buildStrategySuggestion({
-      element: "competitor", kind: "change", action_type: "commercial_action", cause: `loss_competitor:${k}`, priority: 2,
-      title: `Has perdido ${g.ds.length} deals frente a ${g.label}`,
-      body: `El mismo competidor se repite en los deals perdidos. Prepara una respuesta; los deals están en la evidencia.`,
-      evidence: g.ds.map((x) => ({ table: "deals", id: x.id, label: x.name })), sample_size: lost.length, link: "/deals",
-    }));
+    out.push(
+      buildStrategySuggestion({
+        element: "competitor",
+        kind: "change",
+        action_type: "commercial_action",
+        cause: `loss_competitor:${k}`,
+        priority: 2,
+        title: `Has perdido ${g.ds.length} deals frente a ${g.label}`,
+        body: `El mismo competidor se repite en los deals perdidos. Prepara una respuesta; los deals están en la evidencia.`,
+        evidence: g.ds.map((x) => ({ table: "deals", id: x.id, label: x.name })),
+        sample_size: lost.length,
+        link: "/deals",
+      }),
+    );
   }
   return out;
 };

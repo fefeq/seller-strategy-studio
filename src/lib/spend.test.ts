@@ -5,7 +5,13 @@ import { describe, expect, it } from "vitest";
 import { budgetState } from "@/lib/orchestrator/planner";
 import { estimateCost, median, spendTotals, type SpendRow } from "./spend";
 
-const row = (cost: number | null, currency = "EUR", kind: SpendRow["cost_kind"] = "measured", tool = "apollo_find_people", at = "2026-11-01T00:00:00Z"): SpendRow => ({
+const row = (
+  cost: number | null,
+  currency = "EUR",
+  kind: SpendRow["cost_kind"] = "measured",
+  tool = "apollo_find_people",
+  at = "2026-11-01T00:00:00Z",
+): SpendRow => ({
   cost,
   currency,
   cost_kind: kind,
@@ -41,13 +47,18 @@ describe("estimateCost", () => {
   });
 
   it("without a comparable sample returns null («sin dato»), never zero", () => {
-    expect(estimateCost([row(null), row(5, "EUR", "estimate")], "apollo_find_people", "EUR").value).toBeNull();
+    expect(
+      estimateCost([row(null), row(5, "EUR", "estimate")], "apollo_find_people", "EUR").value,
+    ).toBeNull();
     expect(estimateCost([], "apollo_find_people", "EUR").samples).toBe(0);
   });
 
   it("reports the period the samples cover", () => {
     const e = estimateCost(
-      [row(2, "EUR", "measured", "t", "2026-10-01T00:00:00Z"), row(4, "EUR", "measured", "t", "2026-11-05T00:00:00Z")],
+      [
+        row(2, "EUR", "measured", "t", "2026-10-01T00:00:00Z"),
+        row(4, "EUR", "measured", "t", "2026-11-05T00:00:00Z"),
+      ],
       "t",
       "EUR",
     );

@@ -8,10 +8,17 @@ export const MAX_MESSAGES_PER_PASS = 100;
 export const normEmail = (s: string | null | undefined) => (s ?? "").trim().toLowerCase();
 
 /** R-1: one Gmail query per batch of contacted-lead addresses; never a query without a sender filter. */
-export function senderQueries(emails: string[], days = LOOKBACK_DAYS, size = MAX_SENDERS_PER_QUERY): string[] {
-  const list = [...new Set(emails.map(normEmail).filter((e) => /^[^\s@()"]+@[^\s@()"]+\.[^\s@()"]+$/.test(e)))].sort();
+export function senderQueries(
+  emails: string[],
+  days = LOOKBACK_DAYS,
+  size = MAX_SENDERS_PER_QUERY,
+): string[] {
+  const list = [
+    ...new Set(emails.map(normEmail).filter((e) => /^[^\s@()"]+@[^\s@()"]+\.[^\s@()"]+$/.test(e))),
+  ].sort();
   const out: string[] = [];
-  for (let i = 0; i < list.length; i += size) out.push(`from:(${list.slice(i, i + size).join(" OR ")}) newer_than:${days}d`);
+  for (let i = 0; i < list.length; i += size)
+    out.push(`from:(${list.slice(i, i + size).join(" OR ")}) newer_than:${days}d`);
   return out;
 }
 
@@ -39,14 +46,28 @@ export function replyKind(h: Headers): "human" | "auto" | "drop" {
   return "human";
 }
 
-export type FoundMessage = { id: string; threadId: string; internalDate?: string; headers: Headers };
+export type FoundMessage = {
+  id: string;
+  threadId: string;
+  internalDate?: string;
+  headers: Headers;
+};
 export type ContactedLead = { id: string; email: string | null };
-export type ReplyRow = { gmail_id: string; thread_id: string; lead_id: string; received_at: string; kind: "human" | "auto" };
+export type ReplyRow = {
+  gmail_id: string;
+  thread_id: string;
+  lead_id: string;
+  received_at: string;
+  kind: "human" | "auto";
+};
 
 /** R-2 + R-4: rows to store and the leads to mark (latest human reply date). Unmatched senders are ignored. */
 export function matchReplies(messages: FoundMessage[], leads: ContactedLead[]) {
   const byEmail = new Map<string, string>();
-  for (const l of leads) { const e = normEmail(l.email); if (e && !byEmail.has(e)) byEmail.set(e, l.id); }
+  for (const l of leads) {
+    const e = normEmail(l.email);
+    if (e && !byEmail.has(e)) byEmail.set(e, l.id);
+  }
   const rows: ReplyRow[] = [];
   const marks = new Map<string, string>();
   for (const m of messages) {
@@ -55,7 +76,10 @@ export function matchReplies(messages: FoundMessage[], leads: ContactedLead[]) {
     const kind = replyKind(m.headers);
     if (kind === "drop") continue;
     const ms = Number(m.internalDate);
-    const at = Number.isFinite(ms) && ms > 0 ? new Date(ms).toISOString() : new Date(m.headers["date"] ?? 0).toISOString();
+    const at =
+      Number.isFinite(ms) && ms > 0
+        ? new Date(ms).toISOString()
+        : new Date(m.headers["date"] ?? 0).toISOString();
     rows.push({ gmail_id: m.id, thread_id: m.threadId, lead_id: lead, received_at: at, kind });
     if (kind === "human" && (!marks.has(lead) || marks.get(lead)! < at)) marks.set(lead, at);
   }

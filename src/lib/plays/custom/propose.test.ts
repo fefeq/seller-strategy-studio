@@ -11,10 +11,19 @@ const good: Proposal = {
   trigger: "Nota de prensa con la apertura de una sede",
   window: { backDays: 30, forwardDays: 90 },
   steps: [
-    { n: 1, source: "news", question: "¿Qué cuenta anuncia una sede y cuándo?", returns: ["event_date"] },
+    {
+      n: 1,
+      source: "news",
+      question: "¿Qué cuenta anuncia una sede y cuándo?",
+      returns: ["event_date"],
+    },
     { n: 2, source: "people", question: "¿Quién lleva operaciones allí?", returns: ["seniority"] },
   ],
-  message: { claims: [{ text: "La cuenta abre sede con fecha", step: 1 }], built: "Un plan de arranque", ask: "¿Lo vemos?" },
+  message: {
+    claims: [{ text: "La cuenta abre sede con fecha", step: 1 }],
+    built: "Un plan de arranque",
+    ask: "¿Lo vemos?",
+  },
   test: { n: 20, k: 2, base: 20 },
   verifiedOnly: false,
 };
@@ -27,11 +36,17 @@ describe("SDD 3: proposal rules", () => {
     expect(checkProposal({ ...good, window: { backDays: 0, forwardDays: 0 } }).ok).toBe(false);
   });
   it("rejects a claim that cites a missing step", () => {
-    const r = checkProposal({ ...good, message: { ...good.message, claims: [{ text: "x", step: 9 }] } });
+    const r = checkProposal({
+      ...good,
+      message: { ...good.message, claims: [{ text: "x", step: 9 }] },
+    });
     expect(r.ok).toBe(false);
   });
   it("rejects an unknown source", () => {
-    const r = checkProposal({ ...good, steps: [{ ...good.steps[0]!, source: "linkedin" as never }] });
+    const r = checkProposal({
+      ...good,
+      steps: [{ ...good.steps[0]!, source: "linkedin" as never }],
+    });
     expect(r.ok).toBe(false);
   });
   it("rejects a bad test design", () => {

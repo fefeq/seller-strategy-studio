@@ -175,7 +175,11 @@ export function StakeholdersTab({
                 value={sel.email ?? ""}
                 onChange={(e) => setSel({ ...sel, email: e.target.value })}
               />
-              <EmailVerificationMark email={sel.email} rows={verification.data} error={verification.error} />
+              <EmailVerificationMark
+                email={sel.email}
+                rows={verification.data}
+                error={verification.error}
+              />
             </Field>
             <Field label="Teléfono">
               <Input
@@ -218,7 +222,9 @@ export function StakeholdersTab({
             key={sel.id}
             stakeholderId={sel.id}
             hasLinkedin={!!sel.linkedin_url?.trim()}
-            onUseTitle={(title) => setSel((cur) => (cur && cur.id === sel.id ? { ...cur, title } : cur))}
+            onUseTitle={(title) =>
+              setSel((cur) => (cur && cur.id === sel.id ? { ...cur, title } : cur))
+            }
           />
           <ApolloReveal
             stakeholderId={sel.id}

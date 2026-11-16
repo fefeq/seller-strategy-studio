@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { fetchAll, PAGE } from "./fetch-all";
 
 const table = (n: number) => Array.from({ length: n }, (_, i) => i);
-const pager = (all: number[]) => async (from: number, to: number) => ({ data: all.slice(from, to + 1), error: null });
+const pager = (all: number[]) => async (from: number, to: number) => ({
+  data: all.slice(from, to + 1),
+  error: null,
+});
 
 describe("fetchAll", () => {
   it("reads past the 1000-row default instead of stopping there", async () => {
@@ -19,6 +22,8 @@ describe("fetchAll", () => {
     expect(r.truncated).toBe(true);
   });
   it("a read error is thrown, never an empty success", async () => {
-    await expect(fetchAll(async () => ({ data: null, error: { message: "boom" } }))).rejects.toThrow("boom");
+    await expect(
+      fetchAll(async () => ({ data: null, error: { message: "boom" } })),
+    ).rejects.toThrow("boom");
   });
 });

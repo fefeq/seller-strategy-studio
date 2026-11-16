@@ -45,13 +45,31 @@ describe("buildVerificationRow", () => {
   it("CA-4 an unknown or absent provider value is never verified, and no email means no row", () => {
     for (const value of [null, undefined, "", "extrapolated", "surprise"])
       expect(
-        buildVerificationRow({ orgId: ORG, email: "a@example.invalid", providerStatus: value, requestedBy: ME, now })?.status,
+        buildVerificationRow({
+          orgId: ORG,
+          email: "a@example.invalid",
+          providerStatus: value,
+          requestedBy: ME,
+          now,
+        })?.status,
       ).toBe("unverifiable");
     expect(
-      buildVerificationRow({ orgId: ORG, email: " ", providerStatus: "verified", requestedBy: ME, now }),
+      buildVerificationRow({
+        orgId: ORG,
+        email: " ",
+        providerStatus: "verified",
+        requestedBy: ME,
+        now,
+      }),
     ).toBeNull();
     expect(
-      buildVerificationRow({ orgId: ORG, email: null, providerStatus: "verified", requestedBy: ME, now }),
+      buildVerificationRow({
+        orgId: ORG,
+        email: null,
+        providerStatus: "verified",
+        requestedBy: ME,
+        now,
+      }),
     ).toBeNull();
   });
   it("CA-3 the literal provider value is kept short for auditing", () => {

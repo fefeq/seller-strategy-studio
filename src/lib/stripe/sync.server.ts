@@ -20,21 +20,32 @@ export const SYNC_BATCH = 5;
 export const MANUAL_SYNC_MINUTES = 2;
 
 export class StripeError extends Error {
-  constructor(message: string, readonly status: number) {
+  constructor(
+    message: string,
+    readonly status: number,
+  ) {
     super(message);
   }
 }
 
 /** What the person reads when Stripe refuses: never Stripe's raw English, never the key. */
 export function stripeErrorText(status: number, code?: string): string {
-  if (status === 401) return "Stripe no acepta la clave: puede que esté revocada o mal copiada. Crea una nueva clave restringida y vuelve a conectarla.";
-  if (status === 403) return "La clave no tiene permiso para leer las suscripciones. En Stripe, edita la clave restringida y dale permiso de lectura («Read») en «Subscriptions».";
-  if (status === 429) return "Stripe ha limitado las peticiones. Se volverá a intentar en la próxima sincronización.";
-  if (code === "network") return "No se ha podido conectar con Stripe. Se volverá a intentar en la próxima sincronización.";
+  if (status === 401)
+    return "Stripe no acepta la clave: puede que esté revocada o mal copiada. Crea una nueva clave restringida y vuelve a conectarla.";
+  if (status === 403)
+    return "La clave no tiene permiso para leer las suscripciones. En Stripe, edita la clave restringida y dale permiso de lectura («Read») en «Subscriptions».";
+  if (status === 429)
+    return "Stripe ha limitado las peticiones. Se volverá a intentar en la próxima sincronización.";
+  if (code === "network")
+    return "No se ha podido conectar con Stripe. Se volverá a intentar en la próxima sincronización.";
   return "Stripe ha devuelto un error al leer las suscripciones. Se volverá a intentar en la próxima sincronización.";
 }
 
-async function fetchPages(key: string, params: Record<string, string>, fetcher: typeof fetch): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
+async function fetchPages(
+  key: string,
+  params: Record<string, string>,
+  fetcher: typeof fetch,
+): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
   const subs: StripeSubscription[] = [];
   let after: string | null = null;
   for (let page = 0; page < MAX_PAGES; page++) {
@@ -63,23 +74,45 @@ async function fetchPages(key: string, params: Record<string, string>, fetcher: 
  * ones whose last period reached into the window (a subscription that ended in the window always has
  * current_period_end inside or after it). Never the whole cancelled history.
  */
-export async function fetchSubscriptions(key: string, fetcher: typeof fetch = fetch, now = new Date(), windowDays = 30): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
+export async function fetchSubscriptions(
+  key: string,
+  fetcher: typeof fetch = fetch,
+  now = new Date(),
+  windowDays = 30,
+): Promise<{ subs: StripeSubscription[]; truncated: boolean }> {
   const since = String(Math.floor(now.getTime() / 1000) - windowDays * 86_400);
   const parts = [];
-  for (const status of ["active", "past_due", "trialing"]) parts.push(await fetchPages(key, { status }, fetcher));
-  parts.push(await fetchPages(key, { status: "canceled", "current_period_end[gte]": since }, fetcher));
+  for (const status of ["active", "past_due", "trialing"])
+    parts.push(await fetchPages(key, { status }, fetcher));
+  parts.push(
+    await fetchPages(key, { status: "canceled", "current_period_end[gte]": since }, fetcher),
+  );
   return { subs: parts.flatMap((p) => p.subs), truncated: parts.some((p) => p.truncated) };
 }
 
 /** Syncs one company. Never throws: the outcome is written on its connection. */
-export async function syncStripeOrg(db: Admin, orgId: string, now = new Date(), fetcher: typeof fetch = fetch): Promise<{ ok: boolean; error?: string }> {
+export async function syncStripeOrg(
+  db: Admin,
+  orgId: string,
+  now = new Date(),
+  fetcher: typeof fetch = fetch,
+): Promise<{ ok: boolean; error?: string }> {
   const { data: key, error: keyError } = await db.rpc("stripe_key_for", { _org: orgId });
   if (keyError || !key) {
-    const message = keyError ? "No se ha podido leer la clave guardada. Se volverá a intentar en la próxima sincronización." : "No hay ninguna clave guardada para Stripe. Vuelve a conectarla en Conexiones.";
-    await db.from("stripe_connections").update({ status: "error", last_error: message, last_synced_at: now.toISOString() }).eq("org_id", orgId);
+    const message = keyError
+      ? "No se ha podido leer la clave guardada. Se volverá a intentar en la próxima sincronización."
+      : "No hay ninguna clave guardada para Stripe. Vuelve a conectarla en Conexiones.";
+    await db
+      .from("stripe_connections")
+      .update({ status: "error", last_error: message, last_synced_at: now.toISOString() })
+      .eq("org_id", orgId);
     return { ok: false, error: message };
   }
-  const { data: org } = await db.from("organizations").select("currency").eq("id", orgId).maybeSingle();
+  const { data: org } = await db
+    .from("organizations")
+    .select("currency")
+    .eq("id", orgId)
+    .maybeSingle();
   const currency = org?.currency ?? "EUR";
   try {
     const { subs, truncated } = await fetchSubscriptions(key as string, fetcher, now);
@@ -98,14 +131,25 @@ export async function syncStripeOrg(db: Admin, orgId: string, now = new Date(), 
       logo_churn_pct: m.logoChurnPct,
       revenue_churn_pct: m.revenueChurnPct,
       window_days: m.windowDays,
-      details: { subscriptions: subs.length, truncated, unpriced_items: m.unpricedItems, other_currencies: m.otherCurrencies },
+      details: {
+        subscriptions: subs.length,
+        truncated,
+        unpriced_items: m.unpricedItems,
+        other_currencies: m.otherCurrencies,
+      },
     });
     if (error) throw new StripeError("No se ha podido guardar la lectura de Stripe.", 500);
-    await db.from("stripe_connections").update({ status: "ok", last_error: null, last_synced_at: now.toISOString() }).eq("org_id", orgId);
+    await db
+      .from("stripe_connections")
+      .update({ status: "ok", last_error: null, last_synced_at: now.toISOString() })
+      .eq("org_id", orgId);
     return { ok: true };
   } catch (e) {
     const message = e instanceof StripeError ? e.message : stripeErrorText(500);
-    await db.from("stripe_connections").update({ status: "error", last_error: message, last_synced_at: now.toISOString() }).eq("org_id", orgId);
+    await db
+      .from("stripe_connections")
+      .update({ status: "error", last_error: message, last_synced_at: now.toISOString() })
+      .eq("org_id", orgId);
     return { ok: false, error: message };
   }
 }
@@ -115,7 +159,10 @@ export async function syncStripeOrg(db: Admin, orgId: string, now = new Date(), 
  * written before reading Stripe, so a company that makes the run fall over goes to the back of the
  * queue instead of blocking the others every hour.
  */
-export async function runStripeSyncs(db: Admin, now = new Date()): Promise<{ synced: number; failed: number }> {
+export async function runStripeSyncs(
+  db: Admin,
+  now = new Date(),
+): Promise<{ synced: number; failed: number }> {
   const before = new Date(now.getTime() - SYNC_EVERY_HOURS * 3_600_000).toISOString();
   const { data } = await db
     .from("stripe_connections")
@@ -126,7 +173,10 @@ export async function runStripeSyncs(db: Admin, now = new Date()): Promise<{ syn
   let synced = 0;
   let failed = 0;
   for (const c of data ?? []) {
-    await db.from("stripe_connections").update({ last_synced_at: now.toISOString() }).eq("org_id", c.org_id);
+    await db
+      .from("stripe_connections")
+      .update({ last_synced_at: now.toISOString() })
+      .eq("org_id", c.org_id);
     const r = await syncStripeOrg(db, c.org_id, now);
     if (r.ok) synced++;
     else failed++;

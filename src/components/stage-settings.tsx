@@ -5,17 +5,34 @@ import { supabase } from "@/integrations/supabase/client";
 import { Pick } from "@/components/fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { errorText } from "@/lib/errors";
 import { confirmed } from "@/lib/save";
-import { checkStageEdit, newStageKey, openStages, reorderOpen, sortStages, type BoardGroup, type Stage } from "@/lib/stages";
+import {
+  checkStageEdit,
+  newStageKey,
+  openStages,
+  reorderOpen,
+  sortStages,
+  type BoardGroup,
+  type Stage,
+} from "@/lib/stages";
 
 /** The company's deal stages in order. Falls back to the default seven until they load. Key "deal-stages". */
 export function useStages() {
   const q = useQuery({
     queryKey: ["deal-stages"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("deal_stages").select("id,key,label,position,kind,board_group,probability,color");
+      const { data, error } = await supabase
+        .from("deal_stages")
+        .select("id,key,label,position,kind,board_group,probability,color");
       if (error) throw error;
       return (data ?? []) as Stage[];
     },
@@ -56,7 +73,8 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  const value = (s: Stage): Draft => draft[s.key] ?? { label: s.label, probability: String(s.probability) };
+  const value = (s: Stage): Draft =>
+    draft[s.key] ?? { label: s.label, probability: String(s.probability) };
   const dropDraft = (key: string) => setDraft(({ [key]: _, ...rest }) => rest);
 
   // Saved on blur only (Enter blurs), so a field never saves twice; the draft stays until the save lands.
@@ -68,7 +86,17 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
     if (v.label.trim() === s.label && prob === s.probability) return dropDraft(s.key);
     const err = checkStageEdit(v.label, prob, stages, s.key);
     if (err) return toast.error(err);
-    const saved = await run(() => confirmed(supabase.from("deal_stages").update({ label: v.label.trim(), probability: prob }).eq("id", s.id!).select("id")), "Etapa guardada.");
+    const saved = await run(
+      () =>
+        confirmed(
+          supabase
+            .from("deal_stages")
+            .update({ label: v.label.trim(), probability: prob })
+            .eq("id", s.id!)
+            .select("id"),
+        ),
+      "Etapa guardada.",
+    );
     if (saved) dropDraft(s.key);
   }
   const blurOnEnter = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -76,7 +104,11 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
   };
 
   async function setGroup(s: Stage, g: BoardGroup) {
-    await run(() => confirmed(supabase.from("deal_stages").update({ board_group: g }).eq("id", s.id!).select("id")));
+    await run(() =>
+      confirmed(
+        supabase.from("deal_stages").update({ board_group: g }).eq("id", s.id!).select("id"),
+      ),
+    );
   }
   async function move(s: Stage, dir: -1 | 1) {
     const changes = reorderOpen(stages, s.key, dir);
@@ -91,7 +123,10 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
     });
   }
   async function remove(s: Stage) {
-    await run(() => confirmed(supabase.from("deal_stages").delete().eq("id", s.id!).select("id")), `«${s.label}» borrada.`);
+    await run(
+      () => confirmed(supabase.from("deal_stages").delete().eq("id", s.id!).select("id")),
+      `«${s.label}» borrada.`,
+    );
   }
   async function add() {
     if (busy || !newLabel.trim()) return;
@@ -130,18 +165,26 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
         <DialogHeader>
           <DialogTitle>Etapas del pipeline</DialogTitle>
           <DialogDescription>
-            El nombre y la probabilidad son tuyos; la probabilidad se aplica al mover un deal a esa etapa y alimenta el forecast ponderado.
-            {canEdit ? " Una etapa con deals no se puede borrar: muévelos antes." : " Solo el Owner o el Sales Leader pueden cambiarlas."}
+            El nombre y la probabilidad son tuyos; la probabilidad se aplica al mover un deal a esa
+            etapa y alimenta el forecast ponderado.
+            {canEdit
+              ? " Una etapa con deals no se puede borrar: muévelos antes."
+              : " Solo el Owner o el Sales Leader pueden cambiarlas."}
           </DialogDescription>
         </DialogHeader>
-        {!loaded && <p className="text-sm text-muted-foreground">Cargando las etapas de tu empresa…</p>}
+        {!loaded && (
+          <p className="text-sm text-muted-foreground">Cargando las etapas de tu empresa…</p>
+        )}
         <ol className="divide-y divide-hairline border-y border-hairline text-sm">
           {stages.map((s) => {
             const v = value(s);
             const i = opens.findIndex((o) => o.key === s.key);
             const fixed = s.kind !== "open";
             return (
-              <li key={s.key} className="grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_5rem_8.5rem_auto]">
+              <li
+                key={s.key}
+                className="grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-2 py-2 sm:grid-cols-[minmax(0,1fr)_5rem_8.5rem_auto]"
+              >
                 <Input
                   aria-label={`Nombre de la etapa ${s.label}`}
                   value={v.label}
@@ -158,22 +201,56 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
                     value={v.probability}
                     readOnly={!editable || fixed}
                     title={fixed ? "Ganado cuenta siempre al 100 % y Perdido al 0 %." : undefined}
-                    onChange={(e) => setDraft({ ...draft, [s.key]: { ...v, probability: e.target.value } })}
+                    onChange={(e) =>
+                      setDraft({ ...draft, [s.key]: { ...v, probability: e.target.value } })
+                    }
                     onBlur={() => saveRow(s)}
                     onKeyDown={blurOnEnter}
                   />
                   <span className="text-xs text-muted-foreground">%</span>
                 </div>
                 {s.kind === "open" ? (
-                  <Pick aria-label={`Bloque del tablero de ${s.label}`} disabled={!editable || busy} value={s.board_group ?? "progress"} options={GROUPS} onChange={(g) => setGroup(s, g as BoardGroup)} />
+                  <Pick
+                    aria-label={`Bloque del tablero de ${s.label}`}
+                    disabled={!editable || busy}
+                    value={s.board_group ?? "progress"}
+                    options={GROUPS}
+                    onChange={(g) => setGroup(s, g as BoardGroup)}
+                  />
                 ) : (
-                  <span className="text-xs text-muted-foreground">{s.kind === "won" ? "Cierre ganado" : "Cierre perdido"}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {s.kind === "won" ? "Cierre ganado" : "Cierre perdido"}
+                  </span>
                 )}
                 {s.kind === "open" && editable ? (
                   <span className="flex gap-1">
-                    <Button size="icon" variant="ghost" aria-label={`Subir ${s.label}`} disabled={busy || i === 0} onClick={() => move(s, -1)}><span aria-hidden>↑</span></Button>
-                    <Button size="icon" variant="ghost" aria-label={`Bajar ${s.label}`} disabled={busy || i === opens.length - 1} onClick={() => move(s, 1)}><span aria-hidden>↓</span></Button>
-                    <Button size="icon" variant="ghost" aria-label={`Borrar ${s.label}`} disabled={busy || opens.length === 1} onClick={() => remove(s)}><span aria-hidden>×</span></Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Subir ${s.label}`}
+                      disabled={busy || i === 0}
+                      onClick={() => move(s, -1)}
+                    >
+                      <span aria-hidden>↑</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Bajar ${s.label}`}
+                      disabled={busy || i === opens.length - 1}
+                      onClick={() => move(s, 1)}
+                    >
+                      <span aria-hidden>↓</span>
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Borrar ${s.label}`}
+                      disabled={busy || opens.length === 1}
+                      onClick={() => remove(s)}
+                    >
+                      <span aria-hidden>×</span>
+                    </Button>
                   </span>
                 ) : (
                   <span className="hidden sm:block" />
@@ -184,12 +261,23 @@ export function StageSettings({ canEdit }: { canEdit: boolean }) {
         </ol>
         {editable && (
           <div className="flex gap-2">
-            <Input aria-label="Nombre de la nueva etapa" placeholder="Nueva etapa, por ejemplo Piloto" maxLength={40} value={newLabel} disabled={busy} onChange={(e) => setNewLabel(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} />
-            <Button disabled={busy || !newLabel.trim()} onClick={add}>Añadir</Button>
+            <Input
+              aria-label="Nombre de la nueva etapa"
+              placeholder="Nueva etapa, por ejemplo Piloto"
+              maxLength={40}
+              value={newLabel}
+              disabled={busy}
+              onChange={(e) => setNewLabel(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && add()}
+            />
+            <Button disabled={busy || !newLabel.trim()} onClick={add}>
+              Añadir
+            </Button>
           </div>
         )}
         <p className="text-xs text-muted-foreground">
-          «Oportunidad» y «En proceso» deciden en qué bloque del tablero de Inicio sale cada etapa. Ganado y Perdido no se pueden borrar, pero sí renombrar.
+          «Oportunidad» y «En proceso» deciden en qué bloque del tablero de Inicio sale cada etapa.
+          Ganado y Perdido no se pueden borrar, pero sí renombrar.
         </p>
       </DialogContent>
     </Dialog>

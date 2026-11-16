@@ -15,7 +15,8 @@ if (!o.base || !o.file) {
   console.error("usage: fail-first.mjs --base <commit> --file <test file>");
   process.exit(2);
 }
-const sh = (cmd, cwd = ROOT) => spawnSync(cmd, { cwd, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
+const sh = (cmd, cwd = ROOT) =>
+  spawnSync(cmd, { cwd, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
 const wt = resolve(mkdtempSync(resolve(tmpdir(), "nk-ff-")), "base");
 if (sh(`git worktree add --detach ${JSON.stringify(wt)} ${o.base}`).status !== 0) process.exit(2);
 symlinkSync(resolve(ROOT, "node_modules"), resolve(wt, "node_modules"));
@@ -24,5 +25,9 @@ copyFileSync(resolve(ROOT, o.file), resolve(wt, o.file));
 const r = sh(`npx vitest run ${JSON.stringify(o.file)}`, wt);
 sh(`git worktree remove --force ${JSON.stringify(wt)}`);
 const failed = r.status !== 0;
-console.log(failed ? `OK: ${o.file} fails on base ${o.base.slice(0, 12)} (fail-first proven)` : `NOT PROVEN: ${o.file} passes on base ${o.base.slice(0, 12)}; it proves nothing`);
+console.log(
+  failed
+    ? `OK: ${o.file} fails on base ${o.base.slice(0, 12)} (fail-first proven)`
+    : `NOT PROVEN: ${o.file} passes on base ${o.base.slice(0, 12)}; it proves nothing`,
+);
 process.exit(failed ? 0 : 1);

@@ -1,7 +1,13 @@
 // A2 (PLAN-UX-20261115): reads that spend are proposed with a real-history estimate and keep their result.
 import { describe, expect, it } from "vitest";
 import { getTool } from "@/lib/agent/tools";
-import { SPENDING_READS, estimateText, spendResultText, spendSummary, withEstimate } from "./spend-confirm";
+import {
+  SPENDING_READS,
+  estimateText,
+  spendResultText,
+  spendSummary,
+  withEstimate,
+} from "./spend-confirm";
 import { webSpendRows } from "@/lib/web-search";
 
 describe("spending reads need confirmation", () => {
@@ -34,7 +40,12 @@ describe("estimate comes only from measured history", () => {
     expect(estimateText(rows, "x")).toBe("coste aprox.: sin dato");
   });
   it("median per currency, currencies never merged", () => {
-    const m = (cost: number, currency: string) => ({ cost, currency, cost_kind: "measured" as const, tool: "x" });
+    const m = (cost: number, currency: string) => ({
+      cost,
+      currency,
+      cost_kind: "measured" as const,
+      tool: "x",
+    });
     const t = estimateText([m(1, "EUR"), m(3, "EUR"), m(2, "USD")], "x");
     expect(t).toMatch(/2,00\s€/);
     expect(t).toContain("US$");
@@ -62,7 +73,9 @@ describe("loose web searches are charged to the company", () => {
       ["firecrawl", "parallel"],
     );
     expect(rows).toHaveLength(2);
-    expect(rows.every((r) => r.org_id === "o1" && r.cost === null && r.cost_kind === "unknown")).toBe(true);
+    expect(
+      rows.every((r) => r.org_id === "o1" && r.cost === null && r.cost_kind === "unknown"),
+    ).toBe(true);
     expect(rows[0]!.user_id).toBeNull();
   });
 });

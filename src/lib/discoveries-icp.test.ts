@@ -4,8 +4,14 @@ import { PER_ICP, peopleTargets, tallyByIcp } from "./discoveries";
 describe("Descubiertos por ICP", () => {
   it("searches people in at most 2 companies per ICP: empty target accounts first, then the best new fits", () => {
     const t = peopleTargets(
-      [{ id: "a1", name: "Mapped", domain: "mapped.com", people: 3 }, { id: "a2", name: "Empty", domain: "empty.com", people: 0 }],
-      [{ name: "Low", domain: "low.com", fit: 61 }, { name: "High", domain: "https://www.high.com", fit: 90 }],
+      [
+        { id: "a1", name: "Mapped", domain: "mapped.com", people: 3 },
+        { id: "a2", name: "Empty", domain: "empty.com", people: 0 },
+      ],
+      [
+        { name: "Low", domain: "low.com", fit: 61 },
+        { name: "High", domain: "https://www.high.com", fit: 90 },
+      ],
     );
     expect(PER_ICP.searches).toBe(2);
     expect(t.map((x) => x.name)).toEqual(["Empty", "High"]);
@@ -13,7 +19,15 @@ describe("Descubiertos por ICP", () => {
     expect(t[1]!.accountId).toBeNull();
   });
   it("skips companies without a domain and repeated domains", () => {
-    const t = peopleTargets([], [{ name: "NoDomain", domain: null, fit: 99 }, { name: "A", domain: "a.com", fit: 80 }, { name: "A bis", domain: "www.a.com", fit: 70 }], 3);
+    const t = peopleTargets(
+      [],
+      [
+        { name: "NoDomain", domain: null, fit: 99 },
+        { name: "A", domain: "a.com", fit: 80 },
+        { name: "A bis", domain: "www.a.com", fit: 70 },
+      ],
+      3,
+    );
     expect(t.map((x) => x.name)).toEqual(["A"]);
   });
   it("counts only pending companies and contacts per ICP", () => {

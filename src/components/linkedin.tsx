@@ -26,7 +26,15 @@ type Jobs = Awaited<ReturnType<typeof accountJobs>>;
 type Role = Awaited<ReturnType<typeof stakeholderRole>>;
 
 /** A+: checks on LinkedIn whether the person changed role or company. Spends Apify after confirmation; never writes by itself. */
-export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakeholderId: string; hasLinkedin: boolean; onUseTitle: (title: string) => void }) {
+export function RoleCheck({
+  stakeholderId,
+  hasLinkedin,
+  onUseTitle,
+}: {
+  stakeholderId: string;
+  hasLinkedin: boolean;
+  onUseTitle: (title: string) => void;
+}) {
   const run = useServerFn(stakeholderRole);
   const { paused } = useLinkedinLegalPause();
   const [busy, setBusy] = useState(false);
@@ -34,7 +42,8 @@ export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakehol
   async function go() {
     setBusy(true);
     try {
-      if (!(await confirmSpend("linkedin_role_check", "Comprobar su cargo en LinkedIn", "Apify"))) return;
+      if (!(await confirmSpend("linkedin_role_check", "Comprobar su cargo en LinkedIn", "Apify")))
+        return;
       setR(await run({ data: { stakeholderId } }));
     } catch (e) {
       toast.error(errorText(e));
@@ -42,7 +51,12 @@ export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakehol
       setBusy(false);
     }
   }
-  if (paused) return <p className="text-sm text-muted-foreground">Cargo en LinkedIn: en pausa. {LINKEDIN_PAUSE_TEXT}.</p>;
+  if (paused)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Cargo en LinkedIn: en pausa. {LINKEDIN_PAUSE_TEXT}.
+      </p>
+    );
   return (
     <div className="space-y-2 rounded-md border p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -51,8 +65,14 @@ export function RoleCheck({ stakeholderId, hasLinkedin, onUseTitle }: { stakehol
           {busy ? "Comprobando…" : "Comprobar cargo"}
         </Button>
       </div>
-      {!hasLinkedin && <p className="text-sm text-muted-foreground">Añade su LinkedIn para comprobarlo.</p>}
-      {r && !r.change && <p className="text-sm text-muted-foreground">LinkedIn no muestra un cargo actual: sin dato.</p>}
+      {!hasLinkedin && (
+        <p className="text-sm text-muted-foreground">Añade su LinkedIn para comprobarlo.</p>
+      )}
+      {r && !r.change && (
+        <p className="text-sm text-muted-foreground">
+          LinkedIn no muestra un cargo actual: sin dato.
+        </p>
+      )}
       {r?.change && (
         <div className="space-y-2 text-sm">
           <p className={r.change.changed ? "font-medium" : "text-muted-foreground"}>
@@ -85,7 +105,14 @@ export function AccountJobs({ accountId }: { accountId: string }) {
   async function go() {
     setBusy(true);
     try {
-      if (!(await confirmSpend("company_job_postings", "Ver las ofertas de empleo en LinkedIn", "Apify"))) return;
+      if (
+        !(await confirmSpend(
+          "company_job_postings",
+          "Ver las ofertas de empleo en LinkedIn",
+          "Apify",
+        ))
+      )
+        return;
       setR(await run({ data: { accountId } }));
     } catch (e) {
       toast.error(errorText(e));
@@ -105,9 +132,7 @@ export function AccountJobs({ accountId }: { accountId: string }) {
           </Button>
         )}
       </div>
-      {paused && (
-        <p className="text-sm text-muted-foreground">{LINKEDIN_PAUSE_TEXT}.</p>
-      )}
+      {paused && <p className="text-sm text-muted-foreground">{LINKEDIN_PAUSE_TEXT}.</p>}
       {r &&
         (r.jobs.length === 0 ? (
           <p className="text-sm text-muted-foreground">
@@ -115,19 +140,26 @@ export function AccountJobs({ accountId }: { accountId: string }) {
           </p>
         ) : (
           <>
-          {r.hiring?.headline && <p className="text-sm font-medium">{r.hiring.headline}</p>}
-          <ul className="divide-y border-t">
-            {r.jobs.map((j) => (
-              <li key={j.url} className="py-2.5 text-sm">
-                <a href={j.url} target="_blank" rel="noreferrer" className="font-medium underline">
-                  {j.title}
-                </a>
-                <span className="ml-2 font-mono text-xs text-muted-foreground">
-                  {[j.location, j.level, j.date ? ageText(j.date) : ""].filter(Boolean).join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
+            {r.hiring?.headline && <p className="text-sm font-medium">{r.hiring.headline}</p>}
+            <ul className="divide-y border-t">
+              {r.jobs.map((j) => (
+                <li key={j.url} className="py-2.5 text-sm">
+                  <a
+                    href={j.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium underline"
+                  >
+                    {j.title}
+                  </a>
+                  <span className="ml-2 font-mono text-xs text-muted-foreground">
+                    {[j.location, j.level, j.date ? ageText(j.date) : ""]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </>
         ))}
     </div>
@@ -148,7 +180,14 @@ export function BattlecardFromReviews({ onSaved }: { onSaved: (docId: string) =>
     setBusy(true);
     setCard(null);
     try {
-      if (!(await confirmSpend("create_battlecard_from_reviews", "Leer reseñas de G2 y redactar la battlecard", "Apify"))) return;
+      if (
+        !(await confirmSpend(
+          "create_battlecard_from_reviews",
+          "Leer reseñas de G2 y redactar la battlecard",
+          "Apify",
+        ))
+      )
+        return;
       setCard(await run({ data: { competitor: competitor.trim(), max } }));
     } catch (e) {
       toast.error(errorText(e));

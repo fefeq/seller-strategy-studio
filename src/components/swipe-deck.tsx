@@ -128,7 +128,14 @@ export function SwipeDeck<T extends { id: string }>({
           transition={{ duration: 0.25 }}
         />
       </div>
-      <div className="relative" style={current ? { minHeight: topH ? topH + Math.min(visible.length - 1, 2) * 12 : 220 } : undefined}>
+      <div
+        className="relative"
+        style={
+          current
+            ? { minHeight: topH ? topH + Math.min(visible.length - 1, 2) * 12 : 220 }
+            : undefined
+        }
+      >
         <AnimatePresence initial={false} custom={exit}>
           {visible
             .slice(0, 3)
@@ -195,11 +202,7 @@ export function SwipeDeck<T extends { id: string }>({
           >
             Más tarde
           </Button>
-          <Button
-            size="lg"
-            className="h-12 rounded-full px-5"
-            onClick={() => decide("right")}
-          >
+          <Button size="lg" className="h-12 rounded-full px-5" onClick={() => decide("right")}>
             <IconText icon={Check}>{labelsOf(current)["right"]}</IconText>
           </Button>
         </div>

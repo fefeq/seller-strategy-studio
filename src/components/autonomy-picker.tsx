@@ -16,7 +16,11 @@ export function useAutonomy() {
     queryKey: ["autonomy", uid],
     enabled: !!uid,
     queryFn: async () => {
-      const { data, error } = await supabase.from("user_agent_prefs").select("autonomy").eq("user_id", uid!).maybeSingle();
+      const { data, error } = await supabase
+        .from("user_agent_prefs")
+        .select("autonomy")
+        .eq("user_id", uid!)
+        .maybeSingle();
       if (error) throw error;
       return parseAutonomy(data?.autonomy);
     },
@@ -33,7 +37,9 @@ export function AutonomyPicker({ compact = false }: { compact?: boolean }) {
     if (!uid) return;
     const level = parseAutonomy(v);
     setBusy(true);
-    const { error } = await supabase.from("user_agent_prefs").upsert({ user_id: uid, autonomy: level, updated_at: new Date().toISOString() });
+    const { error } = await supabase
+      .from("user_agent_prefs")
+      .upsert({ user_id: uid, autonomy: level, updated_at: new Date().toISOString() });
     setBusy(false);
     if (error) return toast.error(errorText(error));
     await qc.invalidateQueries({ queryKey: ["autonomy", uid] });
@@ -41,5 +47,13 @@ export function AutonomyPicker({ compact = false }: { compact?: boolean }) {
   }
   if (q.error) return <p className="text-sm text-destructive">{errorText(q.error)}</p>;
   const blocks = autonomyBlocks(q.data);
-  return <ConvBlocks blocks={compact ? blocks.filter((b) => b.kind === "chips") : blocks.filter((b) => b.kind !== "link")} onChip={pick} busy={busy || q.isLoading} />;
+  return (
+    <ConvBlocks
+      blocks={
+        compact ? blocks.filter((b) => b.kind === "chips") : blocks.filter((b) => b.kind !== "link")
+      }
+      onChip={pick}
+      busy={busy || q.isLoading}
+    />
+  );
 }

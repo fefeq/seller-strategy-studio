@@ -14,7 +14,13 @@ const src = {
 
 describe("B3 unified inbox", () => {
   it("four kind filters plus Todo", () => {
-    expect(INBOX_FILTERS.map((f) => f.id)).toEqual(["todo", "sugerencia", "aprobacion", "tarea", "agente"]);
+    expect(INBOX_FILTERS.map((f) => f.id)).toEqual([
+      "todo",
+      "sugerencia",
+      "aprobacion",
+      "tarea",
+      "agente",
+    ]);
   });
   it("merges every source, urgent first", () => {
     const m = mergeInbox(src, today);

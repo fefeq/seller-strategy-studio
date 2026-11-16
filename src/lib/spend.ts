@@ -35,10 +35,14 @@ export type Estimate = {
  */
 export function estimateCost(rows: SpendRow[], tool: string, currency: string): Estimate {
   const samples = rows.filter(
-    (r) => r.tool === tool && r.currency === currency && r.cost_kind === "measured" && r.cost !== null,
+    (r) =>
+      r.tool === tool && r.currency === currency && r.cost_kind === "measured" && r.cost !== null,
   );
   const value = median(samples.map((r) => r.cost!));
-  const dates = samples.map((r) => r.created_at).filter((d): d is string => !!d).sort();
+  const dates = samples
+    .map((r) => r.created_at)
+    .filter((d): d is string => !!d)
+    .sort();
   return {
     value,
     samples: samples.length,

@@ -34,7 +34,13 @@ vi.mock("@/components/drive", () => ({
   ),
 }));
 vi.mock("@/lib/background.functions", () => ({ startBackgroundJob: vi.fn() }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: (m: string) => state.error(m), info: (m: string) => state.info(m) } }));
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: (m: string) => state.error(m),
+    info: (m: string) => state.info(m),
+  },
+}));
 
 import { startBackgroundJob } from "@/lib/background.functions";
 import { MAX_SOURCES } from "@/lib/onboarding-files-limit";

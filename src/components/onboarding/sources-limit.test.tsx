@@ -23,7 +23,9 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@/components/drive", () => ({ DriveSetupButton: () => null, DriveRefButton: () => null }));
 vi.mock("@/lib/background.functions", () => ({ startBackgroundJob: vi.fn() }));
-vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: (m: string) => state.error(m), info: vi.fn() } }));
+vi.mock("sonner", () => ({
+  toast: { success: vi.fn(), error: (m: string) => state.error(m), info: vi.fn() },
+}));
 
 import { MAX_SOURCES } from "@/lib/onboarding-files-limit";
 import { SourcesStep } from "./sources";

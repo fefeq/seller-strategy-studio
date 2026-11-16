@@ -13,7 +13,10 @@ export type NokkoEvent =
   | { name: typeof EV.ping; data: { at: string } }
   | { name: typeof EV.orgMaintenance; data: { org_id: string; hour: string } }
   | { name: typeof EV.leadCreated; data: { org_id: string; lead_id: string } }
-  | { name: typeof EV.leadContacted; data: { org_id: string; lead_id: string; contacted_at: string } }
+  | {
+      name: typeof EV.leadContacted;
+      data: { org_id: string; lead_id: string; contacted_at: string };
+    }
   | { name: typeof EV.leadChanged; data: { org_id: string; lead_id: string; stage: string } }
   | { name: typeof EV.jobRequested; data: { job_id: string } }
   | { name: typeof EV.parallelRun; data: { research_id: string } };
@@ -29,10 +32,25 @@ export const hourKey = (d: Date) => d.toISOString().slice(0, 13);
 
 /** Background job kinds and how they read in the app. */
 export const JOB_KINDS = [
-  "battlecard", "stakeholder_research", "account_signals", "drive_import", "complete_account",
-  "key_people", "icp_companies", "qualify_leads",
-  "discover", "autopilot_now", "weekly_report", "posthog_sync", "playbook_library",
-  "debate", "draft_artifact", "deep_review", "account_research", "drive_summaries", "onboarding_read",
+  "battlecard",
+  "stakeholder_research",
+  "account_signals",
+  "drive_import",
+  "complete_account",
+  "key_people",
+  "icp_companies",
+  "qualify_leads",
+  "discover",
+  "autopilot_now",
+  "weekly_report",
+  "posthog_sync",
+  "playbook_library",
+  "debate",
+  "draft_artifact",
+  "deep_review",
+  "account_research",
+  "drive_summaries",
+  "onboarding_read",
 ] as const;
 export type JobKind = (typeof JOB_KINDS)[number];
 export const JOB_LABEL: Record<JobKind, string> = {

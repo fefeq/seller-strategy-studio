@@ -492,7 +492,14 @@ export function EnrichTableButton() {
     setBusy(true);
     setRows(null);
     try {
-      if (!(await confirmSpend("enrich_accounts_table", "Completar datos de cuentas con Parallel", "Parallel"))) return;
+      if (
+        !(await confirmSpend(
+          "enrich_accounts_table",
+          "Completar datos de cuentas con Parallel",
+          "Parallel",
+        ))
+      )
+        return;
       setRows(await run({ data: { accountIds: chosen.slice(0, 25) } }));
     } catch (e) {
       toast.error(errorText(e));

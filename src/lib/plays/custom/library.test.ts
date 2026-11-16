@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { LIBRARY, ORIGIN_LABEL, splitCompetitors, accountsForCompetitor, recipeSources } from "./library";
-import { shingles, overlap, FINGERPRINT_MIN_OVERLAP, copiesAnnex, annexFingerprints } from "./fingerprints";
+import {
+  LIBRARY,
+  ORIGIN_LABEL,
+  splitCompetitors,
+  accountsForCompetitor,
+  recipeSources,
+} from "./library";
+import {
+  shingles,
+  overlap,
+  FINGERPRINT_MIN_OVERLAP,
+  copiesAnnex,
+  annexFingerprints,
+} from "./fingerprints";
 import { validateTestDesign, checkSources, SOURCE_REGISTRY } from "./model";
 import { CAPABILITIES, NEED_KEYS } from "@/lib/orchestrator/planner";
 
@@ -28,11 +40,18 @@ describe("6.4 the three recipes", () => {
     expect(NEED_KEYS.reviews).toBeNull();
     const r2 = LIBRARY[1]!;
     expect(recipeSources(r2)).toContain("reviews");
-    expect(checkSources(recipeSources(r2), { services: ["firecrawl", "perplexity"], posthog: false, driveFolder: false }).ok).toBe(false);
+    expect(
+      checkSources(recipeSources(r2), {
+        services: ["firecrawl", "perplexity"],
+        posthog: false,
+        driveFolder: false,
+      }).ok,
+    ).toBe(false);
     expect(SOURCE_REGISTRY.reviews.need).toBe("reviews");
   });
   it("no recipe uses Drive, PostHog or LinkedIn people", () => {
-    for (const r of LIBRARY) for (const s of recipeSources(r)) expect(["drive", "posthog"]).not.toContain(s);
+    for (const r of LIBRARY)
+      for (const s of recipeSources(r)) expect(["drive", "posthog"]).not.toContain(s);
   });
   it("R-2 never contacts the review author", () => {
     expect(LIBRARY[1]!.contactsAuthor).toBe(false);
@@ -42,13 +61,25 @@ describe("6.4 the three recipes", () => {
 
 describe("6.4 account selection from declared competitors", () => {
   it("splits free text into competitor names", () => {
-    expect(splitCompetitors("HubSpot, Pipedrive; Attio y Salesforce\nZoho")).toEqual(["HubSpot", "Pipedrive", "Attio", "Salesforce", "Zoho"]);
+    expect(splitCompetitors("HubSpot, Pipedrive; Attio y Salesforce\nZoho")).toEqual([
+      "HubSpot",
+      "Pipedrive",
+      "Attio",
+      "Salesforce",
+      "Zoho",
+    ]);
     expect(splitCompetitors(null)).toEqual([]);
   });
   it("picks accounts whose plan or lost deal names the competitor (match.ts rules)", () => {
     const out = accountsForCompetitor("HubSpot Inc.", {
-      plans: [{ account_id: "a1", competitors: "Hubspot, Salesforce" }, { account_id: "a2", competitors: "Pipedrive" }],
-      lostDeals: [{ account_id: "a3", lost_competitor: "HUBSPOT" }, { account_id: null, lost_competitor: "HubSpot" }],
+      plans: [
+        { account_id: "a1", competitors: "Hubspot, Salesforce" },
+        { account_id: "a2", competitors: "Pipedrive" },
+      ],
+      lostDeals: [
+        { account_id: "a3", lost_competitor: "HUBSPOT" },
+        { account_id: null, lost_competitor: "HubSpot" },
+      ],
     });
     expect(out.sort()).toEqual(["a1", "a3"]);
   });
@@ -81,7 +112,14 @@ describe("7 anti-copy: library vs annex (read at run time)", () => {
   });
   it("no recipe title, hook, message or id copies the annex", () => {
     for (const r of LIBRARY)
-      for (const text of [r.title, r.hook, r.message.built, r.message.ask, r.id, ...r.message.claims.map((c) => c.text)])
+      for (const text of [
+        r.title,
+        r.hook,
+        r.message.built,
+        r.message.ask,
+        r.id,
+        ...r.message.claims.map((c) => c.text),
+      ])
         expect(copiesAnnex(text, fps), text).toBe(false);
   });
 });

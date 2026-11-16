@@ -310,7 +310,8 @@ export function Motions() {
         <section className="rounded-lg border bg-card p-6">
           <p className="eyebrow">Segmentos por línea de negocio</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Sin línea, un segmento usa la principal{primary ? ` (${primary.label}, arquetipo ${primary.result.archetype})` : ""}.
+            Sin línea, un segmento usa la principal
+            {primary ? ` (${primary.label}, arquetipo ${primary.result.archetype})` : ""}.
             {!canEditMotion && " Solo Owner y Sales Leader los asignan."}
           </p>
           <ul className="mt-4 grid gap-3 md:grid-cols-2">
@@ -323,7 +324,12 @@ export function Motions() {
                     aria-label={`Línea de negocio de ${s.name}`}
                     disabled={!canEditMotion}
                     value={own?.id ?? ""}
-                    options={{ "": "Principal (por defecto)", ...Object.fromEntries(lines.map((l) => [l.id, l.name || `Línea ${l.position + 1}`])) }}
+                    options={{
+                      "": "Principal (por defecto)",
+                      ...Object.fromEntries(
+                        lines.map((l) => [l.id, l.name || `Línea ${l.position + 1}`]),
+                      ),
+                    }}
                     onChange={(v) => upd(s.id, { business_line_id: v === "" ? null : v })}
                   />
                 </li>

@@ -79,7 +79,9 @@ function HomePage() {
     fallback: `Hola, ${firstName}`,
   });
 
-  const meetingsToday = (data?.meetings ?? []).filter((m) => m.scheduled_at?.slice(0, 10) === today);
+  const meetingsToday = (data?.meetings ?? []).filter(
+    (m) => m.scheduled_at?.slice(0, 10) === today,
+  );
 
   // B3 (PLAN-UX-20261115): Hoy simplificado — titular, un siguiente mejor paso, tres KPI, reuniones de hoy,
   // respuestas y la bandeja única. El resto vive en Métricas, Pipeline y Cuentas.

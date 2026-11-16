@@ -55,7 +55,14 @@ function PlaysPage() {
           </Link>
         ))}
       </nav>
-      {vista === "equipos" ? <PlayTeamsPanel roles={roles} /> : <><CustomPlaysPanel roles={roles} /><PlaysPanel roles={roles} /></>}
+      {vista === "equipos" ? (
+        <PlayTeamsPanel roles={roles} />
+      ) : (
+        <>
+          <CustomPlaysPanel roles={roles} />
+          <PlaysPanel roles={roles} />
+        </>
+      )}
     </Page>
   );
 }

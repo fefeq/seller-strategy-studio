@@ -109,9 +109,14 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
       if (kind === "n") {
         const { parseAutonomy, AUTONOMY } = await import("@/lib/autonomy");
         const level = parseAutonomy(id);
-        const up = await db.from("user_agent_prefs").upsert({ user_id: ctx.userId, autonomy: level, updated_at: new Date().toISOString() });
+        const up = await db
+          .from("user_agent_prefs")
+          .upsert({ user_id: ctx.userId, autonomy: level, updated_at: new Date().toISOString() });
         if (up.error) throw up.error;
-        return t.sendText(chatId, `Nivel cambiado a ${AUTONOMY[level].label}. ${AUTONOMY[level].short} Puedes cambiarlo cuando quieras con /nivel.`);
+        return t.sendText(
+          chatId,
+          `Nivel cambiado a ${AUTONOMY[level].label}. ${AUTONOMY[level].short} Puedes cambiarlo cuando quieras con /nivel.`,
+        );
       }
       if (
         kind === "s" &&
@@ -184,7 +189,11 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
   if (text === "/nivel") {
     const { autonomyBlocks } = await import("@/lib/autonomy-blocks");
     const { toTelegram } = await import("@/lib/conversation");
-    const { data: pref } = await db.from("user_agent_prefs").select("autonomy").eq("user_id", ctx.userId).maybeSingle();
+    const { data: pref } = await db
+      .from("user_agent_prefs")
+      .select("autonomy")
+      .eq("user_id", ctx.userId)
+      .maybeSingle();
     const { absoluteUrl } = await import("@/lib/site");
     const r = toTelegram(autonomyBlocks(pref?.autonomy, "n:"), absoluteUrl("/"));
     return t.sendText(chatId, r.text, r.buttons);
@@ -200,7 +209,9 @@ async function handle(db: Admin, update: TelegramUpdate, t: Tg) {
   return agentReply(db, ctx, chatId, text, t);
 }
 
-type Ctx = NonNullable<Awaited<ReturnType<(typeof import("@/lib/channel-ctx.server"))["channelCtx"]>>>;
+type Ctx = NonNullable<
+  Awaited<ReturnType<(typeof import("@/lib/channel-ctx.server"))["channelCtx"]>>
+>;
 
 /** Runs the shared agent and answers with the same E2 blocks the app shows (actions, next steps, links). */
 async function agentReply(db: Admin, ctx: Ctx, chatId: string, text: string, t: Tg) {
@@ -236,7 +247,11 @@ async function agentReply(db: Admin, ctx: Ctx, chatId: string, text: string, t: 
     const { replyBlocks, toTelegram } = await import("@/lib/conversation");
     const { absoluteUrl } = await import("@/lib/site");
     const r = toTelegram(replyBlocks(out.text, out.pending), absoluteUrl("/"));
-    await t.sendText(chatId, r.text ? `${out.text}\n\n${r.text}` : out.text, r.buttons.length ? r.buttons : undefined);
+    await t.sendText(
+      chatId,
+      r.text ? `${out.text}\n\n${r.text}` : out.text,
+      r.buttons.length ? r.buttons : undefined,
+    );
   } catch (e) {
     await t.sendText(chatId, errorText(e));
   }

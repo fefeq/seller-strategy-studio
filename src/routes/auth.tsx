@@ -119,12 +119,15 @@ function AuthPage() {
   }
 
   async function forgot() {
-    if (!email) return toast.error("Escribe tu email arriba y vuelve a pulsar «¿Olvidaste tu contraseña?».");
+    if (!email)
+      return toast.error("Escribe tu email arriba y vuelve a pulsar «¿Olvidaste tu contraseña?».");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) return toast.error(errorText(error));
-    toast.success("Si existe una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña.");
+    toast.success(
+      "Si existe una cuenta con ese email, te hemos enviado un enlace para cambiar la contraseña.",
+    );
   }
 
   async function google() {
@@ -168,13 +171,24 @@ function AuthPage() {
           )}
           <div className="space-y-1.5">
             <Label htmlFor="auth-email">Email</Label>
-            <Input id="auth-email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            <Input
+              id="auth-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
           </div>
           <div className="space-y-1.5">
             <div className="flex items-baseline justify-between gap-2">
               <Label htmlFor="auth-password">Contraseña</Label>
               {mode === "in" && (
-                <button type="button" onClick={forgot} className="min-h-11 text-sm text-ink underline decoration-hairline-firm underline-offset-4">
+                <button
+                  type="button"
+                  onClick={forgot}
+                  className="min-h-11 text-sm text-ink underline decoration-hairline-firm underline-offset-4"
+                >
                   ¿Olvidaste tu contraseña?
                 </button>
               )}
@@ -189,7 +203,13 @@ function AuthPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <Button type="button" variant="outline" className="min-h-11 shrink-0" aria-pressed={show} onClick={() => setShow(!show)}>
+              <Button
+                type="button"
+                variant="outline"
+                className="min-h-11 shrink-0"
+                aria-pressed={show}
+                onClick={() => setShow(!show)}
+              >
                 {show ? "Ocultar" : "Mostrar"}
               </Button>
             </div>

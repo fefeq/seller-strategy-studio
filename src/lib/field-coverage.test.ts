@@ -6,9 +6,11 @@ import { BASELINE, BASELINE_MAX } from "./field-baseline";
 import { columnsFromTypes, conceptCandidates, coverage, explain } from "./field-coverage";
 
 const root = path.resolve(__dirname, "../..");
-const real = () => columnsFromTypes(readFileSync(path.join(root, "src/integrations/supabase/types.ts"), "utf8"));
+const real = () =>
+  columnsFromTypes(readFileSync(path.join(root, "src/integrations/supabase/types.ts"), "utf8"));
 
-const fake = (rows: string) => columnsFromTypes(`      t: {\n        Row: {\n${rows}\n        }\n      }`);
+const fake = (rows: string) =>
+  columnsFromTypes(`      t: {\n        Row: {\n${rows}\n        }\n      }`);
 
 describe("field coverage", () => {
   it("CA-10: every column of the generated types is catalogued or in the baseline", () => {
@@ -17,7 +19,9 @@ describe("field coverage", () => {
   });
 
   it("CA-10: a new column in neither fails and names the concept to assign", () => {
-    const cols = fake("          id: string\n          size_band: string | null\n          country_code: string");
+    const cols = fake(
+      "          id: string\n          size_band: string | null\n          country_code: string",
+    );
     const cov = coverage(cols, [], { t: ["id"] });
     expect(cov.uncatalogued.map((u) => u.column).sort()).toEqual(["country_code", "size_band"]);
     const country = cov.uncatalogued.find((u) => u.column === "country_code")!;
@@ -41,22 +45,39 @@ describe("field coverage", () => {
   });
 
   it("a column that is catalogued and also in the baseline is reported as stale", () => {
-    const cov = coverage(fake("          country: string"), [{ table: "t", column: "country" }], { t: ["country", "gone"] });
-    expect(cov.staleBaseline).toEqual([{ table: "t", column: "country", reason: "catalogued" }, { table: "t", column: "gone", reason: "missing" }]);
+    const cov = coverage(fake("          country: string"), [{ table: "t", column: "country" }], {
+      t: ["country", "gone"],
+    });
+    expect(cov.staleBaseline).toEqual([
+      { table: "t", column: "country", reason: "catalogued" },
+      { table: "t", column: "gone", reason: "missing" },
+    ]);
   });
 
   it("§8: free-form jsonb columns are listed as pending and never fail", () => {
-    const cov = coverage(fake("          id: string\n          detail: Json\n          meta: Json | null"), [], { t: ["id"] });
+    const cov = coverage(
+      fake("          id: string\n          detail: Json\n          meta: Json | null"),
+      [],
+      { t: ["id"] },
+    );
     expect(cov.uncatalogued).toEqual([]);
-    expect(cov.pendingJson).toEqual([{ table: "t", column: "detail" }, { table: "t", column: "meta" }]);
+    expect(cov.pendingJson).toEqual([
+      { table: "t", column: "detail" },
+      { table: "t", column: "meta" },
+    ]);
     expect(coverage(real(), BINDINGS, BASELINE).pendingJson.length).toBeGreaterThan(30);
   });
 
   it("CA-11: any concept lists where it is stored and where it is shown", () => {
     const pais = placesOf("pais");
-    expect(pais.stored.map((b) => `${b.table}.${b.column}`)).toEqual(["accounts.country", "account_assignment_rules.country"]);
+    expect(pais.stored.map((b) => `${b.table}.${b.column}`)).toEqual([
+      "accounts.country",
+      "account_assignment_rules.country",
+    ]);
     expect(pais.shown).toContain("src/components/country-pick.tsx");
-    expect(placesOf("importe").stored.length).toBe(BINDINGS.filter((b) => b.concept === "importe").length);
+    expect(placesOf("importe").stored.length).toBe(
+      BINDINGS.filter((b) => b.concept === "importe").length,
+    );
   });
 
   it("CA-11: every concept has places and every place named exists", () => {
@@ -65,7 +86,8 @@ describe("field coverage", () => {
       expect(p.stored.length, c.id).toBeGreaterThan(0);
       expect(p.shown.length, c.id).toBeGreaterThan(0);
     }
-    for (const files of Object.values(SHOWN_IN)) for (const f of files) expect(existsSync(path.join(root, f)), f).toBe(true);
+    for (const files of Object.values(SHOWN_IN))
+      for (const f of files) expect(existsSync(path.join(root, f)), f).toBe(true);
   });
 
   it("name hints cover the four first concepts and periodo", () => {
@@ -81,4 +103,3 @@ describe("field coverage", () => {
     expect(cov.uncatalogued.some((u) => u.table === "field_edit_log")).toBe(false);
   });
 });
-

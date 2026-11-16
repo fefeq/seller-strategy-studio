@@ -90,7 +90,8 @@ function ApolloProspect() {
   async function run(next: number) {
     setBusy(true);
     try {
-      if (!(await confirmSpend("apollo_find_companies", "Buscar empresas en Apollo", "Apollo"))) return;
+      if (!(await confirmSpend("apollo_find_companies", "Buscar empresas en Apollo", "Apollo")))
+        return;
       const r = await search({
         data: {
           page: next,
@@ -360,7 +361,8 @@ function ApolloPeople({ accountId, onAdded }: { accountId: string; onAdded: () =
     if (!ids.length) return;
     setBusy(true);
     try {
-      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo"))) return;
+      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo")))
+        return;
       const r = await reveal({ data: { accountId, apolloIds: ids, phone } });
       const next = new Map(added);
       for (const x of r)
@@ -517,7 +519,8 @@ export function ApolloReveal({
   async function run(phone: boolean) {
     setBusy(phone ? "phone" : "email");
     try {
-      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo"))) return;
+      if (!(await confirmSpend("apollo_reveal_contacts", "Revelar contactos con Apollo", "Apollo")))
+        return;
       const r = await reveal({ data: { stakeholderId, phone } });
       if (!r.found)
         toast.message(
@@ -549,7 +552,13 @@ export function ApolloReveal({
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Button size="sm" variant="outline" disabled={!!busy} onClick={() => run(false)}>
-        {busy === "email" ? (hasEmail ? "Verificando…" : "Revelando…") : (hasEmail ? "Verificar email" : "Conseguir email")}
+        {busy === "email"
+          ? hasEmail
+            ? "Verificando…"
+            : "Revelando…"
+          : hasEmail
+            ? "Verificar email"
+            : "Conseguir email"}
       </Button>
       <Button
         size="sm"
@@ -559,7 +568,9 @@ export function ApolloReveal({
       >
         {busy === "phone" ? "Pidiendo…" : "Conseguir móvil"}
       </Button>
-      <span className="basis-full text-xs text-muted-foreground">Fuentes: Apollo · coste aprox. {cost == null ? "sin dato" : money(cost)}</span>
+      <span className="basis-full text-xs text-muted-foreground">
+        Fuentes: Apollo · coste aprox. {cost == null ? "sin dato" : money(cost)}
+      </span>
       {pending?.status === "pending" && (
         <span className="text-xs text-muted-foreground">
           Móvil pedido: llegará en unos minutos.
@@ -591,7 +602,14 @@ export function ApolloEnrich({
   async function run() {
     setBusy(true);
     try {
-      if (!(await confirmSpend("apollo_enrich_account", "Consultar los datos de la cuenta en Apollo", "Apollo"))) return;
+      if (
+        !(await confirmSpend(
+          "apollo_enrich_account",
+          "Consultar los datos de la cuenta en Apollo",
+          "Apollo",
+        ))
+      )
+        return;
       const r = await enrich({ data: { accountId: account.id } });
       setResult(r);
       setPicked(r.changes.filter((c) => c.empty).map((c) => c.field));

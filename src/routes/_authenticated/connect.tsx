@@ -10,9 +10,17 @@ export const Route = createFileRoute("/_authenticated/connect")({
   head: () => ({
     meta: [
       { title: "Conectar asistentes de IA — Nokko" },
-      { name: "description", content: "Cómo conectar Claude, ChatGPT, Claude Code u otro asistente a Nokko y mantenerlo al día." },
+      {
+        name: "description",
+        content:
+          "Cómo conectar Claude, ChatGPT, Claude Code u otro asistente a Nokko y mantenerlo al día.",
+      },
       { property: "og:title", content: "Conectar asistentes de IA — Nokko" },
-      { property: "og:description", content: "Cómo conectar Claude, ChatGPT, Claude Code u otro asistente a Nokko y mantenerlo al día." },
+      {
+        property: "og:description",
+        content:
+          "Cómo conectar Claude, ChatGPT, Claude Code u otro asistente a Nokko y mantenerlo al día.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -27,7 +35,10 @@ const SLUG = "nokko";
 const shellQuote = (s: string) => `'${s.replace(/'/g, `'\\''`)}'`;
 
 function copy(text: string, what: string) {
-  navigator.clipboard.writeText(text).then(() => toast.success(`${what} copiado.`), () => toast.error("No se ha podido copiar. Selecciónalo y cópialo a mano."));
+  navigator.clipboard.writeText(text).then(
+    () => toast.success(`${what} copiado.`),
+    () => toast.error("No se ha podido copiar. Selecciónalo y cópialo a mano."),
+  );
 }
 
 function Steps({ children }: { children: ReactNode }) {
@@ -37,8 +48,16 @@ function Steps({ children }: { children: ReactNode }) {
 function CopyLine({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex gap-2">
-      <Input readOnly value={value} aria-label={label} className="font-mono text-xs" onFocus={(e) => e.target.select()} />
-      <Button variant="outline" onClick={() => copy(value, label)}>Copiar</Button>
+      <Input
+        readOnly
+        value={value}
+        aria-label={label}
+        className="font-mono text-xs"
+        onFocus={(e) => e.target.select()}
+      />
+      <Button variant="outline" onClick={() => copy(value, label)}>
+        Copiar
+      </Button>
     </div>
   );
 }
@@ -55,7 +74,11 @@ function ConnectPage() {
   return (
     <Page eyebrow="Asistentes de IA" title="Conecta tu asistente a Nokko">
       <section className="max-w-3xl space-y-3">
-        <p className="text-sm text-muted-foreground">Tu asistente podrá consultar cuentas, deals, leads, métricas y estrategia, y buscar en Clay. Actúa como tú, en tu empresa activa y con tu rol. Lo que cambie datos queda pendiente hasta que lo confirmes en Sugerencias.</p>
+        <p className="text-sm text-muted-foreground">
+          Tu asistente podrá consultar cuentas, deals, leads, métricas y estrategia, y buscar en
+          Clay. Actúa como tú, en tu empresa activa y con tu rol. Lo que cambie datos queda
+          pendiente hasta que lo confirmes en Sugerencias.
+        </p>
         <p className="eyebrow">Dirección del servidor</p>
         <CopyLine value={url} label="Dirección" />
       </section>
@@ -71,32 +94,81 @@ function ConnectPage() {
           </TabsList>
           <TabsContent value="chatgpt">
             <Steps>
-              <li>Abre <a href="https://chatgpt.com/#settings/Connectors/Advanced" {...ext}>Ajustes → Aplicaciones → Avanzado</a> y activa el modo desarrollador (lee el aviso que aparece). Si no puedes activarlo, pídeselo a quien administre ChatGPT en tu empresa.</li>
-              <li>Abre <a href="https://chatgpt.com/plugins#settings/Connectors?create-connector=true&redirectAfter=%2Fplugins" {...ext}>el formulario de nueva aplicación</a>.</li>
+              <li>
+                Abre{" "}
+                <a href="https://chatgpt.com/#settings/Connectors/Advanced" {...ext}>
+                  Ajustes → Aplicaciones → Avanzado
+                </a>{" "}
+                y activa el modo desarrollador (lee el aviso que aparece). Si no puedes activarlo,
+                pídeselo a quien administre ChatGPT en tu empresa.
+              </li>
+              <li>
+                Abre{" "}
+                <a
+                  href="https://chatgpt.com/plugins#settings/Connectors?create-connector=true&redirectAfter=%2Fplugins"
+                  {...ext}
+                >
+                  el formulario de nueva aplicación
+                </a>
+                .
+              </li>
               <li>Escribe «{APP_NAME}» como nombre y pega la dirección de arriba.</li>
-              <li>Revisa los datos, marca «Entiendo y quiero continuar» (ChatGPT lo pide con cualquier servidor propio) y pulsa Crear.</li>
+              <li>
+                Revisa los datos, marca «Entiendo y quiero continuar» (ChatGPT lo pide con cualquier
+                servidor propio) y pulsa Crear.
+              </li>
               <li>Se abrirá Nokko: inicia sesión si hace falta y pulsa Aprobar.</li>
-              <li>En un chat nuevo, activa {APP_NAME} desde el botón + y pídele, por ejemplo, «¿Qué leads tengo retrasados?».</li>
+              <li>
+                En un chat nuevo, activa {APP_NAME} desde el botón + y pídele, por ejemplo, «¿Qué
+                leads tengo retrasados?».
+              </li>
             </Steps>
           </TabsContent>
           <TabsContent value="claude">
             <Steps>
-              <li>Abre <a href={claudeLink} {...ext}>el formulario de conector de Claude</a>: ya lleva el nombre y la dirección.</li>
-              <li>Revisa los datos y pulsa Añadir. Se abrirá Nokko: inicia sesión si hace falta y pulsa Aprobar.</li>
-              <li>Si el formulario no se abre relleno, ve a Ajustes → Conectores → Añadir conector personalizado, escribe «{APP_NAME}» y pega la dirección.</li>
-              <li>Activa el conector desde el botón de herramientas del chat y pídele a Claude que use {APP_NAME}.</li>
+              <li>
+                Abre{" "}
+                <a href={claudeLink} {...ext}>
+                  el formulario de conector de Claude
+                </a>
+                : ya lleva el nombre y la dirección.
+              </li>
+              <li>
+                Revisa los datos y pulsa Añadir. Se abrirá Nokko: inicia sesión si hace falta y
+                pulsa Aprobar.
+              </li>
+              <li>
+                Si el formulario no se abre relleno, ve a Ajustes → Conectores → Añadir conector
+                personalizado, escribe «{APP_NAME}» y pega la dirección.
+              </li>
+              <li>
+                Activa el conector desde el botón de herramientas del chat y pídele a Claude que use{" "}
+                {APP_NAME}.
+              </li>
             </Steps>
           </TabsContent>
           <TabsContent value="code">
             <Steps>
-              <li>Copia este comando y ejecútalo en un terminal. Es toda la instalación y funciona desde cualquier carpeta.<div className="mt-2"><CopyLine value={mcpUrl ? command : "…"} label="Comando" /></div></li>
-              <li>Abre Claude Code y escribe <code className="font-mono">/mcp</code>. Elige {SLUG}, inicia sesión y pulsa Aprobar en Nokko.</li>
+              <li>
+                Copia este comando y ejecútalo en un terminal. Es toda la instalación y funciona
+                desde cualquier carpeta.
+                <div className="mt-2">
+                  <CopyLine value={mcpUrl ? command : "…"} label="Comando" />
+                </div>
+              </li>
+              <li>
+                Abre Claude Code y escribe <code className="font-mono">/mcp</code>. Elige {SLUG},
+                inicia sesión y pulsa Aprobar en Nokko.
+              </li>
               <li>Pídele a Claude Code que use {APP_NAME}.</li>
             </Steps>
           </TabsContent>
           <TabsContent value="other">
             <Steps>
-              <li>Abre los ajustes de servidores MCP o conectores personalizados de tu asistente (Cursor, Codex, etc.).</li>
+              <li>
+                Abre los ajustes de servidores MCP o conectores personalizados de tu asistente
+                (Cursor, Codex, etc.).
+              </li>
               <li>Crea una conexión a un servidor MCP remoto.</li>
               <li>Ponle de nombre «{APP_NAME}» y pega la dirección de arriba.</li>
               <li>Completa el inicio de sesión y pulsa Aprobar en Nokko.</li>
@@ -108,7 +180,10 @@ function ConnectPage() {
 
       <section className="mt-10 max-w-3xl">
         <h2 className="text-3xl">Actualizar cuando Nokko cambie</h2>
-        <p className="mt-1 text-sm text-muted-foreground">Los asistentes guardan la lista de herramientas. Cuando Nokko estrene funciones, actualiza la conexión para verlas.</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Los asistentes guardan la lista de herramientas. Cuando Nokko estrene funciones, actualiza
+          la conexión para verlas.
+        </p>
         <Tabs defaultValue="chatgpt" className="mt-4">
           <TabsList className="mb-4 flex-wrap">
             <TabsTrigger value="chatgpt">ChatGPT</TabsTrigger>
@@ -120,7 +195,10 @@ function ConnectPage() {
             <Steps>
               <li>Abre la página de aplicaciones de ChatGPT y elige {APP_NAME}.</li>
               <li>Baja hasta «Información» y pulsa Actualizar.</li>
-              <li>ChatGPT no deja cambiar la dirección de una aplicación. Si la dirección ha cambiado, borra la aplicación y vuelve a conectarla con la dirección de arriba.</li>
+              <li>
+                ChatGPT no deja cambiar la dirección de una aplicación. Si la dirección ha cambiado,
+                borra la aplicación y vuelve a conectarla con la dirección de arriba.
+              </li>
               <li>Empieza un chat nuevo y pídele que use {APP_NAME}.</li>
             </Steps>
           </TabsContent>
@@ -128,14 +206,21 @@ function ConnectPage() {
             <Steps>
               <li>Abre Ajustes → Conectores y elige {APP_NAME}.</li>
               <li>Actualiza las herramientas del conector.</li>
-              <li>Claude no deja cambiar la dirección de un conector. Si ha cambiado, quítalo y vuelve a añadirlo con la dirección de arriba.</li>
+              <li>
+                Claude no deja cambiar la dirección de un conector. Si ha cambiado, quítalo y vuelve
+                a añadirlo con la dirección de arriba.
+              </li>
               <li>Pídele a Claude que use {APP_NAME}.</li>
             </Steps>
           </TabsContent>
           <TabsContent value="code">
             <Steps>
               <li>Abre una sesión nueva de Claude Code: carga las herramientas al conectarse.</li>
-              <li>Si la dirección ha cambiado, ejecuta <code className="font-mono">claude mcp remove {SLUG}</code> y vuelve a ejecutar el comando de instalación.</li>
+              <li>
+                Si la dirección ha cambiado, ejecuta{" "}
+                <code className="font-mono">claude mcp remove {SLUG}</code> y vuelve a ejecutar el
+                comando de instalación.
+              </li>
               <li>Pídele a Claude Code que use {APP_NAME}.</li>
             </Steps>
           </TabsContent>
@@ -143,7 +228,9 @@ function ConnectPage() {
             <Steps>
               <li>Abre los ajustes de servidores MCP o conectores de tu asistente.</li>
               <li>Elige la conexión de {APP_NAME}.</li>
-              <li>Actualiza la lista de herramientas, recarga el servidor o vuelve a conectarlo.</li>
+              <li>
+                Actualiza la lista de herramientas, recarga el servidor o vuelve a conectarlo.
+              </li>
               <li>Si la dirección ha cambiado, pega la de arriba.</li>
               <li>Empieza un chat o sesión nueva y pide al asistente que use {APP_NAME}.</li>
             </Steps>

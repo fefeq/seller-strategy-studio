@@ -35,7 +35,9 @@ export async function build() {
     end $$;
   `);
   // Supabase gives anon and authenticated every privilege on new public tables: mimic it so a migration cannot rely on a bare default.
-  await db.exec(`alter default privileges in schema public grant all on tables to anon, authenticated, service_role; alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;`);
+  await db.exec(
+    `alter default privileges in schema public grant all on tables to anon, authenticated, service_role; alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;`,
+  );
   // The tables as the real database has them (catalog read 2026-10-26). accounts.field_sources comes from 0046 below.
   await db.exec(`
     create table public.segments (
@@ -86,7 +88,12 @@ export async function build() {
       new.copy_status := result; return new;
     end $$;
   `);
-  await db.exec(readFileSync(`${REPO}/drizzle/migrations/0046_field_sources_auto_enrich.sql`, "utf8").split("\n").filter((l) => !l.includes("lead_settings")).join("\n"));
+  await db.exec(
+    readFileSync(`${REPO}/drizzle/migrations/0046_field_sources_auto_enrich.sql`, "utf8")
+      .split("\n")
+      .filter((l) => !l.includes("lead_settings"))
+      .join("\n"),
+  );
   // 0002 policies and the audit trigger, as the real tables have them
   await db.exec(`do $$ declare t text; begin
     foreach t in array array['accounts','icp_profiles','segments','positioning','messaging_pillars'] loop
@@ -111,12 +118,15 @@ export async function migrate(db, files) {
 }
 
 export const U = {
-  ownerA: "00000000-0000-4000-8000-0000000000a1", aeA: "00000000-0000-4000-8000-0000000000a2",
+  ownerA: "00000000-0000-4000-8000-0000000000a1",
+  aeA: "00000000-0000-4000-8000-0000000000a2",
   ownerB: "00000000-0000-4000-8000-0000000000b1",
 };
 export async function seed(db) {
-  const A = (await db.query("insert into organizations (name) values ('Empresa A') returning id")).rows[0].id;
-  const B = (await db.query("insert into organizations (name) values ('Empresa B') returning id")).rows[0].id;
+  const A = (await db.query("insert into organizations (name) values ('Empresa A') returning id"))
+    .rows[0].id;
+  const B = (await db.query("insert into organizations (name) values ('Empresa B') returning id"))
+    .rows[0].id;
   await db.exec(`insert into org_members (org_id, user_id, role) values ('${A}','${U.ownerA}','owner'),('${A}','${U.aeA}','ae'),('${B}','${U.ownerB}','owner');
     insert into profiles (id, current_org_id) values ('${U.ownerA}','${A}'),('${U.aeA}','${A}'),('${U.ownerB}','${B}');`);
   return { A, B };
@@ -124,6 +134,14 @@ export async function seed(db) {
 
 /** Runs fn as a signed-in user (authenticated role + jwt sub); null = service role (no auth.uid()). */
 export async function as(db, uid, fn) {
-  await db.exec(uid ? `set role authenticated; select set_config('request.jwt.claim.sub', '${uid}', false);` : `set role service_role; select set_config('request.jwt.claim.sub', '', false);`);
-  try { return await fn(); } finally { await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`); }
+  await db.exec(
+    uid
+      ? `set role authenticated; select set_config('request.jwt.claim.sub', '${uid}', false);`
+      : `set role service_role; select set_config('request.jwt.claim.sub', '', false);`,
+  );
+  try {
+    return await fn();
+  } finally {
+    await db.exec(`reset role; select set_config('request.jwt.claim.sub', '', false);`);
+  }
 }

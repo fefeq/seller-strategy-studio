@@ -4,18 +4,35 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Finding } from "@/lib/onboarding";
 
-const state = vi.hoisted(() => ({ job: { status: "done", step: null as string | null, error: null } }));
-vi.mock("@/integrations/supabase/client", () => ({
-  supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.job }) }) }) }) },
+const state = vi.hoisted(() => ({
+  job: { status: "done", step: null as string | null, error: null },
 }));
-vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { roles: ["owner"], user: { id: "user-ana" } } }) }));
-vi.mock("@/components/confirm-dialog", () => ({ askConfirm: vi.fn(), askText: vi.fn(), askUnsaved: vi.fn() }));
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: {
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: state.job }) }) }),
+    }),
+  },
+}));
+vi.mock("@/hooks/use-me", () => ({
+  useMe: () => ({ data: { roles: ["owner"], user: { id: "user-ana" } } }),
+}));
+vi.mock("@/components/confirm-dialog", () => ({
+  askConfirm: vi.fn(),
+  askText: vi.fn(),
+  askUnsaved: vi.fn(),
+}));
 
 import { ReadingStep } from "./reading";
 
 afterEach(cleanup);
 const at = "2026-11-13T10:00:00.000Z";
-const F = (text: string, source: string, discardedAt?: string): Finding => ({ at, text, source, ...(discardedAt ? { discardedAt } : {}) });
+const F = (text: string, source: string, discardedAt?: string): Finding => ({
+  at,
+  text,
+  source,
+  ...(discardedAt ? { discardedAt } : {}),
+});
 const SOURCES = ["plan.pdf", "deck.pdf"];
 
 function view(status: string, findings: Finding[], step: string | null = null) {
@@ -23,7 +40,14 @@ function view(status: string, findings: Finding[], step: string | null = null) {
   const qc = new QueryClient();
   const ui = (fs: Finding[]) => (
     <QueryClientProvider client={qc}>
-      <ReadingStep jobId="job-1" findings={fs} sources={SOURCES} onNext={() => {}} onBack={() => {}} onChange={async () => {}} />
+      <ReadingStep
+        jobId="job-1"
+        findings={fs}
+        sources={SOURCES}
+        onNext={() => {}}
+        onBack={() => {}}
+        onChange={async () => {}}
+      />
     </QueryClientProvider>
   );
   const r = render(ui(findings));

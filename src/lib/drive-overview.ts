@@ -1,7 +1,15 @@
 // «Drive por cuenta» (Conocimiento): every account folder's documents with their AI summary and date.
 // Pure so the screen and its tests agree on when a summary is still valid.
 
-export type OverviewFile = { id: string; name: string; kind: string; isFolder: boolean; url: string | null; modified: string | null; readable: boolean };
+export type OverviewFile = {
+  id: string;
+  name: string;
+  kind: string;
+  isFolder: boolean;
+  url: string | null;
+  modified: string | null;
+  readable: boolean;
+};
 export type SummaryRow = { file_id: string; summary: string; file_modified_at: string | null };
 export type FolderListing = {
   accountId: string;
@@ -16,7 +24,10 @@ export type SummaryState = "fresh" | "stale" | "missing";
 const time = (iso: string | null | undefined) => (iso ? Date.parse(iso) : NaN);
 
 /** A summary is valid while the file has not changed in Drive since it was written. */
-export function summaryState(fileModified: string | null, row: SummaryRow | undefined): SummaryState {
+export function summaryState(
+  fileModified: string | null,
+  row: SummaryRow | undefined,
+): SummaryState {
   if (!row) return "missing";
   const a = time(fileModified);
   const b = time(row.file_modified_at);
@@ -37,7 +48,11 @@ export function buildOverview(listings: FolderListing[], summaries: SummaryRow[]
       .sort((a, b) => (time(b.modified) || 0) - (time(a.modified) || 0));
     return { ...l, docs, latest: docs[0]?.modified ?? null };
   });
-  accounts.sort((a, b) => (time(b.latest) || 0) - (time(a.latest) || 0) || a.accountName.localeCompare(b.accountName, "es"));
+  accounts.sort(
+    (a, b) =>
+      (time(b.latest) || 0) - (time(a.latest) || 0) ||
+      a.accountName.localeCompare(b.accountName, "es"),
+  );
   const all = accounts.flatMap((a) => a.docs.map((d) => ({ ...d, accountId: a.accountId })));
   const pending = all.filter((d) => d.readable && d.state !== "fresh");
   return {

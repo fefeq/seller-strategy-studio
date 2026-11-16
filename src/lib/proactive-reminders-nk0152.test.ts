@@ -58,9 +58,23 @@ describe("setup_incomplete with a stalled onboarding (NK-0152)", () => {
     expect(setupIncomplete(snap(base)).map((x) => x.user_id)).toEqual(["u-owner"]);
   });
   it("is silenced while that owner's onboarding is stalled", () => {
-    expect(setupIncomplete(snap({ ...base, onboarding: [{ user_id: "u-owner", step: "blocks", updated_at: days(2) }] } as Partial<Snapshot>))).toEqual([]);
+    expect(
+      setupIncomplete(
+        snap({
+          ...base,
+          onboarding: [{ user_id: "u-owner", step: "blocks", updated_at: days(2) }],
+        } as Partial<Snapshot>),
+      ),
+    ).toEqual([]);
   });
   it("comes back once the onboarding is finished", () => {
-    expect(setupIncomplete(snap({ ...base, onboarding: [{ user_id: "u-owner", step: "roadmap", updated_at: days(2) }] } as Partial<Snapshot>)).map((x) => x.user_id)).toEqual(["u-owner"]);
+    expect(
+      setupIncomplete(
+        snap({
+          ...base,
+          onboarding: [{ user_id: "u-owner", step: "roadmap", updated_at: days(2) }],
+        } as Partial<Snapshot>),
+      ).map((x) => x.user_id),
+    ).toEqual(["u-owner"]);
   });
 });

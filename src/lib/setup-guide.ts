@@ -44,7 +44,10 @@ export const STEP_COPY: Record<string, { have: string; do: string }> = {
   positioning: { have: "tu posicionamiento", do: "define tu posicionamiento" },
   icp: { have: "tu ICP", do: "define tu ICP" },
   segments: { have: "tus segmentos con rango de ACV", do: "pon el rango de ACV de tus segmentos" },
-  benchmarks: { have: "el win rate objetivo y la cuota por AE de tus segmentos", do: "fija el win rate objetivo y la cuota por AE de cada segmento" },
+  benchmarks: {
+    have: "el win rate objetivo y la cuota por AE de tus segmentos",
+    do: "fija el win rate objetivo y la cuota por AE de cada segmento",
+  },
   pillars: { have: "tus tres pilares de mensaje", do: "escribe tus tres pilares de mensaje" },
   quota: { have: "la cuota de este trimestre", do: "fija la cuota de este trimestre" },
   accounts: { have: "tus primeras cuentas objetivo", do: "añade tus primeras cuentas objetivo" },
@@ -63,7 +66,11 @@ export function reopenedText(steps: GuideStep[]): string {
   return `${steps.length > 1 ? "Pasos pendientes de nuevo" : "Paso pendiente de nuevo"}: ${steps.map(have).join("; ")}.`;
 }
 
-export const STATE_LABEL: Record<StepState, string> = { done: "Completado", pending: "Pendiente", snoozed: "Pospuesto" };
+export const STATE_LABEL: Record<StepState, string> = {
+  done: "Completado",
+  pending: "Pendiente",
+  snoozed: "Pospuesto",
+};
 
 export function canCompleteStep(stepId: string, role: string | null | undefined): boolean {
   const roles = STEP_ROLES[stepId];
@@ -97,16 +104,31 @@ const active = (s: Snooze, now: Date) => new Date(s.snoozed_until).getTime() > n
 
 export function guideState(d: SetupData, snoozes: Snooze[], now: Date): Guide {
   const st = setupStatus(d);
-  const until = new Map(snoozes.filter((s) => active(s, now)).map((s) => [s.step_id, s.snoozed_until]));
+  const until = new Map(
+    snoozes.filter((s) => active(s, now)).map((s) => [s.step_id, s.snoozed_until]),
+  );
   const steps: GuideStep[] = st.items.map((i) => {
-    const snoozedUntil = !i.done ? until.get(i.id) ?? null : null;
+    const snoozedUntil = !i.done ? (until.get(i.id) ?? null) : null;
     return {
-      id: i.id, label: i.label, unlocks: i.unlocks, why: STEP_WHY[i.id] ?? `Desbloquea: ${i.unlocks}.`, link: i.link, weight: i.weight,
-      state: i.done ? "done" : snoozedUntil ? "snoozed" : "pending", snoozedUntil,
+      id: i.id,
+      label: i.label,
+      unlocks: i.unlocks,
+      why: STEP_WHY[i.id] ?? `Desbloquea: ${i.unlocks}.`,
+      link: i.link,
+      weight: i.weight,
+      state: i.done ? "done" : snoozedUntil ? "snoozed" : "pending",
+      snoozedUntil,
     };
   });
   const pending = steps.filter((s) => s.state === "pending");
-  return { steps, pct: st.pct, next: pending[0] ?? null, pending, snoozed: steps.filter((s) => s.state === "snoozed"), complete: steps.every((s) => s.state === "done") };
+  return {
+    steps,
+    pct: st.pct,
+    next: pending[0] ?? null,
+    pending,
+    snoozed: steps.filter((s) => s.state === "snoozed"),
+    complete: steps.every((s) => s.state === "done"),
+  };
 }
 
 /** The step to recommend to someone with this role: the first pending one they can complete. */
@@ -116,7 +138,10 @@ export function nextFor(guide: Guide, role: string | null | undefined): GuideSte
 
 /** The step the wizard opens on: the first pending one this role can complete; if it has none, the first pending one; else the first step. */
 export function startStepId(guide: Guide, role: string | null | undefined): string {
-  return (nextFor(guide, role) ?? guide.pending[0] ?? guide.steps.find((s) => s.state !== "done") ?? guide.steps[0])!.id;
+  return (nextFor(guide, role) ??
+    guide.pending[0] ??
+    guide.steps.find((s) => s.state !== "done") ??
+    guide.steps[0])!.id;
 }
 
 /** The steps a role sees: those it can complete, plus the pending ones it can't (shown with who can). A person never sees a done step hidden. */
@@ -132,27 +157,75 @@ export function whoCan(stepId: string, members: GuideMember[]): GuideMember[] {
 export function whoCanText(stepId: string, members: GuideMember[]): string {
   const people = whoCan(stepId, members);
   const names = people.map((m) => m.name?.trim()).filter((n): n is string => !!n);
-  if (names.length) return `Lo puede completar ${names.slice(0, 3).join(", ")}${names.length > 3 ? " y otras personas" : ""}.`;
+  if (names.length)
+    return `Lo puede completar ${names.slice(0, 3).join(", ")}${names.length > 3 ? " y otras personas" : ""}.`;
   const roles = STEP_ROLES[stepId];
   if (!roles || roles === "all") return "Lo puede completar cualquier persona de la empresa.";
   return `Lo puede completar una persona con rol ${roles.map((r) => ROLES[r].label).join(" o ")}.`;
 }
 
-export type NextMessage = { stepId: string | null; title: string; why: string; start: string | null; later: string | null; link: string | null };
+export type NextMessage = {
+  stepId: string | null;
+  title: string;
+  why: string;
+  start: string | null;
+  later: string | null;
+  link: string | null;
+};
 
 /** The message shown after finishing a step, in Inicio and in the agent. Same text for the same state (CA-3). */
-export function nextMessage(guide: Guide, role: string | null | undefined, justDone?: string | null, members: GuideMember[] = []): NextMessage {
-  const doneStep = justDone ? guide.steps.find((s) => s.id === justDone && s.state === "done") : undefined;
+export function nextMessage(
+  guide: Guide,
+  role: string | null | undefined,
+  justDone?: string | null,
+  members: GuideMember[] = [],
+): NextMessage {
+  const doneStep = justDone
+    ? guide.steps.find((s) => s.id === justDone && s.state === "done")
+    : undefined;
   const lead = doneStep ? `Ya tienes ${have(doneStep)}. ` : "";
   const step = nextFor(guide, role);
   if (step) {
-    return { stepId: step.id, title: `${lead}Siguiente: ${doIt(step)}.`, why: step.why, start: "Empezar", later: "Más tarde", link: step.link };
+    return {
+      stepId: step.id,
+      title: `${lead}Siguiente: ${doIt(step)}.`,
+      why: step.why,
+      start: "Empezar",
+      later: "Más tarde",
+      link: step.link,
+    };
   }
-  if (guide.complete) return { stepId: null, title: "Ya tienes tu estrategia completa.", why: COMPLETE_TEXT, start: null, later: null, link: null };
+  if (guide.complete)
+    return {
+      stepId: null,
+      title: "Ya tienes tu estrategia completa.",
+      why: COMPLETE_TEXT,
+      start: null,
+      later: null,
+      link: null,
+    };
   const other = guide.pending[0];
-  if (other) return { stepId: null, title: `${lead}Lo que queda no es de tu rol.`, why: `Falta ${have(other)}. ${whoCanText(other.id, members)}`, start: null, later: null, link: null };
-  const back = guide.snoozed.map((s) => s.snoozedUntil).filter((u): u is string => !!u).sort()[0];
-  return { stepId: null, title: `${lead}Los pasos que quedan están pospuestos.`, why: `Vuelven a avisarte el ${back ? formatDay(back) : "día que elegiste"}.`, start: null, later: null, link: null };
+  if (other)
+    return {
+      stepId: null,
+      title: `${lead}Lo que queda no es de tu rol.`,
+      why: `Falta ${have(other)}. ${whoCanText(other.id, members)}`,
+      start: null,
+      later: null,
+      link: null,
+    };
+  const back = guide.snoozed
+    .map((s) => s.snoozedUntil)
+    .filter((u): u is string => !!u)
+    .sort()[0];
+  return {
+    stepId: null,
+    title: `${lead}Los pasos que quedan están pospuestos.`,
+    why: `Vuelven a avisarte el ${back ? formatDay(back) : "día que elegiste"}.`,
+    start: null,
+    later: null,
+    link: null,
+  };
 }
 
 /** CA-2: what Nokko does by itself and what is left for the person once nothing is pending. */
@@ -162,7 +235,12 @@ export const COMPLETE_TEXT =
 export const INACTIVITY_MS = 86_400_000; // 1 day, decided by Fede (2026-10-25)
 
 /** CA-6: nudge when steps are pending and nothing in the setup data changed for more than a day. No data of activity = no nudge. */
-export function nudgeDue(guide: Guide, role: string | null | undefined, lastActivityAt: string | null, now: Date): boolean {
+export function nudgeDue(
+  guide: Guide,
+  role: string | null | undefined,
+  lastActivityAt: string | null,
+  now: Date,
+): boolean {
   return !!nextFor(guide, role) && inactive(lastActivityAt, now);
 }
 
@@ -177,9 +255,16 @@ const ASSIGN_ORDER = ["owner", "sales_leader", "marketing"];
  * goes to nobody in particular (null); otherwise the first member whose role can complete it (Owner, then Sales Leader, then
  * Marketing; ties by id so the choice is stable). Undefined when no member can: there is no one to ask.
  */
-export function suggestionAssignee(stepId: string, members: GuideMember[]): { user_id: string | null } | undefined {
+export function suggestionAssignee(
+  stepId: string,
+  members: GuideMember[],
+): { user_id: string | null } | undefined {
   if (STEP_ROLES[stepId] === "all") return { user_id: null };
-  const who = whoCan(stepId, members).sort((a, b) => ASSIGN_ORDER.indexOf(a.role) - ASSIGN_ORDER.indexOf(b.role) || a.user_id.localeCompare(b.user_id))[0];
+  const who = whoCan(stepId, members).sort(
+    (a, b) =>
+      ASSIGN_ORDER.indexOf(a.role) - ASSIGN_ORDER.indexOf(b.role) ||
+      a.user_id.localeCompare(b.user_id),
+  )[0];
   return who ? { user_id: who.user_id } : undefined;
 }
 

@@ -24,7 +24,12 @@ const STRATEGY_TABS = [
   "review",
   "rules",
 ] as const;
-type StrategySearch = { tab?: (typeof STRATEGY_TABS)[number]; seccion?: string; doc?: string; q?: string };
+type StrategySearch = {
+  tab?: (typeof STRATEGY_TABS)[number];
+  seccion?: string;
+  doc?: string;
+  q?: string;
+};
 
 export const Route = createFileRoute("/_authenticated/strategy")({
   // seccion/doc/q belong to the embedded «Reglas y voz» tab (same keys Conocimiento used).
@@ -36,7 +41,9 @@ export const Route = createFileRoute("/_authenticated/strategy")({
     if (tab !== "rules") return { tab };
     return {
       tab,
-      ...((RULES_SECTIONS as readonly unknown[]).includes(s.seccion) ? { seccion: s.seccion as string } : {}),
+      ...((RULES_SECTIONS as readonly unknown[]).includes(s.seccion)
+        ? { seccion: s.seccion as string }
+        : {}),
       ...(typeof s.doc === "string" ? { doc: s.doc } : {}),
     };
   },

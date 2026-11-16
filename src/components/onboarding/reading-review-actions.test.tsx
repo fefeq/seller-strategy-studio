@@ -4,8 +4,16 @@ import { afterEach, expect, it, vi } from "vitest";
 import { useState } from "react";
 import type { Finding } from "@/lib/onboarding";
 
-vi.mock("@/integrations/supabase/client", () => ({ supabase: { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { status: "done" } }) }) }) }) } }));
-vi.mock("@/hooks/use-me", () => ({ useMe: () => ({ data: { roles: ["owner"], user: { id: "reviewer" } } }) }));
+vi.mock("@/integrations/supabase/client", () => ({
+  supabase: {
+    from: () => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { status: "done" } }) }) }),
+    }),
+  },
+}));
+vi.mock("@/hooks/use-me", () => ({
+  useMe: () => ({ data: { roles: ["owner"], user: { id: "reviewer" } } }),
+}));
 import { ReadingStep } from "./reading";
 afterEach(cleanup);
 const initial: Finding[] = [
@@ -15,12 +23,29 @@ const initial: Finding[] = [
 function show(save: (patch: { findings?: Finding[]; sources?: string[] }) => void) {
   function Harness() {
     const [findings, setFindings] = useState(initial);
-    return <ReadingStep jobId="synthetic-job" findings={findings} sources={["plan.md"]} onNext={() => {}} onBack={() => {}} onChange={async patch => { save(patch); if (patch.findings) setFindings(patch.findings); }} />;
+    return (
+      <ReadingStep
+        jobId="synthetic-job"
+        findings={findings}
+        sources={["plan.md"]}
+        onNext={() => {}}
+        onBack={() => {}}
+        onChange={async (patch) => {
+          save(patch);
+          if (patch.findings) setFindings(patch.findings);
+        }}
+      />
+    );
   }
-  render(<QueryClientProvider client={new QueryClient()}><Harness /></QueryClientProvider>);
+  render(
+    <QueryClientProvider client={new QueryClient()}>
+      <Harness />
+    </QueryClientProvider>,
+  );
 }
 it("CA-1 confirms only the selected finding", async () => {
-  const save = vi.fn(); show(save);
+  const save = vi.fn();
+  show(save);
   const buttons = await screen.findAllByRole("button", { name: "Confirmar" });
   fireEvent.click(buttons[0] as HTMLElement);
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));
@@ -29,7 +54,8 @@ it("CA-1 confirms only the selected finding", async () => {
   expect(fs[1]?.confirmedAt).toBeUndefined();
 });
 it("CA-2 restores an excluded finding without confirming it", async () => {
-  const save = vi.fn(); show(save);
+  const save = vi.fn();
+  show(save);
   const buttons = await screen.findAllByRole("button", { name: "Descartar" });
   fireEvent.click(buttons[0] as HTMLElement);
   await waitFor(() => expect(save).toHaveBeenCalledTimes(1));

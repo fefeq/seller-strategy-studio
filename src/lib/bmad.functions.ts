@@ -15,7 +15,11 @@ export const draftArtifact = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { kind: string; notes?: string; dealId?: string | null }) => {
     if (!KINDS.includes(d.kind as ArtifactKind)) throw new Error("Tipo de documento no válido");
-    return { kind: d.kind as ArtifactKind, notes: String(d.notes ?? "").slice(0, 6000), dealId: d.dealId ? String(d.dealId) : null };
+    return {
+      kind: d.kind as ArtifactKind,
+      notes: String(d.notes ?? "").slice(0, 6000),
+      dealId: d.dealId ? String(d.dealId) : null,
+    };
   })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
@@ -28,20 +32,39 @@ export const deepReview = createServerFn({ method: "POST" })
     if (!REVIEW_METHOD_TEXT[d.method]) throw new Error("Método no válido");
     return { artifactId: String(d.artifactId), method: d.method };
   })
-  .handler(async ({ data, context }) => deepReviewCore(await userCtx(context.supabase as Db, context.userId), data));
+  .handler(async ({ data, context }) =>
+    deepReviewCore(await userCtx(context.supabase as Db, context.userId), data),
+  );
 
 export const runDebate = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { level: string; topic: string; subjectType?: string | null; subjectId?: string | null; participants?: string[] }) => {
-    if (!LEVELS.includes(d.level as DebateLevel)) throw new Error("Nivel no válido");
-    const topic = String(d.topic ?? "").trim();
-    if (!topic) throw new Error("Escribe el tema del debate");
-    const st = ["deal", "account", "artifact"].includes(String(d.subjectType)) ? String(d.subjectType) : null;
-    return { level: d.level as DebateLevel, topic: topic.slice(0, 2000), subjectType: st, subjectId: st && d.subjectId ? String(d.subjectId) : null, participants: Array.isArray(d.participants) ? d.participants.map(String) : [] };
-  })
+  .inputValidator(
+    (d: {
+      level: string;
+      topic: string;
+      subjectType?: string | null;
+      subjectId?: string | null;
+      participants?: string[];
+    }) => {
+      if (!LEVELS.includes(d.level as DebateLevel)) throw new Error("Nivel no válido");
+      const topic = String(d.topic ?? "").trim();
+      if (!topic) throw new Error("Escribe el tema del debate");
+      const st = ["deal", "account", "artifact"].includes(String(d.subjectType))
+        ? String(d.subjectType)
+        : null;
+      return {
+        level: d.level as DebateLevel,
+        topic: topic.slice(0, 2000),
+        subjectType: st,
+        subjectId: st && d.subjectId ? String(d.subjectId) : null,
+        participants: Array.isArray(d.participants) ? d.participants.map(String) : [],
+      };
+    },
+  )
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    if (!canConvene(data.level, ctx.roles)) throw new Error("Tu rol no puede convocar este nivel de debate");
+    if (!canConvene(data.level, ctx.roles))
+      throw new Error("Tu rol no puede convocar este nivel de debate");
     const r = await runDebateCore(ctx, data);
     return { id: r.id };
   });

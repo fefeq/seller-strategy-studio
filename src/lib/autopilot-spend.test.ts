@@ -12,13 +12,16 @@ describe("autopilot never spends on its own", () => {
     }
   });
   it("without auto-enrich it only proposes the web research", () => {
-    expect(autopilotSpendProposals({ id: "a" }, false).map((x) => x.tool)).toEqual(["research_account"]);
+    expect(autopilotSpendProposals({ id: "a" }, false).map((x) => x.tool)).toEqual([
+      "research_account",
+    ]);
   });
 });
 
 import { readFileSync } from "node:fs";
 it("autopilot.server.ts calls no paid core directly (only pending actions)", () => {
   const src = readFileSync("src/lib/autopilot.server.ts", "utf8");
-  for (const f of ["completeAccount(", "researchAccountCore(", "trackedRun(", "applyAutoChanges("]) expect(src).not.toContain(f);
+  for (const f of ["completeAccount(", "researchAccountCore(", "trackedRun(", "applyAutoChanges("])
+    expect(src).not.toContain(f);
   expect(src).toContain('from("agent_pending_actions")');
 });

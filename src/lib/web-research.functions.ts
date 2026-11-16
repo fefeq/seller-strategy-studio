@@ -14,7 +14,9 @@ export const researchAccount = createServerFn({ method: "POST" })
     const c = await userCtx(context.supabase as Db, context.userId);
     const { researchAccountCore } = await import("@/lib/web-research-core");
     const { trackedRun } = await import("@/lib/orchestrator/runner");
-    return trackedRun(c, "research_account", "manual", () => researchAccountCore(context.supabase, data.accountId));
+    return trackedRun(c, "research_account", "manual", () =>
+      researchAccountCore(context.supabase, data.accountId),
+    );
   });
 
 export const refreshSignals = createServerFn({ method: "POST" })

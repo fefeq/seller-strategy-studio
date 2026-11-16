@@ -37,7 +37,11 @@ export function resolveHelp(label: string, key?: string): ResolvedHelp {
   };
 }
 
-export type PromptContext = { company?: string | null; website?: string | null; value?: string | null };
+export type PromptContext = {
+  company?: string | null;
+  website?: string | null;
+  value?: string | null;
+};
 
 /** The text «Copiar prompt» puts in the clipboard, ready to paste in ChatGPT, Claude or any other assistant. */
 export function buildPrompt(help: ResolvedHelp, ctx: PromptContext = {}): string {
@@ -53,5 +57,7 @@ export function buildPrompt(help: ResolvedHelp, ctx: PromptContext = {}): string
     `Tarea: ${help.ask ?? `escribe el contenido de «${help.label}»${who}.`}`,
     `Formato: ${help.format ?? "solo el texto listo para pegar en el campo, en español, sin introducción ni explicaciones."}`,
     "Si te falta información, búscala en la web de la empresa o hazme como máximo 3 preguntas antes de responder.",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

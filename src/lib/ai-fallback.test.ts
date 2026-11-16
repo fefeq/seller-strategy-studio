@@ -4,9 +4,15 @@ import { ProviderError, withFallback } from "./ai-gateway";
 
 describe("AI provider chain", () => {
   it("with OpenRouter: OpenRouter first, then Gemini, and never the Lovable AI", () => {
-    expect(aiProviders({ GEMINI_API_KEY: "g", OPENROUTER_API_KEY: "o" })).toEqual(["openrouter", "gemini"]);
+    expect(aiProviders({ GEMINI_API_KEY: "g", OPENROUTER_API_KEY: "o" })).toEqual([
+      "openrouter",
+      "gemini",
+    ]);
     expect(aiProviders({ OPENROUTER_API_KEY: "o" })).toEqual(["openrouter"]);
-    expect(aiProviders({ OPENROUTER_API_KEY: "o", AI_LOVABLE_FALLBACK: "on" })).toEqual(["openrouter", "lovable"]);
+    expect(aiProviders({ OPENROUTER_API_KEY: "o", AI_LOVABLE_FALLBACK: "on" })).toEqual([
+      "openrouter",
+      "lovable",
+    ]);
   });
   it("without OpenRouter: Gemini with the Lovable AI as safety net (unless switched off)", () => {
     expect(aiProviders({ GEMINI_API_KEY: "g" })).toEqual(["gemini", "lovable"]);
@@ -16,10 +22,18 @@ describe("AI provider chain", () => {
     expect(aiProviders({ GEMINI_API_KEY: "g", AI_PROVIDER: "lovable" })).toEqual(["lovable"]);
   });
   it("OpenRouter tries Gemini, Claude and GPT in that order by default; OPENROUTER_MODEL overrides", () => {
-    expect(openrouterModels({})).toEqual(["google/gemini-3.8-flash", "anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol"]);
+    expect(openrouterModels({})).toEqual([
+      "google/gemini-3.8-flash",
+      "anthropic/claude-sonnet-5.5",
+      "openai/gpt-6.1-sol",
+    ]);
     expect(openrouterRouting({}).models).toHaveLength(3);
-    expect(openrouterModels({ OPENROUTER_MODEL: "anthropic/claude-sonnet-5.5" })).toEqual(["anthropic/claude-sonnet-5.5"]);
-    expect(openrouterRouting({ OPENROUTER_MODEL: "anthropic/claude-sonnet-5.5" }).models).toBeUndefined();
+    expect(openrouterModels({ OPENROUTER_MODEL: "anthropic/claude-sonnet-5.5" })).toEqual([
+      "anthropic/claude-sonnet-5.5",
+    ]);
+    expect(
+      openrouterRouting({ OPENROUTER_MODEL: "anthropic/claude-sonnet-5.5" }).models,
+    ).toBeUndefined();
     expect(openrouterModels({ OPENROUTER_MODEL: "a, b, c, d" })).toEqual(["a", "b", "c"]);
   });
   it("falls back when quota runs out, not on a bad request", () => {
@@ -39,9 +53,11 @@ describe("AI provider chain", () => {
     expect(tried).toEqual(["gemini", "openrouter"]);
   });
   it("never retries past a Lovable AI error", async () => {
-    await expect(withFallback(["gemini", "lovable"], async (p) => {
-      if (p === "gemini") throw new ProviderError("sin cuota", 429);
-      throw new Error("Sin créditos");
-    })).rejects.toThrow("Sin créditos");
+    await expect(
+      withFallback(["gemini", "lovable"], async (p) => {
+        if (p === "gemini") throw new ProviderError("sin cuota", 429);
+        throw new Error("Sin créditos");
+      }),
+    ).rejects.toThrow("Sin créditos");
   });
 });

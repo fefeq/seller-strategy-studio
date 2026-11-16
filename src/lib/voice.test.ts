@@ -13,6 +13,9 @@ describe("voice rules (Fase F)", () => {
   it("dictation drops secrets and refuses deletions", () => {
     expect(acceptDictation("password: SuperSecreta2026!").ok).toBe(false);
     expect(acceptDictation("elimina la cuenta Acme").ok).toBe(false);
-    expect(acceptDictation("¿cómo va el pipeline?")).toEqual({ ok: true, text: "¿cómo va el pipeline?" });
+    expect(acceptDictation("¿cómo va el pipeline?")).toEqual({
+      ok: true,
+      text: "¿cómo va el pipeline?",
+    });
   });
 });

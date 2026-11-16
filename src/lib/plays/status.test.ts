@@ -57,7 +57,9 @@ describe("blocked and planned plays cannot be enabled (CA-9, G-3)", () => {
 
   it("covers the four blockers with their own words", () => {
     const label = (id: string) => effectiveState(play(id), null).label;
-    expect(label("new-hire-tracking")).toBe("Bloqueado: falta una integración con la API oficial de LinkedIn");
+    expect(label("new-hire-tracking")).toBe(
+      "Bloqueado: falta una integración con la API oficial de LinkedIn",
+    );
     expect(label("website-visitor-de-anonymization")).toBe(
       "Bloqueado: falta un proveedor de datos",
     );

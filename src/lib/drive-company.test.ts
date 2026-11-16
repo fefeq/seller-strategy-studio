@@ -9,11 +9,24 @@ describe("Drive por empresa (C2)", () => {
     expect(driveCompanyState(true, null)).toEqual({ kind: "shared" });
   });
   it("muestra el email, quién y cuándo (CA-3, CA-9)", () => {
-    expect(driveCompanyState(true, { account_email: "a@b.com", connected_at: "2026-11-15", status: "active", by: "Fede" }))
-      .toEqual({ kind: "connected", email: "a@b.com", by: "Fede", at: "2026-11-15" });
+    expect(
+      driveCompanyState(true, {
+        account_email: "a@b.com",
+        connected_at: "2026-11-15",
+        status: "active",
+        by: "Fede",
+      }),
+    ).toEqual({ kind: "connected", email: "a@b.com", by: "Fede", at: "2026-11-15" });
   });
   it("un acceso caducado pide reconectar", () => {
-    expect(driveCompanyState(true, { account_email: null, connected_at: "x", status: "reconnect", by: null }).kind).toBe("reconnect");
+    expect(
+      driveCompanyState(true, {
+        account_email: null,
+        connected_at: "x",
+        status: "reconnect",
+        by: null,
+      }).kind,
+    ).toBe("reconnect");
   });
   it("solo el Owner gestiona la cuenta (CA-10)", () => {
     expect(canManageDrive(["owner"])).toBe(true);

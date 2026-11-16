@@ -40,14 +40,21 @@ export function providerErrorBody(e: ProviderError): string {
   return providerBodies.get(e) ?? "";
 }
 
-export type TrackedAskOpts = AskOpts & { onCost?: (cost: number | null, provider: string) => Promise<void> };
+export type TrackedAskOpts = AskOpts & {
+  onCost?: (cost: number | null, provider: string) => Promise<void>;
+};
 export async function ask(system: string, user: string, opts: TrackedAskOpts = {}) {
   return withFallback(aiProviders(process.env), (p) =>
-    p === "openrouter" ? askOpenRouter(system, user, opts) : (async () => {
-      const text = p === "lovable" ? await askLovable(system, user, opts) : await askOwn(p, system, user, opts);
-      await opts.onCost?.(null, p);
-      return text;
-    })(),
+    p === "openrouter"
+      ? askOpenRouter(system, user, opts)
+      : (async () => {
+          const text =
+            p === "lovable"
+              ? await askLovable(system, user, opts)
+              : await askOwn(p, system, user, opts);
+          await opts.onCost?.(null, p);
+          return text;
+        })(),
   );
 }
 
@@ -160,22 +167,39 @@ async function askOpenRouter(system: string, user: string, opts: TrackedAskOpts)
     throw new ProviderError(openrouterErrorMessage(res.status), res.status, body, "openrouter");
   }
   let json: {
-      choices?: { message?: { content?: string } }[];
-      error?: { code?: number; message?: string };
-      usage?: { is_byok?: boolean; cost?: number; cost_details?: { upstream_inference_cost?: number } };
+    choices?: { message?: { content?: string } }[];
+    error?: { code?: number; message?: string };
+    usage?: {
+      is_byok?: boolean;
+      cost?: number;
+      cost_details?: { upstream_inference_cost?: number };
+    };
   };
-  try { json = JSON.parse(body); }
-  catch { throw new Error("OpenRouter devolvió una respuesta inválida tras la petición. Revisa la actividad antes de repetirla."); }
-    if (json.error)
-      throw new ProviderError(
-        openrouterErrorMessage(json.error.code ?? 502),
-        json.error.code ?? 502,
-        body,
-        "openrouter",
-      );
-    const amount = json.usage?.is_byok === true ? json.usage.cost_details?.upstream_inference_cost : json.usage?.is_byok === false ? json.usage.cost : null;
-    await opts.onCost?.(typeof amount === "number" && Number.isFinite(amount) && amount >= 0 ? amount : null, "openrouter");
-    return json.choices?.[0]?.message?.content ?? "";
+  try {
+    json = JSON.parse(body);
+  } catch {
+    throw new Error(
+      "OpenRouter devolvió una respuesta inválida tras la petición. Revisa la actividad antes de repetirla.",
+    );
+  }
+  if (json.error)
+    throw new ProviderError(
+      openrouterErrorMessage(json.error.code ?? 502),
+      json.error.code ?? 502,
+      body,
+      "openrouter",
+    );
+  const amount =
+    json.usage?.is_byok === true
+      ? json.usage.cost_details?.upstream_inference_cost
+      : json.usage?.is_byok === false
+        ? json.usage.cost
+        : null;
+  await opts.onCost?.(
+    typeof amount === "number" && Number.isFinite(amount) && amount >= 0 ? amount : null,
+    "openrouter",
+  );
+  return json.choices?.[0]?.message?.content ?? "";
 }
 
 export function openrouterErrorMessage(status: number) {

@@ -4,12 +4,20 @@
 
 import { SETUP_ITEMS } from "@/lib/setup-schema";
 
-export type ResolvableSuggestion = { detector: string; dedupe_key: string; title: string; body: string; link: string | null };
+export type ResolvableSuggestion = {
+  detector: string;
+  dedupe_key: string;
+  title: string;
+  body: string;
+  link: string | null;
+};
 /** side: where the agent docks; "left" when the record opens as a panel on the right (a deal), so both are visible. */
 export type ResolvePlan = { to: string | null; prompt: string; side: "left" | "right" };
 
 /** Splits a stored link ("/deals?deal=1") into the route and its search params for the router. */
-export function linkTarget(link: string | null): { to: string; search: Record<string, string> } | null {
+export function linkTarget(
+  link: string | null,
+): { to: string; search: Record<string, string> } | null {
   if (!link) return null;
   const [path, query = ""] = link.split("?");
   return { to: path, search: Object.fromEntries(new URLSearchParams(query)) };
@@ -26,7 +34,8 @@ export const SETUP_STEP_LINK: Record<string, string> = {
   accounts: "/accounts",
   deals: "/deals",
 };
-export const setupStepLink = (id: string) => SETUP_STEP_LINK[id] ?? SETUP_ITEMS.find((i) => i.id === id)?.link ?? "/setup";
+export const setupStepLink = (id: string) =>
+  SETUP_STEP_LINK[id] ?? SETUP_ITEMS.find((i) => i.id === id)?.link ?? "/setup";
 
 /** Rules every resolve prompt carries: real data only, questions instead of guesses, nothing changed without OK. */
 export const RESOLVE_RULES = [
@@ -79,7 +88,9 @@ export function resolvePlan(s: ResolvableSuggestion): ResolvePlan {
     to = id ? `/deals?deal=${id}` : "/deals";
   }
   if (s.detector === "setup_incomplete") to = setupStepLink(keyPart(s.dedupe_key));
-  const ask = ASK[s.detector]?.(s) ?? "Ayúdame a resolver esto: propón los pasos concretos y, si hay que cambiar datos, prepáralos como acciones para que los confirme.";
+  const ask =
+    ASK[s.detector]?.(s) ??
+    "Ayúdame a resolver esto: propón los pasos concretos y, si hay que cambiar datos, prepáralos como acciones para que los confirme.";
   const prompt = `Resolver sugerencia: «${s.title}»\n\nDetalle:\n${clip(s.body)}\n\n${ask}\n\n${RESOLVE_RULES}`;
   const side = to?.startsWith("/deals?deal=") ? "left" : "right";
   return { to, prompt, side };

@@ -5,7 +5,8 @@ export const U_PHASES = [
     key: "co_initiating",
     label: "Co-iniciar",
     tagline: "Escuchar lo que nos convoca",
-    description: "Detecta la pregunta o desafío comercial que importa de verdad y reúne a las personas que tienen que estar.",
+    description:
+      "Detecta la pregunta o desafío comercial que importa de verdad y reúne a las personas que tienen que estar.",
     prompts: [
       "¿Qué pregunta o desafío GTM nos convoca ahora mismo?",
       "¿Quiénes tienen que estar? (clientes, ventas, CS, producto, partners)",
@@ -16,7 +17,8 @@ export const U_PHASES = [
     key: "co_sensing",
     label: "Co-percibir",
     tagline: "Observar, observar, observar",
-    description: "Sal a los lugares de mayor potencial: entrevistas con clientes, sensing journeys, llamadas perdidas y ganadas. Suspende el juicio.",
+    description:
+      "Sal a los lugares de mayor potencial: entrevistas con clientes, sensing journeys, llamadas perdidas y ganadas. Suspende el juicio.",
     prompts: [
       "¿Qué clientes, mercados o equipos visitaremos?",
       "¿Qué patrones aparecen en lo que escuchamos?",
@@ -27,7 +29,8 @@ export const U_PHASES = [
     key: "presencing",
     label: "Presencing",
     tagline: "Soltar y dejar venir",
-    description: "Retírate y reflexiona. Conecta con lo que quiere emerger y con la intención más profunda del equipo.",
+    description:
+      "Retírate y reflexiona. Conecta con lo que quiere emerger y con la intención más profunda del equipo.",
     prompts: [
       "¿Qué tenemos que soltar? (mensajes, segmentos, hábitos de venta)",
       "¿Qué futuro quiere emerger para nuestros clientes y para nosotros?",
@@ -38,7 +41,8 @@ export const U_PHASES = [
     key: "co_creating",
     label: "Co-crear",
     tagline: "Prototipar para aprender",
-    description: "Convierte la intención en prototipos rápidos (mensajes, ofertas, motions, playbooks) y busca feedback temprano.",
+    description:
+      "Convierte la intención en prototipos rápidos (mensajes, ofertas, motions, playbooks) y busca feedback temprano.",
     prompts: [
       "¿Qué prototipos lanzaremos en los próximos 30 días?",
       "¿Qué feedback buscaremos y de quién?",
@@ -49,7 +53,8 @@ export const U_PHASES = [
     key: "co_evolving",
     label: "Co-evolucionar",
     tagline: "Escalar desde el todo",
-    description: "Lleva lo que funciona al sistema: playbooks, ICP, posicionamiento, métricas y rituales del equipo.",
+    description:
+      "Lleva lo que funciona al sistema: playbooks, ICP, posicionamiento, métricas y rituales del equipo.",
     prompts: [
       "¿Qué prototipos escalamos al playbook?",
       "¿Qué cambia en ICP, posicionamiento y motions?",
@@ -71,10 +76,30 @@ export function nextPhase(phase: string): UPhase | null {
 }
 
 export const LISTENING_LEVELS = {
-  1: { label: "Descarga", short: "Confirmo lo que ya sé", description: "Escuchas para reconfirmar tus juicios. «Sí, ya lo sabía.» El cliente habla, tú esperas tu turno para hacer el pitch." },
-  2: { label: "Factual", short: "Noto lo nuevo", description: "Mente abierta: prestas atención a los datos que contradicen lo que pensabas. Haces discovery de verdad." },
-  3: { label: "Empática", short: "Veo con sus ojos", description: "Corazón abierto: entiendes la situación desde la perspectiva del stakeholder, sus presiones y sus miedos." },
-  4: { label: "Generativa", short: "Escucho lo que emerge", description: "Voluntad abierta: con el cliente descubres una posibilidad que ninguno de los dos traía. Sales de la reunión distinto de como entraste." },
+  1: {
+    label: "Descarga",
+    short: "Confirmo lo que ya sé",
+    description:
+      "Escuchas para reconfirmar tus juicios. «Sí, ya lo sabía.» El cliente habla, tú esperas tu turno para hacer el pitch.",
+  },
+  2: {
+    label: "Factual",
+    short: "Noto lo nuevo",
+    description:
+      "Mente abierta: prestas atención a los datos que contradicen lo que pensabas. Haces discovery de verdad.",
+  },
+  3: {
+    label: "Empática",
+    short: "Veo con sus ojos",
+    description:
+      "Corazón abierto: entiendes la situación desde la perspectiva del stakeholder, sus presiones y sus miedos.",
+  },
+  4: {
+    label: "Generativa",
+    short: "Escucho lo que emerge",
+    description:
+      "Voluntad abierta: con el cliente descubres una posibilidad que ninguno de los dos traía. Sales de la reunión distinto de como entraste.",
+  },
 } as const;
 
 export type ListeningLevel = 1 | 2 | 3 | 4;
@@ -105,13 +130,58 @@ export const EXPERIMENT_STATUS: Record<string, string> = {
 };
 
 export const CASE_CLINIC_STEPS = [
-  { key: "situation", label: "1 · Intención del case giver", minutes: 15, help: "Situación, stakeholders clave y qué está en juego. El resto solo escucha." },
-  { key: "edge", label: "Mi borde de aprendizaje", minutes: 0, help: "¿Qué tengo que aprender o soltar yo para avanzar?" },
-  { key: "help_needed", label: "Dónde necesito ayuda", minutes: 0, help: "La pregunta concreta que lleva al grupo." },
-  { key: "mirror_image", label: "2 · Silencio y espejos: imagen", minutes: 3, help: "Tras 3 minutos de silencio, cada coach comparte la imagen que le vino." },
-  { key: "mirror_feeling", label: "Espejos: sentimiento", minutes: 0, help: "Qué sentimiento despertó la historia." },
-  { key: "mirror_gesture", label: "Espejos: gesto", minutes: 0, help: "Un gesto o postura que lo exprese (descríbelo)." },
-  { key: "dialogue", label: "3 · Diálogo generativo", minutes: 20, help: "Sin consejos de manual: preguntas que abren posibilidades." },
-  { key: "closing", label: "4 · Cierre del case giver", minutes: 5, help: "¿Qué veo ahora que antes no veía?" },
-  { key: "next_steps", label: "Próximos pasos", minutes: 0, help: "Prototipo o acción concreta para el deal." },
+  {
+    key: "situation",
+    label: "1 · Intención del case giver",
+    minutes: 15,
+    help: "Situación, stakeholders clave y qué está en juego. El resto solo escucha.",
+  },
+  {
+    key: "edge",
+    label: "Mi borde de aprendizaje",
+    minutes: 0,
+    help: "¿Qué tengo que aprender o soltar yo para avanzar?",
+  },
+  {
+    key: "help_needed",
+    label: "Dónde necesito ayuda",
+    minutes: 0,
+    help: "La pregunta concreta que lleva al grupo.",
+  },
+  {
+    key: "mirror_image",
+    label: "2 · Silencio y espejos: imagen",
+    minutes: 3,
+    help: "Tras 3 minutos de silencio, cada coach comparte la imagen que le vino.",
+  },
+  {
+    key: "mirror_feeling",
+    label: "Espejos: sentimiento",
+    minutes: 0,
+    help: "Qué sentimiento despertó la historia.",
+  },
+  {
+    key: "mirror_gesture",
+    label: "Espejos: gesto",
+    minutes: 0,
+    help: "Un gesto o postura que lo exprese (descríbelo).",
+  },
+  {
+    key: "dialogue",
+    label: "3 · Diálogo generativo",
+    minutes: 20,
+    help: "Sin consejos de manual: preguntas que abren posibilidades.",
+  },
+  {
+    key: "closing",
+    label: "4 · Cierre del case giver",
+    minutes: 5,
+    help: "¿Qué veo ahora que antes no veía?",
+  },
+  {
+    key: "next_steps",
+    label: "Próximos pasos",
+    minutes: 0,
+    help: "Prototipo o acción concreta para el deal.",
+  },
 ] as const;

@@ -4,9 +4,21 @@ import { DERIVED_TTL_DAYS, publicReplyContext } from "./classification";
 import { prepareReply, type PreparedReply, type ReplyPorts } from "./classification-core";
 
 export const MAX_CLASSIFY_PER_PASS = 10;
-export type PendingReply = { id: string; org_id: string; user_id: string; gmail_id: string; lead_id: string | null; kind: "human" | "auto" };
+export type PendingReply = {
+  id: string;
+  org_id: string;
+  user_id: string;
+  gmail_id: string;
+  lead_id: string | null;
+  kind: "human" | "auto";
+};
 type Receipt = Parameters<ReplyPorts["record"]>[0];
-type Ctx = { positioning: Record<string, unknown>; pillars: Record<string, unknown>[]; lead: Record<string, unknown>; forbidden: string[] };
+type Ctx = {
+  positioning: Record<string, unknown>;
+  pillars: Record<string, unknown>[];
+  lead: Record<string, unknown>;
+  forbidden: string[];
+};
 export type PassPorts = {
   pending: (limit: number) => Promise<PendingReply[]>;
   reserve: (id: string) => Promise<boolean>;
@@ -27,7 +39,10 @@ function decode(data: string): string {
 function find(part: Part | undefined, mime: string): string | null {
   if (!part) return null;
   if (part.mimeType === mime && part.body?.data) return decode(part.body.data);
-  for (const p of part.parts ?? []) { const hit = find(p, mime); if (hit) return hit; }
+  for (const p of part.parts ?? []) {
+    const hit = find(p, mime);
+    if (hit) return hit;
+  }
   return null;
 }
 /** Plain text of a Gmail format=full message; html fallback is tag-stripped. Never stored. */
@@ -36,26 +51,60 @@ export function plainBody(message: unknown): string {
   const text = find(payload, "text/plain");
   if (text) return text.trim();
   const html = find(payload, "text/html");
-  return html ? html.replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim() : "";
+  return html
+    ? html
+        .replace(/<(script|style)[\s\S]*?<\/\1>/gi, " ")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/&nbsp;/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    : "";
 }
 
 export async function runClassifyPass(ports: PassPorts, now = new Date()) {
   await ports.purge(now).catch(() => console.error("reply classify: purge failed"));
   const rows = await ports.pending(MAX_CLASSIFY_PER_PASS);
-  let classified = 0, skipped = 0, failed = 0;
+  let classified = 0,
+    skipped = 0,
+    failed = 0;
   for (const row of rows.slice(0, MAX_CLASSIFY_PER_PASS)) {
     if (!(await ports.reserve(row.id).catch(() => false))) continue;
-    if (row.kind === "auto") { await ports.finish(row.id, "skipped"); skipped++; continue; }
+    if (row.kind === "auto") {
+      await ports.finish(row.id, "skipped");
+      skipped++;
+      continue;
+    }
     let text = "";
     let ctx: Ctx;
-    try { text = plainBody(await ports.body(row.gmail_id)); ctx = await ports.context(row); }
-    catch { console.error("reply classify: read failed"); await ports.finish(row.id, "failed").catch(() => {}); failed++; continue; }
+    try {
+      text = plainBody(await ports.body(row.gmail_id));
+      ctx = await ports.context(row);
+    } catch {
+      console.error("reply classify: read failed");
+      await ports.finish(row.id, "failed").catch(() => {});
+      failed++;
+      continue;
+    }
     try {
       const prepared = await prepareReply(
-        { kind: "human", text, now, forbidden: ctx.forbidden, context: publicReplyContext(ctx.positioning, ctx.pillars, { contact_name: ctx.lead.contact_name, role: ctx.lead.title, company_name: ctx.lead.company }) },
+        {
+          kind: "human",
+          text,
+          now,
+          forbidden: ctx.forbidden,
+          context: publicReplyContext(ctx.positioning, ctx.pillars, {
+            contact_name: ctx.lead.contact_name,
+            role: ctx.lead.title,
+            company_name: ctx.lead.company,
+          }),
+        },
         { ...ports.model, record: (r) => ports.receipt(row, r) },
       );
-      await ports.save(row, prepared, new Date(now.getTime() + DERIVED_TTL_DAYS * 86_400_000).toISOString());
+      await ports.save(
+        row,
+        prepared,
+        new Date(now.getTime() + DERIVED_TTL_DAYS * 86_400_000).toISOString(),
+      );
       await ports.finish(row.id, "done");
       classified++;
     } catch {

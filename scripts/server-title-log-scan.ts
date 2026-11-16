@@ -2,10 +2,19 @@
 import ts from "typescript";
 
 export function titleLogViolations(source: string): number[] {
-  const file = ts.createSourceFile("audit.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const file = ts.createSourceFile(
+    "audit.tsx",
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TSX,
+  );
   const carriers = new Set<string>();
   const nodes: ts.Node[] = [];
-  const visit = (node: ts.Node) => { nodes.push(node); ts.forEachChild(node, visit); };
+  const visit = (node: ts.Node) => {
+    nodes.push(node);
+    ts.forEachChild(node, visit);
+  };
   visit(file);
   const key = (node: ts.Node): string | undefined => {
     if (ts.isIdentifier(node)) return node.text;
@@ -17,7 +26,8 @@ export function titleLogViolations(source: string): number[] {
     return undefined;
   };
   const privateValue = (node: ts.Node): boolean => {
-    if (ts.isPropertyAccessExpression(node) && ["length", "status"].includes(node.name.text)) return false;
+    if (ts.isPropertyAccessExpression(node) && ["length", "status"].includes(node.name.text))
+      return false;
     const path = key(node);
     if (path && carriers.has(path)) return true;
     if (ts.isPropertyAccessExpression(node) && ["title", "name"].includes(node.name.text)) {
@@ -26,7 +36,9 @@ export function titleLogViolations(source: string): number[] {
       if (!/^(?:e\d*|err\d*|error\d*|\w*Error)$/.test(base)) return true;
     }
     let found = false;
-    ts.forEachChild(node, (child) => { if (privateValue(child)) found = true; });
+    ts.forEachChild(node, (child) => {
+      if (privateValue(child)) found = true;
+    });
     return found;
   };
   const mark = (node: ts.Node) => {
@@ -42,18 +54,33 @@ export function titleLogViolations(source: string): number[] {
   while (previous !== carriers.size) {
     previous = carriers.size;
     for (const node of nodes) {
-      if (ts.isVariableDeclaration(node) && node.initializer && privateValue(node.initializer)) mark(node.name);
-      if (ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken && privateValue(node.right)) mark(node.left);
-      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) &&
-          ["push", "unshift", "set", "add"].includes(node.expression.name.text) && node.arguments.some(privateValue)) {
+      if (ts.isVariableDeclaration(node) && node.initializer && privateValue(node.initializer))
+        mark(node.name);
+      if (
+        ts.isBinaryExpression(node) &&
+        node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        privateValue(node.right)
+      )
+        mark(node.left);
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        ["push", "unshift", "set", "add"].includes(node.expression.name.text) &&
+        node.arguments.some(privateValue)
+      ) {
         mark(node.expression.expression);
       }
     }
   }
-  return nodes.filter((node): node is ts.CallExpression => ts.isCallExpression(node))
-    .filter((node) => ts.isPropertyAccessExpression(node.expression) &&
-      ts.isIdentifier(node.expression.expression) && node.expression.expression.text === "console" &&
-      ["log", "warn", "error", "info", "debug", "trace"].includes(node.expression.name.text) &&
-      node.arguments.some(privateValue))
+  return nodes
+    .filter((node): node is ts.CallExpression => ts.isCallExpression(node))
+    .filter(
+      (node) =>
+        ts.isPropertyAccessExpression(node.expression) &&
+        ts.isIdentifier(node.expression.expression) &&
+        node.expression.expression.text === "console" &&
+        ["log", "warn", "error", "info", "debug", "trace"].includes(node.expression.name.text) &&
+        node.arguments.some(privateValue),
+    )
     .map((node) => file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1);
 }

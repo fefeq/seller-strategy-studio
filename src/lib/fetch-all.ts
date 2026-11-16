@@ -6,7 +6,10 @@
 export const PAGE = 1000;
 
 export async function fetchAll<T>(
-  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
+  page: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>,
   max = 20_000,
 ): Promise<{ rows: T[]; truncated: boolean }> {
   const rows: T[] = [];

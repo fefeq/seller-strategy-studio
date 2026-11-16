@@ -78,7 +78,13 @@ function fakeDb(reply: (q: Q) => Reply) {
 const ORG = "org-1";
 const ME = "11111111-1111-4111-8111-111111111111";
 const LEAD = "00000000-0000-4000-8000-0000000000aa";
-const ctx = (db: ToolCtx["db"]): ToolCtx => ({ db, orgId: ORG, userId: ME, roles: ["ae"], currency: "EUR" });
+const ctx = (db: ToolCtx["db"]): ToolCtx => ({
+  db,
+  orgId: ORG,
+  userId: ME,
+  roles: ["ae"],
+  currency: "EUR",
+});
 
 const leadRow = {
   id: LEAD,
@@ -112,7 +118,10 @@ describe("draft_followup email gate", () => {
   it("CA-3 an invalid email blocks the draft with the reason and registers it without the email", async () => {
     admin.log.length = 0;
     const { db, log } = fakeDb(worldWith("invalid"));
-    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
+    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<
+      string,
+      unknown
+    >;
     expect(out.bloqueado).toBe(true);
     expect(out.motivo).toBe(
       "Este email es inválido: no preparo el borrador. Busca otro contacto de la cuenta.",
@@ -130,14 +139,20 @@ describe("draft_followup email gate", () => {
   });
   it("CA-3 a catch-all domain blocks too", async () => {
     const { db } = fakeDb(worldWith("catch_all"));
-    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
+    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<
+      string,
+      unknown
+    >;
     expect(out.bloqueado).toBe(true);
     expect(out.motivo).toMatch(/catch-all/);
   });
   it("CA-4 an unverified email drafts with the visible mark", async () => {
     admin.log.length = 0;
     const { db, log } = fakeDb(worldWith(null));
-    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
+    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<
+      string,
+      unknown
+    >;
     expect(out.bloqueado).toBeUndefined();
     expect(out.borrador).toBeTruthy();
     expect(out.marca_email).toBe("email sin verificar");
@@ -146,7 +161,10 @@ describe("draft_followup email gate", () => {
   });
   it("CA-4 a verified email drafts with no mark", async () => {
     const { db } = fakeDb(worldWith("verified"));
-    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<string, unknown>;
+    const out = (await executeTool(ctx(db), "draft_followup", { lead_id: LEAD })) as Record<
+      string,
+      unknown
+    >;
     expect(out.borrador).toBeTruthy();
     expect(out.marca_email).toBeNull();
   });

@@ -12,14 +12,28 @@ export function PrimaryLineNote({ className = "" }: { className?: string }) {
     return leader ? (
       <p className={`text-sm text-ink-mid ${className}`}>
         Aún no hay línea de negocio principal.{" "}
-        <Link to="/onboarding" className="underline underline-offset-2">Defínela</Link> para adaptar la estrategia a tu arquetipo.
+        <Link to="/onboarding" className="underline underline-offset-2">
+          Defínela
+        </Link>{" "}
+        para adaptar la estrategia a tu arquetipo.
       </p>
     ) : null;
   return (
     <p className={`text-sm text-ink-mid ${className}`}>
-      <span className="smallcaps">Línea principal</span> {primary.label} · arquetipo {primary.result.archetype}, {primary.result.name}
-      {primary.extra > 0 && <> · {primary.extra === 1 ? "1 línea más" : `${primary.extra} líneas más`}</>}
-      {leader && <> · <Link to="/onboarding" className="underline underline-offset-2">Editar líneas</Link></>}
+      <span className="smallcaps">Línea principal</span> {primary.label} · arquetipo{" "}
+      {primary.result.archetype}, {primary.result.name}
+      {primary.extra > 0 && (
+        <> · {primary.extra === 1 ? "1 línea más" : `${primary.extra} líneas más`}</>
+      )}
+      {leader && (
+        <>
+          {" "}
+          ·{" "}
+          <Link to="/onboarding" className="underline underline-offset-2">
+            Editar líneas
+          </Link>
+        </>
+      )}
     </p>
   );
 }

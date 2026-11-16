@@ -17,15 +17,33 @@ export function replyModelPorts(
     return fetchImpl(input, { ...init, body: JSON.stringify(body) });
   };
   async function run(system: string, input: string, classify: boolean) {
-    const result = await askPinned(REPLY_MODEL, system, input, {
-      effort: "low", maxTokens: classify ? 1200 : 2000,
-      ...(classify ? { schema: { name: "private_reply_classification", schema: CLASSIFICATION_JSON_SCHEMA } } : {}),
-    }, env, privateFetch);
+    const result = await askPinned(
+      REPLY_MODEL,
+      system,
+      input,
+      {
+        effort: "low",
+        maxTokens: classify ? 1200 : 2000,
+        ...(classify
+          ? { schema: { name: "private_reply_classification", schema: CLASSIFICATION_JSON_SCHEMA } }
+          : {}),
+      },
+      env,
+      privateFetch,
+    );
     return {
       output: classify ? result.output : result.text,
       completed: result.stopReason === "end_turn" && result.model === REPLY_MODEL,
-      usage: { inputTokens: result.usage.inputTokens, outputTokens: result.usage.outputTokens, costUsd: result.usage.costUsd },
+      usage: {
+        inputTokens: result.usage.inputTokens,
+        outputTokens: result.usage.outputTokens,
+        costUsd: result.usage.costUsd,
+      },
     };
   }
-  return { classify: (input) => run(CLASSIFICATION_SYSTEM, input, true), draft: (input) => run(DRAFT_SYSTEM, input, false), record };
+  return {
+    classify: (input) => run(CLASSIFICATION_SYSTEM, input, true),
+    draft: (input) => run(DRAFT_SYSTEM, input, false),
+    record,
+  };
 }

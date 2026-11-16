@@ -83,7 +83,14 @@ export async function monthBudget(c: ToolCtx) {
   const otherCurrencies = Object.fromEntries(Object.entries(t.totals).filter(([k]) => k !== "EUR"));
   const complete = t.complete && Object.keys(otherCurrencies).length === 0;
   const limit = b?.monthly_limit == null ? null : Number(b.monthly_limit);
-  return { spent, limit, otherCurrencies, unknown: t.unknown, complete, ...budgetState(spent, limit) };
+  return {
+    spent,
+    limit,
+    otherCurrencies,
+    unknown: t.unknown,
+    complete,
+    ...budgetState(spent, limit),
+  };
 }
 
 async function planNeed(

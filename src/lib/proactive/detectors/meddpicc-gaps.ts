@@ -9,7 +9,9 @@ export const meddpiccGaps: Detector = (s) => {
     .filter((d) => late.has(d.stage))
     .map((d) => {
       const m = d.meddpicc ?? {};
-      const missing = MEDDPICC.filter(([k]) => !String(m[k] ?? "").trim()).map(([, label]) => label);
+      const missing = MEDDPICC.filter(([k]) => !String(m[k] ?? "").trim()).map(
+        ([, label]) => label,
+      );
       return { d, missing };
     })
     .filter(({ missing }) => missing.length > 2)

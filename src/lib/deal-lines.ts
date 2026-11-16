@@ -8,9 +8,17 @@ import { assignSegment, type DealLike, type SegLike } from "@/lib/segment-covera
 
 export type Billing = "monthly" | "annual" | "one_off";
 
-export const BILLING_LABELS: Record<Billing, string> = { monthly: "Mensual", annual: "Anual", one_off: "Pago único" };
+export const BILLING_LABELS: Record<Billing, string> = {
+  monthly: "Mensual",
+  annual: "Anual",
+  one_off: "Pago único",
+};
 /** «/mes», «/año», «» to read next to a price. */
-export const BILLING_SUFFIX: Record<Billing, string> = { monthly: "/mes", annual: "/año", one_off: "" };
+export const BILLING_SUFFIX: Record<Billing, string> = {
+  monthly: "/mes",
+  annual: "/año",
+  one_off: "",
+};
 
 export type Product = {
   id: string;
@@ -40,12 +48,26 @@ const round2 = (x: number) => Math.round(x * 100) / 100;
 
 export const isOneOff = (l: { billing: string }) => l.billing === "one_off";
 /** Revenue of one line: a year of it if recurring (its ACV contribution), its total if one-off. */
-export const lineRevenue = (l: DealLine) => n(l.quantity) * n(l.unit_price) * (1 - Math.min(100, Math.max(0, n(l.discount_pct))) / 100) * periods(String(l.billing));
+export const lineRevenue = (l: DealLine) =>
+  n(l.quantity) *
+  n(l.unit_price) *
+  (1 - Math.min(100, Math.max(0, n(l.discount_pct))) / 100) *
+  periods(String(l.billing));
 /** Yearly cost of one line, or null when its cost is unknown. */
-export const lineCost = (l: DealLine) => (l.unit_cost == null || l.unit_cost === "" ? null : n(l.quantity) * n(l.unit_cost) * periods(String(l.billing)));
+export const lineCost = (l: DealLine) =>
+  l.unit_cost == null || l.unit_cost === ""
+    ? null
+    : n(l.quantity) * n(l.unit_cost) * periods(String(l.billing));
 
 /** amount = ACV of the recurring lines; oneOff = one-off lines, outside the ACV; margin and cost of the recurring part. */
-export type DealTotals = { amount: number; oneOff: number; cost: number | null; margin: number | null; marginPct: number | null; unknownCost: number };
+export type DealTotals = {
+  amount: number;
+  oneOff: number;
+  cost: number | null;
+  margin: number | null;
+  marginPct: number | null;
+  unknownCost: number;
+};
 
 export function dealTotals(lines: DealLine[]): DealTotals {
   // Rounded like the trigger: round(revenue) and round(revenue − cost), never a difference of rounded sums.
@@ -58,31 +80,71 @@ export function dealTotals(lines: DealLine[]): DealTotals {
   const rawCost = costs.reduce((s: number, c) => s + (c ?? 0), 0);
   const cost = unknownCost || !recurring.length ? null : round2(rawCost);
   const margin = unknownCost || rev === 0 ? null : round2(rev - rawCost);
-  return { amount, oneOff, cost, margin, marginPct: margin != null && amount > 0 ? (margin / amount) * 100 : null, unknownCost };
+  return {
+    amount,
+    oneOff,
+    cost,
+    margin,
+    marginPct: margin != null && amount > 0 ? (margin / amount) * 100 : null,
+    unknownCost,
+  };
 }
 
 /** A new line from a catalogue product: its name, price, cost and billing copied as they are today. */
 export function lineFromProduct(p: Product, quantity = 1): DealLine {
-  return { product_id: p.id, name: p.name, quantity, unit_price: n(p.price), unit_cost: p.cost == null || p.cost === "" ? null : n(p.cost), discount_pct: 0, billing: p.billing as Billing };
+  return {
+    product_id: p.id,
+    name: p.name,
+    quantity,
+    unit_price: n(p.price),
+    unit_cost: p.cost == null || p.cost === "" ? null : n(p.cost),
+    discount_pct: 0,
+    billing: p.billing as Billing,
+  };
 }
 
 /** Margin % of a product at list price, or null without cost. */
-export const productMarginPct = (p: Product) => (p.cost == null || p.cost === "" || n(p.price) <= 0 ? null : ((n(p.price) - n(p.cost)) / n(p.price)) * 100);
+export const productMarginPct = (p: Product) =>
+  p.cost == null || p.cost === "" || n(p.price) <= 0
+    ? null
+    : ((n(p.price) - n(p.cost)) / n(p.price)) * 100;
 
 /** Why a line or product value can't be saved, or null. */
-export function checkLineField(field: "quantity" | "unit_price" | "unit_cost" | "discount_pct" | "price" | "cost", raw: string): { ok: true; value: number | null } | { ok: false; error: string } {
-  const label = { quantity: "Cantidad", unit_price: "Precio", unit_cost: "Coste", discount_pct: "Descuento", price: "Precio", cost: "Coste" }[field];
+export function checkLineField(
+  field: "quantity" | "unit_price" | "unit_cost" | "discount_pct" | "price" | "cost",
+  raw: string,
+): { ok: true; value: number | null } | { ok: false; error: string } {
+  const label = {
+    quantity: "Cantidad",
+    unit_price: "Precio",
+    unit_cost: "Coste",
+    discount_pct: "Descuento",
+    price: "Precio",
+    cost: "Coste",
+  }[field];
   const text = raw.trim().replace(/\s/g, "").replace(",", ".");
-  if (text === "") return field === "unit_cost" || field === "cost" ? { ok: true, value: null } : { ok: false, error: `«${label}» no puede quedar vacío.` };
+  if (text === "")
+    return field === "unit_cost" || field === "cost"
+      ? { ok: true, value: null }
+      : { ok: false, error: `«${label}» no puede quedar vacío.` };
   const v = Number(text);
   if (!Number.isFinite(v)) return { ok: false, error: `«${label}» tiene que ser un número.` };
-  if (field === "quantity" && v <= 0) return { ok: false, error: "La cantidad tiene que ser mayor que 0." };
+  if (field === "quantity" && v <= 0)
+    return { ok: false, error: "La cantidad tiene que ser mayor que 0." };
   if (v < 0) return { ok: false, error: `«${label}» no puede ser negativo.` };
-  if (field === "discount_pct" && v > 100) return { ok: false, error: "El descuento tiene que estar entre 0 y 100 %." };
+  if (field === "discount_pct" && v > 100)
+    return { ok: false, error: "El descuento tiene que estar entre 0 y 100 %." };
   return { ok: true, value: v };
 }
 
-export type MarginDeal = { stage: string; amount: number | string | null; gross_margin?: number | string | null; segment_id: string | null; closed_at?: string | null; updated_at?: string };
+export type MarginDeal = {
+  stage: string;
+  amount: number | string | null;
+  gross_margin?: number | string | null;
+  segment_id: string | null;
+  closed_at?: string | null;
+  updated_at?: string;
+};
 
 const YEAR = 365 * 86_400_000;
 
@@ -91,7 +153,14 @@ const YEAR = 365 * 86_400_000;
  * end; now by default), overall and per segment. Weighted by amount: Σ margin / Σ amount. With `segments`,
  * a deal without segment is placed by its amount, like CAC and coverage do.
  */
-export function wonDealsMargin(deals: MarginDeal[], until?: Date, segments?: SegLike[]): { all: { pct: number; deals: number } | null; bySegment: Record<string, { pct: number; deals: number }> } {
+export function wonDealsMargin(
+  deals: MarginDeal[],
+  until?: Date,
+  segments?: SegLike[],
+): {
+  all: { pct: number; deals: number } | null;
+  bySegment: Record<string, { pct: number; deals: number }>;
+} {
   const end = (until ?? new Date()).getTime();
   const won = deals.filter((d) => {
     if (d.stage !== "won" || d.gross_margin == null || n(d.amount) <= 0) return false;
@@ -100,10 +169,18 @@ export function wonDealsMargin(deals: MarginDeal[], until?: Date, segments?: Seg
   });
   const agg = (list: MarginDeal[]) => {
     const amount = list.reduce((s, d) => s + n(d.amount), 0);
-    return list.length && amount > 0 ? { pct: (list.reduce((s, d) => s + n(d.gross_margin), 0) / amount) * 100, deals: list.length } : null;
+    return list.length && amount > 0
+      ? {
+          pct: (list.reduce((s, d) => s + n(d.gross_margin), 0) / amount) * 100,
+          deals: list.length,
+        }
+      : null;
   };
   const bySegment: Record<string, { pct: number; deals: number }> = {};
-  const segOf = (d: MarginDeal) => (segments ? assignSegment({ segment_id: d.segment_id, amount: n(d.amount) } as DealLike, segments) : d.segment_id);
+  const segOf = (d: MarginDeal) =>
+    segments
+      ? assignSegment({ segment_id: d.segment_id, amount: n(d.amount) } as DealLike, segments)
+      : d.segment_id;
   const placed = won.map((d) => [segOf(d), d] as const);
   for (const seg of new Set(placed.map(([s]) => s).filter((x): x is string => !!x))) {
     const m = agg(placed.filter(([s]) => s === seg).map(([, d]) => d));

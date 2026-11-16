@@ -6,11 +6,26 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { as, build, migrate, seed, U } from "@/test/pg-harness";
 
 type Db = Awaited<ReturnType<typeof build>>;
-let db: Db; let A: string, B: string; let sA: string, sB: string;
-const LEADER = "00000000-0000-4000-8000-0000000000a3", DESK = "00000000-0000-4000-8000-0000000000a4";
-const rows = async (sql: string, params?: unknown[]) => (await db.query(sql, params)).rows as Record<string, any>[];
-const throws = async (fn: () => Promise<unknown>) => { try { await fn(); return ""; } catch (e) { return String((e as Error).message); } };
-const proposal = (suggestion: string, over = "") => db.query(`insert into strategy_changes (suggestion_id, element, op, target_table, target_id, values, base ${over ? "," + over.split("=")[0] : ""}) values ($1,'icp','update','icp_profiles','00000000-0000-4000-8000-0000000000c1','{"industries":"Logística"}','{"industries":"Salud"}' ${over ? "," + over.split("=")[1] : ""}) returning id`, [suggestion]);
+let db: Db;
+let A: string, B: string;
+let sA: string, sB: string;
+const LEADER = "00000000-0000-4000-8000-0000000000a3",
+  DESK = "00000000-0000-4000-8000-0000000000a4";
+const rows = async (sql: string, params?: unknown[]) =>
+  (await db.query(sql, params)).rows as Record<string, any>[];
+const throws = async (fn: () => Promise<unknown>) => {
+  try {
+    await fn();
+    return "";
+  } catch (e) {
+    return String((e as Error).message);
+  }
+};
+const proposal = (suggestion: string, over = "") =>
+  db.query(
+    `insert into strategy_changes (suggestion_id, element, op, target_table, target_id, values, base ${over ? "," + over.split("=")[0] : ""}) values ($1,'icp','update','icp_profiles','00000000-0000-4000-8000-0000000000c1','{"industries":"Logística"}','{"industries":"Salud"}' ${over ? "," + over.split("=")[1] : ""}) returning id`,
+    [suggestion],
+  );
 
 beforeAll(async () => {
   db = await build();
@@ -26,8 +41,16 @@ beforeAll(async () => {
     create policy "org read" on public.suggestions for select to authenticated using (org_id = public.current_org() and public.is_org_member(org_id));
     create policy "org insert" on public.suggestions for insert to authenticated with check (public.is_org_member(org_id));
   `);
-  sA = (await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${A}','strategy_icp','strategy_icp:x','t') returning id`))[0]!.id;
-  sB = (await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${B}','strategy_icp','strategy_icp:y','t') returning id`))[0]!.id;
+  sA = (
+    await rows(
+      `insert into suggestions (org_id, detector, dedupe_key, title) values ('${A}','strategy_icp','strategy_icp:x','t') returning id`,
+    )
+  )[0]!.id;
+  sB = (
+    await rows(
+      `insert into suggestions (org_id, detector, dedupe_key, title) values ('${B}','strategy_icp','strategy_icp:y','t') returning id`,
+    )
+  )[0]!.id;
   await migrate(db, ["0070_strategy_execution.sql"]);
 }, 60_000);
 
@@ -43,42 +66,99 @@ describe("CA-32 / CA-37: a member saves a pending proposal linked to a suggestio
   it("insert defaults to pending and the company of the user; one proposal per suggestion", async () => {
     await as(db, U.aeA, async () => {
       c1 = ((await proposal(sA)).rows[0] as { id: string }).id;
-      await db.query("insert into strategy_links (suggestion_id, kind, ref_id) values ($1,'change',$2)", [sA, c1]);
+      await db.query(
+        "insert into strategy_links (suggestion_id, kind, ref_id) values ($1,'change',$2)",
+        [sA, c1],
+      );
       expect(await throws(() => proposal(sA))).toMatch(/duplicate|unique/);
     });
-    expect((await rows("select status, org_id from strategy_changes where id = $1", [c1]))[0]).toEqual({ status: "pending", org_id: A });
+    expect(
+      (await rows("select status, org_id from strategy_changes where id = $1", [c1]))[0],
+    ).toEqual({ status: "pending", org_id: A });
   });
   it("cannot point at a suggestion of another company", async () => {
-    await as(db, U.aeA, async () => { expect(await throws(() => proposal(sB))).toMatch(/row-level security/); });
+    await as(db, U.aeA, async () => {
+      expect(await throws(() => proposal(sB))).toMatch(/row-level security/);
+    });
   });
   it("the shape and lists are enforced by the database", async () => {
     await as(db, U.aeA, async () => {
-      expect(await throws(() => db.query("insert into strategy_changes (suggestion_id, element, op, target_table) values ($1,'icp','update','icp_profiles')", [sA]))).toMatch(/shape|unique/);
-      expect(await throws(() => db.query("insert into strategy_changes (suggestion_id, element, op) values ($1,'precio','manual')", [sA]))).toMatch(/element|unique/);
-      expect(await throws(() => db.query("insert into strategy_links (suggestion_id, kind, ref_id) values ($1,'email',gen_random_uuid())", [sA]))).toMatch(/kind/);
+      expect(
+        await throws(() =>
+          db.query(
+            "insert into strategy_changes (suggestion_id, element, op, target_table) values ($1,'icp','update','icp_profiles')",
+            [sA],
+          ),
+        ),
+      ).toMatch(/shape|unique/);
+      expect(
+        await throws(() =>
+          db.query(
+            "insert into strategy_changes (suggestion_id, element, op) values ($1,'precio','manual')",
+            [sA],
+          ),
+        ),
+      ).toMatch(/element|unique/);
+      expect(
+        await throws(() =>
+          db.query(
+            "insert into strategy_links (suggestion_id, kind, ref_id) values ($1,'email',gen_random_uuid())",
+            [sA],
+          ),
+        ),
+      ).toMatch(/kind/);
     });
   });
 });
 
 describe("CA-38 / CA-33: only the roles that can change strategy move a proposal on; no one deletes", () => {
   let c: string;
-  beforeAll(async () => { c = (await rows(`insert into strategy_changes (org_id, suggestion_id, element, op, target_table, target_id, values) values ('${A}', '${(await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${A}','strategy_icp','strategy_icp:z','t') returning id`))[0]!.id}','icp','update','icp_profiles','00000000-0000-4000-8000-0000000000c1','{}') returning id`))[0]!.id; });
+  beforeAll(async () => {
+    c = (
+      await rows(
+        `insert into strategy_changes (org_id, suggestion_id, element, op, target_table, target_id, values) values ('${A}', '${(await rows(`insert into suggestions (org_id, detector, dedupe_key, title) values ('${A}','strategy_icp','strategy_icp:z','t') returning id`))[0]!.id}','icp','update','icp_profiles','00000000-0000-4000-8000-0000000000c1','{}') returning id`,
+      )
+    )[0]!.id;
+  });
   it("an AE can read it but cannot apply or reject it", async () => {
     await as(db, U.aeA, async () => {
       expect((await rows("select id from strategy_changes where id = $1", [c])).length).toBe(1);
       await db.query("update strategy_changes set status = 'applied' where id = $1", [c]);
     });
-    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe("pending");
+    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe(
+      "pending",
+    );
   });
   it("a sales leader can; deal desk only for products", async () => {
-    await as(db, LEADER, async () => { await db.query("update strategy_changes set status = 'applied', undo_until = now() + interval '24 hours' where id = $1", [c]); });
-    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe("applied");
-    await as(db, DESK, async () => { await db.query("update strategy_changes set status = 'undone' where id = $1", [c]); });
-    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe("applied");
+    await as(db, LEADER, async () => {
+      await db.query(
+        "update strategy_changes set status = 'applied', undo_until = now() + interval '24 hours' where id = $1",
+        [c],
+      );
+    });
+    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe(
+      "applied",
+    );
+    await as(db, DESK, async () => {
+      await db.query("update strategy_changes set status = 'undone' where id = $1", [c]);
+    });
+    expect((await rows("select status from strategy_changes where id = $1", [c]))[0]!.status).toBe(
+      "applied",
+    );
   });
   it("the status list is enforced and nobody deletes through the app", async () => {
-    await as(db, LEADER, async () => { expect(await throws(() => db.query("update strategy_changes set status = 'hecho' where id = $1", [c]))).toMatch(/status/); });
-    await as(db, U.ownerA, async () => { expect(await throws(() => db.query("delete from strategy_changes where id = $1", [c]))).toMatch(/permission denied/); });
+    await as(db, LEADER, async () => {
+      expect(
+        await throws(() =>
+          db.query("update strategy_changes set status = 'hecho' where id = $1", [c]),
+        ),
+      ).toMatch(/status/);
+    });
+    await as(db, U.ownerA, async () => {
+      expect(
+        await throws(() => db.query("delete from strategy_changes where id = $1", [c])),
+      ).toMatch(/permission denied/);
+    });
   });
 });
 
@@ -89,6 +169,8 @@ describe("RLS: another company sees and changes nothing", () => {
       expect((await rows("select id from strategy_links")).length).toBe(0);
       await db.query("update strategy_changes set status = 'rejected'");
     });
-    expect((await rows("select count(*)::int n from strategy_changes where status = 'rejected'"))[0]!.n).toBe(0);
+    expect(
+      (await rows("select count(*)::int n from strategy_changes where status = 'rejected'"))[0]!.n,
+    ).toBe(0);
   });
 });

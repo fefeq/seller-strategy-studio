@@ -1,9 +1,24 @@
 import { describe, expect, it } from "vitest";
 import type { Finding } from "./onboarding";
-import { canRestore, confirmFinding, discardFinding, editFinding, findingsDependingOn, mergeFiles, removeFileText, removeSource, restoreFinding, sourceCore } from "./onboarding-sources";
+import {
+  canRestore,
+  confirmFinding,
+  discardFinding,
+  editFinding,
+  findingsDependingOn,
+  mergeFiles,
+  removeFileText,
+  removeSource,
+  restoreFinding,
+  sourceCore,
+} from "./onboarding-sources";
 
 const f = (name: string) => ({ filename: name, dataUrl: `data:${name}` });
-const finding = (text: string, source: string | null): Finding => ({ at: "2026-10-26T10:00:00Z", text, source });
+const finding = (text: string, source: string | null): Finding => ({
+  at: "2026-10-26T10:00:00Z",
+  text,
+  source,
+});
 
 describe("onboarding sources", () => {
   it("CA-12: adding files keeps the ones already listed", () => {
@@ -36,7 +51,12 @@ describe("onboarding sources", () => {
   });
 
   it("CA-11: it says which findings depend on a source; a generic source depends on none", () => {
-    const xs = [finding("Categoría: CRM", "acme.com"), finding("ICP", "Plan.pdf"), finding("Cuota", "Tus fuentes"), finding("Otro", null)];
+    const xs = [
+      finding("Categoría: CRM", "acme.com"),
+      finding("ICP", "Plan.pdf"),
+      finding("Cuota", "Tus fuentes"),
+      finding("Otro", null),
+    ];
     expect(findingsDependingOn("Web · https://acme.com", xs)).toEqual([0]);
     expect(findingsDependingOn("Plan.pdf", xs)).toEqual([1]);
     expect(findingsDependingOn("Tus fuentes", xs)).toEqual([2]);
@@ -44,7 +64,10 @@ describe("onboarding sources", () => {
   });
 
   it("CA-11: removing a source keeps its findings marked, or discards them", () => {
-    const state = { sources: ["Web · https://acme.com", "Plan.pdf"], findings: [finding("A", "acme.com"), finding("B", "Plan.pdf")] };
+    const state = {
+      sources: ["Web · https://acme.com", "Plan.pdf"],
+      findings: [finding("A", "acme.com"), finding("B", "Plan.pdf")],
+    };
     const keep = removeSource(state, "Web · https://acme.com", "keep", "2026-10-26T11:00:00Z");
     expect(keep.sources).toEqual(["Plan.pdf"]);
     expect(keep.findings[0]).toMatchObject({ text: "A", sourceRemoved: true });
@@ -60,8 +83,19 @@ describe("onboarding sources", () => {
   });
 
   it("CA-1, CA-2: editing a finding saves it as confirmed by the person; an empty text is refused", () => {
-    const out = editFinding([finding("A", "x")], 0, "  Categoría: ventas ", "u1", "2026-10-26T11:00:00Z")!;
-    expect(out[0]).toMatchObject({ text: "Categoría: ventas", edited: true, confirmedBy: "u1", source: "x" });
+    const out = editFinding(
+      [finding("A", "x")],
+      0,
+      "  Categoría: ventas ",
+      "u1",
+      "2026-10-26T11:00:00Z",
+    )!;
+    expect(out[0]).toMatchObject({
+      text: "Categoría: ventas",
+      edited: true,
+      confirmedBy: "u1",
+      source: "x",
+    });
     expect(editFinding([finding("A", null)], 0, "   ", "u1", "x")).toBeNull();
   });
 

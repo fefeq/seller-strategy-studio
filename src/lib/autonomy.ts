@@ -12,7 +12,8 @@ export const AUTONOMY: Record<Autonomy, { label: string; short: string; prompt: 
   copilot: {
     label: "Copiloto",
     short: "Te propongo el siguiente paso y lo dejo listo para que lo confirmes.",
-    prompt: "NIVEL COPILOTO: responde y, cuando haya un siguiente paso claro, déjalo propuesto para que lo confirme.",
+    prompt:
+      "NIVEL COPILOTO: responde y, cuando haya un siguiente paso claro, déjalo propuesto para que lo confirme.",
   },
   autopilot: {
     label: "Autopilot",

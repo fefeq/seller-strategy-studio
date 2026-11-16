@@ -5,9 +5,15 @@ import { MEDDPICC } from "@/lib/roles";
 export type Track = "light" | "standard" | "full";
 
 export const TRACKS: Record<Track, { label: string; description: string }> = {
-  light: { label: "Ligero (PLG)", description: "ACV < 5K: sin plan de cuenta, cualificación mínima." },
+  light: {
+    label: "Ligero (PLG)",
+    description: "ACV < 5K: sin plan de cuenta, cualificación mínima.",
+  },
   standard: { label: "Estándar (inside)", description: "ACV 5K–50K: MEDDPICC ligero." },
-  full: { label: "Completo (field/strategic)", description: "ACV > 50K: plan de cuenta completo y plan de acción conjunto." },
+  full: {
+    label: "Completo (field/strategic)",
+    description: "ACV > 50K: plan de cuenta completo y plan de acción conjunto.",
+  },
 };
 
 export function trackFor(acv: number | null | undefined): Track {
@@ -19,8 +25,18 @@ type Key = (typeof MEDDPICC)[number][0];
 // Criteria required to ENTER each stage, per track.
 const GATES: Record<Track, Partial<Record<string, Key[]>>> = {
   light: { qualified: ["identify_pain"], proposal: ["economic_buyer"] },
-  standard: { qualified: ["identify_pain"], demo: ["metrics", "champion"], proposal: ["economic_buyer", "decision_criteria"], negotiation: ["decision_process"] },
-  full: { qualified: ["identify_pain", "metrics"], demo: ["champion", "decision_criteria"], proposal: ["economic_buyer", "decision_process", "competition"], negotiation: ["paper_process"] },
+  standard: {
+    qualified: ["identify_pain"],
+    demo: ["metrics", "champion"],
+    proposal: ["economic_buyer", "decision_criteria"],
+    negotiation: ["decision_process"],
+  },
+  full: {
+    qualified: ["identify_pain", "metrics"],
+    demo: ["champion", "decision_criteria"],
+    proposal: ["economic_buyer", "decision_process", "competition"],
+    negotiation: ["paper_process"],
+  },
 };
 const ORDER = ["discovery", "qualified", "demo", "proposal", "negotiation", "won"];
 
@@ -36,7 +52,11 @@ export function covered(v: unknown) {
 
 /** Missing MEDDPICC criteria (labels) to move a deal into `toStage`, cumulative over skipped stages. */
 /** `order` is the company's path (open stage keys then 'won'); stages it added have no criteria of their own. */
-export function stageGate(deal: { amount: number | null; meddpicc: Record<string, unknown> | null }, toStage: string, order: string[] = ORDER) {
+export function stageGate(
+  deal: { amount: number | null; meddpicc: Record<string, unknown> | null },
+  toStage: string,
+  order: string[] = ORDER,
+) {
   const track = trackFor(deal.amount);
   const idx = order.indexOf(toStage);
   if (idx < 0) return { track, missing: [] as string[] };
@@ -45,7 +65,8 @@ export function stageGate(deal: { amount: number | null; meddpicc: Record<string
   const walked = order.slice(0, idx + 1);
   const lastStd = Math.max(-1, ...walked.map((st) => ORDER.indexOf(st)));
   const keys = new Set<Key>();
-  for (const st of new Set([...walked, ...ORDER.slice(0, lastStd + 1)])) for (const k of GATES[track][st] ?? []) keys.add(k);
+  for (const st of new Set([...walked, ...ORDER.slice(0, lastStd + 1)]))
+    for (const k of GATES[track][st] ?? []) keys.add(k);
   const m = deal.meddpicc ?? {};
   const missing = MEDDPICC.filter(([k]) => keys.has(k) && !covered(m[k])).map(([, label]) => label);
   return { track, missing };

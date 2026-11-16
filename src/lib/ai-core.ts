@@ -53,7 +53,10 @@ async function rulesFor(
 type Guidance = LoadedRules & { voice: LoadedVoice; withPerson: boolean };
 
 /** withPerson: a person reads the answer now (see rulesFor). */
-export type AiOptions = { withPerson?: boolean; onCost?: (cost: number | null, provider: string) => Promise<void> };
+export type AiOptions = {
+  withPerson?: boolean;
+  onCost?: (cost: number | null, provider: string) => Promise<void>;
+};
 
 /**
  * The system text with the rules block after it; without rules, the system text as it was. With voice examples it adds the one
@@ -320,7 +323,13 @@ export async function researchStakeholderCore(
       },
       8,
       s.org_id
-        ? { db, orgId: s.org_id, userId: scope?.userId || null, tool: "research_stakeholder", trigger: "manual" }
+        ? {
+            db,
+            orgId: s.org_id,
+            userId: scope?.userId || null,
+            tool: "research_stakeholder",
+            trigger: "manual",
+          }
         : undefined,
     );
     if (!web.length) webNote = "No he encontrado resultados en internet sobre esta persona.";

@@ -544,7 +544,8 @@ export const CONCEPTS: Concept[] = [
   {
     id: "clave_conexion_cifrada",
     label: "Clave de conexión cifrada",
-    meaning: "Credencial de la cuenta conectada, cifrada en el servidor. Nunca se muestra ni llega al navegador.",
+    meaning:
+      "Credencial de la cuenta conectada, cifrada en el servidor. Nunca se muestra ni llega al navegador.",
     kind: "text",
     format: "base64 opaco",
     display: "No se muestra",
@@ -561,7 +562,8 @@ export const CONCEPTS: Concept[] = [
   {
     id: "nivel_agente",
     label: "Nivel de Nokko",
-    meaning: "Cuánto propone y explica el agente a cada persona. Ningún nivel se salta confirmaciones ni envía nada por el usuario.",
+    meaning:
+      "Cuánto propone y explica el agente a cada persona. Ningún nivel se salta confirmaciones ni envía nada por el usuario.",
     kind: "enum",
     format: "guided | copilot | autopilot",
     allowed: ["guided", "copilot", "autopilot"],
@@ -812,17 +814,27 @@ export const CONCEPTS: Concept[] = [
   {
     id: "calidad_coste",
     label: "Calidad del coste",
-    meaning: "Si el importe de gasto es un cargo medido, una estimación o «sin dato» (importe vacío, nunca cero).",
+    meaning:
+      "Si el importe de gasto es un cargo medido, una estimación o «sin dato» (importe vacío, nunca cero).",
     kind: "enum",
     format: "Valor cerrado",
     allowed: ["measured", "estimate", "unknown"],
     display: "«medido», «estimado» o «sin dato»",
   },
-  { id: "umbral_piloto", label: "Umbral del piloto", meaning: "Importe máximo por acción de IA automática en moneda de empresa; cero requiere confirmación siempre.", kind: "number", format: "Número no negativo", display: "Umbral por acción" },
+  {
+    id: "umbral_piloto",
+    label: "Umbral del piloto",
+    meaning:
+      "Importe máximo por acción de IA automática en moneda de empresa; cero requiere confirmación siempre.",
+    kind: "number",
+    format: "Número no negativo",
+    display: "Umbral por acción",
+  },
   {
     id: "herramienta_gasto",
     label: "Herramienta que gastó",
-    meaning: "Herramienta o acción concreta que originó el gasto; base de la estimación por mediana.",
+    meaning:
+      "Herramienta o acción concreta que originó el gasto; base de la estimación por mediana.",
     kind: "text",
     format: "Nombre interno de la herramienta",
     display: "No se muestra",
@@ -830,7 +842,8 @@ export const CONCEPTS: Concept[] = [
   {
     id: "volumen_operacion",
     label: "Volumen de la operación",
-    meaning: "Cuántos resultados o elementos pidió la operación; solo se comparan estimaciones de volumen parecido.",
+    meaning:
+      "Cuántos resultados o elementos pidió la operación; solo se comparan estimaciones de volumen parecido.",
     kind: "number",
     format: "Entero o vacío",
     display: "No se muestra",
@@ -883,16 +896,41 @@ const draft = "screen_draft" as const;
 const saved = "permanent" as const;
 
 export const BINDINGS: Binding[] = [
-  { table: "lead_settings", column: "autopilot_action_threshold", concept: "umbral_piloto", persistence: saved },
+  {
+    table: "lead_settings",
+    column: "autopilot_action_threshold",
+    concept: "umbral_piloto",
+    persistence: saved,
+  },
   // Libro de gasto por empresa (SDD pausa-legal-linkedin-y-gasto, pieza B).
   { table: "integration_usage", column: "cost_kind", concept: "calidad_coste", persistence: saved },
   { table: "integration_usage", column: "currency", concept: "moneda_coste", persistence: saved },
   { table: "integration_usage", column: "tool", concept: "herramienta_gasto", persistence: saved },
-  { table: "integration_usage", column: "volume", concept: "volumen_operacion", persistence: saved },
-  { table: "integration_usage", column: "operation_id", concept: "clave_operacion", persistence: saved },
-  { table: "integration_usage", column: "receipt_ref", concept: "referencia_recibo", persistence: saved },
+  {
+    table: "integration_usage",
+    column: "volume",
+    concept: "volumen_operacion",
+    persistence: saved,
+  },
+  {
+    table: "integration_usage",
+    column: "operation_id",
+    concept: "clave_operacion",
+    persistence: saved,
+  },
+  {
+    table: "integration_usage",
+    column: "receipt_ref",
+    concept: "referencia_recibo",
+    persistence: saved,
+  },
   // Pausa legal de LinkedIn (SDD pausa-legal-linkedin-y-gasto, pieza A): estado global de la plataforma.
-  { table: "platform_legal_flags", column: "key", concept: "interruptor_legal", persistence: saved },
+  {
+    table: "platform_legal_flags",
+    column: "key",
+    concept: "interruptor_legal",
+    persistence: saved,
+  },
   { table: "platform_legal_flags", column: "paused", concept: "pausa_legal", persistence: saved },
   {
     table: "platform_legal_flags",
@@ -1198,19 +1236,64 @@ export const BINDINGS: Binding[] = [
   },
   { table: "email_verifications", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "email_verifications", column: "email", concept: "direccion_email", persistence: saved },
-  { table: "drive_company_connections", column: "org_id", concept: "clave_empresa", persistence: saved },
-  { table: "drive_company_connections", column: "connection_key_enc", concept: "clave_conexion_cifrada", persistence: saved },
-  { table: "drive_company_connections", column: "account_email", concept: "direccion_email", persistence: saved },
-  { table: "drive_company_connections", column: "connected_by", concept: "clave_usuario", persistence: saved },
-  { table: "drive_company_connections", column: "connected_at", concept: "alta_sistema", persistence: saved },
-  { table: "drive_company_connections", column: "status", concept: "estado_conexion_drive", persistence: saved },
-  { table: "drive_company_connections", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  {
+    table: "drive_company_connections",
+    column: "org_id",
+    concept: "clave_empresa",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "connection_key_enc",
+    concept: "clave_conexion_cifrada",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "account_email",
+    concept: "direccion_email",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "connected_by",
+    concept: "clave_usuario",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "connected_at",
+    concept: "alta_sistema",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "status",
+    concept: "estado_conexion_drive",
+    persistence: saved,
+  },
+  {
+    table: "drive_company_connections",
+    column: "updated_at",
+    concept: "cambio_sistema",
+    persistence: saved,
+  },
   { table: "drive_folders_backup", column: "id", concept: "clave_registro", persistence: saved },
   { table: "drive_folders_backup", column: "org_id", concept: "clave_empresa", persistence: saved },
-  { table: "drive_folders_backup", column: "backed_up_at", concept: "alta_sistema", persistence: saved },
+  {
+    table: "drive_folders_backup",
+    column: "backed_up_at",
+    concept: "alta_sistema",
+    persistence: saved,
+  },
   { table: "user_agent_prefs", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "user_agent_prefs", column: "autonomy", concept: "nivel_agente", persistence: saved },
-  { table: "user_agent_prefs", column: "updated_at", concept: "cambio_sistema", persistence: saved },
+  {
+    table: "user_agent_prefs",
+    column: "updated_at",
+    concept: "cambio_sistema",
+    persistence: saved,
+  },
   { table: "mailbox_links", column: "org_id", concept: "clave_empresa", persistence: saved },
   { table: "mailbox_links", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "mailbox_links", column: "address", concept: "direccion_email", persistence: saved },

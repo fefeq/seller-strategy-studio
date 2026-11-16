@@ -10,10 +10,13 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // La acción principal de la pantalla: lima con texto tinta.
-        default: "bg-lime text-lime-foreground shadow-xs hover:brightness-95 disabled:bg-paper-sunk disabled:shadow-none",
+        default:
+          "bg-lime text-lime-foreground shadow-xs hover:brightness-95 disabled:bg-paper-sunk disabled:shadow-none",
         // Solo destructivas con confirmación.
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:bg-paper-sunk",
-        outline: "border border-hairline bg-card text-ink shadow-xs hover:bg-paper-sunk disabled:border-hairline",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:bg-paper-sunk",
+        outline:
+          "border border-hairline bg-card text-ink shadow-xs hover:bg-paper-sunk disabled:border-hairline",
         // Secundaria fuerte: tinta.
         secondary: "bg-ink text-ink-reverse hover:bg-ink/85 disabled:bg-paper-sunk",
         ghost: "text-ink hover:bg-paper-sunk",

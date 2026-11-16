@@ -6,7 +6,16 @@ const byName = (n: string) => TOOLS.find((t) => t.name === n);
 
 describe("E3/E4 agent tools", () => {
   it("registers onboarding-by-chat and parity tools", () => {
-    for (const n of ["start_onboarding_read", "list_onboarding_blocks", "approve_onboarding_block", "list_memories", "remember", "list_rules", "list_connections", "get_advisor_recommendations"])
+    for (const n of [
+      "start_onboarding_read",
+      "list_onboarding_blocks",
+      "approve_onboarding_block",
+      "list_memories",
+      "remember",
+      "list_rules",
+      "list_connections",
+      "get_advisor_recommendations",
+    ])
       expect(byName(n), n).toBeDefined();
   });
   it("onboarding writes and remember need confirmation; reads run now", () => {

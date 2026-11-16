@@ -21,13 +21,24 @@ type SummarySource = { id: string; is_primary: boolean; position: number };
 
 /** Safe projection for future agent readers: no customer labels or ticket-bearing reasons. */
 export function summarizeLines<T extends SummarySource>(lines: readonly T[]) {
-  return [...lines].sort((a, b) => a.position - b.position || a.id.localeCompare(b.id)).flatMap((line) => {
-    const input = readLineInput(line);
-    if (!input) return [];
-    const result = diagnose(input);
-    return [{ id: line.id, isPrimary: line.is_primary, position: line.position, archetype: result.archetype,
-      motion: result.motion, stage: input.stage, nextStep: result.nextStep }];
-  });
+  return [...lines]
+    .sort((a, b) => a.position - b.position || a.id.localeCompare(b.id))
+    .flatMap((line) => {
+      const input = readLineInput(line);
+      if (!input) return [];
+      const result = diagnose(input);
+      return [
+        {
+          id: line.id,
+          isPrimary: line.is_primary,
+          position: line.position,
+          archetype: result.archetype,
+          motion: result.motion,
+          stage: input.stage,
+          nextStep: result.nextStep,
+        },
+      ];
+    });
 }
 type PrimarySource = SummarySource & { name: string | null };
 

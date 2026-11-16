@@ -174,8 +174,14 @@ export function ReadingStep({
               {/* NK-0180: a long source without spaces wraps instead of widening the page. */}
               <span className="min-w-0 [overflow-wrap:anywhere]">
                 <span className="block font-medium leading-relaxed text-ink">{f.text}</span>
-                {!!f.source && <span className="mt-2 block text-xs text-ink-mid">Fuente: {f.source}</span>}
-                {!f.source && done && <span className="mt-2 block text-xs text-ink-mid">Sin fuente atribuida: contrasta este dato antes de confirmarlo.</span>}
+                {!!f.source && (
+                  <span className="mt-2 block text-xs text-ink-mid">Fuente: {f.source}</span>
+                )}
+                {!f.source && done && (
+                  <span className="mt-2 block text-xs text-ink-mid">
+                    Sin fuente atribuida: contrasta este dato antes de confirmarlo.
+                  </span>
+                )}
                 {!!f.sourceRemoved && <span className="text-ink-mid"> · fuente quitada</span>}
                 {!!f.edited && <span className="text-ink-mid"> · editado</span>}
                 {done && (
@@ -243,7 +249,10 @@ export function ReadingStep({
         <p id={`${uid}-sources`} className="smallcaps">
           Fuentes
         </p>
-        <p className="mt-2 text-sm leading-relaxed text-ink-mid">La fuente explica de dónde viene el contexto; confirmar un hallazgo solo valida ese dato concreto.</p>
+        <p className="mt-2 text-sm leading-relaxed text-ink-mid">
+          La fuente explica de dónde viene el contexto; confirmar un hallazgo solo valida ese dato
+          concreto.
+        </p>
         <ul aria-labelledby={`${uid}-sources`} className="mt-2 space-y-2 text-sm">
           {summary.map(({ source: s, indexes, count }, n) => {
             const panelId = `${uid}-findings-${n}`;
@@ -259,7 +268,11 @@ export function ReadingStep({
                   ? "No atribuí ningún hallazgo a esta fuente por separado."
                   : null;
             return (
-              <li key={s} className="border-b border-hairline pb-4 pt-2" aria-describedby={hint ? hintId : undefined}>
+              <li
+                key={s}
+                className="border-b border-hairline pb-4 pt-2"
+                aria-describedby={hint ? hintId : undefined}
+              >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="min-w-0 [overflow-wrap:anywhere]">{s}</span>
                   <span data-testid="source-status" className="text-ink-faint">
@@ -324,7 +337,12 @@ export function ReadingStep({
             Seguir a tu diagnóstico
           </Button>
         )}
-        {done && <p className="mt-2 text-xs leading-relaxed text-ink-mid">Puedes continuar sin confirmar todo. Aquí no apruebas tu estrategia: revisarás los bloques más adelante.</p>}
+        {done && (
+          <p className="mt-2 text-xs leading-relaxed text-ink-mid">
+            Puedes continuar sin confirmar todo. Aquí no apruebas tu estrategia: revisarás los
+            bloques más adelante.
+          </p>
+        )}
         {failed && (
           <Button variant="outline" className="mt-4 w-full" onClick={onBack}>
             Volver a tus fuentes

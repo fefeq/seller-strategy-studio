@@ -241,7 +241,11 @@ async function runWith(
           let summary = summarizeAction(t.name, args);
           if (t.spends) {
             const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
-            summary = withEstimate(summary, t.name, await spendEstimateLine(ctx.db, ctx.orgId, t.name));
+            summary = withEstimate(
+              summary,
+              t.name,
+              await spendEstimateLine(ctx.db, ctx.orgId, t.name),
+            );
           }
           const { data, error } = await ctx.db
             .from("agent_pending_actions")

@@ -17,8 +17,17 @@ export const Route = createFileRoute("/api/oauth/google-drive/return")({
             ? { success: true, connectorId, code: null }
             : success && code
               ? { success: true, connectorId, code }
-              : { success: false, connectorId, error: error ?? (success ? "Missing code" : "OAuth failed") };
-        const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+              : {
+                  success: false,
+                  connectorId,
+                  error: error ?? (success ? "Missing code" : "OAuth failed"),
+                };
+        const esc = (s: string) =>
+          s
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
         const safeJson = JSON.stringify(result).replace(/<\//g, "<\\/");
         const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><title>Terminando la conexión…</title></head><body>
 <p>${result.success ? "Conexión completada, cerrando…" : "No se pudo conectar: " + esc("error" in result ? (result.error ?? "") : "")}</p>

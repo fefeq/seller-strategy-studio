@@ -30,21 +30,70 @@ export const connectionsStatus = createServerFn({ method: "GET" })
     const now = new Date();
     const since = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
     const [usage, stripe, posthog, mailbox] = await Promise.all([
-      fetchAll<{ service: string; cost: number | null; currency: string; created_at: string }>((a, b) =>
-        db.from("integration_usage").select("service,cost,currency,created_at").eq("org_id", c.orgId).gte("created_at", since).order("id").range(a, b),
+      fetchAll<{ service: string; cost: number | null; currency: string; created_at: string }>(
+        (a, b) =>
+          db
+            .from("integration_usage")
+            .select("service,cost,currency,created_at")
+            .eq("org_id", c.orgId)
+            .gte("created_at", since)
+            .order("id")
+            .range(a, b),
       ),
-      db.from("stripe_connections").select("connected_by,created_at,status,last_error").eq("org_id", c.orgId).maybeSingle(),
-      db.from("posthog_connections").select("created_by,created_at,status,last_error").eq("org_id", c.orgId).maybeSingle(),
-      db.from("mailbox_links").select("user_id,linked_at,status").eq("org_id", c.orgId).maybeSingle(),
+      db
+        .from("stripe_connections")
+        .select("connected_by,created_at,status,last_error")
+        .eq("org_id", c.orgId)
+        .maybeSingle(),
+      db
+        .from("posthog_connections")
+        .select("created_by,created_at,status,last_error")
+        .eq("org_id", c.orgId)
+        .maybeSingle(),
+      db
+        .from("mailbox_links")
+        .select("user_id,linked_at,status")
+        .eq("org_id", c.orgId)
+        .maybeSingle(),
     ]);
     for (const r of [stripe, posthog, mailbox]) if (r.error) throw new Error(errorText(r.error));
     const rows = usage.rows;
-    const company: Record<string, { by: string | null; at: string | null; err: string | null; ok: boolean } | null> = {
-      stripe_connections: stripe.data ? { by: stripe.data.connected_by, at: stripe.data.created_at, err: stripe.data.status !== "error" && !stripe.data.last_error ? null : BROKEN, ok: stripe.data.status !== "disconnected" } : null,
-      posthog_connections: posthog.data ? { by: posthog.data.created_by, at: posthog.data.created_at, err: posthog.data.status !== "error" && !posthog.data.last_error ? null : BROKEN, ok: posthog.data.status !== "disconnected" } : null,
-      mailbox_links: mailbox.data ? { by: mailbox.data.user_id, at: mailbox.data.linked_at, err: mailbox.data.status === "active" ? null : BROKEN, ok: mailbox.data.status !== "disconnected" } : null,
+    const company: Record<
+      string,
+      { by: string | null; at: string | null; err: string | null; ok: boolean } | null
+    > = {
+      stripe_connections: stripe.data
+        ? {
+            by: stripe.data.connected_by,
+            at: stripe.data.created_at,
+            err: stripe.data.status !== "error" && !stripe.data.last_error ? null : BROKEN,
+            ok: stripe.data.status !== "disconnected",
+          }
+        : null,
+      posthog_connections: posthog.data
+        ? {
+            by: posthog.data.created_by,
+            at: posthog.data.created_at,
+            err: posthog.data.status !== "error" && !posthog.data.last_error ? null : BROKEN,
+            ok: posthog.data.status !== "disconnected",
+          }
+        : null,
+      mailbox_links: mailbox.data
+        ? {
+            by: mailbox.data.user_id,
+            at: mailbox.data.linked_at,
+            err: mailbox.data.status === "active" ? null : BROKEN,
+            ok: mailbox.data.status !== "disconnected",
+          }
+        : null,
     };
-    const ids = [...new Set(Object.values(company).map((x) => x?.by).filter((x): x is string => !!x))];
+    const ids = [
+      ...new Set(
+        Object.values(company)
+          .map((x) => x?.by)
+          .filter((x): x is string => !!x),
+      ),
+    ];
     const names = new Map<string, string>();
     if (ids.length) {
       const { data } = await db.from("profiles").select("id,full_name").in("id", ids);
@@ -53,7 +102,14 @@ export const connectionsStatus = createServerFn({ method: "GET" })
     return SERVICES.map((s) => {
       const u = monthUsage(rows, s, now);
       if (s.source.kind === "shared")
-        return { id: s.id, present: !!process.env[s.source.env], by: "NOKKO", at: null, lastError: null, usage: u };
+        return {
+          id: s.id,
+          present: !!process.env[s.source.env],
+          by: "NOKKO",
+          at: null,
+          lastError: null,
+          usage: u,
+        };
       const row = company[s.source.table];
       return {
         id: s.id,
@@ -75,9 +131,11 @@ export const testConnection = createServerFn({ method: "POST" })
     const at = new Date().toISOString();
     const s = SERVICES.find((x) => x.id === data.id);
     if (!s) return { ok: false, detail: "Servicio desconocido.", at };
-    if (s.source.kind === "company") throw new Error("Esta conexión se comprueba desde su tarjeta, más abajo.");
+    if (s.source.kind === "company")
+      throw new Error("Esta conexión se comprueba desde su tarjeta, más abajo.");
     const k = `${context.userId}:${s.id}`;
-    if (Date.now() - (lastTest.get(k) ?? 0) < 15_000) throw new Error("Acabas de probarla: espera unos segundos.");
+    if (Date.now() - (lastTest.get(k) ?? 0) < 15_000)
+      throw new Error("Acabas de probarla: espera unos segundos.");
     lastTest.set(k, Date.now());
     const key = process.env[s.source.env];
     if (!key) return { ok: false, detail: "Sin conectar en NOKKO.", at };
@@ -92,14 +150,31 @@ export const testConnection = createServerFn({ method: "POST" })
         });
         if (!r.ok) return { ok: false, detail: `La comprobación respondió ${r.status}.`, at };
         const j = (await r.json().catch(() => ({}))) as { outcome?: string };
-        if (j.outcome === "failed") return { ok: false, detail: "Las credenciales no son válidas.", at };
-        return { ok: true, detail: j.outcome === "skipped" ? "Conectada (este servicio no permite comprobación)." : "Conectada y verificada.", at };
+        if (j.outcome === "failed")
+          return { ok: false, detail: "Las credenciales no son válidas.", at };
+        return {
+          ok: true,
+          detail:
+            j.outcome === "skipped"
+              ? "Conectada (este servicio no permite comprobación)."
+              : "Conectada y verificada.",
+          at,
+        };
       }
       if (s.id === "openrouter") {
-        const r = await fetch("https://openrouter.ai/api/v1/key", { headers: { Authorization: `Bearer ${key}` }, signal: AbortSignal.timeout(10_000) });
-        return r.ok ? { ok: true, detail: "Conectada y verificada.", at } : { ok: false, detail: `La comprobación respondió ${r.status}.`, at };
+        const r = await fetch("https://openrouter.ai/api/v1/key", {
+          headers: { Authorization: `Bearer ${key}` },
+          signal: AbortSignal.timeout(10_000),
+        });
+        return r.ok
+          ? { ok: true, detail: "Conectada y verificada.", at }
+          : { ok: false, detail: `La comprobación respondió ${r.status}.`, at };
       }
-      return { ok: true, detail: "Clave presente; este servicio no tiene una comprobación gratuita.", at };
+      return {
+        ok: true,
+        detail: "Clave presente; este servicio no tiene una comprobación gratuita.",
+        at,
+      };
     } catch {
       return { ok: false, detail: "No he podido comprobarla ahora (red o tiempo de espera).", at };
     }

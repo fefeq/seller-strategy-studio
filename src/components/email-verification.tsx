@@ -18,14 +18,39 @@ export function useEmailVerifications(emails: readonly (string | null | undefine
   });
 }
 
-export function EmailVerificationMark({ email, rows = [], error }: { email: string | null | undefined; rows?: EmailVerification[]; error?: unknown }) {
+export function EmailVerificationMark({
+  email,
+  rows = [],
+  error,
+}: {
+  email: string | null | undefined;
+  rows?: EmailVerification[];
+  error?: unknown;
+}) {
   const row = rows.find((r) => r.email === normalizeVerificationEmail(email ?? "")) ?? null;
   const status = emailStatusFor(email, error ? null : row, new Date());
   if (!status) return null;
   const at = row?.checked_at && Number.isFinite(Date.parse(row.checked_at)) ? row.checked_at : null;
-  return <span className="mt-1 block text-xs text-muted-foreground">
-    <span className={status === "verified" ? "text-success" : status === "invalid" || status === "catch_all" ? "text-destructive" : undefined}>{EMAIL_STATUS_LABEL[status]}</span>
-    {at && <> · <time dateTime={at}>{new Date(at).toLocaleDateString("es-ES")}</time></>}
-    {!!error && <span className="block">{errorText(error)}</span>}
-  </span>;
+  return (
+    <span className="mt-1 block text-xs text-muted-foreground">
+      <span
+        className={
+          status === "verified"
+            ? "text-success"
+            : status === "invalid" || status === "catch_all"
+              ? "text-destructive"
+              : undefined
+        }
+      >
+        {EMAIL_STATUS_LABEL[status]}
+      </span>
+      {at && (
+        <>
+          {" "}
+          · <time dateTime={at}>{new Date(at).toLocaleDateString("es-ES")}</time>
+        </>
+      )}
+      {!!error && <span className="block">{errorText(error)}</span>}
+    </span>
+  );
 }

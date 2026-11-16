@@ -151,8 +151,8 @@ function Integrations() {
       <section className="mb-10">
         <h2 className="text-3xl">Conexiones</h2>
         <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-          Estado real de cada servicio: incluido en NOKKO, con la cuenta de tu empresa, sin conectar o con error.
-          Las claves nunca se muestran ni las recibe el agente.
+          Estado real de cada servicio: incluido en NOKKO, con la cuenta de tu empresa, sin conectar
+          o con error. Las claves nunca se muestran ni las recibe el agente.
         </p>
         <div className="mt-4">
           <ConnectionsStatusPanel />
@@ -162,7 +162,12 @@ function Integrations() {
         </div>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           {WORKING.filter((w) => ENTRY_POINTS.includes(w.name)).map((w) => (
-            <Link key={w.name} to={w.to} hash={w.hash} className="block rounded-lg border bg-card p-4 hover:border-signal">
+            <Link
+              key={w.name}
+              to={w.to}
+              hash={w.hash}
+              className="block rounded-lg border bg-card p-4 hover:border-signal"
+            >
               <span className="font-medium">{w.name}</span>
               <span className="mt-1 block text-sm text-muted-foreground">{w.what}</span>
             </Link>

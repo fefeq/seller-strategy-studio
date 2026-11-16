@@ -18,42 +18,95 @@ export type Stage = {
 };
 
 export const DEFAULT_STAGES: Stage[] = [
-  { key: "discovery", label: "Descubrimiento", position: 1, kind: "open", board_group: "opportunity", probability: 10 },
-  { key: "qualified", label: "Cualificado", position: 2, kind: "open", board_group: "opportunity", probability: 25 },
-  { key: "demo", label: "Demo / prueba", position: 3, kind: "open", board_group: "progress", probability: 40 },
-  { key: "proposal", label: "Propuesta", position: 4, kind: "open", board_group: "progress", probability: 60 },
-  { key: "negotiation", label: "Negociación", position: 5, kind: "open", board_group: "progress", probability: 80 },
+  {
+    key: "discovery",
+    label: "Descubrimiento",
+    position: 1,
+    kind: "open",
+    board_group: "opportunity",
+    probability: 10,
+  },
+  {
+    key: "qualified",
+    label: "Cualificado",
+    position: 2,
+    kind: "open",
+    board_group: "opportunity",
+    probability: 25,
+  },
+  {
+    key: "demo",
+    label: "Demo / prueba",
+    position: 3,
+    kind: "open",
+    board_group: "progress",
+    probability: 40,
+  },
+  {
+    key: "proposal",
+    label: "Propuesta",
+    position: 4,
+    kind: "open",
+    board_group: "progress",
+    probability: 60,
+  },
+  {
+    key: "negotiation",
+    label: "Negociación",
+    position: 5,
+    kind: "open",
+    board_group: "progress",
+    probability: 80,
+  },
   { key: "won", label: "Ganado", position: 100, kind: "won", board_group: null, probability: 100 },
   { key: "lost", label: "Perdido", position: 101, kind: "lost", board_group: null, probability: 0 },
 ];
 
-const orDefault = (stages: Stage[] | null | undefined) => (stages && stages.length ? stages : DEFAULT_STAGES);
+const orDefault = (stages: Stage[] | null | undefined) =>
+  stages && stages.length ? stages : DEFAULT_STAGES;
 /** Lowercase, no accents, letters and digits only: «Negociación» and «negociacion» are the same name. */
-const norm = (x: string) => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+const norm = (x: string) =>
+  x
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "");
 
 /** Open stages in order, then «Ganado», then «Perdido». */
 export function sortStages(stages?: Stage[] | null): Stage[] {
   const rank = (s: Stage) => (s.kind === "open" ? 0 : s.kind === "won" ? 1 : 2);
-  return [...orDefault(stages)].sort((a, b) => rank(a) - rank(b) || a.position - b.position || a.label.localeCompare(b.label));
+  return [...orDefault(stages)].sort(
+    (a, b) => rank(a) - rank(b) || a.position - b.position || a.label.localeCompare(b.label),
+  );
 }
 
-export const openStages = (stages?: Stage[] | null) => sortStages(stages).filter((s) => s.kind === "open");
+export const openStages = (stages?: Stage[] | null) =>
+  sortStages(stages).filter((s) => s.kind === "open");
 
 /** The stage a new deal starts in when nobody chose one. */
-export const firstOpenStage = (stages?: Stage[] | null): Stage => openStages(stages)[0] ?? DEFAULT_STAGES[0];
+export const firstOpenStage = (stages?: Stage[] | null): Stage =>
+  openStages(stages)[0] ?? DEFAULT_STAGES[0];
 
 export function stageLabel(key: string | null | undefined, stages?: Stage[] | null): string {
   if (!key) return "";
-  return orDefault(stages).find((s) => s.key === key)?.label ?? DEFAULT_STAGES.find((s) => s.key === key)?.label ?? key;
+  return (
+    orDefault(stages).find((s) => s.key === key)?.label ??
+    DEFAULT_STAGES.find((s) => s.key === key)?.label ??
+    key
+  );
 }
 
 export const stageProbability = (key: string, stages?: Stage[] | null): number | undefined =>
   orDefault(stages).find((s) => s.key === key)?.probability;
 
-export const isStageKey = (key: string, stages?: Stage[] | null) => orDefault(stages).some((s) => s.key === key);
+export const isStageKey = (key: string, stages?: Stage[] | null) =>
+  orDefault(stages).some((s) => s.key === key);
 
 /** Open stage keys in order followed by 'won': the path a deal walks (conversion, «advanced» in the report). */
-export const stagePath = (stages?: Stage[] | null): string[] => [...openStages(stages).map((s) => s.key), "won"];
+export const stagePath = (stages?: Stage[] | null): string[] => [
+  ...openStages(stages).map((s) => s.key),
+  "won",
+];
 
 /** Position of a stage on that path; -1 for «Perdido» or an unknown key. */
 export const stageIndex = (key: string, stages?: Stage[] | null) => stagePath(stages).indexOf(key);
@@ -70,7 +123,9 @@ export function lateStages(stages?: Stage[] | null): Set<string> {
 
 /** `{ key: label }` for selects; `withClosed` adds «Ganado» and «Perdido». */
 export function stageOptions(stages?: Stage[] | null, withClosed = false): Record<string, string> {
-  return Object.fromEntries((withClosed ? sortStages(stages) : openStages(stages)).map((s) => [s.key, s.label]));
+  return Object.fromEntries(
+    (withClosed ? sortStages(stages) : openStages(stages)).map((s) => [s.key, s.label]),
+  );
 }
 
 /** A key for a new stage from its label: lowercase ASCII, unique in the company, never 'won' or 'lost'. */
@@ -85,31 +140,46 @@ export function newStageKey(label: string, stages?: Stage[] | null): string {
       .slice(0, 32) || "etapa";
   // The standard keys stay reserved even after a company deletes one: old webhooks, history and stage
   // criteria still mean that stage, and a new stage must not inherit them.
-  const taken = new Set([...orDefault(stages).map((s) => s.key), ...DEFAULT_STAGES.map((s) => s.key)]);
+  const taken = new Set([
+    ...orDefault(stages).map((s) => s.key),
+    ...DEFAULT_STAGES.map((s) => s.key),
+  ]);
   if (!taken.has(base)) return base;
   for (let i = 2; ; i++) if (!taken.has(`${base}_${i}`)) return `${base}_${i}`;
 }
 
 /** Why a stage edit can't be saved, or null. Mirrors the database rules so the screen says it first. */
-export function checkStageEdit(label: string, probability: number, stages: Stage[], key?: string): string | null {
+export function checkStageEdit(
+  label: string,
+  probability: number,
+  stages: Stage[],
+  key?: string,
+): string | null {
   const name = label.trim();
   if (!name) return "La etapa necesita un nombre.";
   if (name.length > 40) return "El nombre de la etapa tiene como máximo 40 caracteres.";
-  if (!Number.isInteger(probability) || probability < 0 || probability > 100) return "La probabilidad tiene que ser un número entero entre 0 y 100.";
+  if (!Number.isInteger(probability) || probability < 0 || probability > 100)
+    return "La probabilidad tiene que ser un número entero entre 0 y 100.";
   const clash = stages.find((s) => s.key !== key && norm(s.label) === norm(name));
   if (clash) return `Ya hay una etapa que se llama «${clash.label}».`;
   return null;
 }
 
 /** New positions after moving `key` one place up (-1) or down (+1) among the open stages. */
-export function reorderOpen(stages: Stage[], key: string, dir: -1 | 1): { key: string; position: number }[] {
+export function reorderOpen(
+  stages: Stage[],
+  key: string,
+  dir: -1 | 1,
+): { key: string; position: number }[] {
   const open = openStages(stages);
   const i = open.findIndex((s) => s.key === key);
   const j = i + dir;
   if (i < 0 || j < 0 || j >= open.length) return [];
   const next = [...open];
   [next[i], next[j]] = [next[j], next[i]];
-  return next.map((s, idx) => ({ key: s.key, position: idx + 1 })).filter((p) => open.find((s) => s.key === p.key)?.position !== p.position);
+  return next
+    .map((s, idx) => ({ key: s.key, position: idx + 1 }))
+    .filter((p) => open.find((s) => s.key === p.key)?.position !== p.position);
 }
 
 /**

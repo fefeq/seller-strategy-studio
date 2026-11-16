@@ -4,11 +4,36 @@ import type { SegLike } from "./segment-coverage";
 
 const now = new Date("2026-10-20T12:00:00Z");
 const daysAgo = (n: number) => new Date(now.getTime() - n * 86_400_000).toISOString();
-const seg = (id: string, acv_min: number, acv_max: number): SegLike => ({ id, name: id, acv_min, acv_max, win_rate_target: null, cac_target: null, gross_margin_pct: null, payback_months: null });
+const seg = (id: string, acv_min: number, acv_max: number): SegLike => ({
+  id,
+  name: id,
+  acv_min,
+  acv_max,
+  win_rate_target: null,
+  cac_target: null,
+  gross_margin_pct: null,
+  payback_months: null,
+});
 const SEGS = [seg("smb", 0, 10_000), seg("mid", 10_000, 100_000)];
-const deal = (id: string, o: Partial<{ stage: string; amount: number; segment_id: string | null; created: number; closed: number | null; updated: number }>) => ({
-  id, stage: o.stage ?? "demo", amount: o.amount ?? 5000, segment_id: o.segment_id ?? null, close_date: null,
-  created_at: daysAgo(o.created ?? 30), closed_at: o.closed == null ? null : daysAgo(o.closed), updated_at: daysAgo(o.updated ?? 0),
+const deal = (
+  id: string,
+  o: Partial<{
+    stage: string;
+    amount: number;
+    segment_id: string | null;
+    created: number;
+    closed: number | null;
+    updated: number;
+  }>,
+) => ({
+  id,
+  stage: o.stage ?? "demo",
+  amount: o.amount ?? 5000,
+  segment_id: o.segment_id ?? null,
+  close_date: null,
+  created_at: daysAgo(o.created ?? 30),
+  closed_at: o.closed == null ? null : daysAgo(o.closed),
+  updated_at: daysAgo(o.updated ?? 0),
 });
 
 describe("threshold", () => {
@@ -30,17 +55,33 @@ describe("threshold", () => {
     expect(readStaleDays(null)).toBeNull();
   });
   it("explains itself", () => {
-    expect(thresholdText(staleThreshold(90, null))).toBe("23 días, un cuarto del ciclo real de 90 días");
+    expect(thresholdText(staleThreshold(90, null))).toBe(
+      "23 días, un cuarto del ciclo real de 90 días",
+    );
     expect(thresholdText(staleThreshold(null, 21))).toBe("21 días, fijado por la empresa");
-    expect(thresholdText(staleThreshold(null, null))).toBe("14 días por defecto: aún no hay ciclo real");
+    expect(thresholdText(staleThreshold(null, null))).toBe(
+      "14 días por defecto: aún no hay ciclo real",
+    );
   });
 });
 
 describe("cold deals", () => {
   // mid-market won deals took 120 days → threshold 30; smb has no wins → company cycle (median of all wins).
-  const won = [deal("w1", { stage: "won", amount: 50_000, created: 200, closed: 80 }), deal("w2", { stage: "won", amount: 60_000, created: 150, closed: 30 })];
+  const won = [
+    deal("w1", { stage: "won", amount: 50_000, created: 200, closed: 80 }),
+    deal("w2", { stage: "won", amount: 60_000, created: 150, closed: 30 }),
+  ];
   it("uses the segment's real cycle", () => {
-    const rows = staleDeals([...won, deal("a", { amount: 50_000, updated: 20 }), deal("b", { amount: 50_000, updated: 31 })], SEGS, null, now);
+    const rows = staleDeals(
+      [
+        ...won,
+        deal("a", { amount: 50_000, updated: 20 }),
+        deal("b", { amount: 50_000, updated: 31 }),
+      ],
+      SEGS,
+      null,
+      now,
+    );
     const a = rows.find((r) => r.deal.id === "a")!;
     const b = rows.find((r) => r.deal.id === "b")!;
     expect(a.threshold).toEqual({ days: 30, source: "ciclo", cycleDays: 120 });

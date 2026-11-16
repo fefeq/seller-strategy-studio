@@ -8,7 +8,8 @@ export const generateWeeklyReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader")) throw new Error("Solo Owner o Sales Leader pueden generar el informe.");
+    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader"))
+      throw new Error("Solo Owner o Sales Leader pueden generar el informe.");
     const { saveWeeklyReportNow } = await import("@/lib/weekly-report.server");
     return saveWeeklyReportNow(ctx.db, ctx.orgId);
   });

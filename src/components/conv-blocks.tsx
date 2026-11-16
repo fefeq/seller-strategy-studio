@@ -3,7 +3,15 @@ import { Link } from "@tanstack/react-router";
 import type { ConvBlock } from "@/lib/conversation";
 import { Button } from "@/components/ui/button";
 
-export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onChip?: (value: string) => void; busy?: boolean }) {
+export function ConvBlocks({
+  blocks,
+  onChip,
+  busy,
+}: {
+  blocks: ConvBlock[];
+  onChip?: (value: string) => void;
+  busy?: boolean;
+}) {
   return (
     <div className="space-y-2 text-sm">
       {blocks.map((b, i) =>
@@ -17,13 +25,21 @@ export function ConvBlocks({ blocks, onChip, busy }: { blocks: ConvBlock[]; onCh
             </ul>
           </div>
         ) : b.kind === "link" ? (
-          <Link key={i} to={b.path} className="inline-block text-signal underline underline-offset-4">
+          <Link
+            key={i}
+            to={b.path}
+            className="inline-block text-signal underline underline-offset-4"
+          >
             {b.label}
           </Link>
         ) : (
           <div key={i}>
             {b.prompt && <p className="mb-1.5">{b.prompt}</p>}
-            <div role="radiogroup" aria-label={b.prompt ?? "Opciones"} className="flex flex-wrap gap-2">
+            <div
+              role="radiogroup"
+              aria-label={b.prompt ?? "Opciones"}
+              className="flex flex-wrap gap-2"
+            >
               {b.chips.map((c) => (
                 <Button
                   key={c.value}

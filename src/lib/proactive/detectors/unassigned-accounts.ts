@@ -11,17 +11,22 @@ export const unassignedAccounts: Detector = (s) => {
   if (members.filter((m) => isEligible(m.role)).length < 2) return [];
   const unowned = s.accounts.filter((a) => !a.owner_id);
   if (!unowned.length) return [];
-  const newest = [...unowned].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "") || b.id.localeCompare(a.id))[0];
-  const approver = members.find((m) => m.role === "owner") ?? members.find((m) => m.role === "sales_leader");
+  const newest = [...unowned].sort(
+    (a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "") || b.id.localeCompare(a.id),
+  )[0];
+  const approver =
+    members.find((m) => m.role === "owner") ?? members.find((m) => m.role === "sales_leader");
   const n = unowned.length;
-  return [{
-    detector: "unassigned_accounts",
-    dedupe_key: `unassigned_accounts:${newest.id}`,
-    priority: 2,
-    title: n === 1 ? "1 cuenta sin responsable" : `${n} cuentas sin responsable`,
-    body: "Nadie las trabaja. Propón el reparto: aplico tus reglas, equilibro la carga por tier y tú apruebas quién lleva cada una.",
-    link: "/accounts/assignment",
-    action: null,
-    user_id: approver?.user_id ?? null,
-  }];
+  return [
+    {
+      detector: "unassigned_accounts",
+      dedupe_key: `unassigned_accounts:${newest.id}`,
+      priority: 2,
+      title: n === 1 ? "1 cuenta sin responsable" : `${n} cuentas sin responsable`,
+      body: "Nadie las trabaja. Propón el reparto: aplico tus reglas, equilibro la carga por tier y tú apruebas quién lleva cada una.",
+      link: "/accounts/assignment",
+      action: null,
+      user_id: approver?.user_id ?? null,
+    },
+  ];
 };

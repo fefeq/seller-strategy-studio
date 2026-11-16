@@ -80,12 +80,15 @@ export function spendSummary(tool: string, args: unknown): string {
     if (typeof v === "string" && v.trim()) return `${base}: «${v.trim().slice(0, 80)}»`;
     if (Array.isArray(v) && v.length) return `${base}: «${v.slice(0, 4).join(", ").slice(0, 80)}»`;
   }
-  if (Array.isArray(a["account_ids"])) return `${base} (${(a["account_ids"] as unknown[]).length} cuentas)`;
+  if (Array.isArray(a["account_ids"]))
+    return `${base} (${(a["account_ids"] as unknown[]).length} cuentas)`;
   return base;
 }
 
 const money = (v: number, currency: string) =>
-  new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 4 }).format(v);
+  new Intl.NumberFormat("es-ES", { style: "currency", currency, maximumFractionDigits: 4 }).format(
+    v,
+  );
 
 /**
  * «coste aprox.» line from the company's measured history of this same tool, one figure per currency (never
@@ -96,7 +99,9 @@ export function estimateText(rows: SpendRow[], tool: string): string {
   for (const cur of ["EUR", "USD"]) {
     const e = estimateCost(rows, tool, cur);
     if (e.value !== null)
-      parts.push(`${money(e.value, cur)} (mediana de ${e.samples} ${e.samples === 1 ? "uso" : "usos"})`);
+      parts.push(
+        `${money(e.value, cur)} (mediana de ${e.samples} ${e.samples === 1 ? "uso" : "usos"})`,
+      );
   }
   return `coste aprox.: ${parts.length ? parts.join(" + ") : "sin dato"}`;
 }
@@ -107,7 +112,12 @@ export async function spendEstimateLine(db: Db, orgId: string, tool: string): Pr
 }
 
 /** A numeric estimate is comparable only in the organization's currency, with no foreign subtotal. */
-export async function spendEstimate(db: Db, orgId: string, tool: string, currency: string): Promise<{ line: string; value: number | null }> {
+export async function spendEstimate(
+  db: Db,
+  orgId: string,
+  tool: string,
+  currency: string,
+): Promise<{ line: string; value: number | null }> {
   try {
     const { data, error } = await db
       .from("integration_usage")
@@ -119,8 +129,11 @@ export async function spendEstimate(db: Db, orgId: string, tool: string, currenc
       .limit(200);
     if (error) return { line: estimateText([], tool), value: null };
     const rows = (data ?? []) as SpendRow[];
-    const other = rows.some(r => r.currency !== currency);
-    return { line: estimateText(rows, tool), value: other ? null : estimateCost(rows, tool, currency).value };
+    const other = rows.some((r) => r.currency !== currency);
+    return {
+      line: estimateText(rows, tool),
+      value: other ? null : estimateCost(rows, tool, currency).value,
+    };
   } catch {
     return { line: estimateText([], tool), value: null };
   }
@@ -129,7 +142,7 @@ export async function spendEstimate(db: Db, orgId: string, tool: string, currenc
 /** Summary shown on the confirmation card: what, who charges, and the estimate. */
 export function withEstimate(summary: string, tool: string, line: string): string {
   const svc = SPEND_TOOLS[tool];
-  return `${summary} · gasta ${svc === "web" ? "búsqueda web" : svc ?? "créditos"} · ${line}`;
+  return `${summary} · gasta ${svc === "web" ? "búsqueda web" : (svc ?? "créditos")} · ${line}`;
 }
 
 /** What the person sees after confirming a spending read: the full result, clipped so a message stays readable. */

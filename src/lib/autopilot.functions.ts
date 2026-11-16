@@ -8,7 +8,8 @@ export const runAutopilotNow = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader")) throw new Error("Solo el Owner o el Sales Leader pueden lanzarlo.");
+    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader"))
+      throw new Error("Solo el Owner o el Sales Leader pueden lanzarlo.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { autopilotForOrg } = await import("@/lib/autopilot.server");
     return autopilotForOrg(supabaseAdmin, ctx.orgId, new Date());

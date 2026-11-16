@@ -11,7 +11,17 @@ import { emailBlockReason, emailGateMark } from "@/lib/email-status";
  */
 export const followupSequence: Detector = (s) =>
   (s.leads ?? []).flatMap((l) => {
-    const st = followupStatus({ stage: l.stage, contacted_at: l.contacted_at ?? null, next_step_at: l.next_step_at, contact_name: l.contact_name, company: l.company, replied: !!l.replied }, s.now);
+    const st = followupStatus(
+      {
+        stage: l.stage,
+        contacted_at: l.contacted_at ?? null,
+        next_step_at: l.next_step_at,
+        contact_name: l.contact_name,
+        company: l.company,
+        replied: !!l.replied,
+      },
+      s.now,
+    );
     if (!st.due || !l.contacted_at) return [];
     const status = l.email?.trim() ? (l.email_status ?? "unverified") : null;
     const reason = status ? emailBlockReason(status) : null;
@@ -29,17 +39,29 @@ export const followupSequence: Detector = (s) =>
       };
       return [blocked];
     }
-    const draft = followupDraft(st.due, { stage: l.stage, contacted_at: l.contacted_at, next_step_at: l.next_step_at, contact_name: l.contact_name, company: l.company }, { positioning: s.setup.positioning, pillars: s.setup.pillars });
+    const draft = followupDraft(
+      st.due,
+      {
+        stage: l.stage,
+        contacted_at: l.contacted_at,
+        next_step_at: l.next_step_at,
+        contact_name: l.contact_name,
+        company: l.company,
+      },
+      { positioning: s.setup.positioning, pillars: s.setup.pillars },
+    );
     const patch = followupPatch(st.due, l.contacted_at, s.now);
     const mark = status ? emailGateMark(status) : null;
-    return [{
-      detector: "followup_sequence",
-      dedupe_key: `followup:${l.id}:${st.due.id}`,
-      priority: 2 as const,
-      title: `${l.company}: toca el seguimiento del ${st.due.label.toLowerCase()} (${st.daysSinceContact} días sin respuesta)`,
-      body: `Borrador (${st.due.purpose}):\n«${draft}»\n\nEnvíalo desde tu email o LinkedIn. Al aprobar, apunto el envío en el lead y programo ${st.next ? `el siguiente para el ${patch.next_step_at}` : "la revisión final"}. Pídeme en el agente una versión adaptada si quieres cambiar el tono.${mark ? `\n\nMarca: ${mark}.` : ""}`,
-      link: "/leads",
-      action: { tool: "update_lead", args: { lead_id: l.id, ...patch } },
-      user_id: l.owner_id,
-    }];
+    return [
+      {
+        detector: "followup_sequence",
+        dedupe_key: `followup:${l.id}:${st.due.id}`,
+        priority: 2 as const,
+        title: `${l.company}: toca el seguimiento del ${st.due.label.toLowerCase()} (${st.daysSinceContact} días sin respuesta)`,
+        body: `Borrador (${st.due.purpose}):\n«${draft}»\n\nEnvíalo desde tu email o LinkedIn. Al aprobar, apunto el envío en el lead y programo ${st.next ? `el siguiente para el ${patch.next_step_at}` : "la revisión final"}. Pídeme en el agente una versión adaptada si quieres cambiar el tono.${mark ? `\n\nMarca: ${mark}.` : ""}`,
+        link: "/leads",
+        action: { tool: "update_lead", args: { lead_id: l.id, ...patch } },
+        user_id: l.owner_id,
+      },
+    ];
   });

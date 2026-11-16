@@ -225,7 +225,11 @@ function People() {
               <li key={p.id} className="space-y-3 border-b py-4 text-sm">
                 <div>
                   <p className="flex items-start gap-2 break-words font-medium">
-                    <SelectBox checked={pick.has(p.id)} onChange={() => pick.flip(p.id)} label={`Seleccionar ${p.full_name || p.email}`} />
+                    <SelectBox
+                      checked={pick.has(p.id)}
+                      onChange={() => pick.flip(p.id)}
+                      label={`Seleccionar ${p.full_name || p.email}`}
+                    />
                     <span className="min-w-0">{p.full_name || "—"}</span>
                   </p>
                   <p className="break-all text-xs text-muted-foreground">
@@ -264,7 +268,11 @@ function People() {
               <thead className="border-b bg-muted/50 text-left">
                 <tr>
                   <th className="w-10 px-3 py-3">
-                    <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
+                    <SelectBox
+                      checked={pick.all}
+                      onChange={pick.flipAll}
+                      label="Seleccionar todas"
+                    />
                   </th>
                   {[
                     "Persona",
@@ -286,7 +294,11 @@ function People() {
                 {list.map((p) => (
                   <tr key={p.id} className="border-b last:border-0">
                     <td className="px-3 py-2">
-                      <SelectBox checked={pick.has(p.id)} onChange={() => pick.flip(p.id)} label={`Seleccionar ${p.full_name || p.email}`} />
+                      <SelectBox
+                        checked={pick.has(p.id)}
+                        onChange={() => pick.flip(p.id)}
+                        label={`Seleccionar ${p.full_name || p.email}`}
+                      />
                     </td>
                     <td className="px-3 py-2">
                       <p className="font-medium">{p.full_name || "—"}</p>
@@ -326,7 +338,9 @@ function People() {
             filename="personas.csv"
             csv={() => ({
               header: ["Nombre", "Email", "Empresa"],
-              rows: list.filter((p) => pick.has(p.id)).map((p) => [p.full_name, p.email, p.company]),
+              rows: list
+                .filter((p) => pick.has(p.id))
+                .map((p) => [p.full_name, p.email, p.company]),
             })}
           />
         </>

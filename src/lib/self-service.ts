@@ -30,7 +30,8 @@ export function median(xs: number[]): number | null {
   return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
 }
 
-const days = (from: string, to: string) => Math.max(0, (new Date(to).getTime() - new Date(from).getTime()) / DAY);
+const days = (from: string, to: string) =>
+  Math.max(0, (new Date(to).getTime() - new Date(from).getTime()) / DAY);
 
 export function funnelStats(trials: Trial[]): FunnelStats {
   const signups = trials.length;
@@ -51,8 +52,15 @@ export function funnelStats(trials: Trial[]): FunnelStats {
 }
 
 /** Trials whose signup falls in [start, end). */
-export function cohort<T extends Pick<Trial, "signed_up_at">>(trials: T[], start: Date, end: Date): T[] {
-  return trials.filter((t) => { const d = new Date(t.signed_up_at); return d >= start && d < end; });
+export function cohort<T extends Pick<Trial, "signed_up_at">>(
+  trials: T[],
+  start: Date,
+  end: Date,
+): T[] {
+  return trials.filter((t) => {
+    const d = new Date(t.signed_up_at);
+    return d >= start && d < end;
+  });
 }
 
 export type SegmentFunnel = FunnelStats & { segment_id: string | null };

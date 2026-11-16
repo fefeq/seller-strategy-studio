@@ -15,11 +15,31 @@ export function useOnboarding(opts: { poll?: boolean } = {}) {
     queryKey: ["onboarding", orgId, userId],
     enabled: !!orgId && !!userId,
     refetchInterval: opts.poll ? 2000 : false,
-    queryFn: async () => (await supabase.from("onboarding_sessions").select("*").eq("org_id", orgId!).eq("user_id", userId!).maybeSingle()).data,
+    queryFn: async () =>
+      (
+        await supabase
+          .from("onboarding_sessions")
+          .select("*")
+          .eq("org_id", orgId!)
+          .eq("user_id", userId!)
+          .maybeSingle()
+      ).data,
   });
   async function save(patch: Omit<TablesUpdate<"onboarding_sessions">, "org_id" | "user_id">) {
-    const { error } = await supabase.from("onboarding_sessions").upsert({ org_id: orgId!, user_id: userId!, ...(q.data && { depth: q.data.depth }), ...patch, updated_at: new Date().toISOString() }, { onConflict: "org_id,user_id" });
-    if (error) { toast.error(errorText(error)); return false; }
+    const { error } = await supabase.from("onboarding_sessions").upsert(
+      {
+        org_id: orgId!,
+        user_id: userId!,
+        ...(q.data && { depth: q.data.depth }),
+        ...patch,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "org_id,user_id" },
+    );
+    if (error) {
+      toast.error(errorText(error));
+      return false;
+    }
     await qc.invalidateQueries({ queryKey: ["onboarding", orgId, userId] });
     return true;
   }

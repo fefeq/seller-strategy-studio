@@ -21,7 +21,12 @@ export type Used = {
   receiptRef?: string;
 };
 
-export async function logUsage(c: Pick<ToolCtx, "db" | "orgId" | "userId">, need: Need | null, used: Used[], trigger: Trigger) {
+export async function logUsage(
+  c: Pick<ToolCtx, "db" | "orgId" | "userId">,
+  need: Need | null,
+  used: Used[],
+  trigger: Trigger,
+) {
   if (!used.length) return;
   const rows = used.map((u) => ({
     org_id: c.orgId,

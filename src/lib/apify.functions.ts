@@ -13,7 +13,14 @@ async function scope(context: { supabase: unknown; userId: string }) {
 /** Battlecard draft from a competitor's G2 reviews; the screen shows it and saves it to the hub on request. */
 export const battlecardFromReviews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ competitor: z.string().trim().min(2).max(200), max: z.number().int().min(5).max(40) }).parse(d))
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        competitor: z.string().trim().min(2).max(200),
+        max: z.number().int().min(5).max(40),
+      })
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     const { db, s } = await scope(context);
     const { battlecardCore } = await import("@/lib/apify-core");

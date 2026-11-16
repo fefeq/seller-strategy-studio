@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { primaryLine } from "./business-lines";
 
-const l = (id: string, is_primary: boolean, acv: number, friction = "committee") =>
-  ({ id, is_primary, position: 0, name: id === "a" ? "Enterprise" : null, model: "b2b", acv, friction, stage: "early" });
+const l = (id: string, is_primary: boolean, acv: number, friction = "committee") => ({
+  id,
+  is_primary,
+  position: 0,
+  name: id === "a" ? "Enterprise" : null,
+  model: "b2b",
+  acv,
+  friction,
+  stage: "early",
+});
 
 describe("primaryLine: archetype read by Inicio, Estrategia, Métricas and Segmentos", () => {
   it("uses the primary line, not the first one", () => {
