@@ -58,14 +58,44 @@ describe("guardFetch", () => {
     expect(s.calls).toEqual([]);
   });
 
-  it("CA-1 refuses every method, not only reads", async () => {
+  it("CA-1 refuses reads by any route while signing out (GET and HEAD, Request objects too)", async () => {
     const s = stub();
     const f = guardFetch(s.fn, { supabaseUrl: SUPABASE, origin: ORIGIN });
     beginSessionEnd();
+    await expect(f(`${SUPABASE}/rest/v1/accounts`, { method: "HEAD" })).rejects.toBeInstanceOf(
+      SessionEndedError,
+    );
+    await expect(
+      f(new Request(`${SUPABASE}/rest/v1/accounts`, { method: "GET" })),
+    ).rejects.toBeInstanceOf(SessionEndedError);
+    expect(s.calls).toEqual([]);
+  });
+
+  it("CA-1b lets a write of the person signing out leave (their session is still valid until the logout ends)", async () => {
+    const s = stub();
+    const f = guardFetch(s.fn, { supabaseUrl: SUPABASE, origin: ORIGIN });
+    beginSessionEnd();
+    const writes = [
+      [`${SUPABASE}/rest/v1/stages?id=eq.s-1`, "PATCH"],
+      [`${SUPABASE}/rest/v1/rpc/save_quarter`, "POST"],
+      [`${ORIGIN}/_serverFn/save123`, "POST"],
+    ] as const;
+    for (const [url, method] of writes) await f(url, { method });
+    await f(new Request(`${SUPABASE}/rest/v1/notes`, { method: "DELETE" }));
+    expect(s.calls).toHaveLength(4);
+  });
+
+  it("CA-1b refuses every method while the tab is changing account (the token may be the other person's)", async () => {
+    const s = stub();
+    const f = guardFetch(s.fn, { supabaseUrl: SUPABASE, origin: ORIGIN });
+    beginAccountSwitch();
     for (const method of ["POST", "PATCH", "DELETE"])
       await expect(f(`${SUPABASE}/rest/v1/accounts`, { method })).rejects.toBeInstanceOf(
         SessionEndedError,
       );
+    await expect(f(`${ORIGIN}/_serverFn/save123`, { method: "POST" })).rejects.toBeInstanceOf(
+      SessionEndedError,
+    );
     expect(s.calls).toEqual([]);
   });
 
@@ -82,6 +112,14 @@ describe("guardFetch", () => {
     ];
     for (const url of through) await f(url);
     expect(s.calls).toEqual(through);
+  });
+
+  it("CA-2 only the logout and the token refresh pass among the auth routes", async () => {
+    const s = stub();
+    const f = guardFetch(s.fn, { supabaseUrl: SUPABASE, origin: ORIGIN });
+    beginSessionEnd();
+    await expect(f(`${SUPABASE}/auth/v1/user`)).rejects.toBeInstanceOf(SessionEndedError);
+    expect(s.calls).toEqual([]);
   });
 
   it("CA-2 does not treat a look-alike host or path as the backend", async () => {
@@ -137,6 +175,15 @@ describe("installSessionFetchGuard", () => {
     }
   });
 
+  it("CA-4 installs nothing outside the browser", () => {
+    vi.stubGlobal("window", undefined);
+    try {
+      expect(installSessionFetchGuard({ supabaseUrl: SUPABASE })).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("CA-4 installs nothing without a backend URL", () => {
     expect(installSessionFetchGuard({ supabaseUrl: undefined })).toBe(false);
   });
@@ -146,28 +193,42 @@ describe("NK-0169 with a real supabase-js client and signOutAndClear", () => {
   // Built like src/integrations/supabase/client.ts: its fetch resolves the guarded fetch on every request.
   function client(net: typeof fetch) {
     const f = guardFetch(net, { supabaseUrl: SUPABASE, origin: ORIGIN });
+    const asked: string[] = []; // every request the client tried to send, refused or not
     const sb = createClient(SUPABASE, "synthetic-publishable-key", {
-      global: { fetch: (input, init) => f(input, init) },
+      global: {
+        fetch: (input, init) => {
+          asked.push(String(input instanceof Request ? input.url : input));
+          return f(input, init);
+        },
+      },
       auth: { persistSession: false, autoRefreshToken: false },
     });
-    return { sb, f };
+    return { sb, f, asked };
   }
 
   it("CA-5 the logout leaves and a read started while it is in flight does not", async () => {
     vi.useFakeTimers();
     const s = stub();
-    const { sb, f } = client(s.fn);
+    const { sb, f, asked } = client(s.fn);
     const qc = new QueryClient();
     let read: PromiseLike<{ error: unknown }> | null = null;
     let duringLogout: string[] = [];
+    let started = false;
     await signOutAndClear(qc, {
       async signOut() {
-        read = sb.from("accounts").select("*").eq("org_id", "org-a");
+        // A postgrest builder only sends when awaited: start it now, inside the window.
+        read = sb
+          .from("accounts")
+          .select("*")
+          .eq("org_id", "org-a")
+          .then((r) => r);
         await vi.advanceTimersByTimeAsync(0);
+        started = asked.some((u) => u.includes("/rest/v1/accounts"));
         await f(`${SUPABASE}/auth/v1/logout?scope=global`, { method: "POST" });
         duringLogout = [...s.calls];
       },
     });
+    expect(started).toBe(true);
     expect(duringLogout).toEqual([`${SUPABASE}/auth/v1/logout?scope=global`]);
     // supabase-js retries a refused GET after the window (1 s, 2 s, 4 s); by then it carries the session of
     // that moment, never the one being closed. Drain it so nothing outlives the test.
