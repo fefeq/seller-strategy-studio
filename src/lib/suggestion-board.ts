@@ -2,21 +2,39 @@
 
 export const OVERDUE_DAYS = 7;
 export const LEADER_ROLES = ["owner", "sales_leader"] as const;
-export const canSeeTeam = (roles: string[]) => roles.some((r) => (LEADER_ROLES as readonly string[]).includes(r));
+export const canSeeTeam = (roles: string[]) =>
+  roles.some((r) => (LEADER_ROLES as readonly string[]).includes(r));
 /** Whether a user may see and act on a suggestion: own or unassigned, or any for Owner/Sales Leader (the RLS rule, applied in code for privileged clients). */
-export const canActOnSuggestion = (s: { user_id: string | null }, userId: string, roles: string[]) => !s.user_id || s.user_id === userId || canSeeTeam(roles);
+export const canActOnSuggestion = (
+  s: { user_id: string | null },
+  userId: string,
+  roles: string[],
+) => !s.user_id || s.user_id === userId || canSeeTeam(roles);
 
 export const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendiente", snoozed: "Pospuesta", approved: "Hecha", dismissed: "Descartada", resolved: "Resuelta sola",
+  pending: "Pendiente",
+  snoozed: "Pospuesta",
+  approved: "Hecha",
+  dismissed: "Descartada",
+  resolved: "Resuelta sola",
 };
 export const OPEN_STATUSES = ["pending", "snoozed"] as const;
 
-export type BoardItem = { id: string; user_id: string | null; status: string; priority: number; created_at: string; snoozed_until: string | null };
+export type BoardItem = {
+  id: string;
+  user_id: string | null;
+  status: string;
+  priority: number;
+  created_at: string;
+  snoozed_until: string | null;
+};
 
 const DAY = 86_400_000;
-export const ageDays = (s: Pick<BoardItem, "created_at">, now = new Date()) => Math.max(0, Math.floor((now.getTime() - new Date(s.created_at).getTime()) / DAY));
+export const ageDays = (s: Pick<BoardItem, "created_at">, now = new Date()) =>
+  Math.max(0, Math.floor((now.getTime() - new Date(s.created_at).getTime()) / DAY));
 /** Pending for more than 7 days. */
-export const isOverdue = (s: BoardItem, now = new Date()) => s.status === "pending" && ageDays(s, now) > OVERDUE_DAYS;
+export const isOverdue = (s: BoardItem, now = new Date()) =>
+  s.status === "pending" && ageDays(s, now) > OVERDUE_DAYS;
 
 export function boardSummary(items: BoardItem[], now = new Date()) {
   const pending = items.filter((s) => s.status === "pending");
@@ -32,12 +50,25 @@ export function boardSummary(items: BoardItem[], now = new Date()) {
 
 /** Open suggestions per owner (null = sin responsable), most loaded first. */
 export function byOwner(items: BoardItem[], now = new Date()) {
-  const m = new Map<string | null, { owner: string | null; pending: number; urgent: number; overdue: number; snoozed: number }>();
+  const m = new Map<
+    string | null,
+    { owner: string | null; pending: number; urgent: number; overdue: number; snoozed: number }
+  >();
   for (const s of items) {
     if (s.status !== "pending" && s.status !== "snoozed") continue;
-    const g = m.get(s.user_id) ?? { owner: s.user_id, pending: 0, urgent: 0, overdue: 0, snoozed: 0 };
+    const g = m.get(s.user_id) ?? {
+      owner: s.user_id,
+      pending: 0,
+      urgent: 0,
+      overdue: 0,
+      snoozed: 0,
+    };
     if (s.status === "snoozed") g.snoozed++;
-    else { g.pending++; if (s.priority === 1) g.urgent++; if (isOverdue(s, now)) g.overdue++; }
+    else {
+      g.pending++;
+      if (s.priority === 1) g.urgent++;
+      if (isOverdue(s, now)) g.overdue++;
+    }
     m.set(s.user_id, g);
   }
   return [...m.values()].sort((a, b) => b.urgent - a.urgent || b.pending - a.pending);

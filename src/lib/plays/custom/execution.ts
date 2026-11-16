@@ -13,22 +13,32 @@ export type ExecutionInput = {
   now: Date;
 };
 export type StepReceipt = { step: number; evidenceCount: number; suggestionCount: number };
-export type PauseReason = "provider_denied" | "credits" | "rate_limit" | "refusal" | "unavailable" | "uncertain";
+export type PauseReason =
+  "provider_denied" | "credits" | "rate_limit" | "refusal" | "unavailable" | "uncertain";
 export type ExecutionPorts = {
   load(input: ExecutionInput): Promise<{
-    status: string; member: boolean; archived: boolean; proposal: Proposal; sources: SourceContext;
+    status: string;
+    member: boolean;
+    archived: boolean;
+    proposal: Proposal;
+    sources: SourceContext;
   } | null>;
   claim(input: ExecutionInput): Promise<boolean>;
   release(input: ExecutionInput): Promise<void>;
   checkpoint(input: ExecutionInput, step: number): Promise<StepReceipt | null>;
-  guard(input: ExecutionInput): Promise<{ active: boolean; cancelled: boolean; budgetPaused: boolean }>;
+  guard(
+    input: ExecutionInput,
+  ): Promise<{ active: boolean; cancelled: boolean; budgetPaused: boolean }>;
   // Resolves only after the step outputs and its receipt have been committed together.
   runStep(input: ExecutionInput & { step: Step; proposal: Proposal }): Promise<StepReceipt>;
   pause(input: ExecutionInput, reason: PauseReason): Promise<void>;
 };
 type Status = "done" | "skipped" | "busy" | "blocked" | "paused" | "cancelled";
 export type ExecutionResult = {
-  status: Status; completedSteps: number; evidenceCount: number; suggestionCount: number;
+  status: Status;
+  completedSteps: number;
+  evidenceCount: number;
+  suggestionCount: number;
 };
 
 function pauseReason(error: unknown): PauseReason | null {
@@ -43,7 +53,10 @@ function pauseReason(error: unknown): PauseReason | null {
 }
 
 /** One already-requested run. It never activates, sends, schedules or fans out work itself. */
-export async function executeCustomPlay(ports: ExecutionPorts, input: ExecutionInput): Promise<ExecutionResult> {
+export async function executeCustomPlay(
+  ports: ExecutionPorts,
+  input: ExecutionInput,
+): Promise<ExecutionResult> {
   const counts = { completedSteps: 0, evidenceCount: 0, suggestionCount: 0 };
   const result = (status: Status): ExecutionResult => ({ status, ...counts });
   const row = await ports.load(input);
@@ -51,7 +64,13 @@ export async function executeCustomPlay(ports: ExecutionPorts, input: ExecutionI
   const p = row.proposal;
   if (!checkProposal(p).ok || new Set(p.steps.map((s) => s.n)).size !== p.steps.length)
     return result("blocked");
-  if (!checkSources(p.steps.map((s) => s.source), row.sources).ok) return result("blocked");
+  if (
+    !checkSources(
+      p.steps.map((s) => s.source),
+      row.sources,
+    ).ok
+  )
+    return result("blocked");
   if (!(await ports.claim(input))) return result("busy");
   try {
     // Finite steps from the approved definition, strictly sequential; no recursive next hop.
@@ -61,10 +80,17 @@ export async function executeCustomPlay(ports: ExecutionPorts, input: ExecutionI
       if (!g.active) return result("skipped");
       const previous = await ports.checkpoint(input, step.n);
       if (!previous && input.trigger === "automatic" && g.budgetPaused) return result("blocked");
-      const receipt = previous ?? await ports.runStep({ ...input, step, proposal: p });
-      if (receipt.step !== step.n || !Number.isInteger(receipt.evidenceCount) || receipt.evidenceCount < 0
-          || !Number.isInteger(receipt.suggestionCount) || receipt.suggestionCount < 0)
-        throw new Error("No se pudo comprobar el resultado del paso. Revisa la ejecución antes de reintentarlo.");
+      const receipt = previous ?? (await ports.runStep({ ...input, step, proposal: p }));
+      if (
+        receipt.step !== step.n ||
+        !Number.isInteger(receipt.evidenceCount) ||
+        receipt.evidenceCount < 0 ||
+        !Number.isInteger(receipt.suggestionCount) ||
+        receipt.suggestionCount < 0
+      )
+        throw new Error(
+          "No se pudo comprobar el resultado del paso. Revisa la ejecución antes de reintentarlo.",
+        );
       counts.completedSteps += 1;
       counts.evidenceCount += receipt.evidenceCount;
       counts.suggestionCount += receipt.suggestionCount;

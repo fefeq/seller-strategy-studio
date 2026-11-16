@@ -3,8 +3,12 @@ import { logoUrl } from "./logos";
 
 describe("logoUrl", () => {
   it("builds a colour logo URL (dark variant on the dark theme) from a domain, URL or work email", () => {
-    expect(logoUrl("https://www.typeform.com/x", { token: "pk_1", size: 20 })).toBe("https://img.logo.dev/typeform.com?token=pk_1&size=64&format=png&fallback=404&theme=light");
-    expect(logoUrl("ana@acme.com", { token: "pk_1", size: 40, dark: true })).toBe("https://img.logo.dev/acme.com?token=pk_1&size=128&format=png&fallback=404&theme=dark");
+    expect(logoUrl("https://www.typeform.com/x", { token: "pk_1", size: 20 })).toBe(
+      "https://img.logo.dev/typeform.com?token=pk_1&size=64&format=png&fallback=404&theme=light",
+    );
+    expect(logoUrl("ana@acme.com", { token: "pk_1", size: 40, dark: true })).toBe(
+      "https://img.logo.dev/acme.com?token=pk_1&size=128&format=png&fallback=404&theme=dark",
+    );
   });
   it("never asks for greyscale", () => {
     expect(logoUrl("acme.com", { token: "pk_1" })).not.toContain("greyscale");

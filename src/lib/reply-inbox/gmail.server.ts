@@ -43,5 +43,6 @@ export const gmail = {
         );
     return out;
   },
-  getBody: (id: string) => call("getBody", `/users/me/messages/${encodeURIComponent(id)}?format=full`),
+  getBody: (id: string) =>
+    call("getBody", `/users/me/messages/${encodeURIComponent(id)}?format=full`),
 };

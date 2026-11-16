@@ -97,7 +97,11 @@ const SEARCH_URL_DEBOUNCE_MS = 300;
 type DocsCache = { rows: Doc[]; truncated: boolean };
 
 /** B2: Reglas y voz live as a Strategy tab; the same screen renders embedded with only those sections (no page frame, Drive or search). */
-function Frame({ embedded, children, ...page }: ComponentProps<typeof Page> & { embedded: boolean; children?: ReactNode }) {
+function Frame({
+  embedded,
+  children,
+  ...page
+}: ComponentProps<typeof Page> & { embedded: boolean; children?: ReactNode }) {
   return embedded ? <>{children}</> : <Page {...page}>{children}</Page>;
 }
 
@@ -127,14 +131,18 @@ export function HubScreen({ only }: { only?: readonly string[] } = {}) {
   });
   const docs = data?.rows ?? NO_DOCS;
   // Embedded in Strategy the URL belongs to /strategy (same doc/q/seccion keys), so the read is route-agnostic.
-  const { doc: docParam, q: qParam, seccion } = useSearch({ strict: false }) as { doc?: string; q?: string; seccion?: string };
-  const navigate = useNavigate({ from: embedded ? "/strategy" : "/hub" }) as unknown as ReturnType<typeof useNavigate<never, "/hub">>;
+  const {
+    doc: docParam,
+    q: qParam,
+    seccion,
+  } = useSearch({ strict: false }) as { doc?: string; q?: string; seccion?: string };
+  const navigate = useNavigate({ from: embedded ? "/strategy" : "/hub" }) as unknown as ReturnType<
+    typeof useNavigate<never, "/hub">
+  >;
   const navigateAny = useNavigate();
   // NK-0100: a stale ?seccion= or a blank ?q= in the address bar is rewritten clean (replace).
   useCleanUrl(sectionIds, true);
-  const [section, setSection] = useUrlSection(
-    sectionOf(sectionIds, defaultSection, seccion),
-  );
+  const [section, setSection] = useUrlSection(sectionOf(sectionIds, defaultSection, seccion));
   const list = docs.filter((d) => d.section === section);
   // How many rules the agent reads, counted with the reader's own function (SDD-20261106-agent-rules-reader, CA-6).
   const rulesWarning =
@@ -384,12 +392,14 @@ export function HubScreen({ only }: { only?: readonly string[] } = {}) {
                 )}
               </button>
             ))}
-            {!embedded && <button
-              onClick={() => goToSection(DRIVE_TAB)}
-              className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
-            >
-              Drive por cuenta
-            </button>}
+            {!embedded && (
+              <button
+                onClick={() => goToSection(DRIVE_TAB)}
+                className={`shrink-0 whitespace-nowrap rounded-md border px-3 py-2 text-left text-sm lg:mt-3 lg:block lg:w-full lg:whitespace-normal lg:border-0 lg:border-t ${section === DRIVE_TAB ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+              >
+                Drive por cuenta
+              </button>
+            )}
           </nav>
         </div>
         {section === DRIVE_TAB ? (

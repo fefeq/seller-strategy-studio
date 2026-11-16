@@ -8,7 +8,8 @@ export const createPlaybookLibrary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader")) throw new Error("Solo Owner o Sales Leader pueden crear la biblioteca.");
+    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader"))
+      throw new Error("Solo Owner o Sales Leader pueden crear la biblioteca.");
     const { createLibraryCore } = await import("@/lib/playbooks/library-core");
     return createLibraryCore(ctx);
   });

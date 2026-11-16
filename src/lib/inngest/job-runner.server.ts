@@ -382,7 +382,8 @@ async function runKind(
       await step("Investigando, preparando reuniones y repasando cuentas");
       const r = await autopilotForOrg(db, job.org_id, now);
       const parts = [
-        r.researched && `dejé ${r.researched} ${r.researched === 1 ? "cuenta nueva" : "cuentas nuevas"} con la investigación pendiente de tu confirmación`,
+        r.researched &&
+          `dejé ${r.researched} ${r.researched === 1 ? "cuenta nueva" : "cuentas nuevas"} con la investigación pendiente de tu confirmación`,
         r.prepped && `preparé ${r.prepped} ${r.prepped === 1 ? "reunión" : "reuniones"}`,
         r.cooling &&
           `repasé ${r.cooling} ${r.cooling === 1 ? "cuenta que se enfría" : "cuentas que se enfrían"}`,

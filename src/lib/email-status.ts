@@ -1,6 +1,10 @@
 // NK-0173 SDD 3: Spanish labels and the graduated-gate sentences shared by every surface that
 // drafts for a known address (draft_followup, followup_sequence). Pure; tested in email-status.test.ts.
-import { effectiveEmailStatus, type EmailStatus, type EmailVerification } from "./email-verification";
+import {
+  effectiveEmailStatus,
+  type EmailStatus,
+  type EmailVerification,
+} from "./email-verification";
 
 export const EMAIL_STATUS_LABEL: Record<EmailStatus, string> = {
   verified: "verificado",

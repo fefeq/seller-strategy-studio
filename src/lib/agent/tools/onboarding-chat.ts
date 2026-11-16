@@ -4,7 +4,14 @@
 // and records it in block_status, so the screen and the chat stay in sync. Both writes go through the usual confirmation card.
 import { z } from "zod";
 import { def, type AgentTool, type ToolCtx } from "../tool-kit";
-import { BLOCKS, BLOCK_LABEL, blockOf, protectManual, readingCost, type BlockId } from "@/lib/onboarding";
+import {
+  BLOCKS,
+  BLOCK_LABEL,
+  blockOf,
+  protectManual,
+  readingCost,
+  type BlockId,
+} from "@/lib/onboarding";
 import { proposalItems, type SetupProposal } from "@/lib/setup-extraction";
 import { loadSetupData } from "@/lib/org-data";
 import { jsonObject } from "@/lib/json";
@@ -26,7 +33,10 @@ async function session(c: ToolCtx) {
 
 async function itemsByBlock(c: ToolCtx) {
   const s = await session(c);
-  if (!s?.proposal) throw new Error("Aún no hay propuesta: empieza con start_onboarding_read (la web de tu empresa) o en /onboarding.");
+  if (!s?.proposal)
+    throw new Error(
+      "Aún no hay propuesta: empieza con start_onboarding_read (la web de tu empresa) o en /onboarding.",
+    );
   const [segs, setup] = await Promise.all([
     c.db.from("segments").select("id,name").eq("org_id", c.orgId),
     loadSetupData(c.db, c.orgId),
@@ -45,7 +55,11 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
     input: z.object({
       url: z.string().trim().url().max(500).describe("Web de la empresa, https://…"),
       depth: z.enum(["express", "standard", "deep"]).default("standard"),
-      text: z.string().max(8000).optional().describe("Contexto extra que el usuario escribió (sin claves ni contraseñas)"),
+      text: z
+        .string()
+        .max(8000)
+        .optional()
+        .describe("Contexto extra que el usuario escribió (sin claves ni contraseñas)"),
     }),
     summarize: (a) => {
       const cost = readingCost(a.depth, true);
@@ -55,13 +69,28 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       // Same job row the Fuentes step creates. The screens' enqueue() reads the request host (server-only import that the
       // client graph of this registry cannot carry), so the chat path runs the job in this request, as enqueue does without Inngest.
       const input = { depth: a.depth, url: a.url, text: a.text ?? "", files: [], sources: [] };
-      const { data: job, error: jobErr } = await c.db.from("background_jobs")
-        .insert({ kind: "onboarding_read", input: input as unknown as Json, label: "Nokko lee tus fuentes", org_id: c.orgId, user_id: c.userId })
-        .select("id").single();
+      const { data: job, error: jobErr } = await c.db
+        .from("background_jobs")
+        .insert({
+          kind: "onboarding_read",
+          input: input as unknown as Json,
+          label: "Nokko lee tus fuentes",
+          org_id: c.orgId,
+          user_id: c.userId,
+        })
+        .select("id")
+        .single();
       if (jobErr) throw new Error(jobErr.message);
       const jobId = job.id;
       const { error } = await c.db.from("onboarding_sessions").upsert(
-        { org_id: c.orgId, user_id: c.userId, depth: a.depth, step: "reading", read_job_id: jobId, sources: [`Web · ${a.url}`] as unknown as Json },
+        {
+          org_id: c.orgId,
+          user_id: c.userId,
+          depth: a.depth,
+          step: "reading",
+          read_job_id: jobId,
+          sources: [`Web · ${a.url}`] as unknown as Json,
+        },
         { onConflict: "org_id,user_id" },
       );
       if (error) throw new Error(error.message);
@@ -70,7 +99,11 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
         import("@/lib/inngest/tasks.server"),
       ]);
       await runBackgroundJob(supabaseAdmin, jobId).catch(() => undefined);
-      return { jobId, mensaje: "Estoy leyendo tus fuentes. Te aviso al terminar; después repasamos los bloques uno a uno (también puedes verlo en /onboarding)." };
+      return {
+        jobId,
+        mensaje:
+          "Estoy leyendo tus fuentes. Te aviso al terminar; después repasamos los bloques uno a uno (también puedes verlo en /onboarding).",
+      };
     },
   }),
   def({
@@ -86,7 +119,9 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
           bloque: b.id,
           nombre: BLOCK_LABEL[b.id],
           aprobado: !!status[b.id],
-          guardaria: items.filter((i) => blockOf(i) === b.id).map((i) => ({ clave: i.key, que: i.label })),
+          guardaria: items
+            .filter((i) => blockOf(i) === b.id)
+            .map((i) => ({ clave: i.key, que: i.label })),
         })).filter((b) => b.aprobado || b.guardaria.length),
         se_respeta_lo_escrito_a_mano: kept,
         enlace: "/onboarding",
@@ -100,9 +135,14 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       "Aprueba y guarda un bloque de la propuesta de onboarding (igual que «Aprobar» en /onboarding). Se puede excluir elementos por su clave. Nunca gasta saldo; lo escrito a mano no se sobrescribe.",
     input: z.object({
       block: z.enum(BLOCK_IDS),
-      exclude: z.array(z.string().max(120)).max(40).optional().describe("Claves de list_onboarding_blocks que NO se guardan"),
+      exclude: z
+        .array(z.string().max(120))
+        .max(40)
+        .optional()
+        .describe("Claves de list_onboarding_blocks que NO se guardan"),
     }),
-    summarize: (a) => `Aprobar el bloque «${BLOCK_LABEL[a.block]}» del onboarding${a.exclude?.length ? ` sin ${a.exclude.length} elemento(s)` : ""}`,
+    summarize: (a) =>
+      `Aprobar el bloque «${BLOCK_LABEL[a.block]}» del onboarding${a.exclude?.length ? ` sin ${a.exclude.length} elemento(s)` : ""}`,
     run: async (c, a) => {
       const { items, status } = await itemsByBlock(c);
       if (status[a.block]) return { mensaje: `«${BLOCK_LABEL[a.block]}» ya estaba aprobado.` };
@@ -114,14 +154,36 @@ export const ONBOARDING_CHAT_TOOLS: AgentTool[] = [
       const undo: UndoRef[] = [];
       const errors: string[] = [];
       for (const it of chosen) {
-        if (it.tool in SPEND_TOOLS) { errors.push(`${it.label}: gasta saldo`); continue; }
-        try { const r = await executeTool(c, it.tool, it.args); saved++; const u = undoRefFor(it.tool, it.args, r); if (u) undo.push(u); } catch (e) { errors.push(`${it.label}: ${(e as Error).message}`); }
+        if (it.tool in SPEND_TOOLS) {
+          errors.push(`${it.label}: gasta saldo`);
+          continue;
+        }
+        try {
+          const r = await executeTool(c, it.tool, it.args);
+          saved++;
+          const u = undoRefFor(it.tool, it.args, r);
+          if (u) undo.push(u);
+        } catch (e) {
+          errors.push(`${it.label}: ${(e as Error).message}`);
+        }
       }
-      const next = { ...status, [a.block]: { status: "approved", at: new Date().toISOString(), undo } };
-      const { error } = await c.db.from("onboarding_sessions").update({ block_status: next as unknown as Json })
-        .eq("org_id", c.orgId).eq("user_id", c.userId);
+      const next = {
+        ...status,
+        [a.block]: { status: "approved", at: new Date().toISOString(), undo },
+      };
+      const { error } = await c.db
+        .from("onboarding_sessions")
+        .update({ block_status: next as unknown as Json })
+        .eq("org_id", c.orgId)
+        .eq("user_id", c.userId);
       if (error) throw new Error(error.message);
-      return { guardados: saved, errores: errors.slice(0, 5), mensaje: errors.length ? `${saved} guardados, ${errors.length} con error.` : `«${BLOCK_LABEL[a.block]}» aprobado.` };
+      return {
+        guardados: saved,
+        errores: errors.slice(0, 5),
+        mensaje: errors.length
+          ? `${saved} guardados, ${errors.length} con error.`
+          : `«${BLOCK_LABEL[a.block]}» aprobado.`,
+      };
     },
   }),
 ];

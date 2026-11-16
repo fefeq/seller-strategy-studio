@@ -1,12 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { cohort, funnelBySegment, funnelStats, median, parseDateCell, type Trial } from "./self-service";
+import {
+  cohort,
+  funnelBySegment,
+  funnelStats,
+  median,
+  parseDateCell,
+  type Trial,
+} from "./self-service";
 
-const t = (o: Partial<Trial>): Trial => ({ segment_id: null, signed_up_at: "2026-07-01T00:00:00Z", activated_at: null, converted_at: null, mrr: null, ...o });
+const t = (o: Partial<Trial>): Trial => ({
+  segment_id: null,
+  signed_up_at: "2026-07-01T00:00:00Z",
+  activated_at: null,
+  converted_at: null,
+  mrr: null,
+  ...o,
+});
 
 describe("self-service funnel", () => {
   const trials = [
-    t({ segment_id: "smb", activated_at: "2026-07-03T00:00:00Z", converted_at: "2026-07-11T00:00:00Z", mrr: 50 }),
-    t({ segment_id: "smb", activated_at: "2026-07-02T00:00:00Z", converted_at: "2026-07-21T00:00:00Z", mrr: "100" }),
+    t({
+      segment_id: "smb",
+      activated_at: "2026-07-03T00:00:00Z",
+      converted_at: "2026-07-11T00:00:00Z",
+      mrr: 50,
+    }),
+    t({
+      segment_id: "smb",
+      activated_at: "2026-07-02T00:00:00Z",
+      converted_at: "2026-07-21T00:00:00Z",
+      mrr: "100",
+    }),
     t({ segment_id: "smb", activated_at: "2026-07-05T00:00:00Z" }),
     t({ segment_id: "smb" }),
     t({ segment_id: "mid" }),
@@ -45,8 +69,14 @@ describe("self-service funnel", () => {
   });
 
   it("cohort keeps signups inside [start, end)", () => {
-    const list = [t({ signed_up_at: "2026-06-30T23:00:00Z" }), t({ signed_up_at: "2026-07-01T00:00:00Z" }), t({ signed_up_at: "2026-10-01T00:00:00Z" })];
-    expect(cohort(list, new Date("2026-07-01T00:00:00Z"), new Date("2026-10-01T00:00:00Z"))).toHaveLength(1);
+    const list = [
+      t({ signed_up_at: "2026-06-30T23:00:00Z" }),
+      t({ signed_up_at: "2026-07-01T00:00:00Z" }),
+      t({ signed_up_at: "2026-10-01T00:00:00Z" }),
+    ];
+    expect(
+      cohort(list, new Date("2026-07-01T00:00:00Z"), new Date("2026-10-01T00:00:00Z")),
+    ).toHaveLength(1);
   });
 
   it("median and date parsing", () => {

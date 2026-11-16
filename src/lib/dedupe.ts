@@ -13,7 +13,11 @@ export function normEmail(e?: string | null) {
 }
 
 export function normLinkedin(u?: string | null) {
-  const v = (u ?? "").trim().toLowerCase().replace(/^https?:\/\/(www\.)?/, "").replace(/\/+$/, "");
+  const v = (u ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\/(www\.)?/, "")
+    .replace(/\/+$/, "");
   return v || null;
 }
 
@@ -35,8 +39,14 @@ export function dedupePeople(
   for (const p of incoming) {
     const e = normEmail(p.email);
     const l = normLinkedin(p.linkedin_url);
-    if (!e && !l) { skipped++; continue; }
-    if ((e && emails.has(e)) || (l && links.has(l))) { skipped++; continue; }
+    if (!e && !l) {
+      skipped++;
+      continue;
+    }
+    if ((e && emails.has(e)) || (l && links.has(l))) {
+      skipped++;
+      continue;
+    }
     if (e) emails.add(e);
     if (l) links.add(l);
     fresh.push({ ...p, email: e, linkedin_url: p.linkedin_url?.trim() || null });
@@ -48,12 +58,20 @@ export function parseCsv(text: string): Record<string, string>[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim());
   if (!lines.length) return [];
   const split = (l: string) => {
-    const out: string[] = []; let cur = ""; let q = false;
+    const out: string[] = [];
+    let cur = "";
+    let q = false;
     for (let i = 0; i < l.length; i++) {
       const c = l[i];
-      if (c === '"') { if (q && l[i + 1] === '"') { cur += '"'; i++; } else q = !q; }
-      else if (c === "," && !q) { out.push(cur); cur = ""; }
-      else cur += c;
+      if (c === '"') {
+        if (q && l[i + 1] === '"') {
+          cur += '"';
+          i++;
+        } else q = !q;
+      } else if (c === "," && !q) {
+        out.push(cur);
+        cur = "";
+      } else cur += c;
     }
     out.push(cur);
     return out.map((s) => s.trim());

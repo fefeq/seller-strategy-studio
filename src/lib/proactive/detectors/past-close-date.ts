@@ -12,7 +12,10 @@ export const pastCloseDate: Detector = (s) => {
       title: `La fecha de cierre de ${d.name} ya pasó (${d.close_date})`,
       body: "Actualiza la fecha para que el forecast sea fiable. Propuesta: moverla 30 días.",
       link: "/deals",
-      action: { tool: "update_deal", args: { deal_id: d.id, close_date: isoDate(new Date(s.now.getTime() + 30 * DAY)) } },
+      action: {
+        tool: "update_deal",
+        args: { deal_id: d.id, close_date: isoDate(new Date(s.now.getTime() + 30 * DAY)) },
+      },
       user_id: d.owner_id,
     }));
 };

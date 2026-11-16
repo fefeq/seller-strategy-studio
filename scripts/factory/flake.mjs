@@ -17,7 +17,8 @@ if (!o.ticket || !o.base || !o.file) {
   process.exit(2);
 }
 const runs = Number(o.runs ?? 3);
-const sh = (cmd, cwd = ROOT) => spawnSync(cmd, { cwd, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
+const sh = (cmd, cwd = ROOT) =>
+  spawnSync(cmd, { cwd, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
 
 const tip = sh("git rev-parse HEAD").stdout.trim();
 const wt = resolve(mkdtempSync(resolve(tmpdir(), "nk-flake-")), "base");
@@ -28,19 +29,37 @@ if (add.status !== 0) {
 }
 symlinkSync(resolve(ROOT, "node_modules"), resolve(wt, "node_modules"));
 
-const attempt = (cwd) => Array.from({ length: runs }, () => sh(`npx vitest run ${JSON.stringify(o.file)}`, cwd));
+const attempt = (cwd) =>
+  Array.from({ length: runs }, () => sh(`npx vitest run ${JSON.stringify(o.file)}`, cwd));
 const onTip = attempt(ROOT);
 const onBase = attempt(wt);
 sh(`git worktree remove --force ${JSON.stringify(wt)}`);
 
 const fails = (rs) => rs.filter((r) => r.status !== 0).length;
-const sig = (rs) => (rs.find((r) => r.status !== 0)?.stdout ?? "").split("\n").filter((l) => /FAIL|AssertionError|Error:/.test(l)).slice(0, 5).join("\n");
+const sig = (rs) =>
+  (rs.find((r) => r.status !== 0)?.stdout ?? "")
+    .split("\n")
+    .filter((l) => /FAIL|AssertionError|Error:/.test(l))
+    .slice(0, 5)
+    .join("\n");
 const tipFails = fails(onTip);
 const baseFails = fails(onBase);
 const verdict = tipFails === 0 ? "PASSES_ON_TIP" : baseFails > 0 ? "FLAKE" : "REGRESSION";
 const dir = resolve(FACTORY_DIR, "evidence", o.ticket);
 mkdirSync(dir, { recursive: true });
-const out = { file: o.file, tip, base: o.base, runs, tipFails, baseFails, verdict, signature: sig(onTip) };
-writeFileSync(resolve(dir, `flake-${o.file.replace(/\W+/g, "-")}.json`), JSON.stringify(out, null, 2) + "\n");
+const out = {
+  file: o.file,
+  tip,
+  base: o.base,
+  runs,
+  tipFails,
+  baseFails,
+  verdict,
+  signature: sig(onTip),
+};
+writeFileSync(
+  resolve(dir, `flake-${o.file.replace(/\W+/g, "-")}.json`),
+  JSON.stringify(out, null, 2) + "\n",
+);
 console.log(JSON.stringify(out, null, 2));
 process.exit(verdict === "REGRESSION" ? 1 : 0);

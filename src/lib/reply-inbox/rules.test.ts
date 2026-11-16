@@ -7,7 +7,10 @@ import { canLinkMailbox, chunkIds, GMAIL_OPERATIONS, LEGAL_GATE_TEXT } from "./r
 describe("R-1 legal gate", () => {
   it("lets only a superadmin member link", () => {
     expect(canLinkMailbox({ isPlatformAdmin: true, isMember: true }).ok).toBe(true);
-    expect(canLinkMailbox({ isPlatformAdmin: false, isMember: true })).toEqual({ ok: false, reason: LEGAL_GATE_TEXT });
+    expect(canLinkMailbox({ isPlatformAdmin: false, isMember: true })).toEqual({
+      ok: false,
+      reason: LEGAL_GATE_TEXT,
+    });
     expect(canLinkMailbox({ isPlatformAdmin: true, isMember: false }).ok).toBe(false);
   });
 });
@@ -22,7 +25,9 @@ describe("R-3 closed Gmail client", () => {
       expect(src).not.toContain(bad);
   });
   it("caps metadata batches at 50", () => {
-    expect(chunkIds(Array.from({ length: 120 }, (_, i) => String(i))).map((c) => c.length)).toEqual([50, 50, 20]);
+    expect(chunkIds(Array.from({ length: 120 }, (_, i) => String(i))).map((c) => c.length)).toEqual(
+      [50, 50, 20],
+    );
   });
 });
 
@@ -34,7 +39,11 @@ describe("R-6 no assistant access (Q-10 a)", () => {
     });
   }
   it("agent, MCP and Telegram never import reply-inbox modules", () => {
-    const paths = [...files("src/lib/agent"), ...files("src/lib/mcp"), "src/lib/telegram.server.ts"];
+    const paths = [
+      ...files("src/lib/agent"),
+      ...files("src/lib/mcp"),
+      "src/lib/telegram.server.ts",
+    ];
     for (const p of paths) expect(readFileSync(p, "utf8"), p).not.toMatch(/reply-inbox/);
   });
 });

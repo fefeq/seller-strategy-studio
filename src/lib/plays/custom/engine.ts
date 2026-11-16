@@ -3,7 +3,15 @@
 import type { NewsItem } from "@/lib/web-research";
 import { emailDraftGate, type EmailStatus } from "@/lib/email-verification";
 import { emailGateMark } from "@/lib/email-status";
-import { checkFreshness, parseEventDate, validateEvidence, QUOTE_MAX, type Evidence, type FreshnessWindow, type Step } from "./model";
+import {
+  checkFreshness,
+  parseEventDate,
+  validateEvidence,
+  QUOTE_MAX,
+  type Evidence,
+  type FreshnessWindow,
+  type Step,
+} from "./model";
 
 export type Provider = "firecrawl" | "perplexity" | "parallel" | "apify" | "drive";
 export type TaggedItem = NewsItem & { provider: Provider };
@@ -37,37 +45,96 @@ export function signalDate(i: NewsItem): { eventDate: string | null; from: Evide
   return { eventDate: null, from: "unknown" };
 }
 
-export type Target = { accountId: string; personId: string | null; emailStatus: EmailStatus | null };
-export type Suggestion = { accountId: string | null; contact: string; mark: string | null; reason: string | null; url: string };
+export type Target = {
+  accountId: string;
+  personId: string | null;
+  emailStatus: EmailStatus | null;
+};
+export type Suggestion = {
+  accountId: string | null;
+  contact: string;
+  mark: string | null;
+  reason: string | null;
+  url: string;
+};
 
 export function runPlay(i: {
-  steps: Step[]; signalStep: number; window: FreshnessWindow; verifiedOnly: boolean; now: Date;
-  signals: TaggedItem[]; targets: Target[];
+  steps: Step[];
+  signalStep: number;
+  window: FreshnessWindow;
+  verifiedOnly: boolean;
+  now: Date;
+  signals: TaggedItem[];
+  targets: Target[];
 }) {
   const accepted: Array<{ url: string; provider: Provider; evidence: Evidence }> = [];
   const rejected: Array<{ url: string; reason: string }> = [];
   for (const s of i.signals) {
     const d = signalDate(s);
     const fr = checkFreshness({ eventDate: d.eventDate, publishedDate: null }, i.window, i.now);
-    if (!fr.ok) { rejected.push({ url: s.url, reason: fr.reason }); continue; }
+    if (!fr.ok) {
+      rejected.push({ url: s.url, reason: fr.reason });
+      continue;
+    }
     const evidence: Evidence = {
-      step: i.signalStep, url: s.url, quote: s.snippet.slice(0, QUOTE_MAX),
-      observedAt: i.now.toISOString(), eventDate: d.eventDate, dateFrom: d.from,
+      step: i.signalStep,
+      url: s.url,
+      quote: s.snippet.slice(0, QUOTE_MAX),
+      observedAt: i.now.toISOString(),
+      eventDate: d.eventDate,
+      dateFrom: d.from,
     };
     const ev = validateEvidence(evidence);
-    if (!ev.ok) { rejected.push({ url: s.url, reason: ev.reason }); continue; }
+    if (!ev.ok) {
+      rejected.push({ url: s.url, reason: ev.reason });
+      continue;
+    }
     accepted.push({ url: s.url, provider: s.provider, evidence });
   }
   const suggestions: Suggestion[] = [];
   for (const a of accepted) {
-    if (!i.targets.length) { suggestions.push({ accountId: null, contact: "sin dato", mark: null, reason: null, url: a.url }); continue; }
+    if (!i.targets.length) {
+      suggestions.push({
+        accountId: null,
+        contact: "sin dato",
+        mark: null,
+        reason: null,
+        url: a.url,
+      });
+      continue;
+    }
     for (const t of i.targets) {
-      if (!t.personId || !t.emailStatus) { suggestions.push({ accountId: t.accountId, contact: "sin dato", mark: null, reason: null, url: a.url }); continue; }
+      if (!t.personId || !t.emailStatus) {
+        suggestions.push({
+          accountId: t.accountId,
+          contact: "sin dato",
+          mark: null,
+          reason: null,
+          url: a.url,
+        });
+        continue;
+      }
       const g = emailDraftGate(t.emailStatus, i.verifiedOnly);
-      suggestions.push(g.allowed
-        ? { accountId: t.accountId, contact: t.personId, mark: emailGateMark(t.emailStatus), reason: null, url: a.url }
-        : { accountId: t.accountId, contact: "bloqueado", mark: null, url: a.url,
-            reason: i.verifiedOnly && t.emailStatus !== "invalid" && t.emailStatus !== "catch_all" ? "Este play solo usa contactos con email verificado." : "Email inválido o catch-all: no se prepara borrador." });
+      suggestions.push(
+        g.allowed
+          ? {
+              accountId: t.accountId,
+              contact: t.personId,
+              mark: emailGateMark(t.emailStatus),
+              reason: null,
+              url: a.url,
+            }
+          : {
+              accountId: t.accountId,
+              contact: "bloqueado",
+              mark: null,
+              url: a.url,
+              reason:
+                i.verifiedOnly && t.emailStatus !== "invalid" && t.emailStatus !== "catch_all"
+                  ? "Este play solo usa contactos con email verificado."
+                  : "Email inválido o catch-all: no se prepara borrador.",
+            },
+      );
     }
   }
   return { accepted, rejected, suggestions };

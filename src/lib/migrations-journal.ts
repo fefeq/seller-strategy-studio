@@ -10,7 +10,8 @@ export function journalProblems(entries: JournalEntry[], files: string[]): strin
   const out: string[] = [];
   const byNumber = new Map<string, string[]>();
   for (const f of files) byNumber.set(f.slice(0, 4), [...(byNumber.get(f.slice(0, 4)) ?? []), f]);
-  for (const [n, fs] of byNumber) if (fs.length > 1) out.push(`number ${n} is used by ${fs.join(", ")}`);
+  for (const [n, fs] of byNumber)
+    if (fs.length > 1) out.push(`number ${n} is used by ${fs.join(", ")}`);
 
   const tags = new Set(entries.map((e) => e.tag));
   for (const f of files) if (!tags.has(f)) out.push(`${f}.sql has no journal entry`);
@@ -18,7 +19,10 @@ export function journalProblems(entries: JournalEntry[], files: string[]): strin
 
   entries.forEach((e, i) => {
     if (e.idx !== i) out.push(`${e.tag}: idx is ${e.idx}, expected ${i} (its position)`);
-    if (i > 0 && e.when <= entries[i - 1].when) out.push(`${e.tag}: when ${e.when} does not exceed ${entries[i - 1].tag} (${entries[i - 1].when})`);
+    if (i > 0 && e.when <= entries[i - 1].when)
+      out.push(
+        `${e.tag}: when ${e.when} does not exceed ${entries[i - 1].tag} (${entries[i - 1].when})`,
+      );
   });
   return out;
 }

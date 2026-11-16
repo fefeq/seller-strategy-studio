@@ -14,7 +14,9 @@ export const NO_ACQUISITION_MOTION = "sin definir";
 
 /** Reads a stored value; anything outside the closed set counts as undefined, never as another motion. */
 export function readAcquisitionMotion(v: unknown): AcquisitionMotion | null {
-  return typeof v === "string" && (ACQUISITION_MOTIONS as readonly string[]).includes(v) ? (v as AcquisitionMotion) : null;
+  return typeof v === "string" && (ACQUISITION_MOTIONS as readonly string[]).includes(v)
+    ? (v as AcquisitionMotion)
+    : null;
 }
 
 export function acquisitionMotionText(v: unknown): string {

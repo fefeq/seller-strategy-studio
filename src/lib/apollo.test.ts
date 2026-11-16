@@ -277,11 +277,16 @@ describe("canonicalCurrent (SDD field-write-paths-normalization, CA-6)", () => {
 describe("A3 webhook secret source", async () => {
   const { webhookSecretFrom } = await import("./apollo");
   it("header wins over the query", () => {
-    const r = new Request("https://x.dev/h?secret=q", { method: "POST", headers: { "x-webhook-secret": "h" } });
+    const r = new Request("https://x.dev/h?secret=q", {
+      method: "POST",
+      headers: { "x-webhook-secret": "h" },
+    });
     expect(webhookSecretFrom(r)).toBe("h");
   });
   it("query still works for Apollo deliveries", () => {
-    expect(webhookSecretFrom(new Request("https://x.dev/h?secret=q", { method: "POST" }))).toBe("q");
+    expect(webhookSecretFrom(new Request("https://x.dev/h?secret=q", { method: "POST" }))).toBe(
+      "q",
+    );
   });
   it("none → null", () => {
     expect(webhookSecretFrom(new Request("https://x.dev/h", { method: "POST" }))).toBeNull();

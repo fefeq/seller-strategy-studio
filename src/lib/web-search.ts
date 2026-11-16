@@ -41,7 +41,9 @@ export function webSpendRows(spend: WebSpend, providers: WebProvider[]) {
 async function logWebSpend(spend: WebSpend | undefined, providers: WebProvider[]) {
   if (!spend || !providers.length) return;
   try {
-    const { error } = await spend.db.from("integration_usage").insert(webSpendRows(spend, providers));
+    const { error } = await spend.db
+      .from("integration_usage")
+      .insert(webSpendRows(spend, providers));
     if (error) console.error("integration_usage insert failed", safeErrorLog(error));
   } catch (e) {
     console.error("integration_usage insert failed", safeErrorLog(e));
@@ -114,13 +116,31 @@ export async function searchTagged(
 ): Promise<import("@/lib/plays/custom/engine").TaggedItem[]> {
   await logWebSpend(spend, calledProviders(firecrawl, perplexity));
   const { mergeTagged } = await import("@/lib/plays/custom/engine");
-  const tag = (p: "firecrawl" | "perplexity" | "parallel") => (xs: NewsItem[]) => xs.map((x) => ({ ...x, provider: p }));
+  const tag = (p: "firecrawl" | "perplexity" | "parallel") => (xs: NewsItem[]) =>
+    xs.map((x) => ({ ...x, provider: p }));
   const [fc, px, pl] = await Promise.allSettled([
-    firecrawl ? search(firecrawl.query, { limit: firecrawl.limit, sources: firecrawl.sources, tbs: firecrawl.tbs }).then((d) => tag("firecrawl")(newsItems(d, max))) : Promise.resolve([]),
-    perplexity && process.env["PERPLEXITY_API_KEY"] ? perplexitySearch(perplexity.queries, { maxResults: perplexity.maxResults, recency: perplexity.recency }).then((r) => tag("perplexity")(newsItems(r, max))) : Promise.resolve([]),
-    perplexity && process.env["PARALLEL_API_KEY"] ? parallelSearch(perplexity.queries.join(" · "), perplexity.queries, { max: perplexity.maxResults ?? 5, afterDate: null }).then((r) => tag("parallel")(newsItems(r, max))) : Promise.resolve([]),
+    firecrawl
+      ? search(firecrawl.query, {
+          limit: firecrawl.limit,
+          sources: firecrawl.sources,
+          tbs: firecrawl.tbs,
+        }).then((d) => tag("firecrawl")(newsItems(d, max)))
+      : Promise.resolve([]),
+    perplexity && process.env["PERPLEXITY_API_KEY"]
+      ? perplexitySearch(perplexity.queries, {
+          maxResults: perplexity.maxResults,
+          recency: perplexity.recency,
+        }).then((r) => tag("perplexity")(newsItems(r, max)))
+      : Promise.resolve([]),
+    perplexity && process.env["PARALLEL_API_KEY"]
+      ? parallelSearch(perplexity.queries.join(" · "), perplexity.queries, {
+          max: perplexity.maxResults ?? 5,
+          afterDate: null,
+        }).then((r) => tag("parallel")(newsItems(r, max)))
+      : Promise.resolve([]),
   ]);
-  if (fc.status === "rejected" && px.status === "rejected" && pl.status === "rejected") throw fc.reason;
-  const ok = <T,>(r: PromiseSettledResult<T[]>) => (r.status === "fulfilled" ? r.value : []);
+  if (fc.status === "rejected" && px.status === "rejected" && pl.status === "rejected")
+    throw fc.reason;
+  const ok = <T>(r: PromiseSettledResult<T[]>) => (r.status === "fulfilled" ? r.value : []);
   return mergeTagged([ok(fc), ok(px), ok(pl)], max);
 }

@@ -3,11 +3,25 @@ import { describe, expect, it, vi } from "vitest";
 import { enforceLimits } from "./intake.server";
 import { bumpReceived } from "./intake-counter.server";
 
-const src = { id: "s1", org_id: "o1", max_per_request: 10, daily_limit: 5, day_count: 0, day_date: null, received_count: 3 } as never;
+const src = {
+  id: "s1",
+  org_id: "o1",
+  max_per_request: 10,
+  daily_limit: 5,
+  day_count: 0,
+  day_date: null,
+  received_count: 3,
+} as never;
 function fakeDb(rpcResult: unknown, rpcError: unknown = null) {
   const updates: unknown[] = [];
   const rpc = vi.fn(async () => ({ data: rpcResult, error: rpcError }));
-  const from = () => ({ update: (v: unknown) => { updates.push(v); return { eq: async () => ({}) }; }, insert: async () => ({}) });
+  const from = () => ({
+    update: (v: unknown) => {
+      updates.push(v);
+      return { eq: async () => ({}) };
+    },
+    insert: async () => ({}),
+  });
   return { db: { rpc, from } as never, rpc, updates };
 }
 
@@ -15,7 +29,10 @@ describe("enforceLimits uses the atomic reservation", () => {
   it("ok from the RPC writes nothing else", async () => {
     const f = fakeDb({ ok: true, dayCount: 2, dayDate: "2026-11-15" });
     expect(await enforceLimits(f.db, src, 2)).toBeNull();
-    expect(f.rpc).toHaveBeenCalledWith("reserve_intake_quota", expect.objectContaining({ _source: "s1", _n: 2 }));
+    expect(f.rpc).toHaveBeenCalledWith(
+      "reserve_intake_quota",
+      expect.objectContaining({ _source: "s1", _n: 2 }),
+    );
     expect(f.updates).toHaveLength(0);
   });
   it("a refused reservation returns 429 (the pause happens inside the RPC)", async () => {

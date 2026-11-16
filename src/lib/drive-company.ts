@@ -18,11 +18,18 @@ export type DriveCompanyState =
 
 export function driveCompanyState(
   clientReady: boolean,
-  row: { account_email: string | null; connected_at: string; status: string; by: string | null } | null,
+  row: {
+    account_email: string | null;
+    connected_at: string;
+    status: string;
+    by: string | null;
+  } | null,
 ): DriveCompanyState {
   if (row) {
     const base = { email: row.account_email, by: row.by, at: row.connected_at };
-    return row.status === "reconnect" ? { kind: "reconnect", ...base } : { kind: "connected", ...base };
+    return row.status === "reconnect"
+      ? { kind: "reconnect", ...base }
+      : { kind: "connected", ...base };
   }
   return clientReady ? { kind: "shared" } : { kind: "setup_needed" };
 }

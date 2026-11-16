@@ -7,7 +7,8 @@ describe("swipeDirection", () => {
     expect(swipeDirection(-120, 10)).toBe("left");
   });
   it("springs back on a short drag", () => expect(swipeDirection(60, 5)).toBeNull());
-  it("a fast flick commits even when short", () => expect(swipeDirection(40, 0, 900)).toBe("right"));
+  it("a fast flick commits even when short", () =>
+    expect(swipeDirection(40, 0, 900)).toBe("right"));
   it("up postpones, down never decides", () => {
     expect(swipeDirection(5, -130)).toBe("up");
     expect(swipeDirection(5, 200)).toBeNull();

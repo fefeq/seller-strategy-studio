@@ -13,14 +13,24 @@ export const OPENROUTER_BASE = "https://openrouter.ai/api/v1";
  * default tries Gemini, then Claude, then GPT, so each provider's key is used in that order. OPENROUTER_MODEL
  * overrides it with one id or a comma-separated list (first = main model, rest = fallbacks, max 3 in total).
  */
-export const DEFAULT_OPENROUTER_MODELS = ["google/gemini-3.8-flash", "anthropic/claude-sonnet-5.5", "openai/gpt-6.1-sol"];
+export const DEFAULT_OPENROUTER_MODELS = [
+  "google/gemini-3.8-flash",
+  "anthropic/claude-sonnet-5.5",
+  "openai/gpt-6.1-sol",
+];
 export function openrouterModels(env: AiEnv): string[] {
-  const list = (env["OPENROUTER_MODEL"] ?? "").split(",").map((m) => m.trim()).filter(Boolean);
+  const list = (env["OPENROUTER_MODEL"] ?? "")
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
   return (list.length ? list : DEFAULT_OPENROUTER_MODELS).slice(0, 3);
 }
 export const openrouterModel = (env: AiEnv) => openrouterModels(env)[0]!;
 /** Routing fields for every OpenRouter request: fallback models and only endpoints that honour tools / JSON schema. */
-export function openrouterRouting(env: AiEnv): { models?: string[]; provider: { require_parameters: true } } {
+export function openrouterRouting(env: AiEnv): {
+  models?: string[];
+  provider: { require_parameters: true };
+} {
   const models = openrouterModels(env);
   return { ...(models.length > 1 ? { models } : {}), provider: { require_parameters: true } };
 }
@@ -38,7 +48,8 @@ export function aiProviders(env: AiEnv): AiProvider[] {
   if (env["OPENROUTER_API_KEY"]?.trim()) out.push("openrouter");
   if (env["GEMINI_API_KEY"]?.trim()) out.push("gemini");
   const fallback = env["AI_LOVABLE_FALLBACK"]?.trim().toLowerCase();
-  const lovable = !out.length || (out.includes("openrouter") ? fallback === "on" : fallback !== "off");
+  const lovable =
+    !out.length || (out.includes("openrouter") ? fallback === "on" : fallback !== "off");
   if (lovable) out.push("lovable");
   return out;
 }
@@ -54,7 +65,16 @@ export function aiProvider(env: AiEnv): AiProvider {
  * on every provider, except Gemini's "API key not valid" which comes as 400.
  */
 export function shouldFallBack(status: number, body = ""): boolean {
-  if (status === 0 || status === 401 || status === 403 || status === 404 || status === 408 || status === 429 || status >= 500) return true;
+  if (
+    status === 0 ||
+    status === 401 ||
+    status === 403 ||
+    status === 404 ||
+    status === 408 ||
+    status === 429 ||
+    status >= 500
+  )
+    return true;
   return status === 400 && /API key not valid|API_KEY_INVALID/i.test(body);
 }
 
@@ -63,7 +83,29 @@ export const geminiModel = (env: AiEnv) => env["GEMINI_MODEL"]?.trim() || DEFAUL
 // ---------- JSON Schema sanitizer ----------
 
 /** Keywords Gemini's structured output / function declarations reject or ignore; dropping them keeps the call valid. */
-const DROP = new Set(["$schema", "$id", "format", "pattern", "minLength", "maxLength", "default", "examples", "example", "title", "$comment", "readOnly", "writeOnly", "deprecated", "propertyNames", "patternProperties", "const", "uniqueItems", "multipleOf", "exclusiveMinimum", "exclusiveMaximum"]);
+const DROP = new Set([
+  "$schema",
+  "$id",
+  "format",
+  "pattern",
+  "minLength",
+  "maxLength",
+  "default",
+  "examples",
+  "example",
+  "title",
+  "$comment",
+  "readOnly",
+  "writeOnly",
+  "deprecated",
+  "propertyNames",
+  "patternProperties",
+  "const",
+  "uniqueItems",
+  "multipleOf",
+  "exclusiveMinimum",
+  "exclusiveMaximum",
+]);
 
 type Json = null | boolean | number | string | Json[] | { [k: string]: Json };
 
@@ -79,15 +121,22 @@ export function sanitizeSchema(node: unknown): unknown {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(src)) {
     if (k === "properties" && v && typeof v === "object" && !Array.isArray(v)) {
-      out[k] = Object.fromEntries(Object.entries(v).map(([name, sub]) => [name, sanitizeSchema(sub)]));
+      out[k] = Object.fromEntries(
+        Object.entries(v).map(([name, sub]) => [name, sanitizeSchema(sub)]),
+      );
       continue;
     }
-    if (k === "const") { out["enum"] = [v]; continue; }
+    if (k === "const") {
+      out["enum"] = [v];
+      continue;
+    }
     if (DROP.has(k)) continue;
     if (k === "type" && Array.isArray(v)) {
       const types = v.filter((t): t is string => typeof t === "string");
       if (types.length === 1) out[k] = types[0];
-      else { out["anyOf"] = types.map((t) => ({ type: t })); }
+      else {
+        out["anyOf"] = types.map((t) => ({ type: t }));
+      }
       continue;
     }
     out[k] = sanitizeSchema(v);
@@ -106,7 +155,11 @@ export function dataUrlToPart(dataUrl: string): GeminiPart | null {
   return m ? { inlineData: { mimeType: m[1]!, data: m[2]! } } : null;
 }
 
-export type AskOpts = { effort?: "low" | "medium"; schema?: { name: string; schema: unknown }; files?: { filename: string; dataUrl: string }[] };
+export type AskOpts = {
+  effort?: "low" | "medium";
+  schema?: { name: string; schema: unknown };
+  files?: { filename: string; dataUrl: string }[];
+};
 
 export function buildGenerateRequest(system: string, user: string, opts: AskOpts = {}) {
   const parts: GeminiPart[] = [{ text: user }];
@@ -120,20 +173,41 @@ export function buildGenerateRequest(system: string, user: string, opts: AskOpts
     contents: [{ role: "user", parts }],
     generationConfig: {
       thinkingConfig: { thinkingLevel: opts.effort === "medium" ? "medium" : "low" },
-      ...(opts.schema ? { responseMimeType: "application/json", responseJsonSchema: sanitizeSchema(opts.schema.schema) } : {}),
+      ...(opts.schema
+        ? {
+            responseMimeType: "application/json",
+            responseJsonSchema: sanitizeSchema(opts.schema.schema),
+          }
+        : {}),
     },
   };
 }
 
-type GenResponse = { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] }; finishReason?: string }[]; promptFeedback?: { blockReason?: string } };
+type GenResponse = {
+  candidates?: {
+    content?: { parts?: { text?: string; thought?: boolean }[] };
+    finishReason?: string;
+  }[];
+  promptFeedback?: { blockReason?: string };
+};
 
 /** Concatenates the visible text of the first candidate (thought parts are skipped). Throws in Spanish when blocked/empty. */
 export function extractText(body: unknown): string {
   const r = body as GenResponse | null;
   const c = r?.candidates?.[0];
-  const text = (c?.content?.parts ?? []).filter((p) => !p.thought && typeof p.text === "string").map((p) => p.text).join("");
+  const text = (c?.content?.parts ?? [])
+    .filter((p) => !p.thought && typeof p.text === "string")
+    .map((p) => p.text)
+    .join("");
   if (text) return text;
-  if (r?.promptFeedback?.blockReason || c?.finishReason === "SAFETY" || c?.finishReason === "PROHIBITED_CONTENT") throw new Error("Gemini bloqueó la petición por sus filtros de seguridad. Reformula el texto e inténtalo de nuevo.");
+  if (
+    r?.promptFeedback?.blockReason ||
+    c?.finishReason === "SAFETY" ||
+    c?.finishReason === "PROHIBITED_CONTENT"
+  )
+    throw new Error(
+      "Gemini bloqueó la petición por sus filtros de seguridad. Reformula el texto e inténtalo de nuevo.",
+    );
   throw new Error("La IA no respondió");
 }
 
@@ -142,12 +216,24 @@ export function extractText(body: unknown): string {
 /** Gemini HTTP failure → message for the user (Spanish, what happened + what to do). */
 export function geminiErrorMessage(status: number, body = ""): string {
   let detail = "";
-  try { detail = (JSON.parse(body) as { error?: { message?: string; status?: string } }).error?.message ?? ""; } catch { /* not JSON */ }
-  if (status === 429) return /quota|billing|exceeded your current/i.test(detail)
-    ? "Se ha agotado la cuota de la clave de Gemini. Revisa el plan y la facturación en Google AI Studio."
-    : "Demasiadas peticiones, inténtalo en un momento.";
-  if (status === 401 || status === 403 || (status === 400 && /API key not valid|API_KEY_INVALID/i.test(detail))) return "La clave de Gemini no es válida o no tiene permisos. Revisa el secreto GEMINI_API_KEY.";
-  if (status === 404) return "El modelo de Gemini configurado no existe. Revisa el secreto GEMINI_MODEL.";
+  try {
+    detail =
+      (JSON.parse(body) as { error?: { message?: string; status?: string } }).error?.message ?? "";
+  } catch {
+    /* not JSON */
+  }
+  if (status === 429)
+    return /quota|billing|exceeded your current/i.test(detail)
+      ? "Se ha agotado la cuota de la clave de Gemini. Revisa el plan y la facturación en Google AI Studio."
+      : "Demasiadas peticiones, inténtalo en un momento.";
+  if (
+    status === 401 ||
+    status === 403 ||
+    (status === 400 && /API key not valid|API_KEY_INVALID/i.test(detail))
+  )
+    return "La clave de Gemini no es válida o no tiene permisos. Revisa el secreto GEMINI_API_KEY.";
+  if (status === 404)
+    return "El modelo de Gemini configurado no existe. Revisa el secreto GEMINI_MODEL.";
   if (status >= 500) return "Gemini no respondió; vuelve a intentarlo en un momento.";
   return "La IA rechazó la petición.";
 }
@@ -167,43 +253,95 @@ export function jevAnswerSchema(questions: Record<string, unknown>) {
   for (const [id, raw] of Object.entries(questions)) {
     const q = raw as JevQuestion;
     const confidence = { type: "number", minimum: 0, maximum: 1 };
-    if (q.type === "score") props[id] = { type: "object", properties: { score: { type: "integer", minimum: 0, maximum: Math.max(0, q.criteria.length - 1) }, confidence }, required: ["score", "confidence"] };
-    else if (q.type === "noul") props[id] = { type: "object", properties: { noul: { type: "number", minimum: 0, maximum: 1 }, confidence }, required: ["noul", "confidence"] };
-    else props[id] = { type: "object", properties: { choice: { type: "string", enum: Object.keys(q.criteria) }, confidence }, required: ["choice", "confidence"] };
+    if (q.type === "score")
+      props[id] = {
+        type: "object",
+        properties: {
+          score: { type: "integer", minimum: 0, maximum: Math.max(0, q.criteria.length - 1) },
+          confidence,
+        },
+        required: ["score", "confidence"],
+      };
+    else if (q.type === "noul")
+      props[id] = {
+        type: "object",
+        properties: { noul: { type: "number", minimum: 0, maximum: 1 }, confidence },
+        required: ["noul", "confidence"],
+      };
+    else
+      props[id] = {
+        type: "object",
+        properties: { choice: { type: "string", enum: Object.keys(q.criteria) }, confidence },
+        required: ["choice", "confidence"],
+      };
   }
-  return { type: "object", properties: { answers: { type: "object", properties: props, required: Object.keys(props) } }, required: ["answers"] };
+  return {
+    type: "object",
+    properties: { answers: { type: "object", properties: props, required: Object.keys(props) } },
+    required: ["answers"],
+  };
 }
 
-export const JEV_SYSTEM = "Eres un evaluador comercial preciso. Respondes SOLO con el JSON pedido, juzgando únicamente con los datos de `state`; nunca inventas datos. Si la información no basta, elige la opción más prudente y baja la confianza.";
+export const JEV_SYSTEM =
+  "Eres un evaluador comercial preciso. Respondes SOLO con el JSON pedido, juzgando únicamente con los datos de `state`; nunca inventas datos. Si la información no basta, elige la opción más prudente y baja la confianza.";
 
 /** Turns the Jev question set into one Gemini prompt: each question with its criteria spelled out. */
 export function jevPrompt(req: JevRequest): string {
-  const lines: string[] = ["DATOS (state):", JSON.stringify(req.state), "", "PREGUNTAS. Responde cada una en answers[id]. `confidence` va de 0 (nada seguro) a 1 (muy seguro)."];
+  const lines: string[] = [
+    "DATOS (state):",
+    JSON.stringify(req.state),
+    "",
+    "PREGUNTAS. Responde cada una en answers[id]. `confidence` va de 0 (nada seguro) a 1 (muy seguro).",
+  ];
   for (const [id, raw] of Object.entries(req.questions)) {
     const q = raw as JevQuestion;
     lines.push("", `## ${id} (${q.type})`, q.instructions);
     if (q.type === "score") {
-      lines.push("`score` es un entero; elige el nivel que mejor describe el caso:", ...q.criteria.map((c, i) => `- ${i}: ${c}`));
+      lines.push(
+        "`score` es un entero; elige el nivel que mejor describe el caso:",
+        ...q.criteria.map((c, i) => `- ${i}: ${c}`),
+      );
     } else if (q.type === "noul") {
-      lines.push("`noul` es la probabilidad (0 a 1) de que la respuesta sea SÍ:", `- Sí (1): ${q.criteria.true}`, `- No (0): ${q.criteria.false}`);
+      lines.push(
+        "`noul` es la probabilidad (0 a 1) de que la respuesta sea SÍ:",
+        `- Sí (1): ${q.criteria.true}`,
+        `- No (0): ${q.criteria.false}`,
+      );
     } else {
-      lines.push("`choice` es exactamente una de estas claves:", ...Object.entries(q.criteria).map(([k, c]) => `- ${k}: ${c}`));
+      lines.push(
+        "`choice` es exactamente una de estas claves:",
+        ...Object.entries(q.criteria).map(([k, c]) => `- ${k}: ${c}`),
+      );
     }
   }
   return lines.join("\n");
 }
 
 /** Validates the structure Gemini returned against the questions asked (never fills gaps). */
-export function normalizeJevAnswers(text: string, questions: Record<string, unknown>): { answers: Record<string, Record<string, unknown>> } {
+export function normalizeJevAnswers(
+  text: string,
+  questions: Record<string, unknown>,
+): { answers: Record<string, Record<string, unknown>> } {
   let parsed: unknown;
-  try { parsed = JSON.parse(text); } catch { throw new Error("La IA devolvió una respuesta no válida"); }
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("La IA devolvió una respuesta no válida");
+  }
   const answers = (parsed as { answers?: Record<string, Record<string, unknown>> } | null)?.answers;
-  if (!answers || typeof answers !== "object") throw new Error("La IA devolvió una respuesta no válida");
+  if (!answers || typeof answers !== "object")
+    throw new Error("La IA devolvió una respuesta no válida");
   for (const [id, raw] of Object.entries(questions)) {
-    const q = raw as JevQuestion; const a = answers[id];
-    const ok = q.type === "score" ? Number.isInteger(a?.["score"]) && (a!["score"] as number) >= 0 && (a!["score"] as number) < q.criteria.length
-      : q.type === "noul" ? typeof a?.["noul"] === "number"
-      : typeof a?.["choice"] === "string" && a["choice"] in q.criteria;
+    const q = raw as JevQuestion;
+    const a = answers[id];
+    const ok =
+      q.type === "score"
+        ? Number.isInteger(a?.["score"]) &&
+          (a!["score"] as number) >= 0 &&
+          (a!["score"] as number) < q.criteria.length
+        : q.type === "noul"
+          ? typeof a?.["noul"] === "number"
+          : typeof a?.["choice"] === "string" && a["choice"] in q.criteria;
     if (!ok) throw new Error(`Falta la respuesta «${id}» de la IA`);
   }
   return { answers };
@@ -212,7 +350,8 @@ export function normalizeJevAnswers(text: string, questions: Record<string, unkn
 // ---------- Agent (OpenAI-compatible chat endpoint) ----------
 
 /** Model for the chat agent: GEMINI_AGENT_MODEL, else GEMINI_MODEL, else the default. */
-export const geminiAgentModel = (env: AiEnv) => env["GEMINI_AGENT_MODEL"]?.trim() || geminiModel(env);
+export const geminiAgentModel = (env: AiEnv) =>
+  env["GEMINI_AGENT_MODEL"]?.trim() || geminiModel(env);
 
 export const SKIP_SIGNATURE = "skip_thought_signature_validator";
 
@@ -223,11 +362,16 @@ export const SKIP_SIGNATURE = "skip_thought_signature_validator";
  */
 export function withThoughtSignatures(bodyText: string): string {
   let b: { messages?: { role?: string; tool_calls?: { extra_content?: unknown }[] }[] };
-  try { b = JSON.parse(bodyText); } catch { return bodyText; }
+  try {
+    b = JSON.parse(bodyText);
+  } catch {
+    return bodyText;
+  }
   if (!Array.isArray(b?.messages)) return bodyText;
   for (const m of b.messages) {
     if (m.role !== "assistant" || !Array.isArray(m.tool_calls)) continue;
-    for (const tc of m.tool_calls) if (!tc.extra_content) tc.extra_content = { google: { thought_signature: SKIP_SIGNATURE } };
+    for (const tc of m.tool_calls)
+      if (!tc.extra_content) tc.extra_content = { google: { thought_signature: SKIP_SIGNATURE } };
   }
   return JSON.stringify(b);
 }
@@ -249,35 +393,61 @@ export function fixGeminiSseLine(line: string): string {
   if (!line.startsWith("data:")) return line;
   const raw = line.slice(5).trim();
   if (!raw || raw === "[DONE]") return line;
-  let chunk: { choices?: { delta?: { tool_calls?: { index?: number }[] }; finish_reason?: string | null }[] };
-  try { chunk = JSON.parse(raw); } catch { return line; }
+  let chunk: {
+    choices?: { delta?: { tool_calls?: { index?: number }[] }; finish_reason?: string | null }[];
+  };
+  try {
+    chunk = JSON.parse(raw);
+  } catch {
+    return line;
+  }
   let changed = false;
   for (const choice of chunk.choices ?? []) {
     const calls = choice.delta?.tool_calls;
     if (!Array.isArray(calls) || !calls.length) continue;
-    calls.forEach((tc, i) => { if (typeof tc.index !== "number") { tc.index = i; changed = true; } });
-    if (choice.finish_reason === "stop") { choice.finish_reason = "tool_calls"; changed = true; }
+    calls.forEach((tc, i) => {
+      if (typeof tc.index !== "number") {
+        tc.index = i;
+        changed = true;
+      }
+    });
+    if (choice.finish_reason === "stop") {
+      choice.finish_reason = "tool_calls";
+      changed = true;
+    }
   }
   return changed ? `data: ${JSON.stringify(chunk)}` : line;
 }
 
 /** Wraps a Gemini streaming response so each SSE line goes through fixGeminiSseLine. Non-stream responses pass untouched. */
 export function fixGeminiStream(res: Response): Response {
-  if (!res.ok || !res.body || !(res.headers.get("content-type") ?? "").includes("text/event-stream")) return res;
+  if (
+    !res.ok ||
+    !res.body ||
+    !(res.headers.get("content-type") ?? "").includes("text/event-stream")
+  )
+    return res;
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = "";
-  const body = res.body.pipeThrough(new TransformStream<Uint8Array, Uint8Array>({
-    transform(bytes, controller) {
-      buffer += decoder.decode(bytes, { stream: true });
-      const lines = buffer.split("\n");
-      buffer = lines.pop() ?? "";
-      if (lines.length) controller.enqueue(encoder.encode(lines.map(fixGeminiSseLine).join("\n") + "\n"));
-    },
-    flush(controller) {
-      buffer += decoder.decode();
-      if (buffer) controller.enqueue(encoder.encode(fixGeminiSseLine(buffer)));
-    },
-  }));
-  return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+  const body = res.body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(bytes, controller) {
+        buffer += decoder.decode(bytes, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        if (lines.length)
+          controller.enqueue(encoder.encode(lines.map(fixGeminiSseLine).join("\n") + "\n"));
+      },
+      flush(controller) {
+        buffer += decoder.decode();
+        if (buffer) controller.enqueue(encoder.encode(fixGeminiSseLine(buffer)));
+      },
+    }),
+  );
+  return new Response(body, {
+    status: res.status,
+    statusText: res.statusText,
+    headers: res.headers,
+  });
 }

@@ -14,15 +14,41 @@ function subscribe(cb: () => void) {
     observer = new MutationObserver(() => listeners.forEach((l) => l()));
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   }
-  return () => { listeners.delete(cb); if (!listeners.size) { observer?.disconnect(); observer = null; } };
+  return () => {
+    listeners.delete(cb);
+    if (!listeners.size) {
+      observer?.disconnect();
+      observer = null;
+    }
+  };
 }
 const isDark = () => document.documentElement.classList.contains("dark");
 const useDark = () => useSyncExternalStore(subscribe, isDark, () => false);
 
-export function CompanyLogo({ domain, size = 20, className = "" }: { domain: string | null | undefined; size?: number; className?: string }) {
+export function CompanyLogo({
+  domain,
+  size = 20,
+  className = "",
+}: {
+  domain: string | null | undefined;
+  size?: number;
+  className?: string;
+}) {
   const dark = useDark();
   const src = logoUrl(domain, { token: TOKEN, size, dark });
   const [failed, setFailed] = useState<string | null>(null);
   if (!src || failed === src) return null;
-  return <img src={src} alt="" width={size} height={size} loading="lazy" decoding="async" onError={() => setFailed(src)} className={`inline-block shrink-0 object-contain align-middle ${className}`} style={{ width: size, height: size }} />;
+  return (
+    <img
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(src)}
+      className={`inline-block shrink-0 object-contain align-middle ${className}`}
+      style={{ width: size, height: size }}
+    />
+  );
 }

@@ -19,8 +19,13 @@ export type Persona = {
 
 export const PERSONAS: Persona[] = [
   {
-    id: "reid", name: "Reid", inspiredBy: "Reid Hoffman", title: "Estratega GTM / CEO", bmadEquivalent: "Product Manager",
-    teams: ["c_level"], primaryRoles: ["owner", "sales_leader"],
+    id: "reid",
+    name: "Reid",
+    inspiredBy: "Reid Hoffman",
+    title: "Estratega GTM / CEO",
+    bmadEquivalent: "Product Manager",
+    teams: ["c_level"],
+    primaryRoles: ["owner", "sales_leader"],
     tone: "Visión de red y escala; piensa en apuestas, secuencia y efectos compuestos. Pregunta '¿qué tiene que ser verdad?'.",
     focus: "Plan GTM: segmentos, motion, objetivos y apuestas del trimestre.",
     menu: [
@@ -29,10 +34,16 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "benioff", name: "Benioff", inspiredBy: "Marc Benioff", title: "Arquitecto de revenue / CRO", bmadEquivalent: "Arquitecto",
-    teams: ["c_level", "sales", "partners"], primaryRoles: ["owner"],
+    id: "benioff",
+    name: "Benioff",
+    inspiredBy: "Marc Benioff",
+    title: "Arquitecto de revenue / CRO",
+    bmadEquivalent: "Arquitecto",
+    teams: ["c_level", "sales", "partners"],
+    primaryRoles: ["owner"],
     tone: "Obsesión por el sistema comercial repetible: procesos, capacidad, ecosistema y métricas.",
-    focus: "Arquitectura de revenue: capacidad, cobertura, roles, territorios, playbooks y herramientas.",
+    focus:
+      "Arquitectura de revenue: capacidad, cobertura, roles, territorios, playbooks y herramientas.",
     menu: [
       { code: "AR", label: "Arquitectura de revenue", workflow: "architecture" },
       { code: "CP", label: "Plan de capacidad", workflow: "capacity" },
@@ -40,8 +51,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "ruth", name: "Ruth", inspiredBy: "Ruth Porat", title: "CFO / Deal Desk", bmadEquivalent: "Nuevo (finanzas)",
-    teams: ["c_level"], primaryRoles: ["owner", "deal_desk"],
+    id: "ruth",
+    name: "Ruth",
+    inspiredBy: "Ruth Porat",
+    title: "CFO / Deal Desk",
+    bmadEquivalent: "Nuevo (finanzas)",
+    teams: ["c_level"],
+    primaryRoles: ["owner", "deal_desk"],
     tone: "Disciplina financiera: márgenes, payback, descuentos y riesgo. Pide números antes de opinar.",
     focus: "Pricing, descuentos, unit economics y aprobación de deals.",
     menu: [
@@ -51,8 +67,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "melanie", name: "Melanie", inspiredBy: "Melanie Perkins", title: "CMO / Mensajes y campañas", bmadEquivalent: "Diseñador UX",
-    teams: ["c_level", "marketing"], primaryRoles: ["marketing", "enablement"],
+    id: "melanie",
+    name: "Melanie",
+    inspiredBy: "Melanie Perkins",
+    title: "CMO / Mensajes y campañas",
+    bmadEquivalent: "Diseñador UX",
+    teams: ["c_level", "marketing"],
+    primaryRoles: ["marketing", "enablement"],
     tone: "Simplicidad y experiencia del comprador; convierte lo complejo en mensajes claros.",
     focus: "Mensajes por persona, campañas y recorrido de compra.",
     menu: [
@@ -62,8 +83,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "paul", name: "Paul", inspiredBy: "Paul Graham", title: "Analista de mercado", bmadEquivalent: "Analista",
-    teams: ["marketing"], primaryRoles: ["owner", "marketing", "enablement"],
+    id: "paul",
+    name: "Paul",
+    inspiredBy: "Paul Graham",
+    title: "Analista de mercado",
+    bmadEquivalent: "Analista",
+    teams: ["marketing"],
+    primaryRoles: ["owner", "marketing", "enablement"],
     tone: "Curioso y socrático; busca lo que los clientes quieren de verdad y desconfía de las suposiciones.",
     focus: "Investigación de mercado, competidores, voz del cliente y Brief GTM.",
     menu: [
@@ -75,8 +101,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "sheryl", name: "Sheryl", inspiredBy: "Sheryl Sandberg", title: "Directora de ventas", bmadEquivalent: "Product Owner",
-    teams: ["sales", "partners"], primaryRoles: ["sales_leader"],
+    id: "sheryl",
+    name: "Sheryl",
+    inspiredBy: "Sheryl Sandberg",
+    title: "Directora de ventas",
+    bmadEquivalent: "Product Owner",
+    teams: ["sales", "partners"],
+    primaryRoles: ["sales_leader"],
     tone: "Ejecución y foco operativo; convierte la estrategia en prioridades semanales con dueños y fechas.",
     focus: "Plan de la semana, planes de cuenta, prioridad de pipeline y replanificación.",
     menu: [
@@ -87,8 +118,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "jason", name: "Jason", inspiredBy: "Jason Lemkin", title: "Copiloto del vendedor", bmadEquivalent: "Desarrollador",
-    teams: ["sales", "marketing"], primaryRoles: ["ae", "sdr", "se"],
+    id: "jason",
+    name: "Jason",
+    inspiredBy: "Jason Lemkin",
+    title: "Copiloto del vendedor",
+    bmadEquivalent: "Desarrollador",
+    teams: ["sales", "marketing"],
+    primaryRoles: ["ae", "sdr", "se"],
     tone: "Directo, de vendedor SaaS: cualificación dura, siguiente paso concreto, cero autoengaño en el forecast.",
     focus: "Call prep, avanzar deals, revisión de deal, propuestas y win/loss.",
     menu: [
@@ -100,8 +136,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "brian", name: "Brian", inspiredBy: "Brian Chesky", title: "Customer Success", bmadEquivalent: "Nuevo (clientes)",
-    teams: ["sales"], primaryRoles: ["cs"],
+    id: "brian",
+    name: "Brian",
+    inspiredBy: "Brian Chesky",
+    title: "Customer Success",
+    bmadEquivalent: "Nuevo (clientes)",
+    teams: ["sales"],
+    primaryRoles: ["cs"],
     tone: "Obsesión por la experiencia del cliente de punta a punta; diseña momentos que generan expansión.",
     focus: "Onboarding de clientes, expansión y riesgo de churn.",
     menu: [
@@ -111,8 +152,13 @@ export const PERSONAS: Persona[] = [
     ],
   },
   {
-    id: "satya", name: "Satya", inspiredBy: "Satya Nadella", title: "Partners y ecosistema", bmadEquivalent: "Nuevo (partners)",
-    teams: ["partners"], primaryRoles: ["owner", "sales_leader"],
+    id: "satya",
+    name: "Satya",
+    inspiredBy: "Satya Nadella",
+    title: "Partners y ecosistema",
+    bmadEquivalent: "Nuevo (partners)",
+    teams: ["partners"],
+    primaryRoles: ["owner", "sales_leader"],
     tone: "Mentalidad de ecosistema y co-creación; busca el win-win con partners sin conflicto de canal.",
     focus: "Registro de oportunidades, co-selling, planes de partner y conflictos de canal.",
     menu: [
@@ -124,7 +170,12 @@ export const PERSONAS: Persona[] = [
   },
 ];
 
-export const HUB = { id: "hub", name: "Nokko", title: "Orquestador", focus: "Estado del ciclo y siguiente paso." };
+export const HUB = {
+  id: "hub",
+  name: "Nokko",
+  title: "Orquestador",
+  focus: "Estado del ciclo y siguiente paso.",
+};
 
 export const getPersona = (id: string | null | undefined) => PERSONAS.find((p) => p.id === id);
 

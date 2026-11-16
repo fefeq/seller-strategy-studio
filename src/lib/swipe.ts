@@ -18,5 +18,11 @@ export function swipeDirection(dx: number, dy: number, vx = 0, vy = 0): SwipeDir
 
 /** Keyboard: ← discard, → do, ↑ later. */
 export function keyDirection(key: string): SwipeDir | null {
-  return key === "ArrowRight" ? "right" : key === "ArrowLeft" ? "left" : key === "ArrowUp" ? "up" : null;
+  return key === "ArrowRight"
+    ? "right"
+    : key === "ArrowLeft"
+      ? "left"
+      : key === "ArrowUp"
+        ? "up"
+        : null;
 }

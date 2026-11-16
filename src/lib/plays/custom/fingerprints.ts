@@ -2,7 +2,12 @@
 // Pure. The annex is read at run time by tests/validation; no annex text is embedded here.
 
 const norm = (t: string) =>
-  t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  t
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 
 /** Word 3-grams of the normalised text; texts under 3 words count as one fragment. */
 export function shingles(text: string): Set<string> {
@@ -50,7 +55,8 @@ export function hashFragment(s: string): string {
   for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 0x01000193) >>> 0;
   return h.toString(16).padStart(8, "0");
 }
-export const hashFingerprints = (fps: Set<string>[]): string[][] => fps.map((fp) => [...fp].map(hashFragment).sort());
+export const hashFingerprints = (fps: Set<string>[]): string[][] =>
+  fps.map((fp) => [...fp].map(hashFragment).sort());
 
 /** Production check against the stored hash list (used by the assistant tool, SDD 3). */
 export function copiesHashed(text: string, list: string[][]): boolean {

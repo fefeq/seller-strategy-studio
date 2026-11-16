@@ -3,7 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import type { ToolContext } from "@lovable.dev/mcp-js";
 import type { Database } from "@/integrations/supabase/types";
 
-type RuntimeGlobals = typeof globalThis & { process?: { env?: Record<string, string | undefined> } };
+type RuntimeGlobals = typeof globalThis & {
+  process?: { env?: Record<string, string | undefined> };
+};
 const env = (n: string) => (globalThis as RuntimeGlobals).process?.env?.[n]?.trim() || undefined;
 
 function projectUrl() {
@@ -12,7 +14,10 @@ function projectUrl() {
   return url;
 }
 function publishableKey() {
-  const key = env("SUPABASE_PUBLISHABLE_KEY") ?? env("VITE_SUPABASE_PUBLISHABLE_KEY") ?? env("SUPABASE_ANON_KEY");
+  const key =
+    env("SUPABASE_PUBLISHABLE_KEY") ??
+    env("VITE_SUPABASE_PUBLISHABLE_KEY") ??
+    env("SUPABASE_ANON_KEY");
   if (!key) throw new Error("SUPABASE_PUBLISHABLE_KEY is required");
   return key;
 }

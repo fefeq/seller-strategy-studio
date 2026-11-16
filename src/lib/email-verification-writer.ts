@@ -1,7 +1,11 @@
 // NK-0173: stores the email status Apollo already returns in a reveal. The row builder is pure
 // (tested); the write uses the privileged client with an explicit org_id, because the table has
 // no insert/update policy for members. Never logs an email address.
-import { apolloEmailStatus, normalizeVerificationEmail, type EmailStatus } from "./email-verification";
+import {
+  apolloEmailStatus,
+  normalizeVerificationEmail,
+  type EmailStatus,
+} from "./email-verification";
 import { safeErrorLog } from "@/lib/agent/safe-error-log";
 
 export type VerificationRow = {
@@ -54,6 +58,8 @@ export async function recordEmailDraftBlock(
   block: { surface: "draft_followup" | "followup_sequence"; status: EmailStatus; reason: string },
 ): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.from("email_draft_blocks").insert({ org_id: orgId, ...block });
+  const { error } = await supabaseAdmin
+    .from("email_draft_blocks")
+    .insert({ org_id: orgId, ...block });
   if (error) console.error("email_draft_blocks insert failed", safeErrorLog(error));
 }

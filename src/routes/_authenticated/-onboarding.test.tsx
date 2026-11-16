@@ -22,8 +22,22 @@ vi.mock("@/hooks/use-onboarding", () => ({
 // Authorized by Fede (2026-11-14, NK-0167 SDD 2 U-2): the step is now «Líneas de negocio»; one fictitious primary line.
 vi.mock("@/hooks/use-business-lines", () => ({
   useBusinessLines: () => ({
-    data: [{ id: "l1", model: "b2b", acv: 12000, friction: "committee", stage: "early", name: null, is_primary: true, position: 0 }],
-    isLoading: false, error: null, ports: {}, refresh: vi.fn(),
+    data: [
+      {
+        id: "l1",
+        model: "b2b",
+        acv: 12000,
+        friction: "committee",
+        stage: "early",
+        name: null,
+        is_primary: true,
+        position: 0,
+      },
+    ],
+    isLoading: false,
+    error: null,
+    ports: {},
+    refresh: vi.fn(),
   }),
 }));
 vi.mock("@tanstack/react-start", async (orig) => ({

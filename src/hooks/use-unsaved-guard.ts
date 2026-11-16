@@ -13,10 +13,17 @@ export function useUnsavedGuard(dirty: boolean, onSave?: () => Promise<boolean>)
     enableBeforeUnload: () => dirty,
     shouldBlockFn: async () => {
       if (!onSave) {
-        const leave = await askConfirm("Tienes cambios sin guardar", { body: "Si sales ahora, pierdes lo que has editado. Para conservarlo, guárdalo antes.", confirmLabel: "Salir y descartar", cancelLabel: "Seguir editando" });
+        const leave = await askConfirm("Tienes cambios sin guardar", {
+          body: "Si sales ahora, pierdes lo que has editado. Para conservarlo, guárdalo antes.",
+          confirmLabel: "Salir y descartar",
+          cancelLabel: "Seguir editando",
+        });
         return !leave;
       }
-      const choice = await askUnsaved("Tienes cambios sin guardar", { body: "Si sales ahora, los pierdes.", saveLabel: "Guardar y salir" });
+      const choice = await askUnsaved("Tienes cambios sin guardar", {
+        body: "Si sales ahora, los pierdes.",
+        saveLabel: "Guardar y salir",
+      });
       const saved = choice === "save" ? await onSave() : null;
       return blocksLeaving(choice, saved);
     },

@@ -12,13 +12,31 @@ export function FlowStrip() {
         {pos.steps.map((s, i) => (
           <li key={s.to} className="flex items-center gap-2">
             {i > 0 && <span aria-hidden>→</span>}
-            {i === pos.index
-              ? <span aria-current="step" className="font-semibold text-ink">{s.label}</span>
-              : <Link to={s.to as never} className="hover:text-ink">{s.label}</Link>}
+            {i === pos.index ? (
+              <span aria-current="step" className="font-semibold text-ink">
+                {s.label}
+              </span>
+            ) : (
+              <Link to={s.to as never} className="hover:text-ink">
+                {s.label}
+              </Link>
+            )}
           </li>
         ))}
       </ol>
-      <p className="mt-1">{pos.current.what}{pos.next && <> Después: <Link to={pos.next.to as never} className="underline">{pos.next.label}</Link>.</>}</p>
+      <p className="mt-1">
+        {pos.current.what}
+        {pos.next && (
+          <>
+            {" "}
+            Después:{" "}
+            <Link to={pos.next.to as never} className="underline">
+              {pos.next.label}
+            </Link>
+            .
+          </>
+        )}
+      </p>
     </nav>
   );
 }

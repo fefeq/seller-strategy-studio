@@ -18,7 +18,15 @@ function files(dir: string): string[] {
 export function bareIconUses(path: string, src: string): string[] {
   const m = src.match(/import\s*\{([^}]*)\}\s*from\s*"lucide-react"/);
   if (!m) return [];
-  const names = m[1].split(",").map((x) => x.trim().split(/\s+as\s+/).pop()!).filter((x) => x && !x.startsWith("type "));
+  const names = m[1]
+    .split(",")
+    .map((x) =>
+      x
+        .trim()
+        .split(/\s+as\s+/)
+        .pop()!,
+    )
+    .filter((x) => x && !x.startsWith("type "));
   return names.filter((n) => new RegExp(`<${n}[\\s/>]`).test(src)).map((n) => `${path}: <${n}>`);
 }
 
@@ -30,11 +38,27 @@ describe("NK-0168 icon rule", () => {
     expect(bad).toEqual([]);
   });
   it("the guard catches a bare icon", () => {
-    expect(bareIconUses("x.tsx", 'import { Trash2 } from "lucide-react";\nconst a = <Trash2 size={16} />;')).toHaveLength(1);
-    expect(bareIconUses("x.tsx", 'import { Trash2 } from "lucide-react";\nconst a = <IconText icon={Trash2}>Borrar</IconText>;')).toHaveLength(0);
+    expect(
+      bareIconUses(
+        "x.tsx",
+        'import { Trash2 } from "lucide-react";\nconst a = <Trash2 size={16} />;',
+      ),
+    ).toHaveLength(1);
+    expect(
+      bareIconUses(
+        "x.tsx",
+        'import { Trash2 } from "lucide-react";\nconst a = <IconText icon={Trash2}>Borrar</IconText>;',
+      ),
+    ).toHaveLength(0);
   });
   it("one icon per concept: delete=Trash2, discard changes=Eraser, disqualify=Ban, cancel=X", () => {
-    const want: Record<string, string> = { Borrar: "Trash2", Eliminar: "Trash2", "Descartar cambios": "Eraser", Descalificar: "Ban", Cancelar: "X" };
+    const want: Record<string, string> = {
+      Borrar: "Trash2",
+      Eliminar: "Trash2",
+      "Descartar cambios": "Eraser",
+      Descalificar: "Ban",
+      Cancelar: "X",
+    };
     const bad = files(ROOT).flatMap((p) =>
       [...readFileSync(p, "utf8").matchAll(/<IconText icon=\{(\w+)\}[^>]*>([^<]+)<\/IconText>/g)]
         .filter(([, icon, text]) => want[text.trim()] && want[text.trim()] !== icon)

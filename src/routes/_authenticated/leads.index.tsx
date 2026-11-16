@@ -306,129 +306,172 @@ function LeadsPage() {
                   ? rows
                   : [...rows].sort(byScore((l) => view.scores.get(l.id)!));
                 return (
-                  <LeadsListShell ids={sorted.map((l) => l.id)} csv={(sel) => ({ header: ["Empresa", "Contacto", "Email", "Etapa", "Seguimiento"], rows: sorted.filter((l) => sel.has(l.id)).map((l) => [l.company, l.contact_name, l.email, COLUMNS.find((c) => c.id === l.stage)?.label ?? l.stage, l.next_step_at]) })}>
+                  <LeadsListShell
+                    ids={sorted.map((l) => l.id)}
+                    csv={(sel) => ({
+                      header: ["Empresa", "Contacto", "Email", "Etapa", "Seguimiento"],
+                      rows: sorted
+                        .filter((l) => sel.has(l.id))
+                        .map((l) => [
+                          l.company,
+                          l.contact_name,
+                          l.email,
+                          COLUMNS.find((c) => c.id === l.stage)?.label ?? l.stage,
+                          l.next_step_at,
+                        ]),
+                    })}
+                  >
                     {(pick) => (
-                  <>
-                  {/* D1: cards below md. */}
-                  <ul className="divide-y border-t md:hidden">
-                    {sorted.map((l) => (
-                      <li key={l.id} className="flex min-w-0 items-start gap-3 py-3">
-                        <span className="pt-1">
-                          <SelectBox checked={pick.has(l.id)} onChange={() => pick.flip(l.id)} label={`Seleccionar ${l.company}`} />
-                        </span>
-                        <button type="button" className="min-w-0 flex-1 text-left" onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}>
-                          <span className="flex min-w-0 items-center font-medium">
-                            <CompanyLogo domain={l.email} size={16} className="mr-1.5 shrink-0" />
-                            <span className="truncate">{l.company}</span>
-                          </span>
-                          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-                            {[l.contact_name, COLUMNS.find((c) => c.id === l.stage)?.label].filter(Boolean).join(" · ")}
-                          </span>
-                          <span className="mt-1 block"><ScoreBadge score={view.scores.get(l.id)!} /></span>
-                        </button>
-                        <LeadQuickActions lead={l} onMove={move} />
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="hidden overflow-x-auto border-t md:block">
-                    <table className="w-full text-sm">
-                      <thead className="border-b text-left">
-                        <tr>
-                          <th className="w-10 px-3 py-3">
-                            <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todos" />
-                          </th>
-                          {[
-                            "Empresa",
-                            "Contacto",
-                            "Etapa",
-                            "Puntuación",
-                            "En etapa",
-                            "Seguimiento",
-                            "",
-                          ].map((h) => (
-                            <th key={h} className="eyebrow px-3 py-3">
-                              {h}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {sorted.map((l) => {
-                          const d = view.delays.get(l.id)!;
-                          const closed = l.stage === "opportunity" || l.stage === "disqualified";
-                          return (
-                            <tr
-                              key={l.id}
-                              className="cursor-pointer border-b hover:bg-muted/40"
-                              onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
-                            >
-                              <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                                <SelectBox checked={pick.has(l.id)} onChange={() => pick.flip(l.id)} label={`Seleccionar ${l.company}`} />
-                              </td>
-                              <td className="px-3 py-2">
-                                <span className="font-medium">
+                      <>
+                        {/* D1: cards below md. */}
+                        <ul className="divide-y border-t md:hidden">
+                          {sorted.map((l) => (
+                            <li key={l.id} className="flex min-w-0 items-start gap-3 py-3">
+                              <span className="pt-1">
+                                <SelectBox
+                                  checked={pick.has(l.id)}
+                                  onChange={() => pick.flip(l.id)}
+                                  label={`Seleccionar ${l.company}`}
+                                />
+                              </span>
+                              <button
+                                type="button"
+                                className="min-w-0 flex-1 text-left"
+                                onClick={() => navigate({ search: (p) => ({ ...p, lead: l.id }) })}
+                              >
+                                <span className="flex min-w-0 items-center font-medium">
                                   <CompanyLogo
                                     domain={l.email}
                                     size={16}
-                                    className="mr-1.5 -mt-0.5"
+                                    className="mr-1.5 shrink-0"
                                   />
-                                  {l.company}
+                                  <span className="truncate">{l.company}</span>
                                 </span>
-                                {segName(l.segment_id) && (
-                                  <span className="block text-xs text-muted-foreground">
-                                    {segName(l.segment_id)}
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 text-xs">
-                                {l.contact_name ?? "—"}
-                                {l.email && (
-                                  <span className="block text-muted-foreground">{l.email}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
-                                <NativeSelect
-                                  density="compact"
-                                  aria-label="Etapa"
-                                  value={l.stage}
-                                  onChange={(e) => move(l.id, e.target.value)}
-                                >
-                                  {COLUMNS.map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.label}
-                                    </option>
-                                  ))}
-                                </NativeSelect>
-                              </td>
-                              <td className="px-3 py-2">
-                                <ScoreBadge score={view.scores.get(l.id)!} />
-                              </td>
-                              <td
-                                className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}
-                              >
-                                {closed
-                                  ? "—"
-                                  : `${Math.floor(d.daysInStage)} d${d.late ? " · tarde" : ""}`}
-                              </td>
-                              <td className="px-3 py-2 text-xs">{l.next_step_at ?? "—"}</td>
-                              <td
-                                className="px-3 py-2 text-right"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <LeadQuickActions lead={l} onMove={move} />
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                    {sorted.length === 0 && (
-                      <p className="py-4 text-sm text-muted-foreground">
-                        No hay leads con este filtro.
-                      </p>
-                    )}
-                  </div>
-                  </>
+                                <span className="mt-0.5 block truncate text-xs text-muted-foreground">
+                                  {[l.contact_name, COLUMNS.find((c) => c.id === l.stage)?.label]
+                                    .filter(Boolean)
+                                    .join(" · ")}
+                                </span>
+                                <span className="mt-1 block">
+                                  <ScoreBadge score={view.scores.get(l.id)!} />
+                                </span>
+                              </button>
+                              <LeadQuickActions lead={l} onMove={move} />
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="hidden overflow-x-auto border-t md:block">
+                          <table className="w-full text-sm">
+                            <thead className="border-b text-left">
+                              <tr>
+                                <th className="w-10 px-3 py-3">
+                                  <SelectBox
+                                    checked={pick.all}
+                                    onChange={pick.flipAll}
+                                    label="Seleccionar todos"
+                                  />
+                                </th>
+                                {[
+                                  "Empresa",
+                                  "Contacto",
+                                  "Etapa",
+                                  "Puntuación",
+                                  "En etapa",
+                                  "Seguimiento",
+                                  "",
+                                ].map((h) => (
+                                  <th key={h} className="eyebrow px-3 py-3">
+                                    {h}
+                                  </th>
+                                ))}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {sorted.map((l) => {
+                                const d = view.delays.get(l.id)!;
+                                const closed =
+                                  l.stage === "opportunity" || l.stage === "disqualified";
+                                return (
+                                  <tr
+                                    key={l.id}
+                                    className="cursor-pointer border-b hover:bg-muted/40"
+                                    onClick={() =>
+                                      navigate({ search: (p) => ({ ...p, lead: l.id }) })
+                                    }
+                                  >
+                                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                                      <SelectBox
+                                        checked={pick.has(l.id)}
+                                        onChange={() => pick.flip(l.id)}
+                                        label={`Seleccionar ${l.company}`}
+                                      />
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <span className="font-medium">
+                                        <CompanyLogo
+                                          domain={l.email}
+                                          size={16}
+                                          className="mr-1.5 -mt-0.5"
+                                        />
+                                        {l.company}
+                                      </span>
+                                      {segName(l.segment_id) && (
+                                        <span className="block text-xs text-muted-foreground">
+                                          {segName(l.segment_id)}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2 text-xs">
+                                      {l.contact_name ?? "—"}
+                                      {l.email && (
+                                        <span className="block text-muted-foreground">
+                                          {l.email}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="px-3 py-2" onClick={(e) => e.stopPropagation()}>
+                                      <NativeSelect
+                                        density="compact"
+                                        aria-label="Etapa"
+                                        value={l.stage}
+                                        onChange={(e) => move(l.id, e.target.value)}
+                                      >
+                                        {COLUMNS.map((c) => (
+                                          <option key={c.id} value={c.id}>
+                                            {c.label}
+                                          </option>
+                                        ))}
+                                      </NativeSelect>
+                                    </td>
+                                    <td className="px-3 py-2">
+                                      <ScoreBadge score={view.scores.get(l.id)!} />
+                                    </td>
+                                    <td
+                                      className={`px-3 py-2 font-mono text-xs ${d.late ? "text-signal" : ""}`}
+                                    >
+                                      {closed
+                                        ? "—"
+                                        : `${Math.floor(d.daysInStage)} d${d.late ? " · tarde" : ""}`}
+                                    </td>
+                                    <td className="px-3 py-2 text-xs">{l.next_step_at ?? "—"}</td>
+                                    <td
+                                      className="px-3 py-2 text-right"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <LeadQuickActions lead={l} onMove={move} />
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                          {sorted.length === 0 && (
+                            <p className="py-4 text-sm text-muted-foreground">
+                              No hay leads con este filtro.
+                            </p>
+                          )}
+                        </div>
+                      </>
                     )}
                   </LeadsListShell>
                 );
@@ -686,14 +729,22 @@ function LeadsListShell({
   children,
 }: {
   ids: string[];
-  csv: (sel: ReadonlySet<string>) => { header: string[]; rows: (string | number | null | undefined)[][] };
+  csv: (sel: ReadonlySet<string>) => {
+    header: string[];
+    rows: (string | number | null | undefined)[][];
+  };
   children: (pick: ReturnType<typeof useSelection>) => React.ReactNode;
 }) {
   const pick = useSelection(ids);
   return (
     <>
       {children(pick)}
-      <SelectionBar count={pick.sel.size} onClear={pick.clear} filename="leads.csv" csv={() => csv(pick.sel)} />
+      <SelectionBar
+        count={pick.sel.size}
+        onClear={pick.clear}
+        filename="leads.csv"
+        csv={() => csv(pick.sel)}
+      />
     </>
   );
 }

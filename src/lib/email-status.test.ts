@@ -1,10 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { EMAIL_STATUS_LABEL, emailBlockReason, emailGateMark, emailStatusFor } from "./email-status";
+import {
+  EMAIL_STATUS_LABEL,
+  emailBlockReason,
+  emailGateMark,
+  emailStatusFor,
+} from "./email-status";
 
 // NK-0173 SDD 3: every state has its Spanish word; the graduated gate blocks invalid/catch-all
 // with a reason and marks unverified/unverifiable.
 const now = new Date("2026-11-13T00:00:00Z");
-const row = { email: "a@example.invalid", status: "verified" as const, checked_at: now.toISOString() };
+const row = {
+  email: "a@example.invalid",
+  status: "verified" as const,
+  checked_at: now.toISOString(),
+};
 
 describe("email status surfacing", () => {
   it("CA-1 every state has its word in Spanish", () => {

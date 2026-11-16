@@ -3,10 +3,26 @@
 
 export const CALL_NOTE_FIELDS = [
   { key: "dolor", label: "Qué les duele", hint: "Con sus palabras, no las tuyas." },
-  { key: "impacto", label: "Qué les cuesta no resolverlo", hint: "Dinero, tiempo, riesgo o una fecha que se les echa encima." },
-  { key: "decision", label: "Quién decide y cómo", hint: "Quién firma, quién más opina y qué pasos hay hasta la compra." },
-  { key: "freno", label: "Qué les frena", hint: "La objeción, la duda o el riesgo que salió (o el que intuyes)." },
-  { key: "siguiente", label: "Próximo paso acordado", hint: "Qué, quién y cuándo. Si no hay fecha, no es un próximo paso." },
+  {
+    key: "impacto",
+    label: "Qué les cuesta no resolverlo",
+    hint: "Dinero, tiempo, riesgo o una fecha que se les echa encima.",
+  },
+  {
+    key: "decision",
+    label: "Quién decide y cómo",
+    hint: "Quién firma, quién más opina y qué pasos hay hasta la compra.",
+  },
+  {
+    key: "freno",
+    label: "Qué les frena",
+    hint: "La objeción, la duda o el riesgo que salió (o el que intuyes).",
+  },
+  {
+    key: "siguiente",
+    label: "Próximo paso acordado",
+    hint: "Qué, quién y cuándo. Si no hay fecha, no es un próximo paso.",
+  },
 ] as const;
 
 export type CallNoteKey = (typeof CALL_NOTE_FIELDS)[number]["key"];
@@ -18,10 +34,14 @@ export const MAX_LINE = 300;
 
 /** Reads the stored jsonb (or anything) into the five fields, trimmed, one line, capped. */
 export function normalizeCallNotes(raw: unknown): CallNotes {
-  const src = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const src =
+    raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
   const out: CallNotes = {};
   for (const k of KEYS) {
-    const v = typeof src[k] === "string" ? (src[k] as string).replace(/\s+/g, " ").trim().slice(0, MAX_LINE) : "";
+    const v =
+      typeof src[k] === "string"
+        ? (src[k] as string).replace(/\s+/g, " ").trim().slice(0, MAX_LINE)
+        : "";
     if (v) out[k] = v;
   }
   return out;
@@ -32,14 +52,20 @@ export const hasCallNotes = (n: CallNotes) => filledCount(n) > 0;
 
 /** The five lines as text, in order, skipping empty ones (for the call log, the AI and the account context). */
 export function callNotesText(n: CallNotes): string {
-  return CALL_NOTE_FIELDS.filter((f) => n[f.key]).map((f) => `${f.label}: ${n[f.key]}`).join("\n");
+  return CALL_NOTE_FIELDS.filter((f) => n[f.key])
+    .map((f) => `${f.label}: ${n[f.key]}`)
+    .join("\n");
 }
 
 /**
  * What a saved meeting writes to the call log (calls) so the account history, the call prep and the
  * score see it: the five lines first, then the free notes; the agreed next step wins over the old field.
  */
-export function callLogEntry(m: { notes?: string | null; next_steps?: string | null; call_notes?: unknown }) {
+export function callLogEntry(m: {
+  notes?: string | null;
+  next_steps?: string | null;
+  call_notes?: unknown;
+}) {
   const n = normalizeCallNotes(m.call_notes);
   const summary = [callNotesText(n), (m.notes ?? "").trim()].filter(Boolean).join("\n\n");
   const next = n.siguiente ?? (m.next_steps ?? "").trim();
@@ -60,7 +86,15 @@ export const NOTES_FROM_MS = 2 * HOUR;
 export const NOTES_UNTIL_MS = 7 * DAY;
 
 /** A past meeting (2 h–7 days ago) with an account and nothing written afterwards. */
-export function needsCallNotes(m: { scheduled_at: string | null; account_id: string | null; notes?: string | null; call_notes?: unknown }, now: Date): boolean {
+export function needsCallNotes(
+  m: {
+    scheduled_at: string | null;
+    account_id: string | null;
+    notes?: string | null;
+    call_notes?: unknown;
+  },
+  now: Date,
+): boolean {
   if (!m.scheduled_at || !m.account_id) return false;
   const ago = now.getTime() - new Date(m.scheduled_at).getTime();
   if (ago < NOTES_FROM_MS || ago > NOTES_UNTIL_MS) return false;

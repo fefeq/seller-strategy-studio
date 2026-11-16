@@ -12,14 +12,25 @@ export function RecentChanges() {
   const qc = useQueryClient();
   const { data: me } = useMe();
   const [busy, setBusy] = useState<string | null>(null);
-  const { data, isError } = useQuery({ queryKey: ["recent-changes", me?.currentOrg?.org_id], queryFn: () => recentChanges(), enabled: !!me });
+  const { data, isError } = useQuery({
+    queryKey: ["recent-changes", me?.currentOrg?.org_id],
+    queryFn: () => recentChanges(),
+    enabled: !!me,
+  });
   if (isError || !data?.length) return null;
   const now = new Date();
   const roles = me?.roles ?? [];
   async function undo(id: string) {
     setBusy(id);
-    try { await undoChange(id); toast.success("Cambio deshecho."); await qc.invalidateQueries(); }
-    catch (e) { toast.error(errorText(e)); } finally { setBusy(null); }
+    try {
+      await undoChange(id);
+      toast.success("Cambio deshecho.");
+      await qc.invalidateQueries();
+    } catch (e) {
+      toast.error(errorText(e));
+    } finally {
+      setBusy(null);
+    }
   }
   return (
     <section className="mt-10 border-t-2 border-hairline-firm pt-4">
@@ -34,8 +45,17 @@ export function RecentChanges() {
                 <p className="text-sm text-ink-mid">{undoStatus(e, now).text}</p>
               </div>
               <div className="flex items-center gap-2">
-                {!can.allowed && can.reason && <span className="text-xs text-ink-mid">{can.reason}</span>}
-                <Button size="sm" variant="ghost" disabled={!can.allowed || busy === e.id} onClick={() => undo(e.id)}>{busy === e.id ? "Deshaciendo…" : "Deshacer"}</Button>
+                {!can.allowed && can.reason && (
+                  <span className="text-xs text-ink-mid">{can.reason}</span>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={!can.allowed || busy === e.id}
+                  onClick={() => undo(e.id)}
+                >
+                  {busy === e.id ? "Deshaciendo…" : "Deshacer"}
+                </Button>
               </div>
             </li>
           );

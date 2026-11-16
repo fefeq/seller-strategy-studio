@@ -7,7 +7,14 @@ import { useMe } from "@/hooks/use-me";
 import { useSuggestions } from "@/components/suggestions";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/page";
-import { INBOX_FILTERS, filterInbox, inboxCounts, mergeInbox, type InboxFilter, type InboxItem } from "@/lib/today-inbox";
+import {
+  INBOX_FILTERS,
+  filterInbox,
+  inboxCounts,
+  mergeInbox,
+  type InboxFilter,
+  type InboxItem,
+} from "@/lib/today-inbox";
 
 const KIND_LABEL: Record<InboxItem["kind"], string> = {
   sugerencia: "Sugerencia",
@@ -28,7 +35,11 @@ export function TodayInbox() {
     queryFn: async () => {
       const [appr, tasks, acts] = await Promise.all([
         leader
-          ? supabase.from("approvals").select("id,title,created_at").eq("status", "pending").limit(50)
+          ? supabase
+              .from("approvals")
+              .select("id,title,created_at")
+              .eq("status", "pending")
+              .limit(50)
           : Promise.resolve({ data: [] as { id: string; title: string; created_at: string }[] }),
         supabase
           .from("tasks")
@@ -48,7 +59,12 @@ export function TodayInbox() {
   });
   const today = new Date().toISOString().slice(0, 10);
   const items = mergeInbox(
-    { suggestions, approvals: data?.approvals ?? [], tasks: data?.tasks ?? [], actions: data?.actions ?? [] },
+    {
+      suggestions,
+      approvals: data?.approvals ?? [],
+      tasks: data?.tasks ?? [],
+      actions: data?.actions ?? [],
+    },
     today,
   );
   const counts = inboxCounts(items);
@@ -74,7 +90,9 @@ export function TodayInbox() {
           const body = (
             <>
               <span className="min-w-0 break-words">{i.title}</span>
-              <span className={`shrink-0 font-mono text-xs uppercase ${i.priority === 1 ? "text-signal" : "text-muted-foreground"}`}>
+              <span
+                className={`shrink-0 font-mono text-xs uppercase ${i.priority === 1 ? "text-signal" : "text-muted-foreground"}`}
+              >
                 {KIND_LABEL[i.kind]}
               </span>
             </>
@@ -83,9 +101,17 @@ export function TodayInbox() {
           return (
             <li key={i.id}>
               {i.href ? (
-                <Link to={i.href} className={`${cls} hover:text-signal`}>{body}</Link>
+                <Link to={i.href} className={`${cls} hover:text-signal`}>
+                  {body}
+                </Link>
               ) : i.accountId ? (
-                <Link to="/accounts/$id" params={{ id: i.accountId }} className={`${cls} hover:text-signal`}>{body}</Link>
+                <Link
+                  to="/accounts/$id"
+                  params={{ id: i.accountId }}
+                  className={`${cls} hover:text-signal`}
+                >
+                  {body}
+                </Link>
               ) : (
                 <div className={cls}>{body}</div>
               )}

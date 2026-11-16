@@ -14,21 +14,35 @@ const TabsList = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => {
   const inner = React.useRef<HTMLDivElement | null>(null);
-  const [more, setMore] = React.useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+  const [more, setMore] = React.useState<{ start: boolean; end: boolean }>({
+    start: false,
+    end: false,
+  });
   React.useEffect(() => {
     const el = inner.current;
     if (!el) return;
-    const update = () => setMore({ start: el.scrollLeft > 2, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 2 });
+    const update = () =>
+      setMore({
+        start: el.scrollLeft > 2,
+        end: el.scrollLeft + el.clientWidth < el.scrollWidth - 2,
+      });
     update();
     el.addEventListener("scroll", update, { passive: true });
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(update) : null;
     ro?.observe(el);
-    return () => { el.removeEventListener("scroll", update); ro?.disconnect(); };
+    return () => {
+      el.removeEventListener("scroll", update);
+      ro?.disconnect();
+    };
   }, []);
-  const fade = more.start && more.end
-    ? "[mask-image:linear-gradient(to_right,transparent,black_28px,black_calc(100%-28px),transparent)]"
-    : more.end ? "[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
-    : more.start ? "[mask-image:linear-gradient(to_right,transparent,black_28px)]" : "";
+  const fade =
+    more.start && more.end
+      ? "[mask-image:linear-gradient(to_right,transparent,black_28px,black_calc(100%-28px),transparent)]"
+      : more.end
+        ? "[mask-image:linear-gradient(to_right,black_calc(100%-28px),transparent)]"
+        : more.start
+          ? "[mask-image:linear-gradient(to_right,transparent,black_28px)]"
+          : "";
   return (
     <TabsPrimitive.List
       ref={(node) => {
@@ -66,14 +80,7 @@ const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
-  <TabsPrimitive.Content
-    ref={ref}
-    className={cn(
-      "mt-6",
-      className,
-    )}
-    {...props}
-  />
+  <TabsPrimitive.Content ref={ref} className={cn("mt-6", className)} {...props} />
 ));
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 

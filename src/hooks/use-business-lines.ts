@@ -24,10 +24,21 @@ export function useBusinessLines(
   const ports: LineEditorPorts = {
     read: readLines,
     write: async (id, a) => {
-      const row = { model: a.model, acv: a.acv, friction: a.friction, stage: a.stage, name: a.name, position: a.position };
+      const row = {
+        model: a.model,
+        acv: a.acv,
+        friction: a.friction,
+        stage: a.stage,
+        name: a.name,
+        position: a.position,
+      };
       const res = id
         ? await supabase.from("business_lines").update(row).eq("id", id).select(COLS).maybeSingle()
-        : await supabase.from("business_lines").insert({ ...row, is_primary: (q.data?.length ?? 0) === 0 }).select(COLS).maybeSingle();
+        : await supabase
+            .from("business_lines")
+            .insert({ ...row, is_primary: (q.data?.length ?? 0) === 0 })
+            .select(COLS)
+            .maybeSingle();
       if (res.error) throw res.error;
       return res.data;
     },
@@ -49,6 +60,10 @@ export function useBusinessLines(
 
 /** Read-only lines of the active company plus its primary-line diagnosis (Inicio, Estrategia, Métricas, Segmentos). */
 export function usePrimaryLine(orgId: string | null | undefined) {
-  const q = useQuery({ queryKey: ["business-lines", orgId ?? null], queryFn: readLines, enabled: !!orgId });
+  const q = useQuery({
+    queryKey: ["business-lines", orgId ?? null],
+    queryFn: readLines,
+    enabled: !!orgId,
+  });
   return { ...q, lines: q.data ?? [], primary: primaryLine(q.data ?? []) };
 }

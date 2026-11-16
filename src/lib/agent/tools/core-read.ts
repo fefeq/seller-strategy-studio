@@ -527,7 +527,9 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       const l = one(
         await c.db
           .from("leads")
-          .select("id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source,email")
+          .select(
+            "id,company,contact_name,title,stage,contacted_at,next_step_at,notes,source,email",
+          )
           .eq("org_id", c.orgId)
           .eq("id", a.lead_id)
           .single(),
@@ -537,7 +539,8 @@ export const CORE_READ_TOOLS: AgentTool[] = [
       // unverifiable passes with a visible mark; no address on the lead behaves as before.
       let emailMark: string | null = null;
       if (l.email?.trim()) {
-        const { emailBlockReason, emailGateMark, emailStatusFor } = await import("@/lib/email-status");
+        const { emailBlockReason, emailGateMark, emailStatusFor } =
+          await import("@/lib/email-status");
         const { data: vrow } = await c.db
           .from("email_verifications")
           .select("email,status,checked_at")
@@ -545,7 +548,9 @@ export const CORE_READ_TOOLS: AgentTool[] = [
           .eq("email", l.email.trim().toLowerCase())
           .maybeSingle();
         // Database CHECK constrains this string to the shared five-state union.
-        const verification = vrow ? { ...vrow, status: vrow.status as import("@/lib/email-verification").EmailStatus } : null;
+        const verification = vrow
+          ? { ...vrow, status: vrow.status as import("@/lib/email-verification").EmailStatus }
+          : null;
         const status = emailStatusFor(l.email, verification, new Date());
         const reason = status ? emailBlockReason(status) : null;
         if (reason && status) {

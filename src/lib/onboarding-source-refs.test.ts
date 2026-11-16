@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
-  allotBudget, mergeRefs, ownsPath, statusOf, statusLabel, storagePath, uploadProblem,
+  allotBudget,
+  mergeRefs,
+  ownsPath,
+  statusOf,
+  statusLabel,
+  storagePath,
+  uploadProblem,
 } from "@/lib/onboarding-source-refs";
 import { onboardingReadInput } from "@/lib/onboarding-read-input";
 import { MAX_SOURCES } from "@/lib/onboarding-files-limit";
@@ -9,7 +15,10 @@ const ref = (i: number) => ({ kind: "drive" as const, ref: `id${i}`, name: `Doc 
 
 describe("onboarding sources by reference", () => {
   it("takes 20 sources and drops the 21st", () => {
-    const r = mergeRefs([], Array.from({ length: 21 }, (_, i) => ref(i)));
+    const r = mergeRefs(
+      [],
+      Array.from({ length: 21 }, (_, i) => ref(i)),
+    );
     expect(MAX_SOURCES).toBe(20);
     expect(r.sources).toHaveLength(20);
     expect(r.dropped).toEqual(["Doc 20"]);
@@ -26,8 +35,12 @@ describe("onboarding sources by reference", () => {
   });
   it("states full, partial and unread", () => {
     expect(statusOf(ref(1), 10, 10).state).toBe("full");
-    expect(statusLabel(statusOf(ref(1), 12000, 40000))).toBe("Leída en parte: 12.000 de 40.000 caracteres");
-    expect(statusLabel(statusOf(ref(1), 0, 0, "fuera de la carpeta"))).toBe("No leída: fuera de la carpeta");
+    expect(statusLabel(statusOf(ref(1), 12000, 40000))).toBe(
+      "Leída en parte: 12.000 de 40.000 caracteres",
+    );
+    expect(statusLabel(statusOf(ref(1), 0, 0, "fuera de la carpeta"))).toBe(
+      "No leída: fuera de la carpeta",
+    );
   });
   it("refuses wrong types and files over 20 MB", () => {
     expect(uploadProblem({ name: "a.exe", size: 1 })).toMatch(/PDF/);
@@ -43,11 +56,20 @@ describe("onboarding sources by reference", () => {
   });
   it("job input takes N references and rejects N+1, never file content", () => {
     const base = { depth: "express" as const };
-    const ok = onboardingReadInput.safeParse({ ...base, sources: Array.from({ length: 20 }, (_, i) => ref(i)) });
+    const ok = onboardingReadInput.safeParse({
+      ...base,
+      sources: Array.from({ length: 20 }, (_, i) => ref(i)),
+    });
     expect(ok.success).toBe(true);
-    const tooMany = onboardingReadInput.safeParse({ ...base, sources: Array.from({ length: 21 }, (_, i) => ref(i)) });
+    const tooMany = onboardingReadInput.safeParse({
+      ...base,
+      sources: Array.from({ length: 21 }, (_, i) => ref(i)),
+    });
     expect(tooMany.success).toBe(false);
-    const content = onboardingReadInput.safeParse({ ...base, sources: [{ ...ref(1), ref: "data:application/pdf;base64,AAAA" }] });
+    const content = onboardingReadInput.safeParse({
+      ...base,
+      sources: [{ ...ref(1), ref: "data:application/pdf;base64,AAAA" }],
+    });
     expect(content.success).toBe(false);
   });
 });

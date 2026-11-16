@@ -9,9 +9,14 @@ import type { SetupProposal } from "@/lib/setup-extraction";
 import type { Json } from "@/integrations/supabase/types";
 
 const BLOCK = z.enum(["company", "icp", "segments", "positioning", "messages", "goals"]);
-const HINT = z.string().trim()
+const HINT = z
+  .string()
+  .trim()
   .min(2, "Escribe qué quieres que cambie (al menos un par de palabras).")
-  .max(REDO_HINT_MAX, `El texto es demasiado largo: el máximo son ${REDO_HINT_MAX.toLocaleString("es-ES")} caracteres. Recórtalo y vuelve a intentarlo.`);
+  .max(
+    REDO_HINT_MAX,
+    `El texto es demasiado largo: el máximo son ${REDO_HINT_MAX.toLocaleString("es-ES")} caracteres. Recórtalo y vuelve a intentarlo.`,
+  );
 
 export const redoOnboardingBlock = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -22,14 +27,24 @@ export const redoOnboardingBlock = createServerFn({ method: "POST" })
   })
   .handler(async ({ data, context }) => {
     const ctx = await userCtx(context.supabase as Db, context.userId);
-    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader")) throw new Error("Solo el Owner o el Sales Leader pueden rehacer la estrategia.");
-    const { data: s } = await ctx.db.from("onboarding_sessions").select("proposal").eq("org_id", ctx.orgId).eq("user_id", ctx.userId).maybeSingle();
+    if (!ctx.roles.some((r) => r === "owner" || r === "sales_leader"))
+      throw new Error("Solo el Owner o el Sales Leader pueden rehacer la estrategia.");
+    const { data: s } = await ctx.db
+      .from("onboarding_sessions")
+      .select("proposal")
+      .eq("org_id", ctx.orgId)
+      .eq("user_id", ctx.userId)
+      .maybeSingle();
     const prev = s?.proposal as unknown as SetupProposal | null;
     if (!prev) throw new Error("Aún no hay propuesta: primero deja que Nokko lea tus fuentes.");
     const { redoBlockCore } = await import("@/lib/setup-extract.server");
     const next = await redoBlockCore(ctx, prev, data.block, data.hint);
     const merged = mergeBlock(prev, next, data.block as BlockId);
-    const { error } = await ctx.db.from("onboarding_sessions").update({ proposal: merged as unknown as Json, updated_at: new Date().toISOString() }).eq("org_id", ctx.orgId).eq("user_id", ctx.userId);
+    const { error } = await ctx.db
+      .from("onboarding_sessions")
+      .update({ proposal: merged as unknown as Json, updated_at: new Date().toISOString() })
+      .eq("org_id", ctx.orgId)
+      .eq("user_id", ctx.userId);
     if (error) throw new Error(error.message);
     return merged;
   });

@@ -7,7 +7,9 @@ const src = (p: string) => readFileSync(p, "utf8");
 
 describe("logs and step output carry no customer or provider text", () => {
   it("NK-0158: describeError keeps the name and stack frames, never the message or the cause value", () => {
-    const e = new Error(`fallo con ${WITNESS}`, { cause: new TypeError(`causa ${WITNESS}`, { cause: WITNESS }) });
+    const e = new Error(`fallo con ${WITNESS}`, {
+      cause: new TypeError(`causa ${WITNESS}`, { cause: WITNESS }),
+    });
     const out = describeError(e);
     expect(out).not.toContain(WITNESS);
     expect(out).toMatch(/^Error/);

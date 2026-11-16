@@ -9,10 +9,13 @@ export function setupRedirect(): { to: "/onboarding/completar" } {
 }
 
 /** Where an old Conocimiento address for rules or voice goes now; null keeps it in Conocimiento. */
-export function hubRedirect(search: { seccion?: string; doc?: string; q?: string }):
-  | { to: "/strategy"; search: { tab: typeof RULES_TAB; seccion?: string; doc?: string } }
-  | null {
-  if (!search.seccion || !(RULES_SECTIONS as readonly string[]).includes(search.seccion)) return null;
+export function hubRedirect(search: {
+  seccion?: string;
+  doc?: string;
+  q?: string;
+}): { to: "/strategy"; search: { tab: typeof RULES_TAB; seccion?: string; doc?: string } } | null {
+  if (!search.seccion || !(RULES_SECTIONS as readonly string[]).includes(search.seccion))
+    return null;
   // A search (?q=) stays in Conocimiento, the only place with the search box.
   if (search.q?.trim()) return null;
   return {

@@ -22,10 +22,12 @@ export const linkMailbox = createServerFn({ method: "POST" })
     const { gmail } = await import("./gmail.server");
     const { emailAddress } = await gmail.profile();
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("mailbox_links").upsert(
-      { org_id: data.orgId, user_id: context.userId, address: emailAddress, status: "active" },
-      { onConflict: "org_id" },
-    );
+    const { error } = await supabaseAdmin
+      .from("mailbox_links")
+      .upsert(
+        { org_id: data.orgId, user_id: context.userId, address: emailAddress, status: "active" },
+        { onConflict: "org_id" },
+      );
     if (error) throw new Error("No he podido guardar la conexión. Prueba de nuevo.");
     return { address: emailAddress };
   });
@@ -39,7 +41,10 @@ export const unlinkMailbox = createServerFn({ method: "POST" })
     // NK-0174 Q-3: everything read is deleted; «respondió» marks and the counters (Fede) remain.
     const del = await supabaseAdmin.from("inbox_replies").delete().eq("org_id", data.orgId);
     if (del.error) throw new Error("No he podido borrar las respuestas leídas. Prueba de nuevo.");
-    const { error } = await supabaseAdmin.from("mailbox_links").update({ status: "disconnected" }).eq("org_id", data.orgId);
+    const { error } = await supabaseAdmin
+      .from("mailbox_links")
+      .update({ status: "disconnected" })
+      .eq("org_id", data.orgId);
     if (error) throw new Error("No he podido desconectar el buzón. Prueba de nuevo.");
     return { ok: true };
   });

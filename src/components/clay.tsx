@@ -611,7 +611,14 @@ export function ClayEnrich({
   async function run() {
     setBusy(true);
     try {
-      if (!(await confirmSpend("clay_enrich_account", "Consultar los datos de la cuenta en Clay", "Clay"))) return;
+      if (
+        !(await confirmSpend(
+          "clay_enrich_account",
+          "Consultar los datos de la cuenta en Clay",
+          "Clay",
+        ))
+      )
+        return;
       const r = await enrich({ data: { accountId: account.id } });
       setResult(r);
       setPicked(r.changes.filter((c) => c.empty).map((c) => c.field));

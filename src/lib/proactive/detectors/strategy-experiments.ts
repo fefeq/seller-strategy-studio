@@ -4,4 +4,5 @@ import type { Detector } from "../types";
 
 export const experimentCloseRule: Detector = (s) => closeRuleMissing(s.strategy?.experiments ?? []);
 export const experimentReview: Detector = (s) => reviewDue(s.strategy?.experiments ?? [], s.now);
-export const experimentOverdue: Detector = (s) => resultOverdue(s.strategy?.experiments ?? [], s.now);
+export const experimentOverdue: Detector = (s) =>
+  resultOverdue(s.strategy?.experiments ?? [], s.now);

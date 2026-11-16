@@ -10,10 +10,30 @@ export const learnFromMeeting = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ meetingId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const c = await userCtx(context.supabase as Db, context.userId);
-    const { data: m } = await c.db.from("meetings").select("title,objective,notes,call_notes,next_steps,account_id,accounts(name)").eq("id", data.meetingId).eq("org_id", c.orgId).maybeSingle();
+    const { data: m } = await c.db
+      .from("meetings")
+      .select("title,objective,notes,call_notes,next_steps,account_id,accounts(name)")
+      .eq("id", data.meetingId)
+      .eq("org_id", c.orgId)
+      .maybeSingle();
     if (!m) return { added: 0, replaced: 0 };
     const cn = (m.call_notes ?? {}) as Record<string, string>;
-    const text = [`Reunión: ${m.title ?? ""}`, m.objective && `Objetivo: ${m.objective}`, ...Object.entries(cn).filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`), m.notes && `Notas: ${m.notes}`, m.next_steps && `Siguientes pasos: ${m.next_steps}`].filter(Boolean).join("\n");
+    const text = [
+      `Reunión: ${m.title ?? ""}`,
+      m.objective && `Objetivo: ${m.objective}`,
+      ...Object.entries(cn)
+        .filter(([, v]) => v)
+        .map(([k, v]) => `${k}: ${v}`),
+      m.notes && `Notas: ${m.notes}`,
+      m.next_steps && `Siguientes pasos: ${m.next_steps}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
     const { learnFrom } = await import("@/lib/memory.server");
-    return learnFrom(c, { source: "meeting", text, accountId: m.account_id, accountName: (m).accounts?.name ?? null });
+    return learnFrom(c, {
+      source: "meeting",
+      text,
+      accountId: m.account_id,
+      accountName: m.accounts?.name ?? null,
+    });
   });

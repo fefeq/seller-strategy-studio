@@ -14,6 +14,13 @@ if (!o.ticket || !o.slug || !o.base) {
 }
 const dir = resolve(ROOT, `../seller-strategy-studio-${o.slug}`);
 const branch = `feat/${o.slug}`;
-const r = spawnSync(`git worktree add -b ${branch} ${JSON.stringify(dir)} ${o.base}`, { cwd: ROOT, shell: true, stdio: "inherit" });
-if (r.status === 0) console.log(`\nworktree: ${dir}\nbranch:   ${branch}\nbase:     ${o.base}\nNext: cd there, install deps (bun install), then write the failing test first.`);
+const r = spawnSync(`git worktree add -b ${branch} ${JSON.stringify(dir)} ${o.base}`, {
+  cwd: ROOT,
+  shell: true,
+  stdio: "inherit",
+});
+if (r.status === 0)
+  console.log(
+    `\nworktree: ${dir}\nbranch:   ${branch}\nbase:     ${o.base}\nNext: cd there, install deps (bun install), then write the failing test first.`,
+  );
 process.exit(r.status ?? 1);

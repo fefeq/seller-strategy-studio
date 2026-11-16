@@ -201,115 +201,141 @@ function Accounts() {
         <Empty>Aún no hay cuentas. Crea la primera para empezar su plan de cuenta.</Empty>
       ) : (
         <>
-        {/* D1: below md each account is a card (no sideways scroll at 390 px). */}
-        <div className="mb-2 flex items-center gap-2 md:hidden">
-          <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
-          <span className="text-xs text-muted-foreground">Seleccionar todas</span>
-        </div>
-        <ul className="divide-y rounded-lg border bg-card md:hidden">
-          {list.map((a) => (
-            <li key={a.id} className="flex min-w-0 items-start gap-3 p-3">
-              <span className="pt-1">
-                <SelectBox checked={pick.has(a.id)} onChange={() => pick.flip(a.id)} label={`Seleccionar ${a.name}`} />
-              </span>
-              <div className="min-w-0 flex-1">
-                <Link to="/accounts/$id" params={{ id: a.id }} className="flex min-w-0 items-center font-medium">
-                  <CompanyLogo domain={a.domain} size={18} className="mr-2 shrink-0" />
-                  <span className="truncate">{a.name}</span>
-                </Link>
-                <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <ScoreBadge score={scores.get(a.id)!} />
-                  <HealthDot value={a.health} />
-                  <span className="font-mono">
-                    {eur((a.deals ?? []).filter((d) => d.stage !== "won" && d.stage !== "lost").reduce((s, d) => s + Number(d.amount ?? 0), 0))}
-                  </span>
-                  <span>{ownerName(a.owner_id) ?? "Sin responsable"}</span>
-                </div>
-              </div>
-              <AccountQuickActions account={a} />
-            </li>
-          ))}
-        </ul>
-        <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
-          <table className="w-full text-sm">
-            <thead className="border-b bg-muted/50 text-left">
-              <tr>
-                <th className="w-10 px-3 py-3">
-                  <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
-                </th>
-                {[
-                  "Cuenta",
-                  "Puntuación",
-                  "Responsable",
-                  "Tier",
-                  "Salud",
-                  "Stakeholders",
-                  "Pipeline",
-                  "",
-                ].map((h) => (
-                  <th
-                    key={h}
-                    className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" || h === "Responsable" ? "hidden sm:table-cell" : ""}`}
+          {/* D1: below md each account is a card (no sideways scroll at 390 px). */}
+          <div className="mb-2 flex items-center gap-2 md:hidden">
+            <SelectBox checked={pick.all} onChange={pick.flipAll} label="Seleccionar todas" />
+            <span className="text-xs text-muted-foreground">Seleccionar todas</span>
+          </div>
+          <ul className="divide-y rounded-lg border bg-card md:hidden">
+            {list.map((a) => (
+              <li key={a.id} className="flex min-w-0 items-start gap-3 p-3">
+                <span className="pt-1">
+                  <SelectBox
+                    checked={pick.has(a.id)}
+                    onChange={() => pick.flip(a.id)}
+                    label={`Seleccionar ${a.name}`}
+                  />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <Link
+                    to="/accounts/$id"
+                    params={{ id: a.id }}
+                    className="flex min-w-0 items-center font-medium"
                   >
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {list.map((a) => (
-                <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
-                  <td className="px-3 py-3">
-                    <SelectBox checked={pick.has(a.id)} onChange={() => pick.flip(a.id)} label={`Seleccionar ${a.name}`} />
-                  </td>
-                  <td className="px-3 py-3 sm:px-4">
-                    <CompanyLogo domain={a.domain} size={18} className="mr-2" />
-                    <Link
-                      to="/accounts/$id"
-                      params={{ id: a.id }}
-                      className="font-medium hover:text-signal"
-                    >
-                      {a.name}
-                    </Link>
-                    <span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">
-                      {a.domain}
-                    </span>
-                  </td>
-                  <td className="px-3 py-3 sm:px-4">
+                    <CompanyLogo domain={a.domain} size={18} className="mr-2 shrink-0" />
+                    <span className="truncate">{a.name}</span>
+                  </Link>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                     <ScoreBadge score={scores.get(a.id)!} />
-                  </td>
-                  <td className="hidden px-4 py-3 sm:table-cell">
-                    {ownerName(a.owner_id) ?? <span className="text-signal">Sin responsable</span>}
-                  </td>
-                  <td className="hidden px-4 py-3 font-mono sm:table-cell">{a.tier}</td>
-                  <td className="whitespace-nowrap px-3 py-3 sm:px-4">
                     <HealthDot value={a.health} />
-                  </td>
-                  <td className="hidden px-4 py-3 sm:table-cell">{a.stakeholders?.length ?? 0}</td>
-                  <td className="whitespace-nowrap px-3 py-3 font-mono sm:px-4">
-                    {eur(
-                      (a.deals ?? [])
-                        .filter((d) => d.stage !== "won" && d.stage !== "lost")
-                        .reduce((s, d) => s + Number(d.amount ?? 0), 0),
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-right sm:px-4">
-                    <AccountQuickActions account={a} />
-                  </td>
+                    <span className="font-mono">
+                      {eur(
+                        (a.deals ?? [])
+                          .filter((d) => d.stage !== "won" && d.stage !== "lost")
+                          .reduce((s, d) => s + Number(d.amount ?? 0), 0),
+                      )}
+                    </span>
+                    <span>{ownerName(a.owner_id) ?? "Sin responsable"}</span>
+                  </div>
+                </div>
+                <AccountQuickActions account={a} />
+              </li>
+            ))}
+          </ul>
+          <div className="hidden overflow-x-auto rounded-lg border bg-card md:block">
+            <table className="w-full text-sm">
+              <thead className="border-b bg-muted/50 text-left">
+                <tr>
+                  <th className="w-10 px-3 py-3">
+                    <SelectBox
+                      checked={pick.all}
+                      onChange={pick.flipAll}
+                      label="Seleccionar todas"
+                    />
+                  </th>
+                  {[
+                    "Cuenta",
+                    "Puntuación",
+                    "Responsable",
+                    "Tier",
+                    "Salud",
+                    "Stakeholders",
+                    "Pipeline",
+                    "",
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className={`eyebrow px-3 py-3 sm:px-4 ${h === "Tier" || h === "Stakeholders" || h === "Responsable" ? "hidden sm:table-cell" : ""}`}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <SelectionBar
-          count={pick.sel.size}
-          onClear={pick.clear}
-          filename="cuentas.csv"
-          csv={() => ({
-            header: ["Cuenta", "Dominio", "Tier", "Salud", "Responsable"],
-            rows: list.filter((a) => pick.has(a.id)).map((a) => [a.name, a.domain, a.tier, a.health, ownerName(a.owner_id) ?? ""]),
-          })}
-        />
+              </thead>
+              <tbody>
+                {list.map((a) => (
+                  <tr key={a.id} className="border-b last:border-0 hover:bg-muted/40">
+                    <td className="px-3 py-3">
+                      <SelectBox
+                        checked={pick.has(a.id)}
+                        onChange={() => pick.flip(a.id)}
+                        label={`Seleccionar ${a.name}`}
+                      />
+                    </td>
+                    <td className="px-3 py-3 sm:px-4">
+                      <CompanyLogo domain={a.domain} size={18} className="mr-2" />
+                      <Link
+                        to="/accounts/$id"
+                        params={{ id: a.id }}
+                        className="font-medium hover:text-signal"
+                      >
+                        {a.name}
+                      </Link>
+                      <span className="block break-all text-xs text-muted-foreground sm:ml-2 sm:inline">
+                        {a.domain}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 sm:px-4">
+                      <ScoreBadge score={scores.get(a.id)!} />
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      {ownerName(a.owner_id) ?? (
+                        <span className="text-signal">Sin responsable</span>
+                      )}
+                    </td>
+                    <td className="hidden px-4 py-3 font-mono sm:table-cell">{a.tier}</td>
+                    <td className="whitespace-nowrap px-3 py-3 sm:px-4">
+                      <HealthDot value={a.health} />
+                    </td>
+                    <td className="hidden px-4 py-3 sm:table-cell">
+                      {a.stakeholders?.length ?? 0}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 font-mono sm:px-4">
+                      {eur(
+                        (a.deals ?? [])
+                          .filter((d) => d.stage !== "won" && d.stage !== "lost")
+                          .reduce((s, d) => s + Number(d.amount ?? 0), 0),
+                      )}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-3 text-right sm:px-4">
+                      <AccountQuickActions account={a} />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <SelectionBar
+            count={pick.sel.size}
+            onClear={pick.clear}
+            filename="cuentas.csv"
+            csv={() => ({
+              header: ["Cuenta", "Dominio", "Tier", "Salud", "Responsable"],
+              rows: list
+                .filter((a) => pick.has(a.id))
+                .map((a) => [a.name, a.domain, a.tier, a.health, ownerName(a.owner_id) ?? ""]),
+            })}
+          />
         </>
       )}
       {list.length > 0 && (

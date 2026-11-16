@@ -6,7 +6,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { errorText } from "@/lib/errors";
-import { LINKEDIN_ACTIVE_NOTICE, LINKEDIN_FLAG_KEY, LINKEDIN_PAUSE_TEXT } from "@/lib/linkedin-legal";
+import {
+  LINKEDIN_ACTIVE_NOTICE,
+  LINKEDIN_FLAG_KEY,
+  LINKEDIN_PAUSE_TEXT,
+} from "@/lib/linkedin-legal";
 import { useLinkedinLegalPause } from "@/hooks/use-linkedin-legal";
 
 export function LinkedinLegalCard() {
@@ -15,7 +19,10 @@ export function LinkedinLegalCard() {
   const { data: isSuperadmin = false } = useQuery({
     queryKey: ["am-platform-admin"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("platform_admins").select("user_id").maybeSingle();
+      const { data, error } = await supabase
+        .from("platform_admins")
+        .select("user_id")
+        .maybeSingle();
       if (error) throw error;
       return !!data;
     },
@@ -31,9 +38,7 @@ export function LinkedinLegalCard() {
       });
       if (error) throw error;
       toast.success(
-        paused
-          ? "Extracción de LinkedIn reanudada."
-          : "Extracción de LinkedIn en pausa de nuevo.",
+        paused ? "Extracción de LinkedIn reanudada." : "Extracción de LinkedIn en pausa de nuevo.",
       );
       await refetch();
     } catch (e) {

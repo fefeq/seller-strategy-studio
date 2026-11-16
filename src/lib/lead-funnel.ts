@@ -18,8 +18,10 @@ export type LeadSla = Record<OpenLeadStage, number>;
 /** Days a lead may stay in each stage before it counts as delayed. */
 export const DEFAULT_LEAD_SLA: LeadSla = { new: 1, contacted: 3, mql: 5, sql: 7 };
 
-export const leadStageLabel = (s: string) => (s === DISQUALIFIED.id ? DISQUALIFIED.label : LEAD_STAGES.find((x) => x.id === s)?.label ?? s);
-export const isOpenLeadStage = (s: string): s is OpenLeadStage => (OPEN_LEAD_STAGES as readonly string[]).includes(s);
+export const leadStageLabel = (s: string) =>
+  s === DISQUALIFIED.id ? DISQUALIFIED.label : (LEAD_STAGES.find((x) => x.id === s)?.label ?? s);
+export const isOpenLeadStage = (s: string): s is OpenLeadStage =>
+  (OPEN_LEAD_STAGES as readonly string[]).includes(s);
 
 export function readSla(raw: unknown): LeadSla {
   const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
@@ -61,24 +63,42 @@ export type LeadDelay = {
 };
 
 /** A lead is delayed when it stays longer than its stage limit, when its follow-up date has passed, or both. */
-export function leadDelay(lead: Pick<LeadRow, "stage" | "stage_entered_at" | "next_step_at">, sla: LeadSla, now = new Date()): LeadDelay {
-  const daysInStage = Math.max(0, (now.getTime() - new Date(lead.stage_entered_at).getTime()) / DAY);
-  if (!isOpenLeadStage(lead.stage)) return { late: false, reasons: [], daysInStage, limit: null, followupOverdueDays: 0 };
+export function leadDelay(
+  lead: Pick<LeadRow, "stage" | "stage_entered_at" | "next_step_at">,
+  sla: LeadSla,
+  now = new Date(),
+): LeadDelay {
+  const daysInStage = Math.max(
+    0,
+    (now.getTime() - new Date(lead.stage_entered_at).getTime()) / DAY,
+  );
+  if (!isOpenLeadStage(lead.stage))
+    return { late: false, reasons: [], daysInStage, limit: null, followupOverdueDays: 0 };
   const limit = sla[lead.stage];
   const reasons: LeadDelay["reasons"] = [];
   if (daysInStage > limit) reasons.push("stalled");
   let followupOverdueDays = 0;
   if (lead.next_step_at && lead.next_step_at < isoDay(now)) {
     reasons.push("followup");
-    followupOverdueDays = Math.round((new Date(`${isoDay(now)}T00:00:00Z`).getTime() - new Date(`${lead.next_step_at}T00:00:00Z`).getTime()) / DAY);
+    followupOverdueDays = Math.round(
+      (new Date(`${isoDay(now)}T00:00:00Z`).getTime() -
+        new Date(`${lead.next_step_at}T00:00:00Z`).getTime()) /
+        DAY,
+    );
   }
   return { late: reasons.length > 0, reasons, daysInStage, limit, followupOverdueDays };
 }
 
 export function delayText(d: LeadDelay) {
   const parts: string[] = [];
-  if (d.reasons.includes("stalled")) parts.push(`${Math.floor(d.daysInStage)} ${Math.floor(d.daysInStage) === 1 ? "día" : "días"} en la etapa (máx. ${d.limit})`);
-  if (d.reasons.includes("followup")) parts.push(`seguimiento vencido hace ${d.followupOverdueDays} ${d.followupOverdueDays === 1 ? "día" : "días"}`);
+  if (d.reasons.includes("stalled"))
+    parts.push(
+      `${Math.floor(d.daysInStage)} ${Math.floor(d.daysInStage) === 1 ? "día" : "días"} en la etapa (máx. ${d.limit})`,
+    );
+  if (d.reasons.includes("followup"))
+    parts.push(
+      `seguimiento vencido hace ${d.followupOverdueDays} ${d.followupOverdueDays === 1 ? "día" : "días"}`,
+    );
   return parts.join(" · ");
 }
 
@@ -95,21 +115,34 @@ export const FUNNEL_STEPS = [
 export type FunnelStep = (typeof FUNNEL_STEPS)[number]["id"];
 
 /** When the lead reached a funnel step (null if it never did). Ganado comes from its deal. */
-export function reachedAt(lead: LeadRow, step: FunnelStep, deals: Map<string, DealOutcome>): string | null {
+export function reachedAt(
+  lead: LeadRow,
+  step: FunnelStep,
+  deals: Map<string, DealOutcome>,
+): string | null {
   switch (step) {
-    case "lead": return lead.created_at;
-    case "contacted": return lead.contacted_at;
-    case "mql": return lead.mql_at;
-    case "sql": return lead.sql_at;
-    case "opportunity": return lead.opportunity_at;
+    case "lead":
+      return lead.created_at;
+    case "contacted":
+      return lead.contacted_at;
+    case "mql":
+      return lead.mql_at;
+    case "sql":
+      return lead.sql_at;
+    case "opportunity":
+      return lead.opportunity_at;
     case "won": {
       const d = lead.deal_id ? deals.get(lead.deal_id) : undefined;
-      return d?.stage === "won" ? d.closed_at ?? lead.opportunity_at : null;
+      return d?.stage === "won" ? (d.closed_at ?? lead.opportunity_at) : null;
     }
   }
 }
 
-const BACKFILLED: Partial<Record<FunnelStep, FunnelStep>> = { contacted: "mql", mql: "sql", sql: "opportunity" };
+const BACKFILLED: Partial<Record<FunnelStep, FunnelStep>> = {
+  contacted: "mql",
+  mql: "sql",
+  sql: "opportunity",
+};
 
 /**
  * Whether the lead really went through a step. The database stamps every earlier step when a lead
@@ -117,7 +150,11 @@ const BACKFILLED: Partial<Record<FunnelStep, FunnelStep>> = { contacted: "mql", 
  * mql_at and sql_at all at the same instant). A step stamped at the very same instant as the next
  * one was skipped, not passed: counting it shows a 100 % funnel nobody went through.
  */
-export function passedThrough(lead: LeadRow, step: FunnelStep, deals: Map<string, DealOutcome>): boolean {
+export function passedThrough(
+  lead: LeadRow,
+  step: FunnelStep,
+  deals: Map<string, DealOutcome>,
+): boolean {
   const at = reachedAt(lead, step, deals);
   if (!at) return false;
   const next = BACKFILLED[step];
@@ -140,54 +177,109 @@ export type FunnelResult = {
    * count = leads that passed through the step; direct = those that entered the funnel at this step
    * (they skipped the one before); fromPrev = share of the previous step's leads that went on to this one.
    */
-  steps: { id: FunnelStep; label: string; count: number; direct: number; fromPrev: number | null; fromStart: number }[];
+  steps: {
+    id: FunnelStep;
+    label: string;
+    count: number;
+    direct: number;
+    fromPrev: number | null;
+    fromStart: number;
+  }[];
   /** Median days from entry to each step, among leads that reached it. */
   medianDays: Record<"mql" | "sql" | "opportunity" | "won", number | null>;
 };
 
 /** Leads that entered (created_at) within [start, end). */
-export function leadCohort<T extends Pick<LeadRow, "created_at">>(leads: T[], start: Date, end: Date): T[] {
-  return leads.filter((l) => { const t = new Date(l.created_at).getTime(); return t >= start.getTime() && t < end.getTime(); });
+export function leadCohort<T extends Pick<LeadRow, "created_at">>(
+  leads: T[],
+  start: Date,
+  end: Date,
+): T[] {
+  return leads.filter((l) => {
+    const t = new Date(l.created_at).getTime();
+    return t >= start.getTime() && t < end.getTime();
+  });
 }
 
-export function leadFunnel(leads: LeadRow[], deals: DealOutcome[] | Map<string, DealOutcome>): FunnelResult {
+export function leadFunnel(
+  leads: LeadRow[],
+  deals: DealOutcome[] | Map<string, DealOutcome>,
+): FunnelResult {
   const map = deals instanceof Map ? deals : new Map(deals.map((d) => [d.id, d]));
   const total = leads.length;
   const steps = FUNNEL_STEPS.map((s, i) => {
     const here = leads.filter((l) => passedThrough(l, s.id, map));
     const before = i === 0 ? null : FUNNEL_STEPS[i - 1].id;
-    const prevCount = before == null ? null : leads.filter((l) => passedThrough(l, before, map)).length;
-    const continued = before == null ? here.length : here.filter((l) => passedThrough(l, before, map)).length;
+    const prevCount =
+      before == null ? null : leads.filter((l) => passedThrough(l, before, map)).length;
+    const continued =
+      before == null ? here.length : here.filter((l) => passedThrough(l, before, map)).length;
     return {
-      id: s.id, label: s.label, count: here.length,
+      id: s.id,
+      label: s.label,
+      count: here.length,
       direct: before == null ? 0 : here.length - continued,
       fromPrev: prevCount == null ? null : prevCount ? continued / prevCount : 0,
       fromStart: total ? here.length / total : 0,
     };
   });
   // Same rule as the counts: a step a lead skipped has no «days to reach it».
-  const days = (step: FunnelStep) => median(leads.flatMap((l) => {
-    const at = passedThrough(l, step, map) ? reachedAt(l, step, map) : null;
-    return at ? [Math.max(0, (new Date(at).getTime() - new Date(l.created_at).getTime()) / DAY)] : [];
-  }));
+  const days = (step: FunnelStep) =>
+    median(
+      leads.flatMap((l) => {
+        const at = passedThrough(l, step, map) ? reachedAt(l, step, map) : null;
+        return at
+          ? [Math.max(0, (new Date(at).getTime() - new Date(l.created_at).getTime()) / DAY)]
+          : [];
+      }),
+    );
   return {
     total,
     disqualified: leads.filter((l) => l.stage === DISQUALIFIED.id).length,
     steps,
-    medianDays: { mql: days("mql"), sql: days("sql"), opportunity: days("opportunity"), won: days("won") },
+    medianDays: {
+      mql: days("mql"),
+      sql: days("sql"),
+      opportunity: days("opportunity"),
+      won: days("won"),
+    },
   };
 }
 
-export type FunnelGroup = { key: string; total: number; counts: Record<FunnelStep, number>; toOpportunity: number; toWon: number };
+export type FunnelGroup = {
+  key: string;
+  total: number;
+  counts: Record<FunnelStep, number>;
+  toOpportunity: number;
+  toWon: number;
+};
 
 /** Same funnel split by any key (segment, source…), biggest groups first. */
-export function funnelBy(leads: LeadRow[], deals: DealOutcome[], key: (l: LeadRow) => string): FunnelGroup[] {
+export function funnelBy(
+  leads: LeadRow[],
+  deals: DealOutcome[],
+  key: (l: LeadRow) => string,
+): FunnelGroup[] {
   const map = new Map(deals.map((d) => [d.id, d]));
   const groups = new Map<string, LeadRow[]>();
-  for (const l of leads) { const k = key(l); groups.set(k, [...(groups.get(k) ?? []), l]); }
-  return [...groups.entries()].map(([k, ls]) => {
-    const f = leadFunnel(ls, map);
-    const counts = Object.fromEntries(f.steps.map((s) => [s.id, s.count])) as Record<FunnelStep, number>;
-    return { key: k, total: f.total, counts, toOpportunity: f.total ? counts.opportunity / f.total : 0, toWon: f.total ? counts.won / f.total : 0 };
-  }).sort((a, b) => b.total - a.total);
+  for (const l of leads) {
+    const k = key(l);
+    groups.set(k, [...(groups.get(k) ?? []), l]);
+  }
+  return [...groups.entries()]
+    .map(([k, ls]) => {
+      const f = leadFunnel(ls, map);
+      const counts = Object.fromEntries(f.steps.map((s) => [s.id, s.count])) as Record<
+        FunnelStep,
+        number
+      >;
+      return {
+        key: k,
+        total: f.total,
+        counts,
+        toOpportunity: f.total ? counts.opportunity / f.total : 0,
+        toWon: f.total ? counts.won / f.total : 0,
+      };
+    })
+    .sort((a, b) => b.total - a.total);
 }

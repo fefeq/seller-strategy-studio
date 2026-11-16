@@ -441,8 +441,21 @@ function DealDetail({
     },
   });
   const total = MEDDPICC.reduce((s, [k]) => s + (m[k]?.score ?? 0), 0);
-  const FORM_KEYS = ["name", "amount", "close_date", "probability", "health", "meddpicc", "forecast_category", "source", "segment_id", "partner_id"] as const;
-  const dirty = FORM_KEYS.some((k) => JSON.stringify(d[k] ?? null) !== JSON.stringify(deal[k] ?? null));
+  const FORM_KEYS = [
+    "name",
+    "amount",
+    "close_date",
+    "probability",
+    "health",
+    "meddpicc",
+    "forecast_category",
+    "source",
+    "segment_id",
+    "partner_id",
+  ] as const;
+  const dirty = FORM_KEYS.some(
+    (k) => JSON.stringify(d[k] ?? null) !== JSON.stringify(deal[k] ?? null),
+  );
   const [saving, setSaving] = useState(false);
   // With product lines the amount is theirs (the database recomputes it): the form must not overwrite it.
   const { data: lines = [] } = useDealLines(deal.id);
@@ -509,192 +522,200 @@ function DealDetail({
           <TabsTrigger value="plan">Plan conjunto</TabsTrigger>
         </TabsList>
         <TabsContent value="resumen" className="space-y-4 pt-4">
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}
-        <Field label="Etapa">
-          <Pick
-            value={deal.stage}
-            options={stageOptions(stages, true)}
-            onChange={(v) => {
-              if (v !== deal.stage) void onMove(v);
-            }}
-          />
-        </Field>
-        <Field label="Nombre">
-          <Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
-        </Field>
-        <Field label={`Importe (${symbol})`}>
-          {hasLines ? (
-            <p
-              className="flex h-10 items-center font-mono text-sm md:h-9"
-              title="Suma de las líneas del deal en un año"
-            >
-              {eur(Number(deal.amount ?? 0))} · de sus líneas
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {/* Same path as drag & drop: MEDDPICC gate, Ganado → Aprobaciones. Saved immediately, not with "Guardar deal". */}
+            <Field label="Etapa">
+              <Pick
+                value={deal.stage}
+                options={stageOptions(stages, true)}
+                onChange={(v) => {
+                  if (v !== deal.stage) void onMove(v);
+                }}
+              />
+            </Field>
+            <Field label="Nombre">
+              <Input value={d.name} onChange={(e) => setD({ ...d, name: e.target.value })} />
+            </Field>
+            <Field label={`Importe (${symbol})`}>
+              {hasLines ? (
+                <p
+                  className="flex h-10 items-center font-mono text-sm md:h-9"
+                  title="Suma de las líneas del deal en un año"
+                >
+                  {eur(Number(deal.amount ?? 0))} · de sus líneas
+                </p>
+              ) : (
+                <Input
+                  type="number"
+                  value={d.amount ?? 0}
+                  onChange={(e) => setD({ ...d, amount: Number(e.target.value) })}
+                />
+              )}
+            </Field>
+            <Field label="Fecha de cierre">
+              <DateField value={d.close_date} onChange={(iso) => setD({ ...d, close_date: iso })} />
+            </Field>
+            <Field label="Probabilidad (%)">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={d.probability ?? 0}
+                onChange={(e) => setD({ ...d, probability: Number(e.target.value) })}
+              />
+            </Field>
+            <Field label="Salud">
+              <Pick
+                value={d.health ?? ""}
+                options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }}
+                onChange={(v) => setD({ ...d, health: v })}
+              />
+            </Field>
+            <Field label="Categoría de forecast">
+              <Pick
+                value={d.forecast_category ?? "pipeline"}
+                options={{
+                  commit: "Commit",
+                  best_case: "Best case",
+                  pipeline: "Pipeline",
+                  omitted: "Omitido",
+                }}
+                onChange={(v) => setD({ ...d, forecast_category: v })}
+              />
+            </Field>
+            <Field label="Fuente">
+              <DealSourceField
+                value={d.source ?? null}
+                onChange={(v) => setD({ ...d, source: v })}
+              />
+            </Field>
+            <Field label="Segmento">
+              <Pick
+                value={d.segment_id ?? ""}
+                options={Object.fromEntries([
+                  ["", "—"],
+                  ...lookups.segments.map((s) => [s.id, s.name]),
+                ])}
+                onChange={(v) => setD({ ...d, segment_id: v })}
+              />
+            </Field>
+            <Field label="Partner">
+              <Pick
+                value={d.partner_id ?? ""}
+                options={Object.fromEntries([
+                  ["", "—"],
+                  ...lookups.partners.map((s) => [s.id, s.name]),
+                ])}
+                onChange={(v) => setD({ ...d, partner_id: v })}
+              />
+            </Field>
+          </div>
+          {deal.stage === "lost" && <LossSection deal={deal} onSaved={onSaved} />}
+          {d.slip_count > 0 && (
+            <p className="text-xs text-signal">
+              La fecha de cierre se ha retrasado {d.slip_count}{" "}
+              {d.slip_count === 1 ? "vez" : "veces"}.
             </p>
-          ) : (
-            <Input
-              type="number"
-              value={d.amount ?? 0}
-              onChange={(e) => setD({ ...d, amount: Number(e.target.value) })}
-            />
           )}
-        </Field>
-        <Field label="Fecha de cierre">
-          <DateField value={d.close_date} onChange={(iso) => setD({ ...d, close_date: iso })} />
-        </Field>
-        <Field label="Probabilidad (%)">
-          <Input
-            type="number"
-            min={0}
-            max={100}
-            value={d.probability ?? 0}
-            onChange={(e) => setD({ ...d, probability: Number(e.target.value) })}
-          />
-        </Field>
-        <Field label="Salud">
-          <Pick
-            value={d.health ?? ""}
-            options={{ green: "Sano", yellow: "Atención", red: "En riesgo" }}
-            onChange={(v) => setD({ ...d, health: v })}
-          />
-        </Field>
-        <Field label="Categoría de forecast">
-          <Pick
-            value={d.forecast_category ?? "pipeline"}
-            options={{
-              commit: "Commit",
-              best_case: "Best case",
-              pipeline: "Pipeline",
-              omitted: "Omitido",
-            }}
-            onChange={(v) => setD({ ...d, forecast_category: v })}
-          />
-        </Field>
-        <Field label="Fuente">
-          <DealSourceField value={d.source ?? null} onChange={(v) => setD({ ...d, source: v })} />
-        </Field>
-        <Field label="Segmento">
-          <Pick
-            value={d.segment_id ?? ""}
-            options={Object.fromEntries([
-              ["", "—"],
-              ...lookups.segments.map((s) => [s.id, s.name]),
-            ])}
-            onChange={(v) => setD({ ...d, segment_id: v })}
-          />
-        </Field>
-        <Field label="Partner">
-          <Pick
-            value={d.partner_id ?? ""}
-            options={Object.fromEntries([
-              ["", "—"],
-              ...lookups.partners.map((s) => [s.id, s.name]),
-            ])}
-            onChange={(v) => setD({ ...d, partner_id: v })}
-          />
-        </Field>
-      </div>
-      {deal.stage === "lost" && <LossSection deal={deal} onSaved={onSaved} />}
-      {d.slip_count > 0 && (
-        <p className="text-xs text-signal">
-          La fecha de cierre se ha retrasado {d.slip_count} {d.slip_count === 1 ? "vez" : "veces"}.
-        </p>
-      )}
-      <Button variant="outline" onClick={requestDiscount}>
-        Pedir descuento
-      </Button>
+          <Button variant="outline" onClick={requestDiscount}>
+            Pedir descuento
+          </Button>
         </TabsContent>
         <TabsContent value="productos" className="pt-4">
           {/* Product lines save on their own; the deal amount follows them. */}
           <DealLinesEditor dealId={deal.id} orgId={deal.org_id ?? undefined} />
         </TabsContent>
         <TabsContent value="meddpicc" className="pt-4">
-      <div>
-        <div className="mb-2 flex items-baseline justify-between">
-          <h3 className="text-2xl">
-            <JargonTerm term="MEDDPICC" />
-          </h3>
-          <span className="font-mono text-sm">{total}/24</span>
-        </div>
-        <div className="space-y-2">
-          {MEDDPICC.map(([k, label, q]) => (
-            <div
-              key={k}
-              className={`rounded-md border p-3 ${(m[k]?.score ?? 0) === 0 ? "border-signal/50" : ""}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <span className="min-w-0 text-sm font-medium">{label}</span>
-                <ScoreRadio
-                  label={label}
-                  value={m[k]?.score ?? 0}
-                  onChange={(n) => setD({ ...d, meddpicc: { ...m, [k]: { ...m[k], score: n } } })}
-                />
-              </div>
-              <Textarea
-                rows={1}
-                placeholder={q}
-                className="mt-2 md:text-sm"
-                value={m[k]?.note ?? ""}
-                onChange={(e) =>
-                  setD({
-                    ...d,
-                    meddpicc: { ...m, [k]: { score: m[k]?.score ?? 0, note: e.target.value } },
-                  })
-                }
-              />
+          <div>
+            <div className="mb-2 flex items-baseline justify-between">
+              <h3 className="text-2xl">
+                <JargonTerm term="MEDDPICC" />
+              </h3>
+              <span className="font-mono text-sm">{total}/24</span>
             </div>
-          ))}
-        </div>
-      </div>
+            <div className="space-y-2">
+              {MEDDPICC.map(([k, label, q]) => (
+                <div
+                  key={k}
+                  className={`rounded-md border p-3 ${(m[k]?.score ?? 0) === 0 ? "border-signal/50" : ""}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="min-w-0 text-sm font-medium">{label}</span>
+                    <ScoreRadio
+                      label={label}
+                      value={m[k]?.score ?? 0}
+                      onChange={(n) =>
+                        setD({ ...d, meddpicc: { ...m, [k]: { ...m[k], score: n } } })
+                      }
+                    />
+                  </div>
+                  <Textarea
+                    rows={1}
+                    placeholder={q}
+                    className="mt-2 md:text-sm"
+                    value={m[k]?.note ?? ""}
+                    onChange={(e) =>
+                      setD({
+                        ...d,
+                        meddpicc: { ...m, [k]: { score: m[k]?.score ?? 0, note: e.target.value } },
+                      })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         </TabsContent>
         <TabsContent value="plan" className="pt-4">
-      <div>
-        <h3 className="mb-2 text-2xl">Plan de acción conjunto</h3>
-        <p className="mb-2 text-xs text-muted-foreground">Cada hito se guarda al añadirlo o marcarlo.</p>
-        <div className="space-y-1.5">
-          {items.map((i) => (
-            <label
-              key={i.id}
-              className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border p-2.5 text-sm"
-            >
-              <Checkbox checked={i.done} onCheckedChange={(v) => toggle(i.id, !!v)} />
-              <span
-                className={`min-w-0 flex-1 break-words ${i.done ? "line-through opacity-60" : ""}`}
+          <div>
+            <h3 className="mb-2 text-2xl">Plan de acción conjunto</h3>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Cada hito se guarda al añadirlo o marcarlo.
+            </p>
+            <div className="space-y-1.5">
+              {items.map((i) => (
+                <label
+                  key={i.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border p-2.5 text-sm"
+                >
+                  <Checkbox checked={i.done} onCheckedChange={(v) => toggle(i.id, !!v)} />
+                  <span
+                    className={`min-w-0 flex-1 break-words ${i.done ? "line-through opacity-60" : ""}`}
+                  >
+                    {i.title}
+                  </span>
+                  <span className="w-full pl-7 font-mono text-xs text-muted-foreground sm:ml-auto sm:w-auto sm:pl-0">
+                    {i.owner_side} · {i.due_date ?? "sin fecha"}
+                  </span>
+                </label>
+              ))}
+            </div>
+            <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-2 sm:flex">
+              <Input
+                placeholder="Hito (p. ej. revisión de seguridad)"
+                className="col-span-3 sm:col-span-1"
+                value={newItem}
+                onChange={(e) => setNewItem(e.target.value)}
+              />
+              <DateField
+                aria-label="Fecha del hito"
+                className="w-full sm:w-40"
+                value={due || null}
+                onChange={(iso) => setDue(iso ?? "")}
+              />
+              <NativeSelect
+                aria-label="Lado del hito"
+                value={side}
+                onChange={(e) => setSide(e.target.value)}
               >
-                {i.title}
-              </span>
-              <span className="w-full pl-7 font-mono text-xs text-muted-foreground sm:ml-auto sm:w-auto sm:pl-0">
-                {i.owner_side} · {i.due_date ?? "sin fecha"}
-              </span>
-            </label>
-          ))}
-        </div>
-        <div className="mt-2 grid grid-cols-[1fr_auto_auto] gap-2 sm:flex">
-          <Input
-            placeholder="Hito (p. ej. revisión de seguridad)"
-            className="col-span-3 sm:col-span-1"
-            value={newItem}
-            onChange={(e) => setNewItem(e.target.value)}
-          />
-          <DateField
-            aria-label="Fecha del hito"
-            className="w-full sm:w-40"
-            value={due || null}
-            onChange={(iso) => setDue(iso ?? "")}
-          />
-          <NativeSelect
-            aria-label="Lado del hito"
-            value={side}
-            onChange={(e) => setSide(e.target.value)}
-          >
-            <option value="nosotros">Nosotros</option>
-            <option value="cliente">Cliente</option>
-          </NativeSelect>
-          <Button disabled={!newItem} onClick={addItem}>
-            Añadir hito
-          </Button>
-        </div>
-      </div>
+                <option value="nosotros">Nosotros</option>
+                <option value="cliente">Cliente</option>
+              </NativeSelect>
+              <Button disabled={!newItem} onClick={addItem}>
+                Añadir hito
+              </Button>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
       {/* One save for every tab's deal fields (D2). Stage, product lines and plan milestones save on their own. */}

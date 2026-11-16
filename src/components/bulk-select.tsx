@@ -17,7 +17,15 @@ export function useSelection(ids: readonly string[]) {
   };
 }
 
-export function SelectBox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+export function SelectBox({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) {
   return (
     <input
       type="checkbox"

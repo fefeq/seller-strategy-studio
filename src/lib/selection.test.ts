@@ -14,7 +14,8 @@ describe("D1 selection", () => {
     expect([...prune(new Set(["a", "x"]), ["a", "b"])]).toEqual(["a"]);
   });
   it("csv neutralises formulas", () => {
-    for (const f of ["=1+1", "+1", "-1", "@SUM(A1)", "  =x"]) expect(toCsv(["n"], [[f]]).split("\r\n")[1]).toBe(`"'${f}"`);
+    for (const f of ["=1+1", "+1", "-1", "@SUM(A1)", "  =x"])
+      expect(toCsv(["n"], [[f]]).split("\r\n")[1]).toBe(`"'${f}"`);
     expect(toCsv(["n"], [[-5]]).split("\r\n")[1]).toBe('"-5"');
   });
   it("csv escapes quotes, commas and newlines", () => {

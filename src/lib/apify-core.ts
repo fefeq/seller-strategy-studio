@@ -97,7 +97,13 @@ export async function companyLinkedin(_db: Db, acc: Acc): Promise<string | null>
     { query: `"${name}" site:linkedin.com/company`, limit: 5, sources: ["web"] },
     { queries: [`${name} LinkedIn company page`], maxResults: 5 },
     10,
-    { db: _db, orgId: acc.org_id, userId: null, tool: "linkedin_company_page", trigger: "automatic" },
+    {
+      db: _db,
+      orgId: acc.org_id,
+      userId: null,
+      tool: "linkedin_company_page",
+      trigger: "automatic",
+    },
   ).catch(() => [] as NewsItem[]);
   const url = pickLinkedinCompany(
     found.filter((r) => r.title.toLowerCase().includes(name.toLowerCase().split(" ")[0] ?? "")),
@@ -189,7 +195,13 @@ export async function companyJobs(
 }
 
 /** A+: every LinkedIn robot run lands in the company ledger as «sin dato» (Apify gives no synchronous charge). */
-async function logLinkedinRun(db: Db, orgId: string, tool: string, volume: number, trigger: "manual" | "automatic" = "manual") {
+async function logLinkedinRun(
+  db: Db,
+  orgId: string,
+  tool: string,
+  volume: number,
+  trigger: "manual" | "automatic" = "manual",
+) {
   try {
     const { logUsage } = await import("@/lib/orchestrator/usage");
     await logUsage(
@@ -240,13 +252,22 @@ export async function accountJobsCore(db: Db, accountId: string, scope: AiScope 
 /** A+: current role on LinkedIn vs what NOKKO stores. Reads only; updating the record stays a confirmed write. */
 export async function stakeholderRoleCore(db: Db, stakeholderId: string, scope: AiScope = null) {
   const { data: s } = await inOrg(
-    db.from("stakeholders").select("id,org_id,name,title,linkedin_url,account_id").eq("id", stakeholderId),
+    db
+      .from("stakeholders")
+      .select("id,org_id,name,title,linkedin_url,account_id")
+      .eq("id", stakeholderId),
     scope,
   ).maybeSingle();
   if (!s) throw new Error("No encuentro esa persona en esta empresa.");
   const url = linkedinProfileUrl(s.linkedin_url);
   if (!url) throw new Error(`Añade el LinkedIn de ${s.name} para comprobar su cargo.`);
-  const { data: acc } = await inOrg(db.from("accounts").select("name").eq("id", s.account_id as string), scope).maybeSingle();
+  const { data: acc } = await inOrg(
+    db
+      .from("accounts")
+      .select("name")
+      .eq("id", s.account_id as string),
+    scope,
+  ).maybeSingle();
   let raw: unknown;
   try {
     raw = await runActor(
@@ -256,14 +277,22 @@ export async function stakeholderRoleCore(db: Db, stakeholderId: string, scope: 
     );
   } finally {
     // Logged even when the run fails: Apify may have charged it (cost «sin dato»).
-    await logLinkedinRun(db, s.org_id as string, "linkedin_role_check", Array.isArray(raw) ? raw.length : 0);
+    await logLinkedinRun(
+      db,
+      s.org_id as string,
+      "linkedin_role_check",
+      Array.isArray(raw) ? raw.length : 0,
+    );
   }
   const { currentRole, roleChange } = await import("@/lib/linkedin-insights");
   const now = currentRole(raw);
   return {
     name: s.name as string,
     linkedin: url,
-    change: roleChange({ title: s.title as string | null, company: (acc?.name as string | undefined) ?? null }, now),
+    change: roleChange(
+      { title: s.title as string | null, company: (acc?.name as string | undefined) ?? null },
+      now,
+    ),
   };
 }
 
@@ -311,14 +340,21 @@ export async function linkedinSignalItems(db: Db, acc: Acc): Promise<NewsItem[]>
         })
       : Promise.resolve([] as Job[]),
   ]);
-  if (url) await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts.length, "automatic");
+  if (url)
+    await logLinkedinRun(db, acc.org_id, "linkedin_company_posts", posts.length, "automatic");
   if (name) await logLinkedinRun(db, acc.org_id, "company_job_postings", jobs.length, "automatic");
   return linkedinNews(posts, jobs.slice(0, 8));
 }
 
 /** Reviews of a competitor on G2 (by G2 link or by name). */
 /** Who pays for a robot run: the run is logged in the company ledger as «sin dato» (Apify gives no synchronous charge). */
-export type ApifySpend = { db: Db; orgId: string; userId: string | null; trigger: "manual" | "automatic"; tool: string };
+export type ApifySpend = {
+  db: Db;
+  orgId: string;
+  userId: string | null;
+  trigger: "manual" | "automatic";
+  tool: string;
+};
 
 async function logApify(spend: ApifySpend | undefined, volume: number) {
   if (!spend) return;
@@ -332,7 +368,12 @@ async function logApify(spend: ApifySpend | undefined, volume: number) {
 }
 
 /** Runs a G2 actor and logs the attempt, also when it fails after being sent (a failure may still be charged). */
-async function g2Run(spend: ApifySpend | undefined, actor: { id: string; maxUsd: number }, input: object, opts: { maxItems: number; timeoutSecs?: number }) {
+async function g2Run(
+  spend: ApifySpend | undefined,
+  actor: { id: string; maxUsd: number },
+  input: object,
+  opts: { maxItems: number; timeoutSecs?: number },
+) {
   try {
     return await runActor(actor, input, opts);
   } finally {
@@ -382,11 +423,25 @@ export async function competitorReviewsCore(
 }
 
 /** A battlecard (Markdown) written from a competitor's G2 reviews and our positioning. Saves nothing. */
-export async function battlecardCore(db: Db, competitor: string, max = 20, scope: AiScope = null, trigger: "manual" | "automatic" = "manual") {
+export async function battlecardCore(
+  db: Db,
+  competitor: string,
+  max = 20,
+  scope: AiScope = null,
+  trigger: "manual" | "automatic" = "manual",
+) {
   const r = await competitorReviewsCore(
     competitor,
     max,
-    scope ? { db, orgId: scope.orgId, userId: scope.userId, trigger, tool: "create_battlecard_from_reviews" } : undefined,
+    scope
+      ? {
+          db,
+          orgId: scope.orgId,
+          userId: scope.userId,
+          trigger,
+          tool: "create_battlecard_from_reviews",
+        }
+      : undefined,
   );
   const { data: pos } = await inOrg(
     db

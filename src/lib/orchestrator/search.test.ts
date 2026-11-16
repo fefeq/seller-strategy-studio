@@ -20,12 +20,20 @@ describe("need-based searches", () => {
   });
 
   it("key people: free Apollo search first, then Clay", () => {
-    const p = planFor({ need: "find_stakeholders", connected: ["apollo", "clay"], budget: { remaining: Infinity, automatic: false, paused: false } });
+    const p = planFor({
+      need: "find_stakeholders",
+      connected: ["apollo", "clay"],
+      budget: { remaining: Infinity, automatic: false, paused: false },
+    });
     expect(p.steps.map((s) => s.service)).toEqual(["apollo", "clay"]);
   });
 
   it("ICP companies: quick search tries Apollo before Clay and Parallel", () => {
-    const p = planFor({ need: "icp_companies", connected: ["apollo", "clay", "parallel"], budget: { remaining: Infinity, automatic: false, paused: false } });
+    const p = planFor({
+      need: "icp_companies",
+      connected: ["apollo", "clay", "parallel"],
+      budget: { remaining: Infinity, automatic: false, paused: false },
+    });
     expect(p.steps[0].service).toBe("apollo");
     expect(p.steps.map((s) => s.service)).toContain("clay");
   });

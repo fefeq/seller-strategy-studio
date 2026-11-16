@@ -15,7 +15,10 @@ export const Route = createFileRoute("/reset-password")({
       { title: "Cambiar contraseña — Nokko" },
       { name: "description", content: "Elige una contraseña nueva para tu cuenta de Nokko." },
       { property: "og:title", content: "Cambiar contraseña — Nokko" },
-      { property: "og:description", content: "Elige una contraseña nueva para tu cuenta de Nokko." },
+      {
+        property: "og:description",
+        content: "Elige una contraseña nueva para tu cuenta de Nokko.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex" },
@@ -59,20 +62,39 @@ function ResetPassword() {
         {!ready ? (
           <p className="text-sm text-muted-foreground">
             Abre esta página desde el enlace del email de recuperación. Si ha caducado, pide otro en{" "}
-            <Link to="/auth" className="underline underline-offset-4">Entrar</Link>.
+            <Link to="/auth" className="underline underline-offset-4">
+              Entrar
+            </Link>
+            .
           </p>
         ) : (
           <>
             <div className="space-y-1.5">
               <Label htmlFor="new-password">Contraseña nueva</Label>
               <div className="flex gap-2">
-                <Input id="new-password" type={show ? "text" : "password"} autoComplete="new-password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} required />
-                <Button type="button" variant="outline" className="min-h-11 shrink-0" aria-pressed={show} onClick={() => setShow(!show)}>
+                <Input
+                  id="new-password"
+                  type={show ? "text" : "password"}
+                  autoComplete="new-password"
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11 shrink-0"
+                  aria-pressed={show}
+                  onClick={() => setShow(!show)}
+                >
                   {show ? "Ocultar" : "Mostrar"}
                 </Button>
               </div>
             </div>
-            <Button className="w-full" disabled={busy}>Guardar contraseña</Button>
+            <Button className="w-full" disabled={busy}>
+              Guardar contraseña
+            </Button>
           </>
         )}
       </form>

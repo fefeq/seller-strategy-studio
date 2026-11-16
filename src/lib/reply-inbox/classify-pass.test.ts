@@ -1,9 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { MAX_CLASSIFY_PER_PASS, plainBody, runClassifyPass, type PassPorts, type PendingReply } from "./classify-pass";
+import {
+  MAX_CLASSIFY_PER_PASS,
+  plainBody,
+  runClassifyPass,
+  type PassPorts,
+  type PendingReply,
+} from "./classify-pass";
 
-const b64 = (s: string) => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64 = (s: string) =>
+  btoa(unescape(encodeURIComponent(s)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 const now = new Date("2026-11-14T12:00:00Z");
-const row = (id: string, kind: "human" | "auto" = "human"): PendingReply => ({ id, org_id: "o", user_id: "u", gmail_id: `g${id}`, lead_id: "l", kind });
+const row = (id: string, kind: "human" | "auto" = "human"): PendingReply => ({
+  id,
+  org_id: "o",
+  user_id: "u",
+  gmail_id: `g${id}`,
+  lead_id: "l",
+  kind,
+});
 
 function fakePorts(rows: PendingReply[], opts: { reserve?: boolean; bodyFails?: boolean } = {}) {
   const log: string[] = [];
@@ -12,27 +29,82 @@ function fakePorts(rows: PendingReply[], opts: { reserve?: boolean; bodyFails?: 
   const finished: Record<string, string> = {};
   const ports: PassPorts = {
     pending: async (limit) => rows.slice(0, limit),
-    reserve: async (id) => { log.push(`reserve:${id}`); return opts.reserve ?? true; },
-    body: async (g) => { log.push(`body:${g}`); if (opts.bodyFails) throw new Error("x"); return { payload: { mimeType: "text/plain", body: { data: b64("Me interesa, ¿hablamos el martes? secreto-remitente") } } }; },
-    context: async () => ({ positioning: {}, pillars: [], lead: { contact_name: "Ana" }, forbidden: [] }),
-    model: {
-      classify: async () => { log.push("classify"); return { completed: true, output: { category: "interested", confidence: 0.9, returnDate: null, referredName: null, referredEmail: null }, usage: { inputTokens: 1, outputTokens: 1, costUsd: 0.01 } }; },
-      draft: async () => { log.push("draft"); return { completed: true, output: "Hola Ana, claro.", usage: null }; },
+    reserve: async (id) => {
+      log.push(`reserve:${id}`);
+      return opts.reserve ?? true;
     },
-    receipt: async (_r, rec) => { receipts.push(rec); },
-    save: async (r, p, expires) => { saved.push({ id: r.id, expires, category: p.classification?.category ?? null }); },
-    finish: async (id, status) => { finished[id] = status; },
-    purge: async () => { log.push("purge"); },
+    body: async (g) => {
+      log.push(`body:${g}`);
+      if (opts.bodyFails) throw new Error("x");
+      return {
+        payload: {
+          mimeType: "text/plain",
+          body: { data: b64("Me interesa, ¿hablamos el martes? secreto-remitente") },
+        },
+      };
+    },
+    context: async () => ({
+      positioning: {},
+      pillars: [],
+      lead: { contact_name: "Ana" },
+      forbidden: [],
+    }),
+    model: {
+      classify: async () => {
+        log.push("classify");
+        return {
+          completed: true,
+          output: {
+            category: "interested",
+            confidence: 0.9,
+            returnDate: null,
+            referredName: null,
+            referredEmail: null,
+          },
+          usage: { inputTokens: 1, outputTokens: 1, costUsd: 0.01 },
+        };
+      },
+      draft: async () => {
+        log.push("draft");
+        return { completed: true, output: "Hola Ana, claro.", usage: null };
+      },
+    },
+    receipt: async (_r, rec) => {
+      receipts.push(rec);
+    },
+    save: async (r, p, expires) => {
+      saved.push({ id: r.id, expires, category: p.classification?.category ?? null });
+    },
+    finish: async (id, status) => {
+      finished[id] = status;
+    },
+    purge: async () => {
+      log.push("purge");
+    },
   };
   return { ports, log, receipts, saved, finished };
 }
 
 describe("plainBody", () => {
   it("decodes the text/plain part", () => {
-    expect(plainBody({ payload: { mimeType: "multipart/alternative", parts: [{ mimeType: "text/html", body: { data: b64("<b>x</b>") } }, { mimeType: "text/plain", body: { data: b64("Hola ñ") } }] } })).toBe("Hola ñ");
+    expect(
+      plainBody({
+        payload: {
+          mimeType: "multipart/alternative",
+          parts: [
+            { mimeType: "text/html", body: { data: b64("<b>x</b>") } },
+            { mimeType: "text/plain", body: { data: b64("Hola ñ") } },
+          ],
+        },
+      }),
+    ).toBe("Hola ñ");
   });
   it("falls back to stripped html", () => {
-    expect(plainBody({ payload: { mimeType: "text/html", body: { data: b64("<p>Hola</p><p>Ana</p>") } } })).toBe("Hola Ana");
+    expect(
+      plainBody({
+        payload: { mimeType: "text/html", body: { data: b64("<p>Hola</p><p>Ana</p>") } },
+      }),
+    ).toBe("Hola Ana");
   });
 });
 

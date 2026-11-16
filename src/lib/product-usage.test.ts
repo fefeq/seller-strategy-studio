@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { checkPosthogKey, companyDomain, funnelQuery, funnelRows, isProductQualified, isUsageDrop, matchAccounts, posthogHost, usageQuery, usageRows, usageTrend, when } from "./product-usage";
+import {
+  checkPosthogKey,
+  companyDomain,
+  funnelQuery,
+  funnelRows,
+  isProductQualified,
+  isUsageDrop,
+  matchAccounts,
+  posthogHost,
+  usageQuery,
+  usageRows,
+  usageTrend,
+  when,
+} from "./product-usage";
 
 describe("connection checks", () => {
   it("maps regions and ingestion hosts to the API host, refuses unsafe ones", () => {
@@ -11,8 +24,14 @@ describe("connection checks", () => {
     expect(posthogHost("https://192.168.1.4")).toBeNull();
   });
   it("accepts only personal keys", () => {
-    expect(checkPosthogKey(" phx_abcdefghijklmnopqrstuvwxyz ")).toEqual({ ok: true, key: "phx_abcdefghijklmnopqrstuvwxyz" });
-    expect(checkPosthogKey("phc_abcdefghijklmnopqrstuvwxyz")).toMatchObject({ ok: false, error: expect.stringMatching(/pública/) });
+    expect(checkPosthogKey(" phx_abcdefghijklmnopqrstuvwxyz ")).toEqual({
+      ok: true,
+      key: "phx_abcdefghijklmnopqrstuvwxyz",
+    });
+    expect(checkPosthogKey("phc_abcdefghijklmnopqrstuvwxyz")).toMatchObject({
+      ok: false,
+      error: expect.stringMatching(/pública/),
+    });
     expect(checkPosthogKey("hola")).toMatchObject({ ok: false });
   });
 });
@@ -43,25 +62,64 @@ describe("rows", () => {
   it("turn 1970 into null and keep people with a sign-up", () => {
     expect(when("1970-01-01 00:00:00")).toBeNull();
     expect(when("2026-10-01 10:00:00")).toBe("2026-10-01T10:00:00.000Z");
-    const rows = funnelRows({ columns: ["pid", "email", "signed_up", "activated", "paid"], results: [
-      ["p1", "Ana@Acme.com", "2026-10-01 10:00:00", "2026-10-02 10:00:00", "1970-01-01 00:00:00"],
-      ["p2", "", "1970-01-01 00:00:00", null, null],
-      ["p3", "no-email", "2026-09-01T00:00:00Z", null, null],
-    ] });
+    const rows = funnelRows({
+      columns: ["pid", "email", "signed_up", "activated", "paid"],
+      results: [
+        ["p1", "Ana@Acme.com", "2026-10-01 10:00:00", "2026-10-02 10:00:00", "1970-01-01 00:00:00"],
+        ["p2", "", "1970-01-01 00:00:00", null, null],
+        ["p3", "no-email", "2026-09-01T00:00:00Z", null, null],
+      ],
+    });
     expect(rows).toEqual([
-      { posthog_person_id: "p1", email: "ana@acme.com", company: "acme.com", signed_up_at: "2026-10-01T10:00:00.000Z", activated_at: "2026-10-02T10:00:00.000Z", converted_at: null },
-      { posthog_person_id: "p3", email: "", company: "", signed_up_at: "2026-09-01T00:00:00.000Z", activated_at: null, converted_at: null },
+      {
+        posthog_person_id: "p1",
+        email: "ana@acme.com",
+        company: "acme.com",
+        signed_up_at: "2026-10-01T10:00:00.000Z",
+        activated_at: "2026-10-02T10:00:00.000Z",
+        converted_at: null,
+      },
+      {
+        posthog_person_id: "p3",
+        email: "",
+        company: "",
+        signed_up_at: "2026-09-01T00:00:00.000Z",
+        activated_at: null,
+        converted_at: null,
+      },
     ]);
   });
   it("group usage by company domain without webmail and match accounts", () => {
-    const u = usageRows({ columns: ["domain", "wau", "prev", "mau", "events", "last_seen"], results: [
-      ["acme.com", 3, 1, 5, 100, "2026-10-20 10:00:00"], ["www.acme.com", 1, 0, 1, 5, "2026-10-22 10:00:00"], ["gmail.com", 50, 40, 90, 900, null], ["beta.io", 0, 4, 4, 20, "2026-10-10 10:00:00"],
-    ] });
+    const u = usageRows({
+      columns: ["domain", "wau", "prev", "mau", "events", "last_seen"],
+      results: [
+        ["acme.com", 3, 1, 5, 100, "2026-10-20 10:00:00"],
+        ["www.acme.com", 1, 0, 1, 5, "2026-10-22 10:00:00"],
+        ["gmail.com", 50, 40, 90, 900, null],
+        ["beta.io", 0, 4, 4, 20, "2026-10-10 10:00:00"],
+      ],
+    });
     expect(u).toEqual([
-      { domain: "acme.com", active_users_7d: 4, active_users_prev_7d: 1, active_users_30d: 6, events_30d: 105, last_seen_at: "2026-10-22T10:00:00.000Z" },
-      { domain: "beta.io", active_users_7d: 0, active_users_prev_7d: 4, active_users_30d: 4, events_30d: 20, last_seen_at: "2026-10-10T10:00:00.000Z" },
+      {
+        domain: "acme.com",
+        active_users_7d: 4,
+        active_users_prev_7d: 1,
+        active_users_30d: 6,
+        events_30d: 105,
+        last_seen_at: "2026-10-22T10:00:00.000Z",
+      },
+      {
+        domain: "beta.io",
+        active_users_7d: 0,
+        active_users_prev_7d: 4,
+        active_users_30d: 4,
+        events_30d: 20,
+        last_seen_at: "2026-10-10T10:00:00.000Z",
+      },
     ]);
-    expect(matchAccounts(u, [{ id: "a1", domain: "https://acme.com" }]).map((x) => x.account_id)).toEqual(["a1", null]);
+    expect(
+      matchAccounts(u, [{ id: "a1", domain: "https://acme.com" }]).map((x) => x.account_id),
+    ).toEqual(["a1", null]);
   });
 });
 
@@ -74,15 +132,55 @@ describe("signals", () => {
     expect(usageTrend(0, 0)).toBe("inactive");
   });
   it("flags product-qualified non-customers with 3+ active users not falling", () => {
-    expect(isProductQualified({ domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 2 }, false)).toBe(true);
-    expect(isProductQualified({ domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 5 }, false)).toBe(false);
-    expect(isProductQualified({ domain: "a", account_id: "1", active_users_7d: 9, active_users_prev_7d: 2 }, true)).toBe(false);
-    expect(isProductQualified({ domain: "a", account_id: "1", active_users_7d: 2, active_users_prev_7d: 0 }, false)).toBe(false);
+    expect(
+      isProductQualified(
+        { domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 2 },
+        false,
+      ),
+    ).toBe(true);
+    expect(
+      isProductQualified(
+        { domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 5 },
+        false,
+      ),
+    ).toBe(false);
+    expect(
+      isProductQualified(
+        { domain: "a", account_id: "1", active_users_7d: 9, active_users_prev_7d: 2 },
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      isProductQualified(
+        { domain: "a", account_id: "1", active_users_7d: 2, active_users_prev_7d: 0 },
+        false,
+      ),
+    ).toBe(false);
   });
   it("flags customers whose weekly users halved from 3 or more", () => {
-    expect(isUsageDrop({ domain: "a", account_id: "1", active_users_7d: 2, active_users_prev_7d: 4 }, true)).toBe(true);
-    expect(isUsageDrop({ domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 4 }, true)).toBe(false);
-    expect(isUsageDrop({ domain: "a", account_id: "1", active_users_7d: 0, active_users_prev_7d: 2 }, true)).toBe(false);
-    expect(isUsageDrop({ domain: "a", account_id: "1", active_users_7d: 0, active_users_prev_7d: 6 }, false)).toBe(false);
+    expect(
+      isUsageDrop(
+        { domain: "a", account_id: "1", active_users_7d: 2, active_users_prev_7d: 4 },
+        true,
+      ),
+    ).toBe(true);
+    expect(
+      isUsageDrop(
+        { domain: "a", account_id: "1", active_users_7d: 3, active_users_prev_7d: 4 },
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      isUsageDrop(
+        { domain: "a", account_id: "1", active_users_7d: 0, active_users_prev_7d: 2 },
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      isUsageDrop(
+        { domain: "a", account_id: "1", active_users_7d: 0, active_users_prev_7d: 6 },
+        false,
+      ),
+    ).toBe(false);
   });
 });

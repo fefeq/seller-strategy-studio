@@ -136,16 +136,31 @@ export async function researchAccountCore(
       },
       12,
       logSpend && scope
-        ? { db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }
+        ? {
+            db,
+            orgId: scope.orgId,
+            userId: scope.userId,
+            tool: "research_account",
+            trigger: "manual",
+          }
         : undefined,
     ).catch(() => [] as NewsItem[]),
   ]);
   // A2: the website read (Firecrawl) is paid too; the agent path is not under trackedRun, so log it here.
   if (logSpend && scope) {
     const { webSpendRows } = await import("@/lib/web-search");
-    const { error: logError } = await db
-      .from("integration_usage")
-      .insert(webSpendRows({ db, orgId: scope.orgId, userId: scope.userId, tool: "research_account", trigger: "manual" }, ["firecrawl"]));
+    const { error: logError } = await db.from("integration_usage").insert(
+      webSpendRows(
+        {
+          db,
+          orgId: scope.orgId,
+          userId: scope.userId,
+          tool: "research_account",
+          trigger: "manual",
+        },
+        ["firecrawl"],
+      ),
+    );
     if (logError) console.error("integration_usage insert failed", safeErrorLog(logError));
   }
   if (!site.text && !news.length)
@@ -251,7 +266,13 @@ export async function refreshSignalsCore(
       { query: `"${name}"`, limit: 10, sources: ["news"], tbs: "qdr:m" },
       { queries: signalQueries(name), maxResults: 5, recency: "month" },
       18,
-      { db, orgId: acc.org_id, userId: scope?.userId || null, tool: "refresh_account_signals", trigger },
+      {
+        db,
+        orgId: acc.org_id,
+        userId: scope?.userId || null,
+        tool: "refresh_account_signals",
+        trigger,
+      },
     ),
     linkedinSignalItems(db, acc).catch((e) => {
       console.error("LinkedIn signals failed", safeErrorLog(e));

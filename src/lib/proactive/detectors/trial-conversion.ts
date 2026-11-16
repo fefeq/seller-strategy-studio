@@ -3,7 +3,9 @@ import { DAY, type Detector } from "../types";
 
 /** Segment (≥10 signups, last 90 days) converting trial→paid at less than half the org average. */
 export const trialConversion: Detector = (s) => {
-  const recent = s.trials.filter((t) => s.now.getTime() - new Date(t.signed_up_at).getTime() <= 90 * DAY);
+  const recent = s.trials.filter(
+    (t) => s.now.getTime() - new Date(t.signed_up_at).getTime() <= 90 * DAY,
+  );
   const avg = funnelStats(recent).trialToPaid;
   if (!avg) return [];
   return funnelBySegment(recent)

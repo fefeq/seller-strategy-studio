@@ -14,7 +14,12 @@ export type BriefItem = { text: string; link: BriefLink | null };
 
 export type AutoWorkInput = {
   since: string; // ISO; rows older than this are ignored
-  usage: { trigger: string; need: string | null; cost: number | string | null; created_at: string }[];
+  usage: {
+    trigger: string;
+    need: string | null;
+    cost: number | string | null;
+    created_at: string;
+  }[];
   leads: { enriched_at: string | null }[];
   memories: { learned: boolean; created_at: string }[];
   signals: { found_at: string }[];
