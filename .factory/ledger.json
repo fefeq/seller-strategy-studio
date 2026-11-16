@@ -5173,13 +5173,13 @@
       "title": "Sesión: tras Cerrar sesión, lecturas fuera de la guía (useMe, useSetup, Inicio, realtime/useLivePipeline) siguen saliendo con el token y org_id de la cuenta anterior mientras el logout está en vuelo; NK-0150 solo cubrió las consultas de la guía de configuración",
       "kind": "bug",
       "source": "gate de NK-0150 en ea65a9b, evidencia .factory/evidence/sprint8-gate/round3/observe-nonguide.log y gate-ea65a9b.md §Para el coordinador",
-      "state": "LOGGED",
-      "owner": null,
+      "state": "PROMOTED",
+      "owner": "claude-session-nk0169",
       "duplicate_of": null,
       "sdd": null,
       "prd": null,
-      "branch": null,
-      "base_commit": null,
+      "branch": "fix/nk-0169-session-fetch-guard",
+      "base_commit": "893c93df",
       "history": [
         {
           "state": "LOGGED",
@@ -5192,6 +5192,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Parcial: las cuatro lecturas citadas ya tienen guardia (5497973, c58a797, 641b9c3), pero solo 5 de 98 archivos con consultas la usan."
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-16T23:43:30.458Z",
+          "by": "Fede 2026-11-17 «Sí, empieza»",
+          "note": "owner=claude-session-nk0169"
         }
       ]
     },
