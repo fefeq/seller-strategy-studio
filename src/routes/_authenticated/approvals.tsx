@@ -46,10 +46,10 @@ function Approvals() {
   const [title, setTitle] = useState("");
   const [ev, setEv] = useState("");
 
-  async function decide(a: any, status: "applied" | "skipped") {
+  async function decide(a: (typeof data)[number], status: "applied" | "skipped") {
     if (status === "applied" && a.kind === "stage_change") {
       try {
-        const p = JSON.parse(a.evidence);
+        const p = JSON.parse(a.evidence ?? "");
         if (p.deal_id)
           await supabase
             .from("deals")

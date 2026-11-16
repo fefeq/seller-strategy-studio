@@ -9,6 +9,7 @@ import { Empty } from "@/components/page";
 import { approveImport, discardImport, undoImport } from "@/lib/imports.functions";
 import { errorText } from "@/lib/errors";
 import { askConfirm } from "@/components/confirm-dialog";
+import type { Tables } from "@/integrations/supabase/types";
 
 const BATCH: Record<string, string> = {
   pending: "Pendiente",
@@ -78,7 +79,7 @@ function Batch({
   isOwner,
   open = false,
 }: {
-  batch: any;
+  batch: Tables<"import_batches"> & { lead_sources: { name: string } | null };
   canManage: boolean;
   isOwner: boolean;
   open?: boolean;
@@ -102,7 +103,7 @@ function Batch({
           .limit(500)
       ).data ?? [],
   });
-  async function act(fn: () => Promise<unknown>, ok: (r: any) => string) {
+  async function act<T>(fn: () => Promise<T>, ok: (r: T) => string) {
     setBusy(true);
     try {
       const r = await fn();

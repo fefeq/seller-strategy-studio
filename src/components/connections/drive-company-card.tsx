@@ -16,10 +16,14 @@ import { errorText } from "@/lib/errors";
 
 function waitForCode(popup: Window) {
   return new Promise<string | null>((resolve, reject) => {
-    let poll: number | undefined;
+    const poll = window.setInterval(() => {
+      if (!popup.closed) return;
+      cleanup();
+      reject(new Error("Has cerrado la ventana de Google antes de terminar. No ha cambiado nada."));
+    }, 500);
     const cleanup = () => {
       window.removeEventListener("message", onMessage);
-      if (poll !== undefined) window.clearInterval(poll);
+      window.clearInterval(poll);
     };
     const onMessage = (e: MessageEvent) => {
       const type = e.data?.type;
@@ -38,11 +42,6 @@ function waitForCode(popup: Window) {
       reject(new Error("Google no ha completado la conexión. No ha cambiado nada."));
     };
     window.addEventListener("message", onMessage);
-    poll = window.setInterval(() => {
-      if (!popup.closed) return;
-      cleanup();
-      reject(new Error("Has cerrado la ventana de Google antes de terminar. No ha cambiado nada."));
-    }, 500);
   });
 }
 

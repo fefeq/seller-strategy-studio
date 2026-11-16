@@ -1,6 +1,6 @@
 // A+ (PLAN-UX-20261115): what NOKKO reads out of LinkedIn data it already pays for. Pure, tested.
 // Growth signals from open job offers (which teams hire, how senior) and engagement from posts (likes).
-import type { Job, Post } from "@/lib/apify";
+import type { Job, Post, RawItem } from "@/lib/apify";
 
 export type HiringTeam =
   | "Ventas"
@@ -109,9 +109,9 @@ const plain = (s: string) =>
 
 /** Current role from a LinkedIn profile scrape (harvestapi~linkedin-profile-scraper): the first experience with no end date. */
 export function currentRole(raw: unknown): CurrentRole | null {
-  const p = (Array.isArray(raw) ? raw[0] : raw) as Record<string, any> | undefined;
+  const p = (Array.isArray(raw) ? raw[0] : raw) as RawItem | undefined;
   if (!p || typeof p !== "object") return null;
-  const exp = (Array.isArray(p.experience) ? p.experience : []) as Record<string, any>[];
+  const exp = (Array.isArray(p.experience) ? p.experience : []) as RawItem[];
   const open = exp.find(
     (e) => !e?.endDate || /present|actualidad|hoy/i.test(blank(e?.endDate?.text ?? e?.endDate)),
   );

@@ -3,9 +3,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { errorText } from "@/lib/errors";
 import { cleanDomain } from "@/lib/account-import";
 import { planUndo, type AppliedResult, type UndoRow } from "@/lib/import-batch";
+import type { Db } from "@/lib/org-data";
+import type { Stage } from "@/lib/stages";
 import type { Json } from "@/integrations/supabase/types";
 
-type Ctx = { supabase: any; userId: string };
+type Ctx = { supabase: Db; userId: string };
 const UUID = /^[0-9a-f-]{36}$/i;
 
 async function memberRole(c: Ctx) {
@@ -116,7 +118,7 @@ export const approveImport = createServerFn({ method: "POST" })
         orgId,
         sourceId: batch.lead_source_id,
         segments: segments ?? [],
-        stages: sortStages(stageRows ?? []),
+        stages: sortStages((stageRows ?? []) as Stage[]),
       };
       const stage = src && isIntakeStage(src.default_stage, ctx.stages) ? src.default_stage : "new";
       for (const r of pending) {

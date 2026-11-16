@@ -2,10 +2,11 @@
 // Sales Leader sync on demand. The key never comes back to the browser (column grants + encryption).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Db } from "@/lib/org-data";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { checkPosthogKey, domainPropertyOk, posthogHost, projectIdOk } from "@/lib/product-usage";
 
-async function currentOrg(supabase: any, userId: string): Promise<{ orgId: string; role: string }> {
+async function currentOrg(supabase: Db, userId: string): Promise<{ orgId: string; role: string }> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("current_org_id")

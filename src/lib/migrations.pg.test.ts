@@ -10,6 +10,8 @@ type Db = Awaited<ReturnType<typeof build>>;
 let db: Db;
 let A: string;
 const rows = async (sql: string, params?: unknown[]) =>
+  // rows are free-shaped SQL results
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (await db.query(sql, params)).rows as Record<string, any>[];
 const throws = async (fn: () => Promise<unknown>) => {
   try {

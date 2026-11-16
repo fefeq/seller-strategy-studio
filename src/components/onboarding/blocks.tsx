@@ -222,7 +222,8 @@ export function BlocksStep({
                             onClick={() =>
                               setOff((s) => {
                                 const x = new Set(s);
-                                x.has(i.key) ? x.delete(i.key) : x.add(i.key);
+                                if (x.has(i.key)) x.delete(i.key);
+                                else x.add(i.key);
                                 return x;
                               })
                             }

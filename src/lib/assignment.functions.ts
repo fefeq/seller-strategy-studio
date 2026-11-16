@@ -5,6 +5,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { ask } from "@/lib/ai-gateway";
+import type { Db } from "@/lib/org-data";
 import {
   COUNTRY_CODES,
   ELIGIBLE_ROLES,
@@ -15,7 +16,7 @@ import {
   regionOf,
 } from "@/lib/assignment";
 
-async function leaderCtx(supabase: any, userId: string) {
+async function leaderCtx(supabase: Db, userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
     .select("current_org_id")
@@ -71,15 +72,15 @@ export const proposeAssignmentRules = createServerFn({ method: "POST" })
       supabase.from("accounts").select("segment_id,country,tier,owner_id").eq("org_id", orgId),
       supabase.from("org_members").select("user_id,role,max_accounts").eq("org_id", orgId),
     ]);
-    const ids = (mems.data ?? []).map((m: any) => m.user_id);
+    const ids = (mems.data ?? []).map((m) => m.user_id);
     const { data: profiles } = ids.length
       ? await supabase.from("profiles").select("id,full_name").in("id", ids)
       : { data: [] };
     const team = (mems.data ?? [])
-      .filter((m: any) => isEligible(m.role))
-      .map((m: any) => ({
+      .filter((m) => isEligible(m.role))
+      .map((m) => ({
         user_id: m.user_id,
-        nombre: (profiles ?? []).find((p: any) => p.id === m.user_id)?.full_name || "Sin nombre",
+        nombre: (profiles ?? []).find((p) => p.id === m.user_id)?.full_name || "Sin nombre",
         rol: m.role,
         maximo: m.max_accounts,
       }));
@@ -134,7 +135,7 @@ export const proposeAssignmentRules = createServerFn({ method: "POST" })
     } catch {
       throw new Error("La IA no devolvió reglas válidas. Inténtalo de nuevo.");
     }
-    const segIds = new Set((segs.data ?? []).map((s: any) => s.id));
+    const segIds = new Set((segs.data ?? []).map((s) => s.id));
     const teamIds = new Set(team.map((t) => t.user_id));
     // Keep only what exists: unknown segments, countries or people are dropped, never saved.
     const rules = (parsed.rules ?? [])

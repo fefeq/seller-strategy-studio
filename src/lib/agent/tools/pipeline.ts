@@ -108,7 +108,7 @@ export const PIPELINE_TOOLS: AgentTool[] = [
       const score = scoreLead(
         { ...l, late: delay.late },
         icp.data ?? [],
-        new Map((acc.data ?? []).map((x: any) => [x.id, x])),
+        new Map((acc.data ?? []).map((x) => [x.id, x])),
         now,
         new Map((seg.data ?? []).map((x) => [x.id, x.name])),
       );

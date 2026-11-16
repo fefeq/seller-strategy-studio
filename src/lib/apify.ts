@@ -58,11 +58,15 @@ export type Post = {
   likes: number | null;
 };
 
+// One item of an Apify dataset: third-party JSON with no stable shape, read field by field with fallbacks.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type RawItem = Record<string, any>;
+
 /** LinkedIn posts (company or person), newest first, without empty ones. */
 export function postItems(raw: unknown, max = 10): Post[] {
   const list = Array.isArray(raw) ? raw : [];
   const out: Post[] = [];
-  for (const p of list as Record<string, any>[]) {
+  for (const p of list as RawItem[]) {
     const url = String(p?.linkedinUrl ?? p?.shareLinkedinUrl ?? "");
     const text = clipText(p?.content, 1200);
     if (!/^https:\/\//.test(url) || !text) continue;
@@ -106,7 +110,7 @@ export function jobItems(
   max = 15,
 ): Job[] {
   const want = linkedinCompanyUrl(companyUrl);
-  const list = (Array.isArray(raw) ? raw : []) as Record<string, any>[];
+  const list = (Array.isArray(raw) ? raw : []) as RawItem[];
   return list
     .filter((j) => {
       const page = linkedinCompanyUrl(String(j?.companyUrl ?? ""));
@@ -165,7 +169,7 @@ export type Review = {
 };
 
 export function reviewItems(raw: unknown, max = 50): Review[] {
-  const list = (Array.isArray(raw) ? raw : []) as Record<string, any>[];
+  const list = (Array.isArray(raw) ? raw : []) as RawItem[];
   return list
     .filter((r) => String(r?.reviewText ?? "").trim())
     .map((r) => ({
@@ -185,7 +189,7 @@ export function pickG2Product(
   products: unknown,
   name: string,
 ): { name: string; url: string } | null {
-  const list = ((Array.isArray(products) ? products : []) as Record<string, any>[]).filter(
+  const list = ((Array.isArray(products) ? products : []) as RawItem[]).filter(
     (p) => p?.slug && p?.name,
   );
   const exact =

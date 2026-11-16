@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment -- see the note below: this file is an untyped SQL harness */
 // @ts-nocheck — a plain test harness: an in-process Postgres (PGlite) with the tables, helper functions, triggers and
 // policies the provenance and change-log migrations touch. The five tables, their NOT NULLs and defaults, the real
 // set_audit() and positioning_copy_guard() triggers, the foreign keys into segments and the policies were read from the

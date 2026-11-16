@@ -26,6 +26,11 @@ import { AccountImport } from "@/components/account-import";
 
 // ---------------- Interview ----------------
 
+// A step's form is free-shaped: each step keeps its own fields (form strings, values read from the database, row
+// lists) and they are checked when the step's actions are built.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Loose = any;
+
 export function Interview() {
   const { open } = useAgent();
   return (
@@ -213,7 +218,7 @@ export function StepForm({
       ).data ?? [],
   });
   const segs = useMemo(() => segsQ.data ?? [], [segsQ.data]);
-  const [v, setV] = useState<Record<string, any>>({});
+  const [v, setV] = useState<Record<string, Loose>>({});
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -260,7 +265,7 @@ export function StepForm({
       setV({ name: "", account_name: "", segment_id: "", stage: "", amount: "", close_date: "" });
   }, [id, proposal, setup, segs]);
 
-  const num = (x: any) => (x === "" || x == null ? undefined : Number(x));
+  const num = (x: unknown) => (x === "" || x == null ? undefined : Number(x));
   function items(): { tool: string; args: Record<string, unknown> }[] {
     switch (id) {
       case "positioning":
@@ -276,11 +281,11 @@ export function StepForm({
         return [{ tool: "create_icp", args: v }];
       case "pillars":
         return v.rows
-          .filter((r: any) => r.title.trim())
-          .map((r: any) => ({ tool: "create_pillar", args: r }));
+          .filter((r: Loose) => r.title.trim())
+          .map((r: Loose) => ({ tool: "create_pillar", args: r }));
       case "segments":
       case "benchmarks":
-        return v.rows.map((r: any) => ({
+        return v.rows.map((r: Loose) => ({
           tool: "upsert_segment",
           args: Object.fromEntries(
             Object.entries({
@@ -362,7 +367,7 @@ export function StepForm({
     </label>
   );
   const setRow = (i: number, k: string, x: string) =>
-    setV({ ...v, rows: v.rows.map((r: any, j: number) => (j === i ? { ...r, [k]: x } : r)) });
+    setV({ ...v, rows: v.rows.map((r: Loose, j: number) => (j === i ? { ...r, [k]: x } : r)) });
 
   return (
     <div className="space-y-3">
@@ -383,7 +388,7 @@ export function StepForm({
         </div>
       )}
       {id === "pillars" &&
-        v.rows?.map((r: any, i: number) => (
+        v.rows?.map((r: Loose, i: number) => (
           <div key={i} className="grid gap-2 sm:grid-cols-[1fr_2fr]">
             <Input
               placeholder={`Pilar ${i + 1}`}
@@ -400,7 +405,7 @@ export function StepForm({
       {(id === "segments" || id === "benchmarks") && (
         <>
           <div className="space-y-3 md:hidden">
-            {v.rows?.map((r: any, i: number) => (
+            {v.rows?.map((r: Loose, i: number) => (
               <div key={r.id} className="border-t border-hairline pt-2">
                 <p className="text-sm font-medium">{r.name}</p>
                 <div className="mt-2 grid grid-cols-2 gap-2">
@@ -440,7 +445,7 @@ export function StepForm({
                 </tr>
               </thead>
               <tbody>
-                {v.rows?.map((r: any, i: number) => (
+                {v.rows?.map((r: Loose, i: number) => (
                   <tr key={r.id}>
                     <td className="py-1 pr-2">{r.name}</td>
                     {SEG_COLS.map(([k]) => (
@@ -471,12 +476,12 @@ export function StepForm({
             // template segment the company doesn't use isn't a silent blocker.
             const empty = (x: unknown) => x == null || String(x).trim() === "";
             const missing = (v.rows ?? [])
-              .filter((r: any) =>
+              .filter((r: Loose) =>
                 id === "segments"
                   ? empty(r.acv_min) && empty(r.acv_max)
                   : empty(r.win_rate_target) || empty(r.ae_quota),
               )
-              .map((r: any) => r.name);
+              .map((r: Loose) => r.name);
             return missing.length ? (
               <p className="mt-2 text-xs text-muted-foreground">
                 Para completar este paso,{" "}

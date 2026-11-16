@@ -242,7 +242,8 @@ export function KeyPeople({ accountId, onAdded }: { accountId: string; onAdded: 
                       checked={picked.has(p.key)}
                       onCheckedChange={(v) => {
                         const n = new Set(picked);
-                        v ? n.add(p.key) : n.delete(p.key);
+                        if (v) n.add(p.key);
+                        else n.delete(p.key);
                         setPicked(n);
                       }}
                     />

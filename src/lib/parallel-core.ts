@@ -17,8 +17,8 @@ import {
   reportSchema,
   type EnrichRow,
 } from "@/lib/parallel";
+import type { Db } from "@/lib/org-data";
 
-type Db = any;
 export type Scope = { orgId: string; userId: string };
 const admin = async () => (await import("@/integrations/supabase/client.server")).supabaseAdmin;
 

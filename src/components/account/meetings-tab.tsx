@@ -22,7 +22,7 @@ import { LevelPicker } from "@/components/theory-u/listening";
 import { errorText } from "@/lib/errors";
 import { learnFromMeeting } from "@/lib/memory.functions";
 import { useRevealOnMobile } from "@/components/account/stakeholders-tab";
-import type { TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 
 export const MEETING_FIELDS = [
   ["objective", "Objetivo"],
@@ -44,11 +44,13 @@ export function MeetingsTab({
 }: {
   accountId: string;
   openMeetingId?: string;
-  list: any[];
-  stakeholders: any[];
-  deals: any[];
+  list: Tables<"meetings">[];
+  stakeholders: Tables<"stakeholders">[];
+  deals: Tables<"deals">[];
   onChange: () => void;
 }) {
+  // The meeting being edited: a loose draft (form strings, free-shaped call_notes) until it is saved.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sel, setSel] = useState<any | null>(null);
   const [busy, setBusy] = useState(false);
   const [coachBusy, setCoachBusy] = useState(false);
@@ -145,7 +147,7 @@ export function MeetingsTab({
     setReviewBusy(true);
     try {
       const r = await teardown({ data: { meetingId: sel.id } });
-      setSel((s: any) => ({ ...s, call_review: r.text }));
+      setSel({ ...sel, call_review: r.text });
       onChange();
     } catch (e) {
       toast.error(errorText(e));
@@ -242,7 +244,7 @@ export function MeetingsTab({
                   onClick={() =>
                     setSel({
                       ...sel,
-                      attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role] ?? ""})`,
+                      attendees: `${sel.attendees ? sel.attendees + "\n" : ""}${s.name} — ${s.title} (${BUYING_ROLES[s.buying_role ?? ""] ?? ""})`,
                     })
                   }
                 >

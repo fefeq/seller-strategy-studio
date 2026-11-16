@@ -10,7 +10,7 @@ import { errorText } from "@/lib/errors";
 import { AccountResearch } from "@/components/web-research";
 import { SaveToDriveButton } from "@/components/drive";
 import { planMarkdown } from "@/lib/drive";
-import type { TablesUpdate } from "@/integrations/supabase/types";
+import type { Tables, TablesUpdate } from "@/integrations/supabase/types";
 
 export const PLAN_FIELDS = [
   ["objectives", "Objetivos de la cuenta", "Qué quiere conseguir el cliente este año"],
@@ -33,7 +33,7 @@ export function PlanTab({
   accountId: string;
   accountName: string;
   hasDomain: boolean;
-  plan: Record<string, any> | null;
+  plan: Tables<"account_plans"> | null;
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<Record<string, string>>({});
@@ -41,7 +41,8 @@ export function PlanTab({
   const [busy, setBusy] = useState(false);
   const propose = useServerFn(generateProposal);
   useEffect(() => {
-    setForm(Object.fromEntries(PLAN_FIELDS.map(([k]) => [k, plan?.[k] ?? ""])));
+    const saved = plan as Record<string, string | null> | null;
+    setForm(Object.fromEntries(PLAN_FIELDS.map(([k]) => [k, saved?.[k] ?? ""])));
   }, [plan]);
   async function save(next = form) {
     const { error } = plan

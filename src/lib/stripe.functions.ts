@@ -1,9 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { Db } from "@/lib/org-data";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { errorText } from "@/lib/errors";
 import { checkStripeKey } from "@/lib/stripe/metrics";
 
-async function currentOrg(supabase: any, userId: string): Promise<{ orgId: string; role: string }> {
+async function currentOrg(supabase: Db, userId: string): Promise<{ orgId: string; role: string }> {
   const { data: profile } = await supabase
     .from("profiles")
     .select("current_org_id")

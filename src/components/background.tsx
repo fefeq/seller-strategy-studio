@@ -31,7 +31,11 @@ export function useBackgroundReady() {
   return !!data?.ready;
 }
 
-export type BgJob<R = Record<string, any>> = {
+// A job's input and result are free-shaped JSON; each screen narrows the result through R.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type LooseJson = Record<string, any>;
+
+export type BgJob<R = LooseJson> = {
   id: string;
   kind: string;
   status: string;
@@ -40,7 +44,7 @@ export type BgJob<R = Record<string, any>> = {
   created_at: string;
   finished_at: string | null;
   result: R | null;
-  input: Record<string, any>;
+  input: LooseJson;
 };
 type Kind = JobArgs["kind"];
 type InputOf<K extends Kind> = Extract<JobArgs, { kind: K }>["input"];
@@ -51,7 +55,7 @@ const ACTIVE = ["queued", "running"];
  * One heavy task on a screen: the latest job of this kind (for this record, by me, in this company), polled while
  * it runs. `start` returns at once («En marcha…»); `onDone` fires when it finishes while the screen is open.
  */
-export function useJob<K extends Kind, R = Record<string, any>>(
+export function useJob<K extends Kind, R = LooseJson>(
   kind: K,
   opts: { targetId?: string | null; onDone?: (job: BgJob<R>) => void; quiet?: boolean } = {},
 ) {
