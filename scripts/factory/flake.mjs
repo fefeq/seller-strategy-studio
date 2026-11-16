@@ -7,6 +7,7 @@ import { mkdtempSync, writeFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { FACTORY_DIR } from "./paths.mjs";
+import { shq } from "./shell.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const o = {};
@@ -22,7 +23,7 @@ const sh = (cmd, cwd = ROOT) =>
 
 const tip = sh("git rev-parse HEAD").stdout.trim();
 const wt = resolve(mkdtempSync(resolve(tmpdir(), "nk-flake-")), "base");
-const add = sh(`git worktree add --detach ${JSON.stringify(wt)} ${o.base}`);
+const add = sh(`git worktree add --detach ${shq(wt)} ${o.base}`);
 if (add.status !== 0) {
   console.error(add.stderr);
   process.exit(2);
@@ -30,10 +31,10 @@ if (add.status !== 0) {
 symlinkSync(resolve(ROOT, "node_modules"), resolve(wt, "node_modules"));
 
 const attempt = (cwd) =>
-  Array.from({ length: runs }, () => sh(`npx vitest run ${JSON.stringify(o.file)}`, cwd));
+  Array.from({ length: runs }, () => sh(`npx vitest run ${shq(o.file)}`, cwd));
 const onTip = attempt(ROOT);
 const onBase = attempt(wt);
-sh(`git worktree remove --force ${JSON.stringify(wt)}`);
+sh(`git worktree remove --force ${shq(wt)}`);
 
 const fails = (rs) => rs.filter((r) => r.status !== 0).length;
 const sig = (rs) =>

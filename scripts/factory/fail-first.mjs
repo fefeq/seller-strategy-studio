@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, copyFileSync, mkdirSync, symlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { tmpdir } from "node:os";
+import { shq } from "./shell.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const o = {};
@@ -18,12 +19,12 @@ if (!o.base || !o.file) {
 const sh = (cmd, cwd = ROOT) =>
   spawnSync(cmd, { cwd, shell: true, encoding: "utf8", maxBuffer: 1 << 28 });
 const wt = resolve(mkdtempSync(resolve(tmpdir(), "nk-ff-")), "base");
-if (sh(`git worktree add --detach ${JSON.stringify(wt)} ${o.base}`).status !== 0) process.exit(2);
+if (sh(`git worktree add --detach ${shq(wt)} ${o.base}`).status !== 0) process.exit(2);
 symlinkSync(resolve(ROOT, "node_modules"), resolve(wt, "node_modules"));
 mkdirSync(dirname(resolve(wt, o.file)), { recursive: true });
 copyFileSync(resolve(ROOT, o.file), resolve(wt, o.file));
-const r = sh(`npx vitest run ${JSON.stringify(o.file)}`, wt);
-sh(`git worktree remove --force ${JSON.stringify(wt)}`);
+const r = sh(`npx vitest run ${shq(o.file)}`, wt);
+sh(`git worktree remove --force ${shq(wt)}`);
 const failed = r.status !== 0;
 console.log(
   failed
