@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve } from "node:path";
 import { FACTORY_DIR } from "./paths.mjs";
+import { shq } from "./shell.mjs";
 
 const argv = process.argv.slice(2);
 const opt = { extra: [] };
@@ -147,10 +148,7 @@ record(
     .filter((f) => /^(src|scripts)\/.*\.(tsx?|jsx?|mjs)$/.test(f));
   if (!changed.length) record("lint (touched files)", true, "no lintable files touched");
   else {
-    const { r, file } = runLogged(
-      "lint",
-      `npx eslint ${changed.map((f) => JSON.stringify(f)).join(" ")}`,
-    );
+    const { r, file } = runLogged("lint", `npx eslint ${changed.map(shq).join(" ")}`);
     record(`lint (touched files, ${changed.length})`, r.status === 0, "", file);
   }
 }
@@ -171,7 +169,7 @@ let failedFiles = [];
   const jsonFile = resolve(outDir, "vitest.json");
   const { r, file } = runLogged(
     "unit-suite",
-    `npx vitest run --reporter=json --outputFile=${JSON.stringify(jsonFile)}`,
+    `npx vitest run --reporter=json --outputFile=${shq(jsonFile)}`,
   );
   let report = null;
   try {
@@ -231,10 +229,7 @@ let failedFiles = [];
     .stdout.split("\n")
     .filter((f) => /\.(test|spec)\.tsx?$/.test(f));
   if (touched.length) {
-    const { r, file } = runLogged(
-      "touched-tests",
-      `npx vitest run ${touched.map((f) => JSON.stringify(f)).join(" ")}`,
-    );
+    const { r, file } = runLogged("touched-tests", `npx vitest run ${touched.map(shq).join(" ")}`);
     record(`touched test files, whole (${touched.length})`, r.status === 0, "", file);
   } else record("touched test files, whole", true, "none touched");
 }

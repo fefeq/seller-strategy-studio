@@ -3,6 +3,7 @@
 // usage: worktree.mjs --ticket NK-0001 --slug <slug> --base <commit>
 import { spawnSync } from "node:child_process";
 import { resolve } from "node:path";
+import { shq } from "./shell.mjs";
 
 const ROOT = resolve(import.meta.dirname, "../..");
 const o = {};
@@ -14,7 +15,7 @@ if (!o.ticket || !o.slug || !o.base) {
 }
 const dir = resolve(ROOT, `../seller-strategy-studio-${o.slug}`);
 const branch = `feat/${o.slug}`;
-const r = spawnSync(`git worktree add -b ${branch} ${JSON.stringify(dir)} ${o.base}`, {
+const r = spawnSync(`git worktree add -b ${branch} ${shq(dir)} ${o.base}`, {
   cwd: ROOT,
   shell: true,
   stdio: "inherit",
