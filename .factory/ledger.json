@@ -5173,7 +5173,7 @@
       "title": "Sesión: tras Cerrar sesión, lecturas fuera de la guía (useMe, useSetup, Inicio, realtime/useLivePipeline) siguen saliendo con el token y org_id de la cuenta anterior mientras el logout está en vuelo; NK-0150 solo cubrió las consultas de la guía de configuración",
       "kind": "bug",
       "source": "gate de NK-0150 en ea65a9b, evidencia .factory/evidence/sprint8-gate/round3/observe-nonguide.log y gate-ea65a9b.md §Para el coordinador",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "claude-session-nk0169",
       "duplicate_of": null,
       "sdd": null,
@@ -5198,6 +5198,12 @@
           "at": "2026-11-16T23:43:30.458Z",
           "by": "Fede 2026-11-17 «Sí, empieza»",
           "note": "owner=claude-session-nk0169"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-16T23:59:18.726Z",
+          "by": "claude (regla de Fede 2026-11-06: merge con gate PASS)",
+          "note": "PR #156 fusionado (6c75a5d); gate.mjs PASS sobre a43654835460 (6.338/6.338). Guard único sobre window.fetch: al cerrar sesión rechaza lecturas (GET/HEAD) a Supabase y a funciones de servidor; al cambiar de cuenta, todo; pasan /auth/v1/logout y /auth/v1/token. La revisión independiente encontró que CA-5 no probaba nada y que bloquear escrituras al cerrar sesión podía perder un guardado al salir de un campo; corregido en el mismo PR. No verificado en navegador real con sesión (Google no funciona en localhost). Pendientes menores: lecturas por POST salen al cerrar sesión (misma persona, sesión válida); realtime no pasa por fetch; el rechazo llega a postgrest como error plano que failedForReal no reconoce."
         }
       ]
     },
