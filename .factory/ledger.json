@@ -3025,7 +3025,7 @@
       "title": "Peticiones duplicadas al cargar: datos de usuario y empresa 2 veces, /auth/v1/user 3 veces; segments y segment_budget_quarters 2-3 veces en /metrics; u_journeys al volver a Recorrido U",
       "kind": "bug",
       "source": "Sprint 1: walkthrough y gate del 2026-11-08 (previo al sprint)",
-      "state": "PROMOTED",
+      "state": "SHIPPED",
       "owner": "claude-session-local",
       "duplicate_of": null,
       "sdd": null,
@@ -3050,6 +3050,12 @@
           "at": "2026-11-16T23:52:43.780Z",
           "by": "Fede 2026-11-17 «continúa con los pendientes en local»",
           "note": "owner=claude-session-local"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-17T00:08:50.665Z",
+          "by": "claude (regla de Fede 2026-11-06: merge con gate PASS)",
+          "note": "PR #158 fusionado (3e7a555); gate.mjs PASS sobre 11334b070312 (6.342/6.342). staleTime por defecto de 5 s en el QueryClient de getRouter: la precarga de cada ruta ya no se repite al montar la pantalla y useSetup no se relee cuando otro componente se suscribe. Medido antes en /home con sesión real: 14 consultas duplicadas. Revisión independiente OK; su hallazgo (la prueba de volver más tarde solo saltaba con más de 60 s) corregido en el PR. Queda fuera: lecturas duplicadas de /metrics por claves distintas (NK-0190); datos de antes de un trabajo en segundo plano visibles hasta 5 s si su pantalla estaba desmontada. /auth/v1/user ya salía una sola vez."
         }
       ]
     },
