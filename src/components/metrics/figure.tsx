@@ -2,7 +2,7 @@
 // otherwise «Sin dato · motivo» as a DataMark; never «—», Infinity or a negative payback.
 import type { ReactNode } from "react";
 import { DataMark } from "@/components/metrics/data-mark";
-import { caveatMark, figureMark } from "@/components/metrics/mark-text";
+import { caveatMark, figureMark, planIsMark } from "@/components/metrics/mark-text";
 
 type Fig = { value: number | null; state: string; reason: string | null };
 
@@ -30,10 +30,19 @@ export function FigureNote({ f, className }: { f: Fig; className?: string }) {
 }
 
 /** A planned figure: the value; «sin plan» when nobody typed the plan; otherwise its «Sin dato» mark (margin, ACV). */
-export function PlanValue({ f, show }: { f: Fig; show: (n: number) => ReactNode }) {
+export function PlanValue({
+  f,
+  show,
+  markClassName,
+}: {
+  f: Fig;
+  show: (n: number) => ReactNode;
+  /** Class of the «Sin dato» mark only (never of a plain number or of «sin plan»). */
+  markClassName?: string;
+}) {
   if (f.value == null && /^sin (plan|clientes presupuestados)/.test(f.reason ?? ""))
     return <span>sin plan</span>;
-  return <FigureValue f={f} show={show} />;
+  return <FigureValue f={f} show={show} className={planIsMark(f) ? markClassName : undefined} />;
 }
 
 /** The value and, beside it, its full mark: «Real», «Estimado · …» or «Sin dato · …» (board figures). */

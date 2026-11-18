@@ -1,0 +1,102 @@
+// SDD-20261118-ux-legibilidad-pantallas-diarias · U-5 · CA-8, CA-9: below md the elements named in the SDD are at
+// least 44 px tall (min-h-11 / h-11, the pattern move-menu.tsx already uses) and from md up they keep today's size.
+// Classes only: the real height at 375 px is measured in the browser (SDD sections 16 and 17).
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({ children, to, ...p }: { children: React.ReactNode; to: string }) => (
+    <a href={String(to)} {...p}>
+      {children}
+    </a>
+  ),
+  useRouterState: ({ select }: { select: (r: { location: { pathname: string } }) => unknown }) =>
+    select({ location: { pathname: "/leads" } }),
+}));
+vi.mock("@/hooks/use-me", async () => (await import("@/test/metrics-mocks")).fakeUseMeModule());
+vi.mock("@/hooks/use-business-lines", () => ({
+  usePrimaryLine: () => ({
+    isLoading: false,
+    error: null,
+    primary: { label: "Línea ficticia", result: { archetype: "B", name: "Otro" }, extra: 0 },
+  }),
+}));
+
+import { FlowStrip } from "@/components/flow-strip";
+import { PrimaryLineNote } from "@/components/primary-line-note";
+
+const cls = (el: Element | null | undefined) => (el?.className ?? "").toString().split(" ");
+const src = (p: string) => readFileSync(resolve(__dirname, p), "utf8");
+
+describe("CA-8 touch targets below md", () => {
+  it("Button size sm (Tablero / Listado and every small button) is 44 px tall", () => {
+    render(<Button size="sm">Tablero</Button>);
+    const c = cls(screen.getByRole("button", { name: "Tablero" }));
+    expect(c).toContain("h-11");
+    expect(c).not.toContain("h-9");
+  });
+
+  it("the tab row and its triggers are 44 px tall", () => {
+    render(
+      <Tabs defaultValue="a">
+        <TabsList>
+          <TabsTrigger value="a">Resumen</TabsTrigger>
+        </TabsList>
+      </Tabs>,
+    );
+    expect(cls(screen.getByRole("tab", { name: "Resumen" }))).toContain("h-11");
+    expect(cls(screen.getByRole("tablist"))).toContain("h-[3.25rem]");
+  });
+
+  it("every link of the flow strip has a 44 px target", () => {
+    const { container } = render(<FlowStrip />);
+    const links = [...container.querySelectorAll("a")];
+    expect(links.length).toBeGreaterThanOrEqual(4);
+    for (const a of links) expect(cls(a), a.textContent ?? "").toContain("min-h-11");
+  });
+
+  it("«Editar líneas» has a 44 px target", () => {
+    render(<PrimaryLineNote />);
+    expect(cls(screen.getByRole("link", { name: "Editar líneas" }))).toContain("min-h-11");
+  });
+
+  it("the section links of Métricas (a nav of links, not TabsTrigger) have a 44 px target", () => {
+    const s = src("../routes/_authenticated/metrics.tsx");
+    const nav = s.slice(s.indexOf('aria-label="Secciones de Métricas"'), s.indexOf("</nav>"));
+    expect(nav).toContain("min-h-11");
+    expect(nav).toContain("md:min-h-0");
+  });
+
+  it("the «Avisos» trigger has a 44 px target", () => {
+    const s = src("./notification-center.tsx");
+    const trigger = s.slice(s.indexOf("<PopoverTrigger asChild>"), s.indexOf("</PopoverTrigger>"));
+    expect(trigger).toContain("min-h-11");
+    expect(trigger).toContain("md:min-h-0");
+  });
+});
+
+describe("CA-9 from md up the sizes stay", () => {
+  it("Button default and sm, TabsList and TabsTrigger keep their md heights", () => {
+    render(
+      <>
+        <Button size="sm">Pequeño</Button>
+        <Button>Normal</Button>
+        <Tabs defaultValue="a">
+          <TabsList>
+            <TabsTrigger value="a">Uno</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </>,
+    );
+    expect(cls(screen.getByRole("button", { name: "Pequeño" }))).toContain("md:h-7");
+    const normal = cls(screen.getByRole("button", { name: "Normal" }));
+    expect(normal).toContain("h-10");
+    expect(normal).toContain("md:h-9");
+    expect(cls(screen.getByRole("tab", { name: "Uno" }))).toContain("md:h-8");
+    expect(cls(screen.getByRole("tablist"))).toContain("md:h-10");
+  });
+});

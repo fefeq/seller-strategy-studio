@@ -194,7 +194,7 @@ function Shell() {
         <header
           className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}
         >
-          <div className="flex h-14 items-center justify-between gap-1 px-4 min-[400px]:gap-3">
+          <div className="flex h-14 items-center justify-between gap-3 px-4">
             <Link to="/home" className="shrink-0" aria-label="Inicio">
               <Lockup />
             </Link>
@@ -206,7 +206,7 @@ function Shell() {
             <button
               onClick={() => setPaletteOpen(true)}
               aria-label="Buscar"
-              className="ml-auto flex size-11 shrink-0 items-center justify-center text-ink-mid"
+              className="ml-auto flex min-h-11 min-w-11 shrink-0 items-center justify-center px-2 text-ink-mid"
             >
               Buscar
             </button>

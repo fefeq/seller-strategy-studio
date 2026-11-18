@@ -164,7 +164,7 @@ export function NotificationCenter({
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className={`text-sm ${unread ? "font-medium text-ink" : "text-ink-mid"} underline decoration-hairline-firm underline-offset-4 hover:decoration-ink ${className}`}
+          className={`min-h-11 text-sm md:min-h-0 ${unread ? "font-medium text-ink" : "text-ink-mid"} underline decoration-hairline-firm underline-offset-4 hover:decoration-ink ${className}`}
           aria-label={`Avisos, ${unread} sin leer${running.length ? `, ${running.length} en marcha` : ""}`}
         >
           <span className="whitespace-nowrap sm:hidden">{short}</span>

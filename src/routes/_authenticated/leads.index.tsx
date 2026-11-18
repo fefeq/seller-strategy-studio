@@ -29,6 +29,7 @@ import {
   leadStageLabel,
   type LeadDelay,
 } from "@/lib/lead-funnel";
+import { sourceLabeler } from "@/lib/lead-source";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
 import { leadsHeadline } from "@/lib/headlines";
@@ -114,7 +115,7 @@ function LeadsPage() {
     const { start, end } = quarterRange(quarter);
     const cohort = leadCohort(data.leads, start, end);
     const funnel = leadFunnel(cohort, data.deals);
-    const bySource = funnelBy(cohort, data.deals, (l) => l.source || "Sin origen");
+    const bySource = funnelBy(cohort, data.deals, sourceLabeler(cohort));
     const quals = new Map(data.leads.map((l) => [l.id, leadQualView(l, data.qualSettings)]));
     const pending = open.filter((l) => !l.qualified_at).length;
     return { delays, scores, quals, pending, open, late, quarter, funnel, bySource };
@@ -215,7 +216,7 @@ function LeadsPage() {
         </ScreenState>
       ) : (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <Kpi
               size="compact"
               label="Leads abiertos"
@@ -610,7 +611,7 @@ function LeadsPage() {
                 Ver el embudo completo en Métricas →
               </Link>
             </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(7.5rem,1fr))] gap-2">
               {view.funnel.steps.map((s, i) => (
                 <div key={s.id} className="rounded-md bg-muted/50 p-3">
                   <p className="eyebrow">{s.label}</p>

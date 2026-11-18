@@ -10,6 +10,8 @@ import { Deviation } from "@/components/budget-quarters";
 import { ScreenState } from "@/components/page";
 import type { SegLike } from "@/lib/segment-coverage";
 import { FigureNote, FigureValue, PlanValue } from "@/components/metrics/figure";
+import { planIsMark } from "@/components/metrics/mark-text";
+import { ScrollFade } from "@/components/scroll-fade";
 import { DataMark } from "@/components/metrics/data-mark";
 import { noData, real } from "@/lib/unit-economics";
 
@@ -210,7 +212,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
       </div>
 
       <ScreenState isPending={isPending} error={error} refetch={refetch} skeleton="table">
-        <div className="overflow-x-auto">
+        <ScrollFade>
           <table className="w-full min-w-[680px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
@@ -218,7 +220,8 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
                 {quarters.map((q) => (
                   <th
                     key={q}
-                    className={`px-3 py-2.5 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}
+                    data-current={q === quarter ? "" : undefined}
+                    className={`min-w-44 px-3 py-2.5 text-right font-normal ${q === quarter ? "text-foreground" : ""}`}
                   >
                     {q}
                   </th>
@@ -239,7 +242,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
                     return (
                       <td
                         key={k.quarter}
-                        className={`px-3 py-3 text-right ${k.quarter === quarter ? "bg-muted/40" : ""}`}
+                        className={`min-w-44 px-3 py-3 text-right ${k.quarter === quarter ? "bg-muted/40" : ""}`}
                       >
                         <p className="font-mono">
                           {fig && l.fmt ? (
@@ -253,7 +256,10 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {fig && l.fmt ? (
                             <>
-                              plan <PlanValue f={fig.plan} show={l.fmt} />
+                              <span className={planIsMark(fig.plan) ? "block" : undefined}>
+                                plan
+                              </span>{" "}
+                              <PlanValue f={fig.plan} show={l.fmt} markClassName="block" />
                               {fig.real.value != null && fig.plan.value != null && (
                                 <>
                                   {" "}
@@ -289,7 +295,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
               ))}
             </tbody>
           </table>
-        </div>
+        </ScrollFade>
 
         {current && current.actual.cac == null && (
           <p className="mt-3 text-xs text-muted-foreground">
