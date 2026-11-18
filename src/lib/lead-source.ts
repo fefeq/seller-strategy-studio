@@ -4,23 +4,28 @@
 import { funnelBy, type DealOutcome, type FunnelGroup, type LeadRow } from "@/lib/lead-funnel";
 
 export const NO_SOURCE = "Sin origen";
+const NO_SOURCE_KEY = NO_SOURCE.toLowerCase();
 
 /** Key to compare origins by, plus the text to show when nothing better is known. */
 export function normalizeLeadSource(raw: string | null | undefined): {
   key: string;
   label: string;
 } {
-  // NFC so a composed and a decomposed accent are the same origin; \s already folds the non-breaking space.
-  const label = (raw ?? "").normalize("NFC").replace(/\s+/g, " ").trim();
-  if (!label) return { key: NO_SOURCE.toLowerCase(), label: NO_SOURCE };
+  // NFC so a composed and a decomposed accent are the same origin; zero-width characters are dropped and \s folds the
+  // non-breaking space.
+  const label = (raw ?? "")
+    .normalize("NFC")
+    .replace(/[\u200b-\u200d\u2060\ufeff]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!label) return { key: NO_SOURCE_KEY, label: NO_SOURCE };
   return { key: label.toLowerCase(), label };
 }
 
-const hasCapital = (s: string) => s !== s.toLowerCase();
-
 /**
- * The label every lead of the same origin groups under: its most frequent spelling; on a tie the one with a
- * capital letter, then alphabetical order. Pass it to funnelBy as the key.
+ * The label every lead of the same origin groups under: its most frequent spelling; on a tie the first in code-unit
+ * order (a capital letter sorts before its lower case, so «Manual» beats «manual»). «Sin origen» always keeps its own
+ * label, even when leads were saved with the literal text in lower case. Pass it to funnelBy as the key.
  */
 export function sourceLabeler(
   leads: Pick<LeadRow, "source">[],
@@ -35,12 +40,9 @@ export function sourceLabeler(
   const chosen = new Map<string, string>();
   for (const [key, forms] of spellings) {
     const best = [...forms.entries()].sort(
-      (a, b) =>
-        b[1] - a[1] ||
-        Number(hasCapital(b[0])) - Number(hasCapital(a[0])) ||
-        (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0),
+      (a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0),
     )[0]!;
-    chosen.set(key, best[0]);
+    chosen.set(key, key === NO_SOURCE_KEY ? NO_SOURCE : best[0]);
   }
   return (l) => {
     const { key, label } = normalizeLeadSource(l.source);

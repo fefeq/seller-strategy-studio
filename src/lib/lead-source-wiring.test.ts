@@ -18,6 +18,13 @@ describe.each(screens)("%s", (_name, path) => {
   });
   it("does not group by the raw source text any more", () => {
     expect(src).not.toMatch(/l\.source\s*\|\|\s*"Sin origen"/);
-    expect(src).not.toMatch(/funnelBy\([^)]*source/);
+  });
+});
+
+// The Leads screen only splits by origin, so it must not call funnelBy directly at all (any callback could re-read
+// the raw text); the panel also splits by segment and has its own render test (lead-funnel-panel-source.test.tsx).
+describe("Leads screen", () => {
+  it("does not call funnelBy directly", () => {
+    expect(read("../routes/_authenticated/leads.index.tsx")).not.toContain("funnelBy(");
   });
 });

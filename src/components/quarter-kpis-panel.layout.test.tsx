@@ -60,6 +60,17 @@ describe("CA-7b «plan» and its mark sit on separate lines", () => {
   });
 });
 
+describe("CA-7b a cell with no plan stays inline", () => {
+  it("in «CAC» the word «plan» and «sin plan» are not blocks", async () => {
+    await renderPanel();
+    const cell = row("CAC").querySelectorAll("td")[4] as HTMLElement;
+    const planLine = cell.querySelectorAll("p")[1] as HTMLElement;
+    expect(planLine.textContent).toContain("sin plan");
+    expect(planLine.querySelector("[data-mark]")).toBeNull();
+    for (const s of planLine.querySelectorAll("span")) expect(classes(s)).not.toContain("block");
+  });
+});
+
 describe("CA-7c every column has its own minimum width", () => {
   it("the header and the body cells of the quarters carry min-w-44", async () => {
     const { container } = await renderPanel();
@@ -83,6 +94,8 @@ describe("CA-7d faded edge and current quarter in view", () => {
   const isScroller = (el: HTMLElement) => el.getAttribute("data-slot") === "scroll-fade";
 
   beforeEach(() => {
+    // A narrow screen: only there is the current quarter centred (SDD §6).
+    vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("max-width: 767px") }));
     setLeft = null;
     left = 0;
     def("clientWidth", {
@@ -118,6 +131,7 @@ describe("CA-7d faded edge and current quarter in view", () => {
     });
   });
   afterEach(() => {
+    vi.unstubAllGlobals();
     for (const [name, d] of Object.entries(saved)) {
       if (d) Object.defineProperty(proto, name, d);
       else delete proto[name];

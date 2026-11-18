@@ -35,7 +35,7 @@ export function FlowStrip() {
             Después:{" "}
             <Link
               to={pos.next.to as never}
-              className="relative underline before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] md:before:hidden"
+              className="relative underline before:absolute before:-inset-x-1 before:-inset-y-4 before:content-[''] md:before:hidden"
             >
               {pos.next.label}
             </Link>

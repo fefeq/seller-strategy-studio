@@ -44,6 +44,10 @@ describe("CA-3 normalizeLeadSource", () => {
   it("a non-breaking space folds like a space", () => {
     expect(normalizeLeadSource("Origen\u00a0A").key).toBe(normalizeLeadSource("origen a").key);
   });
+  it("zero-width characters do not make a different origin", () => {
+    expect(normalizeLeadSource("manual\u200b").key).toBe(normalizeLeadSource("manual").key);
+    expect(normalizeLeadSource("\ufeffmanual").key).toBe(normalizeLeadSource("manual").key);
+  });
   it("an accent makes a different origin: «Reunión» and «Reunion» stay apart", () => {
     expect(normalizeLeadSource("Reunión").key).not.toBe(normalizeLeadSource("Reunion").key);
   });
@@ -112,5 +116,12 @@ describe("funnelBySource is what both screens call", () => {
   });
   it("an empty cohort gives no groups", () => {
     expect(funnelBySource([], [])).toEqual([]);
+  });
+});
+
+describe("«Sin origen» keeps its own label", () => {
+  it("a literal «sin origen» (lower case) shares the group and does not rename it", () => {
+    const ls = [L("a", "sin origen"), L("b", "sin origen"), L("c", null)];
+    expect(funnelBySource(ls, []).map((g) => [g.key, g.total])).toEqual([[NO_SOURCE, 3]]);
   });
 });

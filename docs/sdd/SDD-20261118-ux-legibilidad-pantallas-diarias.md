@@ -43,7 +43,7 @@ Revisión del 2026-11-18 sobre `localhost:5173` (backend compartido, solo lectur
 No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían otros fuera del alcance (sección 5).
 
 ## 5. Alcance
-**Incluye:** U-1 a U-6 de la sección 12, solo en las rutas `/leads`, `/accounts` y `/metrics` y en los componentes compartidos que ellas usan (`PrimaryLineNote`, `FlowStrip`, `TabsTrigger`, `NotificationCenter`, cabecera móvil).
+**Incluye:** U-1 a U-6 de la sección 12, solo en las rutas `/leads`, `/accounts` y `/metrics` y en los componentes compartidos que ellas usan (`PrimaryLineNote`, `FlowStrip`, `Button` tamaño `sm`, `TabsList` y `TabsTrigger`, `NotificationCenter`, cabecera móvil). *(Corregido tras el gate: `Button sm` y `TabsList` ya estaban en §13 y D-3 pero no en esta lista.)*
 
 **No incluye** (límite que el brief copia a «Movimientos prohibidos»):
 - Cambiar el texto, la palabra o el atributo `data-mark` de «Real», «Estimado» y «Sin dato · motivo», o sustituirlos por «—».
@@ -58,7 +58,7 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - Línea principal: «arquetipo B, B2B mid-market / híbrido» → una sola vez cuando el nombre de la línea y el del arquetipo coinciden.
 - «Conversión por origen» y el filtro «Comparar por» origen: un grupo por origen sin distinguir mayúsculas ni espacios.
 - Rejillas del embudo y de los KPI de Leads: columnas según el ancho disponible, no según el viewport.
-- Tabla trimestral: columnas con ancho mínimo; en cada celda, «plan» y su marca en líneas separadas; en pantalla estrecha, el trimestre actual aparece primero y la tabla indica que se desliza.
+- Tabla trimestral: columnas con ancho mínimo; en cada celda, «plan» y su marca en líneas separadas; en pantalla estrecha (menos de 768 px), la tabla se desplaza al cargar para centrar el trimestre actual, que es la última columna, y señala con un borde por la derecha o por la izquierda que hay más contenido. En pantallas más anchas no se desplaza. *(Texto original: «el trimestre actual aparece primero».)*
 - En pantalla estrecha, altura táctil mínima de 44 px en los elementos de CA-8.
 - Cabecera móvil: «Buscar» con ancho propio y separación fija con «Avisos».
 **Eliminado:** nada.
@@ -70,7 +70,7 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 
 ### H-2: Como Fede, quiero que cada origen cuente una sola vez para que la conversión por origen no se parta.
 - **CA-3** `normalizeLeadSource` iguala «manual», «Manual» y « manual » en una clave; vacío o nulo da «Sin origen». · prueba: `src/lib/lead-source.test.ts`
-- **CA-4** «Conversión por origen» muestra una fila por clave con la suma de leads y de resultados; la etiqueta es la forma más frecuente y, en empate, la que lleva mayúscula inicial. · prueba: `src/lib/lead-source.test.ts`
+- **CA-4** «Conversión por origen» muestra una fila por clave con la suma de leads y de resultados; la etiqueta es la forma más frecuente y, en empate, la primera en orden de código (una mayúscula va antes que su minúscula: «Manual» gana a «manual»). «Sin origen» conserva siempre su etiqueta. · prueba: `src/lib/lead-source.test.ts`
 - **CA-5** Los datos guardados no cambian: la tarjeta del lead sigue mostrando el origen tal como se guardó. · prueba: `src/lib/lead-source.test.ts` (la función es pura y no escribe)
 
 ### H-3: Como Fede, quiero que el embudo y los KPI de Leads no se pisen a ningún ancho.
@@ -83,7 +83,7 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - **CA-7d** En pantalla estrecha el contenedor muestra desvanecido en el borde con más contenido y, al montar, la columna del trimestre actual queda a la vista. · prueba: `src/components/quarter-kpis-panel.layout.test.tsx` (con `scrollIntoView` simulado)
 
 ### H-5: Como Fede, quiero pulsar con el pulgar sin fallar.
-- **CA-8** A menos de 768 px, estos elementos miden al menos 44 px de alto: enlaces de `FlowStrip`, el disparador «Avisos», las pestañas (`TabsTrigger`), «Tablero/Listado» de Leads y «Editar líneas». Se usa `min-h-11 md:min-h-0`, como ya hacen `move-menu.tsx` y `quick-actions.tsx`. · prueba: `src/components/touch-targets.test.tsx` (clases) + medición en navegador a 375 px
+- **CA-8** A menos de 768 px, estos elementos miden al menos 44 px de alto: enlaces de `FlowStrip`, el disparador «Avisos», las pestañas (`TabsTrigger`), «Tablero/Listado» de Leads y «Editar líneas». Se usa `min-h-11 md:min-h-0` en los enlaces y el disparador de «Avisos», como ya hacen `move-menu.tsx` y `quick-actions.tsx`; las primitivas `Button sm`, `TabsList` y `TabsTrigger` usan `h-11`/`h-[3.25rem]` más su altura de escritorio (`md:h-7`, `md:h-10`, `md:h-8`). El enlace «Después:» de `FlowStrip`, que va dentro de una frase, llega a 44 px con un área táctil invisible (`before:-inset-y-4`, 47,5 px medidos) en vez de agrandar la línea. · prueba: `src/components/touch-targets.test.tsx` (clases) + medición en navegador a 375 px
 - **CA-9** En escritorio (≥768 px) los tamaños actuales no cambian. · prueba: `src/components/touch-targets.test.tsx`
 
 ### H-6: Como Fede, quiero una cabecera móvil que no se apriete.
@@ -124,9 +124,9 @@ Orden sugerido: U-1, U-2 (puras, sin riesgo), U-6, U-5, U-3, U-4. Las U-3 a U-6 
 - U-1: comparar con una función `sameText(a, b)` (minúsculas, `trim`, espacios colapsados).
 - U-2: `normalizeLeadSource(raw): { key, label }` en `src/lib/lead-source.ts`; `funnelBy` no cambia de firma: se le pasa `l => normalizeLeadSource(l.source).key` y la etiqueta se resuelve al pintar. Revisar los otros puntos que agrupan por origen: `lead-funnel-panel.tsx` («Comparar por») y `src/lib/agent/tools/core-read.ts` **[Por verificar]**.
 - U-3: `grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))]` (o contenedor con `@container`). El mínimo exacto se ajusta al ancho de «OPORTUNIDAD» con el `eyebrow` real, medido en navegador.
-- U-4: añadir `min-w-40` a las celdas; en `PlanValue` (o en la celda) pasar `className="block"` a la marca; no se toca `DataState`. Alternativa descartada: acortar el motivo o sustituirlo por «—» (D-1).
+- U-4: añadir `min-w-44` a las celdas (el texto original decía `min-w-40`; se midió y quedó en 44); en `PlanValue` (o en la celda) pasar `className="block"` a la marca; no se toca `DataState`. Alternativa descartada: acortar el motivo o sustituirlo por «—» (D-1).
 - U-5: `TabsList` hoy mide `h-10` con `TabsTrigger` `h-8`; con `min-h-11` hay que subir la lista a `h-14` en móvil para que quepan. Es un componente compartido por muchas pantallas (D-3).
-- U-6: sustituir `size-11` por `min-w-11 px-1 text-sm` en el botón «Buscar»; por debajo de 400 px la barra queda con `gap-1 px-3` y solo desde 400 px crece a `gap-3 px-4`; «Menú» pasa a `px-1 -mr-1`. Comprobar a 360 y 375 px que `scrollWidth` del documento no supera el ancho de la ventana.
+- U-6: sustituir `size-11` por `min-w-11 px-1 text-sm` en el botón «Buscar»; por debajo de 400 px la barra queda con `gap-1 px-2.5` y solo desde 400 px crece a `gap-3 px-4`; «Menú» pasa a `px-1 -mr-2`; por debajo de `sm` la etiqueta de «Avisos» limita el número a «9+» (`noticeLabels`), y el `aria-label` conserva la cuenta real. Comprobar a 360 y 375 px que `scrollWidth` del documento no supera el ancho de la ventana.
 
 ## 14. Riesgos y dependencias
 - `TabsTrigger` y `Button` son primitivas compartidas: un cambio móvil se nota en todas las pantallas con pestañas. Se mitiga con `md:min-h-0` y revisando capturas de Estrategia y Métricas.
@@ -370,6 +370,71 @@ Servidor `localhost:5174` verificado contra el commit: `flow-strip.tsx`, `route.
 - Navegador: `browser-measurements.md`, `measure.js`, `measure-def.js`.
 - Worktrees: `worktree-list-before.txt` y `worktree-list-after.txt`. Mis dos worktrees están eliminados. Aparecieron dos ajenos durante la revisión (`/private/tmp/claude-501/gate-wt/base` y `/head`); no los creé ni los toqué.
 
+### Revisión independiente adicional (2026-11-18), sobre el commit `f6ce7fb7`
+
+*Informe de un tercer agente de contexto fresco, lanzado desde la sesión principal a petición de Fede, copiado sin editar su contenido (solo se bajó un nivel de los encabezados y se corrigieron entidades HTML). Es independiente de la «Segunda revisión» de arriba. Este agente no ejecutó `gate.mjs` ni abrió el navegador.*
+
+- **Veredicto del gate: Objeciones.** Las cuatro correcciones y la cabecera están en el código, y las pruebas, tipos, lint y build pasan. Pero tres CA se afirman sin demostrarlo: la altura real del enlace «Después:» (calculo ~40 px, no 44), el crecimiento de las filas de `FlowStrip` y la cláusula «sin plan» de CA-7b. Además el SDD sigue contradiciendo al código en tres puntos.
+
+#### CA sin prueba posible o sin G-n (no hay PRD, G-n no cuenta)
+- CA-6: solo la guardia de código fuente (`layout-grids.test.ts`). El solape real no es medible en jsdom.
+- CA-7c, la geometría de CA-8 y la separación de CA-10: solo navegador, y no las reprodujo.
+- CA-5: la prueba solo comprueba que una función pura no muta su entrada. Nada comprueba que la tarjeta del lead siga pintando `l.source` tal cual. Es testable y sigue sin prueba.
+- CA-7b, cláusula «sin plan se queda en línea»: sin prueba (hallazgo 3).
+- CA-8, «Después:» a 44 px: sin prueba ni medición (hallazgo 1).
+
+#### [Por verificar] que sigue sin comprobarse
+- Todo lo visual y geométrico de la sección 18 (CA-6, 7b a 7d, 8, 10 y «Manual con 2 leads»): no lo reprodujo.
+- Cabecera a 320 px: sigue desbordando (admitido en el SDD) y no hay medición sobre la base, así que no sabe si empeoró.
+- Efecto de `Button sm`, `TabsTrigger` y `TabsList` más altos fuera de las tres pantallas. Ejemplo: el popover de «Avisos» (`notification-center.tsx:177-182`) y `connect.tsx:89,188`, que usa `TabsList flex-wrap` con altura fija.
+- `box-shadow` en celdas `th/td` pegajosas con `border-collapse: collapse` en Safari.
+- Modo oscuro móvil, Safari real y producción: no mirados.
+
+#### Contradicciones con el código o con decisiones previas
+- SDD §6 (línea 61, «el trimestre actual aparece primero») frente a `scroll-fade.tsx:5-6,27-28`, que lo centra. El SDD no se corrigió, pese a que el informe anterior ya lo señaló.
+- SDD CA-8 (línea 86, «se usa `min-h-11 md:min-h-0`») frente a `button.tsx:27`, `tabs.tsx:54,71`, que usan `h-11` más `md:h-*`. §18 no recoge ese desvío de método.
+- SDD §5 (línea 46, lista cerrada) frente a `button.tsx:27` y `tabs.tsx:54`: `Button sm` y `TabsList` no figuran en la lista. Solo aparecen en §13/D-3 y en el PR.
+- SDD CA-4 («en empate, la que lleva mayúscula inicial») frente a `lead-source.ts:35`, que prefiere «alguna mayúscula» y luego orden alfabético.
+- NK-0106, el contrato de `DataState`, `AGENTS.md` y `src/lib/AGENTS.md`: ninguna contradicción. El texto de las marcas no cambia, no hay «—», y `mark-text.ts` solo añade `planIsMark`.
+
+#### Los cuatro hallazgos del informe anterior y la regresión de la cabecera
+1. **Cableado de CA-4: parcial.** Hecho: `funnelBySource` existe y lo usan `leads.index.tsx:117` y `lead-funnel-panel.tsx:36`. Mutación: con ambos archivos revertidos a la base, fallan 4 pruebas de `lead-source-wiring.test.ts` (más 2 de `layout-grids`, porque revertir el archivo también deshace las rejillas). Las 169 restantes de esa corrida pasan. Límite: la guardia es de código fuente, no de render; la regex `funnelBy\([^)]*source` no atrapa `funnelBy(c, d, (l) => l.source…)`, porque el `)` de `(l)` la corta. Falta una prueba de render de `LeadFunnelPanel` con «manual» y «Manual».
+2. **CA-7d, señal a la izquierda: sí, con matiz.** `data-start` más `[[data-start=true]_&]:…` está en `scroll-fade.tsx` y `quarter-kpis-panel.tsx`. La prueba con `scrollLeft` distinto de 0 falla si se quita el centrado (dos fallos en la mutación). Matiz: `ScrollFade` sigue centrando también en escritorio con desborde, aunque el SDD dice «pantalla estrecha».
+3. **`FlowStrip` creciendo: parcial.** El `li` ya no lleva `min-h-11`, pero cada enlace de las migas es `inline-flex min-h-11` dentro de un `li flex items-center`, así que el `li` sigue midiendo 44 px. La prueba «sus filas no crecen» solo mira la clase del `li` y pasaría igualmente con las filas a 44 px.
+4. **NFC en `normalizeLeadSource`: sí.** `lead-source.ts:16` normaliza. Si se quita `.normalize("NFC")` falla 1 prueba, y la de acento distinto («Reunión»/«Reunion» separados) sigue verde.
+5. **Regresión de la cabecera: sí, en el código.** `route.tsx:197` queda en `gap-1 px-3 min-[400px]:gap-3 min-[400px]:px-4`, con «Buscar» `min-w-11 px-1` y «Menú» `px-1 -mr-1`. La suma da 8 px entre textos, exactamente el mínimo de CA-10. Que a 360 y 375 px `scrollWidth` sea igual al ancho de la ventana es medición del implementador, no de este revisor.
+
+#### Hallazgos nuevos
+1. **Importante.** El área táctil de «Después:» no llega a 44 px por cálculo. Evidencia: `flow-strip.tsx:38`. `before:-inset-y-3` suma 24 px a la caja del enlace inline `text-xs`, que son unos 15-16 px, así que quedan ~40 px. El SDD (§18) dice «llega a 44 px» sin medir ese pseudoelemento. Cambiaría: `before:-inset-y-4` (o 14 px) y medirlo.
+2. **Importante.** La prueba de `FlowStrip` no protege lo que dice. `touch-targets.test.tsx` («sus filas no crecen») lee solo la clase del `li`. Para no crecer habría que usar el mismo truco del pseudoelemento en las migas. Si el 44 px de las migas es intencional, la prueba y el texto del SDD deben decir que las filas crecen.
+3. **Menor.** CA-7b «sin plan se queda en línea»: sin prueba. Mutación: `planIsMark` devolviendo `true` siempre deja `quarter-kpis-panel.layout.test.tsx` y `quarter-kpis-panel.test.tsx` en verde (15 de 15). Cambiaría: una prueba con una celda «sin plan».
+4. **Menor.** La regla «mayúscula» del desempate (`lead-source.ts:35`) es código muerto. Quitarla deja las 14 pruebas en verde, porque el orden ASCII ya pone la mayúscula primero. Aun así, el criterio del código («alguna mayúscula») difiere del SDD («inicial»).
+5. **Menor.** Casos límite de §8 sin prueba: desmontaje de `ScrollFade` (listeners y `ResizeObserver`); trimestre actual ausente (el código es seguro, pero no hay prueba); `ScrollFade` solo centra al montar (`[]`), no si cambia `quarter` sin remontar; un origen literal «sin origen» en minúscula y mayoritario sustituiría la etiqueta «Sin origen» por la minúscula. Cubiertos: `sourceLabeler` con 40 leads y 7 orígenes, y la ausencia de `ResizeObserver` (jsdom no lo trae).
+6. **Menor.** `lead-source-wiring.test.ts` solo vigila el código fuente (ver hallazgo 1 de los cuatro).
+7. **Menor, proceso.** Mientras revisaba, el checkout real avanzó a `9ccac7a7`, un commit de otra sesión que solo añade 162 líneas al SDD (la segunda revisión de arriba). Este agente revisó `f6ce7fb7`.
+
+#### Alcance, privacidad y proceso
+- **Alcance:** 22 archivos, 18 añadidos y 4 modificados, todos de `src` o del SDD. Ninguna prueba existente modificada. Todo está dentro de §5 salvo los dos archivos compartidos que §5 no lista: `ui/button.tsx` (`Button sm`) y `ui/tabs.tsx` (`TabsList`). Las tres pantallas y la ampliación de `metrics.tsx` sí están en §18.
+- **Privacidad:** datos ficticios en pruebas, sin URLs, correos, `as any`, `.only/.skip`, `console.*` ni `confirm/prompt` en el diff (grep). La descripción del PR 161 y el SDD no tienen datos de cliente.
+- **Estado del PR:** en borrador, 22 archivos, cabeza `f6ce7fb7`.
+- **Prettier:** el SDD da aviso, como 99 archivos de `docs/sdd`, así que no es regresión.
+
+#### Qué ejecutó y con qué resultado
+- **Pruebas nuevas contra la base `5c646d0a`** (7 archivos copiados a un worktree temporal): 25 fallan y 3 pasan. Las 3 que pasan son CA-2, «línea con otro nombre» y «las palabras de las marcas no cambian». `lead-source.test.ts` falla por import no resuelto, no por lógica; para eso hizo mutaciones sobre la cabeza.
+- **Suite completa en `f6ce7fb7`:** 440 archivos y 6.404 pruebas en verde (92 s). `npx tsc --noEmit -p .` sale con 0. `eslint` sobre los 21 archivos de `src` tocados: 0 errores y 1 aviso previo (`button.tsx:54`). `prettier --check` sobre esos archivos: limpio. `npx vite build`: sale con 0.
+- **Tailwind 4.3.3:** compiló el CSS con `@tailwindcss/node` y lo confirmó en el CSS de la build. Las dos variantes del diff son sintaxis válida: `[[data-start=true]_&]:[box-shadow:6px_0_6px_-6px_var(--hairline-firm)]` genera `[data-start=true] .clase{box-shadow:…}` y `before:-inset-y-3` genera `inset-block:calc(var(--spacing) * -3)`. También generan las demás clases nuevas (`h-[3.25rem]`, `auto-fit`, `min-w-44`, `min-[400px]:*`, `md:before:hidden`).
+- **Mutación pedida (cableado de `funnelBySource`):** revertidos `leads.index.tsx` y `lead-funnel-panel.tsx` a la base. Fallan 6 pruebas: 4 de `lead-source-wiring` y 2 de `layout-grids`. Las otras 169 de esa corrida pasan.
+- **Otras mutaciones sobre `f6ce7fb7`:** quitar NFC, 1 fallo; clave sin `toLowerCase`, 8 fallos; plegar acentos, 2 fallos; quitar la regla de mayúscula, 0 fallos; `planIsMark` siempre `true`, 0 fallos; sin centrado en `ScrollFade`, 2 fallos.
+- **Uso de `size="sm"` y tabs:** 199 usos de `size="sm"` y 13 `<TabsList`, 8 de ellos con `className`; `connect.tsx` usa `flex-wrap`. Solo encontró un botón con altura propia (`hub-screen.tsx:371`, `h-7`), que no se ve afectado.
+- **No ejecutado:** `gate.mjs` (NOT RUN: pide ticket NK y no existe; no se inventó), segunda máquina y soak de recursos (NOT RUN), `flake.mjs` (NOT RUN). Worktrees temporales eliminados. No tocó el checkout real, el PR ni el ledger.
+
+#### Lo que esta revisión NO demuestra
+- Nada visual ni geométrico: no abrió el navegador. Solape de CA-6, líneas por celda de CA-7c, 44 px reales de CA-8, separación y desbordamiento de CA-10, modo oscuro, Safari y 320 px quedan sin reproducir.
+- Que `Button sm`, `TabsTrigger`, `TabsList` o `FlowStrip` más altos no rompan otras pantallas.
+- Comportamiento con datos reales o con producción.
+- Que el gate fijo (`gate.mjs`) pase. Los guards del diff los repitió a mano con grep y `git diff --name-status`.
+- Que el SDD esté libre de objeciones: eso lo decide Fede.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
 **2026-11-18 · Estado: En curso (implementado y medido; sin revisión del gate ni aprobación de entrega).** Rama local `sdd/ux-legibilidad-20261118`, desde `origin/main`; un commit local (`8c300442`, 22:49), sin push. Corregido a las 22:57: esta línea decía «sin commit ni push».
 
@@ -412,3 +477,15 @@ Hecho a petición de Fede («Sí, corrige»): hallazgos 1, 2, 4 y 7 del gate, y 
 - **Embudo y KPI de Leads a 320 px:** 1 columna cada uno, 0 solapes y 0 etiquetas recortadas.
 - **Aún sin medir:** modo oscuro en móvil, Safari real y el efecto de `Button sm`/`TabsTrigger` fuera de las tres pantallas (hallazgo 3 del gate, decisión de Fede).
 - **Verificación:** 440 archivos, 6.404 pruebas en verde; `tsc` limpio; ESLint sin errores; las pruebas nuevas se vieron fallar antes del código (10 fallos, más 2 en la cabecera).
+
+**Segunda ronda tras los gates (2026-11-18, mismo día)**
+Hecho a petición de Fede («Sí, corrige») sobre el informe de la «Segunda revisión» y el de la «Revisión independiente adicional». Cada prueba nueva se vio fallar antes del código; las dos mutaciones de `planIsMark` ahora las atrapan 3 pruebas.
+- **«Después:» a 44 px:** `before:-inset-y-3` → `before:-inset-y-4`. Medido a 360 y 375 px: el área táctil invisible mide 47,5 px (antes 39,5); las migas, 44 px; el bloque `FlowStrip`, 80 px.
+- **Cabecera a 360 px:** con el contador real (14) y la etiqueta corta, la página medía 362 px en una ventana de 360. Ahora: `px-2.5` por debajo de 400 px, «Menú» `-mr-2`, y la etiqueta corta de «Avisos» capada a «9+» (`src/lib/notices-label.ts`, con prueba). Medido: 360 px → documento 360 (el borde de «Menú» queda justo en el borde de la pantalla, sin holgura); 375 px → documento 375, «Menú» termina en 373. **Cambio visible:** por debajo de `sm`, «Avisos · 14» pasa a «Avisos · 9+» (como la insignia de «Sugerencias» de la barra inferior); desde `sm` y el `aria-label` siguen con el número real.
+- **`ScrollFade`:** observa también su contenido, no solo su caja (la tabla puede crecer después de montar), y centra el trimestre actual solo por debajo de 768 px; a 1106 px el centrado tapaba el inicio del primer trimestre. Pruebas nuevas: `scroll-fade.test.tsx` (desmontaje, sin `ResizeObserver`, sin desborde, ancho y estrecho).
+- **CA-7b «sin plan»:** pruebas nuevas en `quarter-kpis-panel.layout.test.tsx` y `src/components/metrics/plan-is-mark.test.ts`.
+- **CA-4:** prueba de render del panel (`lead-funnel-panel-source.test.tsx`: tres grafías, una fila) y guardia más estricta (`leads.index.tsx` no llama a `funnelBy(`). Se eliminó la regla de «mayúscula» del desempate, que era código muerto, y se documenta el criterio real.
+- **`normalizeLeadSource`:** descarta caracteres de ancho cero (U+200B a U+200D, U+2060, U+FEFF); un «sin origen» literal en minúscula ya no sustituye la etiqueta «Sin origen».
+- **CA-9:** las pruebas de `touch-targets.test.tsx` exigen también `md:min-h-0` y `md:before:hidden`.
+- **SDD:** corregidos §5 (lista de componentes), §6 (centrado), CA-4 (desempate), CA-8 (mecanismo) y U-4/U-6 de §13.
+- **Sin resolver:** cabecera a 320 px (sigue desbordando); decisión de Fede sobre `Button size="sm"`; CA-5 sin prueba de render de la tarjeta del lead; `box-shadow` en celdas fijas con `border-collapse: collapse` en Safari, modo oscuro en móvil y Safari real, sin comprobar.

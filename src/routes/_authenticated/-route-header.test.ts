@@ -17,6 +17,11 @@ const row = route.slice(
   route.indexOf("flex h-14 items-center") + 120,
 );
 
+const menu = route.slice(
+  route.indexOf('aria-controls="mobile-nav"'),
+  route.indexOf('aria-controls="mobile-nav"') + 250,
+);
+
 describe("mobile top bar", () => {
   it("«Buscar» sizes itself by its word, with a 44 px minimum", () => {
     expect(bar).toContain("min-w-11");
@@ -27,11 +32,16 @@ describe("mobile top bar", () => {
   });
   // Measured in the browser (2026-11-18): gap-3 at every width pushed «Menú» ~40 px past the right edge at 360 and
   // 375 px (the page became wider than the screen; gate finding 6). The gap and the side padding only grow from 400 px.
-  it("below 400 px the bar is tight (4 px gaps, 12 px sides) and only grows from 400 px", () => {
+  it("below 400 px the bar is tight (4 px gaps, 10 px sides) and only grows from 400 px", () => {
     expect(row).toContain("gap-1");
     expect(row).toContain("min-[400px]:gap-3");
-    expect(row).toContain("px-3");
+    expect(row).toContain("px-2.5");
     expect(row).toContain("min-[400px]:px-4");
     expect(row).not.toMatch(/(^|\s)gap-3(\s|")/);
+  });
+  // Measured at 360 px with the widest short label («Avisos · 9+»): px-3 and -mr-1 left the page 2 px wider than the screen.
+  it("«Menú» hangs 8 px into the side padding so «Avisos · 9+» fits at 360 px", () => {
+    expect(menu).toContain("-mr-2");
+    expect(menu).toContain("px-1");
   });
 });

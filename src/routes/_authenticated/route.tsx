@@ -194,7 +194,7 @@ function Shell() {
         <header
           className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}
         >
-          <div className="flex h-14 items-center justify-between gap-1 px-3 min-[400px]:gap-3 min-[400px]:px-4">
+          <div className="flex h-14 items-center justify-between gap-1 px-2.5 min-[400px]:gap-3 min-[400px]:px-4">
             <Link to="/home" className="shrink-0" aria-label="Inicio">
               <Lockup />
             </Link>
@@ -216,7 +216,7 @@ function Shell() {
               aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={navOpen}
               aria-controls="mobile-nav"
-              className="-mr-1 flex h-11 shrink-0 items-center justify-center px-1 text-sm text-ink"
+              className="-mr-2 flex h-11 shrink-0 items-center justify-center px-1 text-sm text-ink"
             >
               <IconText icon={navOpen ? X : Menu} size="nav">
                 {navOpen ? "Cerrar" : "Menú"}

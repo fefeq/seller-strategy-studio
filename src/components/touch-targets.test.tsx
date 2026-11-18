@@ -56,7 +56,10 @@ describe("CA-8 touch targets below md", () => {
     const { container } = render(<FlowStrip />);
     const crumbs = [...container.querySelectorAll("ol a")];
     expect(crumbs.length).toBeGreaterThanOrEqual(3);
-    for (const a of crumbs) expect(cls(a), a.textContent ?? "").toContain("min-h-11");
+    for (const a of crumbs) {
+      expect(cls(a), a.textContent ?? "").toContain("min-h-11");
+      expect(cls(a), a.textContent ?? "").toContain("md:min-h-0");
+    }
     for (const li of container.querySelectorAll("ol li")) expect(cls(li)).not.toContain("min-h-11");
   });
 
@@ -66,14 +69,17 @@ describe("CA-8 touch targets below md", () => {
     expect(next).not.toBeNull();
     const c = cls(next);
     expect(c).toContain("before:absolute");
-    expect(c).toContain("before:-inset-y-3");
+    expect(c).toContain("before:-inset-y-4");
     expect(c).not.toContain("min-h-11");
     expect(c).not.toContain("inline-flex");
+    expect(c).toContain("md:before:hidden");
   });
 
   it("«Editar líneas» has a 44 px target", () => {
     render(<PrimaryLineNote />);
-    expect(cls(screen.getByRole("link", { name: "Editar líneas" }))).toContain("min-h-11");
+    const edit = cls(screen.getByRole("link", { name: "Editar líneas" }));
+    expect(edit).toContain("min-h-11");
+    expect(edit).toContain("md:min-h-0");
   });
 
   it("the section links of Métricas (a nav of links, not TabsTrigger) have a 44 px target", () => {
