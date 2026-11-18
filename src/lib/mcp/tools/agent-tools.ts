@@ -3,6 +3,7 @@
 import { defineTool, ToolError } from "@lovable.dev/mcp-js";
 import type { z } from "zod";
 import { TOOLS, canUseTool, executeTool, summarizeAction } from "@/lib/agent/tools";
+import { saveToolTrace, traced, type ToolTraceRow } from "@/lib/agent/tool-trace";
 import { mcpCtx, json, text } from "../context";
 import { errorText } from "@/lib/errors";
 
@@ -172,37 +173,45 @@ export const agentMcpTools = TOOLS.map((t) =>
         : { readOnlyHint: false, destructiveHint: false, openWorldHint: EXTERNAL.test(t.name) },
     handler: async (args, ctx) => {
       const c = await mcpCtx(ctx);
-      if (!canUseTool(t, c.roles))
-        throw new ToolError("Tu rol en esta empresa no permite esta acción");
-      if (t.kind === "read") {
-        try {
-          return json(await executeTool(c, t.name, args));
-        } catch (e) {
-          throw new ToolError((e as Error).message);
-        }
+      // Tool trace (0108): name, outcome and duration only. Stored after the call and never fails it.
+      const trace: ToolTraceRow[] = [];
+      try {
+        return await traced(trace, t, async () => {
+          if (!canUseTool(t, c.roles))
+            throw new ToolError("Tu rol en esta empresa no permite esta acción");
+          if (t.kind === "read") {
+            try {
+              return json(await executeTool(c, t.name, args));
+            } catch (e) {
+              throw new ToolError((e as Error).message);
+            }
+          }
+          const parsed = t.input.safeParse(args ?? {});
+          if (!parsed.success)
+            throw new ToolError(
+              `Datos no válidos: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
+            );
+          let summary = summarizeAction(t.name, parsed.data);
+          if (t.spends) {
+            const { spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
+            summary = withEstimate(summary, t.name, await spendEstimateLine(c.db, c.orgId, t.name));
+          }
+          const { error } = await c.db.from("agent_pending_actions").insert({
+            org_id: c.orgId,
+            user_id: c.userId,
+            tool: t.name,
+            args: parsed.data as never,
+            summary,
+            source: "mcp",
+          });
+          if (error) throw new ToolError(errorText(error));
+          return text(
+            `Acción preparada en ${c.orgName}: «${summary}». El usuario debe confirmarla en Nokko → Sugerencias (${APP_URL}).`,
+          );
+        });
+      } finally {
+        await saveToolTrace(c, { source: "mcp" }, trace);
       }
-      const parsed = t.input.safeParse(args ?? {});
-      if (!parsed.success)
-        throw new ToolError(
-          `Datos no válidos: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
-        );
-      let summary = summarizeAction(t.name, parsed.data);
-      if (t.spends) {
-        const { spendEstimateLine, withEstimate } = await import("@/lib/agent/spend-confirm");
-        summary = withEstimate(summary, t.name, await spendEstimateLine(c.db, c.orgId, t.name));
-      }
-      const { error } = await c.db.from("agent_pending_actions").insert({
-        org_id: c.orgId,
-        user_id: c.userId,
-        tool: t.name,
-        args: parsed.data as never,
-        summary,
-        source: "mcp",
-      });
-      if (error) throw new ToolError(errorText(error));
-      return text(
-        `Acción preparada en ${c.orgName}: «${summary}». El usuario debe confirmarla en Nokko → Sugerencias (${APP_URL}).`,
-      );
     },
   }),
 );

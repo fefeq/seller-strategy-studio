@@ -9,7 +9,8 @@ El agente conversa con la persona y actúa sobre sus datos. **Lee al momento; es
 - Cada herramienta declara `kind: "read" | "write"`, esquema zod de entrada, `roles?` opcional y `summarize` opcional.
 - **Turno** (`agent.server.ts`): `streamText` del AI SDK con `stopWhen: stepCountIs(12)`; historial de los últimos 30 mensajes; solo se guarda texto plano de usuario y asistente en `agent_messages`, así todos los canales comparten núcleo.
 - **Prompt**: persona y workflow BMAD, modo «Entrevista de configuración» y bloque de memoria (`memoryBlock`).
-- **Memoria**: se aprende tras responder (`afterResponse`, con `waitUntil` en `src/server.ts`).
+- **Memoria**: se aprende tras responder (`afterResponse`, con `waitUntil` en `src/server.ts`). Solo se aprende de lo que escribe la persona (`chatLearnText` en `learn-text.ts`); la respuesta del agente queda fuera para que una propuesta suya no se guarde como hecho.
+- **Traza de herramientas**: cada llamada de un turno (chat, Telegram, cron y MCP) deja una fila en `agent_tool_calls` con herramienta, tipo, resultado (`ok`, `error`, `pending`), duración, proveedor y origen (`tool-trace.ts`, migración 0108). No guarda argumentos, resultados ni texto de error. Si la escritura falla, el turno sigue.
 - **UI**: no tiene ruta. `AgentProvider` abre un panel lateral con ⌘J, desde la barra superior, la barra móvil o ⌘K. Con `docked` se queda junto a la página (lo usa Pipeline).
 
 ### Proveedores de IA (`aiProviders()` en `src/lib/gemini.ts`)

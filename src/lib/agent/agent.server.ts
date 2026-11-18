@@ -19,8 +19,10 @@ import {
 } from "@/lib/gemini";
 import { openrouterErrorMessage } from "@/lib/ai-gateway";
 import { createLovableAiGatewayRunIdFetch } from "./run-id";
+import { chatLearnText } from "./learn-text";
 import { safeErrorLog } from "./safe-error-log";
-import { summarizeAction, toolsFor, type ToolCtx } from "./tools";
+import { summarizeAction, toolsFor, type AgentTool, type ToolCtx } from "./tools";
+import { saveToolTrace, traced, type ToolTraceRow } from "./tool-trace";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
@@ -144,10 +146,22 @@ export async function runAgent(
   let text = "";
   for (let i = 0; i < chain.length; i++) {
     const kind = chain[i]!;
+    // Tool trace of this attempt, stored after the answer is returned (also when the attempt fails).
+    const trace: ToolTraceRow[] = [];
+    const keepTrace = () =>
+      afterResponse("agent tool trace", () =>
+        saveToolTrace(
+          ctx,
+          { source: "agent", provider: kind, conversationId: opts.conversationId },
+          trace,
+        ),
+      );
     try {
-      text = await runWith(kind, ctx, opts, system, messages, pending);
+      text = await runWith(kind, ctx, opts, system, messages, pending, trace);
+      keepTrace();
       break;
     } catch (e) {
+      keepTrace();
       const status = Number((e as { statusCode?: number })?.statusCode ?? 0);
       const body = String((e as { responseBody?: string })?.responseBody ?? "");
       const canFallBack =
@@ -168,7 +182,6 @@ export async function runAgent(
     text = pending.length
       ? "He preparado estas acciones. Confírmalas para ejecutarlas."
       : "No he podido generar respuesta.";
-  const reply = text;
   // Fixed text, not left to the model: the person must know this answer did not follow the team's rules.
   if (!rules.ok) text = `${RULES_READ_FAILED}\n\n${text}`;
 
@@ -179,11 +192,11 @@ export async function runAgent(
     .from("agent_conversations")
     .update({ updated_at: new Date().toISOString() })
     .eq("id", opts.conversationId);
-  // Learn from what the user said (the reply gives context) after the answer is returned: never adds latency.
-  if (opts.text.trim().length >= 40) {
-    const learnText = `Usuario: ${opts.text}\nNokko: ${reply.slice(0, 1500)}`;
+  // Learn only from what the user said, after the answer is returned: never adds latency. The reply stays out,
+  // otherwise a proposal Nokko made is stored as a fact nobody stated.
+  const learnText = chatLearnText(opts.text);
+  if (learnText)
     afterResponse("chat memory", () => learnFrom(ctx, { source: "chat", text: learnText }));
-  }
   return { text, pending };
 }
 
@@ -206,8 +219,39 @@ async function runWith(
   system: string,
   messages: ModelMessage[],
   pending: PendingAction[],
+  trace: ToolTraceRow[],
 ) {
   const gemini = kind === "gemini";
+  /** Reads run at once; writes only leave a pending action for the person to confirm. */
+  const runTool = async (t: AgentTool, args: unknown) => {
+    if (t.kind === "read") {
+      try {
+        return await t.run(ctx, args as never);
+      } catch (e) {
+        return { error: (e as Error).message };
+      }
+    }
+    let summary = summarizeAction(t.name, args);
+    if (t.spends) {
+      const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
+      summary = withEstimate(summary, t.name, await spendEstimateLine(ctx.db, ctx.orgId, t.name));
+    }
+    const { data, error } = await ctx.db
+      .from("agent_pending_actions")
+      .insert({
+        org_id: ctx.orgId,
+        user_id: ctx.userId,
+        conversation_id: opts.conversationId,
+        tool: t.name,
+        args: args as unknown as Json,
+        summary,
+      })
+      .select("id")
+      .single();
+    if (error) return { error: error.message };
+    pending.push({ id: data.id, tool: t.name, summary, status: "pending" });
+    return { status: "pendiente_de_confirmacion", resumen: summary };
+  };
   const tools = Object.fromEntries(
     toolsFor(ctx.roles).map((t) => [
       t.name,
@@ -230,39 +274,7 @@ async function runWith(
               },
             )
           : t.input,
-        execute: async (args: unknown) => {
-          if (t.kind === "read") {
-            try {
-              return await t.run(ctx, args as never);
-            } catch (e) {
-              return { error: (e as Error).message };
-            }
-          }
-          let summary = summarizeAction(t.name, args);
-          if (t.spends) {
-            const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
-            summary = withEstimate(
-              summary,
-              t.name,
-              await spendEstimateLine(ctx.db, ctx.orgId, t.name),
-            );
-          }
-          const { data, error } = await ctx.db
-            .from("agent_pending_actions")
-            .insert({
-              org_id: ctx.orgId,
-              user_id: ctx.userId,
-              conversation_id: opts.conversationId,
-              tool: t.name,
-              args: args as unknown as Json,
-              summary,
-            })
-            .select("id")
-            .single();
-          if (error) return { error: error.message };
-          pending.push({ id: data.id, tool: t.name, summary, status: "pending" });
-          return { status: "pendiente_de_confirmacion", resumen: summary };
-        },
+        execute: (args: unknown) => traced(trace, t, () => runTool(t, args)),
       }),
     ]),
   );

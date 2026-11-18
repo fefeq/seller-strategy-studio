@@ -750,6 +750,13 @@
       "when": 1794731131965,
       "tag": "0107_autopilot_action_threshold",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1794873481331,
+      "tag": "0108_agent_tool_calls",
+      "breakpoints": true
     }
   ]
 }

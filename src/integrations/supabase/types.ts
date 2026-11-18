@@ -545,6 +545,63 @@ export type Database = {
           },
         ]
       }
+      agent_tool_calls: {
+        Row: {
+          conversation_id: string | null
+          created_at: string
+          duration_ms: number
+          id: string
+          kind: string
+          org_id: string
+          outcome: string
+          provider: string | null
+          source: string
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          kind: string
+          org_id: string
+          outcome: string
+          provider?: string | null
+          source?: string
+          tool: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number
+          id?: string
+          kind?: string
+          org_id?: string
+          outcome?: string
+          provider?: string | null
+          source?: string
+          tool?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tool_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_tool_calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       approvals: {
         Row: {
           created_at: string

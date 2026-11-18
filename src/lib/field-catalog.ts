@@ -105,7 +105,12 @@ export type ConceptId =
   | "referencia_recibo"
   | "clave_conexion_cifrada"
   | "estado_conexion_drive"
-  | "nivel_agente";
+  | "nivel_agente"
+  | "herramienta_agente"
+  | "tipo_herramienta"
+  | "resultado_herramienta"
+  | "proveedor_ia"
+  | "duracion_ms";
 
 export type Concept = {
   id: ConceptId;
@@ -570,6 +575,50 @@ export const CONCEPTS: Concept[] = [
     display: "Guiado / Copiloto / Autopilot",
   },
   {
+    id: "herramienta_agente",
+    label: "Herramienta usada",
+    meaning:
+      "Herramienta que el agente o un asistente por MCP llamó en un turno; solo para diagnóstico.",
+    kind: "text",
+    format: "Nombre interno de la herramienta",
+    display: "No se muestra",
+  },
+  {
+    id: "tipo_herramienta",
+    label: "Tipo de herramienta",
+    meaning: "Si la herramienta llamada solo lee o propone un cambio.",
+    kind: "enum",
+    format: "read | write",
+    allowed: ["read", "write"],
+    display: "No se muestra",
+  },
+  {
+    id: "resultado_herramienta",
+    label: "Resultado de la llamada",
+    meaning:
+      "Cómo terminó la llamada a la herramienta: bien, con error o pendiente de confirmación. Nunca guarda el texto del error.",
+    kind: "enum",
+    format: "ok | error | pending",
+    allowed: ["ok", "error", "pending"],
+    display: "No se muestra",
+  },
+  {
+    id: "proveedor_ia",
+    label: "Proveedor de IA",
+    meaning: "Proveedor de IA que respondió el turno en el que se llamó la herramienta.",
+    kind: "text",
+    format: "Nombre interno del proveedor o vacío",
+    display: "No se muestra",
+  },
+  {
+    id: "duracion_ms",
+    label: "Duración",
+    meaning: "Cuánto tardó la llamada a la herramienta, en milisegundos.",
+    kind: "number",
+    format: "Entero no negativo",
+    display: "No se muestra",
+  },
+  {
     id: "estado_buzon",
     label: "Estado del buzón",
     meaning: "Si el buzón de la empresa está conectado o desconectado.",
@@ -676,6 +725,7 @@ export const CONCEPTS: Concept[] = [
     allowedBy: {
       tasks: ["manual", "agent", "debate", "strategy"],
       agent_pending_actions: ["agent", "mcp"],
+      agent_tool_calls: ["agent", "mcp"],
       memories: ["chat", "meeting", "decision", "suggestion", "manual"],
     },
     display: "Etiqueta en español del valor",
@@ -1286,6 +1336,27 @@ export const BINDINGS: Binding[] = [
     concept: "alta_sistema",
     persistence: saved,
   },
+  ...(
+    [
+      ["id", "clave_registro"],
+      ["org_id", "clave_empresa"],
+      ["user_id", "clave_usuario"],
+      ["conversation_id", "clave_registro"],
+      ["source", "creado_por"],
+      ["provider", "proveedor_ia"],
+      ["tool", "herramienta_agente"],
+      ["kind", "tipo_herramienta"],
+      ["outcome", "resultado_herramienta"],
+      ["duration_ms", "duracion_ms"],
+      ["created_at", "alta_sistema"],
+    ] as const
+  ).map(([column, concept]) => ({
+    table: "agent_tool_calls",
+    column,
+    concept,
+    persistence: saved,
+    note: "Migration 0108; diagnosis only, written by the tool trace",
+  })),
   { table: "user_agent_prefs", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "user_agent_prefs", column: "autonomy", concept: "nivel_agente", persistence: saved },
   {
@@ -1759,6 +1830,11 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   clave_conexion_cifrada: ["src/components/connections/drive-company-card.tsx"],
   estado_conexion_drive: ["src/components/connections/drive-company-card.tsx"],
   nivel_agente: ["src/components/autonomy-picker.tsx"],
+  herramienta_agente: ["src/lib/agent/tool-trace.ts"],
+  tipo_herramienta: ["src/lib/agent/tool-trace.ts"],
+  resultado_herramienta: ["src/lib/agent/tool-trace.ts"],
+  proveedor_ia: ["src/lib/agent/tool-trace.ts"],
+  duracion_ms: ["src/lib/agent/tool-trace.ts"],
   tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
