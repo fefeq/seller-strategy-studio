@@ -22,14 +22,13 @@ import {
   DISQUALIFIED,
   LEAD_STAGES,
   delayText,
-  funnelBy,
   leadCohort,
   leadDelay,
   leadFunnel,
   leadStageLabel,
   type LeadDelay,
 } from "@/lib/lead-funnel";
-import { sourceLabeler } from "@/lib/lead-source";
+import { funnelBySource } from "@/lib/lead-source";
 import { quarterOf, quarterRange } from "@/lib/metrics";
 import { errorText } from "@/lib/errors";
 import { leadsHeadline } from "@/lib/headlines";
@@ -115,7 +114,7 @@ function LeadsPage() {
     const { start, end } = quarterRange(quarter);
     const cohort = leadCohort(data.leads, start, end);
     const funnel = leadFunnel(cohort, data.deals);
-    const bySource = funnelBy(cohort, data.deals, sourceLabeler(cohort));
+    const bySource = funnelBySource(cohort, data.deals);
     const quals = new Map(data.leads.map((l) => [l.id, leadQualView(l, data.qualSettings)]));
     const pending = open.filter((l) => !l.qualified_at).length;
     return { delays, scores, quals, pending, open, late, quarter, funnel, bySource };

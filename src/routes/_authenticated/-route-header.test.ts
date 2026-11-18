@@ -20,13 +20,18 @@ const row = route.slice(
 describe("mobile top bar", () => {
   it("«Buscar» sizes itself by its word, with a 44 px minimum", () => {
     expect(bar).toContain("min-w-11");
-    expect(bar).toContain("px-2");
+    expect(bar).toContain("px-1");
+    expect(bar).toContain("text-sm");
     expect(bar).not.toMatch(/\bsize-11\b/);
     expect(bar).toContain("min-h-11");
   });
-  it("the actions are 12 px apart at every width", () => {
-    expect(row).toContain("gap-3");
-    expect(row).not.toContain("gap-1 ");
-    expect(row).not.toContain("min-[400px]:gap-3");
+  // Measured in the browser (2026-11-18): gap-3 at every width pushed «Menú» ~40 px past the right edge at 360 and
+  // 375 px (the page became wider than the screen; gate finding 6). The gap and the side padding only grow from 400 px.
+  it("below 400 px the bar is tight (4 px gaps, 12 px sides) and only grows from 400 px", () => {
+    expect(row).toContain("gap-1");
+    expect(row).toContain("min-[400px]:gap-3");
+    expect(row).toContain("px-3");
+    expect(row).toContain("min-[400px]:px-4");
+    expect(row).not.toMatch(/(^|\s)gap-3(\s|")/);
   });
 });

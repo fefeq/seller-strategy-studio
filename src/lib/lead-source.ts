@@ -1,7 +1,7 @@
 // SDD-20261118-ux-legibilidad-pantallas-diarias · U-2: one origin per lead source, whatever its case or spacing.
 // Only case and whitespace are folded (an accent makes a different origin); nothing is written back, the lead keeps
 // the text it was saved with. Pure and tested (lead-source.test.ts).
-import type { LeadRow } from "@/lib/lead-funnel";
+import { funnelBy, type DealOutcome, type FunnelGroup, type LeadRow } from "@/lib/lead-funnel";
 
 export const NO_SOURCE = "Sin origen";
 
@@ -10,7 +10,8 @@ export function normalizeLeadSource(raw: string | null | undefined): {
   key: string;
   label: string;
 } {
-  const label = (raw ?? "").replace(/\s+/g, " ").trim();
+  // NFC so a composed and a decomposed accent are the same origin; \s already folds the non-breaking space.
+  const label = (raw ?? "").normalize("NFC").replace(/\s+/g, " ").trim();
   if (!label) return { key: NO_SOURCE.toLowerCase(), label: NO_SOURCE };
   return { key: label.toLowerCase(), label };
 }
@@ -45,4 +46,9 @@ export function sourceLabeler(
     const { key, label } = normalizeLeadSource(l.source);
     return chosen.get(key) ?? label;
   };
+}
+
+/** The lead funnel split by origin: one group per origin whatever its case, spacing or accent encoding. */
+export function funnelBySource(leads: LeadRow[], deals: DealOutcome[]): FunnelGroup[] {
+  return funnelBy(leads, deals, sourceLabeler(leads));
 }

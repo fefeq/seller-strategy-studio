@@ -10,7 +10,7 @@ export function FlowStrip() {
     <nav aria-label="Flujo de venta" className="mb-5 text-xs text-ink-mid">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
         {pos.steps.map((s, i) => (
-          <li key={s.to} className="flex min-h-11 items-center gap-2 md:min-h-0">
+          <li key={s.to} className="flex items-center gap-2">
             {i > 0 && <span aria-hidden>→</span>}
             {i === pos.index ? (
               <span aria-current="step" className="font-semibold text-ink">
@@ -35,7 +35,7 @@ export function FlowStrip() {
             Después:{" "}
             <Link
               to={pos.next.to as never}
-              className="inline-flex min-h-11 items-center underline md:min-h-0"
+              className="relative underline before:absolute before:-inset-x-1 before:-inset-y-3 before:content-[''] md:before:hidden"
             >
               {pos.next.label}
             </Link>

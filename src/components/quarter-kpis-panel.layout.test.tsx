@@ -75,6 +75,7 @@ describe("CA-7d faded edge and current quarter in view", () => {
   const proto = HTMLElement.prototype as unknown as Record<string, unknown>;
   const saved: Record<string, PropertyDescriptor | undefined> = {};
   let setLeft: number | null = null;
+  let left = 0;
   const def = (name: string, d: PropertyDescriptor) => {
     saved[name] = Object.getOwnPropertyDescriptor(HTMLElement.prototype, name);
     Object.defineProperty(proto, name, { configurable: true, ...d });
@@ -83,6 +84,7 @@ describe("CA-7d faded edge and current quarter in view", () => {
 
   beforeEach(() => {
     setLeft = null;
+    left = 0;
     def("clientWidth", {
       get() {
         return isScroller(this as HTMLElement) ? 400 : 0;
@@ -105,10 +107,13 @@ describe("CA-7d faded edge and current quarter in view", () => {
     });
     def("scrollLeft", {
       get() {
-        return 0;
+        return left;
       },
       set(v: number) {
-        if (isScroller(this as unknown as HTMLElement)) setLeft = v;
+        if (isScroller(this as unknown as HTMLElement)) {
+          setLeft = v;
+          left = v;
+        }
       },
     });
   });
@@ -129,5 +134,25 @@ describe("CA-7d faded edge and current quarter in view", () => {
   it("on mount the current quarter is centred: 600 - 400/2 + 150/2 = 475", async () => {
     await renderPanel();
     expect(setLeft).toBe(475);
+  });
+
+  it("after centring, content hidden to the left is signalled (gate finding 2)", async () => {
+    const { container } = await renderPanel();
+    const scroller = container.querySelector('[data-slot="scroll-fade"]') as HTMLElement;
+    expect(scroller.getAttribute("data-start")).toBe("true");
+    const sticky = [...container.querySelectorAll("tbody td:first-child, thead th:first-child")];
+    expect(sticky.length).toBeGreaterThan(0);
+    for (const c of sticky) expect(classes(c).join(" ")).toContain("[[data-start=true]_&]");
+  });
+
+  it("at the very start nothing is signalled to the left", async () => {
+    def("scrollWidth", {
+      get() {
+        return isScroller(this as HTMLElement) ? 400 : 0;
+      },
+    });
+    const { container } = await renderPanel();
+    const scroller = container.querySelector('[data-slot="scroll-fade"]') as HTMLElement;
+    expect(scroller.hasAttribute("data-start")).toBe(false);
   });
 });

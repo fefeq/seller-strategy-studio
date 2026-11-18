@@ -2,7 +2,7 @@
 // case or spacing. Pure, fictional data.
 import { describe, expect, it } from "vitest";
 import { funnelBy, type LeadRow } from "./lead-funnel";
-import { NO_SOURCE, normalizeLeadSource, sourceLabeler } from "./lead-source";
+import { NO_SOURCE, funnelBySource, normalizeLeadSource, sourceLabeler } from "./lead-source";
 
 const L = (
   id: string,
@@ -36,6 +36,13 @@ describe("CA-3 normalizeLeadSource", () => {
       expect(normalizeLeadSource(raw).label).toBe(NO_SOURCE);
     }
     expect(normalizeLeadSource("").key).toBe(normalizeLeadSource(null).key);
+  });
+  it("composed and decomposed accents are the same origin (NFC)", () => {
+    expect(normalizeLeadSource("Reunio\u0301n").key).toBe(normalizeLeadSource("Reunión").key);
+    expect(normalizeLeadSource("Reunio\u0301n").label).toBe("Reunión");
+  });
+  it("a non-breaking space folds like a space", () => {
+    expect(normalizeLeadSource("Origen\u00a0A").key).toBe(normalizeLeadSource("origen a").key);
   });
   it("an accent makes a different origin: «Reunión» and «Reunion» stay apart", () => {
     expect(normalizeLeadSource("Reunión").key).not.toBe(normalizeLeadSource("Reunion").key);
@@ -80,5 +87,30 @@ describe("CA-5 stored data is not changed", () => {
     const copy = JSON.parse(JSON.stringify(leads));
     funnelBy(leads, [], sourceLabeler(leads));
     expect(leads).toEqual(copy);
+  });
+});
+
+describe("funnelBySource is what both screens call", () => {
+  it("groups spellings of one origin and keeps «Sin origen»", () => {
+    const leads = [L("1", "manual"), L("2", "Manual"), L("3", null), L("4", "Origen A")];
+    const g = funnelBySource(leads, []);
+    expect(g.map((x) => [x.key, x.total]).sort()).toEqual(
+      [
+        ["Manual", 2],
+        [NO_SOURCE, 1],
+        ["Origen A", 1],
+      ].sort(),
+    );
+  });
+  it("many origins: every lead lands in exactly one group", () => {
+    const leads = Array.from({ length: 40 }, (_, i) =>
+      L(String(i), i % 2 ? `Origen ${i % 7}` : `origen ${i % 7}`),
+    );
+    const g = funnelBySource(leads, []);
+    expect(g).toHaveLength(7);
+    expect(g.reduce((n, x) => n + x.total, 0)).toBe(40);
+  });
+  it("an empty cohort gives no groups", () => {
+    expect(funnelBySource([], [])).toEqual([]);
   });
 });

@@ -216,7 +216,9 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
           <table className="w-full min-w-[680px] text-sm">
             <thead>
               <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="sticky left-0 z-10 bg-background py-2.5 pr-4 font-normal">KPI</th>
+                <th className="sticky left-0 z-10 bg-background py-2.5 pr-4 font-normal [[data-start=true]_&]:[box-shadow:6px_0_6px_-6px_var(--hairline-firm)]">
+                  KPI
+                </th>
                 {quarters.map((q) => (
                   <th
                     key={q}
@@ -231,7 +233,7 @@ export function QuarterKpisPanel({ quarter }: { quarter: string }) {
             <tbody>
               {lines.map((l) => (
                 <tr key={l.label} className="border-b align-top last:border-0">
-                  <td className="sticky left-0 z-10 bg-background py-3 pr-4 font-medium">
+                  <td className="sticky left-0 z-10 bg-background py-3 pr-4 font-medium [[data-start=true]_&]:[box-shadow:6px_0_6px_-6px_var(--hairline-firm)]">
                     {l.label}
                   </td>
                   {kpis.map((k) => {

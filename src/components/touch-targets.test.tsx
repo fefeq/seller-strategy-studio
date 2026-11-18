@@ -52,11 +52,23 @@ describe("CA-8 touch targets below md", () => {
     expect(cls(screen.getByRole("tablist"))).toContain("h-[3.25rem]");
   });
 
-  it("every link of the flow strip has a 44 px target", () => {
+  it("the breadcrumb links of the flow strip are 44 px tall and their rows do not grow", () => {
     const { container } = render(<FlowStrip />);
-    const links = [...container.querySelectorAll("a")];
-    expect(links.length).toBeGreaterThanOrEqual(4);
-    for (const a of links) expect(cls(a), a.textContent ?? "").toContain("min-h-11");
+    const crumbs = [...container.querySelectorAll("ol a")];
+    expect(crumbs.length).toBeGreaterThanOrEqual(3);
+    for (const a of crumbs) expect(cls(a), a.textContent ?? "").toContain("min-h-11");
+    for (const li of container.querySelectorAll("ol li")) expect(cls(li)).not.toContain("min-h-11");
+  });
+
+  it("the «Después» link reaches 44 px with an invisible hit area, not with a taller line", () => {
+    const { container } = render(<FlowStrip />);
+    const next = container.querySelector("p a");
+    expect(next).not.toBeNull();
+    const c = cls(next);
+    expect(c).toContain("before:absolute");
+    expect(c).toContain("before:-inset-y-3");
+    expect(c).not.toContain("min-h-11");
+    expect(c).not.toContain("inline-flex");
   });
 
   it("«Editar líneas» has a 44 px target", () => {

@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { useMe } from "@/hooks/use-me";
 import { useLeads } from "@/hooks/use-leads";
 import { funnelBy, leadCohort, leadFunnel, leadDelay } from "@/lib/lead-funnel";
-import { sourceLabeler } from "@/lib/lead-source";
+import { funnelBySource } from "@/lib/lead-source";
 import { quarterRange } from "@/lib/metrics";
 import { ScreenState } from "@/components/page";
 import { DataMark } from "@/components/metrics/data-mark";
@@ -29,12 +29,12 @@ export function LeadFunnelPanel({ quarter }: { quarter: string }) {
     const segName = (id: string | null | undefined) =>
       id ? (data.segments.find((s) => s.id === id)?.name ?? "Segmento eliminado") : "Sin segmento";
     const late = data.leads.filter((l) => leadDelay(l, data.sla).late).length;
-    const sourceOf = sourceLabeler(cohort);
     return {
       funnel: leadFunnel(cohort, data.deals),
-      groups: funnelBy(cohort, data.deals, (l) =>
-        by === "segment" ? segName(l.segment_id) : sourceOf(l),
-      ),
+      groups:
+        by === "segment"
+          ? funnelBy(cohort, data.deals, (l) => segName(l.segment_id))
+          : funnelBySource(cohort, data.deals),
       late,
     };
   }, [data, quarter, by]);

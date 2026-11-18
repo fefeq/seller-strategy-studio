@@ -1,7 +1,7 @@
 # SDD-20261118-ux-legibilidad-pantallas-diarias · [Mejora] Legibilidad y objetivos táctiles en Leads, Cuentas y Métricas
 
 **Tipo:** Mejora · **Prioridad propuesta:** Media
-**Estado:** En curso, implementado el 2026-11-18 (aprobado por Fede ese día con las decisiones D-1 a D-4 tal como se recomendaron; sin revisión del gate ni aprobación de entrega; ver sección 18) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-18
+**Estado:** En curso, implementado el 2026-11-18 (aprobado por Fede ese día con las decisiones D-1 a D-4 tal como se recomendaron; gate con objeciones, sin aprobación de entrega; ver secciones 17 y 18) · **Pide:** Fede · **Aprueba:** Fede · **Fecha:** 2026-11-18
 **PRD:** No aplica (mejora acotada) · **Depende de:** —
 
 > Un SDD dice cómo se verifica que está bien hecho. Cada criterio de aceptación (CA-n) debe poder tener una prueba automática que lo nombre.
@@ -87,7 +87,7 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - **CA-9** En escritorio (≥768 px) los tamaños actuales no cambian. · prueba: `src/components/touch-targets.test.tsx`
 
 ### H-6: Como Fede, quiero una cabecera móvil que no se apriete.
-- **CA-10** «Buscar» no se sale de su caja (`min-w-11 px-2` en vez de `size-11`) y entre «Buscar», «Avisos» y «Menú» hay al menos 12 px a 375 px; ninguno queda truncado. · prueba: `src/routes/_authenticated/route.header.test.tsx` (clases) + medición en navegador a 375 px
+- **CA-10** «Buscar» no se sale de su caja (`min-w-11 px-1 text-sm` en vez de `size-11`), la página no es más ancha que la pantalla a 360 y 375 px (`scrollWidth` igual al ancho de la ventana) y entre los textos de «Buscar», «Avisos» y «Menú» hay al menos 8 px; ninguno queda truncado. *(Redactado de nuevo tras la medición del 2026-11-18: la versión original, «12 px a 375 px», hacía la cabecera más ancha que la pantalla; ver sección 18.)* · prueba: `src/routes/_authenticated/route.header.test.tsx` (clases) + medición en navegador a 375 px
 
 ## 8. Casos límite y errores
 - Origen con espacios, mayúsculas mixtas o solo espacios: una clave; solo espacios cuenta como «Sin origen» (CA-3).
@@ -126,7 +126,7 @@ Orden sugerido: U-1, U-2 (puras, sin riesgo), U-6, U-5, U-3, U-4. Las U-3 a U-6 
 - U-3: `grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))]` (o contenedor con `@container`). El mínimo exacto se ajusta al ancho de «OPORTUNIDAD» con el `eyebrow` real, medido en navegador.
 - U-4: añadir `min-w-40` a las celdas; en `PlanValue` (o en la celda) pasar `className="block"` a la marca; no se toca `DataState`. Alternativa descartada: acortar el motivo o sustituirlo por «—» (D-1).
 - U-5: `TabsList` hoy mide `h-10` con `TabsTrigger` `h-8`; con `min-h-11` hay que subir la lista a `h-14` en móvil para que quepan. Es un componente compartido por muchas pantallas (D-3).
-- U-6: sustituir `size-11` por `min-w-11 px-2` en el botón «Buscar» y fijar `gap-3` sin el salto de `min-[400px]`; comprobar que a 375 px caben logo, «Buscar», «Avisos» y «Menú».
+- U-6: sustituir `size-11` por `min-w-11 px-1 text-sm` en el botón «Buscar»; por debajo de 400 px la barra queda con `gap-1 px-3` y solo desde 400 px crece a `gap-3 px-4`; «Menú» pasa a `px-1 -mr-1`. Comprobar a 360 y 375 px que `scrollWidth` del documento no supera el ancho de la ventana.
 
 ## 14. Riesgos y dependencias
 - `TabsTrigger` y `Button` son primitivas compartidas: un cambio móvil se nota en todas las pantallas con pestañas. Se mitiga con `md:min-h-0` y revisando capturas de Estrategia y Métricas.
@@ -162,14 +162,54 @@ Para la revisión técnica: ¿el contenedor de la tabla trimestral debe seguir c
 - **[Por verificar]** Si la pestaña recomendada de Estrategia queda a la vista al entrar (fuera de alcance).
 
 ## 17. Revisión técnica independiente (la hace `nokko-gate`, no quien redactó)
-- Veredicto del gate: No revisado
-- CA sin prueba posible o sin G-n: CA-6, CA-7c y las mediciones de CA-8 y CA-10 se prueban en navegador, no en jsdom. No hay G-n (no hay PRD).
-- [Por verificar] que sigue sin comprobarse: ver sección 16.
-- Contradicciones con el código o con decisiones previas: la propuesta original de colapsar «Sin dato» chocaba con NK-0106 y se retiró (sección 3).
-- Lo que esta revisión NO demuestra: que el SDD esté libre de objeciones; el gate aún no lo ha leído.
+*Informe de un agente de contexto fresco (2026-11-18), copiado sin editar su contenido; sobre el commit `8c300442`, base `5c646d0a`. No es la ejecución de `scripts/factory/gate.mjs`: ver «Qué ejecutó».*
+
+- **Veredicto del gate: Objeciones.** Las suites pasan y las pruebas nuevas fallan sobre la base, pero el arreglo de «Conversión por origen» en las pantallas no lo protege ninguna prueba, y hay un desajuste real entre CA-7d y el comportamiento del código.
+- **CA sin prueba posible o sin G-n:**
+  - CA-6: solo la guardia de código fuente (`layout-grids.test.ts`); el solape real no es automatizable en jsdom.
+  - CA-7c: solo en navegador.
+  - CA-10: clases leídas del código fuente; los 12 px y la ausencia de recorte son solo navegador.
+  - CA-8: la altura real es solo navegador, y tres de sus seis pruebas leen el código fuente en vez de renderizar (secciones de Métricas, «Avisos», cabecera).
+  - CA-4 (cableado): la parte pura sí tiene prueba; el cableado en `leads.index.tsx` y `lead-funnel-panel.tsx` no (hallazgo 1).
+  - CA-5: la prueba solo demuestra que la función pura no muta; nada comprueba que la tarjeta del lead siga pintando `l.source` literal.
+  - No hay G-n (sin PRD); no cuenta.
+- **[Por verificar] que sigue sin comprobarse:**
+  - Producción (`nokko.ai`): no mirada. Modo oscuro en móvil: no mirado. Safari en iPhone real: no probado. Pestaña recomendada de Estrategia: fuera de alcance.
+  - Mediciones en navegador de la sección 18 (CA-6, CA-7b, CA-7c, CA-7d, CA-8, CA-10, «Manual con 2 leads»): **no las reprodujo**.
+  - Efecto de `Button sm` y `TabsTrigger` más altos fuera de Leads, Cuentas y Métricas.
+  - Cabecera móvil a menos de 375 px (hallazgo 6).
+  - Resueltos por el gate: las clases de `TabsTrigger`, `TabsList` y cabecera en pruebas existentes (los 439 archivos pasan, ninguna prueba existente modificada); y los otros sitios que agrupan por origen (solo hay dos `funnelBy` con origen, ambos cambiados; `core-read.ts` solo usa `funnelBySegment`).
+- **Contradicciones con el código o con decisiones previas:**
+  - SDD §6 («el trimestre actual aparece primero») frente a `src/components/scroll-fade.tsx:15-18`: el código lo centra y, como `quartersUpTo(quarter, 4)` (`quarter-kpis-panel.tsx:54`) pone el trimestre actual como última columna, la tabla queda desplazada al final y los trimestres anteriores quedan fuera de vista por la izquierda.
+  - SDD §5 (lista cerrada de componentes compartidos) frente a `src/components/ui/button.tsx:27`: `Button size="sm"` pasa a `h-11` en móvil y no figura en esa lista, aunque sí en §13 y en D-3.
+  - SDD CA-8 (`min-h-11 md:min-h-0`) frente a `ui/tabs.tsx` y `button.tsx`, que usan `h-11` más `md:h-8` o `md:h-7`: desvío de método no recogido en §18.
+  - SDD §13 U-4 (`min-w-40`) frente a `min-w-44`: recogido en §18.
+  - NK-0106 («no «—»»), contrato de `DataState`, `AGENTS.md` y `src/lib/AGENTS.md`: sin contradicción.
+- **Hallazgos:**
+  1. **Importante.** El cableado de CA-4 no tiene prueba. Con `leads.index.tsx:118` y `lead-funnel-panel.tsx:35` devueltos a `l.source || "Sin origen"` en un worktree temporal, pasaron 7 archivos y 63 pruebas; la prueba de CA-4 llama ella misma a `funnelBy(leads, [], sourceLabeler(leads))`. Cambiaría: una prueba de render de `LeadFunnelPanel` con «manual» y «Manual» que espere una fila; para `leads.index`, una guardia de código fuente como `layout-grids`.
+  2. **Importante.** CA-7d no cubre el caso real. `scroll-fade.tsx:14` solo calcula «hay más a la derecha»; con el trimestre actual como última columna, tras centrar `more` es falso y no hay degradado, y el contenido oculto queda a la izquierda sin indicador. La prueba simula `scrollLeft` fijo en 0. Cambiaría: degradado también a la izquierda, como `TabsList` (`ui/tabs.tsx:40-45`), y una prueba con `scrollLeft` > 0; o aclarar en el SDD que el borde izquierdo no se señala.
+  3. **Importante.** `Button size="sm"` cambia en las 199 apariciones de la app a `h-11` en móvil (`button.tsx:27`). Solo se midieron Leads, Cuentas y Métricas. Cambiaría: revisar capturas de las pantallas con más botones pequeños, o limitar el cambio a un tamaño nuevo aplicado en el alcance. Se decide con Fede (D-3 aprobó «primitivas compartidas»).
+  4. **Importante.** `FlowStrip` crece en todas las pantallas con flujo. `flow-strip.tsx:13` pone `min-h-11` en cada `li` (también en el paso actual, que no es enlace) y el enlace «Después:» pasa a `inline-flex min-h-11` dentro de un `<p>` (línea 36); con `FlowStrip` en `page.tsx:22`, cada fila que se parte en móvil pasa de ~16 a 44 px. No hay medición del alto total. Cambiaría: `min-h-11` solo en el enlace, no en el `li`, y comprobar visualmente el «Después».
+  5. **Menor.** Casos límite de §8 sin prueba: trimestre actual ausente, desmontaje (listeners y `ResizeObserver`), `sourceLabeler` con muchos orígenes, lead fuera de la cohorte; sin `ResizeObserver` solo cubierto de rebote.
+  6. **Menor.** Cabecera móvil por debajo de 375 px: `route.tsx:197` quita `gap-1` por debajo de 400 px (ahora `gap-3`) y «Buscar» suma `px-2`: unos 32 px más de ancho en una barra donde NK-0179 ya tuvo un desbordamiento lateral. Cambiaría: medir a 320 y 360 px.
+  7. **Menor.** `normalizeLeadSource` no unifica Unicode compuesto y descompuesto («Reunión» y «Reunión» dan claves distintas). Cambiaría: `.normalize("NFC")` y una prueba.
+  8. **Menor.** `ScrollFade` centra al montar siempre que haya desborde, aunque el SDD dice «en pantalla estrecha»; duplica la lógica de `TabsList` y el `ResizeObserver` observa el contenedor, no la tabla.
+  9. **Menor.** §17 seguía en «No revisado» y §18 decía «sin commit ni push» cuando ya existía el commit `8c300442`. Hay un archivo sin seguimiento ajeno a este cambio (`docs/prd/PRD-20261118-coherencia-y-continuidad.md`).
+- **Qué ejecutó:**
+  - `npx vitest run` con los 6 archivos nuevos y 3 suites de marcas: 9 archivos, 50 pruebas, en verde. Suite completa: **439 archivos, 6.392 pruebas, en verde** (87 s). `npx tsc --noEmit -p .`: salida 0. `npx eslint` sobre lo tocado: 0 errores y 1 aviso previo (`ui/button.tsx:54`).
+  - Pruebas nuevas contra la base (`5c646d0a`, worktree temporal ya eliminado): 21 pruebas en 6 archivos, **18 fallan y 3 pasan**. Las 3 que pasan son de comportamiento ya existente (CA-2, «línea con otro nombre muestra ambos» y «las palabras de las marcas no cambian»). `lead-source.test.ts` falla por import no resuelto, lo que no prueba su lógica sobre la base; el resto falla por aserción (`expected 2 to be 1`, `expected [...] to include 'block'` o `'min-w-44'`).
+  - Mutación (hallazgo 1): 63 pruebas en verde con el cableado revertido.
+  - Diff: los 6 archivos de prueba son nuevos, ninguna existente modificada; sin `as any`, `.only/.skip`, `window.confirm/prompt`, `console.log`, URLs, correos ni secretos; datos ficticios.
+  - `node scripts/factory/gate.mjs`: **NOT RUN** (no hay ticket NK para este SDD, no se inventó, y el árbol no estaba limpio por el PRD sin seguimiento). Segunda máquina y soak de recursos: **NOT RUN**. `git status` igual que al empezar; HEAD `8c3004429262f1101f949ef41d8849aca0968836`.
+- **Lo que esta revisión NO demuestra:**
+  - Nada visual ni geométrico: solape de CA-6, líneas por celda de CA-7c, 44 px reales de CA-8, separación de CA-10, modo oscuro, Safari, 320 px. No abrió navegador y no reprodujo las mediciones de la sección 18.
+  - Que `Button sm`, `TabsTrigger`, `TabsList` o `FlowStrip` más altos no rompan otras pantallas.
+  - Comportamiento con datos reales o con producción.
+  - Que el protocolo de flakes esté limpio (no ejecutó `flake.mjs`).
+  - Que el SDD esté libre de objeciones: eso lo decide Fede.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-**2026-11-18 · Estado: En curso (implementado y medido; sin revisión del gate ni aprobación de entrega).** Rama local `sdd/ux-legibilidad-20261118`, desde `origin/main`; sin commit ni push.
+**2026-11-18 · Estado: En curso (implementado y medido; sin revisión del gate ni aprobación de entrega).** Rama local `sdd/ux-legibilidad-20261118`, desde `origin/main`; un commit local (`8c300442`, 22:49), sin push. Corregido a las 22:57: esta línea decía «sin commit ni push».
 
 **Qué difiere de lo escrito**
 - **Nombre de prueba (U-6):** `src/routes/_authenticated/-route-header.test.ts`, no `route.header.test.tsx`. El prefijo `-` evita que el router lo tome por una ruta.
@@ -190,7 +230,7 @@ Para la revisión técnica: ¿el contenedor de la tabla trimestral debe seguir c
 | CA-7c | Líneas de la marca más larga a 375 px | 4 → 2; ancho mínimo de celda 176 px |
 | CA-7b | Marca del plan en bloque propio, escritorio | Sí, 28 marcas, todas con la del plan en su línea |
 | CA-7d | Trimestre actual a la vista al cargar a 375 px | Sí (`scrollLeft` 486 de 786); sin degradado porque ya está al final |
-| CA-10 | «Buscar», «Avisos», «Menú» a 375 px | 44 px de alto; separación 12 y 12 px; «Avisos» sin recorte |
+| CA-10 | «Buscar», «Avisos», «Menú» | **Sustituido, ver «Correcciones tras el gate».** La primera medición (44 px de alto, 12 px de separación) se hizo con la página ya desbordada: el documento medía 406 px a 375 px |
 | CA-8 | Enlaces de `FlowStrip`, «Editar líneas», «Avisos», «Buscar» y secciones de Métricas a 375 px | 44 px (antes 16–32) |
 | CA-8 | Elementos interactivos bajo 44 px en `main`, cabecera y navegación a 375 px | Métricas 30 → 16, Leads 15 → 8 (no es la misma consulta que en el pase inicial: ahora se acota a `main`, cabecera y navegación) |
 | CA-5 / CA-4 | «Conversión por origen» con datos reales | Una fila «Manual» con 2 leads |
@@ -198,3 +238,15 @@ Para la revisión técnica: ¿el contenedor de la tabla trimestral debe seguir c
 **Lo que sigue bajo 44 px y no estaba en el alcance:** botones de tamaño normal (40 px) como «+ Nuevo lead» y «+ Nueva cuenta»; «Inicio» de la barra inferior (41 px); el selector de trimestre (40 px); enlaces en línea de texto («CAC real», «Define cuotas», 16 px); los «ACCIONES» y las casillas de las tarjetas de Cuentas y Leads (16 px); los interruptores (20 px).
 
 **Sin comprobar:** modo oscuro en móvil tras los cambios; Safari en iPhone real; el efecto de `Button sm` y `TabsTrigger` más altos en pantallas distintas de Leads, Cuentas y Métricas (por ejemplo, el popover de «Avisos» usa `TabsTrigger`).
+
+**Correcciones tras el gate (2026-11-18, mismo día)**
+Hecho a petición de Fede («Sí, corrige»): hallazgos 1, 2, 4 y 7 del gate, y medir a 320 y 360 px (hallazgo 6).
+- **Hallazgo 1 (cableado de CA-4):** nueva función `funnelBySource` en `src/lib/lead-source.ts`, usada por `leads.index.tsx` y `lead-funnel-panel.tsx`. Pruebas: `lead-source.test.ts` (función, muchos orígenes, cohorte vacía) y `src/lib/lead-source-wiring.test.ts` (guardia de código fuente: ambas pantallas la usan y ninguna agrupa por `l.source` literal). Las pruebas de cableado fallaban antes del cambio.
+- **Hallazgo 7:** `normalizeLeadSource` aplica `.normalize("NFC")`; «Reunio\u0301n» y «Reunión» son el mismo origen. El espacio de no separación ya se plegaba y ahora tiene prueba.
+- **Hallazgo 2 (CA-7d):** `ScrollFade` pone `data-start="true"` cuando hay contenido oculto a la izquierda y las celdas fijas de la primera columna dibujan un borde de sombra (`[[data-start=true]_&]:…`). No se usa degradado a la izquierda porque también desvanecería la columna fija. Prueba nueva en `quarter-kpis-panel.layout.test.tsx` con `scrollLeft` distinto de 0. La simulación de `scrollLeft` de esas pruebas ahora conserva el valor asignado.
+- **Hallazgo 4 (`FlowStrip`):** el `li` ya no lleva `min-h-11`; los enlaces de las migas lo conservan. El enlace «Después:» llega a 44 px con un área táctil invisible (`before:absolute before:-inset-y-3`, solo en móvil) en lugar de crecer la línea. Las pruebas de `touch-targets.test.tsx` se reescribieron para exigir ese mecanismo; a 320 px el bloque mide 80 px y los enlaces de las migas 44 px (el área invisible de «Después» no se ve en el rectángulo del enlace, por eso mide 16 px).
+- **Hallazgo 6 (regresión mía, ahora corregida):** con `gap-3` fijo, la cabecera medía 406 px a 360 y 375 px (`scrollWidth` 406 frente a 375): «Menú» quedaba ~39 px fuera de la pantalla y el navegador móvil ensanchaba la página. Mi medición anterior leyó «vw 406» sin verlo. Ahora: `gap-1 px-3` por debajo de 400 px, «Buscar» con `px-1 text-sm` y «Menú» con `px-1`. Medido: 375 px → documento 375, «Menú» termina en 367; 360 px → documento 360, termina en 352. `-route-header.test.ts` se reescribió para exigir esos valores (revisión de una prueba mía, no de una existente).
+- **320 px:** la cabecera **sigue desbordando**: documento 359 px en una ventana de 320 (~39 px). El logo ocupa 147 px y las tres acciones ~197 px; no cabe sin quitar texto o el logo. No se midió sobre la base, así que no afirmo cuánto empeoró o mejoró; queda como pendiente fuera de este SDD.
+- **Embudo y KPI de Leads a 320 px:** 1 columna cada uno, 0 solapes y 0 etiquetas recortadas.
+- **Aún sin medir:** modo oscuro en móvil, Safari real y el efecto de `Button sm`/`TabsTrigger` fuera de las tres pantallas (hallazgo 3 del gate, decisión de Fede).
+- **Verificación:** 440 archivos, 6.404 pruebas en verde; `tsc` limpio; ESLint sin errores; las pruebas nuevas se vieron fallar antes del código (10 fallos, más 2 en la cabecera).
