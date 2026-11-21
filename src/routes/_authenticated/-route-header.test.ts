@@ -52,11 +52,12 @@ describe("mobile top bar", () => {
       route.indexOf('aria-label="Buscar"'),
       route.indexOf("Buscar\n", route.indexOf('aria-label="Buscar"')),
     );
-    expect(search).toContain('navOpen ? "hidden min-[400px]:flex" : "flex"');
+    // Anchored so an inverted condition (`!navOpen ? …`), which hides «Buscar» with the drawer closed, fails (gate, 2026-11-21).
+    expect(search).toMatch(/[\s{(]navOpen \? "hidden min-\[400px\]:flex" : "flex"/);
     const notices = route.slice(
       route.indexOf("<NotificationCenter"),
       route.indexOf("<NotificationCenter") + 200,
     );
-    expect(notices).toContain('navOpen ? "ml-auto shrink-0 min-[400px]:ml-0" : "shrink-0"');
+    expect(notices).toMatch(/[\s{(]navOpen \? "ml-auto shrink-0 min-\[400px\]:ml-0" : "shrink-0"/);
   });
 });

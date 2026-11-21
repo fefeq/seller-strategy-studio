@@ -534,12 +534,15 @@ Todas las líneas son del SDD.
 
 ### Quinta revisión independiente (2026-11-21), sobre el commit `2f431418`
 
-*Informe de un agente de contexto fresco, lanzado el 2026-11-21 a petición de Fede, copiado sin editar su contenido. Solo se bajó un nivel de los encabezados, se corrigieron las entidades HTML y se quitaron las rutas absolutas del scratchpad. Revisó `2f431418` tal como estaba subido: la «Tercera ronda» de §18 (2026-11-19) estaba entonces sin commit en otro checkout, así que no la vio. Su hallazgo 2 (cableado de «9+») ya lo cubría esa ronda con `notification-center.test.tsx`, y su hallazgo 1 («Cerrar» a 360 px) se corrigió en `5ecbcf6a` (ver la «Cuarta ronda» de §18). Es independiente de la «Cuarta revisión», que también fue sobre `2f431418`.*
+*Informe íntegro de un agente de contexto fresco, lanzado el 2026-11-21 a petición de Fede. Cambios respecto al original, y ninguno más: el agente la tituló «Tercera revisión» y aquí se numera «Quinta» (la «Cuarta revisión» de arriba también fue sobre `2f431418`); se corrigieron las entidades HTML (`&lt;wt&gt;` → `<wt>`); el prefijo del scratchpad de la sesión se abrevia como `<scratchpad>` (no persiste en el repo); y se omite la frase con la que el agente pasaba el informe («Puedes pegar lo de abajo tal cual en la §17»). Primero va su resumen y después el informe. Este agente revisó `2f431418` tal como estaba subido: la «Tercera ronda» de §18 (2026-11-19) estaba entonces sin commit en otro checkout, así que no la vio. Su hallazgo 2 ya lo cubría esa ronda con `notification-center.test.tsx`, y su hallazgo 1 se corrigió en `5ecbcf6a` (ver la «Cuarta ronda» de §18). Una versión anterior de esta sección (commit `f7d31faa`) resumía el informe diciendo que estaba «sin editar»; la «Sexta revisión» lo detectó y se sustituyó por este texto.*
 
-- **Veredicto: Objeciones, sobre `2f431418`.** El núcleo fijo pasa entero, y los cuatro hallazgos Importantes de las revisiones sobre `f6ce7fb7` están resueltos en el código y los protegen pruebas que caen al mutarlas. Quedan tres huecos menores, ninguno bloqueante: una mutación del cableado de «9+» sobrevive; a 360 px, con el menú abierto y 10 o más avisos, la cabecera se pasa del ancho de pantalla unos 5 px; y la geometría de la app real no se pudo medir con sesión.
+**Veredicto: Objeciones, sobre `2f43141`.** El núcleo fijo pasa entero, y los cuatro hallazgos Importantes de las revisiones sobre `f6ce7fb` están resueltos en el código y los protegen pruebas que caen al mutarlas. Quedan tres huecos menores, ninguno bloqueante:
+- Una mutación del cableado de «9+» sobrevive.
+- A 360 px, con el menú abierto y 10 o más avisos, la cabecera se pasa del ancho de pantalla unos 5 px.
+- La geometría de la app real no la pude medir con sesión: no había sesión y no se puede entrar con contraseña real.
 
 #### Checks del núcleo fijo
-Comando: `FACTORY_DIR=<wt>/.factory node scripts/factory/gate.mjs --ticket SDD-20261118-legibilidad --base 5c646d0a --root <wt> --extra "npx prettier --check <11 archivos tocados>"`, en un worktree desechable, con el árbol limpio y sobre `2f4314189e67`. El script da **PASS** (exit 0).
+Comando: `FACTORY_DIR=<wt>/.factory node scripts/factory/gate.mjs --ticket SDD-20261118-legibilidad --base 5c646d0a --root <wt> --extra "npx prettier --check <11 archivos tocados>"`. Lo ejecuté en un worktree desechable, con el árbol limpio y sobre `2f4314189e67`. El script da **PASS** (exit 0).
 
 | Check | Resultado |
 |---|---|
@@ -557,7 +560,9 @@ Comando: `FACTORY_DIR=<wt>/.factory node scripts/factory/gate.mjs --ticket SDD-2
 
 **Protocolo de flakes:** no hubo ningún fallo, así que `flake.mjs` no tuvo nada que clasificar (NOT RUN por falta de fallos).
 
-**Pruebas nuevas contra la base `5c646d0a`** (11 archivos copiados a un worktree de la base): 32 fallan por aserción y 5 pasan. Las 5 que pasan son de no regresión: CA-2, «nombres distintos, ambos», «las palabras de las marcas no cambian», «en CAC "plan" y "sin plan" no son bloque» y «sin origen cuenta bajo "Sin origen"». `lead-source.test.ts`, `notices-label.test.ts` y `scroll-fade.test.tsx` no llegan a ejecutarse en la base porque el módulo que importan no existe; se comprueban con mutaciones sobre la cabeza, no se cuentan como fallo previo.
+**Pruebas nuevas contra la base `5c646d0a`** (11 archivos copiados a un worktree de la base):
+- 32 fallan por aserción y 5 pasan. Las 5 que pasan son de no regresión: CA-2, «nombres distintos, ambos», «las palabras de las marcas no cambian», «en CAC "plan" y "sin plan" no son bloque» y «sin origen cuenta bajo "Sin origen"».
+- `lead-source.test.ts`, `notices-label.test.ts` y `scroll-fade.test.tsx` no llegan a ejecutarse en la base porque el módulo que importan no existe. Lo compruebo con mutaciones sobre la cabeza, no lo cuento como fallo previo.
 
 #### Estado de los hallazgos Importantes anteriores
 | Hallazgo | Estado | Evidencia |
@@ -578,30 +583,144 @@ Comando: `FACTORY_DIR=<wt>/.factory node scripts/factory/gate.mjs --ticket SDD-2
 | **Avisos · 9+** (máximo posible tras el tope) | **360,1 (0)** | **365,5 (5)** | 365,8 (6) | 371,2 (11) |
 | Avisos · 14 (sin tope, referencia) | 358 (0) | 362,1 (2) | 362,5 (2) | 367,8 (8) |
 
-La separación entre textos es de 8,0 px en todas las filas de HEAD (CA-10 pide ≥ 8). «9+» es 2 px **más ancho** que «14»: el tope fija un ancho máximo, pero no estrecha las cifras de dos dígitos.
+La separación entre textos es de 8,0 px en todas las filas de HEAD (CA-10 pide ≥ 8). Aquí aparece algo que el SDD no dice: «9+» es 2 px **más ancho** que «14». El tope fija un ancho máximo, pero no estrecha las cifras de dos dígitos.
 
 #### Hallazgos nuevos (por gravedad)
-1. **Menor · `route.tsx:216-223` con `notices-label.ts`.** Entrada: menú abierto (el texto pasa a «Cerrar») a 360 px con 10 o más avisos sin leer o 10 o más trabajos en marcha. Salida: la fila desborda 5 px y «Cerrar» acaba en 361,5 px, cortado 1,5 px. La medición de §18 solo cubre «Menú». Antes era peor (11 px). Qué cambiaría: medirlo en la app real y, si se confirma, ajustar el estado abierto o reservar el ancho de «Cerrar»; o documentarlo en §18.
-2. **Menor · hueco de prueba en el cableado de «9+» (`notification-center.tsx:163`).** La mutación I (el `span` móvil pinta `{label}` en vez de `{short}`) deja las 83 pruebas en verde: el tope solo se prueba en la función pura y nadie renderiza el disparador. Qué cambiaría: una prueba de render de `NotificationCenter` con 14 avisos que espere «Avisos · 9+» en el `span` `sm:hidden` y el número real en el `aria-label`. La mutación S también sobrevive, pero es artificial; no pediría nada por ella.
-3. **Menor · `scroll-fade.tsx:31-35`.** El `ResizeObserver` observa `firstElementChild` solo al montar; si el hijo se sustituyera, observaría un nodo suelto (hoy el hijo es siempre el `<table>`, así que no afecta). El centrado sigue haciéndose solo al montar: cambiar de trimestre sin remontar no vuelve a centrar. Es un caso límite de §8 ya anotado; lo del cambio de trimestre no se verificó en la app.
-4. **Informativo.** `Button sm`, `TabsTrigger` y `TabsList`: `2f431418` no los toca (vienen de `8c300442`) y D-3 los aprobó. El texto «9+» es un cambio visible de copy, declarado en §18; desde `sm` y en el `aria-label` se mantiene el número real. CA-10 en §7 citaba `route.header.test.tsx`; el archivo real es `-route-header.test.ts` (declarado en §18).
+1. **Menor · `route.tsx:216-223` con `notices-label.ts`.** Entrada: menú abierto (el texto pasa a «Cerrar») a 360 px con 10 o más avisos sin leer o 10 o más trabajos en marcha. Salida: la fila desborda 5 px y «Cerrar» acaba en 361,5 px, cortado 1,5 px; el borde es exacto sin holgura. La medición de §18 solo cubre «Menú». Antes era peor (11 px). Qué cambiaría: medirlo en la app real y, si se confirma, ajustar `-mr-2` a `-mr-3` en el estado abierto o reservar el ancho de «Cerrar»; o documentarlo en §18.
+2. **Menor · hueco de prueba en el cableado de «9+» (`notification-center.tsx:163`).** La mutación I (el `span` móvil pinta `{label}` en vez de `{short}`) deja las 83 pruebas en verde: el tope solo se prueba en la función pura y nadie renderiza el disparador. Qué cambiaría: una prueba de render de `NotificationCenter` con 14 avisos que espere «Avisos · 9+» en el `span` `sm:hidden` y el número real en el `aria-label`. La mutación S (preprocesar `source` en `leads.index.tsx` antes de `funnelBySource`) también sobrevive, pero es artificial; no pediría nada por ella.
+3. **Menor · `scroll-fade.tsx:31-35`.**
+   - El `ResizeObserver` observa `firstElementChild` solo al montar; si el hijo se sustituyera, observaría un nodo suelto. Hoy el hijo es siempre el `<table>`, así que no afecta.
+   - El centrado sigue haciéndose solo al montar (dependencias `[]`): cambiar de trimestre sin remontar no vuelve a centrar.
+   - Es un caso límite de §8 que ya estaba anotado. La sustitución del hijo es teórica; lo del cambio de trimestre sin remontar no lo verifiqué en la app.
+4. **Informativo.**
+   - `Button sm`, `TabsTrigger` y `TabsList`: `2f43141` no los toca (vienen de `8c30044`) y D-3 los aprobó; no hay cambio nuevo fuera del alcance.
+   - El texto «9+» es un cambio visible de copy, declarado en §18; desde `sm` y en el `aria-label` se mantiene el número real, y lo comprobé en el código.
+   - CA-10 en §7 sigue citando `route.header.test.tsx`; el archivo real es `-route-header.test.ts` (declarado en §18).
 
-#### Qué ejecutó
-- `gate.mjs` con el `--extra` de prettier: PASS (444 archivos, 6428 pruebas).
+#### Qué ejecuté
+- `gate.mjs` con el `--extra` de prettier: PASS. Son 444 archivos y 6428 pruebas; el resto de cifras está en la tabla.
 - Pruebas nuevas contra la base: 37 pruebas, 32 fallan, 5 pasan, y 3 archivos no se ejecutan por import sin resolver.
 - 23 mutaciones (A–W) sobre los 11 archivos de prueba nuevos más `quarter-kpis-panel.test.tsx`, `data-state.test.tsx` y `metrics/finance-panel.test.tsx` (83 pruebas): 21 caen y sobreviven 2 (I y S).
-- Arnés de navegador: una ruta pública desechable con copias de las clases de la cabecera de HEAD y de la base, y del enlace «Después:». Sin datos, sin red y sin clics que guarden nada; medido a 360 px en su propio servidor local.
-- Eliminó al acabar sus tres worktrees desechables, paró su servidor y dejó el navegador en tamaño de escritorio. No tocó otros checkouts, el PR ni GitHub.
+- Arnés de navegador: una ruta pública desechable con copias de las clases de la cabecera de HEAD y de la base, y del enlace «Después:». Sin datos, sin red y sin clics que guarden nada. La medí a 360 px en el navegador integrado sobre mi servidor local (`:5188`, desde mi worktree).
+- Al acabar eliminé con `git worktree remove` los tres worktrees desechables (`wt`, `mut`, `base`). Paré mi servidor y dejé el navegador en tamaño de escritorio. No toqué el checkout `-ci`, el PR ni GitHub. No usé el servidor ajeno de `:5174`, que sirve el checkout `seller-strategy-studio-pr161`.
 
 #### Lo que esta revisión NO demuestra
-- **La app real con sesión: NOT RUN.** Entrar con la contraseña real no le estaba permitido. No midió CA-6, CA-7c, CA-7d ni CA-8 sobre las pantallas reales, ni CA-10 con el disparador real de «Avisos». Las cifras de la cabecera y del «Después:» salen de un arnés que copia las clases, no del componente montado. *(La medición en la app real se hizo después, con la sesión de Fede: ver la «Cuarta ronda» de §18.)*
-- La medición a 375 px y la sonda con `elementFromPoint` sobre «Después:» quedaron a medias: el panel cambió de página mientras medía.
-- Segunda máquina y soak de recursos: NOT RUN. Safari o iPhone real, modo oscuro, el popover de «Avisos» y producción: NOT RUN.
+- **La app real con sesión: NOT RUN.** El servidor local redirige a `/auth` y entrar con la contraseña real está prohibido. No medí CA-6, CA-7c, CA-7d ni CA-8 sobre las pantallas reales, ni CA-10 con el disparador real de «Avisos» o con el `current` de la ruta. Las cifras de la cabecera y del «Después:» salen de un arnés que copia las clases, no del componente montado.
+- La medición a 375 px y la sonda con `elementFromPoint` sobre «Después:» quedaron a medias: el panel del navegador cambió de página mientras medía (parece que alguien lo estaba usando) y paré para no interferir.
+- Segunda máquina y soak: NOT RUN. Safari o iPhone real, modo oscuro, el popover de «Avisos» y producción: NOT RUN.
 - CA-5 (la tarjeta del lead pinta el origen tal cual se guardó) sigue sin prueba de render.
 - La aprobación de entrega la decide Fede.
 
+#### Evidencia (scratchpad `gate3`, no persiste en el repo)
+- Gate: `<scratchpad>/gate3/factory-evidence/SDD-20261118-legibilidad/` (`gate-2f4314189e67.json` y la carpeta `2f4314189e67/`) y `<scratchpad>/gate3/gate-run.log`
+- Base: `<scratchpad>/gate3/base-newtests.json`
+- Mutaciones: `<scratchpad>/gate3/mutate.mjs` y `<scratchpad>/gate3/mutate.log`
+- Arnés: `<scratchpad>/gate3/gate-probe.tsx`
+
+### Sexta revisión independiente (2026-11-21), sobre el commit `f7d31faa`
+
+*Informe íntegro de un agente de contexto fresco, lanzado el 2026-11-21 a petición de Fede. Cambios respecto al original, y ninguno más: se añade este título (el original empezaba por el veredicto), se corrigieron las entidades HTML (`&lt;wt&gt;` → `<wt>`) y el prefijo del scratchpad de la sesión se abrevia como `<scratchpad>` (no persiste en el repo). Sus hallazgos 1 a 3 se atendieron después, en la «Quinta ronda» de §18.*
+
+**Veredicto: Objeciones, sobre `f7d31faa`.** El núcleo fijo pasa entero y el código de los tres commits nuevos hace lo que dice. Medí la cabecera en un arnés y cuadra con la §18. Ninguna objeción bloquea, pero hay dos. La prueba nueva de la cabecera no detecta justo la regresión que se pidió buscar: «Buscar» oculto con el menú cerrado. Y la nota de la «Quinta revisión» afirma que el informe se copió «sin editar su contenido», y no es así.
+
+#### Checks del núcleo fijo
+Comando: `FACTORY_DIR=<wt>/.factory node scripts/factory/gate.mjs --ticket SDD-20261118-legibilidad --base 5c646d0a --root <wt>`, con dos `--extra`: `npx prettier --check` sobre los 27 archivos de `src` tocados, y `npx vitest run` sobre los cuatro archivos de prueba tocados por `5ecbcf6a` y `4a1c9373`. Lo ejecuté en un worktree desechable, con el árbol limpio y sobre `f7d31faa9af7`. El script da **PASS** (exit 0).
+
+| Check | Resultado |
+|---|---|
+| clean tree on exact commit | PASS (f7d31faa9af7…) |
+| canary: runner detects failure | PASS |
+| guards (`as any`, confirm/prompt, secretos, VITE_, `.only/.skip`, `error.message` en toasts, `.env`, aserciones, timeouts) | PASS (los 9) |
+| typecheck | PASS |
+| lint (touched files, 27) | PASS (0 errores; el aviso previo de `ui/button.tsx:54`) |
+| release build (red exterior bloqueada en mejor esfuerzo) | PASS |
+| full unit suite | PASS: **445 archivos, 6436/6436 pruebas**; fallos conocidos 0; inesperados 0; archivos sin aserción 0 |
+| touched test files, whole (12) | PASS |
+| extra: `prettier --check` (27 archivos de `src`) | PASS |
+| extra: vitest de `-route-header`, `notification-center`, `scroll-fade` y `touch-targets` | PASS |
+| second-machine full run | **NOT RUN** (el script da PASS con «no second runner configured») |
+| artifact size recorded | **NOT A SOAK** |
+
+**Protocolo de flakes:** no falló nada, así que `flake.mjs` no tuvo nada que clasificar (NOT RUN por falta de fallos).
+
+**Pruebas nuevas contra `2f431418`**, el commit anterior a los tres nuevos. Copié los 4 archivos de prueba de HEAD encima del código de `2f431418`: 2 fallan por aserción y 23 pasan.
+- **Fallan** la prueba nueva de la cabecera y «si matchMedia lanza…».
+- **Pasan** las 4 de `notification-center.test.tsx`, porque el cableado de «9+» ya existía en `2f431418`. Son pruebas de cobertura que cierran un hueco de mutación, no de código nuevo; las validan las mutaciones M12 a M15 de abajo.
+- **Pasan también** «sin matchMedia» y «desborde sin `data-current`», porque `2f431418` ya tenía el `typeof` y el `if (cur)`. Son de no regresión.
+
+#### Mutaciones (15, sobre el código de los tres commits nuevos)
+| # | Mutación | Resultado |
+|---|---|---|
+| M1 | «Buscar» sin `hidden min-[400px]:flex` | Cae (1) |
+| **M2** | **`!navOpen ? "hidden min-[400px]:flex"`: «Buscar» oculto por debajo de 400 px con el menú CERRADO** | **Sobrevive** |
+| M3 | «Avisos» sin el `className` condicional (sin `ml-auto`) | Cae (1) |
+| **M4** | **`!navOpen ? "ml-auto …"`: el margen automático se aplica con el menú cerrado** | **Sobrevive** |
+| M5 | Umbral 400 → 640 en «Buscar» | Cae (1) |
+| M6 | «Buscar» sin el `ml-auto` estático (ya estaba en la base) | Sobrevive |
+| M7 | «Avisos» sin `min-[400px]:ml-0` | Cae (1) |
+| M8 | Quitar el `try` de `matchMedia` | Cae (2) |
+| M9 | En el `catch`, `narrow = false` | Cae (2) |
+| M10 | Volver a la versión anterior (`typeof`, sin `try`) | Cae (1) |
+| M11 | Quitar el guard `if (cur)` | Cae (1) |
+| M12 | El `span` móvil pinta `{label}` en vez de `{short}` | Cae (2) |
+| M13 | El `span` desde `sm` pinta `{short}` | Cae (2) |
+| M14 | El `aria-label` usa `Math.min(unread, 9)` | Cae (2) |
+| M15 | El `span` móvil sin `sm:hidden` | Cae (4) |
+
+Caen 12 de 15. Sobreviven M2, M4 y M6.
+
+#### Verificación en arnés (cabecera de `5ecbcf6a`)
+El arnés usa las clases exactas de `route.tsx` y `notification-center.tsx` en HEAD, el CSS de la build de release, DM Sans cargada, un logo de 229×64 a 41 px de alto e «Avisos · 9+». Mide los anchos de 360, 375, 399, 400 y 412 px en iframes, sin cambiar el tamaño de la ventana.
+- **Menú abierto por debajo de 400 px:** «Buscar» queda oculto, «Avisos» se pega a «Cerrar» con 4 px entre cajas y el documento mide lo mismo que la ventana. A 360 px, «Cerrar» acaba en **358**.
+- **Menú abierto desde 400 px:** «Buscar» vuelve a verse, con 12 px entre cajas.
+- **Menú cerrado, a todos los anchos:** «Buscar» se ve y la fila no desborda. A 360 px, «Menú» acaba en **360,1**.
+
+Las cifras de la §18 (358 y 360,1) cuadran. No hay regresión de alineación a la derecha ni de umbral.
+
+El atajo ⌘K es un listener de `window` en `command-palette.tsx:28`, que ningún commit toca: no depende de que el botón se vea. La accesibilidad del botón «Avisos» no cambia, porque `aria-label` y foco son los mismos y solo cambia el margen. «Buscar» oculto sale con `display:none`, así que no recibe foco.
+
+#### Hallazgos (por gravedad)
+1. **Menor · la prueba de cabecera acepta la condición invertida** (`-route-header.test.ts:56` y `:61`). Las aserciones usan `toContain('navOpen ? "hidden min-[400px]:flex" : "flex"')`, y `!navOpen ? …` contiene esa misma subcadena.
+   - Entrada: invertir la condición en `route.tsx:211` o en `route.tsx:217`.
+   - Salida: con el menú cerrado y por debajo de 400 px «Buscar» desaparece, o «Avisos» toma el margen automático, y las 4 pruebas siguen en verde (M2 y M4).
+   - Qué cambiaría: anclar la condición con un límite de palabra, por ejemplo `toMatch(/[^!]navOpen \? "hidden min-\[400px\]:flex" : "flex"/)`. Mejor aún, una prueba de render del `Shell` que compruebe las clases con `navOpen` en `false` y en `true`.
+   - M6 (sin el `ml-auto` estático de «Buscar») también sobrevive, pero ya pasaba en la base; lo anoto sin pedirlo aquí.
+2. **Menor · la nota de la «Quinta revisión» no es fiel** (SDD:537). Dice «copiado sin editar su contenido» y que solo se cambiaron encabezados, entidades HTML y rutas. Lo comparé con el informe original del agente, que está en la transcripción de su subagente, y hay más cambios:
+   - Todo pasó de primera a tercera persona.
+   - Se reescribió el título («Tercera revisión independiente» pasó a «Quinta»).
+   - El veredicto pasó de lista a una sola frase.
+   - Se quitó la sección «Evidencia» entera.
+   - Se quitaron frases de contenido:
+     - la recomendación concreta «ajustar `-mr-2` a `-mr-3` en el estado abierto» (hallazgo 1);
+     - «el borde es exacto sin holgura»;
+     - la descripción de la mutación S;
+     - «La sustitución del hijo es teórica»;
+     - en «Lo que NO demuestra», «o con el `current` de la ruta» (SDD:595): esto **quita un elemento no demostrado**.
+   - Qué cambiaría: o restaurar el texto original, o reescribir la nota para que diga que se pasó a tercera persona, se resumió y se quitaron la sección de evidencia y esos fragmentos.
+3. **Informativo · ⌘K no ayuda en móvil.** La §18 dice «⌘K sigue abriendo la búsqueda». Es cierto, pero en un móvil sin teclado, con el menú abierto y por debajo de 400 px, no hay forma de buscar hasta cerrar el menú. Es un compromiso aceptable y ya está declarado; solo conviene que la frase no se lea como alternativa en el teléfono.
+4. **Informativo · la §18 cuadra con lo ejecutado.** 445 archivos y 6436 pruebas cuadran con mi ejecución. «Una prueba añadida; las existentes sin tocar» es cierto según el diff de `5ecbcf6a`. Las afirmaciones de la «Tercera ronda» se cumplen:
+   - las mutaciones de `noticeLabels` y del tope en el `aria-label` las atrapan 2 pruebas cada una (M12 y M14);
+   - la de `if (cur)` la atrapa 1 (M11).
+
+   El texto de §18 que cambió `f7d31faa` solo son dos líneas sustituidas (primera línea del estado y la corrección de la «Tercera ronda»), más lo añadido.
+
+#### Qué ejecuté
+- `gate.mjs` con los dos `--extra`: PASS (445 archivos, 6436 pruebas, 12 archivos de prueba tocados).
+- Los 4 archivos de prueba de HEAD sobre el código de `2f431418`: 25 pruebas, 2 fallan y 23 pasan.
+- 15 mutaciones de usar y tirar sobre `route.tsx`, `scroll-fade.tsx` y `notification-center.tsx`: 12 caen y sobreviven 3. Restauré cada una con `git checkout`.
+- Arnés estático con mi propio servidor en `127.0.0.1:5293` y en una pestaña propia, a 360, 375, 399, 400 y 412 px, con el menú abierto y cerrado. Sin datos ni red, y sin tocar el servidor de `:5174`.
+- Comparación palabra a palabra del informe original de la «Quinta revisión» con la §17.
+- Al acabar: quité mis dos worktrees con `git worktree remove` (`gate5/head` y `gate5/base`; el segundo lo pasé de `5c646d0a` a `2f431418` para la prueba contra la base), cerré mi pestaña y paré mi servidor. No cambié el tamaño de la ventana. No hice commit, push ni comentarios, y no toqué otros checkouts. La evidencia está copiada en `<scratchpad>/gate5/factory-evidence/SDD-20261118-legibilidad/` (`gate-f7d31faa9af7.json` y la carpeta `f7d31faa9af7/`).
+
+#### Lo que esta revisión NO demuestra
+- **La app real con sesión: NOT RUN.** Las cifras de la cabecera salen de un arnés con las clases copiadas, un logo aproximado y una etiqueta `current` ficticia, no del `Shell` montado.
+- El estado de foco y `aria-hidden` del Sheet modal sobre la cabecera, con el menú abierto y lector de pantalla: NOT RUN (no lo tocan estos commits).
+- Segunda máquina y soak: NOT RUN. Safari o iPhone real, modo oscuro y producción: NOT RUN.
+- El walkthrough completo (`nokko-walkthrough`) sobre los flujos de Leads, Cuentas y Métricas: NOT RUN, porque requiere sesión.
+- La aprobación de entrega la decide Fede.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-**2026-11-21 · Estado: En curso (implementado y medido en la app real; cinco revisiones de gate, todas con objeciones y `gate.mjs` en PASS; sin aprobación de entrega).** Rama `sdd/ux-legibilidad-20261118`, desde `origin/main`, subida a origin; PR #161 en borrador (el estado y los commits actuales están en el PR).
+**2026-11-21 · Estado: En curso (implementado y medido en la app real; seis revisiones de gate, todas con objeciones y `gate.mjs` en PASS; sin aprobación de entrega).** Rama `sdd/ux-legibilidad-20261118`, desde `origin/main`, subida a origin; PR #161 en borrador (el estado y los commits actuales están en el PR).
 
 **Qué difiere de lo escrito**
 - **Nombre de prueba (U-6):** `src/routes/_authenticated/-route-header.test.ts`, no `route.header.test.tsx`. El prefijo `-` evita que el router lo tome por una ruta.
@@ -666,7 +785,7 @@ Hecho a petición de Fede («Sí, corrige») sobre la «Cuarta revisión indepen
 **Cuarta ronda (2026-11-21)**
 Hecho a petición de Fede: medir en la app real con su sesión, corregir «Cerrar» a 360 px («Corrígelo») e incorporar la «Tercera ronda» del 2026-11-19, que estaba sin commit en otro checkout («Incorporarla»).
 - **Commits:** `5ecbcf6a` (arreglo de «Cerrar»), `4a1c9373` (la «Tercera ronda» del 19-nov, aplicada tal cual) y el de esta actualización del SDD.
-- **«Cerrar» a 360 px (hallazgo 1 de la «Quinta revisión», confirmado en la app real):** con el menú abierto y «Avisos · 9+», el documento medía 366 px en una ventana de 360 y «Cerrar» se leía cortado («Cerra|»); la caja acababa en 365,5 px. «Cerrar» es ~5 px más ancho que «Menú» y la barra no tenía holgura. Recortar márgenes no daba margen sin bajar de los 8 px entre textos de CA-10, y reducir el logo incumple su mínimo de 140 px (`brand.tsx`). Arreglo: por debajo de 400 px y solo con el menú abierto, «Buscar» se oculta (`hidden min-[400px]:flex`) y «Avisos» toma el margen automático para que las acciones sigan a la derecha; al cerrar el menú vuelve todo. ⌘K sigue abriendo la búsqueda. Prueba nueva en `-route-header.test.ts` (una añadida; las existentes sin tocar).
+- **«Cerrar» a 360 px (hallazgo 1 de la «Quinta revisión», confirmado en la app real):** con el menú abierto y «Avisos · 9+», el documento medía 366 px en una ventana de 360 y «Cerrar» se leía cortado («Cerra|»); la caja acababa en 365,5 px. «Cerrar» es ~5 px más ancho que «Menú» y la barra no tenía holgura. Recortar márgenes no daba margen sin bajar de los 8 px entre textos de CA-10, y reducir el logo incumple su mínimo de 140 px (`brand.tsx`). Arreglo: por debajo de 400 px y solo con el menú abierto, «Buscar» se oculta (`hidden min-[400px]:flex`) y «Avisos» toma el margen automático para que las acciones sigan a la derecha; al cerrar el menú vuelve todo. Con teclado, ⌘K sigue abriendo la búsqueda; en un móvil sin teclado, con el menú abierto y por debajo de 400 px, no hay forma de buscar hasta cerrarlo (compromiso aceptado). Prueba nueva en `-route-header.test.ts` (una añadida; las existentes sin tocar).
 - **Medido tras el arreglo** (app real, sesión de Fede, solo lectura): a 360 px, documento 360 con el menú cerrado y abierto; «Cerrar» acaba en 358 y «Menú» en 360,1; Avisos y Cerrar a 44 px. A 412 px no cambia nada («Buscar» sigue visible con el menú abierto).
 
 **Mediciones en la app real** (`localhost:5174` sobre `2f431418`, sesión de Fede, pestaña aparte, solo lectura, 2026-11-21)
@@ -686,4 +805,12 @@ Hecho a petición de Fede: medir en la app real con su sesión, corregir «Cerra
 
 **Verificación:** 445 archivos, 6.436 pruebas en verde con las tres piezas juntas; `tsc` limpio; ESLint sin errores; prettier limpio en los archivos de `src` tocados.
 
-**Sigue abierto:** gate sobre el commit final (ninguna revisión independiente ha visto `5ecbcf6a` ni `4a1c9373`); hallazgos 3 y 4 de la «Cuarta revisión» (solape del área de «Después:» con las migas, altura de «Editar líneas»); `ScrollFade` solo centra al montar; CA-5 sin prueba de render; cabecera a 320 px; `Button size="sm"` (decisión de Fede); geometría de la tabla trimestral con datos, Safari real.
+**Sigue abierto:** *(actualizado en la «Quinta ronda»: la «Sexta revisión» ya revisó `5ecbcf6a` y `4a1c9373`)*; hallazgos 3 y 4 de la «Cuarta revisión» (solape del área de «Después:» con las migas, altura de «Editar líneas»); `ScrollFade` solo centra al montar; CA-5 sin prueba de render; cabecera a 320 px; `Button size="sm"` (decisión de Fede); geometría de la tabla trimestral con datos, Safari real.
+
+**Quinta ronda (2026-11-21)**
+Hecho a petición de Fede («Sí, corrige») sobre la «Sexta revisión independiente» (`f7d31faa`; `gate.mjs`: PASS).
+- **Hallazgo 1 (prueba de cabecera):** `-route-header.test.ts` exige ahora la condición exacta con una expresión anclada (`[\s{(]navOpen \? …`), en «Buscar» y en «Avisos». Las mutaciones M2 y M4 (condición invertida) fallan una prueba cada una; antes sobrevivían. M6 (sin el `ml-auto` estático de «Buscar») sigue sin prueba, como en la base.
+- **Hallazgo 2 (fidelidad de la «Quinta revisión»):** la versión de `f7d31faa` resumía el informe, lo pasaba a tercera persona y quitaba frases y la sección de evidencia, aunque decía estar «sin editar». Se sustituyó por el informe íntegro del agente; la nota de cabecera enumera los únicos cambios (número del título, entidades HTML, prefijo del scratchpad y la frase con la que el agente lo entregaba). La «Sexta revisión» se copia con el mismo criterio.
+- **Hallazgo 3 (⌘K en móvil):** la «Cuarta ronda» dice ahora que ⌘K solo sirve con teclado y que en el móvil, con el menú abierto y por debajo de 400 px, no hay forma de buscar hasta cerrarlo.
+- **Verificación:** se indica en el commit de esta ronda y en el cuerpo del PR.
+- **Sigue abierto:** ningún gate ha revisado esta ronda (solo toca una prueba y el SDD); hallazgos 3 y 4 de la «Cuarta revisión» (solape del área de «Después:» con las migas, altura de «Editar líneas»); `ScrollFade` solo centra al montar; CA-5 sin prueba de render; cabecera a 320 px; `Button size="sm"` (decisión de Fede); geometría de la tabla trimestral con datos, Safari real.
