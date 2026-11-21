@@ -2,6 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { useMe } from "@/hooks/use-me";
 import { usePrimaryLine } from "@/hooks/use-business-lines";
 
+// A line without its own name is labelled with its archetype's name (primaryLine: `line.name || result.name`).
+const sameText = (a: string, b: string) =>
+  a.replace(/\s+/g, " ").trim().toLowerCase() === b.replace(/\s+/g, " ").trim().toLowerCase();
+
 /** One line naming the primary business line and its archetype; screens read the archetype from here. */
 export function PrimaryLineNote({ className = "" }: { className?: string }) {
   const { data: me } = useMe();
@@ -21,7 +25,8 @@ export function PrimaryLineNote({ className = "" }: { className?: string }) {
   return (
     <p className={`text-sm text-ink-mid ${className}`}>
       <span className="smallcaps">Línea principal</span> {primary.label} · arquetipo{" "}
-      {primary.result.archetype}, {primary.result.name}
+      {primary.result.archetype}
+      {!sameText(primary.label, primary.result.name) && <>, {primary.result.name}</>}
       {primary.extra > 0 && (
         <> · {primary.extra === 1 ? "1 línea más" : `${primary.extra} líneas más`}</>
       )}
@@ -29,7 +34,10 @@ export function PrimaryLineNote({ className = "" }: { className?: string }) {
         <>
           {" "}
           ·{" "}
-          <Link to="/onboarding" className="underline underline-offset-2">
+          <Link
+            to="/onboarding"
+            className="inline-flex min-h-11 items-center underline underline-offset-2 md:min-h-0"
+          >
             Editar líneas
           </Link>
         </>

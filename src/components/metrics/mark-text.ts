@@ -40,3 +40,13 @@ export function figureTone(f: { value: number | null; state: string }, ok: boole
   if (f.value == null || (f.state !== "real" && f.state !== "estimado")) return "";
   return ok === false ? "text-signal" : ok ? "text-success" : "";
 }
+
+/** True when the plan cell shows a «Sin dato · motivo» mark (not a number and not «sin plan»). */
+export function planIsMark(f: {
+  value: number | null;
+  state: string;
+  reason: string | null;
+}): boolean {
+  if (f.value == null && /^sin (plan|clientes presupuestados)/.test(f.reason ?? "")) return false;
+  return f.value == null || f.state === "sin_dato";
+}

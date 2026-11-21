@@ -17,7 +17,10 @@ export function FlowStrip() {
                 {s.label}
               </span>
             ) : (
-              <Link to={s.to as never} className="hover:text-ink">
+              <Link
+                to={s.to as never}
+                className="inline-flex min-h-11 items-center hover:text-ink md:min-h-0"
+              >
                 {s.label}
               </Link>
             )}
@@ -30,7 +33,10 @@ export function FlowStrip() {
           <>
             {" "}
             Después:{" "}
-            <Link to={pos.next.to as never} className="underline">
+            <Link
+              to={pos.next.to as never}
+              className="relative underline before:absolute before:-inset-x-1 before:-inset-y-4 before:content-[''] md:before:hidden"
+            >
               {pos.next.label}
             </Link>
             .

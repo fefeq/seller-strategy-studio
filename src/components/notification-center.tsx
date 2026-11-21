@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { unreadCount } from "@/lib/jobs";
+import { noticeLabels } from "@/lib/notices-label";
 
 type Notice = {
   id: string;
@@ -149,22 +150,14 @@ export function NotificationCenter({
     if (n.link) navigate({ to: n.link as "/" });
   }
 
-  // NK-0179: on a 375 px top bar the long label pushed the page sideways; below sm only the number is shown.
-  const short = running.length
-    ? `Avisos · ${running.length}`
-    : unread
-      ? `Avisos · ${unread}`
-      : "Avisos";
-  const label = running.length
-    ? `Avisos · ${running.length} en marcha`
-    : unread
-      ? `Avisos · ${unread}`
-      : "Avisos";
+  // NK-0179: on a 375 px top bar the long label pushed the page sideways; below sm only the short one shows, with
+  // its number capped (SDD-20261118 U-6).
+  const { short, label } = noticeLabels(unread, running.length);
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className={`text-sm ${unread ? "font-medium text-ink" : "text-ink-mid"} underline decoration-hairline-firm underline-offset-4 hover:decoration-ink ${className}`}
+          className={`min-h-11 text-sm md:min-h-0 ${unread ? "font-medium text-ink" : "text-ink-mid"} underline decoration-hairline-firm underline-offset-4 hover:decoration-ink ${className}`}
           aria-label={`Avisos, ${unread} sin leer${running.length ? `, ${running.length} en marcha` : ""}`}
         >
           <span className="whitespace-nowrap sm:hidden">{short}</span>

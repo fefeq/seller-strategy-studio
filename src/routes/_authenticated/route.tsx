@@ -194,7 +194,7 @@ function Shell() {
         <header
           className={`sticky top-0 ${navOpen ? "z-[60]" : "z-30"} border-b border-hairline bg-sidebar pt-[env(safe-area-inset-top)] text-sidebar-foreground md:hidden`}
         >
-          <div className="flex h-14 items-center justify-between gap-1 px-4 min-[400px]:gap-3">
+          <div className="flex h-14 items-center justify-between gap-1 px-2.5 min-[400px]:gap-3 min-[400px]:px-4">
             <Link to="/home" className="shrink-0" aria-label="Inicio">
               <Lockup />
             </Link>
@@ -203,20 +203,25 @@ function Shell() {
                 {current}
               </span>
             )}
+            {/* «Cerrar» is ~5 px wider than «Menú»: with the drawer open, below 400 px «Buscar» steps aside so the bar
+                fits at 360 px (measured 2026-11-21: 366 px page with «Avisos · 9+»). It comes back when the drawer closes. */}
             <button
               onClick={() => setPaletteOpen(true)}
               aria-label="Buscar"
-              className="ml-auto flex size-11 shrink-0 items-center justify-center text-ink-mid"
+              className={`ml-auto ${navOpen ? "hidden min-[400px]:flex" : "flex"} min-h-11 min-w-11 shrink-0 items-center justify-center px-1 text-sm text-ink-mid`}
             >
               Buscar
             </button>
-            <NotificationCenter userId={me?.user.id} className="shrink-0" />
+            <NotificationCenter
+              userId={me?.user.id}
+              className={navOpen ? "ml-auto shrink-0 min-[400px]:ml-0" : "shrink-0"}
+            />
             <button
               onClick={() => setNavOpen((o) => !o)}
               aria-label={navOpen ? "Cerrar menú" : "Abrir menú"}
               aria-expanded={navOpen}
               aria-controls="mobile-nav"
-              className="-mr-2 flex h-11 shrink-0 items-center justify-center px-2 text-sm text-ink"
+              className="-mr-2 flex h-11 shrink-0 items-center justify-center px-1 text-sm text-ink"
             >
               <IconText icon={navOpen ? X : Menu} size="nav">
                 {navOpen ? "Cerrar" : "Menú"}

@@ -51,7 +51,7 @@ const TabsList = React.forwardRef<
         else if (ref) ref.current = node;
       }}
       className={cn(
-        "inline-flex h-10 max-w-full items-center justify-start gap-1 overflow-x-auto overflow-y-hidden rounded-lg bg-paper-sunk p-1 text-ink-mid [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+        "inline-flex h-[3.25rem] max-w-full items-center justify-start gap-1 overflow-x-auto md:h-10 overflow-y-hidden rounded-lg bg-paper-sunk p-1 text-ink-mid [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
         fade,
         className,
       )}
@@ -68,7 +68,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-medium cursor-pointer transition-all hover:text-ink disabled:pointer-events-none disabled:text-ink-faint disabled:cursor-not-allowed data-[state=active]:bg-card data-[state=active]:text-ink data-[state=active]:shadow-sm",
+      "inline-flex h-11 shrink-0 md:h-8 items-center justify-center whitespace-nowrap rounded-md px-3 text-sm font-medium cursor-pointer transition-all hover:text-ink disabled:pointer-events-none disabled:text-ink-faint disabled:cursor-not-allowed data-[state=active]:bg-card data-[state=active]:text-ink data-[state=active]:shadow-sm",
       className,
     )}
     {...props}
