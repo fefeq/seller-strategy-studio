@@ -44,4 +44,19 @@ describe("mobile top bar", () => {
     expect(menu).toContain("-mr-2");
     expect(menu).toContain("px-1");
   });
+  // Measured 2026-11-21 in the real app at 360 px with «Avisos · 9+»: with the drawer open «Cerrar» (5 px wider than
+  // «Menú») left the page 366 px wide and cut its last letter. Below 400 px «Buscar» steps aside while the drawer is
+  // open and «Avisos» takes its auto margin so both stay right-aligned; from 400 px nothing changes.
+  it("with the drawer open, below 400 px «Buscar» steps aside and «Avisos» keeps the bar right-aligned", () => {
+    const search = route.slice(
+      route.indexOf('aria-label="Buscar"'),
+      route.indexOf("Buscar\n", route.indexOf('aria-label="Buscar"')),
+    );
+    expect(search).toContain('navOpen ? "hidden min-[400px]:flex" : "flex"');
+    const notices = route.slice(
+      route.indexOf("<NotificationCenter"),
+      route.indexOf("<NotificationCenter") + 200,
+    );
+    expect(notices).toContain('navOpen ? "ml-auto shrink-0 min-[400px]:ml-0" : "shrink-0"');
+  });
 });
