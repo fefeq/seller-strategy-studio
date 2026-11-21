@@ -148,6 +148,35 @@ describe("ScrollFade lifecycle", () => {
       render(table);
       expect(left).toBe(0);
     });
+    it("without matchMedia (old browsers) it centres, as on a narrow screen", () => {
+      vi.stubGlobal("matchMedia", undefined);
+      render(table);
+      expect(left).toBe(475);
+    });
+    it("if matchMedia throws it does not break the screen and centres", () => {
+      vi.stubGlobal("matchMedia", () => {
+        throw new Error("blocked");
+      });
+      expect(() => render(table)).not.toThrow();
+      expect(left).toBe(475);
+    });
+    it("overflow but no current element: nothing to centre and nothing thrown", () => {
+      vi.stubGlobal("matchMedia", () => ({ matches: true }));
+      expect(() =>
+        render(
+          <ScrollFade>
+            <table>
+              <thead>
+                <tr>
+                  <th>2026-Q3</th>
+                </tr>
+              </thead>
+            </table>
+          </ScrollFade>,
+        ),
+      ).not.toThrow();
+      expect(left).toBe(0);
+    });
     it("on a narrow screen it centres the current element", () => {
       vi.stubGlobal("matchMedia", (q: string) => ({ matches: q.includes("max-width: 767px") }));
       render(table);

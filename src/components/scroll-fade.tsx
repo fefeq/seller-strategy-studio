@@ -19,9 +19,13 @@ export function ScrollFade({ children, className }: { children: ReactNode; class
       setStart(el.scrollLeft > 2);
     };
     // Only on narrow screens (below md). On a wider one the table overflows by a few pixels and centring would hide the
-    // start of the first quarter. Without matchMedia (old browsers, jsdom) it centres, as on a narrow screen.
-    const narrow =
-      typeof window.matchMedia !== "function" || window.matchMedia("(max-width: 767px)").matches;
+    // start of the first quarter. Without a working matchMedia it centres, as on a narrow screen.
+    let narrow = true;
+    try {
+      narrow = window.matchMedia("(max-width: 767px)").matches;
+    } catch {
+      // No matchMedia (old browsers) or one that throws: behave as on a narrow screen rather than break the table.
+    }
     if (narrow && el.scrollWidth > el.clientWidth) {
       const cur = el.querySelector<HTMLElement>("[data-current]");
       if (cur) el.scrollLeft = cur.offsetLeft - el.clientWidth / 2 + cur.offsetWidth / 2;

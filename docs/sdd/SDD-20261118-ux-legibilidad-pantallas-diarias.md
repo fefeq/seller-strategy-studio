@@ -60,7 +60,7 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - Rejillas del embudo y de los KPI de Leads: columnas según el ancho disponible, no según el viewport.
 - Tabla trimestral: columnas con ancho mínimo; en cada celda, «plan» y su marca en líneas separadas; en pantalla estrecha (menos de 768 px), la tabla se desplaza al cargar para centrar el trimestre actual, que es la última columna, y señala con un borde por la derecha o por la izquierda que hay más contenido. En pantallas más anchas no se desplaza. *(Texto original: «el trimestre actual aparece primero».)*
 - En pantalla estrecha, altura táctil mínima de 44 px en los elementos de CA-8.
-- Cabecera móvil: «Buscar» con ancho propio y separación fija con «Avisos».
+- Cabecera móvil: «Buscar» con ancho propio; por debajo de 400 px la barra queda más ajustada (`gap-1 px-2.5`). Por debajo de `sm`, la etiqueta de «Avisos» limita el número a «9+» («Avisos · 14» pasa a «Avisos · 9+»); desde `sm` y en el `aria-label` se conserva el número real. *(Cambio añadido durante la implementación, no estaba en la versión aprobada del SDD: Fede aceptó corregir la cabecera a 360 px el 2026-11-18 y el detalle del tope se le comunicó después.)*
 **Eliminado:** nada.
 
 ## 7. Historias y criterios de aceptación
@@ -80,14 +80,14 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - **CA-7** Los textos de las marcas no cambian: las pruebas existentes de `quarter-kpis-panel.test.tsx`, `data-state.test.tsx` y `metrics/finance-panel.test.tsx` siguen en verde **sin modificarse**. · prueba: las suites existentes
 - **CA-7b** En cada celda con plan, la palabra «plan» y su marca van en líneas distintas (la marca con `block`); «sin plan» se queda en línea. · prueba: `src/components/quarter-kpis-panel.layout.test.tsx`
 - **CA-7c** Las celdas tienen ancho mínimo propio y ninguna marca ocupa más de 3 líneas a 375 px. · prueba: evidencia en navegador
-- **CA-7d** En pantalla estrecha el contenedor muestra desvanecido en el borde con más contenido y, al montar, la columna del trimestre actual queda a la vista. · prueba: `src/components/quarter-kpis-panel.layout.test.tsx` (con `scrollIntoView` simulado)
+- **CA-7d** En pantalla estrecha (menos de 768 px) el contenedor señala que hay más contenido (desvanecido en el borde derecho; a la izquierda, una sombra en las celdas de la primera columna, que es fija) y, al montar, la columna del trimestre actual queda a la vista. Solo se centra al montar: si cambia el trimestre sin volver a montar la tabla, no se recentra. · prueba: `src/components/quarter-kpis-panel.layout.test.tsx` (con `scrollIntoView` simulado)
 
 ### H-5: Como Fede, quiero pulsar con el pulgar sin fallar.
 - **CA-8** A menos de 768 px, estos elementos miden al menos 44 px de alto: enlaces de `FlowStrip`, el disparador «Avisos», las pestañas (`TabsTrigger`), «Tablero/Listado» de Leads y «Editar líneas». Se usa `min-h-11 md:min-h-0` en los enlaces y el disparador de «Avisos», como ya hacen `move-menu.tsx` y `quick-actions.tsx`; las primitivas `Button sm`, `TabsList` y `TabsTrigger` usan `h-11`/`h-[3.25rem]` más su altura de escritorio (`md:h-7`, `md:h-10`, `md:h-8`). El enlace «Después:» de `FlowStrip`, que va dentro de una frase, llega a 44 px con un área táctil invisible (`before:-inset-y-4`, 47,5 px medidos) en vez de agrandar la línea. · prueba: `src/components/touch-targets.test.tsx` (clases) + medición en navegador a 375 px
 - **CA-9** En escritorio (≥768 px) los tamaños actuales no cambian. · prueba: `src/components/touch-targets.test.tsx`
 
 ### H-6: Como Fede, quiero una cabecera móvil que no se apriete.
-- **CA-10** «Buscar» no se sale de su caja (`min-w-11 px-1 text-sm` en vez de `size-11`), la página no es más ancha que la pantalla a 360 y 375 px (`scrollWidth` igual al ancho de la ventana) y entre los textos de «Buscar», «Avisos» y «Menú» hay al menos 8 px; ninguno queda truncado. *(Redactado de nuevo tras la medición del 2026-11-18: la versión original, «12 px a 375 px», hacía la cabecera más ancha que la pantalla; ver sección 18.)* · prueba: `src/routes/_authenticated/route.header.test.tsx` (clases) + medición en navegador a 375 px
+- **CA-10** «Buscar» no se sale de su caja (`min-w-11 px-1 text-sm` en vez de `size-11`), la página no es más ancha que la pantalla a 360 y 375 px (`scrollWidth` igual al ancho de la ventana) y entre los textos de «Buscar», «Avisos» y «Menú» hay al menos 8 px; ninguno queda truncado. *(Redactado de nuevo tras la medición del 2026-11-18: la versión original, «12 px a 375 px», hacía la cabecera más ancha que la pantalla; ver sección 18.)* · prueba: `src/routes/_authenticated/-route-header.test.ts` (clases) + medición en navegador a 375 px
 
 ## 8. Casos límite y errores
 - Origen con espacios, mayúsculas mixtas o solo espacios: una clave; solo espacios cuenta como «Sin origen» (CA-3).
@@ -95,10 +95,11 @@ No se fija una meta global de «elementos bajo 44 px» por pantalla: quedarían 
 - Línea sin arquetipo o con `extra` > 0: el sufijo «N líneas más» se conserva (CA-1).
 - Trimestre actual fuera de los visibles: la tabla muestra el primero y no falla (CA-7d).
 - Datos vacíos o una sola empresa: sin cambio. Varias empresas: sin cambio, nada se lee ni escribe nuevo.
-- Pantalla de 320 px: es el ancho mínimo de la prueba de CA-6.
+- Pantalla de 320 px: es el ancho mínimo de la prueba de CA-6. La cabecera móvil sigue desbordando a ese ancho (el logo y las tres acciones suman más de 320 px); queda fuera de este SDD.
+- `ScrollFade` sin `matchMedia` o con uno que lanza una excepción: se comporta como en pantalla estrecha y no rompe la tabla. Sin trimestre actual (`data-current`) y con desborde: no desplaza nada.
 
 ## 9. Experiencia y copy
-No hay textos nuevos. Se conservan «Sin dato · …», «sin plan», «Buscar», «Avisos». No se añaden iconos (regla de la plantilla); la cabecera móvil se arregla con ancho y separación, no con un icono.
+No hay textos nuevos. Se conservan «Sin dato · …», «sin plan», «Buscar» y «Avisos», con una excepción: por debajo de `sm` el número de «Avisos» se muestra como «9+» a partir de 10 (sección 6). No se añaden iconos (regla de la plantilla); la cabecera móvil se arregla con ancho y separación, no con un icono.
 
 ## 10. Datos, permisos y privacidad
 Sin tablas, columnas, migraciones, RLS ni permisos nuevos. Solo se leen datos ya cargados. Ningún dato de cliente en pruebas: se usan orígenes y líneas ficticios («Origen A», «Línea ficticia»).
@@ -116,7 +117,7 @@ Sin tablas, columnas, migraciones, RLS ni permisos nuevos. Solo se leen datos ya
 | U-3 | Rejillas por ancho disponible en el embudo y KPI de Leads | CA-6 | `src/lib/layout-grids.test.ts` |
 | U-4 | Tabla trimestral: ancho de columna, marca del plan en línea propia, borde desvanecido y trimestre actual a la vista | CA-7, CA-7b, CA-7c, CA-7d | `src/components/quarter-kpis-panel.layout.test.tsx` |
 | U-5 | Altura táctil de 44 px a <768 px | CA-8, CA-9 | `src/components/touch-targets.test.tsx` |
-| U-6 | Cabecera móvil: ancho de «Buscar» y separación | CA-10 | `src/routes/_authenticated/route.header.test.tsx` |
+| U-6 | Cabecera móvil: ancho de «Buscar» y separación | CA-10 | `src/routes/_authenticated/-route-header.test.ts` |
 
 Orden sugerido: U-1, U-2 (puras, sin riesgo), U-6, U-5, U-3, U-4. Las U-3 a U-6 piden medir en navegador antes y después y guardar la evidencia.
 
@@ -125,7 +126,7 @@ Orden sugerido: U-1, U-2 (puras, sin riesgo), U-6, U-5, U-3, U-4. Las U-3 a U-6 
 - U-2: `normalizeLeadSource(raw): { key, label }` en `src/lib/lead-source.ts`; `funnelBy` no cambia de firma: se le pasa `l => normalizeLeadSource(l.source).key` y la etiqueta se resuelve al pintar. Revisar los otros puntos que agrupan por origen: `lead-funnel-panel.tsx` («Comparar por») y `src/lib/agent/tools/core-read.ts` **[Por verificar]**.
 - U-3: `grid-cols-[repeat(auto-fit,minmax(8.5rem,1fr))]` (o contenedor con `@container`). El mínimo exacto se ajusta al ancho de «OPORTUNIDAD» con el `eyebrow` real, medido en navegador.
 - U-4: añadir `min-w-44` a las celdas (el texto original decía `min-w-40`; se midió y quedó en 44); en `PlanValue` (o en la celda) pasar `className="block"` a la marca; no se toca `DataState`. Alternativa descartada: acortar el motivo o sustituirlo por «—» (D-1).
-- U-5: `TabsList` hoy mide `h-10` con `TabsTrigger` `h-8`; con `min-h-11` hay que subir la lista a `h-14` en móvil para que quepan. Es un componente compartido por muchas pantallas (D-3).
+- U-5: `TabsList` hoy mide `h-10` con `TabsTrigger` `h-8`; en móvil `TabsTrigger` pasa a `h-11` (con `md:h-8`) y la lista a `h-[3.25rem]` (con `md:h-10`) para que quepan; es el desvío de método respecto a `min-h-11 md:min-h-0` que usan los enlaces. Es un componente compartido por muchas pantallas (D-3).
 - U-6: sustituir `size-11` por `min-w-11 px-1 text-sm` en el botón «Buscar»; por debajo de 400 px la barra queda con `gap-1 px-2.5` y solo desde 400 px crece a `gap-3 px-4`; «Menú» pasa a `px-1 -mr-2`; por debajo de `sm` la etiqueta de «Avisos» limita el número a «9+» (`noticeLabels`), y el `aria-label` conserva la cuenta real. Comprobar a 360 y 375 px que `scrollWidth` del documento no supera el ancho de la ventana.
 
 ## 14. Riesgos y dependencias
@@ -435,8 +436,104 @@ Servidor `localhost:5174` verificado contra el commit: `flow-strip.tsx`, `route.
 - Que el gate fijo (`gate.mjs`) pase. Los guards del diff los repitió a mano con grep y `git diff --name-status`.
 - Que el SDD esté libre de objeciones: eso lo decide Fede.
 
+### Cuarta revisión independiente (2026-11-18), sobre el commit `2f431418`
+
+*Informe de un agente de contexto fresco, lanzado desde la sesión principal a petición de Fede, copiado sin editar su contenido (se bajó un nivel de los encabezados y se corrigieron entidades HTML). Este agente sí ejecutó `gate.mjs` en un worktree limpio (etiqueta `SDD-20261118-legibilidad`, sin ticket NK real) y no abrió el navegador. Va después de la «Revisión independiente adicional» y es independiente de ella y de la «Segunda revisión».*
+
+- **Veredicto del gate: Objeciones.** Las correcciones del último commit están en el código y las pruebas las atrapan. Quedan tres cosas sin protección: el cableado de «Avisos» a `noticeLabels`, el caso «trimestre actual ausente», y varios textos del SDD que ya no dicen lo que hace el código. `gate.mjs` devolvió PASS.
+
+#### CA sin prueba posible o sin G-n (no hay PRD, G-n no cuenta)
+- **CA-5 (tarjeta del lead):** solo hay prueba de una función pura que no muta su entrada. Ninguna prueba renderiza la tarjeta ni comprueba que pinte `l.source` tal cual. Es comprobable y sigue sin prueba.
+- **CA-6:** solo la guardia de código fuente (`layout-grids.test.ts`). El solape real no es automatizable en jsdom.
+- **CA-7c, parte geométrica de CA-8 y CA-10:** solo navegador, y no lo reprodujo.
+- **CA-10, cableado de «Avisos»:** el tope «9+» tiene prueba en la función pura, pero nada prueba que `notification-center.tsx` la use ni que el `aria-label` conserve la cuenta real (hallazgo 1).
+- **CA-1, 2, 3, 4, 7b, 7d y 9:** tienen prueba que nombra el CA y falla al revertir el código.
+
+#### [Por verificar] que sigue sin comprobarse
+- **Geometría:** el 47,5 px de «Después:», la cabecera a 360 y 375 px («Menú» justo en el borde a 360), el máximo de 3 líneas por celda, el solape de las rejillas a 320 px, el modo oscuro y Safari.
+- **Hit-area de «Después:»:** sube de 12 a 16 px por arriba y el `<p>` solo tiene `mt-1` bajo las migas de 44 px. El área nueva podría quitarle toques a las migas.
+- **Popover de «Avisos»:** usa `TabsTrigger`; no se ha visto con las pestañas más altas.
+- **`Button sm` y `TabsList`:** `Button sm` pasa a `h-11` en móvil en unas 199 apariciones de la app, y solo se midieron cuatro pantallas. La decisión de Fede sigue abierta.
+- **`box-shadow` en celdas pegajosas con `border-collapse: collapse`** en Safari.
+- **Producción, otras empresas y dispositivos táctiles reales.**
+
+#### Contradicciones con el código o con decisiones previas
+Todas las líneas son del SDD.
+- **Prueba de CA-10:** `SDD:90` y `SDD:119` dicen `route.header.test.tsx`. El archivo real es `-route-header.test.ts`, y solo §18 lo documenta.
+- **U-5 de §13:** `SDD:128` dice `min-h-11` y `TabsList h-14`. El código usa `h-11` y `h-[3.25rem]`. CA-8 sí se corrigió, pero U-5 no. §18 afirma haber corregido «U-4/U-6 de §13», pero no U-5.
+- **§6 y §9 frente a `notices-label.ts`:** §9 dice «se conservan Avisos» y §6 «Modificado» no lista el cambio. Por debajo de `sm`, «Avisos · 14» pasa a «Avisos · 9+» y se pierde información. Solo está declarado en §13 y §18 («Cambio visible»), sin una decisión de Fede registrada.
+- **§18, primera línea (`SDD:439`):** dice «un commit local (8c300442), sin push». Hoy son 4 commits, ya subidos, con el PR 161 abierto.
+- **Cuerpo del PR 161:** dice «440 archivos, 6.404 pruebas», «segundo gate en curso sobre f6ce7fb7» y «a 360 px no desborda». Todo desfasado: hoy son 444 archivos y 6.428 pruebas.
+- **CA-7d (`SDD:83`):** dice «desvanecido en el borde con más contenido». A la izquierda el código dibuja una sombra en las celdas pegajosas, no un desvanecido. §6 sí lo describe bien.
+- **Prueba de `FlowStrip` (`touch-targets.test.tsx`):** se llama «sus filas no crecen» y solo mira la clase del `li`. Cada enlace de las migas es `inline-flex min-h-11`, así que el `li` mide 44 px. El propio §18 reconoce el bloque de 80 px.
+- El resto coincide: CA-1, CA-3, CA-4 (desempate), CA-8 (`-inset-y-4`), CA-9, §6 (centrado bajo 768 px), §13 U-4 y U-6 y CA-7b son coherentes con el código. §18 solo se puede comprobar en parte (la aritmética 15,5 + 32 = 47,5, que cada prueba nueva falla sobre la base y las mutaciones de `planIsMark`; no las mediciones en navegador).
+
+#### Estado de los hallazgos de los informes anteriores
+**Primer informe (sobre `8c300442`)**
+
+| # | Hallazgo | Estado | Evidencia |
+|---|---|---|---|
+| 1 | Cableado de CA-4 sin prueba (importante) | Resuelto | `funnelBySource` y la prueba de render `lead-funnel-panel-source.test.tsx`. Revertir el panel a `l.source` falla 3 pruebas. En `leads.index.tsx` solo hay guardia de código fuente: quitar `funnelBySource(` falla 1. |
+| 2 | CA-7d sin señal a la izquierda (importante) | Resuelto | `data-start` más sombra en celdas pegajosas, con prueba y `scrollLeft` > 0. Quitar el atributo o la sombra falla 1 prueba. Queda lo de Safari. |
+| 3 | `Button sm` en las 199 apariciones (importante) | No | El propio §18 lo deja sin resolver. Decisión de Fede abierta. |
+| 4 | `FlowStrip` crece en todas las pantallas (importante) | Parcial | El `li` ya no lleva `min-h-11` y «Después:» usa un pseudoelemento de 47,5 px (aritmética, sin medir por este revisor). Las migas siguen a 44 px y la prueba lleva un nombre engañoso. |
+| 5 | Casos límite de §8 sin prueba (menor) | Parcial | Ahora hay prueba de desmontaje, de ausencia de `ResizeObserver`, de 40 leads con 7 orígenes, de cohorte vacía y de «sin origen» literal. Siguen sin prueba: trimestre actual ausente, `matchMedia` ausente o que lanza, lead fuera de la cohorte. |
+| 6 | Cabecera por debajo de 375 px (menor) | Parcial | `px-2.5`, `-mr-2` y el tope «9+» están en el código y con prueba de clases. A 320 px desborda (declarado), a 360 px queda sin holgura, y el tope no tiene prueba de cableado. |
+| 7 | NFC (menor) | Resuelto | Quitar `.normalize("NFC")` falla la prueba de NFC. |
+| 8 | `ScrollFade` centra siempre y observa solo la caja (menor) | Resuelto | Quitar la condición estrecha falla 1 prueba. Invertir `matchMedia` falla 3. Quitar `observe(firstElementChild)` falla 1. |
+| 9 | §17 y §18 desfasados (menor) | Parcial | §18 sigue con «commit local, sin push». El PRD sin seguimiento es ajeno. |
+
+**Segunda revisión (sobre `f6ce7fb7`)**
+
+| # | Hallazgo | Estado | Evidencia |
+|---|---|---|---|
+| 1 | «Después:» a 39,5 px (importante) | Resuelto en código | `-inset-y-4` en `flow-strip.tsx`. Medición no reproducida y solape con las migas sin sondear de nuevo. |
+| 2 | Cabecera a 360 px depende de los avisos (importante) | Parcial | El tope «9+» acota el ancho. Sin holgura a 360 px. Cableado sin prueba. |
+| 3 | `ResizeObserver` observa solo el contenedor (importante) | Resuelto | Ahora observa el contenido, con prueba. |
+| 4 | Huecos de prueba (importante) | Resuelto | Las mutaciones de desmontaje, `ResizeObserver`, crecimiento en escritorio y `planIsMark` las atrapa ahora una prueba cada una. No se rehízo la mutación que esquiva la guardia con un agrupador propio y un `funnelBySource(` decorativo. |
+| 5 | Etiqueta «Sin origen» en minúscula (menor) | Resuelto | La prueba falla si se quita la protección de la clave. |
+| 6 | Ancho cero U+200B (menor) | Resuelto | La prueba falla si se quita la limpieza. |
+| 7 | `flake.mjs` clasifica mal un archivo nuevo (menor) | No aplica | Es un defecto del script. No se tocó. |
+| 8 | Informativo (768 px, embudo) | Sin cambio | No reproducido. |
+
+**Revisión independiente adicional (sobre `f6ce7fb7`)**
+
+| # | Hallazgo | Estado | Evidencia |
+|---|---|---|---|
+| 1 | «Después:» ~40 px (importante) | Resuelto en código | Igual que el hallazgo 1 de la segunda revisión. |
+| 2 | La prueba de `FlowStrip` no protege lo que dice (importante) | No | El nombre sigue diciendo «sus filas no crecen» y las filas miden 44 px por el enlace. |
+| 3 | Cláusula «sin plan» de CA-7b sin prueba (menor) | Resuelto | `planIsMark` siempre true falla 3 pruebas. Siempre false falla 3. |
+| 4 | Regla de mayúscula del desempate, código muerto (menor) | Resuelto | Se eliminó y CA-4 se corrigió. |
+| 5 | Casos límite sin prueba (menor) | Parcial | Igual que el hallazgo 5 del primer informe. |
+| 6 | La guardia de cableado solo vigila el fuente (menor) | Parcial | El panel tiene prueba de render. `leads.index.tsx` solo guardia, endurecida con `not.toContain("funnelBy(")`. |
+| 7 | Checkout avanzó durante la revisión (proceso) | No aplica | |
+
+#### Hallazgos nuevos
+1. **Importante. El tope «9+» y el `aria-label` de «Avisos» no están protegidos en pantalla.** Tres mutaciones sobre `notification-center.tsx` (ignorar `noticeLabels` y volver a las cadenas sin tope; cambiar el `aria-label` por «9+») dejaron las 83 pruebas en verde. Solo `notices-label.test.ts` cubre la función pura; ninguna prueba renderiza `NotificationCenter`. CA-10 depende de este cableado a 360 px y el SDD afirma que el `aria-label` conserva la cuenta real sin prueba. Cambiaría: una prueba de render de `NotificationCenter` con 14 avisos sin leer, que compruebe un `span` «Avisos · 9+» con `sm:hidden`, otro «Avisos · 14» y un `aria-label` con «14 sin leer».
+2. **Menor. Dos casos límite de §8 y de `ScrollFade` siguen sin prueba.** Con trimestre actual ausente y desborde, sustituir `if (cur)` por `cur!` lanza un `TypeError` y las 83 pruebas pasan. Quitar `typeof window.matchMedia !== "function" ||` también las deja en verde, porque `src/test/setup.ts:19` define `matchMedia`. Cambiaría: dos pruebas (desborde sin `data-current`, y `matchMedia` borrado con `vi.stubGlobal`) y, si se quiere, un `try`.
+3. **Menor. «Después:» con `-inset-y-4` puede solaparse con las migas.** `flow-strip.tsx:38` es un pseudoelemento posicionado, posterior en el DOM, a 16 px por encima y a 4 px de la fila de migas de 44 px. Podría quitarle toques a la parte baja de las migas. No lo midió. Cambiaría: repetir el sondeo con `elementFromPoint` a 320, 360 y 375 px, o reducir al mínimo que dé 44 px.
+4. **Menor. «Editar líneas» usa `inline-flex min-h-11` dentro de un `<p>`.** `primary-line-note.tsx:37` es el mismo mecanismo que el diff evitó para «Después:». La línea de la nota crece de unos 20 a 44 px en móvil. §18 no mide esa altura. Cambiaría: medirlo y decidir si el crecimiento es aceptable, o usar el pseudoelemento.
+5. **Menor. Cabecera sin holgura y arreglo que depende de pocos píxeles.** `route.tsx:197` y `route.tsx:219` dejan «Menú» a 2 px del borde de la pantalla. `-route-header.test.ts` corta el fuente por desplazamientos fijos de caracteres (`-200`/`+300`/`+250`/`+120`); una línea añadida a esas clases puede dar falso verde o falso rojo. Cambiaría: una prueba más robusta (extraer el `className` de forma estructural) y medir con fuentes distintas.
+6. **Menor. `ScrollFade` solo centra al montar.** El efecto tiene `[]` de dependencias; si cambia `quarter` sin remontar, `data-current` se mueve y la tabla no se recentra. Es coherente con «al montar» en §6, pero §8 no lo menciona. Cambiaría: documentarlo o recentrar al cambiar `quarter`.
+7. **Menor. Prueba de CA-7b que pasa sobre la base.** «Una celda sin plan se queda en línea» pasa sobre la base: es de no regresión y está bien, pero no demuestra el cambio.
+
+#### Qué ejecutó
+- **Preparación:** tres worktrees temporales bajo `/private/tmp/claude-501/gate3/` (`base` sobre `5c646d0a`, `head` y `gate` sobre `2f431418`), con `node_modules` enlazado; borrados al terminar. `FACTORY_DIR` fuera del repo.
+- **`gate.mjs`:** `node scripts/factory/gate.mjs --ticket SDD-20261118-legibilidad --base 5c646d0a --root <worktree limpio>`. Veredicto **PASS**, exit 0. Checks: árbol limpio sobre el commit exacto, canario, los 9 guards del diff, `typecheck`, `lint` (26 archivos), build de release, suite completa (6.428 pruebas, 0 fallos, 0 conocidos, 0 sin aserción, 444 archivos), y los 11 archivos de prueba tocados enteros (63 pruebas). Segunda máquina: «NOT RUN: no second runner configured». Soak: «NOT A SOAK». `flake.mjs`: NOT RUN (no hubo fallos inesperados).
+- **Pruebas nuevas contra la base (`5c646d0a`):** 11 archivos copiados; los 11 fallan; 32 pruebas fallan y 5 pasan, de 37 que llegan a ejecutarse. `lead-source.test.ts`, `notices-label.test.ts` y `scroll-fade.test.tsx` no cargan en la base (import sin resolver). Las 5 que pasan son de no regresión: CA-2, «línea con otro nombre», «palabras de las marcas», «lead sin origen cuenta bajo Sin origen» y «CAC sin plan en línea».
+- **Mutaciones:** 28 sobre `2f431418` con 14 archivos de prueba (línea base 83 en verde). Atrapadas por una a tres pruebas: tope «9+», `md:before:hidden`, condición estrecha y `narrow = false` de `ScrollFade`, `observe(firstElementChild)`, cleanup, `planIsMark` (siempre true o false), `plan` siempre `block`, ancho cero, NFC, protección de «Sin origen», desempate invertido, cableado de `funnelBySource` en ambas pantallas, `md:min-h-0` (migas, «Editar líneas», Métricas), `gap-3`, `-mr-1`, `data-start` y sombra. **Sobreviven 4:** `notification-center` ignora `noticeLabels`, `aria-label` de «Avisos» con «9+», quitar el guard de `matchMedia` y quitar el guard de `cur`.
+- **Resto:** `prettier --check` limpio sobre los 26 archivos de `src` tocados (el SDD da aviso, como otros 9 de `docs/sdd`); `eslint` 0 errores y 1 aviso previo (`ui/button.tsx:54`); alcance de 27 archivos, ninguna prueba existente modificada, todo dentro de §5; privacidad: sin `as any`, `.only`, `.skip`, `console.`, URLs ni correos, datos ficticios, y el cuerpo del PR y el SDD sin datos de cliente.
+
+#### Lo que esta revisión NO demuestra
+- Nada visual ni geométrico: 44 px reales, 47,5 px de «Después:», solape del embudo a 320 px, líneas por celda, ancho de la cabecera a 320, 360 y 375 px, modo oscuro, Safari, dispositivos reales. No abrió el navegador ni reprodujo ninguna medición de §18.
+- Que `Button sm`, `TabsList`, `TabsTrigger`, `FlowStrip` o «Editar líneas» más altos no rompan otras pantallas.
+- Ninguna lectura de producción ni de datos de otras empresas.
+- El efecto real del popover de «Avisos» con pestañas más altas.
+- Segunda máquina y soak: NOT RUN. `flake.mjs`: NOT RUN.
+- Que el SDD esté libre de objeciones: lo decide Fede.
+
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-**2026-11-18 · Estado: En curso (implementado y medido; sin revisión del gate ni aprobación de entrega).** Rama local `sdd/ux-legibilidad-20261118`, desde `origin/main`; un commit local (`8c300442`, 22:49), sin push. Corregido a las 22:57: esta línea decía «sin commit ni push».
+**2026-11-18 · Estado: En curso (implementado y medido; cuatro revisiones de gate con objeciones, sin aprobación de entrega).** Rama `sdd/ux-legibilidad-20261118`, desde `origin/main`, subida a origin; PR #161 en borrador (el estado y los commits actuales están en el PR).
 
 **Qué difiere de lo escrito**
 - **Nombre de prueba (U-6):** `src/routes/_authenticated/-route-header.test.ts`, no `route.header.test.tsx`. El prefijo `-` evita que el router lo tome por una ruta.
@@ -489,3 +586,11 @@ Hecho a petición de Fede («Sí, corrige») sobre el informe de la «Segunda re
 - **CA-9:** las pruebas de `touch-targets.test.tsx` exigen también `md:min-h-0` y `md:before:hidden`.
 - **SDD:** corregidos §5 (lista de componentes), §6 (centrado), CA-4 (desempate), CA-8 (mecanismo) y U-4/U-6 de §13.
 - **Sin resolver:** cabecera a 320 px (sigue desbordando); decisión de Fede sobre `Button size="sm"`; CA-5 sin prueba de render de la tarjeta del lead; `box-shadow` en celdas fijas con `border-collapse: collapse` en Safari, modo oscuro en móvil y Safari real, sin comprobar.
+
+**Tercera ronda tras los gates (2026-11-19)**
+Hecho a petición de Fede («Sí, corrige») sobre la «Cuarta revisión independiente» (`2f431418`; `gate.mjs`: PASS).
+- **Hallazgo 1 (cableado de «Avisos»):** nueva prueba de render `src/components/notification-center.test.tsx` (14 avisos: «Avisos · 9+» bajo `sm`, «Avisos · 14» desde `sm` y `aria-label` con «14 sin leer»; con trabajos en marcha; con pocos avisos; sin nada). Las dos mutaciones que sobrevivían (ignorar `noticeLabels`, tope en el `aria-label`) ahora las atrapan 2 pruebas cada una.
+- **Hallazgo 2 (casos límite de `ScrollFade`):** pruebas de `matchMedia` ausente, `matchMedia` que lanza y desborde sin `data-current`. `ScrollFade` ya no depende de que `matchMedia` exista: lo llama dentro de `try`, y ante un fallo se comporta como en pantalla estrecha. La mutación que quita `if (cur)` ahora falla una prueba.
+- **Texto del SDD alineado con el código:** nombre de la prueba de cabecera (`-route-header.test.ts`), U-5 de §13 (`h-11` y `h-[3.25rem]`), el cambio «Avisos · 9+» en §6 y §9, CA-7d (borde derecho y sombra a la izquierda), el caso de 320 px y de `ScrollFade` en §8, y la primera línea de esta sección. El cuerpo del PR #161 se actualizó con los números de esta ronda.
+- **Prueba de `FlowStrip`:** se renombró para decir lo que mide (los enlaces de las migas miden 44 px y el `li` no lleva `min-height`); las filas sí crecen a 44 px por el enlace, como ya constaba.
+- **Sigue abierto (no pedido en esta ronda):** hallazgos 3 y 4 del gate (si el área táctil de «Después:» le quita toques a las migas, y si «Editar líneas» hace crecer su línea a 44 px; ninguno medido); hallazgo 5 (la prueba de cabecera corta el código fuente por posiciones fijas; «Menú» queda a 2 px del borde a 360 px); hallazgo 6 (`ScrollFade` solo centra al montar, ahora documentado); CA-5 sin prueba de render de la tarjeta del lead; cabecera a 320 px; `Button size="sm"` (decisión de Fede); Safari, modo oscuro en móvil y la geometría, que ningún gate reprodujo.

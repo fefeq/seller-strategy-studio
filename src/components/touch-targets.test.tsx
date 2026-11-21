@@ -52,7 +52,7 @@ describe("CA-8 touch targets below md", () => {
     expect(cls(screen.getByRole("tablist"))).toContain("h-[3.25rem]");
   });
 
-  it("the breadcrumb links of the flow strip are 44 px tall and their rows do not grow", () => {
+  it("the breadcrumb links of the flow strip are 44 px tall and the li itself carries no min-height", () => {
     const { container } = render(<FlowStrip />);
     const crumbs = [...container.querySelectorAll("ol a")];
     expect(crumbs.length).toBeGreaterThanOrEqual(3);
