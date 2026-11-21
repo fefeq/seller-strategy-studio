@@ -20,6 +20,12 @@
           "at": "2026-10-28T20:00:36.350Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Reconciliación del 2026-11-21: probablemente resuelto (todas las tablas creadas en las migraciones activan RLS), pero sin prueba global ni consulta a la base viva. Sigue abierto hasta comprobarlo en la base."
         }
       ]
     },
@@ -70,7 +76,7 @@
       "title": "Verify server-side AI execution",
       "kind": "feature",
       "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -83,6 +89,12 @@
           "at": "2026-10-28T20:00:36.516Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. No hay llamadas a IA ni claves en el navegador; el agente va por createServerFn (src/lib/agent.functions.ts:45) y solo se expone VITE_SUPABASE_URL. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -91,7 +103,7 @@
       "title": "Enforce utility-first styling",
       "kind": "feature",
       "source": "BMAD auditoria tecnica (archivado, docs/archivado/bmad)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -104,6 +116,12 @@
           "at": "2026-10-28T20:00:36.568Z",
           "by": "Claude",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Solo styles.css define tokens; los 24 style={{}} son valores dinámicos (anchos de barra). Quedan 3 colores hex a mano. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -430,7 +448,7 @@
       "title": "Theory U con IA proactiva para decidir",
       "kind": "feature",
       "source": "docs/sdd (iniciativa UX, onboarding y coherencia)",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261025-theory-u-proactive-decision-support.md",
@@ -449,6 +467,12 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "D-7: superado por GTM Lab; su idea entra en la ayuda de IA por paso (GTM Lab SDD 4). No construir este SDD"
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21 como obsoleto, por una decisión de Fede ya escrita: Superado por GTM Lab: decisión D-7 de Fede del 06-nov («No construir»)."
         }
       ]
     },
@@ -589,7 +613,7 @@
       "title": "Deuda de formato: prettier marca apollo.tsx, accounts.ts, apollo.ts y apollo.test.ts (archivo entero; cifra de errores por medir)",
       "kind": "bug",
       "source": "Gate de NK-0006 (mensaje de la sesión de revisión); lint medido por delta, excepción aprobada por Fede el 2026-10-28",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -608,6 +632,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Parcial: siguen sin formato src/components/apollo.tsx y src/lib/apollo.test.ts. Lint global hoy: 6.545 errores, 6.475 de formato."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Commit b293aaf (16-nov, prettier en todo el código); prettier 3.9.6 pasa hoy en apollo.tsx, apollo.ts, apollo.test.ts y los dos accounts.ts. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -1147,7 +1177,7 @@
       "title": "Aceptar sin borrador desde Telegram, el agente y el MCP cierra una sugerencia de prueba o acción comercial sin crear el experimento ni la tarea",
       "kind": "bug",
       "source": "",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": "NK-0038",
       "sdd": null,
@@ -1160,6 +1190,12 @@
           "at": "2026-10-31T20:14:03.294Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. src/lib/agent.functions.ts:394 exige el formulario para aceptar una prueba o acción comercial; lo cubrió NK-0041 (SHIPPED). Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -1498,7 +1534,7 @@
       "title": "main en rojo: migración 0073 duplicada (platform_admins) y columnas de platform_admins sin catalogar",
       "kind": "bug",
       "source": "gate de NK-0048 sobre la base 9910511; origen en el commit de Lovable e609ede (2026-11-01)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": "NK-0049",
       "sdd": null,
@@ -1517,6 +1553,12 @@
           "at": "2026-11-02T20:54:39.231Z",
           "by": "nk-0048-author",
           "note": "linked to NK-0049"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. La 0073 duplicada pasó a 0075_platform_admins y el diario no repite prefijos; columnas catalogadas en field-catalog.ts:1665. Coincide con NK-0049 (SHIPPED). Sin comprobar contra la base viva. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -1570,7 +1612,7 @@
       "title": "Torre de control GTM 8: conexión a las vistas agregadas de Postin (credencial, lector y fuente de Activa y Publicó, lado Nokko)",
       "kind": "feature",
       "source": "Entrevista con Fede, 2026-10-31 y 2026-11-02",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261031-gtm-control-tower-8-postin-views-nokko.md",
@@ -1595,6 +1637,12 @@
           "at": "2026-11-08T19:24:33.122Z",
           "by": "fede-decisions-20261108",
           "note": "Descartado por Fede el 2026-11-08: la Torre no leerá vistas de Postin; «Activa» y «Publicó» se apuntan a mano. No construir"
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21 como obsoleto, por una decisión de Fede ya escrita: Descartado por Fede el 08-nov: «Activa» y «Publicó» se apuntan a mano."
         }
       ]
     },
@@ -1678,7 +1726,7 @@
       "title": "Eval GTM Lab: el registro de gasto acepta costes NaN o negativos y desactiva el tope por pasada",
       "kind": "bug",
       "source": "Gate independiente de NK-0048 (2026-11-06), objeción 1; src/lib/gtm-lab/eval/budget.ts record() y anthropic-http.ts costUsd()",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": "NK-0048",
       "sdd": null,
@@ -1697,6 +1745,12 @@
           "at": "2026-11-06T15:56:46.262Z",
           "by": "Fede",
           "note": "linked to NK-0048"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. src/lib/gtm-lab/eval/budget.ts:194-195 trata NaN, infinito o negativo como «sin dato» (commit f854d61). Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -1786,7 +1840,7 @@
       "title": "Torre de control GTM 5d: plan con IA y herramientas de estrategia",
       "kind": "feature",
       "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261030-gtm-control-tower-5d-plan-strategy-tools.md",
@@ -1805,6 +1859,12 @@
           "at": "2026-11-06T21:32:27.263Z",
           "by": "fede-decisions-20261106",
           "note": "Superado por GTM Lab (PRD-20261101 §8 paso 2, aprobado por Fede el 2026-11-01). No construir"
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21 como obsoleto, por una decisión de Fede ya escrita: Superado por GTM Lab (PRD-20261101 §8)."
         }
       ]
     },
@@ -1813,7 +1873,7 @@
       "title": "Vistas agregadas de Nokko del lado Postin (para Dani): recuentos por día y canal",
       "kind": "feature",
       "source": "Auditoría de ledger 2026-11-06 (PLAN-MAESTRO-NOKKO); SDD sin ticket; decisiones de Fede cerradas 2026-11-06",
-      "state": "LOGGED",
+      "state": "REJECTED",
       "owner": null,
       "duplicate_of": null,
       "sdd": "docs/sdd/SDD-20261031-nokko-aggregate-views.md",
@@ -1832,6 +1892,12 @@
           "at": "2026-11-08T19:24:33.122Z",
           "by": "fede-decisions-20261108",
           "note": "Descartado por Fede el 2026-11-08: no se pide a Dani. No construir"
+        },
+        {
+          "state": "REJECTED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21 como obsoleto, por una decisión de Fede ya escrita: Descartado por Fede el 08-nov: no se pide a Dani."
         }
       ]
     },
@@ -2538,7 +2604,7 @@
       "source": "Gate independiente post-merge de Plays GTM 1 (commit a2884fe, merge #96 dc19f11)",
       "state": "LOGGED",
       "owner": null,
-      "duplicate_of": null,
+      "duplicate_of": "NK-0075",
       "sdd": null,
       "prd": null,
       "branch": null,
@@ -2555,6 +2621,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Sigue abierto: sin regla nueva; la evidencia sigue sin versionar."
+        },
+        {
+          "state": "LOGGED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Reconciliación del 2026-11-21: duplicado de NK-0075 (la misma regla de proceso: no marcar ni aplicar nada antes del gate independiente). El incidente queda como registro."
         }
       ]
     },
@@ -3556,7 +3628,7 @@
       "title": "Sesión: org-create, org-onboarding, calls-deals-tabs y el consentimiento OAuth siguen llamando a getUser() en cada uso (el consentimiento OAuth no figura en NK-0110)",
       "kind": "bug",
       "source": "Sprint 2: walkthrough d0f4252, 2026-11-09",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": "NK-0110",
       "sdd": null,
@@ -3575,6 +3647,12 @@
           "at": "2026-11-09T18:02:28.494Z",
           "by": "tracker",
           "note": "linked to NK-0110"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Ya no queda getUser() en org-create, org-onboarding, calls-deals-tabs ni en el consentimiento OAuth; solo en src/lib/session-check.ts:92, una vez por token. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -3934,7 +4012,7 @@
       "title": "Diagnóstico de entrada y equipos de plays (Sprint 4): fase, autonomía y dependencias en los 28 plays, seis equipos de plays, voz y regla Escalar",
       "kind": "feature",
       "source": "Fede, entrevista 2026-11-10; PRD-20261110-diagnostico-y-equipos-de-plays; depende de NK-0009 y NK-0028; coordinar con SDD 2 de plays y NK-0081 a NK-0083",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -3959,6 +4037,12 @@
           "at": "2026-11-11T19:58:18.373Z",
           "by": "fede-interview-20261111",
           "note": "Decisión de Fede (2026-11-11): el SDD 4 (diagnóstico en el chat) espera a una semana de uso real con la estrategia de Postin cargada"
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Sus cuatro SDD están entregados (NK-0127, NK-0140, NK-0128 y NK-0153). La medida de la voz sigue en NK-0154. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -4714,7 +4798,7 @@
       "title": "Onboarding: decidir si se silencia uno de los dos recordatorios (onboarding_stalled y setup_incomplete) cuando coinciden (P-3 del SDD NK-0009)",
       "kind": "feature",
       "source": "docs/sdd/SDD-20261111-onboarding-complete.md (P-3), coordinador-sprint7 (walkthrough f5458dd, gate 6c02feb)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -4727,6 +4811,12 @@
           "at": "2026-11-11T23:07:40.236Z",
           "by": "tracker",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. src/lib/proactive/detectors/setup-incomplete.ts:16, con la prueba proactive-reminders-nk0152.test.ts. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -5317,7 +5407,7 @@
       "title": "Verificación de email como paso de contacto en las recetas de plays y en la búsqueda de personas (estado de verificación, catch-all) con un proveedor a decidir (Apollo, Hunter, FullEnrich…); hoy src/lib/apollo.ts menciona el estado pero no hay herramienta de verificación propia",
       "kind": "feature",
       "source": "Fede 2026-11-12: análisis de las features de Glider (https://heyglider.co/#features)",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5336,6 +5426,12 @@
           "at": "2026-11-15T21:54:58.000Z",
           "by": "claude (auditoría 2026-11-15)",
           "note": "Reconciliación sobre main fb12ce0. Construido por Lovable fuera de la factory; pendiente de aceptación: el revelado real de Apollo quedó sin resultado confirmado."
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Migración 0089 y email-verification-writer.ts; Fede la aceptó tal cual el 14-nov (roadmap.md). El verificador independiente queda aplazado por decisión (Q-1/Q-2). Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -5689,7 +5785,7 @@
       "title": "safe-logs-notes.test.ts: el caso de ICP roza o supera los 5 s por defecto; acelerar lo que comprueba sin alargar el timeout",
       "kind": "bug",
       "source": "auditoría 2026-11-15",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5702,6 +5798,12 @@
           "at": "2026-11-15T21:54:58.377Z",
           "by": "claude",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. Medido el 21-nov: safe-logs-notes.test.ts tarda 877 ms en total y el caso de ICP 4 ms, tras el cambio de src/test/setup.ts del 14-nov (e16f3e4). Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
@@ -5710,7 +5812,7 @@
       "title": "Confirmación de coste antes de gastar en las búsquedas de Apollo, Clay, Parallel y G2: exige guardar el resultado para leerlo tras confirmar (pieza D del SDD de gasto, CA-8)",
       "kind": "feature",
       "source": "auditoría 2026-11-15",
-      "state": "LOGGED",
+      "state": "SHIPPED",
       "owner": null,
       "duplicate_of": null,
       "sdd": null,
@@ -5723,6 +5825,12 @@
           "at": "2026-11-15T21:54:58.428Z",
           "by": "claude",
           "note": ""
+        },
+        {
+          "state": "SHIPPED",
+          "at": "2026-11-21T15:00:00.000Z",
+          "by": "claude (auditoría 2026-11-21)",
+          "note": "Cerrado en la reconciliación del 2026-11-21: resuelto en el código de main 5c646d0. src/lib/agent/spend-confirm.ts:39, con el resultado guardado tras confirmar (agent.functions.ts:203) y confirmSpend en Apollo, Clay, Parallel y LinkedIn. El piloto automático queda fuera por decisión. Verificado leyendo el código, sin gate propio de este ticket."
         }
       ]
     },
