@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "seq": 190,
+  "seq": 192,
   "tickets": [
     {
       "id": "NK-0001",
@@ -5871,6 +5871,54 @@
         {
           "state": "LOGGED",
           "at": "2026-11-16T23:59:13.006Z",
+          "by": "claude-session-local",
+          "note": ""
+        }
+      ]
+    },
+    {
+      "id": "NK-0191",
+      "title": "Agente: medir cada turno (resultado, duración, tokens y coste medido o desconocido) con tabla agent_turns y turn_id en traza y acciones",
+      "kind": "feature",
+      "source": "PRD-20261121-inicio-conversacional, SDD 1; aprobado por Fede el 2026-11-22",
+      "state": "PROMOTED",
+      "owner": "claude-author-nk0191",
+      "duplicate_of": null,
+      "sdd": "docs/sdd/SDD-20261121-agent-turn-metrics.md",
+      "prd": "docs/prd/PRD-20261121-inicio-conversacional.md",
+      "branch": "feat/agent-turn-metrics",
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-22T13:51:47.687Z",
+          "by": "claude-session-local",
+          "note": ""
+        },
+        {
+          "state": "PROMOTED",
+          "at": "2026-11-22T20:53:25.345Z",
+          "by": "Fede",
+          "note": "owner=claude-author-nk0191"
+        }
+      ]
+    },
+    {
+      "id": "NK-0192",
+      "title": "Agente: una conversación nueva guarda como título los primeros 80 caracteres del mensaje antes de la comprobación de secreto, aunque responde que no lo ha guardado (agent.functions.ts:87 frente a agent.server.ts:104-105)",
+      "kind": "bug",
+      "source": "revisión gate del SDD-20261121-agent-turn-metrics, 2026-11-22",
+      "state": "LOGGED",
+      "owner": null,
+      "duplicate_of": null,
+      "sdd": null,
+      "prd": null,
+      "branch": null,
+      "base_commit": null,
+      "history": [
+        {
+          "state": "LOGGED",
+          "at": "2026-11-22T13:51:47.739Z",
           "by": "claude-session-local",
           "note": ""
         }
