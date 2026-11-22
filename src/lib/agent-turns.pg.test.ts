@@ -185,7 +185,7 @@ describe("migration 0109 · agent_turns", () => {
             [mine.id, colleague.id, other.id, stray.id],
           ]),
         )
-      ).rows.map((r) => r.id);
+      ).rows.map((r: { id: string }) => r.id);
     expect(await ids(U.ownerA)).toEqual([mine.id]);
     expect(await ids(U.aeA)).toEqual([colleague.id]);
     expect(await ids(U.ownerB)).toEqual([other.id]);
