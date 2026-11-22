@@ -1,0 +1,162 @@
+// Agent turn record (SDD-20261121-agent-turn-metrics, NK-0191): the pure rules that turn what happened in one agent
+// turn into its agent_turns row (migration 0109). Diagnosis only: no request, answer, argument, result or error text.
+// A cost is what the provider reported, or empty and `unknown`; it is never worked out from tokens.
+import { usageOf } from "@/lib/ai-pinned";
+import type { AiProvider } from "@/lib/gemini";
+
+export type TurnChannel = "app" | "telegram";
+export type TurnMode = "chat" | "interview";
+export type TurnProvider = AiProvider | "none";
+export type TurnOutcome = "answered" | "proposed" | "empty" | "failed" | "refused";
+export type TurnCostKind = "measured" | "unknown";
+
+/** What one model step reported. A missing or invalid value is «not reported», never zero. */
+export type StepUsage = {
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  costUsd?: number | null;
+};
+
+export type TurnFacts = {
+  id: string;
+  orgId: string;
+  userId: string;
+  conversationId: string | null;
+  channel: TurnChannel;
+  mode: TurnMode;
+  /** The provider of the last attempt; `none` when the turn reached no provider. */
+  provider: TurnProvider;
+  model?: string | null;
+  /** Providers tried; 0 when none was reached. */
+  attempts: number;
+  /** The steps of the attempt that answered; null or undefined when they are not known. */
+  steps?: StepUsage[] | null;
+  durationMs: number;
+  failed?: boolean;
+  refused?: boolean;
+  /** HTTP status of the failure, if it had one. */
+  errorStatus?: number | null;
+  proposedCount: number;
+  /** The model wrote text (before any fixed fallback text). */
+  hasText: boolean;
+  /** Answered by a rule with no model call at all: the cost is known to be zero (SDD section 10). */
+  noModel?: boolean;
+};
+
+export type AgentTurnRow = {
+  id: string;
+  org_id: string;
+  user_id: string;
+  conversation_id: string | null;
+  channel: TurnChannel;
+  mode: TurnMode;
+  provider: TurnProvider;
+  model: string | null;
+  attempts: number;
+  steps: number | null;
+  duration_ms: number;
+  input_tokens: number | null;
+  output_tokens: number | null;
+  cost_usd: number | null;
+  cost_kind: TurnCostKind;
+  outcome: TurnOutcome;
+  error_status: number | null;
+  proposed_count: number;
+};
+
+const MAX_MODEL = 200;
+const reported = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v) && v >= 0;
+const whole = (v: unknown) => (reported(v) ? Math.round(v) : 0);
+
+/** How the turn ended. Priority: failed > refused > proposed > empty > answered. */
+export function turnOutcome(
+  f: Pick<TurnFacts, "failed" | "refused" | "proposedCount" | "hasText">,
+): TurnOutcome {
+  if (f.failed) return "failed";
+  if (f.refused) return "refused";
+  if (f.proposedCount > 0) return "proposed";
+  return f.hasText ? "answered" : "empty";
+}
+
+/** A total only when every step reported the value: one missing step empties it, never a partial sum. */
+function total(values: unknown[]): number | null {
+  if (!values.length || !values.every(reported)) return null;
+  return (values as number[]).reduce((a, b) => a + b, 0);
+}
+
+export function sumSteps(steps: StepUsage[] | null | undefined): {
+  steps: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+  costUsd: number | null;
+  costKind: TurnCostKind;
+} {
+  const list = steps ?? [];
+  const costUsd = total(list.map((s) => s.costUsd));
+  return {
+    steps: steps ? steps.length : null,
+    inputTokens: total(list.map((s) => s.inputTokens)),
+    outputTokens: total(list.map((s) => s.outputTokens)),
+    costUsd,
+    costKind: costUsd === null ? "unknown" : "measured",
+  };
+}
+
+/** The cost one raw OpenRouter stream chunk reports: undefined when the chunk carries no usage (not a step's
+ *  closing chunk), null when it carries usage without a cost. Same billing rule as usageOf (ai-pinned.ts). */
+export function rawStepCost(raw: unknown): number | null | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const usage = (raw as { usage?: unknown }).usage;
+  if (!usage || typeof usage !== "object") return undefined;
+  return usageOf(usage as Record<string, unknown>).costUsd;
+}
+
+/** Steps of an AI SDK result as StepUsage. `costs` holds one entry per usage chunk seen; they are paired with the
+ *  steps only when there is exactly one per step, otherwise no step gets a cost. Null when the result has no steps. */
+export function stepUsages(
+  sdkSteps: unknown,
+  costs: (number | null)[] | null | undefined,
+): StepUsage[] | null {
+  if (!Array.isArray(sdkSteps)) return null;
+  const paired = costs?.length === sdkSteps.length ? costs : null;
+  return sdkSteps.map((step, i) => {
+    const usage = (step as { usage?: { inputTokens?: unknown; outputTokens?: unknown } } | null)
+      ?.usage;
+    const cost = paired?.[i];
+    return {
+      inputTokens: reported(usage?.inputTokens) ? usage.inputTokens : null,
+      outputTokens: reported(usage?.outputTokens) ? usage.outputTokens : null,
+      costUsd: reported(cost) ? cost : null,
+    };
+  });
+}
+
+export function turnRow(f: TurnFacts): AgentTurnRow {
+  const sum = sumSteps(f.steps);
+  const outcome = turnOutcome(f);
+  const model = typeof f.model === "string" && f.model ? f.model.slice(0, MAX_MODEL) : null;
+  const status = f.errorStatus;
+  return {
+    id: f.id,
+    org_id: f.orgId,
+    user_id: f.userId,
+    conversation_id: f.conversationId,
+    channel: f.channel,
+    mode: f.mode,
+    provider: f.provider,
+    model,
+    attempts: whole(f.attempts),
+    steps: sum.steps,
+    duration_ms: whole(f.durationMs),
+    input_tokens: f.noModel ? null : sum.inputTokens,
+    output_tokens: f.noModel ? null : sum.outputTokens,
+    cost_usd: f.noModel ? 0 : sum.costUsd,
+    cost_kind: f.noModel ? "measured" : sum.costKind,
+    outcome,
+    error_status:
+      outcome === "failed" && reported(status) && Number.isInteger(status) && status >= 100
+        ? status
+        : null,
+    proposed_count: whole(f.proposedCount),
+  };
+}
