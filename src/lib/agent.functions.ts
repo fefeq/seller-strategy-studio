@@ -53,7 +53,9 @@ export async function autopilotChatTurn(
   const request = localAutopilotRequest(input.text);
   if (!request) return null;
   const { keepTurn, newTurn } = await import("@/lib/agent/turn-record");
-  const turn = { ...newTurn(), noModel: true };
+  const { withTurnId } = await import("@/lib/agent/turn-id");
+  // No provider is ever reached here (attempts stays 0), so the row is provider `none` and cost 0 measured.
+  const turn = newTurn();
   let proposedCount = 0;
   const keep = (failed: boolean) =>
     keepTurn(ctx, turn, {
@@ -72,15 +74,18 @@ export async function autopilotChatTurn(
       const currency = request.currency ?? ctx.currency;
       if (currency !== ctx.currency)
         throw new Error("Indica el umbral en la moneda de tu empresa; no se convierten importes.");
-      const { error } = await ctx.db.from("agent_pending_actions").insert({
-        org_id: ctx.orgId,
-        user_id: ctx.userId,
-        conversation_id: input.conversationId,
-        tool: "set_autopilot_threshold",
-        args: { threshold: request.threshold, currency },
-        summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
-        turn_id: turn.id,
-      });
+      // Works while migration 0109 is not applied: without the column, once more without turn_id.
+      const { error } = await withTurnId((withTurn) =>
+        ctx.db.from("agent_pending_actions").insert({
+          org_id: ctx.orgId,
+          user_id: ctx.userId,
+          conversation_id: input.conversationId,
+          tool: "set_autopilot_threshold",
+          args: { threshold: request.threshold, currency },
+          summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
+          ...(withTurn ? { turn_id: turn.id } : {}),
+        }),
+      );
       if (error) throw error;
       proposedCount = 1;
     }

@@ -31,7 +31,7 @@ export type TurnFacts = {
   /** The provider of the last attempt; `none` when the turn reached no provider. */
   provider: TurnProvider;
   model?: string | null;
-  /** Providers tried; 0 when none was reached. */
+  /** Providers tried; 0 when none was reached. With 0 no model was called, so the cost is known: 0, measured. */
   attempts: number;
   /** The steps of the attempt that answered; null or undefined when they are not known. */
   steps?: StepUsage[] | null;
@@ -43,8 +43,6 @@ export type TurnFacts = {
   proposedCount: number;
   /** The model wrote text (before any fixed fallback text). */
   hasText: boolean;
-  /** Answered by a rule with no model call at all: the cost is known to be zero (SDD section 10). */
-  noModel?: boolean;
 };
 
 export type AgentTurnRow = {
@@ -140,6 +138,10 @@ export function turnRow(f: TurnFacts): AgentTurnRow {
   const outcome = turnOutcome(f);
   const model = typeof f.model === "string" && f.model ? f.model.slice(0, MAX_MODEL) : null;
   const status = f.errorStatus;
+  const attempts = whole(f.attempts);
+  // No provider was reached (refused, failed before the first attempt, or answered by a rule): nothing was called, so
+  // the cost is known to be zero. After one attempt a missing cost is unknown: a failed attempt may have been billed.
+  const noCall = attempts === 0;
   return {
     id: f.id,
     org_id: f.orgId,
@@ -147,15 +149,15 @@ export function turnRow(f: TurnFacts): AgentTurnRow {
     conversation_id: f.conversationId,
     channel: f.channel,
     mode: f.mode,
-    provider: f.provider,
-    model,
-    attempts: whole(f.attempts),
-    steps: sum.steps,
+    provider: noCall ? "none" : f.provider,
+    model: noCall ? null : model,
+    attempts,
+    steps: noCall ? null : sum.steps,
     duration_ms: whole(f.durationMs),
-    input_tokens: f.noModel ? null : sum.inputTokens,
-    output_tokens: f.noModel ? null : sum.outputTokens,
-    cost_usd: f.noModel ? 0 : sum.costUsd,
-    cost_kind: f.noModel ? "measured" : sum.costKind,
+    input_tokens: noCall ? null : sum.inputTokens,
+    output_tokens: noCall ? null : sum.outputTokens,
+    cost_usd: noCall ? 0 : sum.costUsd,
+    cost_kind: noCall ? "measured" : sum.costKind,
     outcome,
     error_status:
       outcome === "failed" && reported(status) && Number.isInteger(status) && status >= 100
@@ -176,7 +178,6 @@ export type TurnState = {
   errorStatus: number | null;
   refused: boolean;
   hasText: boolean;
-  noModel: boolean;
 };
 
 export function newTurn(): TurnState {
@@ -190,7 +191,6 @@ export function newTurn(): TurnState {
     errorStatus: null,
     refused: false,
     hasText: false,
-    noModel: false,
   };
 }
 
@@ -251,7 +251,6 @@ export function keepTurn(
       refused: turn.refused,
       errorStatus: turn.errorStatus,
       hasText: turn.hasText,
-      noModel: turn.noModel,
     });
     afterResponse("agent turn", () => saveTurn(ctx.db, row));
   } catch (e) {

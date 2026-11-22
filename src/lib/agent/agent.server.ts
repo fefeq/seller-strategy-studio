@@ -24,6 +24,7 @@ import { safeErrorLog } from "./safe-error-log";
 import { summarizeAction, toolsFor, type AgentTool, type ToolCtx } from "./tools";
 import { saveToolTrace, traced, type ToolTraceRow } from "./tool-trace";
 import { keepTurn, newTurn, rawStepCost, streamFacts, type TurnState } from "./turn-record";
+import { withTurnId } from "./turn-id";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
@@ -273,19 +274,22 @@ async function runWith(
       const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
       summary = withEstimate(summary, t.name, await spendEstimateLine(ctx.db, ctx.orgId, t.name));
     }
-    const { data, error } = await ctx.db
-      .from("agent_pending_actions")
-      .insert({
-        org_id: ctx.orgId,
-        user_id: ctx.userId,
-        conversation_id: opts.conversationId,
-        tool: t.name,
-        args: args as unknown as Json,
-        summary,
-        turn_id: turnId,
-      })
-      .select("id")
-      .single();
+    // Proposing must work while migration 0109 is not applied: without the column, once more without turn_id.
+    const { data, error } = await withTurnId((withTurn) =>
+      ctx.db
+        .from("agent_pending_actions")
+        .insert({
+          org_id: ctx.orgId,
+          user_id: ctx.userId,
+          conversation_id: opts.conversationId,
+          tool: t.name,
+          args: args as unknown as Json,
+          summary,
+          ...(withTurn ? { turn_id: turnId } : {}),
+        })
+        .select("id")
+        .single(),
+    );
     if (error) return { error: error.message };
     pending.push({ id: data.id, tool: t.name, summary, status: "pending" });
     return { status: "pendiente_de_confirmacion", resumen: summary };

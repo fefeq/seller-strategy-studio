@@ -93,17 +93,39 @@ describe("turnRow", () => {
     }
   });
 
-  it("CA-13 (rule): a turn answered without any model is cost 0 measured with no tokens", () => {
-    const row = turnRow({
-      ...base,
-      provider: "none",
-      model: null,
-      attempts: 0,
-      steps: null,
-      noModel: true,
-    });
+  it("CA-2/CA-13 (rule): a turn that reached no provider is cost 0 measured, provider `none`, no tokens", () => {
+    const row = turnRow({ ...base, provider: "none", model: null, attempts: 0, steps: null });
     expect([row.cost_usd, row.cost_kind]).toEqual([0, "measured"]);
     expect([row.input_tokens, row.output_tokens, row.steps]).toEqual([null, null, null]);
+    expect(row.provider).toBe("none");
+    // No attempt means no provider and no usage, whatever the caller left in the facts.
+    const stale = turnRow({ ...base, attempts: 0 });
+    expect([stale.provider, stale.cost_usd, stale.cost_kind]).toEqual(["none", 0, "measured"]);
+    expect([stale.input_tokens, stale.output_tokens, stale.steps]).toEqual([null, null, null]);
+  });
+
+  it("CA-2/CA-5: a refused turn reached no provider, so its cost is known: 0 measured", () => {
+    const row = turnRow({ ...base, provider: "none", attempts: 0, steps: null, refused: true });
+    expect([row.outcome, row.provider, row.cost_usd, row.cost_kind]).toEqual([
+      "refused",
+      "none",
+      0,
+      "measured",
+    ]);
+  });
+
+  it("CA-2/CA-6: a turn that failed before any attempt is 0 measured; after one attempt it is unknown", () => {
+    const before = turnRow({ ...base, provider: "none", attempts: 0, steps: null, failed: true });
+    expect([before.outcome, before.cost_usd, before.cost_kind]).toEqual(["failed", 0, "measured"]);
+    // A failed attempt may have been billed: nothing reported is unknown, never zero.
+    for (const attempts of [1, 2]) {
+      const after = turnRow({ ...base, attempts, steps: null, failed: true, errorStatus: 500 });
+      expect([after.provider, after.cost_usd, after.cost_kind]).toEqual([
+        "openrouter",
+        null,
+        "unknown",
+      ]);
+    }
   });
 
   it("CA-4: the row names the provider that answered and counts the attempts", () => {

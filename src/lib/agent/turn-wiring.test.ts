@@ -407,13 +407,18 @@ describe("runAgent leaves one row per turn", () => {
       attempts: 0,
       steps: null,
       conversation_id: CONV,
+      // CA-2: no provider was reached, so the cost is known.
+      cost_usd: 0,
+      cost_kind: "measured",
+      input_tokens: null,
+      output_tokens: null,
     });
     expect(JSON.stringify(rows)).not.toContain("FICTICIA");
   });
 });
 
 describe("CA-6: a turn that fails anywhere leaves a `failed` row with no error text", () => {
-  it("CA-6: no AI configured: provider `none`, no attempt, no status", async () => {
+  it("CA-2/CA-6: no AI configured: provider `none`, no attempt, no status, cost 0 measured", async () => {
     h.chain = ["lovable"];
     vi.stubEnv("LOVABLE_API_KEY", "");
     const { db, log } = fakeDb();
@@ -427,21 +432,27 @@ describe("CA-6: a turn that fails anywhere leaves a `failed` row with no error t
       steps: null,
       input_tokens: null,
       output_tokens: null,
-      cost_usd: null,
-      cost_kind: "unknown",
+      cost_usd: 0,
+      cost_kind: "measured",
       error_status: null,
     });
     expectNoText(rows);
   });
 
-  it("CA-6: the reads before the model fail: provider `none`", async () => {
+  it("CA-2/CA-6: the reads before the model fail: provider `none`, cost 0 measured", async () => {
     const { db, log } = fakeDb((q) =>
       q.table === "agent_messages" && q.op === "select" ? { throws: true } : undefined,
     );
     await expect(turn(db)).rejects.toThrow();
     const rows = await turnRows(log);
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({ outcome: "failed", provider: "none", attempts: 0 });
+    expect(rows[0]).toMatchObject({
+      outcome: "failed",
+      provider: "none",
+      attempts: 0,
+      cost_usd: 0,
+      cost_kind: "measured",
+    });
     expectNoText(rows);
   });
 
@@ -457,6 +468,9 @@ describe("CA-6: a turn that fails anywhere leaves a `failed` row with no error t
       attempts: 1,
       error_status: 429,
       steps: null,
+      // CA-2: an attempt was made and nothing was reported: unknown, never zero.
+      cost_usd: null,
+      cost_kind: "unknown",
     });
     expectNoText(rows);
   });
@@ -568,6 +582,131 @@ describe("CA-7: the turn id travels with what the turn did", () => {
     const rows = await turnRows(log);
     expect(rows).toHaveLength(2);
     expect(rows[0]!["id"]).not.toBe(rows[1]!["id"]);
+  });
+});
+
+describe("CA-7/CA-9: migration 0109 not applied yet (no turn_id column)", () => {
+  const noColumn = (code: string, tables: string[]) => (q: Q) =>
+    tables.includes(q.table) && q.op === "insert" && JSON.stringify(q.payload).includes('"turn_id"')
+      ? { error: { message: SECRET_ERROR, code } }
+      : undefined;
+
+  it.each(["PGRST204", "42703"])(
+    "CA-7/CA-9: proposing still works (%s): the action is written again once, without turn_id",
+    async (code) => {
+      h.streams.push(proposing("He propuesto una tarea."));
+      const { db, log } = fakeDb(noColumn(code, ["agent_pending_actions"]));
+      const out = await turn(db);
+      expect(out.text).toBe("He propuesto una tarea.");
+      expect(out.pending).toEqual([
+        {
+          id: ACTION,
+          tool: "create_task",
+          summary: "Crear la tarea «Tarea ficticia»",
+          status: "pending",
+        },
+      ]);
+      const actions = inserts(log, "agent_pending_actions").map((q) => q.payload as TurnRow);
+      expect(actions).toHaveLength(2);
+      expect(actions[0]).toHaveProperty("turn_id");
+      expect(actions[1]).not.toHaveProperty("turn_id");
+      const { turn_id: _turn, ...first } = actions[0]!;
+      expect(actions[1]).toEqual(first);
+      const rows = await turnRows(log);
+      expect(rows[0]).toMatchObject({ outcome: "proposed", proposed_count: 1 });
+      expectNoText(rows);
+    },
+  );
+
+  it("CA-9: any other error on the action behaves as before: no second insert and nothing proposed", async () => {
+    h.streams.push(proposing("No he podido proponerlo."));
+    const { db, log } = fakeDb((q) =>
+      q.table === "agent_pending_actions" && q.op === "insert"
+        ? { error: { message: "permission denied", code: "42501" } }
+        : undefined,
+    );
+    const out = await turn(db);
+    expect(out.pending).toEqual([]);
+    expect(inserts(log, "agent_pending_actions")).toHaveLength(1);
+    expect((await turnRows(log))[0]).toMatchObject({ outcome: "answered", proposed_count: 0 });
+  });
+
+  it("CA-9: the action is retried only once", async () => {
+    h.streams.push(proposing("No he podido proponerlo."));
+    const { db, log } = fakeDb((q) =>
+      q.table === "agent_pending_actions" && q.op === "insert"
+        ? { error: { message: SECRET_ERROR, code: "PGRST204" } }
+        : undefined,
+    );
+    const out = await turn(db);
+    expect(out.pending).toEqual([]);
+    expect(inserts(log, "agent_pending_actions")).toHaveLength(2);
+  });
+
+  it("CA-7/CA-9: the tool trace is saved again once without turn_id", async () => {
+    h.streams.push(proposing("He propuesto una tarea."));
+    const { db, log } = fakeDb(noColumn("PGRST204", ["agent_tool_calls"]));
+    await turn(db);
+    await turnRows(log);
+    const saved = inserts(log, "agent_tool_calls").map((q) => q.payload as TurnRow[]);
+    expect(saved).toHaveLength(2);
+    expect(saved[0]![0]).toHaveProperty("turn_id");
+    expect(saved[1]![0]).not.toHaveProperty("turn_id");
+    expect(saved[1]![0]).toMatchObject({ tool: "create_task", kind: "write", outcome: "pending" });
+    expect(logs.join("\n")).not.toContain("tool trace failed");
+    expectNoText([]);
+  });
+
+  it("CA-9: any other error on the trace is logged once, with no second insert", async () => {
+    h.streams.push(proposing("He propuesto una tarea."));
+    const { db, log } = fakeDb((q) =>
+      q.table === "agent_tool_calls"
+        ? { error: { message: SECRET_ERROR, code: "42501" } }
+        : undefined,
+    );
+    await turn(db);
+    await turnRows(log);
+    expect(inserts(log, "agent_tool_calls")).toHaveLength(1);
+    expect(logs.join("\n")).toContain("tool trace failed");
+    expectNoText([]);
+  });
+
+  it("CA-7/CA-9/CA-13: the threshold rule still proposes, writing its action again without turn_id", async () => {
+    const { db, log } = fakeDb(noColumn("PGRST204", ["agent_pending_actions"]));
+    const out = await agentFunctions.autopilotChatTurn(ctxWith(db, ["owner"]), {
+      conversationId: CONV,
+      text: "cambia el umbral a 5 EUR",
+      mode: "chat",
+    });
+    expect(out?.text).toContain("Cambio propuesto, todavía no guardado.");
+    const actions = inserts(log, "agent_pending_actions").map((q) => q.payload as TurnRow);
+    expect(actions).toHaveLength(2);
+    expect(actions[1]).toEqual({
+      org_id: ORG,
+      user_id: ME,
+      conversation_id: CONV,
+      tool: "set_autopilot_threshold",
+      args: { threshold: 5, currency: "EUR" },
+      summary: "Cambiar umbral del piloto a 5 EUR por acción",
+    });
+    expect((await turnRows(log))[0]).toMatchObject({ outcome: "proposed", proposed_count: 1 });
+  });
+
+  it("CA-9/CA-13: any other error of the threshold rule is thrown as before, with one insert", async () => {
+    const { db, log } = fakeDb((q) =>
+      q.table === "agent_pending_actions" && q.op === "insert"
+        ? { error: { message: "permission denied", code: "42501" } }
+        : undefined,
+    );
+    await expect(
+      agentFunctions.autopilotChatTurn(ctxWith(db, ["owner"]), {
+        conversationId: CONV,
+        text: "cambia el umbral a 5 EUR",
+        mode: "chat",
+      }),
+    ).rejects.toMatchObject({ code: "42501" });
+    expect(inserts(log, "agent_pending_actions")).toHaveLength(1);
+    expect((await turnRows(log))[0]).toMatchObject({ outcome: "failed", proposed_count: 0 });
   });
 });
 
