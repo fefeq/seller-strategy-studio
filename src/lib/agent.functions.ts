@@ -42,6 +42,64 @@ export async function userCtx(
 
 // ---------------- Agent ----------------
 
+/** The autopilot threshold rule of the app chat: a narrow request (see the threshold, propose a new one, list what is
+ *  pending) is answered here without any model. Null when the message is not such a request. It is a turn like any
+ *  other, so it leaves its agent_turns row: provider `none`, no tokens, cost 0 measured (NK-0191, CA-13). */
+export async function autopilotChatTurn(
+  ctx: ToolCtx,
+  input: { conversationId: string; text: string; mode: "chat" | "interview" },
+) {
+  const { localAutopilotRequest } = await import("@/lib/autopilot-chat");
+  const request = localAutopilotRequest(input.text);
+  if (!request) return null;
+  const { keepTurn, newTurn } = await import("@/lib/agent/turn-record");
+  const turn = { ...newTurn(), noModel: true };
+  let proposedCount = 0;
+  const keep = (failed: boolean) =>
+    keepTurn(ctx, turn, {
+      conversationId: input.conversationId,
+      channel: "app",
+      mode: input.mode,
+      proposedCount,
+      failed,
+    });
+  try {
+    const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
+    const state = await pendingAutopilotState(ctx);
+    if (request.kind === "threshold") {
+      if (!state.canChange)
+        throw new Error("Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.");
+      const currency = request.currency ?? ctx.currency;
+      if (currency !== ctx.currency)
+        throw new Error("Indica el umbral en la moneda de tu empresa; no se convierten importes.");
+      const { error } = await ctx.db.from("agent_pending_actions").insert({
+        org_id: ctx.orgId,
+        user_id: ctx.userId,
+        conversation_id: input.conversationId,
+        tool: "set_autopilot_threshold",
+        args: { threshold: request.threshold, currency },
+        summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
+        turn_id: turn.id,
+      });
+      if (error) throw error;
+      proposedCount = 1;
+    }
+    const latest = request.kind === "threshold" ? await pendingAutopilotState(ctx) : state;
+    const text = `Umbral actual del piloto: ${state.threshold} ${state.currency} por acción. ${state.threshold === 0 ? "Todo requiere confirmación." : "Los costes desconocidos o en otra moneda requieren confirmación."}\n\n${request.kind === "threshold" ? "Cambio propuesto, todavía no guardado. Confirma la acción para aplicarlo." : latest.pending.length ? "Estas son tus acciones pendientes." : "No tienes acciones pendientes."}`;
+    const { error } = await ctx.db.from("agent_messages").insert([
+      { conversation_id: input.conversationId, role: "user", content: input.text },
+      { conversation_id: input.conversationId, role: "assistant", content: text },
+    ]);
+    if (error) throw error;
+    turn.hasText = true;
+    keep(false);
+    return { text, pending: latest.pending };
+  } catch (e) {
+    keep(true);
+    throw e;
+  }
+}
+
 export const sendAgentMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
@@ -91,40 +149,12 @@ export const sendAgentMessage = createServerFn({ method: "POST" })
       if (error) throw new Error(error.message);
       conversationId = conv.id;
     }
-    const { localAutopilotRequest } = await import("@/lib/autopilot-chat");
-    const request = localAutopilotRequest(data.text);
-    if (request) {
-      const { pendingAutopilotState } = await import("@/lib/agent/tools/autopilot");
-      const state = await pendingAutopilotState(ctx);
-      if (request.kind === "threshold") {
-        if (!state.canChange)
-          throw new Error(
-            "Solo Owner y Sales Leader pueden cambiar el umbral. Puedes consultarlo.",
-          );
-        const currency = request.currency ?? ctx.currency;
-        if (currency !== ctx.currency)
-          throw new Error(
-            "Indica el umbral en la moneda de tu empresa; no se convierten importes.",
-          );
-        const { error } = await ctx.db.from("agent_pending_actions").insert({
-          org_id: ctx.orgId,
-          user_id: ctx.userId,
-          conversation_id: conversationId,
-          tool: "set_autopilot_threshold",
-          args: { threshold: request.threshold, currency },
-          summary: `Cambiar umbral del piloto a ${request.threshold} ${currency} por acción`,
-        });
-        if (error) throw error;
-      }
-      const latest = request.kind === "threshold" ? await pendingAutopilotState(ctx) : state;
-      const text = `Umbral actual del piloto: ${state.threshold} ${state.currency} por acción. ${state.threshold === 0 ? "Todo requiere confirmación." : "Los costes desconocidos o en otra moneda requieren confirmación."}\n\n${request.kind === "threshold" ? "Cambio propuesto, todavía no guardado. Confirma la acción para aplicarlo." : latest.pending.length ? "Estas son tus acciones pendientes." : "No tienes acciones pendientes."}`;
-      const { error } = await ctx.db.from("agent_messages").insert([
-        { conversation_id: conversationId, role: "user", content: data.text },
-        { conversation_id: conversationId, role: "assistant", content: text },
-      ]);
-      if (error) throw error;
-      return { conversationId, text, pending: latest.pending };
-    }
+    const local = await autopilotChatTurn(ctx, {
+      conversationId,
+      text: data.text,
+      mode: data.mode,
+    });
+    if (local) return { conversationId, text: local.text, pending: local.pending };
     const { runAgent } = await import("@/lib/agent/agent.server");
     const out = await runAgent(ctx, {
       conversationId,

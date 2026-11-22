@@ -15,6 +15,8 @@ export type ToolTraceMeta = {
   source: "agent" | "mcp";
   provider?: string | null;
   conversationId?: string | null;
+  /** The agent turn the calls belong to (0109, no foreign key). MCP calls have none. */
+  turnId?: string | null;
 };
 
 /** How a call ended, from what the tool wrapper returned: reads answer `{error}` instead of throwing. */
@@ -55,6 +57,7 @@ export async function saveToolTrace(ctx: ToolCtx, meta: ToolTraceMeta, rows: Too
         conversation_id: meta.conversationId ?? null,
         source: meta.source,
         provider: meta.provider ?? null,
+        ...(meta.turnId ? { turn_id: meta.turnId } : {}),
         ...r,
       })),
     );

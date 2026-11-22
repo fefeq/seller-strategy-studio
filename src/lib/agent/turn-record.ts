@@ -1,8 +1,12 @@
 // Agent turn record (SDD-20261121-agent-turn-metrics, NK-0191): the pure rules that turn what happened in one agent
-// turn into its agent_turns row (migration 0109). Diagnosis only: no request, answer, argument, result or error text.
-// A cost is what the provider reported, or empty and `unknown`; it is never worked out from tokens.
+// turn into its agent_turns row (migration 0109), plus the one insert that stores it. Diagnosis only: no request,
+// answer, argument, result or error text. A cost is what the provider reported, or empty and `unknown`; it is never
+// worked out from tokens. Recording must never break or slow a turn: keepTurn and saveTurn swallow every failure.
+import { afterResponse } from "@/lib/after-response.server";
 import { usageOf } from "@/lib/ai-pinned";
 import type { AiProvider } from "@/lib/gemini";
+import type { Db } from "@/lib/org-data";
+import { safeErrorLog } from "./safe-error-log";
 
 export type TurnChannel = "app" | "telegram";
 export type TurnMode = "chat" | "interview";
@@ -159,4 +163,98 @@ export function turnRow(f: TurnFacts): AgentTurnRow {
         : null,
     proposed_count: whole(f.proposedCount),
   };
+}
+
+/** What a turn knows while it runs; runAgent and the threshold rule fill it and keepTurn reads it at the end. */
+export type TurnState = {
+  id: string;
+  startedAt: number;
+  provider: TurnProvider;
+  model: string | null;
+  attempts: number;
+  steps: StepUsage[] | null;
+  errorStatus: number | null;
+  refused: boolean;
+  hasText: boolean;
+  noModel: boolean;
+};
+
+export function newTurn(): TurnState {
+  return {
+    id: crypto.randomUUID(),
+    startedAt: Date.now(),
+    provider: "none",
+    model: null,
+    attempts: 0,
+    steps: null,
+    errorStatus: null,
+    refused: false,
+    hasText: false,
+    noModel: false,
+  };
+}
+
+/** Steps and model of a finished AI SDK stream. A result without them (or that rejects) gives nulls, never a throw. */
+export async function streamFacts(
+  result: { steps?: PromiseLike<unknown>; response?: PromiseLike<unknown> },
+  costs: (number | null)[] | null,
+): Promise<{ steps: StepUsage[] | null; model: string | null }> {
+  let steps: StepUsage[] | null = null;
+  let model: string | null = null;
+  try {
+    steps = stepUsages(await result.steps, costs);
+  } catch {
+    steps = null;
+  }
+  try {
+    const id = ((await result.response) as { modelId?: unknown } | undefined)?.modelId;
+    model = typeof id === "string" && id ? id : null;
+  } catch {
+    model = null;
+  }
+  return { steps, model };
+}
+
+/** Stores one turn in one insert. Never throws; the log carries a code or safe error fields, never text. */
+export async function saveTurn(db: Db, row: AgentTurnRow) {
+  try {
+    const { error } = await db.from("agent_turns").insert(row);
+    if (error) console.error("agent turn failed", { code: error.code ?? null });
+  } catch (e) {
+    console.error("agent turn failed", safeErrorLog(e));
+  }
+}
+
+/** Hands the turn's row to afterResponse so the answer never waits for it. Never throws. */
+export function keepTurn(
+  ctx: { db: Db; orgId: string; userId: string },
+  turn: TurnState,
+  facts: {
+    conversationId: string | null;
+    channel: TurnChannel;
+    mode: TurnMode;
+    proposedCount: number;
+    failed: boolean;
+  },
+) {
+  try {
+    const row = turnRow({
+      ...facts,
+      id: turn.id,
+      orgId: ctx.orgId,
+      userId: ctx.userId,
+      provider: turn.provider,
+      model: turn.model,
+      attempts: turn.attempts,
+      steps: turn.steps,
+      durationMs: Date.now() - turn.startedAt,
+      refused: turn.refused,
+      errorStatus: turn.errorStatus,
+      hasText: turn.hasText,
+      noModel: turn.noModel,
+    });
+    afterResponse("agent turn", () => saveTurn(ctx.db, row));
+  } catch (e) {
+    console.error("agent turn failed", safeErrorLog(e));
+  }
 }
