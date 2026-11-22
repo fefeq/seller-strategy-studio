@@ -21,15 +21,16 @@
 | `lead-followup` | `nokko/lead.contacted` | Seguimiento a los 3, 7, 14 y 21 días a las 9:00; se cancela si el lead cambia |
 | `background-job` | `nokko/job.requested` | Concurrencia 4; solo el último intento escribe `failed` |
 | `parallel-run` | `nokko/parallel.run` | Comprueba cada 30–60 s, hasta 120 veces |
+| `custom-play-maintenance` | `nokko/org.maintenance` | Plays a medida; concurrencia 1 por empresa, idempotente por empresa y hora |
 
 `JOB_KINDS` (`inngest/events.ts`) define 19 tipos de trabajo pesado. Solo el sitio publicado los manda a Inngest; en preview o con Inngest mudo se ejecutan en la propia petición. El envío de eventos va por el gateway de Lovable (`INNGEST_API_KEY`), en lotes de 100.
 
 ### Informes y avisos
 - **Informe semanal**: lunes desde las 06:00 UTC, una sugerencia por empresa y semana (`weekly_report:<org>:<lunes>`). Telegram para quien tiene `daily_digest` y email para `owner` y `sales_leader`. Se puede regenerar a mano sin reenviar.
 - **Email diario**: una vez al día por persona, a su hora local (8:00 Europe/Madrid por defecto, hasta 2 h tarde), máx. 300 por ejecución. Remitente `Nokko <avisos@nokko.ai>` o `RESEND_FROM`. Usa las mismas palabras que el briefing de Inicio.
-- **Autopilot**: `AUTOPILOT_LIMITS = {research: 2, prep: 5, cooling: 3}` por empresa y ejecución. Investiga cuentas nuevas (14 días), prepara reuniones de las próximas 36 h y revisa cuentas enfriadas (21 días por defecto).
+- **Autopilot**: `AUTOPILOT_LIMITS = {research: 2, prep: 5, cooling: 3}` por empresa y ejecución. Investiga cuentas nuevas (14 días), prepara reuniones de las próximas 36 h y revisa cuentas enfriadas (21 días por defecto). Respeta el umbral de gasto por acción (`lead_settings.autopilot_action_threshold`, 0 por defecto): por encima o sin dato, deja una acción pendiente en vez de gastar.
 - **Avisos**: `deliverJobNotice` envía por Telegram según `notification_prefs` y silencio nocturno; lo retenido sale cada hora.
-- **Detectores proactivos**: 23 detectores en `src/lib/proactive/detectors/`, uno por archivo.
+- **Detectores proactivos**: 24 detectores en `src/lib/proactive/detectors/`, uno por archivo.
 
 ## 2. Integraciones
 
@@ -39,28 +40,33 @@ Casi todo va por `https://connector-gateway.lovable.dev/<servicio>` con `Authori
 | --- | --- | --- | --- |
 | Supabase | `src/integrations/supabase/` | Proyecto propio | Archivos generados; no editar |
 | IA | `gemini.ts`, `ai-gateway.ts`, `jev.server.ts` | OpenRouter BYOK / Gemini / Lovable AI Gateway | La cualificación de leads usa Jev (`/v1/systemone`) |
-| Apollo | `apollo-gateway.ts` | Compartida | Los teléfonos llegan por webhook (`/api/public/apollo/phone-webhook`, secreto en la URL). Revelar contactos es escritura |
+| Apollo | `apollo-gateway.ts` | Compartida | Los teléfonos llegan por webhook (`/api/public/apollo/phone-webhook`). Acepta el secreto por cabecera `X-Webhook-Secret`, pero Apollo no admite cabeceras y sigue mandándolo en la URL (que no se registra). Revelar contactos es escritura |
 | Clay | `clay-gateway.ts` | Compartida | Páginas de hasta 25; solo lectura desde agente y MCP |
 | Parallel | `parallel-gateway.ts`, `parallel-core.ts` | Compartida | Informes largos en `research_runs`; tercera fuente de `searchBoth` |
 | Perplexity | `perplexity.ts` | Compartida | El gateway administrado solo permite `POST /search` |
 | Firecrawl | `firecrawl.ts` | Compartida (`FIRECRAWL_API_KEY`) | API directa, sin gateway |
 | Apify | `apify-gateway.ts`, `apify-core.ts` | Compartida | Cada robot con tope `maxItems` y `maxTotalChargeUsd` |
 | Google Drive | `google-drive.ts`, `drive-core.ts` | Una cuenta (la del builder) | Cada empresa ve solo `Nokko / <empresa>`, comprobando los padres del archivo |
+| Drive por empresa | `drive-company.ts`, `/api/oauth/google-drive/return` | **Por empresa** (preparado) | Migración 0105, clave cifrada, copia de seguridad de carpetas. **Sin activar**: falta el cliente OAuth de Google y enrutar las lecturas a la cuenta de la empresa |
+| Gmail (Respuestas) | `reply-inbox/gmail.server.ts` | Un buzón, solo superadmin | Solo lectura; sincroniza y clasifica respuestas de leads. Otros buzones esperan revisión legal |
 | PostHog | `posthog-sync.server.ts` | **Por empresa** | El Owner pega una clave `phx_` en Conexiones; se cifra con AES-GCM |
 | Stripe | `stripe/sync.server.ts` | **Por empresa** | Clave restringida en Vault; sincroniza cada 6 h o cada 2 min a mano |
 | Resend | `email.server.ts` | Compartida | Sin claves devuelve `{sent:false}` |
-| Telegram | `telegram.server.ts` | Compartida | Un bot; cada persona se vincula con código |
+| Telegram | `telegram.server.ts` | Compartida | Un bot; cada persona se vincula con código. **Sin token conectado**: el canal se desactiva solo |
 | Logo.dev | `components/company-logo.tsx` | Clave pública `VITE_` | Solo navegador; siempre junto al nombre y con `fallback=404` |
-| LinkedIn | `agent/tools/linkedin.ts` | — | Lee posts de página de empresa y de personas vía Apify. **No hay API de LinkedIn** |
+| LinkedIn | `agent/tools/linkedin.ts`, `linkedin-legal.ts` | — | Lee posts de página de empresa y de personas vía Apify. **No hay API de LinkedIn**. Activo con aviso legal; un superadmin puede pausarlo (`platform_legal_flags`, 0101). Revisión legal pendiente |
 
 ### «Cuenta propia» (BYO) en el código
 Es **parcial**. BYO real: PostHog, Stripe, el BYOK de OpenRouter y la clave de entrada de leads (por conexión). Compartidas del builder: Clay, Apollo, Parallel, Apify, Perplexity, Drive, Telegram, Resend, Inngest. El SDD `connections-bring-your-own-account` (En curso) apunta a Apollo, Clay, Parallel, Perplexity y Firecrawl con cuenta propia, con la cuenta de NOKKO como respaldo si no hay crédito.
 
+### Conexiones (pantalla `/integrations`)
+Cada tarjeta muestra el estado real (Incluida en NOKKO, Tu cuenta, Sin conectar, Error), el uso del mes y una prueba no destructiva. El agente puede listar conexiones (`list_connections`) pero nunca recibe secretos.
+
 ### Gasto en integraciones
-Todo gasto pasa por el orquestador (`src/lib/orchestrator/runner.ts`): respeta el presupuesto mensual `org_budgets` (aviso al 80 %, pausa al 100 % solo en lo automático) y registra en `integration_usage`.
+Todo gasto pasa por el orquestador (`src/lib/orchestrator/runner.ts`): respeta el presupuesto mensual `org_budgets` (aviso al 80 %, pausa al 100 % solo en lo automático) y registra en `integration_usage` (libro de uso en 0102). Desde el agente, MCP y Telegram, una herramienta que gasta queda pendiente de confirmar con coste estimado (ver [AGENTE-Y-MCP.md](AGENTE-Y-MCP.md)).
 
 ### Entrada pública de datos
-- `/api/public/leads` y `/api/public/accounts`: clave `gtm_…` por conexión (24–64 caracteres), guardada solo como SHA-256 en `lead_sources`. Máx. 256 KB y 200 registros por envío, límite diario con autopausa, modo `review` en cuarentena, `?test=1` no escribe, CORS `*`.
+- `/api/public/leads` y `/api/public/accounts`: clave `gtm_…` por conexión (24–64 caracteres), guardada solo como SHA-256 en `lead_sources`. Máx. 256 KB y 200 registros por envío, límite diario con autopausa y contadores atómicos (0103/0104), modo `review` en cuarentena, `?test=1` no escribe, CORS `*`.
 - La clave se acepta por cabecera, Bearer y `?key=`. **Evita `?key=`**: puede acabar en logs e historiales.
 
 ## 3. Variables de entorno y secretos (solo nombres)
@@ -72,14 +78,14 @@ Los secretos van en **Lovable Cloud** y se leen solo en funciones de servidor. N
 | Supabase | `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (solo `client.server.ts`), `SUPABASE_ANON_KEY` (alternativa en `mcp/supabase.ts`), `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_SUPABASE_PROJECT_ID` |
 | Lovable | `LOVABLE_API_KEY`, `LOVABLE_CRON_SECRET`, `LOVABLE_CRON_SECRET_PREVIOUS`, `__LOVABLE_PROJECT_ID` |
 | IA | `OPENROUTER_API_KEY`, `OPENROUTER_MODEL`, `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_AGENT_MODEL`, `AI_PROVIDER`, `AI_LOVABLE_FALLBACK` |
-| Proveedores | `CLAY_API_KEY`, `APOLLO_API_KEY`, `APOLLO_WEBHOOK_SECRET`, `PARALLEL_API_KEY`, `PERPLEXITY_API_KEY`, `FIRECRAWL_API_KEY`, `APIFY_API_KEY`, `GOOGLE_DRIVE_API_KEY` |
+| Proveedores | `CLAY_API_KEY`, `APOLLO_API_KEY`, `APOLLO_WEBHOOK_SECRET`, `PARALLEL_API_KEY`, `PERPLEXITY_API_KEY`, `FIRECRAWL_API_KEY`, `APIFY_API_KEY`, `GOOGLE_DRIVE_API_KEY`, `GOOGLE_DRIVE_APP_USER_CONNECTOR_CLIENT_API_KEY`, `GOOGLE_MAIL_API_KEY` |
 | Canales y correo | `TELEGRAM_API_KEY`, `RESEND_API_KEY`, `RESEND_FROM`, `APP_URL` |
 | Inngest | `INNGEST_API_KEY`, `INNGEST_SIGNING_KEY` |
-| Cifrado | `INTEGRATION_KEYS_SECRET` |
+| Cifrado | `INTEGRATION_KEYS_SECRET`, `APP_USER_CONNECTION_KEY_SECRET` |
 | Cliente (públicas) | `VITE_LOVABLE_CONNECTOR_LOGO_DEV_API_KEY`, `VITE_LOVABLE_CONNECTOR_POSTHOG_*` (en `.env`) |
 | Migraciones | `LOVABLE_DB_MIGRATION_URL` (solo `drizzle.config.ts`) |
 
-La lista sale de un `grep` sobre `src`; puede faltar alguna leída fuera de `src/`. Stripe no usa variable: la clave es por empresa en Vault.
+La lista sale de un `grep` sobre `src` (recontada el 2026-11-22); puede faltar alguna leída fuera de `src/`. Stripe no usa variable: la clave es por empresa en Vault.
 
 > **Revisar**: `.env` está versionado a propósito y `AGENTS.md` dice que solo contiene valores públicos. Contiene variables `VITE_LOVABLE_CONNECTOR_*` (Logo.dev y PostHog). Al ser `VITE_`, acaban en el bundle del navegador: confirma que son claves públicas por diseño.
 
@@ -89,12 +95,13 @@ La lista sale de un `grep` sobre `src`; puede faltar alguna leída fuera de `src
 | --- | --- |
 | `/api/public/leads`, `/api/public/accounts` | Clave por conexión, límites y cuarentena (arriba) |
 | `/api/public/telegram/webhook` | Secreto en cabecera derivado por SHA-256 de `TELEGRAM_API_KEY` + `timingSafeEqual`; idempotente por `update_id` |
-| `/api/public/apollo/phone-webhook` | Secreto en la URL; máx. 1 MB |
+| `/api/public/apollo/phone-webhook` | Secreto por cabecera o en la URL (Apollo solo puede la URL); máx. 1 MB |
+| `/api/oauth/google-drive/return` | Vuelta del OAuth de Drive por empresa (sin activar) |
 | `/api/public/jobs/proactive` | Bearer de cron |
 | `/api/public/inngest` | Firma del SDK; 503 si falta `INNGEST_SIGNING_KEY` |
 
 - **Cifrado**: AES-GCM con IV aleatorio de 12 bytes (`secret-box.server.ts`, formato `v1:<iv>:<ct>`, clave derivada con SHA-256 de `INTEGRATION_KEYS_SECRET`). Stripe usa Vault.
-- **Cliente admin** en 16 archivos fuera de tests (rutas públicas, Inngest, cores de Drive/Parallel/Apify y escrituras puntuales), siempre por `import()` dinámico.
+- **Cliente admin** en 26 archivos fuera de tests (recuento del 2026-11-22) (rutas públicas, Inngest, cores de Drive/Parallel/Apify y escrituras puntuales), siempre por `import()` dinámico.
 - **Límites por recurso** (no hay limitador genérico por usuario ni IP): topes de entrada de leads, 2 min entre sincronizaciones manuales y 6 h entre automáticas, páginas pequeñas de Clay, topes de Apify, presupuesto mensual por empresa y `AUTOPILOT_LIMITS`.
 
 ### Puntos a vigilar
@@ -103,8 +110,3 @@ La lista sale de un `grep` sobre `src`; puede faltar alguna leída fuera de `src
 3. Trabajos periódicos con topes fijos sin paginar (100 empresas por job horario, 200 en informe semanal, 2000 perfiles en email diario).
 4. Borrar segmentos, ICP y pilares solo lo puede hacer el Owner; se comprueba en código porque los canales privilegiados no tienen RLS.
 5. Cron real y `digest` sin definición en el repo.
-
-
-## Novedades desde 2026-11-06 (actualizado 2026-11-16)
-- Conexiones: estado real (Incluida en NOKKO, Tu cuenta, Sin conectar, Error), uso del mes y prueba no destructiva; el agente nunca recibe secretos.
-- Gmail solo lectura para el superadmin (bandeja de Respuestas). Drive por empresa preparado, falta OAuth de Google. Telegram preparado, falta token. LinkedIn por robots activo con aviso legal.
