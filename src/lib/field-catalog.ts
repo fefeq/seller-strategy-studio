@@ -110,7 +110,15 @@ export type ConceptId =
   | "tipo_herramienta"
   | "resultado_herramienta"
   | "proveedor_ia"
-  | "duracion_ms";
+  | "duracion_ms"
+  | "canal_turno"
+  | "modo_turno"
+  | "modelo_ia"
+  | "intentos_turno"
+  | "pasos_turno"
+  | "resultado_turno"
+  | "estado_http_error"
+  | "propuestas_turno";
 
 export type Concept = {
   id: ConceptId;
@@ -614,6 +622,74 @@ export const CONCEPTS: Concept[] = [
     id: "duracion_ms",
     label: "Duración",
     meaning: "Cuánto tardó la llamada a la herramienta, en milisegundos.",
+    kind: "number",
+    format: "Entero no negativo",
+    display: "No se muestra",
+  },
+  {
+    id: "canal_turno",
+    label: "Canal del turno",
+    meaning: "Por dónde llegó la petición al agente.",
+    kind: "enum",
+    format: "app | telegram",
+    allowed: ["app", "telegram"],
+    display: "No se muestra",
+  },
+  {
+    id: "modo_turno",
+    label: "Modo del turno",
+    meaning: "Si el turno fue de chat o de entrevista de configuración.",
+    kind: "enum",
+    format: "chat | interview",
+    allowed: ["chat", "interview"],
+    display: "No se muestra",
+  },
+  {
+    id: "modelo_ia",
+    label: "Modelo de IA",
+    meaning: "Identificador del modelo que informa el proveedor; vacío si no lo informa.",
+    kind: "text",
+    format: "Identificador del proveedor, máximo 200 caracteres",
+    display: "No se muestra",
+  },
+  {
+    id: "intentos_turno",
+    label: "Intentos",
+    meaning: "Proveedores de IA intentados en el turno; 0 si no se llegó a ninguno.",
+    kind: "number",
+    format: "Entero no negativo",
+    display: "No se muestra",
+  },
+  {
+    id: "pasos_turno",
+    label: "Pasos",
+    meaning: "Pasos del modelo en el turno; vacío si no se conoce.",
+    kind: "number",
+    format: "Entero no negativo o vacío",
+    display: "No se muestra",
+  },
+  {
+    id: "resultado_turno",
+    label: "Resultado del turno",
+    meaning:
+      "Cómo acabó la petición al agente: respondió, propuso un cambio, no generó texto, falló o se rechazó por parecer un secreto. Nunca guarda el texto del error.",
+    kind: "enum",
+    format: "answered | proposed | empty | failed | refused",
+    allowed: ["answered", "proposed", "empty", "failed", "refused"],
+    display: "No se muestra",
+  },
+  {
+    id: "estado_http_error",
+    label: "Código HTTP del fallo",
+    meaning: "Código HTTP del error de un turno fallido; vacío si el error no trae código.",
+    kind: "number",
+    format: "Entero o vacío",
+    display: "No se muestra",
+  },
+  {
+    id: "propuestas_turno",
+    label: "Acciones propuestas",
+    meaning: "Número de acciones que el agente propuso en el turno.",
     kind: "number",
     format: "Entero no negativo",
     display: "No se muestra",
@@ -1357,6 +1433,42 @@ export const BINDINGS: Binding[] = [
     persistence: saved,
     note: "Migration 0108; diagnosis only, written by the tool trace",
   })),
+  {
+    table: "agent_tool_calls",
+    column: "turn_id",
+    concept: "clave_registro",
+    persistence: saved,
+    note: "Migration 0109; the agent turn of the call, no foreign key; empty for MCP calls",
+  },
+  ...(
+    [
+      ["id", "clave_registro"],
+      ["org_id", "clave_empresa"],
+      ["user_id", "clave_usuario"],
+      ["conversation_id", "clave_registro"],
+      ["channel", "canal_turno"],
+      ["mode", "modo_turno"],
+      ["provider", "proveedor_ia"],
+      ["model", "modelo_ia"],
+      ["attempts", "intentos_turno"],
+      ["steps", "pasos_turno"],
+      ["duration_ms", "duracion_ms"],
+      ["input_tokens", "tokens_ia"],
+      ["output_tokens", "tokens_ia"],
+      ["cost_usd", "coste_ia_usd"],
+      ["cost_kind", "calidad_coste"],
+      ["outcome", "resultado_turno"],
+      ["error_status", "estado_http_error"],
+      ["proposed_count", "propuestas_turno"],
+      ["created_at", "alta_sistema"],
+    ] as const
+  ).map(([column, concept]) => ({
+    table: "agent_turns",
+    column,
+    concept,
+    persistence: saved,
+    note: "Migration 0109; diagnosis only, one row per agent turn (cost_kind is measured or unknown, never estimate)",
+  })),
   { table: "user_agent_prefs", column: "user_id", concept: "clave_usuario", persistence: saved },
   { table: "user_agent_prefs", column: "autonomy", concept: "nivel_agente", persistence: saved },
   {
@@ -1684,6 +1796,13 @@ export const BINDINGS: Binding[] = [
     concept: "creado_por",
     persistence: "pending_action",
   },
+  {
+    table: "agent_pending_actions",
+    column: "turn_id",
+    concept: "clave_registro",
+    persistence: "pending_action",
+    note: "Migration 0109; the agent turn that proposed it, no foreign key; empty outside a turn",
+  },
   { table: "memories", column: "source", concept: "creado_por", persistence: "memory" },
   { table: "account_signals", column: "source", concept: "fuente_citada", persistence: saved },
   { table: "discoveries", column: "source", concept: "fuente_citada", persistence: saved },
@@ -1835,6 +1954,14 @@ export const SHOWN_IN: Record<ConceptId, string[]> = {
   resultado_herramienta: ["src/lib/agent/tool-trace.ts"],
   proveedor_ia: ["src/lib/agent/tool-trace.ts"],
   duracion_ms: ["src/lib/agent/tool-trace.ts"],
+  canal_turno: ["src/lib/agent/turn-record.ts"],
+  modo_turno: ["src/lib/agent/turn-record.ts"],
+  modelo_ia: ["src/lib/agent/turn-record.ts"],
+  intentos_turno: ["src/lib/agent/turn-record.ts"],
+  pasos_turno: ["src/lib/agent/turn-record.ts"],
+  resultado_turno: ["src/lib/agent/turn-record.ts"],
+  estado_http_error: ["src/lib/agent/turn-record.ts"],
+  propuestas_turno: ["src/lib/agent/turn-record.ts"],
   tipo_respuesta: ["src/lib/reply-inbox/sync.ts"],
   id_mensaje_correo: ["src/lib/reply-inbox/sync.ts"],
   contador_respuestas: ["src/components/reply-inbox/mailbox-card.tsx"],
