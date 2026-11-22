@@ -104,3 +104,7 @@ API pública en `src/routes/api/public/`: ver [INTEGRACIONES-Y-SEGUNDO-PLANO.md]
 
 ## 6. Tests de interfaz
 140 archivos de test en total (`src/lib` 130, `src/components` 5, `src/hooks` 3, `src/test` 2). Componentes con test: `icp-editor`, `strategy-review`, `strategy-screens`, `onboarding/sources`, `setup/ai-fill`. Cobertura de rutas: solo `app-routing.test.tsx` (comprueba que `/` no cae en «no encontrado»). **No hay tests de render de las pantallas de `src/routes/`.**
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Hoy con bandeja única y siguiente mejor paso; /onboarding/completar sustituye a Configuración (rutas antiguas redirigen); /reset-password; Conexiones; deal por pestañas con un solo guardado; MEDDPICC con radios de 44 px; Cuentas, Leads y Personas sin scroll lateral a 390 px.

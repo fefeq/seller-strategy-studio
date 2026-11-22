@@ -108,3 +108,9 @@ Recogidas de `AGENTS.md` y `src/lib/AGENTS.md`:
 - No hay limitador genérico por usuario ni IP en server functions, agente ni MCP; solo topes por recurso (ver [INTEGRACIONES-Y-SEGUNDO-PLANO.md](INTEGRACIONES-Y-SEGUNDO-PLANO.md)).
 - Los trabajos periódicos tienen topes fijos sin paginar (100 empresas por ejecución horaria, 200 en el informe semanal, 2000 perfiles en el email diario).
 - No hay CI en el repositorio (ver [PROCESO.md](PROCESO.md)).
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Navegación en cinco secciones (src/lib/nav.ts) con modo avanzado por persona; ⌘K muestra todo el catálogo filtrado por rol.
+- Niveles del agente por persona (user_agent_prefs, src/lib/autonomy.ts) y bloques neutros de conversación (src/lib/conversation.ts) compartidos por app y Telegram.
+- Piloto automático con umbral por acción en lead_settings: por encima del umbral o sin dato, crea una acción pendiente; nunca marca como hecho lo no ejecutado.

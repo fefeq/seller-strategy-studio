@@ -1,6 +1,6 @@
 # Documentación de NOKKO
 
-Índice de la documentación técnica. Se escribió leyendo el código del repo (2026-11-06); lo no comprobado va marcado como **[Por verificar]**.
+Índice de la documentación técnica. Se escribió leyendo el código del repo (2026-11-06; actualizado 2026-11-16); lo no comprobado va marcado como **[Por verificar]**.
 
 ## Por dónde empezar
 
@@ -30,13 +30,18 @@ docs/
   ESTADO-Y-DEUDA.md              Hallazgos y preguntas abiertas
   factory/                       Software factory: README, GROUND-RULES, plantillas
   prd/                           PRD (1)
-  sdd/                           SDD (25), EXECUTION.md, AUDIT, anexos
+  sdd/                           SDD (100), EXECUTION.md, AUDIT, anexos
+  plan/                          Plan e informe final de la ronda UX (2026-11-15)
+  ux-audit/                      Auditoría UX de 42 rutas
+  verificacion-20261114/         Evidencias de verificación
+  ola-*-informe-*.md             Informes de las olas UX
+  lovable-run-report.md          Informe de ejecuciones de Lovable
 ```
 
 ## Archivos de reglas fuera de `docs/`
 - [`../AGENTS.md`](../AGENTS.md): reglas de arquitectura y convenciones del repo (incluye el bloque de conexión con Lovable).
 - [`../src/lib/AGENTS.md`](../src/lib/AGENTS.md): reglas del dominio (agente, MCP, métricas, Theory U, onboarding…). Léelo antes de tocar `src/lib/`.
-- [`../roadmap.md`](../roadmap.md): estado histórico, parado en 2026-10-24.
+- [`../roadmap.md`](../roadmap.md): cola de trabajo viva con los encargos y tareas abiertas.
 
 ## Cómo mantener esta documentación
 - Las cifras (herramientas, migraciones, tests, rutas) se cuentan sobre el código; **no las estimes**. Si cambian, recuéntalas.

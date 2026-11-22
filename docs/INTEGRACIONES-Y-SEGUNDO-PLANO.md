@@ -103,3 +103,8 @@ La lista sale de un `grep` sobre `src`; puede faltar alguna leída fuera de `src
 3. Trabajos periódicos con topes fijos sin paginar (100 empresas por job horario, 200 en informe semanal, 2000 perfiles en email diario).
 4. Borrar segmentos, ICP y pilares solo lo puede hacer el Owner; se comprueba en código porque los canales privilegiados no tienen RLS.
 5. Cron real y `digest` sin definición en el repo.
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Conexiones: estado real (Incluida en NOKKO, Tu cuenta, Sin conectar, Error), uso del mes y prueba no destructiva; el agente nunca recibe secretos.
+- Gmail solo lectura para el superadmin (bandeja de Respuestas). Drive por empresa preparado, falta OAuth de Google. Telegram preparado, falta token. LinkedIn por robots activo con aviso legal.

@@ -75,3 +75,7 @@ Lee `AGENTS.md` y `src/lib/AGENTS.md` antes de tocar esas áreas. Lo esencial:
 - **Un test de cobertura de campos falla tras una migración**: actualiza `src/lib/field-catalog.ts`.
 - **El manifest MCP no refleja una herramienta**: regenéralo (ver [AGENTE-Y-MCP.md](AGENTE-Y-MCP.md)).
 - **`routeTree.gen.ts`**: autogenerado; no lo edites.
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Tipos: `oj typecheck -b --noEmit` o `tsgo -b --noEmit`. Pruebas existentes protegidas: no se modifican sin permiso escrito; las nuevas se escriben antes de implementar.

@@ -164,3 +164,8 @@ Motor de sugerencias estratégicas: `strategy_decisions` (0068), `strategy_chang
 4. **Archivo citado que no existe**: `check-migration-journal.mjs`.
 5. **Numeración rota**: faltan 0059 y 0074 (están en ramas abiertas).
 6. **Snapshots incompletos**: 60 snapshots; no hay de 0058 a 0073.
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Migraciones hasta 0108 (108 archivos, sin prefijos duplicados): conexiones de Drive por empresa (0105), preferencias del agente (0106), umbral del piloto (0107), registro de llamadas a herramientas (0108).
+- Hallazgo de seguridad pendiente: la función undo_field_edit es SECURITY DEFINER y ejecuta SQL dinámico; ver ESTADO-Y-DEUDA.

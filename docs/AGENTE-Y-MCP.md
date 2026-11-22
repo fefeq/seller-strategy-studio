@@ -91,3 +91,8 @@ Permite usar NOKKO desde ChatGPT, Claude, Claude Code u otros asistentes (pantal
    node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .
    ```
 4. No hay test que vigile que `manifest.json` y `TITLES` estén sincronizados: revísalo a mano.
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- 143 herramientas en .lovable/mcp/manifest.json (onboarding por chat, Memoria, reglas, Conexiones, Asesor, pendientes y umbral del piloto).
+- Gasto: las herramientas con coste piden confirmación con coste estimado medido o «sin dato»; el cambio de umbral siempre queda pendiente y solo lo aprueban Owner o Sales Leader.

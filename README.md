@@ -20,10 +20,11 @@ Estudio de estrategia go-to-market para equipos comerciales. Define tu estrategi
 | **Pipeline** | Kanban con etapas configurables, MEDDPICC, líneas de producto, aprobaciones |
 | **Métricas** | Embudo conciliado, perdidos, cohortes, tendencias (RevOps), CAC, finanzas (presupuesto, gasto, margen, ROI), Stripe, PostHog |
 | **Sugerencias** | Mazo de tarjetas con gestos y 5 s para deshacer; motor de sugerencias estratégicas |
-| **Agente** | Chat, Telegram y servidor MCP. 112 herramientas (53 de lectura, 59 de escritura) |
+| **Agente** | Chat (con chips, listas y enlaces), dictado y lectura en voz, niveles Guiado/Copiloto/Autopilot por persona, Telegram (preparado, sin token) y servidor MCP. 143 herramientas en el manifest MCP |
 | **Descubiertos e investigación** | Búsqueda de empresas, personas y competidores con Apollo, Clay, Parallel, Perplexity, Firecrawl y Apify |
 | **Onboarding guiado** | Lectura en segundo plano, aprobación por bloques con origen, diagnóstico GTM, roadmap |
 | **Avisos** | Centro de avisos, email diario a la hora de cada persona, informe semanal, Telegram con silencio nocturno |
+| **Hoy y Conexiones** | Bandeja única en Hoy (sugerencias, aprobaciones, tareas, pendientes del agente), Respuestas de Gmail (solo superadmin hasta revisión legal), Conexiones con estado real y «Probar conexión», umbral de gasto del piloto automático (por defecto 0: todo gasto queda pendiente de confirmar) |
 | **Multiempresa** | Cada empresa con espacio aislado (RLS) y roles propios; superadmins de plataforma |
 
 Roles por empresa: `owner`, `sales_leader`, `marketing`, `sdr`, `ae`, `se`, `cs`, `deal_desk`, `enablement`. Solo el Owner borra, gestiona miembros e invitaciones.
@@ -46,8 +47,8 @@ Inngest              (trabajos en segundo plano)
 | Datos | Supabase (Postgres + RLS + Auth + Realtime); migraciones SQL en `drizzle/migrations` |
 | IA | Vercel AI SDK (`ai` 5) solo en servidor; OpenRouter (BYOK) → Gemini → Lovable AI Gateway |
 | Segundo plano | Inngest 4 + ruta cron |
-| MCP | `@lovable.dev/mcp-js` (116 herramientas en el manifest) |
-| Tests | Vitest 4 · Testing Library · PGlite (140 archivos de test) |
+| MCP | `@lovable.dev/mcp-js` (143 herramientas en el manifest) |
+| Tests | Vitest 4 · Testing Library · PGlite (445 archivos de test) |
 | Paquetes | Bun, con guarda de 24 h (`bunfig.toml`) |
 | Hosting | Lovable Cloud (nokko.ai) |
 
@@ -89,7 +90,7 @@ src/lib/agent/       Registro de herramientas del agente
 src/lib/proactive/   23 detectores proactivos
 src/lib/inngest/     Funciones de segundo plano
 src/integrations/    Clientes y tipos de Supabase (generados)
-drizzle/migrations/  75 migraciones SQL (0000–0076)
+drizzle/migrations/  108 migraciones SQL (0000–0108)
 docs/                Documentación técnica, PRD, SDD y software factory
 .claude/             Agentes y skills del flujo de trabajo
 .lovable/            Manifest MCP y planes de Lovable
@@ -117,14 +118,14 @@ Las convenciones detalladas viven en [`AGENTS.md`](AGENTS.md) y [`src/lib/AGENTS
 | [`docs/README.md`](docs/README.md) | Índice y mapa de la documentación |
 | [`docs/ARQUITECTURA.md`](docs/ARQUITECTURA.md) | Capas, clientes de Supabase, convenciones de módulos y decisiones de diseño |
 | [`docs/BASE-DE-DATOS.md`](docs/BASE-DE-DATOS.md) | Tablas por dominio, multitenant, roles, RLS, funciones, migraciones |
-| [`docs/AGENTE-Y-MCP.md`](docs/AGENTE-Y-MCP.md) | Agente, 112 herramientas, confirmación de escrituras, canales y servidor MCP |
+| [`docs/AGENTE-Y-MCP.md`](docs/AGENTE-Y-MCP.md) | Agente, 143 herramientas, confirmación de escrituras, canales y servidor MCP |
 | [`docs/INTEGRACIONES-Y-SEGUNDO-PLANO.md`](docs/INTEGRACIONES-Y-SEGUNDO-PLANO.md) | Inngest, cron, informes, integraciones, variables de entorno y seguridad |
 | [`docs/PANTALLAS.md`](docs/PANTALLAS.md) | Rutas, roles, navegación, pantallas, sistema de diseño y tests de UI |
 | [`docs/PROCESO.md`](docs/PROCESO.md) | Software factory, gate, SDD y PRD |
 | [`docs/DESARROLLO.md`](docs/DESARROLLO.md) | Puesta en marcha, calidad, migraciones, despliegue y resolución de problemas |
 | [`docs/ESTADO-Y-DEUDA.md`](docs/ESTADO-Y-DEUDA.md) | Riesgos, incoherencias y preguntas abiertas detectadas |
-| [`roadmap.md`](roadmap.md) | Estado histórico de lo hecho y pendiente (**parado en 2026-10-24**, ver deuda documental) |
+| [`roadmap.md`](roadmap.md) | Cola de trabajo viva (encargos y tareas abiertas) |
 
 ## Estado
 
-Las cifras de este README (herramientas, migraciones, tests, rutas) se contaron sobre el código el 2026-11-06. No se han ejecutado la suite de tests, el build ni el lint durante la documentación. No hay CI en el repositorio. Las incoherencias y las preguntas abiertas están en [`docs/ESTADO-Y-DEUDA.md`](docs/ESTADO-Y-DEUDA.md).
+Cifras recontadas sobre el código el 2026-11-16 (manifest MCP, migraciones, archivos de test). Menú en cinco secciones: Hoy, Diseñar, Ejecutar, Medir y aprender, Ajustes (Ciclo GTM, Debates y Theory U en modo avanzado). Bloqueado o pendiente: Drive por empresa (faltan credenciales OAuth de Google), Telegram (sin token), webhook de Apollo, revisión legal de LinkedIn y Gmail. Informe de la última ronda: [`docs/plan/INFORME-FINAL-UX-20261115.md`](docs/plan/INFORME-FINAL-UX-20261115.md). Riesgos y preguntas abiertas: [`docs/ESTADO-Y-DEUDA.md`](docs/ESTADO-Y-DEUDA.md).

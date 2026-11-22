@@ -54,3 +54,8 @@ Hallazgos del análisis completo del repo (2026-11-06). Cada punto cita su orige
 - ¿Las claves `VITE_LOVABLE_CONNECTOR_*` son públicas por diseño?
 - ¿Se retoma o se archiva el flujo BMAD y los tickets de auditoría técnica?
 - ¿Se publica el ledger en `main` o se mantiene en la rama de la factory?
+
+
+## Novedades desde 2026-11-06 (actualizado 2026-11-16)
+- Resuelto: la numeración duplicada de migraciones (ya no hay prefijos repetidos) y roadmap.md desfasado (ahora es la cola viva).
+- Abierto: Drive OAuth, token de Telegram, webhook de Apollo, revisión legal LinkedIn/Gmail, deshacer bloques de onboarding desde el chat.
