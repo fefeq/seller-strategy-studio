@@ -1,7 +1,7 @@
 # SDD-20261121-agent-turn-metrics · [Mejora] Medir cada turno del agente: cómo acaba, cuánto tarda y cuánto cuesta
 
 **Tipo:** Mejora · **Prioridad propuesta:** Alta dentro de la iniciativa (es la condición del criterio de descarte del PRD: sin esta medición no se lanza el Inicio conversacional)
-**Estado:** Aprobado por Fede el 2026-11-22 (versión corregida tras la pasada 1 del gate; sin segunda revisión del gate) · **Pide:** Fede (2026-11-21) · **Aprueba:** Fede · **Fecha:** 2026-11-21
+**Estado:** En curso desde el 2026-11-22 (construido en la rama `feat/agent-turn-metrics`, pendiente de revisión, gate y aprobación de entrega). Aprobado por Fede el 2026-11-22 (versión corregida tras la pasada 1 del gate; sin segunda revisión del gate) · **Pide:** Fede (2026-11-21) · **Aprueba:** Fede · **Fecha:** 2026-11-21
 **PRD:** `docs/prd/PRD-20261121-inicio-conversacional.md` (Aprobado el 2026-11-21) · **Depende de:** —
 **Ticket:** NK-0191 (LOGGED el 2026-11-22; bug derivado: NK-0192)
 **Base de lectura:** `origin/main` @ `cc4a0cd2` (2026-11-21), solo lectura. Producción consultada el 2026-11-21 con consultas de esquema y de conteo.
@@ -247,4 +247,17 @@ Pasada 1, 2026-11-22, sobre la primera versión de este borrador. Informe copiad
   - `src/lib/AGENTS.md` y `.claude/agents/nokko-gate.md` se leyeron parcialmente (la salida se truncó); las reglas citadas se comprobaron por búsqueda.
 
 ## 18. Delta de implementación (lo rellena el agente al entregar)
-—
+Entregado el 2026-11-22 en la rama `feat/agent-turn-metrics` (U-1 a U-5). Lo que difiere del texto de arriba o lo concreta:
+
+- **Coste 0 `measured` solo en la regla del umbral.** Un turno rechazado por parecer un secreto y un turno que falla antes de llegar a ningún proveedor tampoco llaman a un modelo, pero el SDD solo decide el cero para la regla del umbral (sección 10). Esos turnos guardan coste nulo y `unknown`, así que el resumen los cuenta como «coste desconocido». **Pregunta abierta para Fede:** ¿deben contar como 0 medido?
+- **Tokens de entrada y de salida se evalúan por separado.** Si a un paso le falta solo uno de los dos, se vacía ese total y el otro se suma entero. Nunca hay suma parcial (CA-3).
+- **Coste por paso.** Se guarda una entrada por cada fragmento en bruto que trae `usage`; solo se emparejan con los pasos si hay exactamente una por paso. Si no cuadra, el coste del turno es `unknown`. Solo se piden fragmentos en bruto a OpenRouter; Gemini y la pasarela no cambian.
+- **`usage: { include: true }` va en todas las peticiones del agente a OpenRouter.** Sigue [Por verificar] con una llamada real que no cambia precio ni respuesta (sección 16).
+- **`model`** sale de `response.modelId` del AI SDK. Si el proveedor no informa del modelo, el SDK deja ahí el identificador que se pidió, así que la columna puede traer el modelo pedido y no el que respondió. No se ha podido distinguir sin una llamada real.
+- **`error_status`** solo guarda un entero de 100 en adelante y solo en `failed`; el 0 que el código usa para «sin estado» se guarda como nulo.
+- **Migración 0109, más estricta que la tabla de la sección 10:** `CHECK` de no negativos, `model` de 200 caracteres como máximo, y `cost_kind = 'measured'` si y solo si `cost_usd` no es nulo. Revoca todo a `anon` **y a `authenticated`** antes de conceder `SELECT` e `INSERT`, para que los permisos por defecto no dejen `UPDATE` ni `DELETE`.
+- **`turn_id` en la traza** solo se envía cuando hay turno; las llamadas por MCP no lo mandan y la columna queda nula.
+- **Catálogo de campos:** además de los cuatro conceptos reutilizados (más `calidad_coste`, `clave_registro`, `clave_empresa`, `clave_usuario` y `alta_sistema`), hicieron falta ocho conceptos nuevos: `canal_turno`, `modo_turno`, `modelo_ia`, `intentos_turno`, `pasos_turno`, `resultado_turno`, `estado_http_error` y `propuestas_turno`.
+- **Regla del umbral:** vive en `autopilotChatTurn` (`src/lib/agent.functions.ts`). Si la regla lanza un error (rol sin permiso, otra moneda, fallo al guardar), deja fila `failed` con proveedor `none`.
+- **Resumen (`summarizeTurns`):** cuenta las propuestas de los turnos del periodo (por `turn_id`), declara el límite de los turnos cortados en `limits` y devuelve el coste medido total como nulo si ningún turno tiene coste medido. No se añadió función de lectura: la consulta está documentada en `src/lib/AGENTS.md` y nada de la app la llama.
+- **Sección 16:** ningún [Por verificar] se ha podido comprobar; todos necesitan producción o una llamada real a un proveedor, que no están autorizadas. La migración solo se ha probado en PGlite.
