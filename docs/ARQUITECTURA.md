@@ -14,6 +14,7 @@ Supabase (Postgres + Auth + Realtime + Vault)  ◄──────────
 Server functions (*.functions.ts) ── IA, jobs, integraciones ───┘
    ▲
 Rutas /api/public/*  (leads, accounts, Telegram, Apollo, cron, Inngest)
+Ruta /api/oauth/google-drive/return  (Drive por empresa; sin activar)
 Ruta /mcp            (asistentes externos con OAuth)
 Inngest              (trabajos en segundo plano)
 ```
@@ -36,7 +37,8 @@ Inngest              (trabajos en segundo plano)
 | IA | Vercel AI SDK (`ai` 5, `@ai-sdk/openai` 2) solo en servidor; cadena de proveedores en `src/lib/gemini.ts` |
 | Segundo plano | Inngest 4 (`src/lib/inngest/`) + ruta cron `/api/public/jobs/proactive` |
 | MCP | `@lovable.dev/mcp-js` (`/mcp`, autogenerado) |
-| Tests | Vitest 4 + Testing Library + PGlite (Postgres en proceso) |
+| Tests | Vitest 4 + Testing Library + PGlite (Postgres en proceso); 445 archivos de test |
+| CI | GitHub Actions (`.github/workflows/ci.yml`): `tsc --noEmit`, `vitest run` y `vite build` en cada push a `main` y en cada PR; sin lint |
 | Paquetes | Bun (`bun.lock` de texto) con guarda de 24 h en `bunfig.toml` |
 
 ### CSRF y autenticación
@@ -50,14 +52,18 @@ Inngest              (trabajos en segundo plano)
 src/
   routes/            Rutas por archivo. `_authenticated/` es la app (layout con sesión y empresa activa)
     api/public/      Entradas públicas: leads, accounts, telegram, apollo, cron, inngest
+    api/oauth/       Vuelta del OAuth de Google Drive por empresa
     mcp.ts           Servidor MCP (autogenerado)
-  components/        ≈70 módulos sueltos + subcarpetas por pantalla
-                     (account, discoveries, home, leads, metrics, onboarding,
-                      orchestrator, setup, strategy, theory-u, ui)
+    reset-password.tsx  Recuperación de contraseña
+  components/        118 módulos sueltos + subcarpetas por pantalla
+                     (account, connections, deal, discoveries, home, hub, leads,
+                      metrics, onboarding, orchestrator, plays, reply-inbox, setup,
+                      strategy, theory-u, ui)
   hooks/             Consultas y utilidades compartidas (use-me, screen-queries, use-leads…)
-  lib/               Dominio. 380 archivos: ≈130 tests, 25 *.functions.ts, 24 *.server.ts
-    agent/           Registro de herramientas del agente
-    proactive/       23 detectores
+  lib/               Dominio. 738 archivos: 346 tests, 31 *.functions.ts, 38 *.server.ts
+    agent/           Registro de herramientas del agente (25 módulos en tools/)
+    proactive/       24 detectores
+    reply-inbox/     Sincronización y clasificación de respuestas de Gmail
     inngest/         Funciones de segundo plano
     orchestrator/    Planificador y ejecutor de gasto en integraciones
     mcp/             Contexto y utilidades del servidor MCP
@@ -65,9 +71,11 @@ src/
     stripe/          Sincronización y métricas
   integrations/supabase/   Clientes y tipos generados (no editar a mano)
   test/              Arnés PGlite, setup de Vitest
-drizzle/migrations/  75 migraciones SQL (0000–0076)
-docs/                Esta documentación, PRD, SDD y la software factory
+drizzle/migrations/  108 migraciones SQL (0000–0108; falta 0059)
+docs/                Esta documentación, PRD, SDD, plan e informes
 .claude/             Agentes y skills del flujo de trabajo
+.factory/            Ledger de la factory y evidencias del gate
+.github/workflows/   CI
 .lovable/            Manifest MCP y planes de Lovable
 ```
 
@@ -93,6 +101,9 @@ Recogidas de `AGENTS.md` y `src/lib/AGENTS.md`:
 10. **Uso de LLM**: regla determinista → dato derivado o caché → modelo barato (`effort:"low"`) → modelo caro solo en modo «A fondo».
 11. **Pantallas grandes** se dividen en `src/components/<pantalla>/`, una pestaña o panel por módulo.
 12. **GTM diagnosis**, **RevOps**, **Theory U**, **self-service** y **navegación** son reglas puras con test.
+13. **Navegación en cinco secciones** (`src/lib/nav.ts`): Hoy, Diseñar, Ejecutar, Medir y aprender, Ajustes. El modo avanzado por persona solo oculta enlaces (Ciclo GTM, Debates, Theory U), nunca rutas ni permisos; ⌘K usa el mismo catálogo filtrado por rol.
+14. **Agente con niveles y umbral**: los niveles (Guiado, Copiloto, Autopilot) cambian cuánto propone, no lo que puede hacer solo; el piloto automático respeta un umbral de gasto por acción (0 por defecto). Detalle en [AGENTE-Y-MCP.md](AGENTE-Y-MCP.md).
+15. **Secretos fuera del agente**: Conexiones muestra el estado real y prueba sin escribir; el agente nunca recibe claves.
 
 ## 5. Flujo típico de una petición
 
@@ -107,10 +118,4 @@ Recogidas de `AGENTS.md` y `src/lib/AGENTS.md`:
 - Conocido y documentado: el trigger `guard_approval` lee `auth.uid()`, así que `decide_approval` falla desde Telegram hasta que exista una migración.
 - No hay limitador genérico por usuario ni IP en server functions, agente ni MCP; solo topes por recurso (ver [INTEGRACIONES-Y-SEGUNDO-PLANO.md](INTEGRACIONES-Y-SEGUNDO-PLANO.md)).
 - Los trabajos periódicos tienen topes fijos sin paginar (100 empresas por ejecución horaria, 200 en el informe semanal, 2000 perfiles en el email diario).
-- No hay CI en el repositorio (ver [PROCESO.md](PROCESO.md)).
-
-
-## Novedades desde 2026-11-06 (actualizado 2026-11-16)
-- Navegación en cinco secciones (src/lib/nav.ts) con modo avanzado por persona; ⌘K muestra todo el catálogo filtrado por rol.
-- Niveles del agente por persona (user_agent_prefs, src/lib/autonomy.ts) y bloques neutros de conversación (src/lib/conversation.ts) compartidos por app y Telegram.
-- Piloto automático con umbral por acción en lead_settings: por encima del umbral o sin dato, crea una acción pendiente; nunca marca como hecho lo no ejecutado.
+- El CI no pasa lint (la base arrastra deuda de formato) y no se ha comprobado que GitHub Actions esté activado en el repositorio **[Por verificar]**.

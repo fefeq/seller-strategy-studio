@@ -20,10 +20,10 @@ El agente conversa con la persona y actúa sobre sus datos. **Lee al momento; es
 
 El agente solo cae al siguiente proveedor si todavía no ha propuesto ninguna acción de escritura. Gemini necesita `fixGeminiStream` porque su stream no trae `tool_calls[].index`. Las claves **nunca** van en `.env` ni en variables `VITE_`.
 
-### Herramientas (112)
-53 de lectura y 59 de escritura. Solo 9 llevan `roles:` explícito (strategy 6, inbox 2, product 1); el resto comprueba el rol dentro del handler.
+### Herramientas (138)
+Contadas sobre `TOOLS` el 2026-11-22. **52 se ejecutan al momento** (lectura) y **86 piden confirmación**: 71 escrituras declaradas más 15 lecturas que gastan saldo y que el registro convierte en propuestas (`SPENDING_READS` en `spend-confirm.ts`). 24 herramientas llevan `spends` (la tarjeta de confirmación muestra el coste estimado). 17 llevan `roles:` explícito; el resto comprueba el rol dentro del handler.
 
-| Módulo | Total | Lectura | Escritura |
+| Módulo (`src/lib/agent/tools/`) | Total | Lectura declarada | Escritura |
 | --- | ---: | ---: | ---: |
 | core-read | 13 | 13 | 0 |
 | core-write | 12 | 0 | 12 |
@@ -38,10 +38,26 @@ El agente solo cae al siguiente proveedor si todavía no ha propuesto ninguna ac
 | apollo | 5 | 3 | 2 |
 | web | 3 | 2 | 1 |
 | drive | 6 | 3 | 3 |
-| linkedin | 5 | 4 | 1 |
+| linkedin | 6 | 5 | 1 |
 | product | 2 | 1 | 1 |
 | parallel | 5 | 3 | 2 |
 | needs (`complete_account`, `find_key_people`, `find_icp_companies`, `integration_budget`) | 4 | 4 | 0 |
+| plays | 4 | 3 | 1 |
+| custom-plays | 4 | 1 | 3 |
+| onboarding | 1 | 1 | 0 |
+| play-diagnosis | 3 | 1 | 2 |
+| business-lines | 1 | 1 | 0 |
+| onboarding-chat (`start_onboarding_read`, `list_onboarding_blocks`, `approve_onboarding_block`) | 3 | 1 | 2 |
+| parity (`list_memories`, `remember`, `list_rules`, `list_connections`, `get_advisor_recommendations`) | 5 | 4 | 1 |
+| autopilot (`list_my_pending_actions`, `set_autopilot_threshold`…) | 4 | 1 | 3 |
+| **Total** | **138** | **67** | **71** |
+
+### Gasto, niveles y piloto automático
+- **Gasto**: toda herramienta que gasta saldo de un proveedor (Apollo, Clay, Parallel, G2, LinkedIn/Apify…) queda como propuesta con coste estimado (mediana medida o «sin dato»); el resultado se guarda al confirmar. Igual en app, MCP, Telegram y botones.
+- **Niveles del agente** por persona (`src/lib/autonomy.ts`, tabla `user_agent_prefs`, 0106): Guiado, Copiloto (por defecto) y Autopilot. Solo cambian cuánto propone y explica; **en ningún nivel escribe sin confirmación** ni envía nada en nombre de la persona.
+- **Umbral del piloto automático** (`lead_settings.autopilot_action_threshold`, 0107): por acción, en la moneda de la empresa, **0 por defecto**. Por encima del umbral o sin dato comparable, crea una acción pendiente; nunca marca como hecho lo no ejecutado. Cambiarlo siempre queda pendiente y solo lo confirman Owner o Sales Leader (trigger `guard_autopilot_threshold`).
+- **Bloques de conversación** neutros (chips, listas, enlaces; `src/lib/conversation.ts`) compartidos por la app y Telegram.
+- **Voz**: dictado y lectura en voz en el navegador (`src/components/voice-controls.tsx`).
 
 Reglas de implementación (de `src/lib/AGENTS.md`): cada handler filtra por `org_id` explícitamente, valida con `mustFind`/`mustBeMember` cada id que enlaza (cuenta, deal, segmento, miembro), lee nombres relacionados con el filtro de empresa (`accountNames`, nunca un join embebido) y replica las reglas que la app da por RLS o triggers (visibilidad de sugerencias con `canActOnSuggestion`, quién decide aprobaciones, quién reasigna un deal, precios y descuentos solo para `canPrice`, documentos personales solo para su autor).
 
@@ -60,7 +76,7 @@ Reglas de implementación (de `src/lib/AGENTS.md`): cada handler filtra por `org
 | Cron y trabajos | `jobCtx` (`job-runner.server.ts`) | Admin | Reconstruye roles con el cliente admin |
 | MCP | `/mcp` | Cliente de la persona (RLS) | Ver abajo |
 
-WhatsApp está anotado como futuro; no hay código.
+Telegram tiene el código listo pero **no hay token de bot conectado**: se desactiva solo y en Conexiones aparece «Sin conectar». WhatsApp está anotado como futuro; no hay código.
 
 ### Límites conocidos
 - `guard_approval` lee `auth.uid()`: `decide_approval` falla desde Telegram hasta que una migración permita el camino privilegiado.
@@ -76,23 +92,19 @@ Permite usar NOKKO desde ChatGPT, Claude, Claude Code u otros asistentes (pantal
 - **Auth**: OAuth con issuer `https://<proyecto>.supabase.co/auth/v1` y audiencia `authenticated`.
 - **Cliente**: `supabaseForUser` crea un cliente con la clave publicable y el Bearer del llamante, así RLS aplica como a esa persona. Nunca usa service role.
 - **Contexto** (`mcpCtx`): lee `profiles.current_org_id` y roles en `org_members`; sin empresa activa o sin pertenecer a ella, lanza error.
-- **Herramientas**: **116** en `.lovable/mcp/manifest.json` (verificado), versión del manifest `0.1.0`.
-  - Las 112 del agente, generadas desde `TOOLS`.
-  - `list_companies` (lectura), `switch_company` (escritura directa: cambia `profiles.current_org_id`), `get_real_metrics` y `get_segment_coverage`.
+- **Herramientas**: **143** en `.lovable/mcp/manifest.json` (contadas el 2026-11-22), versión del servidor `0.1.0`.
+  - Las 138 del agente, generadas desde `TOOLS` (no falta ninguna).
+  - 5 propias del MCP: `list_companies` (lectura), `switch_company` (escritura directa: cambia `profiles.current_org_id`), `get_real_metrics`, `get_segment_coverage` y `get_team_rules`.
+  - 56 llevan `readOnlyHint`.
   - Las escrituras del agente **no ejecutan**: insertan en `agent_pending_actions` con `source:'mcp'` y se confirman en Sugerencias.
   - `canUseTool` aplica el rol; las salidas JSON se truncan a 60.000 caracteres.
 - **Anotaciones**: `readOnlyHint`, `idempotentHint`, `openWorldHint` (una regex `EXTERNAL` marca las herramientas que salen a fuentes externas).
 
 ### Al tocar herramientas
 1. Añade o cambia la herramienta en `src/lib/agent/tools/`.
-2. Añade su título a `TITLES` en `src/lib/mcp/tools/agent-tools.ts` (hoy 112 entradas, no falta ninguna).
+2. Añade su título a `TITLES` en `src/lib/mcp/tools/agent-tools.ts` (hoy 138 entradas, no falta ninguna).
 3. Regenera el manifest:
    ```sh
    node node_modules/@lovable.dev/mcp-js/dist/cli/extract-manifest.cjs .
    ```
-4. No hay test que vigile que `manifest.json` y `TITLES` estén sincronizados: revísalo a mano.
-
-
-## Novedades desde 2026-11-06 (actualizado 2026-11-16)
-- 143 herramientas en .lovable/mcp/manifest.json (onboarding por chat, Memoria, reglas, Conexiones, Asesor, pendientes y umbral del piloto).
-- Gasto: las herramientas con coste piden confirmación con coste estimado medido o «sin dato»; el cambio de umbral siempre queda pendiente y solo lo aprueban Owner o Sales Leader.
+4. Ningún test vigila la sincronía completa de `manifest.json` con `TOOLS` y `TITLES` (solo hay comprobaciones puntuales de algunas herramientas en `agent-tools.test.ts`): revísalo a mano.
