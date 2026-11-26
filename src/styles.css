@@ -11,7 +11,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Nokko — Ink + Lima (24 oct 2026). Moderno, business casual, con espíritu startup:
+ * Nokko — herramienta comercial (26 nov 2026, Ronda 1): densidad tipo Attio / Linear.
+ * Color con significado: índigo (accent-brand) solo para acción principal y selección;
+ * rojo / ámbar / verde (state-*) solo para estado, salud y riesgo.
+ * Space Grotesk solo en títulos de página y cifras; DM Sans en todo lo demás.
+ *
+ * Historia: Nokko — Ink + Lima (24 oct 2026). Moderno, business casual, con espíritu startup:
  * blanco cálido, tinta, un lima eléctrico para lo principal y azul para enlaces y foco.
  * Space Grotesk en titulares y cifras, DM Sans en el texto. Esquinas redondeadas y sombras suaves.
  */
@@ -83,6 +88,12 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Tokens semánticos (Ronda 1): úsalos en código nuevo. */
+  --color-accent-brand: var(--accent-brand);
+  --color-accent-brand-foreground: var(--accent-brand-foreground);
+  --color-accent-brand-soft: var(--accent-brand-soft);
+  --color-accent-text: var(--accent-text);
+
   /* Tokens propios de Nokko Edición */
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
@@ -143,6 +154,12 @@
   --series-4: #c2410c;
   --series-5: #7a7f89;
   --series-rest: #c9cac3;
+
+  /* Semánticos. lime / blue / red quedan como alias de compatibilidad del mismo índigo. */
+  --accent-brand: var(--lime);
+  --accent-brand-foreground: var(--lime-foreground);
+  --accent-brand-soft: var(--lime-soft);
+  --accent-text: var(--blue);
 
   --background: var(--paper);
   --foreground: var(--ink);
@@ -240,17 +257,20 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-size: 15px;
-    line-height: 23px;
+    font-size: 14px;
+    line-height: 20px;
   }
-  h1, h2, h3,
+  /* Space Grotesk solo en el título de página (h1) y en cifras (.font-display). */
+  h1,
   .font-display {
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.02em;
   }
-  h3 {
-    letter-spacing: 0;
+  h2, h3 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
   em, i {
     font-style: italic;
@@ -273,31 +293,65 @@
 }
 
 /* —— Tipografía de la edición —— */
+/* Rótulos: texto normal (sin versalitas), 12/16, gris discreto. */
 @utility smallcaps {
   font-family: var(--font-sans);
   font-size: 12px;
-  line-height: 14px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
 }
 @utility eyebrow {
   font-family: var(--font-sans);
   font-size: 12px;
   line-height: 16px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-ink-mid);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-ink-faint);
 }
 @utility kicker {
   font-family: var(--font-sans);
   font-size: 12px;
   line-height: 16px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--color-ink-faint);
+}
+/* Escala de herramienta: título de página 28/34 (24/30 en móvil), cuerpo 14/20, dato secundario 12/16, cifra 28/34. */
+@utility page-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 30px;
   font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-ink-mid);
+  letter-spacing: -0.02em;
+  @media (width >= 48rem) {
+    font-size: 28px;
+    line-height: 34px;
+  }
+}
+@utility section-title {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+@utility text-body {
+  font-size: 14px;
+  line-height: 20px;
+}
+@utility text-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-ink-faint);
+}
+@utility metric {
+  font-family: var(--font-display);
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 @utility lede-xl {
   font-family: var(--font-display);
@@ -321,11 +375,11 @@
   letter-spacing: -0.02em;
 }
 @utility head {
-  font-family: var(--font-display);
-  font-size: 25px;
-  line-height: 31px;
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 24px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
 }
 @utility figure {
   font-family: var(--font-display);

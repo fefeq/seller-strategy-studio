@@ -5,7 +5,8 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Kpi, Panel } from "@/components/page";
+import { Inbox } from "lucide-react";
+import { Empty, HealthDot, Kpi, Panel } from "@/components/page";
 
 const ROOT = process.cwd();
 function walk(dir: string, out: string[] = []) {
@@ -35,18 +36,18 @@ describe("CA-10 densidades de la tarjeta de cifra", () => {
     );
   it("hero: la cifra grande de Inicio y Pipeline", () => {
     const h = render({ size: "hero" });
-    expect(h).toContain("text-4xl");
+    expect(h).toContain("metric");
     expect(h).toContain("p-5");
   });
   it("normal: Métricas, finanzas y self-service", () => {
     const h = render({ size: "normal" });
-    expect(h).toContain("md:text-3xl");
+    expect(h).toContain("metric");
     expect(h).toContain("break-words");
   });
   it("compact: Leads y presupuesto", () => {
     const h = render({ size: "compact" });
     expect(h).toContain("px-4 py-3");
-    expect(h).toContain("text-2xl");
+    expect(h).toContain("text-xl");
   });
   it("inline: sin tarjeta", () => {
     const h = render({ size: "inline" });
@@ -59,6 +60,8 @@ describe("CA-10 densidades de la tarjeta de cifra", () => {
   });
   it("tono de alerta: color de la cifra o de la pista", () => {
     expect(render({ tone: "signal" })).toContain("text-signal");
+    expect(render({ tone: "alarm" })).toContain("text-state-alarm");
+    expect(render({ tone: "alarm" })).not.toContain("text-signal");
     expect(render({ hint: "x", hintTone: "alarm" })).toContain("text-state-alarm");
     expect(render({ hint: "x", hintTone: "signal" })).toContain("text-signal");
   });
@@ -76,5 +79,50 @@ describe("Panel", () => {
     expect(h).toContain("Título");
     expect(h).toContain("Ver");
     expect(h).toContain("Cuerpo");
+  });
+});
+
+describe("Panel: título de sección discreto", () => {
+  it("usa section-title (14 px seminegrita), no text-2xl", () => {
+    const h = renderToStaticMarkup(createElement(Panel, { title: "T", children: "x" }));
+    expect(h).toContain("section-title");
+    expect(h).not.toContain("text-2xl");
+  });
+});
+
+describe("HealthDot: el riesgo es rojo de estado, nunca índigo", () => {
+  it("rojo usa state-alarm", () => {
+    const h = renderToStaticMarkup(createElement(HealthDot, { value: "red" }));
+    expect(h).toContain("En riesgo");
+    expect(h).toContain("bg-state-alarm");
+    expect(h).not.toMatch(/text-red\b/);
+  });
+});
+
+describe("Empty", () => {
+  it("solo con texto conserva la nota de siempre", () => {
+    const h = renderToStaticMarkup(createElement(Empty, null, "Nada todavía."));
+    expect(h).toBe(
+      '<div class="border-t border-hairline py-8 text-sm text-ink-mid">Nada todavía.</div>',
+    );
+  });
+  it("con título, ícono y acciones pinta todo, con el ícono acompañado de texto", () => {
+    const h = renderToStaticMarkup(
+      createElement(
+        Empty,
+        {
+          title: "Sin leads",
+          icon: Inbox,
+          action: createElement("button", null, "Importar"),
+          secondaryAction: createElement("button", null, "Crear a mano"),
+        },
+        "Importa un CSV o crea el primero.",
+      ),
+    );
+    expect(h).toContain("Sin leads");
+    expect(h).toContain("<svg");
+    expect(h).toContain("Importa un CSV");
+    expect(h).toContain("Importar");
+    expect(h).toContain("Crear a mano");
   });
 });
