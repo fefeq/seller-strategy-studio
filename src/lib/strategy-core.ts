@@ -1,157 +1,103 @@
-// Writes of strategic suggestions (SDD-20261027 strategic-suggestions-engine, F0 · H-1): recording a decision and
-// re-evaluating what a detector finds again. Takes the client and the company explicitly, like the agent tools, because it
-// also runs with the privileged client (Telegram, cron) where RLS does not apply. The rules themselves are pure, in
-// strategy-suggestions.ts.
-import type { Db } from "@/lib/org-data";
-import type { Json } from "@/integrations/supabase/types";
-import {
-  decisionRecord,
-  parseStrategy,
-  reconcile,
-  type StrategyDecision,
-  type StrategyRow,
-  type StrategySuggestion,
-} from "@/lib/strategy-suggestions";
+// Strategy simple start: the five sections a new manager sees first.
+// Pure logic, mirrors public.strategy_core_missing_for on the server.
 
-/** Detectors named strategy_<element>; the generic sync must never auto-close or rewrite them. */
-export const STRATEGY_DETECTOR_LIKE = "strategy_%";
+export type CoreSectionKey =
+  | "ideal_customer"
+  | "segments"
+  | "positioning"
+  | "value_proposition"
+  | "messages";
 
-export const isStrategySuggestion = (
-  s: { detector: string } & Record<string, unknown>,
-): s is StrategySuggestion =>
-  s.detector.startsWith("strategy_") && !!parseStrategy((s as { strategy?: unknown }).strategy);
-
-type Ctx = { db: Db; orgId: string; userId: string };
-type SuggestionLike = { id: string; strategy: unknown };
-
-const MESSAGE = {
-  approve: "Aceptada",
-  dismiss: "Descartada; no volverá a aparecer salvo que haya evidencia nueva",
-};
-
-/**
- * CA-4: one database function (decide_strategy_suggestion, migration 0068) changes the status, only while the suggestion is
- * still pending, and logs who decided, when, why and with which evidence, in a single transaction: there is never a decided
- * suggestion without its record, even if the connection drops in between. The date and the fingerprint are set by the database.
- */
-export async function decideStrategy(
-  ctx: Ctx,
-  s: SuggestionLike,
-  decision: StrategyDecision,
-  opts: { reason?: string | null; remindAt?: Date | null; now?: Date } = {},
-): Promise<{ status: string; message: string }> {
-  const meta = parseStrategy(s.strategy);
-  if (!meta)
-    throw new Error(
-      "Esta sugerencia no tiene los datos de una sugerencia estratégica completa; no se puede decidir.",
-    );
-  const now = opts.now ?? new Date();
-  const rec = decisionRecord({
-    decision,
-    by: ctx.userId,
-    now,
-    fingerprint: meta.fingerprint,
-    reason: opts.reason,
-    remindAt: opts.remindAt,
-  });
-  // p_reason / p_remind_at are nullable in SQL; the generated types list them as plain strings (no nullable-argument information).
-  const { data, error } = await ctx.db.rpc("decide_strategy_suggestion", {
-    p_suggestion_id: s.id,
-    p_org_id: ctx.orgId,
-    p_decision: decision,
-    p_reason: rec.reason as string,
-    p_remind_at: rec.remind_at as string,
-    p_by: ctx.userId,
-  });
-  if (error)
-    throw new Error("No pude registrar la decisión. No he cambiado nada; inténtalo de nuevo.");
-  if (!data) return { status: rec.status, message: "Ya estaba gestionada" };
-  const message =
-    decision === "accept"
-      ? MESSAGE.approve
-      : decision === "dismiss"
-        ? MESSAGE.dismiss
-        : `Pospuesta hasta el ${(rec.remind_at ?? now.toISOString()).slice(0, 10)}`;
-  return { status: data, message };
+export interface CoreSection {
+  key: CoreSectionKey;
+  label: string;
+  hint: string;
 }
 
-/**
- * CA-5 and CA-6: for each suggestion a detector finds, inserts it, refreshes its evidence, reopens it (only when the evidence
- * changed since a dismissal or postponement) or leaves it alone. Rows that stopped being found are not closed here (F5).
- */
-export async function syncStrategySuggestions(
-  db: Db,
-  orgId: string,
-  found: StrategySuggestion[],
-  now: Date = new Date(),
-) {
-  if (!found.length) return;
-  const keys = found.map((f) => f.dedupe_key);
-  const { data: existing } = await db
-    .from("suggestions")
-    .select("id,dedupe_key,status,priority,created_at,snoozed_until,strategy,title,body")
-    .eq("org_id", orgId)
-    .in("dedupe_key", keys);
-  const rows = (existing ?? []) as {
-    id: string;
-    dedupe_key: string;
-    status: string;
-    priority: number;
-    created_at: string;
-    snoozed_until: string | null;
-    strategy: unknown;
-    title: string;
-    body: string;
+export const CORE_SECTIONS: readonly CoreSection[] = [
+  { key: "ideal_customer", label: "Cliente ideal", hint: "A quién le vendes: industria y por qué encaja." },
+  { key: "segments", label: "Segmentos", hint: "Los grupos de clientes que atiendes." },
+  { key: "positioning", label: "Posicionamiento", hint: "Qué te hace distinto frente a la competencia." },
+  { key: "value_proposition", label: "Propuesta de valor", hint: "El beneficio principal que recibe tu cliente." },
+  { key: "messages", label: "Mensajes", hint: "Lo que dice tu equipo al hablar con clientes." },
+];
+
+export interface StrategySnapshot {
+  icpProfiles: { industries?: string | null; why_fit?: string | null }[];
+  segments: { name?: string | null }[];
+  positioning: {
+    differentiator?: string | null;
+    differentiation?: string | null;
+    key_benefit?: string | null;
+    value?: string | null;
   }[];
-  const ids = rows.map((r) => r.id);
-  const lastFp = new Map<string, string>();
-  if (ids.length) {
-    const { data: decided } = await db
-      .from("strategy_decisions")
-      .select("suggestion_id,evidence_fingerprint,decided_at")
-      .eq("org_id", orgId)
-      .in("suggestion_id", ids)
-      .order("decided_at", { ascending: false });
-    for (const d of (decided ?? []) as { suggestion_id: string; evidence_fingerprint: string }[])
-      if (!lastFp.has(d.suggestion_id)) lastFp.set(d.suggestion_id, d.evidence_fingerprint);
+  pillars: { message?: string | null }[];
+}
+
+const filled = (v: string | null | undefined): boolean => (v ?? "").trim() !== "";
+
+export function missingCoreSections(s: StrategySnapshot): CoreSectionKey[] {
+  const missing: CoreSectionKey[] = [];
+  if (!s.icpProfiles.some((p) => filled(p.industries) || filled(p.why_fit))) missing.push("ideal_customer");
+  if (!s.segments.some((x) => filled(x.name))) missing.push("segments");
+  if (!s.positioning.some((p) => filled(p.differentiator) || filled(p.differentiation))) missing.push("positioning");
+  if (!s.positioning.some((p) => filled(p.key_benefit) || filled(p.value))) missing.push("value_proposition");
+  if (!s.pillars.some((p) => filled(p.message))) missing.push("messages");
+  return missing;
+}
+
+export function sectionLabel(key: string): string {
+  return CORE_SECTIONS.find((s) => s.key === key)?.label ?? "una sección";
+}
+
+type FieldValue = string | number | boolean | null;
+
+/**
+ * Builds the update to send when saving from the five-section view.
+ * Only fields that are visible AND were edited are included, so hidden
+ * sections are never emptied or overwritten.
+ */
+export function buildCorePatch(
+  original: Record<string, FieldValue | undefined>,
+  edited: Record<string, FieldValue | undefined>,
+  visibleKeys: readonly string[],
+): Record<string, FieldValue> {
+  const patch: Record<string, FieldValue> = {};
+  for (const key of visibleKeys) {
+    if (!(key in edited)) continue;
+    const next = edited[key];
+    if (next === undefined) continue;
+    if (next === (original[key] ?? null)) continue;
+    patch[key] = next;
   }
-  const byKey = new Map(rows.map((r) => [r.dedupe_key, r]));
-  const inserts: StrategySuggestion[] = [];
-  const at = now.toISOString();
-  for (const f of found) {
-    const r = byKey.get(f.dedupe_key);
-    const meta = r ? parseStrategy(r.strategy) : null;
-    const existingRow: StrategyRow | null =
-      r && meta ? { ...r, strategy: meta, decided_fingerprint: lastFp.get(r.id) ?? null } : null;
-    // The database refuses a strategy_* row without valid data, so a row we cannot read is only a defensive case: refresh it.
-    const out =
-      r && !existingRow
-        ? ({
-            action: "refresh",
-            patch: { strategy: f.strategy, title: f.title, body: f.body, priority: f.priority },
-          } as const)
-        : reconcile(existingRow, f, now);
-    if (out.action === "insert") inserts.push(f);
-    else if (out.action === "keep") continue;
-    else
-      await db
-        .from("suggestions")
-        .update({ ...out.patch, strategy: out.patch.strategy as unknown as Json, updated_at: at })
-        .eq("id", r!.id)
-        .eq("org_id", orgId);
+  return patch;
+}
+
+export interface ApprovalResult {
+  approved: boolean;
+  missing: string[];
+}
+
+export function parseApprovalResult(raw: unknown): ApprovalResult {
+  if (raw && typeof raw === "object") {
+    const r = raw as { approved?: unknown; missing?: unknown };
+    const missing = Array.isArray(r.missing) ? r.missing.filter((m): m is string => typeof m === "string") : [];
+    return { approved: r.approved === true, missing };
   }
-  if (inserts.length) {
-    await db.from("suggestions").upsert(
-      inserts.map((f) => {
-        const { email_block: _block, ...row } = f;
-        return {
-          ...row,
-          org_id: orgId,
-          action: f.action as unknown as Json,
-          strategy: f.strategy as unknown as Json,
-        };
-      }),
-      { onConflict: "org_id,dedupe_key", ignoreDuplicates: true },
-    );
-  }
+  return { approved: false, missing: [] };
+}
+
+export function approvalMessage(result: ApprovalResult): string {
+  if (result.approved) return "Tu estrategia quedó aprobada.";
+  if (result.missing.length === 0) return "No pudimos aprobar la estrategia. Inténtalo de nuevo.";
+  const names = result.missing.map(sectionLabel);
+  return names.length === 1
+    ? `Falta completar: ${names[0]}.`
+    : `Faltan completar: ${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}.`;
+}
+
+/** Clear message for the person, never the raw error text. */
+export function approvalErrorMessage(error: { code?: string | null } | null | undefined): string {
+  if (error?.code === "42501") return "Solo el gerente o quien tenga ese permiso puede aprobar la estrategia.";
+  return "No pudimos aprobar la estrategia. Inténtalo de nuevo en un momento.";
 }
