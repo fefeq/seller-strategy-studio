@@ -78,7 +78,8 @@ const count = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v 
 const money = (v: unknown) => (typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : null);
 const str = (v: unknown) => (typeof v === "string" && v ? v : null);
 
-function usageOf(raw: Raw): PinnedUsage {
+/** Reads an OpenRouter `usage` object. Exported so the agent turn record applies the same cost rule (NK-0191). */
+export function usageOf(raw: Raw): PinnedUsage {
   const cacheReadTokens = count(obj(raw.prompt_tokens_details).cached_tokens);
   const byok = typeof raw.is_byok === "boolean" ? raw.is_byok : null;
   // No falling from one cost field to the other: each billing mode has its own field.

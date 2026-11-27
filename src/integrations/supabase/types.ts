@@ -498,6 +498,7 @@ export type Database = {
           status: string
           summary: string
           tool: string
+          turn_id: string | null
           user_id: string
         }
         Insert: {
@@ -512,6 +513,7 @@ export type Database = {
           status?: string
           summary?: string
           tool: string
+          turn_id?: string | null
           user_id: string
         }
         Update: {
@@ -526,6 +528,7 @@ export type Database = {
           status?: string
           summary?: string
           tool?: string
+          turn_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -557,6 +560,7 @@ export type Database = {
           provider: string | null
           source: string
           tool: string
+          turn_id: string | null
           user_id: string
         }
         Insert: {
@@ -570,6 +574,7 @@ export type Database = {
           provider?: string | null
           source?: string
           tool: string
+          turn_id?: string | null
           user_id: string
         }
         Update: {
@@ -583,6 +588,7 @@ export type Database = {
           provider?: string | null
           source?: string
           tool?: string
+          turn_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -595,6 +601,87 @@ export type Database = {
           },
           {
             foreignKeyName: "agent_tool_calls_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_turns: {
+        Row: {
+          attempts: number
+          channel: string
+          conversation_id: string | null
+          cost_kind: string
+          cost_usd: number | null
+          created_at: string
+          duration_ms: number
+          error_status: number | null
+          id: string
+          input_tokens: number | null
+          mode: string
+          model: string | null
+          org_id: string
+          outcome: string
+          output_tokens: number | null
+          proposed_count: number
+          provider: string
+          steps: number | null
+          user_id: string
+        }
+        Insert: {
+          attempts: number
+          channel: string
+          conversation_id?: string | null
+          cost_kind: string
+          cost_usd?: number | null
+          created_at?: string
+          duration_ms: number
+          error_status?: number | null
+          id?: string
+          input_tokens?: number | null
+          mode: string
+          model?: string | null
+          org_id: string
+          outcome: string
+          output_tokens?: number | null
+          proposed_count?: number
+          provider: string
+          steps?: number | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          conversation_id?: string | null
+          cost_kind?: string
+          cost_usd?: number | null
+          created_at?: string
+          duration_ms?: number
+          error_status?: number | null
+          id?: string
+          input_tokens?: number | null
+          mode?: string
+          model?: string | null
+          org_id?: string
+          outcome?: string
+          output_tokens?: number | null
+          proposed_count?: number
+          provider?: string
+          steps?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_turns_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_turns_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"

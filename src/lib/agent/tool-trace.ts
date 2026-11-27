@@ -2,6 +2,7 @@
 // Only the tool name, how it ended and how long it took. Never arguments, results or error text: those can hold
 // customer text. Tracing must never break or slow a turn: saveToolTrace swallows every failure.
 import { safeErrorLog } from "./safe-error-log";
+import { withTurnId } from "./turn-id";
 import type { ToolCtx } from "./tool-kit";
 
 export type ToolOutcome = "ok" | "error" | "pending";
@@ -15,6 +16,8 @@ export type ToolTraceMeta = {
   source: "agent" | "mcp";
   provider?: string | null;
   conversationId?: string | null;
+  /** The agent turn the calls belong to (0109, no foreign key). MCP calls have none. */
+  turnId?: string | null;
 };
 
 /** How a call ended, from what the tool wrapper returned: reads answer `{error}` instead of throwing. */
@@ -48,15 +51,19 @@ export async function traced<T>(
 export async function saveToolTrace(ctx: ToolCtx, meta: ToolTraceMeta, rows: ToolTraceRow[]) {
   if (!rows.length) return;
   try {
-    const { error } = await ctx.db.from("agent_tool_calls").insert(
-      rows.map((r) => ({
-        org_id: ctx.orgId,
-        user_id: ctx.userId,
-        conversation_id: meta.conversationId ?? null,
-        source: meta.source,
-        provider: meta.provider ?? null,
-        ...r,
-      })),
+    // While migration 0109 is not applied the trace is still saved: without the column, once more without turn_id.
+    const { error } = await withTurnId((withTurn) =>
+      ctx.db.from("agent_tool_calls").insert(
+        rows.map((r) => ({
+          org_id: ctx.orgId,
+          user_id: ctx.userId,
+          conversation_id: meta.conversationId ?? null,
+          source: meta.source,
+          provider: meta.provider ?? null,
+          ...(withTurn && meta.turnId ? { turn_id: meta.turnId } : {}),
+          ...r,
+        })),
+      ),
     );
     if (error) console.error("tool trace failed", { code: error.code ?? null });
   } catch (e) {

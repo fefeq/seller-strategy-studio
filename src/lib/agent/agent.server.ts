@@ -23,6 +23,8 @@ import { chatLearnText } from "./learn-text";
 import { safeErrorLog } from "./safe-error-log";
 import { summarizeAction, toolsFor, type AgentTool, type ToolCtx } from "./tools";
 import { saveToolTrace, traced, type ToolTraceRow } from "./tool-trace";
+import { keepTurn, newTurn, rawStepCost, streamFacts, type TurnState } from "./turn-record";
+import { withTurnId } from "./turn-id";
 import { ROLES, type Role } from "@/lib/roles";
 import { getPersona } from "@/lib/bmad/personas";
 import { getWorkflow } from "@/lib/bmad/workflows";
@@ -86,23 +88,47 @@ MODO ENTREVISTA DE CONFIGURACIÓN: tu objetivo es completar la estrategia GTM de
 - Cuando todo esté completo, felicítale y sugiere el siguiente paso útil.`;
 }
 
-/** Runs one agent turn. Write tools create pending actions instead of executing. */
-export async function runAgent(
-  ctx: ToolCtx,
-  opts: {
-    conversationId: string;
-    text: string;
-    channel: AgentChannel;
-    mode: AgentMode;
-    orgName: string;
-    signal?: AbortSignal;
-    personaId?: string | null;
-    workflowId?: string | null;
-  },
-) {
+type AgentOpts = {
+  conversationId: string;
+  text: string;
+  channel: AgentChannel;
+  mode: AgentMode;
+  orgName: string;
+  signal?: AbortSignal;
+  personaId?: string | null;
+  workflowId?: string | null;
+};
+
+/** Runs one agent turn. Write tools create pending actions instead of executing.
+ *  Every turn, also one that fails anywhere, leaves its agent_turns row after the answer (NK-0191). */
+export async function runAgent(ctx: ToolCtx, opts: AgentOpts) {
+  const turn = newTurn();
+  const pending: PendingAction[] = [];
+  const keep = (failed: boolean) =>
+    keepTurn(ctx, turn, {
+      conversationId: opts.conversationId,
+      channel: opts.channel,
+      mode: opts.mode,
+      proposedCount: pending.length,
+      failed,
+    });
+  try {
+    const out = await runTurn(ctx, opts, turn, pending);
+    keep(false);
+    return out;
+  } catch (e) {
+    keep(true);
+    throw e;
+  }
+}
+
+async function runTurn(ctx: ToolCtx, opts: AgentOpts, turn: TurnState, pending: PendingAction[]) {
   // E3: a message that looks like a secret is never stored nor sent to the model.
   const { looksLikeSecret, SECRET_REFUSAL } = await import("./secret-guard");
-  if (looksLikeSecret(opts.text)) return { text: SECRET_REFUSAL, pending: [] as PendingAction[] };
+  if (looksLikeSecret(opts.text)) {
+    turn.refused = true;
+    return { text: SECRET_REFUSAL, pending: [] as PendingAction[] };
+  }
   const chain = aiProviders(process.env);
   if (chain.length === 1 && chain[0] === "lovable" && !process.env["LOVABLE_API_KEY"])
     throw new Error("La IA no está configurada");
@@ -129,7 +155,6 @@ export async function runAgent(
   // E1: the person's level only shapes how Nokko proposes; confirmations stay for every level.
   const { autonomyPrompt, parseAutonomy } = await import("@/lib/autonomy");
   const level = autonomyPrompt(parseAutonomy(pref.data?.autonomy));
-  const pending: PendingAction[] = [];
   const system = systemPrompt(
     ctx,
     opts.channel,
@@ -146,23 +171,34 @@ export async function runAgent(
   let text = "";
   for (let i = 0; i < chain.length; i++) {
     const kind = chain[i]!;
+    turn.provider = kind;
+    turn.attempts = i + 1;
     // Tool trace of this attempt, stored after the answer is returned (also when the attempt fails).
     const trace: ToolTraceRow[] = [];
     const keepTrace = () =>
       afterResponse("agent tool trace", () =>
         saveToolTrace(
           ctx,
-          { source: "agent", provider: kind, conversationId: opts.conversationId },
+          {
+            source: "agent",
+            provider: kind,
+            conversationId: opts.conversationId,
+            turnId: turn.id,
+          },
           trace,
         ),
       );
     try {
-      text = await runWith(kind, ctx, opts, system, messages, pending, trace);
+      const answer = await runWith(kind, ctx, opts, turn.id, system, messages, pending, trace);
+      text = answer.text;
+      turn.steps = answer.steps;
+      turn.model = answer.model;
       keepTrace();
       break;
     } catch (e) {
       keepTrace();
       const status = Number((e as { statusCode?: number })?.statusCode ?? 0);
+      turn.errorStatus = status;
       const body = String((e as { responseBody?: string })?.responseBody ?? "");
       const canFallBack =
         kind !== "lovable" &&
@@ -178,6 +214,7 @@ export async function runAgent(
       throw new Error(agentErrorMessage(kind, status, body));
     }
   }
+  turn.hasText = Boolean(text);
   if (!text)
     text = pending.length
       ? "He preparado estas acciones. Confírmalas para ejecutarlas."
@@ -216,6 +253,7 @@ async function runWith(
   kind: AiProvider,
   ctx: ToolCtx,
   opts: { conversationId: string; signal?: AbortSignal },
+  turnId: string,
   system: string,
   messages: ModelMessage[],
   pending: PendingAction[],
@@ -236,18 +274,22 @@ async function runWith(
       const { spendEstimateLine, withEstimate } = await import("./spend-confirm");
       summary = withEstimate(summary, t.name, await spendEstimateLine(ctx.db, ctx.orgId, t.name));
     }
-    const { data, error } = await ctx.db
-      .from("agent_pending_actions")
-      .insert({
-        org_id: ctx.orgId,
-        user_id: ctx.userId,
-        conversation_id: opts.conversationId,
-        tool: t.name,
-        args: args as unknown as Json,
-        summary,
-      })
-      .select("id")
-      .single();
+    // Proposing must work while migration 0109 is not applied: without the column, once more without turn_id.
+    const { data, error } = await withTurnId((withTurn) =>
+      ctx.db
+        .from("agent_pending_actions")
+        .insert({
+          org_id: ctx.orgId,
+          user_id: ctx.userId,
+          conversation_id: opts.conversationId,
+          tool: t.name,
+          args: args as unknown as Json,
+          summary,
+          ...(withTurn ? { turn_id: turnId } : {}),
+        })
+        .select("id")
+        .single(),
+    );
     if (error) return { error: error.message };
     pending.push({ id: data.id, tool: t.name, summary, status: "pending" });
     return { status: "pendiente_de_confirmacion", resumen: summary };
@@ -305,9 +347,14 @@ async function runWith(
       fetch: (async (url: RequestInfo | URL, init?: RequestInit) => {
         if (typeof init?.body !== "string") return fetch(url, init);
         try {
+          // usage.include asks OpenRouter to report the measured cost of the call (read from the raw chunks below).
           return fetch(url, {
             ...init,
-            body: JSON.stringify({ ...JSON.parse(init.body), ...routing }),
+            body: JSON.stringify({
+              ...JSON.parse(init.body),
+              ...routing,
+              usage: { include: true },
+            }),
           });
         } catch {
           return fetch(url, init);
@@ -328,6 +375,9 @@ async function runWith(
     model = provider.responses(MODEL);
   }
 
+  // The AI SDK drops OpenRouter's cost from its usage, so it is read from the raw chunks: one entry per chunk that
+  // carries usage (one per step). Reading it must fail towards «cost unknown», never towards a broken turn.
+  const costs: (number | null)[] | null = kind === "openrouter" ? [] : null;
   // The stream's own error (provider status and body); "No output generated" alone hides it.
   let streamError: unknown;
   try {
@@ -343,6 +393,20 @@ async function runWith(
         streamError ??= error;
         console.error("Agent stream error", safeErrorLog(error));
       },
+      ...(costs
+        ? {
+            includeRawChunks: true,
+            onChunk: ({ chunk }: { chunk: { type: string; rawValue?: unknown } }) => {
+              try {
+                if (chunk.type !== "raw") return;
+                const cost = rawStepCost(chunk.rawValue);
+                if (cost !== undefined) costs.push(cost);
+              } catch {
+                // A chunk that cannot be read leaves fewer costs than steps, so the turn's cost is unknown.
+              }
+            },
+          }
+        : {}),
       ...(kind === "lovable"
         ? {
             providerOptions: {
@@ -357,7 +421,8 @@ async function runWith(
           }
         : {}),
     });
-    return (await result.text).trim();
+    const text = (await result.text).trim();
+    return { text, ...(await streamFacts(result, costs)) };
   } catch (caught) {
     const e = streamError ?? caught;
     // AI_RetryError wraps the real API error.
